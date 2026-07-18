@@ -1,0 +1,138 @@
+export type PhaseOneFeaturePage = {
+  slug: string;
+  title: string;
+  badge: string;
+  metaTitle: string;
+  metaDescription: string;
+  h1: string;
+  summary: string;
+  primaryKeyword: string;
+  keywords: string[];
+  useCases: string[];
+  mvpDeliverables: string[];
+  creditModel: string[];
+  internalLinks: { label: string; href: string; note: string }[];
+};
+
+export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
+  {
+    slug: "ai-ad-performance-score-checker",
+    title: "AI Ad Performance Score Checker",
+    badge: "AI Ad Scorer",
+    metaTitle: "AI Ad Performance Score Checker for Ecommerce Ads | Crelavo",
+    metaDescription: "Score ecommerce ads, TikTok hooks, product video scripts, CTA clarity and creative performance with Crelavo's AI ad performance score checker roadmap.",
+    h1: "AI ad performance score checker for ecommerce ads, hooks and product video scripts",
+    summary: "Crelavo's AI Ad Performance Score Checker is planned as a lead magnet and production gateway: users can score product ad ideas, hooks, CTA clarity, platform fit and creative weaknesses before turning the best version into a Crelavo production request.",
+    primaryKeyword: "AI ad performance score checker",
+    keywords: ["AI ad scorer", "ad performance checker", "video ad score", "TikTok ad score", "ecommerce ad score", "ROAS prediction tool", "CTR prediction tool", "ad creative analysis", "product ad checker", "creative performance score"],
+    useCases: ["Score a TikTok product ad hook before production", "Review Shopify or Amazon product video scripts", "Find weak CTA, offer clarity and first-three-second issues", "Turn low scoring ad concepts into improved Crelavo briefs"],
+    mvpDeliverables: ["Basic ad score report", "Hook strength and CTA clarity notes", "3 improved ad angles", "Video-ready creative brief", "Optional product video production request"],
+    creditModel: ["Basic score: free or low-friction lead magnet", "Detailed ad score report: 25-50 credits", "3 improved ad scripts: 75-100 credits", "Video-ready creative brief: 100-150 credits", "Generated video variants: normal video credits"],
+    internalLinks: [
+      { label: "AI product video generator", href: "/ai-product-video-generator", note: "Turn improved ad score into video production" },
+      { label: "TikTok Hook Generator", href: "/free-tools/tiktok-hook-generator", note: "Prepare stronger hooks first" },
+      { label: "Predictive launch plan", href: "/ai-tool-launch-distribution-plan", note: "Route scored ads into launch channels" }
+    ]
+  },
+  {
+    slug: "ai-virtual-model-studio",
+    title: "AI Virtual Model Studio",
+    badge: "Virtual Model Studio",
+    metaTitle: "AI Virtual Model Studio for Fashion and Ecommerce | Crelavo",
+    metaDescription: "Create a roadmap for AI virtual model photos, fashion product images, AI clothing models, jewelry model visuals and ecommerce model photography with Crelavo.",
+    h1: "AI virtual model studio for fashion, jewelry, accessories and ecommerce product visuals",
+    summary: "Crelavo's AI Virtual Model Studio positions product visuals for fashion, jewelry, beauty and accessories as model-ready campaign assets. The first phase is SEO and request intake; MVP delivery can provide sanal model image packs through admin/assistant-assisted production.",
+    primaryKeyword: "AI virtual model studio",
+    keywords: ["AI virtual model", "AI fashion model", "virtual model studio", "AI clothing model", "AI model photography", "fashion product photos", "AI jewelry model", "AI try on model", "ecommerce model photos", "virtual model generator"],
+    useCases: ["Show apparel on different virtual model styles", "Create jewelry and accessory model visuals", "Prepare fashion product photos without a full shoot", "Generate lifestyle images for Shopify, Amazon or Trendyol campaigns"],
+    mvpDeliverables: ["4 image virtual model pack", "10 image catalog pack", "Product close-up and lifestyle shot direction", "Short video teaser brief", "Model style and market fit notes"],
+    creditModel: ["1 virtual model image: 30-50 credits", "4 image pack: 120-180 credits", "10 image catalog pack: 300-500 credits", "Image + short video teaser pack: 700+ credits", "Premium fashion campaign pack: 800+ credits"],
+    internalLinks: [
+      { label: "AI product video generator", href: "/ai-product-video-generator", note: "Use virtual model assets in product videos" },
+      { label: "AI UGC creator program", href: "/ai-ugc-creator-program", note: "Connect model visuals with UGC creator strategy" },
+      { label: "Pinterest + YouTube visual distribution", href: "/pinterest-youtube-visual-distribution-plan", note: "Distribute visuals into visual search" }
+    ]
+  },
+  {
+    slug: "ai-cultural-localization",
+    title: "AI Cultural Localization",
+    badge: "Global Culture-Shift",
+    metaTitle: "AI Cultural Localization for Global Ecommerce Ads | Crelavo",
+    metaDescription: "Adapt ecommerce ads, product videos, scripts, visuals and messaging for country-specific buyer psychology with Crelavo AI cultural localization.",
+    h1: "AI cultural localization for cross-border ecommerce ads and global product videos",
+    summary: "AI Cultural Localization goes beyond translation. Crelavo can position this as country-specific creative adaptation: messaging, proof, tone, pacing, visual style, CTA and product psychology change by market.",
+    primaryKeyword: "AI cultural localization",
+    keywords: ["AI cultural localization", "global ad localization", "cross border ecommerce ads", "localized product video", "AI localization pack", "multilingual ad video", "international ecommerce marketing", "country specific ad creative", "ecommerce localization", "global product video"],
+    useCases: ["Adapt a Shopify product video for Germany, USA, Japan or Gulf markets", "Rewrite ad psychology for country-specific buyer trust", "Localize hooks, CTAs, claims and proof points", "Create market-specific video briefs and scripts"],
+    mvpDeliverables: ["1 country localization brief", "Localized hook and script pack", "Visual style and pace notes", "Country-specific CTA and proof angle", "Optional localized video variant brief"],
+    creditModel: ["1 country localization brief: 50 credits", "Localized script: 50-100 credits", "Localized video brief: 100-150 credits", "3 country campaign pack: 300-800 credits", "Full global campaign pack: 1500+ credits"],
+    internalLinks: [
+      { label: "Trendyol product video", href: "/trendyol-product-video", note: "Regional ecommerce video path" },
+      { label: "AI ecommerce campaign checklist", href: "/blog/shopify-amazon-trendyol-ai-campaign-checklist", note: "Prepare campaign inputs" },
+      { label: "Campaign category", href: "/categories/campaign", note: "Start a localized campaign request" }
+    ]
+  },
+  {
+    slug: "ai-campaign-calendar",
+    title: "AI Campaign Calendar",
+    badge: "Campaign Calendar",
+    metaTitle: "AI Campaign Calendar for Ecommerce Marketing | Crelavo",
+    metaDescription: "Plan Black Friday ads, seasonal campaigns, holiday marketing, product launches and ecommerce content reminders with Crelavo AI campaign calendar roadmap.",
+    h1: "AI campaign calendar for ecommerce launches, seasonal ads and product video planning",
+    summary: "The AI Campaign Calendar is a retention feature: it helps sellers plan Black Friday, Valentine’s Day, Ramadan/Eid, New Year, back-to-school, summer sale and product launch campaigns before deadlines arrive.",
+    primaryKeyword: "AI campaign calendar",
+    keywords: ["AI campaign calendar", "ecommerce campaign calendar", "Black Friday ad planner", "seasonal campaign ideas", "holiday marketing calendar", "product launch calendar", "social media campaign calendar", "AI marketing calendar", "ecommerce promotion planner", "campaign reminder tool"],
+    useCases: ["Plan Black Friday product video campaigns", "Prepare holiday hooks and landing page copy", "Create monthly ecommerce content calendars", "Remind users to produce seasonal ads before deadlines"],
+    mvpDeliverables: ["Seasonal campaign brief", "Product launch checklist", "Ad hook calendar", "Free tool preparation links", "Production-ready campaign package request"],
+    creditModel: ["Calendar preview: included/free", "Campaign brief: 25-50 credits", "Seasonal script pack: 100-200 credits", "Campaign asset pack: 200-500 credits", "Video generation: separate video credits"],
+    internalLinks: [
+      { label: "AI social media launch plan", href: "/ai-social-media-launch-plan", note: "Turn calendar into social posts" },
+      { label: "AI tool launch distribution plan", href: "/ai-tool-launch-distribution-plan", note: "Distribute campaign pages" },
+      { label: "Free AI tools", href: "/free-tools", note: "Prepare hooks, captions and scripts" }
+    ]
+  },
+  {
+    slug: "crelavo-academy",
+    title: "Crelavo Academy",
+    badge: "AI Creative Academy",
+    metaTitle: "Crelavo Academy for AI Marketing and Ecommerce Ads",
+    metaDescription: "Learn AI product videos, ecommerce ad hooks, Shopify video marketing, UGC ads, AI creative workflows and campaign production with Crelavo Academy.",
+    h1: "Crelavo Academy for AI marketing, ecommerce ads and product video workflows",
+    summary: "Crelavo Academy is a long-term SEO and retention hub for teaching sellers, founders and creators how to use AI for product videos, ecommerce campaigns, UGC ads, hooks, landing pages and creative delivery.",
+    primaryKeyword: "AI creative academy",
+    keywords: ["AI marketing course", "AI product video course", "ecommerce ad course", "UGC ads course", "Shopify video marketing", "AI creative academy", "AI advertising course", "product video training", "AI ecommerce lessons", "creative production course"],
+    useCases: ["Teach Shopify sellers product video workflows", "Explain UGC ad hooks and short-form creative", "Educate users before they spend credits", "Convert SEO learners into production requests"],
+    mvpDeliverables: ["Free academy hub", "Lesson roadmap", "Product video mini course outline", "UGC ads lesson cluster", "Credit CTA after course completion"],
+    creditModel: ["Core lessons: free", "Premium templates: credit-based", "Workshop or done-with-you pack: paid package", "Course completion credit bonus: optional", "Production request after lesson: normal credits"],
+    internalLinks: [
+      { label: "Blog", href: "/blog", note: "Connect academy with SEO content" },
+      { label: "Community showcase", href: "/community-showcase", note: "Show examples from lessons" },
+      { label: "AI product video generator", href: "/ai-product-video-generator", note: "Turn learning into production" }
+    ]
+  },
+  {
+    slug: "community-showcase",
+    title: "Community Showcase",
+    badge: "Community Showcase",
+    metaTitle: "Community Showcase for AI Ads, Product Videos and Websites | Crelavo",
+    metaDescription: "Explore a roadmap for Crelavo community showcase pages featuring AI ad examples, ecommerce video examples, UGC ad examples, website examples and reusable templates.",
+    h1: "Community showcase for AI ad examples, ecommerce videos, UGC demos and website projects",
+    summary: "Community Showcase extends existing samples into user-approved proof. The first phase is a public hub and SEO path; later phases can support approved user submissions, template reuse and creator rewards.",
+    primaryKeyword: "AI ad examples",
+    keywords: ["AI ad examples", "ecommerce video examples", "UGC ad examples", "AI website examples", "product video examples", "AI campaign examples", "community showcase", "AI creative examples", "Crelavo examples", "AI production samples"],
+    useCases: ["Show approved ecommerce ad examples", "Route visitors from examples into production requests", "Create reusable template demand", "Build trust with public visual proof"],
+    mvpDeliverables: ["Public showcase hub", "Approved sample categories", "Use this style CTA", "Template reuse roadmap", "Community submission checklist"],
+    creditModel: ["View examples: free", "Use similar style: normal production credits", "Template reuse later: 50-200 credits", "Creator reward later: Crelavo credits first", "Cash payout only after provider/payment stability"],
+    internalLinks: [
+      { label: "Explore samples", href: "/showcase/explore-samples", note: "Existing sample hub" },
+      { label: "UGC product demo sample", href: "/samples/ugc-product-demo", note: "Creator-style example" },
+      { label: "AI video template marketplace", href: "/ai-video-template-marketplace", note: "Future template marketplace path" }
+    ]
+  }
+];
+
+export function getPhaseOneFeature(slug: string) {
+  return phaseOneFeaturePages.find((page) => page.slug === slug);
+}
+
+export const phaseOneFeatureKeywords = Array.from(new Set(phaseOneFeaturePages.flatMap((page) => [page.primaryKeyword, ...page.keywords])));

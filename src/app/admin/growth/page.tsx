@@ -5,6 +5,7 @@ import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmiss
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
 import { pinterestBoards, pinterestPinTemplates, pinterestYoutubeKeywords, socialContentCalendar, socialLaunchKeywords, socialSemiAutoChecklist, socialSharePlatforms, visualDistributionSemiAutoChecklist, youtubeShortsTemplates } from "@/lib/social-distribution";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
 
@@ -100,6 +101,29 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Measurement checklist</h3>
         <ul>{growthMeasurementChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">New feature Phase 1 SEO</span>
+        <h2>SEO/category roadmap pages for new Crelavo feature system</h2>
+        <p style={{ color: "var(--muted)" }}>These are Phase 1 pages: no new API required yet. Each page defines niche keywords, MVP deliverables, credit model and future automation path.</p>
+        <div className="admin-info-grid">
+          <div><span>Phase 1 pages</span><strong>{phaseOneFeaturePages.length} live URLs</strong><small>SEO/category/roadmap layer.</small></div>
+          <div><span>Phase 2</span><strong>MVP delivery</strong><small>Admin/assistant-supported real outputs.</small></div>
+          <div><span>Phase 3</span><strong>API automation</strong><small>Provider/API integrations later.</small></div>
+          <div><span>Credit model</span><strong>Per feature</strong><small>Free lead magnet + paid reports/assets.</small></div>
+        </div>
+        <div className="admin-category-grid">
+          {phaseOneFeaturePages.map((page) => (
+            <div className="card admin-category-card" key={page.slug}>
+              <span className="badge">{page.badge}</span>
+              <h3>{page.title}</h3>
+              <p>{page.primaryKeyword}</p>
+              <p>{page.summary}</p>
+              <p><strong>URL:</strong> /{page.slug}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

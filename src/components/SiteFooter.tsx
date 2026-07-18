@@ -32,6 +32,12 @@ export async function SiteFooter() {
             <HardReloadLink href="/ai-tool-launch-distribution-plan">AI tool launch plan</HardReloadLink>
             <HardReloadLink href="/ai-social-media-launch-plan">AI social media launch</HardReloadLink>
             <HardReloadLink href="/pinterest-youtube-visual-distribution-plan">Pinterest YouTube plan</HardReloadLink>
+            <HardReloadLink href="/ai-ad-performance-score-checker">AI ad score checker</HardReloadLink>
+            <HardReloadLink href="/ai-virtual-model-studio">AI virtual model studio</HardReloadLink>
+            <HardReloadLink href="/ai-cultural-localization">AI cultural localization</HardReloadLink>
+            <HardReloadLink href="/ai-campaign-calendar">AI campaign calendar</HardReloadLink>
+            <HardReloadLink href="/crelavo-academy">Crelavo Academy</HardReloadLink>
+            <HardReloadLink href="/community-showcase">Community showcase</HardReloadLink>
             <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales agent</HardReloadLink>
           </nav>
         </div>

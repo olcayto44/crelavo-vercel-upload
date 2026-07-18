@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { footerInfoPages } from "@/lib/footer-info-pages";
 import { alternativePages } from "@/lib/alternative-pages";
 import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { freeTools } from "@/lib/free-tools";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 
@@ -78,7 +79,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  return [...publicRoutes, ...serviceRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
+  const phaseOneFeatureRoutes = phaseOneFeaturePages.map((page) => ({
+    path: `/${page.slug}`,
+    priority: 0.8,
+    changeFrequency: "monthly" as const
+  }));
+
+  return [...publicRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { organicKeywordCoverage } from "@/lib/organic-directory";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -72,6 +73,12 @@ const seoKeywordLinks = [
   { label: "YouTube Shorts launch plan", href: "/pinterest-youtube-visual-distribution-plan" },
   { label: "Pinterest SEO strategy", href: "/pinterest-youtube-visual-distribution-plan" },
   { label: "Growth Intelligence", href: "/growth-intelligence" },
+  { label: "AI ad performance score checker", href: "/ai-ad-performance-score-checker" },
+  { label: "AI virtual model studio", href: "/ai-virtual-model-studio" },
+  { label: "AI cultural localization", href: "/ai-cultural-localization" },
+  { label: "AI campaign calendar", href: "/ai-campaign-calendar" },
+  { label: "Crelavo Academy", href: "/crelavo-academy" },
+  { label: "Community Showcase", href: "/community-showcase" },
   { label: "self-in-video", href: "/products/avatar" },
   { label: "multi-person talking video", href: "/products/avatar" },
   { label: "regional clothing", href: "/products/global-localization" },
@@ -181,6 +188,24 @@ export default async function BlogPage() {
                 <h3>{guide.title}</h3>
                 <p>{guide.summary}</p>
                 <small>Main keyword: {guide.primaryKeyword}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">New feature SEO guides</span>
+          <h2>Phase 1 acquisition pages for future feature demand</h2>
+          <p>
+            Crelavo now has public roadmap pages for AI ad scoring, virtual model production, cultural localization, campaign calendars, education content and community proof. These pages support organic discovery first, then can route qualified users into MVP delivery and later API automation.
+          </p>
+          <div className="admin-category-grid">
+            {phaseOneFeaturePages.map((page) => (
+              <Link className="card admin-category-card" href={`/${page.slug}`} key={page.slug}>
+                <span className="badge">{page.badge}</span>
+                <h3>{page.title}</h3>
+                <p>{page.summary}</p>
+                <small>Main keyword: {page.primaryKeyword}</small>
               </Link>
             ))}
           </div>

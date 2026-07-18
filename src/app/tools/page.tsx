@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { footerGroups } from "@/lib/site-content";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -73,6 +74,22 @@ export default async function ToolsPage() {
               <h3>Growth tools</h3>
               <p>Social media, ads planning, credit paths and production-ready workflows.</p>
             </div>
+          </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 18 }}>
+          <span className="badge">New feature Phase 1 SEO</span>
+          <h2>Roadmap tool pages for scoring, virtual models, localization, campaign planning and community proof</h2>
+          <p>
+            These Phase 1 pages create searchable entry points before the MVP delivery layer. Each page explains the request path, likely credit model and how the feature can later become API-powered automation.
+          </p>
+          <div className="plan-feature-groups">
+            {phaseOneFeaturePages.map((page) => (
+              <Link href={`/${page.slug}`} key={page.slug}>
+                <b>{page.title}</b>
+                <small>{page.primaryKeyword}</small>
+              </Link>
+            ))}
           </div>
         </section>
 

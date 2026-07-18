@@ -5,6 +5,7 @@ import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { categoryShowcaseItems } from "@/lib/showcase-items";
 import { getConfiguredCategoryPages } from "@/lib/category-pages-loader";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
@@ -113,6 +114,23 @@ export default async function CategoriesPage() {
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>
                 <Link className="btn secondary" href={`/categories/${page.slug}`}>Open page</Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">New feature SEO paths</span>
+          <h2>Phase 1 roadmap categories for future Crelavo acquisition pages</h2>
+          <p>
+            These public Phase 1 pages capture demand for ad scoring, virtual model visuals, cultural localization, campaign planning, academy content and community proof before the later MVP and API automation phases.
+          </p>
+          <div className="delivery-step-grid">
+            {phaseOneFeaturePages.slice(0, 6).map((page) => (
+              <div className="delivery-step-card" key={page.slug}>
+                <h3>{page.title}</h3>
+                <p>{page.summary}</p>
+                <Link className="btn secondary" href={`/${page.slug}`}>Open page</Link>
               </div>
             ))}
           </div>
