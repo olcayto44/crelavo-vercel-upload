@@ -49,6 +49,7 @@ export default async function ToolsPage() {
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/alternatives">AI tool alternatives</Link>
             <Link className="btn secondary" href="/chrome-extension">Chrome extension funnel</Link>
+            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Launch plan</Link>
             <Link className="btn secondary" href="/pricing">View credits</Link>
           </div>
         </section>
@@ -88,6 +89,7 @@ export default async function ToolsPage() {
             <Link href="/blog/shopify-amazon-trendyol-ai-campaign-checklist"><b>AI ecommerce campaign checklist</b><small>Multi-platform campaign preparation</small></Link>
             <Link href="/ai-ugc-creator-program"><b>AI UGC creator program</b><small>Creator sourcing for UGC product demo ads</small></Link>
             <Link href="/samples/ugc-product-demo"><b>UGC product demo sample</b><small>Creator-style ecommerce video sample</small></Link>
+            <Link href="/ai-tool-launch-distribution-plan"><b>AI tool launch distribution plan</b><small>Directory, community and organic traffic plan</small></Link>
           </div>
         </section>
 

@@ -128,6 +128,15 @@ export default async function CategoriesPage() {
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Launch distribution SEO</span>
+          <h2>AI tool launch plan, SaaS distribution and organic traffic paths</h2>
+          <p>
+            The launch distribution page connects production categories to AI directory submission, SaaS launch distribution, Product Hunt launch timing, founder launch posts, community traffic and UTM tracking.
+          </p>
+          <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open launch distribution plan</Link>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">SEO category coverage</span>
           <h2>High-intent production categories and search paths</h2>
           <p>

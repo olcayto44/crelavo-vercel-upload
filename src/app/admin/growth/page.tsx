@@ -3,6 +3,7 @@ import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelli
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
+import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
 
@@ -124,6 +125,46 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Blocked automation notes</h3>
         <ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Launch distribution plan</span>
+        <h2>External traffic, launch channels and UTM tracking package</h2>
+        <p style={{ color: "var(--muted)" }}>Use /ai-tool-launch-distribution-plan as the public launch plan page. Keep Product Hunt and Hacker News for the final Whop/payment-verified launch window.</p>
+        <div className="admin-info-grid">
+          <div><span>Public page</span><strong>/ai-tool-launch-distribution-plan</strong><small>AI tool launch plan and SaaS launch distribution SEO path.</small></div>
+          <div><span>Channels</span><strong>{launchDistributionChannels.length} mapped</strong><small>Directories, communities, founder posts, social and visual search.</small></div>
+          <div><span>Keywords</span><strong>{launchDistributionKeywords.length} terms</strong><small>AI tool launch plan, Product Hunt launch, organic traffic plan.</small></div>
+          <div><span>UTMs</span><strong>{launchUtmTemplates.length} templates</strong><small>Source/medium/campaign tracking templates.</small></div>
+        </div>
+        <h3>Channel priority map</h3>
+        <div className="admin-category-grid">
+          {launchDistributionChannels.map((channel) => (
+            <div className="card admin-category-card" key={channel.channel}>
+              <span className="badge">{channel.priority} · {channel.keyword}</span>
+              <h3>{channel.channel}</h3>
+              <p><strong>Timing:</strong> {channel.timing}</p>
+              <p>{channel.copyAngle}</p>
+              <p><strong>Guardrail:</strong> {channel.guardrail}</p>
+            </div>
+          ))}
+        </div>
+        <h3>URL packs</h3>
+        <div className="admin-category-grid">
+          {launchDistributionUrlPacks.map((pack) => (
+            <div className="card admin-category-card" key={pack.name}>
+              <h3>{pack.name}</h3>
+              <ul>{pack.urls.map((url) => <li key={url}>{url}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+        <h3>Launch copy</h3>
+        <p><strong>Directory one-liner:</strong> {launchCopyPack.directoryOneLiner}</p>
+        <div className="workspace-action-note">{launchCopyPack.linkedinPost.map((line) => <p key={line}>{line}</p>)}</div>
+        <h3>UTM templates</h3>
+        <ul>{launchUtmTemplates.map((utm) => <li key={utm.template}>{utm.template}</li>)}</ul>
+        <h3>Checklist</h3>
+        <ul>{launchDistributionChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

@@ -64,6 +64,10 @@ const seoKeywordLinks = [
   { label: "AI image generation", href: "/products/image" },
   { label: "visual style clone", href: "/products/visual-clone" },
   { label: "free AI tools", href: "/free-tools" },
+  { label: "AI tool launch plan", href: "/ai-tool-launch-distribution-plan" },
+  { label: "SaaS launch distribution", href: "/ai-tool-launch-distribution-plan" },
+  { label: "Product Hunt launch", href: "/ai-tool-launch-distribution-plan" },
+  { label: "AI directory submission", href: "/ai-tool-launch-distribution-plan" },
   { label: "Growth Intelligence", href: "/growth-intelligence" },
   { label: "self-in-video", href: "/products/avatar" },
   { label: "multi-person talking video", href: "/products/avatar" },
@@ -177,6 +181,15 @@ export default async function BlogPage() {
               </Link>
             ))}
           </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Launch distribution guide</span>
+          <h2>AI tool launch plan, SaaS launch distribution and organic traffic plan</h2>
+          <p>
+            Use the launch distribution plan after content pages, alternatives, free tools, samples and ecommerce workflows are live. It organizes AI directory submission, founder launch posts, Product Hunt launch timing, Reddit/community feedback and UTM tracking.
+          </p>
+          <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open AI tool launch distribution plan</Link>
         </section>
 
         <section className="blog-keyword-panel">

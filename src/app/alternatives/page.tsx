@@ -41,6 +41,7 @@ export default async function AlternativesPage() {
             <Link className="btn" href="/dashboard/assistant-workspace">Start a Crelavo request</Link>
             <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
             <Link className="btn secondary" href="/tools">Browse tools</Link>
+            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Launch distribution plan</Link>
           </div>
         </section>
 
@@ -89,6 +90,7 @@ export default async function AlternativesPage() {
             <Link href="/amazon-product-ad-video"><b>Amazon product ad video</b><small>Marketplace product campaign workflow</small></Link>
             <Link href="/trendyol-product-video"><b>Trendyol product video</b><small>Regional ecommerce video path</small></Link>
             <Link href="/ai-website-builder"><b>AI website builder</b><small>Website and landing page production</small></Link>
+            <Link href="/ai-tool-launch-distribution-plan"><b>AI tool launch distribution plan</b><small>Launch channel and organic traffic plan</small></Link>
             <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery and package options</small></Link>
           </div>
         </section>
