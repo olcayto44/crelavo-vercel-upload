@@ -9,6 +9,7 @@ import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeSho
 import { SampleVideoGallery } from "@/components/SampleVideoGallery";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
+import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { categoryShowcaseItems, featureShowcaseItems } from "@/lib/showcase-items";
@@ -41,6 +42,39 @@ const featuredTools = [
   { title: "SaaS / App Builder", href: "/tools/saas-app-builder", icon: Layers3 },
   { title: "Brand & Files", href: "/tools/brand-files", icon: Boxes }
 ];
+
+const homeFeaturePathCopy: Record<string, { title: string; description: string; tags: string[] }> = {
+  "ai-ad-performance-score-checker": {
+    title: "AI Ad Performance Score Checker for TikTok, Meta and ecommerce ads",
+    description: "Score hooks, CTA clarity, first-three-second strength, offer angle and product video readiness before spending credits on full campaign production.",
+    tags: ["ad score", "TikTok hooks", "ROAS signals"]
+  },
+  "ai-virtual-model-studio": {
+    title: "AI Virtual Model Studio for fashion, jewelry and product catalog visuals",
+    description: "Create model-style ecommerce image packs for apparel, accessories, jewelry and beauty products without planning a full photo shoot first.",
+    tags: ["AI model photos", "fashion visuals", "catalog images"]
+  },
+  "ai-cultural-localization": {
+    title: "AI Cultural Localization for cross-border ecommerce campaign creative",
+    description: "Adapt product hooks, claims, CTA, buyer psychology and video brief direction for country-specific markets instead of only translating copy.",
+    tags: ["global ads", "localization brief", "country fit"]
+  },
+  "ai-campaign-calendar": {
+    title: "AI Campaign Calendar for seasonal ecommerce launches and ad planning",
+    description: "Plan Black Friday, Ramadan/Eid, Valentine’s Day, summer sale and product launch creative before production deadlines arrive.",
+    tags: ["campaign calendar", "seasonal ads", "launch planning"]
+  },
+  "crelavo-academy": {
+    title: "Crelavo Academy for AI product video, UGC ads and ecommerce marketing",
+    description: "Learn product video workflows, hook strategy, UGC ad planning and credit-based production paths before starting a managed Crelavo request.",
+    tags: ["AI marketing course", "UGC lessons", "video workflow"]
+  },
+  "community-showcase": {
+    title: "Community Showcase for AI ad examples, ecommerce videos and reusable styles",
+    description: "Browse example-style proof, then turn approved ad, UGC, product video or website references into a similar Crelavo production request.",
+    tags: ["AI ad examples", "showcase proof", "reuse style"]
+  }
+};
 
 const seoNicheLinks = [
   { title: "AI Product Video Generator", href: "/ai-product-video-generator", description: "Product links, ad scripts, previews and final video delivery." },
@@ -118,6 +152,33 @@ export default async function HomePage() {
                 <span className="text-link">Explore solution</span>
               </HardReloadLink>
             ))}
+          </div>
+        </section>
+
+        <section className="container section home-section-tight clean-feed-section" aria-labelledby="new-feature-paths-heading">
+          <div className="sample-video-head">
+            <div>
+              <span className="badge"><Sparkles size={15} /> New Crelavo feature paths</span>
+              <h2 id="new-feature-paths-heading">AI ad scoring, virtual model visuals, cultural localization and campaign planning tools for ecommerce teams</h2>
+              <p className="section-lead">Use these niche Crelavo entry points to validate ad ideas, prepare market-specific creative, plan seasonal campaigns and turn examples into credit-based production requests.</p>
+            </div>
+            <HardReloadLink className="btn secondary" href="/tools">See all feature tools</HardReloadLink>
+          </div>
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            {phaseOneFeaturePages.map((page) => {
+              const featureCopy = homeFeaturePathCopy[page.slug] ?? { title: page.title, description: page.summary, tags: [page.primaryKeyword] };
+              return (
+                <HardReloadLink className="card admin-category-card" href={`/${page.slug}`} key={page.slug}>
+                  <span className="badge">{page.primaryKeyword}</span>
+                  <h3>{featureCopy.title}</h3>
+                  <p>{featureCopy.description}</p>
+                  <div className="category-option-row" aria-label={`${page.title} SEO tags`}>
+                    {featureCopy.tags.map((tag) => <small key={`${page.slug}-${tag}`}>{tag}</small>)}
+                  </div>
+                  <span className="text-link">Open {page.title}</span>
+                </HardReloadLink>
+              );
+            })}
           </div>
         </section>
 
