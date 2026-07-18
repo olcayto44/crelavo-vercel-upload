@@ -6,6 +6,7 @@ import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { categoryShowcaseItems } from "@/lib/showcase-items";
+import { getConfiguredCategoryPages } from "@/lib/category-pages-loader";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
@@ -61,7 +62,7 @@ const deliverySteps = [
 ];
 
 export default async function CategoriesPage() {
-  const siteContent = await getConfiguredSiteContentConfig();
+  const [siteContent, categoryPages] = await Promise.all([getConfiguredSiteContentConfig(), getConfiguredCategoryPages()]);
 
   return (
     <>
@@ -99,6 +100,23 @@ export default async function CategoriesPage() {
         </section>
 
         <HomeShowcaseSlider title="Crelavo production categories" subtitle="A moving showcase for Crelavo production categories: video, web, apps, avatars, brand files and e-commerce." slides={categorySlides(siteContent.showcaseSlides)} />
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Programmatic SEO category pages</span>
+          <h2>Search pages that can be edited from admin</h2>
+          <p>
+            These public category pages can be added, hidden and updated from the admin panel. Each page has its own SEO summary, sections, FAQs and redirect links.
+          </p>
+          <div className="delivery-step-grid">
+            {categoryPages.slice(0, 3).map((page) => (
+              <div className="delivery-step-card" key={page.slug}>
+                <h3>{page.title}</h3>
+                <p>{page.summary}</p>
+                <Link className="btn secondary" href={`/categories/${page.slug}`}>Open page</Link>
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">SEO category coverage</span>
