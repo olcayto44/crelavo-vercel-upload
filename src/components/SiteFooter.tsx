@@ -24,6 +24,7 @@ export async function SiteFooter() {
             <HardReloadLink href="/shopify-product-link-to-ad-video">Shopify product video</HardReloadLink>
             <HardReloadLink href="/amazon-product-ad-video">Amazon product ad video</HardReloadLink>
             <HardReloadLink href="/trendyol-product-video">Trendyol product video</HardReloadLink>
+            <HardReloadLink href="/chrome-extension">Chrome extension funnel</HardReloadLink>
             <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales agent</HardReloadLink>
           </nav>
         </div>

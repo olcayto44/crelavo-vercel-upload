@@ -181,6 +181,78 @@ export const growthMeasurementChecklist = [
   "Keep the next growth move ordered by observed return."
 ];
 
+export const aiNewsletterOutreachTargets = [
+  {
+    name: "The Rundown AI",
+    priority: "P1",
+    fit: "Large AI audience that responds to practical workflow demos and tool discovery.",
+    angle: "Crelavo turns ecommerce product links into campaign videos, hooks and creative assets."
+  },
+  {
+    name: "TLDR AI",
+    priority: "P1",
+    fit: "Operator and builder audience looking for useful AI product launches.",
+    angle: "Position Crelavo as an AI production studio for product pages, websites, apps and campaign assets."
+  },
+  {
+    name: "Ben's Bites",
+    priority: "P1",
+    fit: "Daily AI readers who like new tools with clear use cases and founder-led launches.",
+    angle: "Show Shopify, Amazon and Trendyol sellers moving from product page to ad video request."
+  },
+  {
+    name: "Superhuman AI",
+    priority: "P2",
+    fit: "Broad AI productivity audience; best after the public pages and examples are stable.",
+    angle: "Crelavo helps teams turn raw ecommerce/product ideas into production-ready creative packages."
+  },
+  {
+    name: "Future Tools / AI tool newsletters",
+    priority: "P2",
+    fit: "Directory/newsletter hybrid channels that can amplify tool pages and demos.",
+    angle: "Use the Chrome extension and product-link pages as concrete acquisition hooks."
+  },
+  {
+    name: "Ecommerce creator newsletters",
+    priority: "P2",
+    fit: "Smaller but high-intent Shopify/Amazon seller audiences.",
+    angle: "Pitch Crelavo as a product-page-to-ad-video workflow for store owners and agencies."
+  }
+];
+
+export const aiNewsletterPitchPack = {
+  subjectLines: [
+    "Crelavo: turn Shopify and Amazon product links into AI ad videos",
+    "New AI production workflow for ecommerce product pages",
+    "Chrome-extension-ready AI video funnel for product sellers",
+    "From product URL to campaign assets with Crelavo"
+  ],
+  shortPitch: "Crelavo is an AI production studio that helps ecommerce sellers, agencies and founders turn product links or business ideas into videos, ad hooks, landing copy, websites, app concepts and campaign assets.",
+  emailBody: [
+    "Hi [Name],",
+    "I thought Crelavo could be a useful fit for your AI/tools audience. It helps ecommerce sellers and creators turn Shopify, Amazon or Trendyol product pages into AI product videos, ad hooks and campaign assets from one production workspace.",
+    "The clearest angle is product-page-to-video: a seller opens a product URL, sends it into Crelavo, and starts a campaign request without manually rebuilding the brief.",
+    "Useful links: https://www.crelavo.com/categories/campaign, https://www.crelavo.com/shopify-product-link-to-ad-video, https://www.crelavo.com/amazon-product-ad-video, https://www.crelavo.com/trendyol-product-video, https://www.crelavo.com/chrome-extension",
+    "If it looks relevant, I can send a short demo angle or launch blurb for your format."
+  ],
+  linksToInclude: [
+    "https://www.crelavo.com/categories/campaign",
+    "https://www.crelavo.com/shopify-product-link-to-ad-video",
+    "https://www.crelavo.com/amazon-product-ad-video",
+    "https://www.crelavo.com/trendyol-product-video",
+    "https://www.crelavo.com/chrome-extension"
+  ]
+};
+
+export const aiNewsletterSubmissionChecklist = [
+  "Use the campaign category page as the main proof page.",
+  "Include one ecommerce angle only; do not pitch every Crelavo category in the first email.",
+  "Attach or link one short demo once live examples are ready.",
+  "Track every outreach URL with utm_source=newsletter and the target name.",
+  "Follow up once after 5-7 days; do not run broad spam from the main domain.",
+  "Wait for final payment/provider confidence before buying paid newsletter placements."
+];
+
 export const rewardCreditRules = [
   { action: "Share a Crelavo preview output", credits: 100, limit: "2 approved rewards per day" },
   { action: "Invite a new user who signs up", credits: 250, limit: "5 approved rewards per week" },

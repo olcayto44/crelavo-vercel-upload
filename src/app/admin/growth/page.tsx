@@ -1,7 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
-import { growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
+import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
@@ -124,6 +124,39 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Blocked automation notes</h3>
         <ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">AI newsletter outreach pack</span>
+        <h2>Ready outreach package for AI newsletters and ecommerce creator channels</h2>
+        <p style={{ color: "var(--muted)" }}>{aiNewsletterPitchPack.shortPitch}</p>
+        <div className="admin-info-grid">
+          <div><span>Targets</span><strong>{aiNewsletterOutreachTargets.length} channels</strong><small>The Rundown AI, TLDR AI, Ben's Bites and ecommerce newsletters.</small></div>
+          <div><span>Subject lines</span><strong>{aiNewsletterPitchPack.subjectLines.length} ready</strong><small>Use one focused ecommerce angle per send.</small></div>
+          <div><span>Main proof URL</span><strong>/categories/campaign</strong><small>Pair with Shopify, Amazon, Trendyol and Chrome extension pages.</small></div>
+          <div><span>Safety rule</span><strong>Manual, low volume</strong><small>No broad spam; paid placements wait until launch confidence.</small></div>
+        </div>
+        <h3>Target list and pitch angle</h3>
+        <div className="admin-category-grid">
+          {aiNewsletterOutreachTargets.map((target) => (
+            <div className="card admin-category-card" key={target.name}>
+              <span className="badge">{target.priority}</span>
+              <h3>{target.name}</h3>
+              <p>{target.fit}</p>
+              <p><strong>Angle:</strong> {target.angle}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Subject line options</h3>
+        <ul>{aiNewsletterPitchPack.subjectLines.map((line) => <li key={line}>{line}</li>)}</ul>
+        <h3>Email body draft</h3>
+        <div className="workspace-action-note">
+          {aiNewsletterPitchPack.emailBody.map((line) => <p key={line}>{line}</p>)}
+        </div>
+        <h3>Links to include</h3>
+        <ul>{aiNewsletterPitchPack.linksToInclude.map((link) => <li key={link}>{link}</li>)}</ul>
+        <h3>Submission checklist</h3>
+        <ul>{aiNewsletterSubmissionChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

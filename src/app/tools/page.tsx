@@ -47,6 +47,7 @@ export default async function ToolsPage() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/dashboard/assistant-workspace">Start a request</Link>
             <Link className="btn secondary" href="/categories">Open categories</Link>
+            <Link className="btn secondary" href="/chrome-extension">Chrome extension funnel</Link>
             <Link className="btn secondary" href="/pricing">View credits</Link>
           </div>
         </section>
