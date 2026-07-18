@@ -68,6 +68,9 @@ const seoKeywordLinks = [
   { label: "SaaS launch distribution", href: "/ai-tool-launch-distribution-plan" },
   { label: "Product Hunt launch", href: "/ai-tool-launch-distribution-plan" },
   { label: "AI directory submission", href: "/ai-tool-launch-distribution-plan" },
+  { label: "AI social media launch plan", href: "/ai-social-media-launch-plan" },
+  { label: "YouTube Shorts launch plan", href: "/pinterest-youtube-visual-distribution-plan" },
+  { label: "Pinterest SEO strategy", href: "/pinterest-youtube-visual-distribution-plan" },
   { label: "Growth Intelligence", href: "/growth-intelligence" },
   { label: "self-in-video", href: "/products/avatar" },
   { label: "multi-person talking video", href: "/products/avatar" },
@@ -189,7 +192,11 @@ export default async function BlogPage() {
           <p>
             Use the launch distribution plan after content pages, alternatives, free tools, samples and ecommerce workflows are live. It organizes AI directory submission, founder launch posts, Product Hunt launch timing, Reddit/community feedback and UTM tracking.
           </p>
-          <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open AI tool launch distribution plan</Link>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open AI tool launch distribution plan</Link>
+            <Link className="btn secondary" href="/ai-social-media-launch-plan">Open social media launch plan</Link>
+            <Link className="btn secondary" href="/pinterest-youtube-visual-distribution-plan">Open Pinterest + YouTube plan</Link>
+          </div>
         </section>
 
         <section className="blog-keyword-panel">

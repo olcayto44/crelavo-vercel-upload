@@ -90,6 +90,8 @@ export default async function ToolsPage() {
             <Link href="/ai-ugc-creator-program"><b>AI UGC creator program</b><small>Creator sourcing for UGC product demo ads</small></Link>
             <Link href="/samples/ugc-product-demo"><b>UGC product demo sample</b><small>Creator-style ecommerce video sample</small></Link>
             <Link href="/ai-tool-launch-distribution-plan"><b>AI tool launch distribution plan</b><small>Directory, community and organic traffic plan</small></Link>
+            <Link href="/ai-social-media-launch-plan"><b>AI social media launch plan</b><small>Semi-automatic social sharing pack</small></Link>
+            <Link href="/pinterest-youtube-visual-distribution-plan"><b>Pinterest + YouTube visual distribution</b><small>Visual search and Shorts sharing pack</small></Link>
           </div>
         </section>
 

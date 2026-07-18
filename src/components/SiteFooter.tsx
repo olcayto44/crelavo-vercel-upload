@@ -30,6 +30,8 @@ export async function SiteFooter() {
             <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce video plugin</HardReloadLink>
             <HardReloadLink href="/ai-ugc-creator-program">AI UGC creator program</HardReloadLink>
             <HardReloadLink href="/ai-tool-launch-distribution-plan">AI tool launch plan</HardReloadLink>
+            <HardReloadLink href="/ai-social-media-launch-plan">AI social media launch</HardReloadLink>
+            <HardReloadLink href="/pinterest-youtube-visual-distribution-plan">Pinterest YouTube plan</HardReloadLink>
             <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales agent</HardReloadLink>
           </nav>
         </div>

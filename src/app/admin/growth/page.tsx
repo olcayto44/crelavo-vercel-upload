@@ -4,6 +4,7 @@ import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelP
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
+import { pinterestBoards, pinterestPinTemplates, pinterestYoutubeKeywords, socialContentCalendar, socialLaunchKeywords, socialSemiAutoChecklist, socialSharePlatforms, visualDistributionSemiAutoChecklist, youtubeShortsTemplates } from "@/lib/social-distribution";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
 
@@ -125,6 +126,72 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Blocked automation notes</h3>
         <ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Social media sharing prep</span>
+        <h2>Semi-automatic social sharing pack for Crelavo launch</h2>
+        <p style={{ color: "var(--muted)" }}>Use /ai-social-media-launch-plan as the public SEO page. This is not auto-posting; it prepares copy, URLs, cadence and manual publish steps.</p>
+        <div className="admin-info-grid">
+          <div><span>Public page</span><strong>/ai-social-media-launch-plan</strong><small>AI social media launch plan and SaaS social media launch SEO path.</small></div>
+          <div><span>Platforms</span><strong>{socialSharePlatforms.length} packs</strong><small>LinkedIn, X, TikTok/Reels, YouTube Shorts and communities.</small></div>
+          <div><span>Keywords</span><strong>{socialLaunchKeywords.length} terms</strong><small>AI startup social posts, product launch social media, short form video launch.</small></div>
+          <div><span>Mode</span><strong>Semi-automatic</strong><small>Copy, UTM and manual review before publishing.</small></div>
+        </div>
+        <h3>Platform sharing packs</h3>
+        <div className="admin-category-grid">
+          {socialSharePlatforms.map((platform) => (
+            <div className="card admin-category-card" key={platform.platform}>
+              <span className="badge">{platform.keyword}</span>
+              <h3>{platform.platform}</h3>
+              <p><strong>Cadence:</strong> {platform.cadence}</p>
+              <p>{platform.postTemplate}</p>
+              <p><strong>Semi-auto action:</strong> {platform.semiAutoAction}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Weekly content calendar</h3>
+        <div className="admin-info-grid">
+          {socialContentCalendar.map((item) => <div key={item.day}><span>{item.day}</span><strong>{item.theme}</strong><small>{item.keyword} · {item.url}</small></div>)}
+        </div>
+        <h3>Semi-auto checklist</h3>
+        <ul>{socialSemiAutoChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Pinterest / YouTube visual distribution</span>
+        <h2>Semi-automatic Pinterest boards and YouTube Shorts sharing pack</h2>
+        <p style={{ color: "var(--muted)" }}>Use /pinterest-youtube-visual-distribution-plan as the public visual discovery page. Pins and Shorts are prepared here, then published manually.</p>
+        <div className="admin-info-grid">
+          <div><span>Public page</span><strong>/pinterest-youtube-visual-distribution-plan</strong><small>Pinterest SEO and YouTube Shorts launch plan.</small></div>
+          <div><span>Boards</span><strong>{pinterestBoards.length} boards</strong><small>AI product videos, ecommerce ads, Shopify, UGC and startup visuals.</small></div>
+          <div><span>Shorts</span><strong>{youtubeShortsTemplates.length} templates</strong><small>Titles, descriptions and hashtags ready to copy.</small></div>
+          <div><span>Keywords</span><strong>{pinterestYoutubeKeywords.length} terms</strong><small>Visual search traffic, AI product video pins, sample video SEO.</small></div>
+        </div>
+        <h3>Pinterest board map</h3>
+        <div className="admin-category-grid">
+          {pinterestBoards.map((board) => (
+            <div className="card admin-category-card" key={board.board}>
+              <span className="badge">{board.keyword}</span>
+              <h3>{board.board}</h3>
+              <p>{board.url}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Pin title templates</h3>
+        <ul>{pinterestPinTemplates.map((title) => <li key={title}>{title}</li>)}</ul>
+        <h3>YouTube Shorts templates</h3>
+        <div className="admin-category-grid">
+          {youtubeShortsTemplates.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <p>{item.hashtags.join(" ")}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Visual distribution checklist</h3>
+        <ul>{visualDistributionSemiAutoChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

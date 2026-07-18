@@ -133,7 +133,11 @@ export default async function CategoriesPage() {
           <p>
             The launch distribution page connects production categories to AI directory submission, SaaS launch distribution, Product Hunt launch timing, founder launch posts, community traffic and UTM tracking.
           </p>
-          <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open launch distribution plan</Link>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open launch distribution plan</Link>
+            <Link className="btn secondary" href="/ai-social-media-launch-plan">Open social media launch plan</Link>
+            <Link className="btn secondary" href="/pinterest-youtube-visual-distribution-plan">Open Pinterest + YouTube plan</Link>
+          </div>
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>

@@ -21,6 +21,8 @@ const publicRoutes = [
   { path: "/chrome-extension", priority: 0.82, changeFrequency: "monthly" as const },
   { path: "/ai-ugc-creator-program", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/ai-tool-launch-distribution-plan", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/ai-social-media-launch-plan", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/pinterest-youtube-visual-distribution-plan", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/shopify-ai-product-video-app", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/woocommerce-ai-product-video-plugin", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/affiliate", priority: 0.78, changeFrequency: "monthly" as const },
