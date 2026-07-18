@@ -47,6 +47,60 @@ export const productionQualityProfiles: Record<ProductionType, Omit<ProductionQu
     commonRisks: ["Literal translation", "Wrong cultural symbols", "Missing subtitle/voice direction"],
     adminReviewFocus: ["Check target locale", "Check cultural adaptation", "Check localized delivery files"]
   }),
+  ad_score_checker: profile({
+    label: "AI ad score checker quality",
+    minimumStandard: "Ad score, hook/CTA review, weaknesses and improvement recommendations are clear enough to guide production.",
+    customerReadyDefinition: "Customer receives a usable score report or improved ad brief through dashboard delivery.",
+    checklist: ["Product/ad idea is identified", "Hook and CTA are scored", "Weaknesses are listed", "Improved angles or video-ready brief exists when selected", ...SHARED_PROJECT],
+    acceptanceCriteria: ["Score and reasoning exist", "Improvement actions are clear", "Delivery appears in dashboard"],
+    commonRisks: ["Generic score", "No CTA analysis", "No next production step"],
+    adminReviewFocus: ["Check score clarity", "Check hook/CTA notes", "Check delivery file/report"]
+  }),
+  virtual_model_studio: profile({
+    label: "AI virtual model studio quality",
+    minimumStandard: "Product, model style, image count, catalog/lifestyle direction and delivery format are clear.",
+    customerReadyDefinition: "Customer receives virtual model visuals or a prepared image pack with usage notes and dashboard delivery.",
+    checklist: ["Product/category is clear", "Model visual direction is documented", "Image count and usage are clear", "Final files or ZIP are attached", ...SHARED_BRAND],
+    acceptanceCriteria: ["Visual scope is clear", "Product remains central", "Files/ZIP are delivered"],
+    commonRisks: ["No product reference", "Unclear model style", "Missing usage rights note"],
+    adminReviewFocus: ["Check product/materials", "Check visual pack", "Check ZIP/download links"]
+  }),
+  cultural_localization: profile({
+    label: "AI cultural localization quality",
+    minimumStandard: "Target country, localized hooks, CTA/proof angle, script or video brief direction are market-specific.",
+    customerReadyDefinition: "Customer receives localization brief/script that explains what changes for the target market and why.",
+    checklist: ["Target market is explicit", "Localized hooks or script exist", "CTA/proof angle is adapted", "Video/visual direction is included when selected", ...SHARED_PROJECT],
+    acceptanceCriteria: ["Not only translation", "Country-specific buyer logic exists", "Deliverable is attached"],
+    commonRisks: ["Literal translation", "No market reasoning", "Missing CTA adaptation"],
+    adminReviewFocus: ["Check market fit", "Check localized script", "Check delivery brief"]
+  }),
+  campaign_calendar: profile({
+    label: "AI campaign calendar quality",
+    minimumStandard: "Season, launch timing, hooks, content checklist and production next steps are organized.",
+    customerReadyDefinition: "Customer receives campaign calendar/brief that can be used to start assets or video production.",
+    checklist: ["Campaign season/goal is clear", "Timeline or calendar exists", "Hooks/scripts are included when selected", "Next production actions are listed", ...SHARED_PROJECT],
+    acceptanceCriteria: ["Timeline exists", "Campaign outputs are clear", "Delivery file/report exists"],
+    commonRisks: ["Generic calendar", "No product tie-in", "No action checklist"],
+    adminReviewFocus: ["Check season/goal", "Check calendar structure", "Check asset checklist"]
+  }),
+  crelavo_academy: profile({
+    label: "Crelavo Academy quality",
+    minimumStandard: "Lesson/template purpose, learning outcome and production next step are clear.",
+    customerReadyDefinition: "Customer receives a lesson/template pack or done-with-you brief that can move into production.",
+    checklist: ["Lesson/template topic is clear", "Actionable examples exist", "Production next step is documented", "Files or notes are delivered", ...SHARED_PROJECT],
+    acceptanceCriteria: ["Learning output is usable", "Template/brief exists", "Next production path is clear"],
+    commonRisks: ["Too generic", "No template", "No production CTA"],
+    adminReviewFocus: ["Check template quality", "Check lesson clarity", "Check handoff path"]
+  }),
+  community_showcase: profile({
+    label: "Community showcase quality",
+    minimumStandard: "Reference example, similar-style scope, originality boundary and delivery plan are clear.",
+    customerReadyDefinition: "Customer receives a similar-style request plan or delivered assets based on approved showcase direction.",
+    checklist: ["Reference/example is identified", "Similar-style scope is clear", "Originality boundary is documented", "Delivery package is attached", ...SHARED_BRAND],
+    acceptanceCriteria: ["Example role is clear", "Output is not a direct copy", "Delivery plan/files exist"],
+    commonRisks: ["Copying example too closely", "No selected reference", "No scope boundary"],
+    adminReviewFocus: ["Check reference role", "Check originality", "Check delivery files"]
+  }),
   video: profile({
     label: "AI video quality",
     minimumStandard: "Final video or preview plan matches duration, aspect/platform, voice/music/subtitle and scene intent.",

@@ -159,7 +159,7 @@ const dynamicWizardLabels: Record<DynamicWizardType, string> = {
 };
 
 const wizardCategoryTypeMap: Record<string, DynamicWizardType> = {
-  campaign: "campaign", ai_agent: "campaign", localization: "campaign",
+  campaign: "campaign", ai_agent: "campaign", localization: "campaign", ad_score_checker: "campaign", cultural_localization: "campaign", campaign_calendar: "campaign", community_showcase: "campaign", virtual_model_studio: "image", crelavo_academy: "document",
   video: "video", documentary: "video", animation: "video", anime_short_film: "video", animal_video: "video", nature_video: "video", planet_space_video: "video", drone_video: "video", live_sales_agent: "video", stickman_animation: "video", music_video: "video", studio: "video", drama: "video", cinematic_video: "video", video_clipping: "video", video_tools: "video",
   talking_video: "talking_video", avatar: "talking_video", lip_sync: "talking_video", voice_clone: "talking_video", visual_clone: "image",
   website: "website", saas: "website", mobile_app: "mobile_app", admin_project: "website",
@@ -167,7 +167,7 @@ const wizardCategoryTypeMap: Record<string, DynamicWizardType> = {
 };
 
 const wizardCategoryLabels: Record<string, string> = {
-  campaign: "Text-to-Campaign / Product Ads", ai_agent: "AI Agents", localization: "Global Localization",
+  campaign: "Text-to-Campaign / Product Ads", ai_agent: "AI Agents", localization: "Global Localization", ad_score_checker: "AI Ad Performance Score Checker", virtual_model_studio: "AI Virtual Model Studio", cultural_localization: "AI Cultural Localization", campaign_calendar: "AI Campaign Calendar", crelavo_academy: "Crelavo Academy", community_showcase: "Community Showcase",
   video: "AI Video Generator", talking_video: "Advanced Talking Video", documentary: "Documentary", animation: "Animation Video", anime_short_film: "Anime Short Film", animal_video: "Animal Video", nature_video: "Nature Video", planet_space_video: "Planet / Space Video", drone_video: "Drone / Satellite Video", live_sales_agent: "AI Live Sales Agent", stickman_animation: "Stickman Animation", music_video: "Music Video / MV", studio: "Studio / Series-Film", drama: "Drama / Short Series", cinematic_video: "Cinematic Video", video_clipping: "Video Clipping", video_tools: "Video Tools",
   avatar: "Avatar Design / Avatar Video", lip_sync: "Lip Sync Video", voice_clone: "Voice Cloning", visual_clone: "Visual / Style Clone",
   website: "Website Builder", saas: "SaaS Product", mobile_app: "Mobile App Builder", admin_project: "Admin Panel Projects",
@@ -178,6 +178,12 @@ const wizardCategoryOptions: Record<string, string[]> = {
   campaign: ["Shopify product link", "Amazon product link", "Trendyol product link", "Product link ad", "Store/social publish"],
   ai_agent: ["AI influencer", "Daily social manager", "Trend monitor", "Voice/personality", "Approval flow"],
   localization: ["Language adaptation", "Cultural rewrite", "Voice direction", "Subtitle notes", "Country variants"],
+  ad_score_checker: ["Basic ad score", "Detailed ad score report", "3 improved ad angles", "Hook rewrite", "Video-ready creative brief"],
+  virtual_model_studio: ["1 virtual model visual", "4 image pack", "10 image catalog idea", "Fashion model visual", "Jewelry / beauty product visual"],
+  cultural_localization: ["1 country localization brief", "Localized hooks", "Localized script", "Country-specific CTA", "Video brief"],
+  campaign_calendar: ["Campaign brief", "Seasonal hook list", "Product launch checklist", "Script pack", "Campaign asset plan"],
+  crelavo_academy: ["Free lesson path", "Premium template", "Done-with-you brief", "UGC lesson pack", "Product video workflow"],
+  community_showcase: ["Use similar style", "Template reuse", "AI ad example", "UGC example", "Product video example"],
   video: ["Prompt-to-video", "Link-to-video", "Voice-to-video", "Own voice-over", "Photo/avatar input", "Choose character", "Create character", "Choose AI voice", "Create AI voice", "Background music", "Emotion-matched music"],
   talking_video: ["Self-in-video", "Photo/avatar input", "Choose character", "Create character", "Own voice-over", "Choose AI voice", "Create AI voice", "2/3/4/5+ people", "7-8 person panel", "Separate voices", "Regional clothing", "Dialect voice"],
   documentary: ["Topic research", "Narration outline", "Interview map", "Archival visuals", "Documentary music", "Own voice-over", "Choose AI voice", "Create AI voice"],
@@ -209,6 +215,7 @@ const wizardCategoryOptions: Record<string, string[]> = {
 };
 
 const wizardCategoryGroups = [
+  { id: "new-feature-tools", title: "Yeni Feature Araçları", count: 6, description: "Reklam skoru, sanal model, kültürel lokalizasyon, kampanya takvimi, Academy ve showcase üretim girişleri.", typeIds: ["ad_score_checker", "virtual_model_studio", "cultural_localization", "campaign_calendar", "crelavo_academy", "community_showcase"] },
   { id: "marketing", title: "Pazarlama ve Ticaret", count: 3, description: "Büyüme iş akışları için ürün bağlantıları, kampanyalar, yerelleştirme ve yapay zeka aracıları.", typeIds: ["campaign", "ai_agent", "localization"] },
   { id: "video-motion", title: "Video ve Hareket", count: 17, description: "Yapay zekâ destekli video, canlı satış ajanı, drama, kısa dizi, drone/uydu, animasyon, sinematik çalışmalar, klip düzenleme, müzik videoları ve video araçları.", typeIds: ["video", "talking_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "stickman_animation", "music_video", "studio", "drama", "cinematic_video", "video_clipping", "video_tools"] },
   { id: "avatar-cloning", title: "Avatar ve Klonlama", count: 4, description: "Özel avatarlar, konuşan videolar, dudak senkronizasyonu, ses klonlama ve görsel/stil klonlama.", typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone"] },
@@ -286,6 +293,66 @@ type CategoryOptionProfile = {
 };
 
 const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
+  ad_score_checker: {
+    title: "AI ad score checker options",
+    note: "Ad score, hook review, CTA clarity, improved angles and video-ready brief decisions.",
+    modules: ["Ad score report", "Hook review", "CTA clarity", "Creative weakness analysis", "Video-ready creative brief"],
+    features: ["Basic ad score", "Detailed ad score report", "3 improved ad angles", "Hook rewrite", "CTA rewrite", "Video-ready creative brief", "Production package"],
+    platforms: ["Dashboard delivery", "TikTok", "Facebook/Meta Ads", "Instagram Reels", "Shopify", "Amazon", "Trendyol"],
+    quality: ["Basic Ad Score Report", "Ad Score + Script Improvement Pack"],
+    style: ["Premium ad", "Realistic UGC", "Viral TikTok", "Product demo"],
+    duration: ["Project based"]
+  },
+  virtual_model_studio: {
+    title: "AI virtual model studio options",
+    note: "Virtual model image count, catalog/lifestyle mix, product fit and ecommerce delivery decisions.",
+    modules: ["Virtual model visual", "Fashion model visual", "Jewelry model visual", "Product visual set", "Catalog image pack"],
+    features: ["1 virtual model visual", "4 image pack", "10 image catalog idea", "Product close-up", "Lifestyle shot direction", "Final ZIP", "Production package"],
+    platforms: ["Dashboard delivery", "ZIP source", "Shopify", "Amazon", "Trendyol", "WooCommerce"],
+    quality: ["Single Virtual Model Visual", "Virtual Model Image Pack"],
+    style: ["Luxury product", "Product demo", "Realistic UGC", "Minimal"],
+    duration: ["Project based"]
+  },
+  cultural_localization: {
+    title: "AI cultural localization options",
+    note: "Target country, localized hooks, CTA, proof angle, script and video brief decisions.",
+    modules: ["Country localization brief", "Localized hook pack", "Localized script", "Country-specific CTA", "Video-ready creative brief"],
+    features: ["1 country localization brief", "Localized hooks", "Localized script", "Country-specific CTA", "Visual direction", "Video-ready creative brief", "Production package"],
+    platforms: ["Dashboard delivery", "TikTok", "Instagram Reels", "Facebook/Meta Ads", "Shopify", "Amazon", "Trendyol"],
+    quality: ["Country Localization Brief", "Localized Script + Video Brief Pack"],
+    style: ["Premium ad", "Product demo", "Corporate", "Realistic UGC"],
+    duration: ["Project based"]
+  },
+  campaign_calendar: {
+    title: "AI campaign calendar options",
+    note: "Season, launch timing, campaign brief, hook calendar, script pack and asset checklist decisions.",
+    modules: ["Campaign calendar", "Seasonal campaign brief", "Product launch checklist", "Ad hook calendar", "Campaign asset plan"],
+    features: ["Campaign brief", "Seasonal hook list", "Product launch checklist", "Script pack", "Campaign asset plan", "Production package"],
+    platforms: ["Dashboard delivery", "TikTok", "Instagram Reels", "Facebook/Meta Ads", "Shopify", "Amazon", "Trendyol"],
+    quality: ["Campaign Calendar Brief", "Seasonal Campaign Asset Plan"],
+    style: ["Premium ad", "Corporate", "Minimal", "Product demo"],
+    duration: ["Project based"]
+  },
+  crelavo_academy: {
+    title: "Crelavo Academy options",
+    note: "Free lesson path, premium template, done-with-you brief and production-ready learning pack decisions.",
+    modules: ["Academy lesson", "Premium template", "UGC lesson pack", "Product video workflow", "Done-with-you brief"],
+    features: ["Free lesson path", "Premium template", "Done-with-you brief", "Production checklist", "Template pack", "Production package"],
+    platforms: ["Dashboard delivery", "ZIP source"],
+    quality: ["Academy Template Pack", "Done-With-You Creative Brief"],
+    style: ["Corporate", "SaaS modern", "Minimal"],
+    duration: ["Project based"]
+  },
+  community_showcase: {
+    title: "Community showcase options",
+    note: "Example selection, similar-style request, template reuse and dashboard delivery decisions.",
+    modules: ["Showcase example", "Use similar style", "Template reuse", "AI ad example", "UGC product demo"],
+    features: ["Use similar style", "Template reuse", "Reference notes", "Production plan", "Final ZIP", "Production package"],
+    platforms: ["Dashboard delivery", "ZIP source", "TikTok", "Instagram Reels", "Shopify", "Amazon", "Trendyol"],
+    quality: ["Use Similar Style Request", "Showcase Template Reuse Pack"],
+    style: ["Premium ad", "Realistic UGC", "Product demo", "SaaS modern"],
+    duration: ["Project based"]
+  },
   website: {
     title: "Website project options",
     note: "Page count, site type, admin panel, e-commerce and source delivery decisions for website projects.",
@@ -1278,7 +1345,12 @@ function openDynamicWizardFromMessage(message: string) {
 function selectWizardCategory(groupId: string, categoryId: string) {
   const type = wizardCategoryTypeMap[categoryId] ?? "video";
   const subject = wizardCategoryLabels[categoryId] ?? dynamicWizardLabels[type];
-  applyDynamicWizardPreset(type, subject);
+  const productionMatch = productionTypes.some((item) => item.id === categoryId);
+  if (productionMatch) {
+    applyGeneralProductionPreset(categoryId, subject);
+  } else {
+    applyDynamicWizardPreset(type, subject);
+  }
   setDynamicWizard({ open: true, type, subject, groupId, categoryId, answers: {}, creditPromptOpen: false });
   setOptionsOpen(true);
 }
@@ -1537,6 +1609,30 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     const idea = initialIdea.toLocaleLowerCase("tr-TR");
     if (idea.includes("kesitleme") || idea.includes("uzun film") || idea.includes("uzun dizi")) {
       applyLongFilmClippingPreset();
+      return;
+    }
+    if (idea.includes("ai ad performance score") || idea.includes("ad score checker") || idea.includes("ad_score_checker") || idea.includes("reklam skoru")) {
+      applyGeneralProductionPreset("ad_score_checker", initialIdea || "AI Ad Performance Score Checker");
+      return;
+    }
+    if (idea.includes("ai virtual model") || idea.includes("virtual model studio") || idea.includes("virtual_model_studio") || idea.includes("sanal model")) {
+      applyGeneralProductionPreset("virtual_model_studio", initialIdea || "AI Virtual Model Studio");
+      return;
+    }
+    if (idea.includes("ai cultural localization") || idea.includes("cultural localization") || idea.includes("cultural_localization") || idea.includes("kültürel lokalizasyon") || idea.includes("kulturel lokalizasyon")) {
+      applyGeneralProductionPreset("cultural_localization", initialIdea || "AI Cultural Localization");
+      return;
+    }
+    if (idea.includes("ai campaign calendar") || idea.includes("campaign calendar") || idea.includes("campaign_calendar") || idea.includes("kampanya takvimi")) {
+      applyGeneralProductionPreset("campaign_calendar", initialIdea || "AI Campaign Calendar");
+      return;
+    }
+    if (idea.includes("crelavo academy") || idea.includes("crelavo_academy")) {
+      applyGeneralProductionPreset("crelavo_academy", initialIdea || "Crelavo Academy");
+      return;
+    }
+    if (idea.includes("community showcase") || idea.includes("community_showcase")) {
+      applyGeneralProductionPreset("community_showcase", initialIdea || "Community Showcase");
       return;
     }
     if (idea.includes("ai live sales agent") || idea.includes("live sales") || idea.includes("live commerce") || idea.includes("canlı satış") || idea.includes("canli satis") || idea.includes("canlı yayın satış") || idea.includes("canli yayin satis") || idea.includes("24/7 sales") || idea.includes("tiktok shop") || idea.includes("autonomous brand agent") || idea.includes("canlı yayın marka temsilciliği") || idea.includes("canli yayin marka temsilciligi")) {

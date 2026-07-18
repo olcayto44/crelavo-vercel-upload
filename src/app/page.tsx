@@ -43,6 +43,18 @@ const featuredTools = [
   { title: "Brand & Files", href: "/tools/brand-files", icon: Boxes }
 ];
 
+const featurePreviewVideos = [
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200446193878757-1783200446163.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200475974783117-1783200475940.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4"
+];
+
+function featurePreviewVideo(slug: string) {
+  const index = Math.abs(Array.from(slug).reduce((total, char) => total + char.charCodeAt(0), 0)) % featurePreviewVideos.length;
+  return featurePreviewVideos[index];
+}
+
 const homeFeaturePathCopy: Record<string, { title: string; description: string; tags: string[] }> = {
   "ai-ad-performance-score-checker": {
     title: "AI Ad Performance Score Checker for TikTok, Meta and ecommerce ads",
@@ -168,15 +180,21 @@ export default async function HomePage() {
             {phaseOneFeaturePages.map((page) => {
               const featureCopy = homeFeaturePathCopy[page.slug] ?? { title: page.title, description: page.summary, tags: [page.primaryKeyword] };
               return (
-                <HardReloadLink className="card admin-category-card" href={`/${page.slug}`} key={page.slug}>
+                <div className="card admin-category-card production-pricing-card" key={page.slug}>
+                  <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
+                    <video className="sample-card-video" src={featurePreviewVideo(page.slug)} muted loop playsInline preload="metadata" />
+                    <small>{page.badge}</small>
+                    <strong>Preview</strong>
+                  </div>
                   <span className="badge">{page.primaryKeyword}</span>
                   <h3>{featureCopy.title}</h3>
                   <p>{featureCopy.description}</p>
                   <div className="category-option-row" aria-label={`${page.title} SEO tags`}>
                     {featureCopy.tags.map((tag) => <small key={`${page.slug}-${tag}`}>{tag}</small>)}
                   </div>
-                  <span className="text-link">Open {page.title}</span>
-                </HardReloadLink>
+                  <HardReloadLink className="btn" href="/dashboard/credits">Paketi oluştur</HardReloadLink>
+                  <HardReloadLink className="btn secondary" href={`/${page.slug}`}>Sayfayı incele</HardReloadLink>
+                </div>
               );
             })}
           </div>

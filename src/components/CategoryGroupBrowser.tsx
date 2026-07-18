@@ -10,6 +10,12 @@ const icons = {
   campaign: Megaphone,
   ai_agent: Bot,
   localization: Globe2,
+  ad_score_checker: Megaphone,
+  virtual_model_studio: Image,
+  cultural_localization: Globe2,
+  campaign_calendar: Sparkles,
+  crelavo_academy: FileText,
+  community_showcase: UsersRound,
   video: Video,
   talking_video: UsersRound,
   documentary: ScrollText,
@@ -56,6 +62,12 @@ const categoryOptions: Record<string, string[]> = {
   campaign: ["Shopify product link", "Amazon product link", "Trendyol product link", "Product link ad", "Store/social publish"],
   ai_agent: ["AI influencer", "Daily social manager", "Trend monitor", "Voice/personality", "Approval flow"],
   localization: ["Language adaptation", "Cultural rewrite", "Voice direction", "Subtitle notes", "Country variants"],
+  ad_score_checker: ["Basic ad score", "Detailed score report", "3 improved ad angles", "Hook rewrite", "Video-ready brief"],
+  virtual_model_studio: ["1 virtual model visual", "4 image pack", "Catalog visuals", "Fashion model", "Jewelry / beauty visual"],
+  cultural_localization: ["Country brief", "Localized hooks", "Localized script", "CTA adaptation", "Video brief"],
+  campaign_calendar: ["Seasonal brief", "Product launch checklist", "Hook calendar", "Script pack", "Asset plan"],
+  crelavo_academy: ["Free lesson path", "Premium templates", "Done-with-you brief", "UGC lesson", "Product video workflow"],
+  community_showcase: ["Use similar style", "Template reuse", "AI ad example", "UGC example", "Product video proof"],
   video: ["Prompt-to-video", "Link-to-video", "Voice-to-video", "Photo/avatar input", "Choose character", "Create character", "Own voice-over", "Choose AI voice", "Create AI voice", "Background music", "Emotion-matched music", "Drone-style aerial video"],
   talking_video: ["Self-in-video", "Photo/avatar input", "Choose character", "Create character", "2/3/4/5+ people", "7-8 person panel", "Own voice-over", "Choose AI voice", "Create AI voice", "Separate voices", "Regional clothing", "Dialect voice"],
   documentary: ["Topic research", "Narration outline", "Interview map", "Archival visuals", "Documentary music", "Own voice-over", "Choose AI voice"],
@@ -87,6 +99,12 @@ const categoryOptions: Record<string, string[]> = {
 };
 
 const categoryGroups = [
+  {
+    id: "new-feature-tools",
+    title: "New Feature Tools",
+    description: "Ad scoring, virtual models, cultural localization, campaign calendar, Academy and showcase request paths.",
+    typeIds: ["ad_score_checker", "virtual_model_studio", "cultural_localization", "campaign_calendar", "crelavo_academy", "community_showcase"]
+  },
   {
     id: "marketing",
     title: "Marketing & Commerce",
@@ -124,7 +142,9 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
   if (!type) return null;
 
   const Icon = icons[type.id];
-  const packages = packageCatalog.filter((item) => item.productionType === type.id);
+  const configuredPackages = packageCatalog.filter((item) => item.productionType === type.id);
+  const fallbackPackages = productionPackages.filter((item) => item.productionType === type.id);
+  const packages = configuredPackages.length ? configuredPackages : fallbackPackages;
 
   return (
     <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>

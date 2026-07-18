@@ -44,6 +44,18 @@ function categorySlides(slides: CategoryShowcaseSlide[]) {
   return configured.length ? configured : categoryShowcaseItems;
 }
 
+const featurePreviewVideos = [
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200446193878757-1783200446163.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200475974783117-1783200475940.mp4",
+  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4"
+];
+
+function featurePreviewVideo(slug: string) {
+  const index = Math.abs(Array.from(slug).reduce((total, char) => total + char.charCodeAt(0), 0)) % featurePreviewVideos.length;
+  return featurePreviewVideos[index];
+}
+
 const deliverySteps = [
   {
     icon: PackageCheck,
@@ -119,18 +131,38 @@ export default async function CategoriesPage() {
           </div>
         </section>
 
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">New feature SEO paths</span>
-          <h2>Phase 1 roadmap categories for future Crelavo acquisition pages</h2>
-          <p>
-            These public Phase 1 pages capture demand for ad scoring, virtual model visuals, cultural localization, campaign planning, academy content and community proof before the later MVP and API automation phases.
-          </p>
-          <div className="delivery-step-grid">
+        <section className="category-group-section" style={{ marginTop: 24 }}>
+          <div className="category-group-head">
+            <span className="badge">New feature categories</span>
+            <h2>New Crelavo feature categories that use the existing credit packages</h2>
+            <p>
+              These new paths are visible like category cards, but they still use the current Crelavo credit packages. Users can review the feature page, then create a package from the existing credit system and receive delivery from the dashboard.
+            </p>
+          </div>
+          <div className="production-pricing-grid">
             {phaseOneFeaturePages.slice(0, 6).map((page) => (
-              <div className="delivery-step-card" key={page.slug}>
+              <div className={`card production-pricing-card production-tone-${page.slug}`} key={page.slug}>
+                <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
+                  <video className="sample-card-video" src={featurePreviewVideo(page.slug)} muted loop playsInline preload="metadata" />
+                  <small>{page.badge}</small>
+                  <strong>Preview</strong>
+                </div>
+                <span className="badge">Uses existing credit packages</span>
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>
-                <Link className="btn secondary" href={`/${page.slug}`}>Open page</Link>
+                <div className="category-option-row">
+                  {page.keywords.slice(0, 5).map((keyword) => <small key={`${page.slug}-${keyword}`}>{keyword}</small>)}
+                </div>
+                <div className="production-package-list">
+                  {page.creditModel.slice(0, 3).map((creditLine) => (
+                    <div key={`${page.slug}-${creditLine}`}>
+                      <strong>{creditLine.split(":")[0]}</strong>
+                      <span>{creditLine.includes(":") ? creditLine.split(":").slice(1).join(":").trim() : "Existing credits"}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link className="btn" href="/dashboard/credits">Paketi oluştur</Link>
+                <Link className="btn secondary" href={`/${page.slug}`}>Sayfayı incele</Link>
               </div>
             ))}
           </div>

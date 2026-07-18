@@ -38,6 +38,12 @@ export function packageIdFromSelection(productionType: string, selection: Pick<A
   if (explicitMatch) return explicitMatch.id;
   const fallbackPackageId = (preferredId: string) => availablePackages.some((item) => item.id === preferredId) ? preferredId : availablePackages[0]?.id ?? preferredId;
   if (selection.quickProviderTest && productionType === "video") return "video_draft";
+  if (productionType === "ad_score_checker") return packageSignal.includes("script") || packageSignal.includes("brief") || packageSignal.includes("angle") || packageSignal.includes("100") ? "ad_score_script_pack" : "ad_score_basic";
+  if (productionType === "virtual_model_studio") return packageSignal.includes("4") || packageSignal.includes("pack") || packageSignal.includes("catalog") || packageSignal.includes("katalog") ? "virtual_model_pack" : "virtual_model_single";
+  if (productionType === "cultural_localization") return packageSignal.includes("script") || packageSignal.includes("video") || packageSignal.includes("pack") || packageSignal.includes("brief") ? "cultural_localization_pack" : "cultural_localization_brief";
+  if (productionType === "campaign_calendar") return packageSignal.includes("asset") || packageSignal.includes("script") || packageSignal.includes("pack") || packageSignal.includes("seasonal") ? "campaign_calendar_asset_pack" : "campaign_calendar_brief";
+  if (productionType === "crelavo_academy") return packageSignal.includes("done-with-you") || packageSignal.includes("brief") || packageSignal.includes("production") ? "academy_done_with_you_brief" : "academy_template_pack";
+  if (productionType === "community_showcase") return packageSignal.includes("template") || packageSignal.includes("pack") ? "showcase_template_reuse_pack" : "showcase_style_reuse";
   if (productionType === "animation") return packageSignal.includes("character") || packageSignal.includes("karakter") ? "animation_character_pack" : "animation_explainer";
   if (productionType === "anime_short_film") return packageSignal.includes("multi") || packageSignal.includes("film") || packageSignal.includes("story") || packageSignal.includes("scene plan") ? "anime_short_film_pack" : "anime_short_scene";
   if (productionType === "animal_video") return packageSignal.includes("cinematic") || packageSignal.includes("sinematik") || packageSignal.includes("3d") || packageSignal.includes("exciting") || packageSignal.includes("heyecan") ? "animal_cinematic_pack" : "animal_funny_short";
