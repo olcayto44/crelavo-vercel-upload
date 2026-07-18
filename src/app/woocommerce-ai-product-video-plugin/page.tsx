@@ -1,0 +1,104 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Header } from "@/components/Header";
+import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
+
+const checklist = [
+  "WordPress plugin slug and public plugin positioning",
+  "WooCommerce REST API connection and store permission model",
+  "Product ID, product URL, title, images and description handoff",
+  "Plugin settings page with Crelavo workspace launch button",
+  "Nonce, capability checks and secure admin-only actions",
+  "Readme.txt, screenshots, support link and WordPress.org submission assets",
+  "Manual ZIP plugin path first; full directory submission after API/provider confidence"
+];
+
+const keywords = ["WooCommerce video plugin", "WooCommerce AI video", "WooCommerce product video", "WordPress product video", "AI product video plugin", "WooCommerce ad video", "ecommerce video plugin"];
+
+export const metadata: Metadata = {
+  title: "WooCommerce AI Product Video Plugin Roadmap | Crelavo",
+  description: "Crelavo WooCommerce AI product video plugin roadmap for WordPress stores, product page to video workflows, ecommerce campaign assets and future plugin submission steps.",
+  keywords,
+  alternates: { canonical: "/woocommerce-ai-product-video-plugin" },
+  openGraph: {
+    title: "WooCommerce AI Product Video Plugin Roadmap | Crelavo",
+    description: "Plan the Crelavo WooCommerce plugin path for product page to AI product video and ecommerce campaign workflows.",
+    url: "/woocommerce-ai-product-video-plugin",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WooCommerce AI Product Video Plugin Roadmap | Crelavo",
+    description: "WooCommerce product video plugin roadmap for Crelavo ecommerce workflows."
+  }
+};
+
+export default async function WooCommerceAiProductVideoPluginPage() {
+  const siteContent = await getConfiguredSiteContentConfig();
+
+  return (
+    <>
+      <Header navLinks={siteContent.navLinks} />
+      <main className="container section service-page-detail">
+        <section className="production-hero-card admin-overview-hero service-hero-card">
+          <span className="badge">WooCommerce plugin roadmap</span>
+          <h1>WooCommerce AI product video plugin roadmap for WordPress ecommerce campaigns</h1>
+          <p className="section-lead">
+            This page defines the future WooCommerce plugin path for Crelavo: WordPress store owners should be able to send product page context into AI product videos, ad hooks, captions, landing copy and ecommerce campaign assets.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/blog/ecommerce-product-page-to-video-workflow">Read product page workflow</Link>
+            <Link className="btn secondary" href="/shopify-ai-product-video-app">Shopify app roadmap</Link>
+            <Link className="btn secondary" href="/categories/campaign">Campaign category</Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
+          <span className="badge">SEO keywords</span>
+          <h2>WooCommerce video plugin keywords and WordPress ecommerce intent</h2>
+          <div className="admin-category-grid">
+            {keywords.map((keyword) => (
+              <div className="card admin-category-card" key={keyword}>
+                <h3>{keyword}</h3>
+                <p>Supports WordPress and WooCommerce sellers searching for product video plugins, AI ecommerce campaign tools and product page to video workflows.</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+          <span className="badge">Roadmap</span>
+          <h2>Manual product page workflow now, WooCommerce plugin path later</h2>
+          <p>
+            Crelavo can capture WooCommerce intent through product page URLs and campaign requests now. A plugin path can later make this deeper by adding a WordPress admin button, secure product context handoff and plugin submission assets.
+          </p>
+          <h2>What the WooCommerce plugin should do first</h2>
+          <p>
+            The first plugin should be simple: let an admin send product context to Crelavo. It should avoid complex automation until API, provider, privacy and support flows are stable.
+          </p>
+          <div className="delivery-step-grid">
+            {checklist.map((item) => (
+              <div className="delivery-step-card" key={item}>
+                <h3>{item}</h3>
+                <p>Required before the WooCommerce plugin path becomes a public installable integration.</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-category-links" style={{ marginTop: 18 }}>
+          <span className="badge">Internal links</span>
+          <h2>Related Crelavo WooCommerce and ecommerce paths</h2>
+          <div className="plan-feature-groups">
+            <Link href="/blog/ecommerce-product-page-to-video-workflow"><b>Product page to video workflow</b><small>Broad ecommerce guide</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Shopify app-store roadmap</small></Link>
+            <Link href="/ai-product-video-generator"><b>AI product video generator</b><small>Product video workflow</small></Link>
+            <Link href="/categories/campaign"><b>Campaign category</b><small>Product-link campaign hub</small></Link>
+            <Link href="/chrome-extension"><b>Chrome extension funnel</b><small>Fastest acquisition path before plugins</small></Link>
+            <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery options</small></Link>
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}

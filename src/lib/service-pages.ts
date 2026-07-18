@@ -383,6 +383,10 @@ const strategicSeoPages: ServicePage[] = [
     ],
     internalLinks: [
       { label: "AI Product Video Generator", href: "/ai-product-video-generator" },
+      { label: "Shopify product link guide", href: "/blog/shopify-product-link-to-ai-video-guide" },
+      { label: "Shopify AI product video app", href: "/shopify-ai-product-video-app" },
+      { label: "Chrome extension funnel", href: "/chrome-extension" },
+      { label: "Campaign category", href: "/categories/campaign" },
       { label: "Product ad video service", href: "/products/product-ad-video" },
       { label: "Pricing and preview fees", href: "/pricing" },
       { label: "AI Ecommerce Builder", href: "/ai-ecommerce-builder" }
@@ -410,6 +414,10 @@ const strategicSeoPages: ServicePage[] = [
     seoPriority: "high",
     internalLinks: [
       { label: "AI Product Video Generator", href: "/ai-product-video-generator" },
+      { label: "Amazon product page guide", href: "/blog/amazon-product-page-to-ai-ad-video-guide" },
+      { label: "Product page to video workflow", href: "/blog/ecommerce-product-page-to-video-workflow" },
+      { label: "Campaign category", href: "/categories/campaign" },
+      { label: "Product video alternatives", href: "/alternatives/product-video-generator-alternative" },
       { label: "Product ad video service", href: "/products/product-ad-video" },
       { label: "AI Video Generator", href: "/ai-video-generator" },
       { label: "Pricing", href: "/pricing" }
@@ -437,6 +445,9 @@ const strategicSeoPages: ServicePage[] = [
     seoPriority: "high",
     internalLinks: [
       { label: "AI Ecommerce Builder", href: "/ai-ecommerce-builder" },
+      { label: "Trendyol product video guide", href: "/blog/trendyol-product-video-campaign-guide" },
+      { label: "AI ecommerce campaign checklist", href: "/blog/shopify-amazon-trendyol-ai-campaign-checklist" },
+      { label: "Campaign category", href: "/categories/campaign" },
       { label: "AI Product Video Generator", href: "/ai-product-video-generator" },
       { label: "Product ad video service", href: "/products/product-ad-video" },
       { label: "Pricing", href: "/pricing" }

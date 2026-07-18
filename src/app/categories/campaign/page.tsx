@@ -57,6 +57,7 @@ export default async function CampaignCategoryPage() {
             <Link className="btn secondary" href="/shopify-product-link-to-ad-video">Shopify video workflow</Link>
             <Link className="btn secondary" href="/amazon-product-ad-video">Amazon video workflow</Link>
             <Link className="btn secondary" href="/trendyol-product-video">Trendyol video workflow</Link>
+            <Link className="btn secondary" href="/blog/shopify-amazon-trendyol-ai-campaign-checklist">Campaign checklist</Link>
           </div>
         </section>
 
@@ -99,6 +100,13 @@ export default async function CampaignCategoryPage() {
             <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Product%20link%20campaign">Start from a product link</Link>
             <Link className="btn secondary" href="/categories">Back to all categories</Link>
             <Link className="btn secondary" href="/tools">Open tools catalog</Link>
+          </div>
+          <div className="plan-feature-groups" style={{ marginTop: 24 }}>
+            <Link href="/blog/shopify-product-link-to-ai-video-guide"><b>Shopify product video guide</b><small>Shopify product link to AI video SEO path</small></Link>
+            <Link href="/blog/amazon-product-page-to-ai-ad-video-guide"><b>Amazon product ad guide</b><small>Amazon product page to AI ad video path</small></Link>
+            <Link href="/blog/trendyol-product-video-campaign-guide"><b>Trendyol product video guide</b><small>Turkish ecommerce product video path</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify app roadmap</b><small>Future App Store integration path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce plugin roadmap</b><small>Future WordPress plugin integration path</small></Link>
           </div>
         </section>
       </main>

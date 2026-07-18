@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { footerInfoPages } from "@/lib/footer-info-pages";
 import { alternativePages } from "@/lib/alternative-pages";
+import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
 import { freeTools } from "@/lib/free-tools";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 
@@ -17,6 +18,9 @@ const publicRoutes = [
   { path: "/growth-intelligence", priority: 0.84, changeFrequency: "monthly" as const },
   { path: "/drone-credits", priority: 0.82, changeFrequency: "monthly" as const },
   { path: "/blog", priority: 0.82, changeFrequency: "monthly" as const },
+  { path: "/chrome-extension", priority: 0.82, changeFrequency: "monthly" as const },
+  { path: "/shopify-ai-product-video-app", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/woocommerce-ai-product-video-plugin", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/affiliate", priority: 0.78, changeFrequency: "monthly" as const },
   { path: "/contact", priority: 0.72, changeFrequency: "monthly" as const },
   { path: "/styles", priority: 0.7, changeFrequency: "monthly" as const },
@@ -64,7 +68,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  return [...publicRoutes, ...serviceRoutes, ...alternativeRoutes, ...freeToolRoutes, ...infoRoutes]
+  const blogGuideRoutes = ecommerceIntegrationGuides.map((guide) => ({
+    path: `/blog/${guide.slug}`,
+    priority: 0.78,
+    changeFrequency: "monthly" as const
+  }));
+
+  return [...publicRoutes, ...serviceRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,

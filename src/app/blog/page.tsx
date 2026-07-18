@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
 import { organicKeywordCoverage } from "@/lib/organic-directory";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -158,6 +159,24 @@ export default async function BlogPage() {
               </article>
             );
           })}
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Ecommerce integration guides</span>
+          <h2>Shopify, Amazon, Trendyol and product-page-to-video SEO guides</h2>
+          <p>
+            These blog guides target practical 3-4 word ecommerce searches such as Shopify product video, Amazon product ad video, Trendyol product video, product page to video and AI ecommerce campaign.
+          </p>
+          <div className="admin-category-grid">
+            {ecommerceIntegrationGuides.map((guide) => (
+              <Link className="card admin-category-card" href={`/blog/${guide.slug}`} key={guide.slug}>
+                <span className="badge">{guide.platform}</span>
+                <h3>{guide.title}</h3>
+                <p>{guide.summary}</p>
+                <small>Main keyword: {guide.primaryKeyword}</small>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <section className="blog-keyword-panel">

@@ -76,6 +76,8 @@ export const footerGroups: FooterGroup[] = [
     title: "Business and File Production",
     links: [
       { label: "Website", href: footerInfoHref("website") },
+      { label: "Shopify AI Product Video App", href: "/shopify-ai-product-video-app" },
+      { label: "WooCommerce AI Product Video Plugin", href: "/woocommerce-ai-product-video-plugin" },
       { label: "SaaS", href: footerInfoHref("saas") },
       { label: "Mobile App", href: footerInfoHref("mobile-app") },
       { label: "Admin Panel", href: footerInfoHref("admin-panel") },

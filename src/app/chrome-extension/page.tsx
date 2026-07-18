@@ -55,6 +55,8 @@ export default async function ChromeExtensionPage() {
             <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Chrome%20extension%20product%20link%20video">Start extension campaign flow</Link>
             <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
             <Link className="btn secondary" href="/shopify-product-link-to-ad-video">Shopify workflow</Link>
+            <Link className="btn secondary" href="/shopify-ai-product-video-app">Shopify app roadmap</Link>
+            <Link className="btn secondary" href="/woocommerce-ai-product-video-plugin">WooCommerce plugin roadmap</Link>
           </div>
         </section>
 
@@ -86,6 +88,14 @@ export default async function ChromeExtensionPage() {
           <p>
             Ecommerce sellers spend their time inside product pages, not inside random AI tool directories. A browser extension creates a direct acquisition funnel from the moment a seller is thinking about a product to the moment they ask Crelavo to create product videos, ad hooks and campaign assets.
           </p>
+          <p>
+            The Chrome extension is the fastest product-page-to-video acquisition path now. Shopify App Store and WooCommerce plugin paths can become deeper installation channels later, after OAuth, store permissions, privacy and provider workflows are stable.
+          </p>
+          <div className="plan-feature-groups">
+            <Link href="/blog/ecommerce-product-page-to-video-workflow"><b>Product page to video workflow</b><small>Guide for ecommerce product URLs</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Future Shopify App Store path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>Future WordPress plugin path</small></Link>
+          </div>
         </section>
       </main>
     </>
