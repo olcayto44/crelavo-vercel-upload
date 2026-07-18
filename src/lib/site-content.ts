@@ -91,6 +91,7 @@ export const footerGroups: FooterGroup[] = [
     links: [
       { label: "Avatar Design / Avatar Video", href: productionInfoHref("avatar") },
       { label: "Visual Clone / Style Clone", href: productionInfoHref("visual_clone") },
+      { label: "AI Tool Alternatives", href: "/alternatives" },
       { label: "All Production Categories", href: footerInfoHref("categories") },
       { label: "Explore Samples", href: "/showcase/explore-samples" },
       { label: "All Tools", href: "/showcase/all-tools" }

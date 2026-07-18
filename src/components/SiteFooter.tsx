@@ -12,6 +12,7 @@ export async function SiteFooter() {
           <nav>
             <HardReloadLink href="/pricing">Pricing</HardReloadLink>
             <HardReloadLink href="/tools">Tools</HardReloadLink>
+            <HardReloadLink href="/alternatives">Alternatives</HardReloadLink>
             <HardReloadLink href="/categories">Categories</HardReloadLink>
             <HardReloadLink href="/showcase/explore-samples">Samples</HardReloadLink>
           </nav>

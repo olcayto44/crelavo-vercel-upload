@@ -119,6 +119,15 @@ export default async function CategoriesPage() {
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Alternative SEO pages</span>
+          <h2>Compare Crelavo with AI video, design, website and campaign tools</h2>
+          <p>
+            The alternatives hub supports comparison searches like Canva alternative, Runway alternative, Synthesia alternative, AI product video generator alternative and Shopify video app alternative, then routes visitors into Crelavo categories and production workflows.
+          </p>
+          <Link className="btn secondary" href="/alternatives">Open AI tool alternatives</Link>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">SEO category coverage</span>
           <h2>High-intent production categories and search paths</h2>
           <p>

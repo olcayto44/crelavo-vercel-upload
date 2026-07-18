@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { footerInfoPages } from "@/lib/footer-info-pages";
+import { alternativePages } from "@/lib/alternative-pages";
 import { freeTools } from "@/lib/free-tools";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 
@@ -8,6 +9,7 @@ const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admi
 const publicRoutes = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFrequency: "weekly" as const },
+  { path: "/alternatives", priority: 0.88, changeFrequency: "weekly" as const },
   { path: "/tools", priority: 0.88, changeFrequency: "weekly" as const },
   { path: "/free-tools", priority: 0.86, changeFrequency: "weekly" as const },
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" as const },
@@ -56,7 +58,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  return [...publicRoutes, ...serviceRoutes, ...freeToolRoutes, ...infoRoutes]
+  const alternativeRoutes = alternativePages.map((page) => ({
+    path: `/alternatives/${page.slug}`,
+    priority: 0.76,
+    changeFrequency: "monthly" as const
+  }));
+
+  return [...publicRoutes, ...serviceRoutes, ...alternativeRoutes, ...freeToolRoutes, ...infoRoutes]
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,
