@@ -61,7 +61,11 @@ function buildShowcaseKeywords(item: { title: string; description: string; longD
     "AI production studio demo",
     "managed production workflow",
     "category showcase",
-    "creative delivery examples"
+      "creative delivery examples",
+      "AI product video examples",
+      "ecommerce campaign showcase",
+      "UGC product demo",
+      "free AI tools workflow"
   ];
 }
 
@@ -77,6 +81,7 @@ export async function generateMetadata({ params }: ShowcasePageProps): Promise<M
   return {
     title: `${item.title} showcase for ${item.bestFor[0] || "Crelavo users"} | Crelavo`,
     description: `${item.longDescription} Explore ${keywords} and related Crelavo categories, tools and production workflows.`,
+    keywords: buildShowcaseKeywords(item),
     alternates: { canonical: `/showcase/${item.id}` },
     openGraph: {
       title: `${item.title} | Crelavo`,
@@ -126,6 +131,22 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
             <p>This showcase page is designed to support search intent for people looking for demos, workflows, examples, production previews and category-specific inspiration.</p>
             <div className="showcase-pill-row">
               {keywords.slice(0, 10).map((keyword) => <span key={keyword}>{keyword}</span>)}
+            </div>
+          </div>
+        </section>
+
+        <section className="container showcase-detail-keywords-section">
+          <div className="showcase-info-card showcase-wide-card">
+            <span className="badge">Visual SEO links</span>
+            <h2>Connect this showcase to samples, free tools and niche ecommerce pages</h2>
+            <p>These links strengthen sample and showcase discovery around AI product video examples, ecommerce campaign showcase, UGC product demo and free AI tools workflow searches.</p>
+            <div className="plan-feature-groups">
+              <Link href="/samples/product-ad-skincare"><b>Product ad sample</b><small>ecommerce video sample</small></Link>
+              <Link href="/samples/ugc-product-demo"><b>UGC product demo</b><small>UGC product demo</small></Link>
+              <Link href="/ai-ugc-creator-program"><b>AI UGC creator program</b><small>AI UGC creator</small></Link>
+              <Link href="/free-tools/tiktok-hook-generator"><b>TikTok Hook Generator</b><small>short-form hook workflow</small></Link>
+              <Link href="/free-tools/ecommerce-ad-script-generator"><b>Ecommerce Ad Script Generator</b><small>ecommerce ad script</small></Link>
+              <Link href="/categories/campaign"><b>Campaign category</b><small>ecommerce campaign showcase</small></Link>
             </div>
           </div>
         </section>

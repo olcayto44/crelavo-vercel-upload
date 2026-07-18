@@ -76,6 +76,14 @@ const freeToolCategoryLinks = [
   { href: "/pricing", label: "Pricing and credits", keyword: "credit packages for production" }
 ];
 
+const blogToProductLinks = [
+  { href: "/blog/shopify-product-link-to-ai-video-guide", label: "Shopify product video guide", keyword: "Shopify product video" },
+  { href: "/blog/amazon-product-page-to-ai-ad-video-guide", label: "Amazon product ad guide", keyword: "Amazon product ad video" },
+  { href: "/blog/trendyol-product-video-campaign-guide", label: "Trendyol product video guide", keyword: "Trendyol product video" },
+  { href: "/blog/ecommerce-product-page-to-video-workflow", label: "Product page to video workflow", keyword: "product page to video" },
+  { href: "/blog/shopify-amazon-trendyol-ai-campaign-checklist", label: "AI ecommerce campaign checklist", keyword: "AI ecommerce campaign" }
+];
+
 export async function generateMetadata({ params }: { params: Promise<{ toolSlug: string }> }): Promise<Metadata> {
   const { toolSlug } = await params;
   const tool = freeToolMap.get(toolSlug);
@@ -145,6 +153,20 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <p>Use this free tool to test the message before spending credits. For ecommerce and product campaigns, paste a product link, product notes, offer, buyer profile or platform goal, then compare the generated angles. The best result can become the first brief for a product video, landing page, campaign asset, short-form ad or live sales workflow.</p>
           <p>Crelavo is designed to connect free planning tools with managed production. A free result is not the final deliverable; it is the low-friction starting point that helps the assistant understand your product, audience, CTA and expected output before you move into a paid preview or full production package.</p>
         </article>
+
+        <section className="card admin-wide-card free-tool-category-links" style={{ marginTop: 18 }}>
+          <span className="badge">Blog → product → free tool funnel</span>
+          <h2>Read the guide, open the product workflow, then use this free tool</h2>
+          <p>These internal links connect blog guides, product pages and free tools around niche ecommerce keywords like Shopify product video, Amazon product ad video, Trendyol product video, product page to video and AI ecommerce campaign.</p>
+          <div className="plan-feature-groups">
+            {blogToProductLinks.map((item) => (
+              <Link href={item.href} key={item.href}>
+                <b>{item.label}</b>
+                <small>{item.keyword}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
           <span className="badge">Continue to production</span>

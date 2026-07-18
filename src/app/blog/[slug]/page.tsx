@@ -100,6 +100,9 @@ export default async function EcommerceGuidePage({ params }: { params: Promise<{
             <Link href="/ai-product-video-generator"><b>AI product video generator</b><small>Broad product video workflow</small></Link>
             <Link href="/categories/campaign"><b>Ecommerce campaign category</b><small>Product-link campaign hub</small></Link>
             <Link href="/tools"><b>AI tools catalog</b><small>All Crelavo production tools</small></Link>
+            <Link href="/free-tools/tiktok-hook-generator"><b>TikTok Hook Generator</b><small>Free hook ideas before product video production</small></Link>
+            <Link href="/free-tools/product-description-generator"><b>Product Description Generator</b><small>Free product page copy before campaign briefs</small></Link>
+            <Link href="/free-tools/ad-copy-generator"><b>Ad Copy Generator</b><small>Free ad copy variants for ecommerce campaigns</small></Link>
             <Link href="/pricing"><b>Pricing and credits</b><small>Review package and delivery options</small></Link>
           </div>
         </section>

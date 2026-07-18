@@ -253,6 +253,23 @@ export const aiNewsletterSubmissionChecklist = [
   "Wait for final payment/provider confidence before buying paid newsletter placements."
 ];
 
+export const aiUgcCreatorCrowdsourcingTargets = [
+  { channel: "TikTok UGC creators", niche: "ecommerce UGC ads", priority: "P1", angle: "Find product demo creators who can record short-form hook-led ads." },
+  { channel: "Instagram Reels creators", niche: "Reels product demo", priority: "P1", angle: "Source creators for beauty, fashion, tech, home and fitness product demos." },
+  { channel: "YouTube Shorts creators", niche: "short form creator", priority: "P2", angle: "Build a pool for educational product demos, SaaS explainers and creator-read ads." },
+  { channel: "Turkish ecommerce creators", niche: "Trendyol product video", priority: "P2", angle: "Support Turkish marketplace sellers with local language creator-style videos." },
+  { channel: "Micro actor communities", niche: "AI actor casting", priority: "P2", angle: "Collect permission-based actor profiles for future AI-assisted video sourcing." }
+];
+
+export const aiUgcCreatorIntakeChecklist = [
+  "Collect name, email, country, city, languages and creator category.",
+  "Require TikTok, Instagram, YouTube or portfolio URL before review.",
+  "Tag niche fit: beauty, fashion, tech, home, fitness, SaaS, ecommerce, Turkish marketplace.",
+  "Track style fit: product demo creator, UGC ad actor, talking video, unboxing, testimonial, live commerce.",
+  "Confirm usage rights, consent, brand safety and manual review before any client production.",
+  "Use /ai-ugc-creator-program as the public sourcing page and /samples/ugc-product-demo as proof context."
+];
+
 export const rewardCreditRules = [
   { action: "Share a Crelavo preview output", credits: 100, limit: "2 approved rewards per day" },
   { action: "Invite a new user who signs up", credits: 250, limit: "5 approved rewards per week" },

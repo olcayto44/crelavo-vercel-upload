@@ -34,8 +34,12 @@ function buildSampleKeywords(sample: { title: string; category: string; format: 
     `${sample.category} example`,
     "AI production sample",
     "creative workflow demo",
-    "social video example"
-  ];
+      "social video example",
+      "UGC product demo",
+      "AI product video sample",
+      "ecommerce video sample",
+      "product ad creative"
+   ];
 }
 
 type SamplePageProps = {
@@ -51,6 +55,7 @@ export async function generateMetadata({ params }: SamplePageProps): Promise<Met
   return {
     title: `${sample.title} sample for ${sample.category} | Crelavo`,
     description: `${sample.description} Explore ${keywords} and use this sample as a direct entry into the matching Crelavo production workflow.`,
+    keywords: buildSampleKeywords(sample),
     alternates: { canonical: `/samples/${sample.id}` },
     openGraph: {
       title: `${sample.title} | Crelavo sample`,
@@ -109,6 +114,22 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
         </section>
 
         <SampleEngagement sampleId={sample.id} initialLikeCount={sample.likeCount} initialShareCount={sample.shareCount} initialComments={sample.comments} />
+
+        <section className="container sample-detail-keywords-section">
+          <div className="showcase-info-card showcase-wide-card">
+            <span className="badge">Niche SEO paths</span>
+            <h2>Turn this sample into product video, UGC ad and free tool workflows</h2>
+            <p>Use this sample as a visual SEO bridge from sample discovery into product video, UGC creator, free tool and ecommerce campaign pages.</p>
+            <div className="plan-feature-groups">
+              <HardReloadLink href="/ai-product-video-generator"><b>AI product video generator</b><small>AI product video sample</small></HardReloadLink>
+              <HardReloadLink href="/categories/campaign"><b>Ecommerce campaign category</b><small>product ad creative</small></HardReloadLink>
+              <HardReloadLink href="/ai-ugc-creator-program"><b>AI UGC creator program</b><small>UGC product demo</small></HardReloadLink>
+              <HardReloadLink href="/free-tools/tiktok-hook-generator"><b>TikTok Hook Generator</b><small>short-form hook ideas</small></HardReloadLink>
+              <HardReloadLink href="/free-tools/ecommerce-ad-script-generator"><b>Ecommerce Ad Script Generator</b><small>product video script</small></HardReloadLink>
+              <HardReloadLink href="/showcase/explore-samples"><b>Explore more samples</b><small>AI production samples</small></HardReloadLink>
+            </div>
+          </div>
+        </section>
 
         <section className="container section home-section-tight sample-detail-workflow">
           <div className="sample-detail-section-head">

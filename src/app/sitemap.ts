@@ -19,6 +19,7 @@ const publicRoutes = [
   { path: "/drone-credits", priority: 0.82, changeFrequency: "monthly" as const },
   { path: "/blog", priority: 0.82, changeFrequency: "monthly" as const },
   { path: "/chrome-extension", priority: 0.82, changeFrequency: "monthly" as const },
+  { path: "/ai-ugc-creator-program", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/shopify-ai-product-video-app", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/woocommerce-ai-product-video-plugin", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/affiliate", priority: 0.78, changeFrequency: "monthly" as const },

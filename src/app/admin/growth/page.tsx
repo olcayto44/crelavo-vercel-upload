@@ -1,7 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
-import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
+import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
@@ -124,6 +124,31 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Blocked automation notes</h3>
         <ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">AI UGC actor crowdsourcing</span>
+        <h2>Creator sourcing plan for AI UGC ads and product demo actors</h2>
+        <p style={{ color: "var(--muted)" }}>Use /ai-ugc-creator-program as the public sourcing page. Keep first phase manual: creator review, usage rights, category tags and brand-safety checks before any client production.</p>
+        <div className="admin-info-grid">
+          <div><span>Public page</span><strong>/ai-ugc-creator-program</strong><small>AI UGC creator, product demo creator and AI actor casting SEO path.</small></div>
+          <div><span>Targets</span><strong>{aiUgcCreatorCrowdsourcingTargets.length} channels</strong><small>TikTok, Reels, Shorts and niche ecommerce creators.</small></div>
+          <div><span>Main proof</span><strong>/samples/ugc-product-demo</strong><small>Use sample page as creator-style video context.</small></div>
+          <div><span>Guardrail</span><strong>Manual review</strong><small>No automatic casting or rights promise before consent check.</small></div>
+        </div>
+        <h3>Crowdsourcing targets</h3>
+        <div className="admin-category-grid">
+          {aiUgcCreatorCrowdsourcingTargets.map((target) => (
+            <div className="card admin-category-card" key={target.channel}>
+              <span className="badge">{target.priority}</span>
+              <h3>{target.channel}</h3>
+              <p><strong>Niche:</strong> {target.niche}</p>
+              <p>{target.angle}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Creator intake checklist</h3>
+        <ul>{aiUgcCreatorIntakeChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

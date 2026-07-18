@@ -28,6 +28,7 @@ export async function SiteFooter() {
             <HardReloadLink href="/chrome-extension">Chrome extension funnel</HardReloadLink>
             <HardReloadLink href="/shopify-ai-product-video-app">Shopify AI video app</HardReloadLink>
             <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce video plugin</HardReloadLink>
+            <HardReloadLink href="/ai-ugc-creator-program">AI UGC creator program</HardReloadLink>
             <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales agent</HardReloadLink>
           </nav>
         </div>

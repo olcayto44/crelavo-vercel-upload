@@ -23,6 +23,15 @@ const categoryLinks = [
   { href: "/pricing", label: "Pricing and credits", keyword: "AI production pricing and credit packages" }
 ];
 
+const freeToolFunnelLinks = [
+  { href: "/free-tools/tiktok-hook-generator", label: "TikTok Hook Generator", keyword: "TikTok hook generator" },
+  { href: "/free-tools/ecommerce-ad-script-generator", label: "Ecommerce Ad Script Generator", keyword: "ecommerce ad script" },
+  { href: "/free-tools/product-description-generator", label: "Product Description Generator", keyword: "product description generator" },
+  { href: "/free-tools/ad-copy-generator", label: "Ad Copy Generator", keyword: "ad copy generator" },
+  { href: "/free-tools/instagram-caption-generator", label: "Instagram Caption Generator", keyword: "Instagram caption generator" },
+  { href: "/free-tools/seo-meta-title-generator", label: "SEO Meta Title Generator", keyword: "SEO meta title generator" }
+];
+
 function exampleHref(baseHref: string, example: string) {
   const separator = baseHref.includes("?") ? "&" : "?";
   return `${baseHref}${separator}example=${encodeURIComponent(example)}`;
@@ -169,6 +178,20 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <p>Category pages are important for SEO and user navigation, so every landing page links back to the main Crelavo production categories and high-intent service paths.</p>
         <div className="plan-feature-groups">
           {visibleCategoryLinks.map((item) => (
+            <Link href={item.href} key={item.href}>
+              <b>{item.label}</b>
+              <small>{item.keyword}</small>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card free-tool-category-links" style={{ marginTop: 18 }}>
+        <span className="badge">Free tools funnel</span>
+        <h2>Prepare this production with free tools first</h2>
+        <p>Use these free tools to create hooks, product descriptions, ad copy, captions and SEO titles before opening the full {page.title} workflow.</p>
+        <div className="plan-feature-groups">
+          {freeToolFunnelLinks.map((item) => (
             <Link href={item.href} key={item.href}>
               <b>{item.label}</b>
               <small>{item.keyword}</small>
