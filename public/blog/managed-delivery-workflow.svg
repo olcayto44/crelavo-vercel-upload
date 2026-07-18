@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Managed creative delivery dashboard with credits and production status">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#020617"/><stop offset="0.48" stop-color="#0f3557"/><stop offset="1" stop-color="#10231f"/></linearGradient><linearGradient id="g" x1="0" x2="1"><stop stop-color="#22c55e"/><stop offset="0.5" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1280" cy="180" r="240" fill="#22d3ee" opacity="0.14"/><circle cx="260" cy="780" r="300" fill="#22c55e" opacity="0.13"/>
+  <rect x="130" y="145" width="1340" height="710" rx="50" fill="#0f172a" opacity="0.92" stroke="#67e8f9" stroke-opacity="0.34" stroke-width="3"/>
+  <rect x="205" y="230" width="285" height="530" rx="34" fill="#111c31"/><rect x="540" y="230" width="855" height="120" rx="34" fill="#14243d"/><rect x="540" y="405" width="250" height="260" rx="34" fill="#111c31"/><rect x="825" y="405" width="250" height="260" rx="34" fill="#111c31"/><rect x="1110" y="405" width="285" height="260" rx="34" fill="#111c31"/>
+  <text x="575" y="305" fill="#f8fafc" font-family="Inter,Arial" font-size="44" font-weight="900">Managed Creative Delivery</text>
+  <g fill="none" stroke="url(#g)" stroke-width="18" stroke-linecap="round"><path d="M270 325h145M270 410h105M270 495h155M270 580h120"/><path d="M605 560l55 55 95-130"/><path d="M890 560l55 55 95-130"/><path d="M1190 560l55 55 95-130"/></g>
+  <g fill="#e0f2fe" font-family="Inter,Arial" font-size="28" font-weight="800"><text x="590" y="725">Credits</text><text x="875" y="725">Status</text><text x="1160" y="725">Delivery link</text></g>
+  <rect x="1060" y="250" width="260" height="46" rx="23" fill="url(#g)"/><text x="1115" y="282" fill="#06111f" font-family="Inter,Arial" font-size="22" font-weight="900">Ready package</text>
+</svg>

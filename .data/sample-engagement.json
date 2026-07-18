@@ -1,0 +1,30 @@
+{
+  "comments": [
+    {
+      "id": "40f452c4-65f2-4873-a197-525657d13e3c",
+      "sampleId": "product-ad-skincare",
+      "parentCommentId": null,
+      "author": "Test User",
+      "role": "user",
+      "text": "Persistent test comment",
+      "likes": 0,
+      "createdAt": "2026-07-04T15:24:19.751Z",
+      "replies": []
+    },
+    {
+      "id": "328771ae-7d1c-4c29-affc-a1dd28a362a3",
+      "sampleId": "product-ad-skincare",
+      "parentCommentId": "40f452c4-65f2-4873-a197-525657d13e3c",
+      "author": "Clipora Admin",
+      "role": "user",
+      "text": "Admin persistent reply",
+      "likes": 0,
+      "createdAt": "2026-07-04T15:24:38.434Z",
+      "replies": []
+    }
+  ],
+  "likes": {
+    "product-ad-skincare": 1
+  },
+  "shares": {}
+}

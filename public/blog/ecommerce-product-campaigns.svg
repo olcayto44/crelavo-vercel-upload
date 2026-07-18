@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="E-commerce product campaign workflow with Shopify Amazon and Trendyol links">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#082f49"/><stop offset="0.55" stop-color="#111827"/><stop offset="1" stop-color="#312e81"/></linearGradient><linearGradient id="g" x1="0" x2="1"><stop stop-color="#22c55e"/><stop offset="0.5" stop-color="#22d3ee"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="320" cy="160" r="230" fill="#22c55e" opacity="0.13"/><circle cx="1260" cy="820" r="300" fill="#7c5cff" opacity="0.18"/>
+  <rect x="120" y="180" width="390" height="640" rx="52" fill="#0f172a" stroke="#67e8f9" stroke-opacity="0.35" stroke-width="3"/>
+  <rect x="175" y="250" width="280" height="260" rx="34" fill="#e0f2fe" opacity="0.92"/>
+  <circle cx="315" cy="360" r="82" fill="url(#g)" opacity="0.9"/>
+  <rect x="180" y="560" width="250" height="34" rx="17" fill="#67e8f9" opacity="0.78"/><rect x="180" y="620" width="190" height="24" rx="12" fill="#93c5fd" opacity="0.58"/>
+  <rect x="620" y="145" width="850" height="710" rx="54" fill="#0f172a" opacity="0.9" stroke="#818cf8" stroke-opacity="0.35" stroke-width="3"/>
+  <text x="680" y="240" fill="#f8fafc" font-family="Inter,Arial" font-size="50" font-weight="900">Product Link to Campaign</text>
+  <text x="680" y="300" fill="#bae6fd" font-family="Inter,Arial" font-size="28">Shopify • Amazon • Trendyol • Store URL</text>
+  <g stroke="url(#g)" stroke-width="10" stroke-linecap="round" fill="none"><path d="M510 500 H620"/><path d="M760 445 H1230"/><path d="M760 560 H1320"/><path d="M760 675 H1160"/></g>
+  <g fill="#111c31" stroke="#334155" stroke-width="2"><rect x="680" y="390" width="710" height="90" rx="28"/><rect x="680" y="505" width="710" height="90" rx="28"/><rect x="680" y="620" width="710" height="90" rx="28"/></g>
+  <g font-family="Inter,Arial" font-size="30" font-weight="800" fill="#e0f2fe"><text x="725" y="447">AI video ad script and hooks</text><text x="725" y="562">Marketplace visuals and captions</text><text x="725" y="677">Delivery package for launch</text></g>
+  <rect x="1140" y="735" width="250" height="58" rx="29" fill="url(#g)"/><text x="1194" y="773" fill="#06111f" font-family="Inter,Arial" font-size="24" font-weight="900">Ready Ads</text>
+</svg>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Clipora Studio AI production studio dashboard illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#07111f"/><stop offset="0.52" stop-color="#123a63"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+    <linearGradient id="a" x1="0" x2="1"><stop stop-color="#22d3ee"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="16" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1260" cy="150" r="280" fill="#22d3ee" opacity="0.16"/>
+  <circle cx="210" cy="850" r="260" fill="#7c5cff" opacity="0.2"/>
+  <rect x="170" y="130" width="1260" height="740" rx="46" fill="#0f172a" opacity="0.9" stroke="#67e8f9" stroke-opacity="0.36" stroke-width="3"/>
+  <rect x="220" y="190" width="330" height="610" rx="30" fill="#111c31" stroke="#334155" stroke-width="2"/>
+  <rect x="590" y="190" width="790" height="170" rx="30" fill="#14243d" stroke="#334155" stroke-width="2"/>
+  <rect x="590" y="400" width="370" height="400" rx="30" fill="#111c31" stroke="#334155" stroke-width="2"/>
+  <rect x="1010" y="400" width="370" height="400" rx="30" fill="#111c31" stroke="#334155" stroke-width="2"/>
+  <rect x="260" y="240" width="230" height="38" rx="19" fill="url(#a)" filter="url(#glow)"/>
+  <rect x="260" y="320" width="210" height="24" rx="12" fill="#93c5fd" opacity="0.75"/>
+  <rect x="260" y="370" width="245" height="24" rx="12" fill="#93c5fd" opacity="0.5"/>
+  <rect x="260" y="420" width="170" height="24" rx="12" fill="#93c5fd" opacity="0.5"/>
+  <rect x="640" y="240" width="420" height="42" rx="21" fill="#e0f2fe" opacity="0.9"/>
+  <rect x="640" y="304" width="640" height="18" rx="9" fill="#67e8f9" opacity="0.45"/>
+  <g fill="none" stroke="url(#a)" stroke-width="16" stroke-linecap="round">
+    <path d="M675 710 C725 560 790 575 830 655 S920 762 950 560"/>
+    <path d="M1085 705 C1140 610 1195 740 1260 590" opacity="0.9"/>
+  </g>
+  <circle cx="680" cy="710" r="18" fill="#22d3ee"/><circle cx="950" cy="560" r="18" fill="#7c5cff"/><circle cx="1260" cy="590" r="18" fill="#22c55e"/>
+  <text x="640" y="480" fill="#e0f2fe" font-family="Inter,Arial" font-size="44" font-weight="800">AI Production Studio</text>
+  <text x="640" y="535" fill="#93c5fd" font-family="Inter,Arial" font-size="26">Websites • Apps • Campaigns • Delivery</text>
+</svg>
