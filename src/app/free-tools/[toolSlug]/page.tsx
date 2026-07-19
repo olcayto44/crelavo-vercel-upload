@@ -113,9 +113,29 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <h1>{tool.title} for {tool.category}, ecommerce campaigns and production workflows</h1>
           <p>{tool.description}</p>
           <p className="section-lead">Use this page for long-tail searches like {longTailKeywords.slice(0, 4).join(", ")} before turning the result into a Crelavo production request.</p>
+          {tool.slug === "ad-performance-score-checker" ? (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <Link className="btn" href="#free-ad-score">Score my ad free</Link>
+              <Link className="btn secondary" href="/ai-ad-performance-score-checker">See ad scorer roadmap</Link>
+              <Link className="btn secondary" href="/ai-product-video-generator">Create video after score</Link>
+            </div>
+          ) : null}
         </section>
 
-        <FreeToolGenerator tool={tool} />
+        {tool.slug === "ad-performance-score-checker" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">Lead magnet flow</span>
+            <h2>Free score → stronger brief → paid production path</h2>
+            <div className="admin-info-grid">
+              <div><span>1</span><strong>Paste ad idea</strong><small>Hook, script, offer, product URL notes or short-form video concept.</small></div>
+              <div><span>2</span><strong>Get weak spots</strong><small>First-three-second strength, CTA clarity, proof and platform fit.</small></div>
+              <div><span>3</span><strong>Keep selected result</strong><small>The chosen score is sent into Assistant Workspace automatically.</small></div>
+              <div><span>4</span><strong>Upgrade when ready</strong><small>Create improved angles, preview video direction and production package.</small></div>
+            </div>
+          </section>
+        ) : null}
+
+        <div id="free-ad-score"><FreeToolGenerator tool={tool} /></div>
 
         <section className="card admin-wide-card free-tool-keyword-cluster" style={{ marginTop: 18 }}>
           <span className="badge">SEO keyword coverage</span>
@@ -150,6 +170,7 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <h2>{tool.keyword} for faster production planning</h2>
           <p>{tool.title} helps users create a useful starting point before they open a full production workspace. Instead of beginning with a blank prompt, the user can shape an idea, hook, caption, product description, ad script or brand message first.</p>
           <p>After the quick result, Crelavo can route the idea into Assistant Workspace where the user can request preview, final ZIP, source files, README/setup notes, export notes and a revision path.</p>
+          {tool.slug === "ad-performance-score-checker" ? <p>The ad scorer is designed as the free entry gate: users get a useful diagnosis first, then the strongest CTA asks them to convert the score into improved hooks, proof points, video direction and a production-ready campaign brief.</p> : null}
           <p>Use this free tool to test the message before spending credits. For ecommerce and product campaigns, paste a product link, product notes, offer, buyer profile or platform goal, then compare the generated angles. The best result can become the first brief for a product video, landing page, campaign asset, short-form ad or live sales workflow.</p>
           <p>Crelavo is designed to connect free planning tools with managed production. A free result is not the final deliverable; it is the low-friction starting point that helps the assistant understand your product, audience, CTA and expected output before you move into a paid preview or full production package.</p>
         </article>

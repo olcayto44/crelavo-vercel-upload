@@ -18,11 +18,37 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             This is the SEO, category and roadmap layer. The MVP layer can deliver real reports, scripts, visuals, briefs or files through admin/assistant-assisted production before full API automation is added later.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace">Start a request</Link>
+            {page.slug === "ai-ad-performance-score-checker" ? (
+              <>
+                <Link className="btn" href="/free-tools/ad-performance-score-checker">Run the free ad score now</Link>
+                <Link className="btn secondary" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Score%20my%20ad%20and%20turn%20it%20into%20a%20stronger%20campaign">Turn score into campaign</Link>
+              </>
+            ) : <Link className="btn" href="/dashboard/assistant-workspace">Start a request</Link>}
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/tools">Open tools</Link>
           </div>
         </section>
+
+        {page.slug === "ai-ad-performance-score-checker" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">Free lead magnet</span>
+            <h2>Score the ad first, then sell the stronger campaign path</h2>
+            <p style={{ color: "var(--muted)" }}>
+              This page now acts as the low-friction entry door: visitors can paste an ad hook, script, product offer or video idea, get a quick score, then carry the selected result into Assistant Workspace for an AI + human QA campaign brief.
+            </p>
+            <div className="admin-info-grid">
+              <div><span>Free value</span><strong>Instant score</strong><small>Hook strength, CTA clarity, platform fit and conversion weak spots.</small></div>
+              <div><span>Capture intent</span><strong>Selected result</strong><small>The score output is passed into Assistant Workspace as context.</small></div>
+              <div><span>Upgrade path</span><strong>Production brief</strong><small>Turn the weak points into improved angles, script and video direction.</small></div>
+              <div><span>Paid path</span><strong>Preview / package</strong><small>Credits are introduced after the visitor understands the campaign gap.</small></div>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <Link className="btn" href="/free-tools/ad-performance-score-checker">Open free AI Ad Scorer</Link>
+              <Link className="btn secondary" href="/free-tools/ecommerce-ad-script-generator">Write an ad script first</Link>
+              <Link className="btn secondary" href="/ai-product-video-generator">Create product video after scoring</Link>
+            </div>
+          </section>
+        ) : null}
 
         <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
           <span className="badge">Niche keyword cluster</span>

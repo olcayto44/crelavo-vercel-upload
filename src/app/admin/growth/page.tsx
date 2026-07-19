@@ -36,12 +36,12 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage goal wizard and AI + Human QA positioning are live</h2>
-        <p style={{ color: "var(--muted)" }}>The homepage now gives visitors three clear paths before the large category/showcase sections, and public trust copy positions delivery as AI speed plus human quality assurance.</p>
+        <h2>Homepage wizard, AI + Human QA and Ad Scorer lead magnet are live</h2>
+        <p style={{ color: "var(--muted)" }}>The homepage now gives visitors three clear paths before the large category/showcase sections, public trust copy positions delivery as AI speed plus human quality assurance, and the AI Ad Scorer is strengthened as a free lead magnet.</p>
         <div className="admin-info-grid">
           <div><span>Live page</span><strong>/</strong><small>Goal wizard sits under the hero section and collapses cleanly on mobile.</small></div>
           <div><span>Path 1</span><strong>Global campaign</strong><small>Routes to cultural_localization in Assistant Workspace.</small></div>
-          <div><span>Path 2</span><strong>Score my ad</strong><small>Routes to ad_score_checker in Assistant Workspace.</small></div>
+          <div><span>Path 2</span><strong>Free ad score</strong><small>Routes to /free-tools/ad-performance-score-checker before paid production.</small></div>
           <div><span>Trust copy</span><strong>AI + Human QA</strong><small>Managed delivery wording is reframed as expert-reviewed delivery.</small></div>
         </div>
       </section>

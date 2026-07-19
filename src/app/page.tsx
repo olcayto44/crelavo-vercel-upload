@@ -33,9 +33,9 @@ const homepageGoalWizard = [
   },
   {
     title: "I want to test my existing ad",
-    description: "Score your ad hook, CTA, visual clarity and conversion weaknesses before spending more budget.",
-    cta: "Score my ad",
-    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20test%20my%20existing%20ad&category=ad_score_checker&mode=media",
+    description: "Use the free AI Ad Scorer to find hook, CTA, proof and conversion weaknesses before spending more budget.",
+    cta: "Score my ad free",
+    href: "/free-tools/ad-performance-score-checker",
     badge: "Fastest free entry",
     step: "02"
   },

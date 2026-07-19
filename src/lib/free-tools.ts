@@ -138,7 +138,7 @@ export const freeTools: FreeTool[] = [
     turkishTitle: "Ücretsiz Reklam Performans Skoru Kontrolü",
     keyword: "AI Ad Performance Score Checker",
     category: "Ad performance",
-    description: "Score a product ad script, hook or campaign idea for first-three-second strength, CTA clarity, platform fit and conversion potential before production.",
+    description: "Score a product ad script, hook or campaign idea for first-three-second strength, CTA clarity, platform fit and conversion potential before spending budget or production credits.",
     placeholder: "Paste your ad script, hook, product offer or video idea",
     sampleOutputs: ["Hook score with improvement notes", "CTA clarity and platform fit score", "Ad performance checklist before production"],
     assistantHref: "/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Ad%20Performance%20Score%20Checker"

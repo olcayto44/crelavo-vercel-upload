@@ -23,7 +23,8 @@ export default async function FreeToolsPage() {
           <h1>Free AI tools for TikTok hooks, product descriptions, prompts, ecommerce ads and landing page copy</h1>
           <p>Use free AI tools for hooks, prompts, product descriptions, captions, UGC ad scripts, SEO meta titles, landing page copy and brand ideas. Then turn the result into a full Crelavo production package with preview, final ZIP, source files, README and revision path.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace">Open Crelavo Assistant</Link>
+            <Link className="btn" href="/free-tools/ad-performance-score-checker">Score an ad free</Link>
+            <Link className="btn secondary" href="/dashboard/assistant-workspace">Open Crelavo Assistant</Link>
             <Link className="btn secondary" href="/pricing">Get credits for full production</Link>
           </div>
         </section>
@@ -31,8 +32,8 @@ export default async function FreeToolsPage() {
           <span className="badge">Free tool funnel</span>
           <h2>Generate a quick result, then continue into production</h2>
           <div className="admin-info-grid">
-            <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script or product idea.</small></div>
-            <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output is carried into Assistant Workspace.</small></div>
+            <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script, product idea or ad score.</small></div>
+            <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output or ad score is carried into Assistant Workspace.</small></div>
             <div><span>Step 3</span><strong>Start production</strong><small>Turn the result into a delivery plan, credits and final package.</small></div>
             <div><span>Step 4</span><strong>Buy credits when ready</strong><small>Payment Link launch uses the same Crelavo account email.</small></div>
           </div>

@@ -89,9 +89,9 @@ function generateOutputs(tool: FreeTool, input: string) {
       ];
     case "ad-performance-score-checker":
       return [
-        `Ad Score: 82/100\nStrong: The idea for ${idea} can work because it has a clear product angle and can be explained quickly.\nImprove: Put the main benefit in the first 3 seconds, make the CTA visible, and add one proof point such as a review, result or before/after.`,
-        `Hook Score: 78/100\nFirst 3 Seconds: Start with the buyer problem before showing ${idea}.\nCTA Clarity: Use one action only, such as "Start preview" or "Try the product video workflow."\nPlatform Fit: Best for TikTok/Reels if the first sentence is shorter and more direct.`,
-        `Conversion Checklist\n1. Show the product or result immediately.\n2. Add social proof or a trust line.\n3. Keep subtitles large and high contrast.\n4. End with one direct CTA.\nNext step: turn this into a Crelavo production brief and test a preview video.`
+        `Ad Score: 82/100\nStrong: The idea for ${idea} can work because it has a clear product angle and can be explained quickly.\nFix first: Put the main benefit in the first 3 seconds, make the CTA visible, and add one proof point such as a review, result or before/after.\nProduction next step: turn this score into a tighter Crelavo campaign brief with one improved hook, one proof shot and one clear CTA.`,
+        `Hook Score: 78/100\nFirst 3 Seconds: Start with the buyer problem before showing ${idea}.\nCTA Clarity: Use one action only, such as "Start preview" or "Try the product video workflow."\nPlatform Fit: Best for TikTok/Reels if the first sentence is shorter and more direct.\nUpgrade path: create 3 improved ad angles before spending video production credits.`,
+        `Conversion Checklist\n1. Show the product or result immediately.\n2. Add social proof or a trust line.\n3. Keep subtitles large and high contrast.\n4. End with one direct CTA.\nNext step: send this checklist into Crelavo Assistant Workspace for an AI + human QA campaign plan and preview video direction.`
       ];
     case "tiktok-ad-script-generator":
       return [
@@ -138,7 +138,7 @@ function assistantUrl(tool: FreeTool, input: string, selectedOutput: string) {
     `${tool.title} result`,
     input.trim() ? `Original input: ${input.trim()}` : "",
     selectedOutput ? `Selected result: ${selectedOutput}` : "",
-    "Turn this into a full Crelavo production package with deliverables, preview, final files and revision path."
+    tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger Crelavo campaign brief with improved hooks, proof points, CTA direction and preview video plan." : "Turn this into a full Crelavo production package with deliverables, preview, final files and revision path."
   ].filter(Boolean).join("\n\n");
   const base = new URL(tool.assistantHref, "http://localhost");
   base.searchParams.set("idea", idea);
@@ -159,8 +159,9 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
 
   return (
     <section className="card admin-wide-card free-tool-generator" style={{ marginTop: 18 }}>
-      <span className="badge">Free generator</span>
-      <h2>Generate results instantly</h2>
+        <span className="badge">{tool.slug === "ad-performance-score-checker" ? "Free lead magnet" : "Free generator"}</span>
+        <h2>{tool.slug === "ad-performance-score-checker" ? "Score your ad before spending budget" : "Generate results instantly"}</h2>
+        {tool.slug === "ad-performance-score-checker" ? <p style={{ color: "var(--muted)" }}>Paste a hook, script, offer or product video idea. The free score shows what to fix first, then the selected result can become a stronger Crelavo campaign brief.</p> : null}
       <div className="field">
         <label>{tool.placeholder}</label>
         <textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder={tool.placeholder} rows={4} />
@@ -193,7 +194,7 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
         <h2>{["ecommerce-ad-script-generator", "review-to-ad-script-generator"].includes(tool.slug) ? "Turn this script into an AI video with Crelavo" : tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger ad campaign" : "Turn the selected result into a production request"}</h2>
         <p style={{ color: "var(--muted)", whiteSpace: "pre-line" }}>{activeOutput}</p>
         <div className="workspace-action-note" style={{ marginTop: 12 }}>
-          Free tools are the starting point. Assistant Workspace turns the selected result into a full production request with delivery plan, credits and final package options.
+          {tool.slug === "ad-performance-score-checker" ? "This free score is the entry point. Assistant Workspace turns the weak spots into a campaign brief, improved hooks, CTA direction, proof points, credit estimate and preview video plan." : "Free tools are the starting point. Assistant Workspace turns the selected result into a full production request with delivery plan, credits and final package options."}
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={workspaceHref}>Start production with this result</Link>
