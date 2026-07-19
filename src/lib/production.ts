@@ -35,37 +35,37 @@ export const productionTypes = [
     id: "ad_score_checker",
     label: "AI Ad Performance Score Checker",
     description: "Score ecommerce ads, TikTok hooks, CTA clarity and creative weaknesses before turning the best angle into production.",
-    startingCredits: 50
+    startingCredits: 600
   },
   {
     id: "virtual_model_studio",
     label: "AI Virtual Model Studio",
     description: "Create virtual model image packs for fashion, jewelry, beauty, accessories and ecommerce catalog visuals.",
-    startingCredits: 50
+    startingCredits: 900
   },
   {
     id: "cultural_localization",
     label: "AI Cultural Localization",
     description: "Adapt product hooks, scripts, CTA, buyer psychology and video briefs for country-specific markets.",
-    startingCredits: 50
+    startingCredits: 900
   },
   {
     id: "campaign_calendar",
     label: "AI Campaign Calendar",
     description: "Plan seasonal ecommerce campaigns, product launches, hook calendars and production-ready campaign asset packs.",
-    startingCredits: 50
+    startingCredits: 800
   },
   {
     id: "crelavo_academy",
     label: "Crelavo Academy",
     description: "AI marketing, product video, UGC ad and ecommerce lesson/template packs that can route into paid production.",
-    startingCredits: 0
+    startingCredits: 700
   },
   {
     id: "community_showcase",
     label: "Community Showcase",
     description: "Turn AI ad examples, ecommerce videos, UGC demos and showcase styles into similar Crelavo production requests.",
-    startingCredits: 50
+    startingCredits: 1200
   },
   {
     id: "video",
@@ -322,7 +322,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "ad_score_basic",
     productionType: "ad_score_checker",
     name: "Basic Ad Score Report",
-    credits: 50,
+    credits: 600,
     description: "Scores one ad idea, product hook or script for clarity, first-three-second strength, CTA and creative weakness.",
     deliverables: ["Ad score", "Hook strength notes", "CTA clarity review", "Weakness list", "Dashboard delivery"]
   },
@@ -330,7 +330,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "ad_score_script_pack",
     productionType: "ad_score_checker",
     name: "Ad Score + Script Improvement Pack",
-    credits: 100,
+    credits: 1200,
     description: "Scores the ad and prepares improved hooks, CTA direction and three stronger ad angles.",
     deliverables: ["Detailed ad score", "3 improved ad angles", "Hook rewrite", "CTA rewrite", "Video-ready brief"]
   },
@@ -338,7 +338,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "virtual_model_single",
     productionType: "virtual_model_studio",
     name: "Single Virtual Model Visual",
-    credits: 50,
+    credits: 900,
     description: "Creates one virtual model visual direction or image request for a product, outfit, jewelry or beauty item.",
     deliverables: ["1 virtual model visual", "Product placement notes", "Usage direction", "Dashboard delivery"]
   },
@@ -346,7 +346,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "virtual_model_pack",
     productionType: "virtual_model_studio",
     name: "Virtual Model Image Pack",
-    credits: 180,
+    credits: 2800,
     description: "Creates a 4-image virtual model pack for ecommerce catalog, fashion, jewelry, beauty or accessory campaigns.",
     deliverables: ["4 virtual model visuals", "Catalog/lifestyle mix", "Model style notes", "ZIP delivery"]
   },
@@ -354,7 +354,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "cultural_localization_brief",
     productionType: "cultural_localization",
     name: "Country Localization Brief",
-    credits: 50,
+    credits: 900,
     description: "Adapts one product or campaign idea for a target country with buyer psychology, CTA and proof-angle notes.",
     deliverables: ["Country-specific brief", "Hook adaptation", "CTA adaptation", "Cultural fit notes"]
   },
@@ -362,7 +362,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "cultural_localization_pack",
     productionType: "cultural_localization",
     name: "Localized Script + Video Brief Pack",
-    credits: 150,
+    credits: 1800,
     description: "Creates localized hooks, script direction, visual pace notes and a video-ready brief for one target market.",
     deliverables: ["Localized hook pack", "Localized script", "Visual direction", "Video-ready brief"]
   },
@@ -370,7 +370,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "campaign_calendar_brief",
     productionType: "campaign_calendar",
     name: "Campaign Calendar Brief",
-    credits: 50,
+    credits: 800,
     description: "Prepares one seasonal or product-launch campaign brief with timing, content ideas and production next steps.",
     deliverables: ["Campaign brief", "Timing notes", "Hook ideas", "Production checklist"]
   },
@@ -378,7 +378,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "campaign_calendar_asset_pack",
     productionType: "campaign_calendar",
     name: "Seasonal Campaign Asset Plan",
-    credits: 200,
+    credits: 2200,
     description: "Creates a seasonal hook/script/calendar pack for ecommerce launches and promotional campaigns.",
     deliverables: ["Campaign calendar", "Seasonal hook list", "Script pack", "Asset checklist", "Dashboard delivery"]
   },
@@ -386,7 +386,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "academy_template_pack",
     productionType: "crelavo_academy",
     name: "Academy Template Pack",
-    credits: 50,
+    credits: 700,
     description: "Provides premium learning templates, lesson notes or production-ready examples from Crelavo Academy content.",
     deliverables: ["Template pack", "Lesson summary", "Usage notes", "Next production CTA"]
   },
@@ -394,7 +394,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "academy_done_with_you_brief",
     productionType: "crelavo_academy",
     name: "Done-With-You Creative Brief",
-    credits: 150,
+    credits: 1800,
     description: "Turns Academy learning into a guided creative brief ready for campaign, product video or UGC production.",
     deliverables: ["Guided creative brief", "Hook direction", "Production checklist", "Credit-based next step"]
   },
@@ -402,7 +402,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "showcase_style_reuse",
     productionType: "community_showcase",
     name: "Use Similar Style Request",
-    credits: 100,
+    credits: 1200,
     description: "Turns a showcase example into a similar production request with style notes, scope and delivery plan.",
     deliverables: ["Style reuse brief", "Reference notes", "Production plan", "Dashboard delivery"]
   },
@@ -410,7 +410,7 @@ export const productionPackages: ProductionPackage[] = [
     id: "showcase_template_reuse_pack",
     productionType: "community_showcase",
     name: "Showcase Template Reuse Pack",
-    credits: 200,
+    credits: 2500,
     description: "Creates a reusable example-based request package for similar ad, UGC, product video or website outputs.",
     deliverables: ["Template reuse plan", "Creative direction", "Output checklist", "ZIP/dashboard delivery"]
   },

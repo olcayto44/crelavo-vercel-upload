@@ -230,6 +230,27 @@ img, video {
   transform: translateY(-3px);
   box-shadow: 0 28px 90px var(--credit-shadow, #22d3ee29);
 }
+.pricing-service-card {
+  min-height: 220px;
+}
+.pricing-service-live {
+  --credit-base-a: rgba(76,29,149,.98);
+  --credit-base-b: rgba(190,24,93,.72);
+  --credit-glow: rgba(236,72,153,.46);
+  --credit-accent: rgba(124,92,255,.36);
+  --credit-border: rgba(244,114,182,.42);
+  --credit-hover-border: rgba(249,168,212,.70);
+  --credit-shadow: rgba(236,72,153,.24);
+}
+.pricing-service-drone {
+  --credit-base-a: rgba(8,47,73,.98);
+  --credit-base-b: rgba(14,116,144,.72);
+  --credit-glow: rgba(34,211,238,.48);
+  --credit-accent: rgba(59,130,246,.34);
+  --credit-border: rgba(34,211,238,.42);
+  --credit-hover-border: rgba(103,232,249,.70);
+  --credit-shadow: rgba(34,211,238,.25);
+}
 .credit-plan-tone-pro {
   --credit-base-a: rgba(8,47,73,.96);
   --credit-base-b: rgba(14,116,144,.68);
@@ -2145,6 +2166,25 @@ body.admin-route > .site-footer {
   margin: 0;
   line-height: 1.55;
 }
+.pricing-delivery-feature-card {
+  text-decoration: none;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.pricing-delivery-feature-card small {
+  width: max-content;
+  max-width: 100%;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  margin-bottom: 10px;
+  padding: 5px 8px;
+  background: rgba(2,6,23,.24);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  display: block;
+}
 .pricing-delivery-cyan {
   --delivery-base-a: rgba(8,47,73,.98);
   --delivery-base-b: rgba(14,116,144,.72);
@@ -2267,7 +2307,13 @@ body.admin-route > .site-footer {
 }
 .production-tone-campaign,
 .production-tone-ai_agent,
-.production-tone-localization {
+.production-tone-localization,
+.production-tone-ad_score_checker,
+.production-tone-virtual_model_studio,
+.production-tone-cultural_localization,
+.production-tone-campaign_calendar,
+.production-tone-crelavo_academy,
+.production-tone-community_showcase {
   --production-glow: rgba(34,211,238,.24);
   --production-accent: rgba(236,72,153,.18);
   --production-border: rgba(34,211,238,.42);
@@ -2350,7 +2396,7 @@ body.admin-route > .site-footer {
 }
 
 .category-tab-grid {
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
   margin: 24px 0;
   display: grid;
@@ -2368,9 +2414,9 @@ body.admin-route > .site-footer {
   padding: 18px;
   isolation: isolate;
   display: grid;
-  grid-template-rows: auto 64px 1fr;
+  grid-template-rows: auto auto 1fr;
   align-items: start;
-  gap: 10px;
+  gap: 12px;
   background:
     radial-gradient(circle at 16% 8%, rgba(125,211,252,.12), transparent 30%),
     linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.82));
@@ -2426,12 +2472,16 @@ body.admin-route > .site-footer {
 }
 .category-tab-card strong {
   margin: 0;
-  font-size: clamp(22px, 2vw, 31px);
-  line-height: 1.02;
-  letter-spacing: -.04em;
-  display: flex;
-  align-items: center;
-  min-height: 64px;
+  font-size: clamp(20px, 1.8vw, 28px);
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  display: block;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.category-tone-new-feature-tools {
+  --category-gradient: linear-gradient(135deg, #111827, #7c2d12 42%, #7e22ce);
+  --category-shadow: rgba(251,146,60,.20);
 }
 .category-tone-marketing {
   --category-gradient: linear-gradient(135deg, #111827, #164e63 48%, #312e81);

@@ -27,7 +27,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI ad scorer", "ad performance checker", "video ad score", "TikTok ad score", "ecommerce ad score", "ROAS prediction tool", "CTR prediction tool", "ad creative analysis", "product ad checker", "creative performance score"],
     useCases: ["Score a TikTok product ad hook before production", "Review Shopify or Amazon product video scripts", "Find weak CTA, offer clarity and first-three-second issues", "Turn low scoring ad concepts into improved Crelavo briefs"],
     mvpDeliverables: ["Basic ad score report", "Hook strength and CTA clarity notes", "3 improved ad angles", "Video-ready creative brief", "Optional product video production request"],
-    creditModel: ["Basic score: free or low-friction lead magnet", "Detailed ad score report: 25-50 credits", "3 improved ad scripts: 75-100 credits", "Video-ready creative brief: 100-150 credits", "Generated video variants: normal video credits"],
+    creditModel: ["Light preview can stay free as a lead magnet", "Detailed ad score report opens as a credit-based package", "Script and hook improvement uses a higher package tier", "Workspace shows the exact credit cost before production starts", "Generated video variants use normal video production credits"],
     internalLinks: [
       { label: "AI product video generator", href: "/ai-product-video-generator", note: "Turn improved ad score into video production" },
       { label: "TikTok Hook Generator", href: "/free-tools/tiktok-hook-generator", note: "Prepare stronger hooks first" },
@@ -46,7 +46,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI virtual model", "AI fashion model", "virtual model studio", "AI clothing model", "AI model photography", "fashion product photos", "AI jewelry model", "AI try on model", "ecommerce model photos", "virtual model generator"],
     useCases: ["Show apparel on different virtual model styles", "Create jewelry and accessory model visuals", "Prepare fashion product photos without a full shoot", "Generate lifestyle images for Shopify, Amazon or Trendyol campaigns"],
     mvpDeliverables: ["4 image virtual model pack", "10 image catalog pack", "Product close-up and lifestyle shot direction", "Short video teaser brief", "Model style and market fit notes"],
-    creditModel: ["1 virtual model image: 30-50 credits", "4 image pack: 120-180 credits", "10 image catalog pack: 300-500 credits", "Image + short video teaser pack: 700+ credits", "Premium fashion campaign pack: 800+ credits"],
+    creditModel: ["Single model visual opens as a credit-based visual package", "4-image packs use a higher catalog-production tier", "Bigger catalog sets are scoped inside the workspace", "Image + short video teaser uses normal visual/video production credits", "Workspace shows the exact credit cost before production starts"],
     internalLinks: [
       { label: "AI product video generator", href: "/ai-product-video-generator", note: "Use virtual model assets in product videos" },
       { label: "AI UGC creator program", href: "/ai-ugc-creator-program", note: "Connect model visuals with UGC creator strategy" },
@@ -65,7 +65,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI cultural localization", "global ad localization", "cross border ecommerce ads", "localized product video", "AI localization pack", "multilingual ad video", "international ecommerce marketing", "country specific ad creative", "ecommerce localization", "global product video"],
     useCases: ["Adapt a Shopify product video for Germany, USA, Japan or Gulf markets", "Rewrite ad psychology for country-specific buyer trust", "Localize hooks, CTAs, claims and proof points", "Create market-specific video briefs and scripts"],
     mvpDeliverables: ["1 country localization brief", "Localized hook and script pack", "Visual style and pace notes", "Country-specific CTA and proof angle", "Optional localized video variant brief"],
-    creditModel: ["1 country localization brief: 50 credits", "Localized script: 50-100 credits", "Localized video brief: 100-150 credits", "3 country campaign pack: 300-800 credits", "Full global campaign pack: 1500+ credits"],
+    creditModel: ["Country localization brief opens as a credit-based package", "Localized script and video brief use higher planning tiers", "Multi-country campaign packs are scoped inside the workspace", "Full global campaign work uses normal campaign/localization credits", "Workspace shows the exact credit cost before production starts"],
     internalLinks: [
       { label: "Trendyol product video", href: "/trendyol-product-video", note: "Regional ecommerce video path" },
       { label: "AI ecommerce campaign checklist", href: "/blog/shopify-amazon-trendyol-ai-campaign-checklist", note: "Prepare campaign inputs" },
@@ -84,7 +84,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI campaign calendar", "ecommerce campaign calendar", "Black Friday ad planner", "seasonal campaign ideas", "holiday marketing calendar", "product launch calendar", "social media campaign calendar", "AI marketing calendar", "ecommerce promotion planner", "campaign reminder tool"],
     useCases: ["Plan Black Friday product video campaigns", "Prepare holiday hooks and landing page copy", "Create monthly ecommerce content calendars", "Remind users to produce seasonal ads before deadlines"],
     mvpDeliverables: ["Seasonal campaign brief", "Product launch checklist", "Ad hook calendar", "Free tool preparation links", "Production-ready campaign package request"],
-    creditModel: ["Calendar preview: included/free", "Campaign brief: 25-50 credits", "Seasonal script pack: 100-200 credits", "Campaign asset pack: 200-500 credits", "Video generation: separate video credits"],
+    creditModel: ["Calendar preview can stay included/free", "Campaign brief opens as a credit-based package", "Seasonal script and asset planning use higher campaign tiers", "Video generation stays separate from planning credits", "Workspace shows the exact credit cost before production starts"],
     internalLinks: [
       { label: "AI social media launch plan", href: "/ai-social-media-launch-plan", note: "Turn calendar into social posts" },
       { label: "AI tool launch distribution plan", href: "/ai-tool-launch-distribution-plan", note: "Distribute campaign pages" },
@@ -103,7 +103,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI marketing course", "AI product video course", "ecommerce ad course", "UGC ads course", "Shopify video marketing", "AI creative academy", "AI advertising course", "product video training", "AI ecommerce lessons", "creative production course"],
     useCases: ["Teach Shopify sellers product video workflows", "Explain UGC ad hooks and short-form creative", "Educate users before they spend credits", "Convert SEO learners into production requests"],
     mvpDeliverables: ["Free academy hub", "Lesson roadmap", "Product video mini course outline", "UGC ads lesson cluster", "Credit CTA after course completion"],
-    creditModel: ["Core lessons: free", "Premium templates: credit-based", "Workshop or done-with-you pack: paid package", "Course completion credit bonus: optional", "Production request after lesson: normal credits"],
+    creditModel: ["Core lessons can stay free", "Premium templates open as a credit-based package", "Done-with-you creative briefs use a higher guided tier", "Course completion credit bonus remains optional", "Production request after lesson uses normal production credits"],
     internalLinks: [
       { label: "Blog", href: "/blog", note: "Connect academy with SEO content" },
       { label: "Community showcase", href: "/community-showcase", note: "Show examples from lessons" },
@@ -122,7 +122,7 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
     keywords: ["AI ad examples", "ecommerce video examples", "UGC ad examples", "AI website examples", "product video examples", "AI campaign examples", "community showcase", "AI creative examples", "Crelavo examples", "AI production samples"],
     useCases: ["Show approved ecommerce ad examples", "Route visitors from examples into production requests", "Create reusable template demand", "Build trust with public visual proof"],
     mvpDeliverables: ["Public showcase hub", "Approved sample categories", "Use this style CTA", "Template reuse roadmap", "Community submission checklist"],
-    creditModel: ["View examples: free", "Use similar style: normal production credits", "Template reuse later: 50-200 credits", "Creator reward later: Crelavo credits first", "Cash payout only after provider/payment stability"],
+    creditModel: ["View examples can stay free", "Use similar style opens as a credit-based package", "Template reuse uses a higher reusable-production tier", "Creator reward later can start with Crelavo credits", "Workspace shows the exact credit cost before production starts"],
     internalLinks: [
       { label: "Explore samples", href: "/showcase/explore-samples", note: "Existing sample hub" },
       { label: "UGC product demo sample", href: "/samples/ugc-product-demo", note: "Creator-style example" },

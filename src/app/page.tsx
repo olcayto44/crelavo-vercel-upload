@@ -98,7 +98,13 @@ const seoNicheLinks = [
   { title: "Brand Memory & Brand Voice Hub", href: "/brand-memory", description: "Save brand voice, logos, colors and campaign rules for repeat production." },
   { title: "AI Hook & UGC Generator", href: "/ai-hook-generator", description: "Create multiple first-three-second hooks and UGC angles for ad testing." },
   { title: "AI Marketplace Localization Studio", href: "/ai-marketplace-localization", description: "Adapt listings, ad scripts and marketplace copy for global ecommerce." },
-  { title: "Competitor Ad Analyzer", href: "/competitor-ad-analyzer", description: "Analyze public ad structure and create an original campaign response." }
+  { title: "Competitor Ad Analyzer", href: "/competitor-ad-analyzer", description: "Analyze public ad structure and create an original campaign response." },
+  { title: "AI Ad Performance Score Checker", href: "/ai-ad-performance-score-checker", description: "Score hooks, CTA clarity and creative weaknesses before launching paid production." },
+  { title: "AI Virtual Model Studio", href: "/ai-virtual-model-studio", description: "Create model-style ecommerce visuals for fashion, jewelry, beauty and catalog campaigns." },
+  { title: "AI Cultural Localization", href: "/ai-cultural-localization", description: "Adapt hooks, scripts, CTA and buyer psychology for country-specific markets." },
+  { title: "AI Campaign Calendar", href: "/ai-campaign-calendar", description: "Plan seasonal launches, holiday campaigns and production-ready ecommerce asset packs." },
+  { title: "Crelavo Academy", href: "/crelavo-academy", description: "Learn AI product video, UGC ad and ecommerce workflows before starting production." },
+  { title: "Community Showcase", href: "/community-showcase", description: "Use approved AI ad, product video and website examples as reusable production directions." }
 ];
 
 type ShowcaseSection = "launcher" | "features" | "categories";
@@ -156,9 +162,9 @@ export default async function HomePage() {
             <HardReloadLink className="btn secondary" href="/pricing">Compare pricing</HardReloadLink>
           </div>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
-            {seoNicheLinks.map((item) => (
-              <HardReloadLink className="card admin-category-card" href={item.href} key={item.href}>
-                <span className="badge">Popular solution</span>
+            {seoNicheLinks.map((item, index) => (
+              <HardReloadLink className={`card admin-category-card tools-tone-${index % 5}`} href={item.href} key={item.href}>
+                <span className="badge">{index >= 10 ? "New feature" : "Popular solution"}</span>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <span className="text-link">Explore solution</span>

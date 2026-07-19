@@ -20,6 +20,15 @@ const deliveryFormats = [
   { title: "Revision path", text: "Clear delivery status, requested changes, admin notes and revision-ready output tracking from the workspace.", tone: "pricing-delivery-pink" }
 ];
 
+const deliveryFeatureUnlocks = [
+  { title: "AI Ad Performance Score Checker", text: "Ad score reports, hook rewrites, CTA notes and video-ready creative briefs can be delivered as tracked workspace assets.", href: "/ai-ad-performance-score-checker", tone: "pricing-delivery-cyan" },
+  { title: "AI Virtual Model Studio", text: "Virtual model visuals, catalog image packs, product placement notes and final ZIP deliveries can be scoped with credits.", href: "/ai-virtual-model-studio", tone: "pricing-delivery-purple" },
+  { title: "AI Cultural Localization", text: "Country-specific hooks, localized scripts, CTA adaptation and market-ready video briefs can be delivered as production files.", href: "/ai-cultural-localization", tone: "pricing-delivery-blue" },
+  { title: "AI Campaign Calendar", text: "Seasonal campaign briefs, hook calendars, script packs and asset plans can move from planning into production delivery.", href: "/ai-campaign-calendar", tone: "pricing-delivery-green" },
+  { title: "Crelavo Academy", text: "Premium templates and done-with-you creative briefs can unlock guided production paths after the learning flow.", href: "/crelavo-academy", tone: "pricing-delivery-warm" },
+  { title: "Community Showcase", text: "Showcase examples can become similar-style requests, reusable templates and tracked production packages.", href: "/community-showcase", tone: "pricing-delivery-pink" }
+];
+
 const deliveryLocations = [
   "Customer dashboard delivery panel",
   "Preview link before final approval",
@@ -117,6 +126,13 @@ export default async function PricingPage() {
                 <p>{item.text}</p>
               </div>
             ))}
+            {deliveryFeatureUnlocks.map((item) => (
+              <Link className={`pricing-delivery-card pricing-delivery-feature-card ${item.tone}`} href={item.href} key={item.title}>
+                <small>New feature category</small>
+                <span>{item.title}</span>
+                <p>{item.text}</p>
+              </Link>
+            ))}
           </div>
           <div className="pricing-delivery-locations">
             <strong>Supported delivery locations and handoff paths</strong>
@@ -127,13 +143,13 @@ export default async function PricingPage() {
         </section>
 
         <section className="grid" style={{ marginTop: 28 }}>
-          <Link className="card clickable-credit-card" href="/live-sales-credits">
+          <Link className="card clickable-credit-card pricing-service-card pricing-service-live" href="/live-sales-credits">
             <span className="badge">Separate service plans</span>
             <h3>AI Live Sales Agent</h3>
             <p>Monthly avatar live sales plans with 10h, 40h or 120h fair-use live hours. No included credits.</p>
             <span className="btn">Open live sales plans</span>
           </Link>
-          <Link className="card clickable-credit-card" href="/drone-credits">
+          <Link className="card clickable-credit-card pricing-service-card pricing-service-drone" href="/drone-credits">
             <span className="badge">Separate credit packs</span>
             <h3>Drone / Satellite Video</h3>
             <p>One-time drone and map/satellite credit packs with their own sales cards, using the same credit activation logic.</p>
