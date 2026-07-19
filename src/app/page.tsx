@@ -22,6 +22,30 @@ const platformHighlights = [
   "Brand & Files"
 ];
 
+const homepageGoalWizard = [
+  {
+    title: "I want to sell my product internationally",
+    description: "Localize product ads, hooks, visuals and campaign direction for another country.",
+    cta: "Start global campaign",
+    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20sell%20my%20product%20internationally&category=cultural_localization&mode=media",
+    badge: "Global ecommerce"
+  },
+  {
+    title: "I want to test my existing ad",
+    description: "Score your ad hook, CTA, visual clarity and conversion weaknesses before spending more budget.",
+    cta: "Score my ad",
+    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20test%20my%20existing%20ad&category=ad_score_checker&mode=media",
+    badge: "Free lead magnet"
+  },
+  {
+    title: "I want to create from scratch",
+    description: "Create a product video, website, landing page, campaign pack, virtual model visual or launch asset from one brief.",
+    cta: "Start from scratch",
+    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20create%20from%20scratch&mode=media",
+    badge: "Omni Assistant"
+  }
+];
+
 const appLauncherSlides: HomeShowcaseSlide[] = [
   { title: "Explore", kicker: "Samples", description: "Browse large sample outputs and open dedicated detail pages.", href: "/showcase/explore-samples", tone: "cyan", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192157407622951-1783192157402.png" },
   { title: "Assets", kicker: "Materials", description: "Use images, videos, audio references and documents across productions.", href: "/showcase/assets-library", tone: "green", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192199380895416-1783192199376.png" },
@@ -147,6 +171,26 @@ export default async function HomePage() {
             <div className="promo-corner-slot"><CampaignPromoSlot /></div>
           </section>
 
+          <section className="container section home-section-tight clean-feed-section home-goal-wizard" aria-labelledby="home-goal-wizard-heading">
+            <div className="sample-video-head">
+              <div>
+                <span className="badge"><Sparkles size={15} /> Start with your goal</span>
+                <h2 id="home-goal-wizard-heading">What do you want Crelavo to do first?</h2>
+                <p className="section-lead">Skip the category maze. Choose the outcome and Omni Assistant will open the right production path.</p>
+              </div>
+              <span className="badge">AI speed + human quality assurance</span>
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {homepageGoalWizard.map((goal, index) => (
+                <HardReloadLink className={`card admin-category-card production-pricing-card tools-tone-${index % 5}`} href={goal.href} key={goal.title}>
+                  <span className="badge">{goal.badge}</span>
+                  <h3>{goal.title}</h3>
+                  <p>{goal.description}</p>
+                  <span className="text-link">{goal.cta}</span>
+                </HardReloadLink>
+              ))}
+            </div>
+          </section>
 
         <HomeShowcaseSlider title="Explore Crelavo" subtitle="A large moving entry showcase for samples, assets, Omni Assistant, generation, workspace tracking and the full tool catalog." slides={slidesForSection(siteContent.showcaseSlides, "launcher", appLauncherSlides)} />
 

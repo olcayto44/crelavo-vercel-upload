@@ -35,6 +35,18 @@ export default function AdminGrowthPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">4. Grup / Acil UX conversion</span>
+        <h2>Homepage goal wizard is live as the first conversion cleanup</h2>
+        <p style={{ color: "var(--muted)" }}>The homepage now gives visitors three clear paths before the large category/showcase sections: sell internationally, test an existing ad, or create from scratch.</p>
+        <div className="admin-info-grid">
+          <div><span>Live page</span><strong>/</strong><small>Goal wizard sits under the hero section.</small></div>
+          <div><span>Path 1</span><strong>Global campaign</strong><small>Routes to cultural_localization in Assistant Workspace.</small></div>
+          <div><span>Path 2</span><strong>Score my ad</strong><small>Routes to ad_score_checker in Assistant Workspace.</small></div>
+          <div><span>Path 3</span><strong>Start from scratch</strong><small>Routes to Omni Assistant with a general creation brief.</small></div>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Retention lifecycle</span>
         <h2>Bring users back without API automation</h2>
         <div className="admin-category-grid">
