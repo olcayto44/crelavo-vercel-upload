@@ -26,6 +26,25 @@ export const legalSupportCancellationControls = [
   { area: "Support", href: "/contact", status: "active", check: "Support/contact path is public and dashboard-linked." }
 ];
 
+export const manualDisputeEvidenceChecklist = [
+  { step: "Payment proof", owner: "Finance", check: "Collect Whop payment ID, package name, amount, billing interval, customer email and purchase timestamp before responding to any dispute." },
+  { step: "Terms acceptance", owner: "Admin", check: "Open the user record and confirm the latest accepted terms/responsibility text, policy version, IP address, user-agent and timestamp." },
+  { step: "Production start proof", owner: "Production admin", check: "Confirm production ID, package ID, reserved credits, started_at time, user prompt/brief and the second production-start acceptance." },
+  { step: "Provider cost proof", owner: "Finance", check: "Attach provider/API cost estimate or final provider job note when production work has already started." },
+  { step: "Delivery proof", owner: "Support", check: "Attach final delivery URL, dashboard delivery timestamp, viewed/downloaded evidence if available and support conversation summary." },
+  { step: "Refund decision", owner: "Owner", check: "Mark whether the case is eligible, partially eligible or not eligible based on unused credits, provider work, delivered files and policy wording." }
+];
+
+export const manualDisputeEvidenceBundle = [
+  "Whop receipt/payment reference",
+  "User ID, email, package and credit ledger rows",
+  "Accepted terms/responsibility text version with IP, user-agent and timestamp",
+  "Production ID, production type, prompt/brief and reserved/spent credit record",
+  "Provider/API job notes, cost estimate or admin production log",
+  "Delivery link, file/ZIP visibility, viewed/downloaded note and support messages",
+  "Final admin decision note: approve refund, partial credit, reject refund or escalate"
+];
+
 export const productHuntGlobalLaunchControls = [
   { area: "Product Hunt", status: "wait", check: "Wait until real Whop payment + onboarding + provider readiness are verified." },
   { area: "AI directories", status: "ready_manual", check: "Use /admin/growth directory kit first; submit AI directories before high-profile launch." },

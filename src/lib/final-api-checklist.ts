@@ -14,6 +14,65 @@ type ChecklistGroup = {
   items: ChecklistItem[];
 };
 
+type EmailTemplate = {
+  label: string;
+  subject: string;
+  body: string;
+  audience: string;
+  smokeStep: string;
+};
+
+const resendEmailTemplates: EmailTemplate[] = [
+  {
+    label: "Welcome / access",
+    subject: "Welcome to Crelavo",
+    audience: "New users",
+    body: "Hi {{name}},\n\nWelcome to Crelavo. Your account is ready, and you can start from categories, free tools or your dashboard.\n\nIf you need help, reply to this email and we will help you continue.",
+    smokeStep: "Send to one internal test inbox and confirm sender, subject, plain text body and reply-to all arrive correctly."
+  },
+  {
+    label: "Payment receipt",
+    subject: "Your Crelavo payment was received",
+    audience: "Paying users",
+    body: "Hi {{name}},\n\nWe received your payment and activated the next step in your Crelavo flow. Your receipt reference and package details are recorded in the dashboard.\n\nIf you need the receipt again, reply and we will resend the details.",
+    smokeStep: "Send one payment-style test email and confirm the receipt language, package reference and dashboard wording are clear."
+  },
+  {
+    label: "Production update",
+    subject: "Your Crelavo production has an update",
+    audience: "Active production users",
+    body: "Hi {{name}},\n\nYour production has a new update. Please check the dashboard for the latest status, delivery link or next action.\n\nIf anything looks wrong, reply and we will review it.",
+    smokeStep: "Send one status-update test email and confirm the dashboard call-to-action and support fallback are readable."
+  },
+  {
+    label: "Partner approval",
+    subject: "Your Crelavo partner application update",
+    audience: "Affiliate / partner applicants",
+    body: "Hi {{name}},\n\nYour partner application has been reviewed. Please check your partner dashboard or reply if you need any payout detail updates.\n\nCommission remains subject to refund and payout rules.",
+    smokeStep: "Send one partner review email and confirm referral / payout wording matches the current policy."
+  },
+  {
+    label: "Refund / policy",
+    subject: "Crelavo refund and cancellation policy reminder",
+    audience: "Support / finance follow-up",
+    body: "Hi {{name}},\n\nThis email summarizes the refund and cancellation rules for your current package. Please review the policy and the dashboard notes before replying.\n\nIf you need a manual review, reply to this message.",
+    smokeStep: "Send one policy reminder email and confirm the refund wording matches the public refund policy."
+  }
+];
+
+const resendSmokeChecklist = [
+  "Verify RESEND_API_KEY exists in the active environment.",
+  "Verify SUPPORT_FROM_EMAIL and SUPPORT_EMAIL are valid and branded.",
+  "Confirm SPF, DKIM and DMARC are verified for the sender domain.",
+  "Send one welcome email to an internal test inbox.",
+  "Send one payment receipt email and confirm receipt wording.",
+  "Send one production update email and confirm the support fallback.",
+  "Send one partner approval email and confirm commission/payout wording.",
+  "Send one refund policy reminder email and confirm policy language.",
+  "Check that all links, reply-to details and subjects render correctly in the inbox.",
+  "Record the test inbox addresses and results in the admin notes before launch."
+];
+
 function hasEnv(name: string) {
   const value = process.env[name];
   return Boolean(value && !value.includes("TODO") && !value.includes("your_") && !value.includes("change_me"));
@@ -176,6 +235,8 @@ export function buildFinalApiChecklist() {
       "Live domain redirects, auth callbacks and Search Console verification.",
       "Real AI/video provider success path."
     ],
+    resendEmailTemplates,
+    resendSmokeChecklist,
     groups: groupsWithStatus
   };
 }

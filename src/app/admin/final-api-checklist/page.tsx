@@ -101,6 +101,25 @@ export default function FinalApiChecklistPage() {
         </div>
       </section>
 
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Resend email templates</span>
+        <h2>Prepared message templates and smoke checklist</h2>
+        <p style={{ color: "var(--muted)" }}>Use these templates for the first live Resend smoke pass. Send each one to an internal test inbox before using bulk or user-facing email actions.</p>
+        <div className="admin-category-grid">
+          {checklist.resendEmailTemplates.map((template) => (
+            <div className="card admin-category-card" key={template.label}>
+              <span className="badge">{template.audience}</span>
+              <h3>{template.label}</h3>
+              <p><strong>Subject:</strong> {template.subject}</p>
+              <p style={{ whiteSpace: "pre-line" }}>{template.body}</p>
+              <p className="workspace-action-note">{template.smokeStep}</p>
+            </div>
+          ))}
+        </div>
+        <h3 style={{ marginTop: 16 }}>Resend smoke checklist</h3>
+        <ul>{checklist.resendSmokeChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
       <section className="launch-readiness-grid" style={{ marginTop: 20 }}>
         {checklist.groups.map((group) => (
           <article className="card admin-category-card launch-readiness-group" key={group.title}>

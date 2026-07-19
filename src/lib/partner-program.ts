@@ -292,6 +292,28 @@ export const partnerLaunchChecklist = [
   "Keep Lemon out of partner launch flow until all Whop and growth work is complete"
 ];
 
+export const partnerManualOperationQueues = [
+  { queue: "New applications", owner: "Admin", action: "Review channel fit, audience quality, content examples and promotion risk before approval.", exit: "approve, reject or request more details" },
+  { queue: "Approved but no code", owner: "Admin", action: "Assign partner code, create main/affiliate/Growth Intelligence links and send creator asset pack.", exit: "partner has code and safe launch copy" },
+  { queue: "First referred signup", owner: "Admin", action: "Record referred user, source URL, UTM/ref code, signup date and whether the user started production.", exit: "signup linked to partner record" },
+  { queue: "Paid conversion review", owner: "Finance", action: "Verify Whop payment reference, package, amount, refund risk and duplicate payment reference before adding commission.", exit: "commission is pending_30_day_hold or rejected" },
+  { queue: "Payout review", owner: "Finance", action: "After 30-day hold, confirm no refund/cancel/chargeback, minimum payout reached and payout details verified.", exit: "payable, held, rejected or needs bank update" },
+  { queue: "Partner support", owner: "Support", action: "Keep payout questions, bank detail changes and campaign requests outside normal customer support noise.", exit: "admin note updated and next action assigned" }
+];
+
+export const partnerManualOperationChecklist = [
+  "Check partner application source, channel URL and audience before approval.",
+  "Send approval/rejection/bank-info email using the prepared partner templates.",
+  "Create or confirm partner code and referral links before the partner promotes Crelavo.",
+  "For every paid conversion, record partner code, customer email, package, amount, Whop payment reference and payout window.",
+  "Reject duplicate payment references and purchases outside the attribution window.",
+  "Keep every commission pending for 30 days before payout review.",
+  "Void commission for refunded, cancelled, chargebacked, unpaid, fraud or abuse-flagged purchases.",
+  "Verify payout method, payout email, account holder and bank details before any manual payout.",
+  "Add finance/admin notes for every manual override, payout hold or rejected commission.",
+  "Run one full manual path before scaling outreach: partner click → signup → paid purchase → ledger → 30-day hold → payout review."
+];
+
 export const partnerWhopOptimizationPlan = [
   {
     title: "Whop source metadata capture",

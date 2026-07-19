@@ -5,7 +5,7 @@ import { PartnerApplicationStatusActions } from "@/components/PartnerApplication
 import { PartnerCommissionSimulator } from "@/components/PartnerCommissionSimulator";
 import { PartnerCommissionStatusActions } from "@/components/PartnerCommissionStatusActions";
 import { PartnerPayoutDetailsForm } from "@/components/PartnerPayoutDetailsForm";
-import { calculatePartnerCommission, partnerApiVisibilityRoadmap, partnerApplicationFields, partnerAssets, partnerChannelPriority, partnerCommissionDefaults, partnerCommissionTiers, partnerCreatorAssetPack, partnerEmailCampaignTemplates, partnerInboxRoutingRules, partnerLaunchChecklist, partnerLaunchSequence, partnerPackageCommissionRules, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerPerformanceSummary, partnerProgramPolicy, partnerPurchaseAttribution, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerStatusCommissionAdjustments, partnerWhopOptimizationPlan, samplePartnerApplications } from "@/lib/partner-program";
+import { calculatePartnerCommission, partnerApiVisibilityRoadmap, partnerApplicationFields, partnerAssets, partnerChannelPriority, partnerCommissionDefaults, partnerCommissionTiers, partnerCreatorAssetPack, partnerEmailCampaignTemplates, partnerInboxRoutingRules, partnerLaunchChecklist, partnerLaunchSequence, partnerManualOperationChecklist, partnerManualOperationQueues, partnerPackageCommissionRules, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerPerformanceSummary, partnerProgramPolicy, partnerPurchaseAttribution, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerStatusCommissionAdjustments, partnerWhopOptimizationPlan, samplePartnerApplications } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -404,6 +404,24 @@ export default async function AdminPartnersPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Manual partner operations</span>
+        <h2>Daily manual workflow before referral and payout automation</h2>
+        <p style={{ color: "var(--muted)" }}>Use these queues while Whop attribution, commission automation and payout provider setup are still manual. Every partner case should have a clear owner, action and exit status.</p>
+        <div className="admin-category-grid">
+          {partnerManualOperationQueues.map((queue) => (
+            <div className="card admin-category-card" key={queue.queue}>
+              <span className="badge">{queue.owner}</span>
+              <h3>{queue.queue}</h3>
+              <p>{queue.action}</p>
+              <p className="workspace-action-note"><strong>Exit:</strong> {queue.exit}</p>
+            </div>
+          ))}
+        </div>
+        <h3 style={{ marginTop: 16 }}>Manual operation checklist</h3>
+        <ul>{partnerManualOperationChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
