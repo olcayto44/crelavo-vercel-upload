@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/AdminShell";
-import { buildManualE2EChecklist } from "@/lib/manual-e2e-checklist";
+import { adminSupportedDeliveryTemplates, buildManualE2EChecklist, longVideoHighlightManualFlow, whopLiveTestPrepNotes } from "@/lib/manual-e2e-checklist";
 
 function statusLabel(status: string) {
   if (status === "pass") return "PASS";
@@ -87,6 +87,42 @@ export default function ManualE2EChecklistPage() {
             {checklist.acceptance.finalApi.map((entry) => <p key={entry}>{entry}</p>)}
           </div>
         </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">MVP delivery templates</span>
+        <h2>Admin-supported delivery templates for new MVP feature tools</h2>
+        <p style={{ color: "var(--muted)" }}>Use these templates when the feature is live as an admin-supported/manual MVP before full provider automation.</p>
+        <div className="admin-category-grid">
+          {adminSupportedDeliveryTemplates.map((template) => (
+            <div className="card admin-category-card" key={template.title}>
+              <span className="badge">API needed: {template.apiNeeded}</span>
+              <h3>{template.title}</h3>
+              <p><strong>Admin action:</strong> {template.adminAction}</p>
+              <p><strong>Deliverable:</strong> {template.deliverable}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Long video highlight MVP</span>
+        <h2>Manual request flow before scene-detection automation</h2>
+        <div className="admin-category-grid">
+          {longVideoHighlightManualFlow.map((entry) => (
+            <div className="card admin-category-card" key={entry.step}>
+              <span className="badge">{entry.owner}</span>
+              <h3>{entry.step}</h3>
+              <p>{entry.action}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Whop live payment prep</span>
+        <h2>Payment and subscription test notes before live smoke</h2>
+        <ul>{whopLiveTestPrepNotes.map((note) => <li key={note}>{note}</li>)}</ul>
       </section>
 
       <section className="launch-readiness-grid" style={{ marginTop: 20 }}>

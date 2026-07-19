@@ -432,6 +432,31 @@ export const alternativePages: AlternativePage[] = [
       { question: "Why compare Crelavo with Jasper AI?", answer: "Users searching for Jasper alternatives often need marketing content. Crelavo expands that into campaign production assets." }
     ],
     relatedSlugs: ["adcreative-ai-alternative", "canva-alternative", "product-video-generator-alternative"]
+  },
+  {
+    slug: "best-ai-production-studio-alternatives",
+    competitor: "AI production studio tools",
+    category: "AI production studio",
+    title: "Best AI production studio alternatives",
+    metaTitle: "Best AI Production Studio Alternatives for Video, Websites and Campaign Assets | Crelavo",
+    metaDescription: "Explore the best AI production studio alternatives for websites, apps, product videos, ecommerce campaigns, ad creative and managed creative delivery.",
+    h1: "Best AI production studio alternatives for video, websites, apps and campaign assets",
+    summary: "This page captures users searching for the best AI production studio alternatives and routes them toward Crelavo's managed production paths for video, websites, apps, ecommerce campaigns and delivery-ready files.",
+    bestFor: "teams that want a broader production studio instead of a single-purpose AI tool",
+    competitorFit: "AI production studio tools often focus on one output type, editor, or workflow surface.",
+    crelavoFit: "Crelavo combines campaign production, video, websites, apps, brand kits, ecommerce workflows and managed delivery in one system.",
+    primaryKeyword: "best AI production studio alternatives",
+    secondaryKeywords: ["AI production studio alternative", "managed AI production studio", "AI video website campaign studio", "ecommerce production studio alternative"],
+    h2Sections: [
+      { title: "What users expect from a production studio", body: "Visitors searching this phrase usually need more than a generator. They want campaign outputs, source files, page direction, revision support and a clean delivery path.", bullets: ["Product videos and ad assets", "Website and landing page production", "Source ZIP and README delivery"] },
+      { title: "Why Crelavo fits this search intent", body: "Crelavo covers the broader workflow: request intake, campaign direction, production package selection, delivery notes and admin-supported handoff. That makes it a stronger fit than a narrow editor or single-purpose generator.", bullets: ["Campaign category routing", "Admin-assisted delivery flow", "Video, website and app outputs"] }
+    ],
+    comparison: commonComparison("AI production studio tools"),
+    faq: [
+      { question: "Is Crelavo only a video tool?", answer: "No. Crelavo is a wider production studio for video, websites, apps, ecommerce campaigns, visuals and delivery workflows." },
+      { question: "Why use this page for SEO?", answer: "It captures high-intent visitors comparing production studio tools and sends them into a managed Crelavo request path." }
+    ],
+    relatedSlugs: ["canva-alternative", "runway-alternative", "product-video-generator-alternative"]
   }
 ];
 
@@ -453,5 +478,6 @@ export const alternativeHubKeywords = [
   "AI product video generator alternative",
   "AI website builder alternative",
   "ecommerce campaign generator alternative",
-  "AI ad creative alternative"
+  "AI ad creative alternative",
+  "best AI production studio alternatives"
 ];

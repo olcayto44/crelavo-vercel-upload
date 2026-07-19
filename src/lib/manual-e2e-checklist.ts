@@ -26,6 +26,62 @@ function groupSummary(items: ManualE2EItem[]) {
   };
 }
 
+export const adminSupportedDeliveryTemplates = [
+  {
+    title: "AI Ad Performance Score Checker delivery",
+    adminAction: "Prepare one short score report, one hook rewrite note and one clear next-step recommendation.",
+    deliverable: "Score summary, weak points, suggested hook improvements and a route into the paid production flow.",
+    apiNeeded: 0
+  },
+  {
+    title: "AI Virtual Model Studio delivery",
+    adminAction: "Choose one product angle, one model style and one catalog-ready output set.",
+    deliverable: "Model image pack, product visual direction and campaign-ready handoff notes.",
+    apiNeeded: 1
+  },
+  {
+    title: "AI Cultural Localization delivery",
+    adminAction: "Write one country brief, one localized hook set and one CTA adaptation note.",
+    deliverable: "Localized brief, rewritten copy, visual adaptation notes and market-specific campaign outline.",
+    apiNeeded: 1
+  },
+  {
+    title: "AI Campaign Calendar delivery",
+    adminAction: "Select one seasonal event, one product launch path and one hook calendar week.",
+    deliverable: "Campaign timeline, hook calendar, seasonal asset checklist and production plan.",
+    apiNeeded: 0
+  },
+  {
+    title: "Crelavo Academy delivery",
+    adminAction: "Assign one lesson path, one template pack and one next-step production request.",
+    deliverable: "Lesson path, template pack and optional paid production brief.",
+    apiNeeded: 0
+  },
+  {
+    title: "Community Showcase delivery",
+    adminAction: "Approve one public example, one template reuse angle and one similar-style route.",
+    deliverable: "Approved showcase item, similar-style guidance and reuse-ready request prompt.",
+    apiNeeded: 0
+  }
+];
+
+export const longVideoHighlightManualFlow = [
+  { step: "Upload long source", owner: "User", action: "Add the full video and describe whether the goal is scary, funny, high-retention or highlight-only clips." },
+  { step: "Admin pre-review", owner: "Admin", action: "Check source length, language, target clips and whether the request is one-off or recurring." },
+  { step: "Highlight selection", owner: "Admin", action: "Mark the best scenes, hooks or emotional beats manually before any provider automation is used." },
+  { step: "Subtitle and delivery notes", owner: "Admin", action: "Prepare short clip notes, subtitle expectations and social cut instructions for the final handoff." },
+  { step: "Final delivery", owner: "Admin", action: "Deliver the clip plan, source timestamps and export notes while provider/API automation is still pending." }
+];
+
+export const whopLiveTestPrepNotes = [
+  "Use one real test product or subscription path only after the final env checklist is clear.",
+  "Keep one test inbox and one test user account ready before payment testing.",
+  "Record the Whop payment reference, package name, amount, billing interval and user email for every test.",
+  "Check admin finance, user ledger and production ledger after every successful payment.",
+  "Verify refund, cancellation and subscription events before marking the test pass.",
+  "Do not start live testing until direct checkout or API checkout settings are confirmed in the final API checklist."
+];
+
 export function buildManualE2EChecklist() {
   const groups: ManualE2EGroup[] = [
     {
