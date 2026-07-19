@@ -236,7 +236,7 @@ export default async function HomePage() {
               return (
                 <div className="card admin-category-card production-pricing-card" key={page.slug}>
                   <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
-                    <video className="sample-card-video" src={featurePreviewVideo(page.slug)} muted loop playsInline preload="metadata" />
+                    <video className="sample-card-video" src={featurePreviewVideo(page.slug)} muted loop playsInline preload="none" />
                     <small>{page.badge}</small>
                     <strong>Preview</strong>
                   </div>

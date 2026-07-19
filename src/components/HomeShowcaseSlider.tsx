@@ -35,7 +35,8 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
                     className="showcase-art-image"
                     src={slide.imageUrl}
                     alt={duplicate ? "" : `Crelavo ${slide.kicker} showcase preview for ${slide.title}`}
-                    loading={index < slides.length ? "eager" : "lazy"}
+                    loading={index < 2 ? "eager" : "lazy"}
+                    fetchPriority={index === 0 ? "high" : "auto"}
                     decoding="async"
                   />
                 ) : <div className="showcase-art-fallback" aria-hidden="true" />}

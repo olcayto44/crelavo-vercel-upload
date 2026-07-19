@@ -3096,6 +3096,12 @@ body.admin-route > .site-footer {
   object-fit: cover;
   opacity: .86;
 }
+.sample-card-static-fallback {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34,211,238,.55), transparent 30%),
+    radial-gradient(circle at 80% 10%, rgba(168,85,247,.45), transparent 32%),
+    linear-gradient(135deg, #0f172a, #1e293b 55%, #312e81);
+}
 .sample-video-preview-cinematic::after {
   content: "";
   position: absolute;

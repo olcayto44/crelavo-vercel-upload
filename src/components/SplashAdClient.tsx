@@ -19,6 +19,8 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
   useEffect(() => {
     if (slot.status !== "active" || !slot.code.trim()) return;
 
+    if (window.matchMedia("(max-width: 768px)").matches) return;
+
     const storageKey = `clipora-splash-${todayKey()}`;
     const timer = window.setTimeout(() => {
       try {
@@ -29,7 +31,7 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
         // If storage is blocked, still show the active splash slot instead of hiding it.
       }
       setVisible(true);
-    }, 500);
+    }, 2200);
     return () => window.clearTimeout(timer);
   }, [slot]);
 

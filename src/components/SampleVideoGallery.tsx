@@ -57,6 +57,15 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
     return typeof limit === "number" ? filtered.slice(0, limit) : filtered;
   }, [category, limit, videos]);
   const [items, setItems] = useState<SampleVideo[]>(baseItems);
+  const [allowVideoPreview, setAllowVideoPreview] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px) and (prefers-reduced-motion: no-preference)");
+    const updatePreviewMode = () => setAllowVideoPreview(query.matches);
+    updatePreviewMode();
+    query.addEventListener("change", updatePreviewMode);
+    return () => query.removeEventListener("change", updatePreviewMode);
+  }, []);
 
   useEffect(() => {
     setItems(shuffleOnLoad ? shuffleSamples(baseItems) : baseItems);
@@ -76,9 +85,13 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
       </div>
       <div className="sample-video-grid sample-video-grid-cinematic">
         {items.map((item, index) => (
-          <Link className="sample-video-card sample-video-card-cinematic" href={`/samples/${item.id}`} key={item.id} onMouseEnter={playPreview} onMouseLeave={pausePreview}>
+          <Link className="sample-video-card sample-video-card-cinematic" href={`/samples/${item.id}`} key={item.id} onMouseEnter={allowVideoPreview ? playPreview : undefined} onMouseLeave={allowVideoPreview ? pausePreview : undefined}>
             <div className="sample-video-preview sample-video-preview-cinematic">
-              <video className="sample-card-video" src={samplePreviewUrl(item, index)} muted loop playsInline preload="metadata" poster={item.thumbnailUrl} />
+              {allowVideoPreview ? (
+                <video className="sample-card-video" src={samplePreviewUrl(item, index)} muted loop playsInline preload="none" poster={item.thumbnailUrl} />
+              ) : item.thumbnailUrl ? (
+                <img className="sample-card-video" src={item.thumbnailUrl} alt={`${item.title} static preview`} loading="lazy" decoding="async" />
+              ) : <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />}
               <span className="sample-video-play"><PlayCircle size={34} /></span>
               <small>{item.category}</small>
               <strong>{item.title}</strong>
