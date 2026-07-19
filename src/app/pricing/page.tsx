@@ -5,7 +5,7 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
 import { productionPackageHref } from "@/lib/assistant-links";
 import { dronePurchasePackages, growthIntelligencePlans, liveSalesServicePlans, packages, topUpPackages } from "@/lib/data";
-import { productionCreditGuide } from "@/lib/pricing";
+import { creditCalculatorExamples, productionCreditGuide, quickCreditMath } from "@/lib/pricing";
 import { productionPackages, productionTypes } from "@/lib/production";
 import { PricingStructuredData } from "@/components/PricingStructuredData";
 
@@ -106,6 +106,38 @@ export default async function PricingPage() {
             </p>
           </div>
           <div className="promo-corner-slot pricing-promo-slot"><CampaignPromoSlot /></div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">Credit calculator</span>
+          <h2>Estimate credits before starting production</h2>
+          <p className="section-lead">
+            Use these simple examples to understand the usual credit range before opening a production request. Final reserved credits can still change when a project needs extra scenes, source delivery, voice, subtitles, revisions or premium quality.
+          </p>
+          <div className="admin-info-grid">
+            {quickCreditMath.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.result}</strong>
+                <small>{item.math} credits/sec estimate</small>
+              </div>
+            ))}
+          </div>
+          <div className="admin-category-grid" style={{ marginTop: 18 }}>
+            {creditCalculatorExamples.map((item) => (
+              <Link className="card admin-category-card" href={item.href} key={item.title}>
+                <span className="badge">Estimated usage</span>
+                <h3>{item.title}</h3>
+                <p><strong>{item.estimate}</strong></p>
+                <p>{item.bestFor}</p>
+                <small>{item.nextStep}</small>
+              </Link>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/assistant-workspace?idea=Estimate%20my%20credits%20before%20production">Estimate my project</Link>
+            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Start with free ad score</Link>
+          </div>
         </section>
 
         <section className="pricing-delivery-section" style={{ marginTop: 28 }}>
