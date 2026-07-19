@@ -2,7 +2,7 @@ import { Boxes, Clapperboard, Grid3X3, Image, Layers3, MonitorPlay, Plane, Radio
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
-import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
+import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
@@ -13,14 +13,6 @@ import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { categoryShowcaseItems, featureShowcaseItems } from "@/lib/showcase-items";
-
-const platformHighlights = [
-  "Campaigns",
-  "AI Agents",
-  "Video & MV",
-  "Web / App / SaaS",
-  "Brand & Files"
-];
 
 const homepageGoalWizard = [
   {
@@ -149,19 +141,7 @@ export default async function HomePage() {
         <div className="page-with-rails">
           <aside className="ad-rail ad-rail-left"><AdSlot slotId="left-rail" /></aside>
           <aside className="ad-rail ad-rail-right"><AdSlot slotId="right-rail" /></aside>
-          <section className="container section home-section-tight clean-feed-section home-platform-hero">
-            <div>
-            <span className="badge"><Sparkles size={16} /> Crelavo — AI production studio for websites, apps, e-commerce and campaigns</span>
-            <h1>Launch websites, apps and product campaigns from one AI production studio.</h1>
-            <p>
-              Turn ideas, briefs, Shopify, Amazon or Trendyol product links into AI + human QA reviewed websites, mobile apps, e-commerce assets, ad videos, visuals, voice-over content and campaign-ready delivery packages.
-            </p>
-            <div className="home-highlight-row">
-              {platformHighlights.map((item, index) => <span key={item}>{index > 0 ? " • " : ""}{item}</span>)}
-            </div>
-            </div>
-            <div className="promo-corner-slot"><CampaignPromoSlot /></div>
-          </section>
+          <CrelavoPremiumHero />
 
           <section className="container section home-section-tight clean-feed-section home-goal-wizard" aria-labelledby="home-goal-wizard-heading">
             <div className="sample-video-head home-goal-wizard-head">
