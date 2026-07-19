@@ -3102,6 +3102,13 @@ body.admin-route > .site-footer {
     radial-gradient(circle at 80% 10%, rgba(168,85,247,.45), transparent 32%),
     linear-gradient(135deg, #0f172a, #1e293b 55%, #312e81);
 }
+.sample-card-video-layer {
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.sample-video-card-cinematic:hover .sample-card-video-layer {
+  opacity: .86;
+}
 .sample-video-preview-cinematic::after {
   content: "";
   position: absolute;

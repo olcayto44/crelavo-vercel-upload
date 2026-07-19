@@ -87,11 +87,12 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
         {items.map((item, index) => (
           <Link className="sample-video-card sample-video-card-cinematic" href={`/samples/${item.id}`} key={item.id} onMouseEnter={allowVideoPreview ? playPreview : undefined} onMouseLeave={allowVideoPreview ? pausePreview : undefined}>
             <div className="sample-video-preview sample-video-preview-cinematic">
-              {allowVideoPreview ? (
-                <video className="sample-card-video" src={samplePreviewUrl(item, index)} muted loop playsInline preload="none" poster={item.thumbnailUrl} />
-              ) : item.thumbnailUrl ? (
-                <img className="sample-card-video" src={item.thumbnailUrl} alt={`${item.title} static preview`} loading="lazy" decoding="async" />
+              {item.thumbnailUrl ? (
+                <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={`${item.title} static preview`} loading="lazy" decoding="async" />
               ) : <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />}
+              {allowVideoPreview ? (
+                <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="metadata" poster={item.thumbnailUrl} />
+              ) : null}
               <span className="sample-video-play"><PlayCircle size={34} /></span>
               <small>{item.category}</small>
               <strong>{item.title}</strong>
