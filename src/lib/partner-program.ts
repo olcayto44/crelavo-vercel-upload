@@ -106,7 +106,7 @@ export const partnerPackageCommissionRules = [
     note: "Highest launch default is 30%. Recurring is off at launch; admin can manually review Growth Intelligence recurring later."
   },
   {
-    packageGroup: "High-cost managed delivery / custom production",
+    packageGroup: "High-cost AI + Human QA delivery / custom production",
     examplePackages: ["Custom app", "managed SaaS build", "heavy provider/API usage", "enterprise custom work"],
     marginProfile: "high labor or provider cost",
     defaultPercent: 15,

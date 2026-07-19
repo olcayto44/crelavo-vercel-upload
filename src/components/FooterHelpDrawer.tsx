@@ -11,11 +11,11 @@ const drawerContent: Record<DrawerKey, { title: string; badge: string; intro: st
   faq: {
     title: "Frequently Asked Questions",
     badge: "Quick answers",
-    intro: "Short answers about Crelavo production, credits, delivery and managed AI workflows.",
+    intro: "Short answers about Crelavo production, credits, delivery and AI + human QA workflows.",
     items: [
-      { question: "What does Crelavo produce?", answer: "Crelavo starts managed production requests for websites, apps, e-commerce campaigns, AI videos, avatars, visuals, brand kits, documents and product-link campaigns." },
+      { question: "What does Crelavo produce?", answer: "Crelavo starts AI + human QA production requests for websites, apps, e-commerce campaigns, AI videos, avatars, visuals, brand kits, documents and product-link campaigns." },
       { question: "Can I start from a product link?", answer: "Yes. Shopify, Amazon, Trendyol, WooCommerce or direct product links can be used to prepare product ads, marketplace assets, captions, visual sets and campaign packages." },
-      { question: "Is it only a video generator?", answer: "No. Crelavo is positioned as a broader AI production studio for digital products, campaigns, media, creative assets and managed delivery." },
+      { question: "Is it only a video generator?", answer: "No. Crelavo is positioned as a broader AI production studio for digital products, campaigns, media, creative assets and expert-reviewed delivery." },
       { question: "Where do final files appear?", answer: "Production outputs, previews, delivery links, ZIP files, source notes and revision information are organized in the user dashboard." }
     ]
   },
@@ -24,7 +24,7 @@ const drawerContent: Record<DrawerKey, { title: string; badge: string; intro: st
     badge: "Simple rules",
     intro: "Crelavo is for safe, commercial and publishable production requests.",
     items: [
-      { question: "What can users request?", answer: "Users can request websites, app screens, campaigns, product-link ads, visuals, brand kits, videos, voice-over content and managed creative packages." },
+      { question: "What can users request?", answer: "Users can request websites, app screens, campaigns, product-link ads, visuals, brand kits, videos, voice-over content and AI + human QA creative packages." },
       { question: "What should requests include?", answer: "A clear product link, brief, target platform, language, format, audience and delivery expectation helps the system reserve credits and route the production correctly." },
       { question: "What is not allowed?", answer: "Illegal, unsafe, explicit, harmful, misleading or non-commercially publishable requests are not supported." }
     ]

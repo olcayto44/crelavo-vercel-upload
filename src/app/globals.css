@@ -1009,6 +1009,137 @@ body.admin-route > .site-footer {
   line-height: 1;
 }
 
+.home-goal-wizard {
+  background:
+    radial-gradient(circle at 12% 5%, #22d3ee30, transparent 34%),
+    radial-gradient(circle at 86% 10%, #a855f72d, transparent 36%),
+    linear-gradient(135deg, #0f172af5, #111827e8 58%, #020617f5);
+  border: 1px solid #7dd3fc40;
+  box-shadow: 0 28px 90px #0000004d, 0 0 0 1px #ffffff0b inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-goal-wizard::before {
+  content: "";
+  background: linear-gradient(90deg, transparent, #ffffff26, transparent);
+  width: 45%;
+  height: 1px;
+  position: absolute;
+  top: 0;
+  left: 8%;
+}
+
+.home-goal-wizard-head {
+  align-items: center;
+}
+
+.home-goal-qa-badge {
+  color: #022c22;
+  background: linear-gradient(135deg, #bbf7d0, #67e8f9);
+  border-color: #ffffff80;
+  box-shadow: 0 12px 36px #22d3ee30;
+}
+
+.home-goal-wizard-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+  display: grid;
+}
+
+.home-goal-card {
+  color: #fff;
+  text-decoration: none;
+  background: linear-gradient(145deg, #ffffff1f, #ffffff0b);
+  border: 1px solid #ffffff2e;
+  border-radius: 28px;
+  min-height: 245px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 56px #00000038;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.home-goal-card::before {
+  content: "";
+  background: radial-gradient(circle, #ffffff42, transparent 62%);
+  width: 160px;
+  height: 160px;
+  position: absolute;
+  top: -58px;
+  right: -54px;
+}
+
+.home-goal-card:hover {
+  border-color: #7dd3fcaa;
+  box-shadow: 0 28px 80px #38bdf844;
+  transform: translateY(-5px);
+}
+
+.home-goal-card-1 { background: linear-gradient(145deg, #0f766e66, #0f172a 68%); }
+.home-goal-card-2 { background: linear-gradient(145deg, #7c3aed66, #0f172a 68%); }
+.home-goal-card-3 { background: linear-gradient(145deg, #ea580c66, #0f172a 68%); }
+
+.home-goal-step {
+  color: #0f172a;
+  background: #f8fafc;
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 950;
+  box-shadow: 0 10px 26px #00000038;
+  margin-bottom: 16px;
+}
+
+.home-goal-card h3 {
+  letter-spacing: -.04em;
+  margin: 14px 0 10px;
+  font-size: clamp(24px, 2.7vw, 34px);
+  line-height: 1.02;
+}
+
+.home-goal-card p {
+  color: #dbeafe;
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.home-goal-cta {
+  color: #0f172a;
+  background: #fff;
+  border-radius: 999px;
+  width: fit-content;
+  margin-top: auto;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+@media (max-width: 900px) {
+  .home-goal-wizard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-goal-card {
+    min-height: auto;
+  }
+
+  .sample-video-head.home-goal-wizard-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .home-goal-qa-badge {
+    width: fit-content;
+  }
+}
+
 .home-service-seo-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;

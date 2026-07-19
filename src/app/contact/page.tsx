@@ -12,7 +12,7 @@ const contactCards = [
   },
   {
     title: "Project and package questions",
-    body: "For websites, mobile apps, SaaS panels, e-commerce campaigns, AI videos, voice, brand kits, and managed delivery requests, start a structured brief in the assistant workspace.",
+    body: "For websites, mobile apps, SaaS panels, e-commerce campaigns, AI videos, voice, brand kits, and AI + human QA requests, start a structured brief in the assistant workspace.",
     href: "/dashboard/assistant-workspace",
     label: "Start a brief"
   },
@@ -35,7 +35,7 @@ export default async function ContactPage() {
           <span className="badge">Contact</span>
           <h1>Contact Crelavo</h1>
           <p>
-            Reach the right Crelavo support path for production delivery, account help, managed creative requests, and launch preparation.
+            Reach the right Crelavo support path for production delivery, account help, AI + human QA creative requests, and launch preparation.
           </p>
           <div className="button-nav" style={{ marginTop: 18 }}>
             <Link className="btn" href="/dashboard/assistant-workspace">Start production</Link>
@@ -46,7 +46,7 @@ export default async function ContactPage() {
         <section className="card" style={{ marginTop: 24 }}>
           <h2>Send a contact request</h2>
           <p style={{ color: "var(--muted)" }}>
-            Fill out the form below for support, launch, account, or managed delivery questions. The security check helps block automated spam submissions.
+            Fill out the form below for support, launch, account, or AI + human QA delivery questions. The security check helps block automated spam submissions.
           </p>
           <ContactForm />
         </section>

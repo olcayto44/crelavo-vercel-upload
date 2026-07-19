@@ -11,7 +11,7 @@ void smokeGuardIdeaTerms;
 
 export const metadata: Metadata = {
   title: "Crelavo Blog / Content — AI Production, Websites, Apps and Product Campaigns",
-  description: "Explore Crelavo content about AI production studio workflows, AI website production, AI app production, e-commerce campaign production, Shopify product link ads, Amazon product campaigns, Trendyol product videos, AI avatar video, AI voice-over and managed creative delivery.",
+  description: "Explore Crelavo content about AI production studio workflows, AI website production, AI app production, e-commerce campaign production, Shopify product link ads, Amazon product campaigns, Trendyol product videos, AI avatar video, AI voice-over and AI + human QA delivery.",
   alternates: { canonical: "/blog" },
   openGraph: {
     title: "Crelavo Blog / Content — AI Production, Websites, Apps and Product Campaigns",
@@ -117,9 +117,9 @@ export default async function BlogPage() {
       <main className="container section blog-article-page">
         <section className="blog-hero-panel">
           <span className="badge">Blog / Content</span>
-          <h1>AI production insights for websites, apps, e-commerce campaigns and managed creative delivery.</h1>
+          <h1>AI production insights for websites, apps, e-commerce campaigns and AI + human QA delivery.</h1>
           <p className="section-lead">
-            {renderLinkedText("Crelavo is a global AI production studio for teams that need AI website production, AI app production, e-commerce campaign production, Shopify product link ads, Amazon product campaigns, Trendyol product videos, AI avatar video, AI voice-over, brand kit production and managed creative delivery from one structured workspace.", heroLinkedKeywords)}
+            {renderLinkedText("Crelavo is a global AI production studio for teams that need AI website production, AI app production, e-commerce campaign production, Shopify product link ads, Amazon product campaigns, Trendyol product videos, AI avatar video, AI voice-over, brand kit production and AI + human QA delivery from one structured workspace.", heroLinkedKeywords)}
           </p>
           <div className="url-action-center blog-hero-actions">
             <Link className="btn" href="/dashboard/assistant-workspace">Start production</Link>
@@ -228,7 +228,7 @@ export default async function BlogPage() {
           <span className="badge">Production coverage</span>
           <h2>What Crelavo covers</h2>
           <p>
-            {renderLinkedText("The content hub connects practical search intent with real production categories: AI production studio, AI marketing campaigns, AI e-commerce campaign generator, product link to ad video, AI video ads, AI website production, AI app production, brand kit production, AI avatar video, self-in-video, multi-person talking video, regional clothing, local accent, dialect voice, AI voice-over, motion graphics, 2D animation, 3D animation, stickman animation, anime short film, short drama, cinematic video, drone satellite video, map to video, route flyover video, AI image generation, visual style clone, free AI tools, Growth Intelligence and managed creative delivery.", coverageLinkedKeywords)}
+            {renderLinkedText("The content hub connects practical search intent with real production categories: AI production studio, AI marketing campaigns, AI e-commerce campaign generator, product link to ad video, AI video ads, AI website production, AI app production, brand kit production, AI avatar video, self-in-video, multi-person talking video, regional clothing, local accent, dialect voice, AI voice-over, motion graphics, 2D animation, 3D animation, stickman animation, anime short film, short drama, cinematic video, drone satellite video, map to video, route flyover video, AI image generation, visual style clone, free AI tools, Growth Intelligence and AI + human QA delivery.", coverageLinkedKeywords)}
           </p>
           <div className="category-option-row" aria-label="Organic keyword coverage">
             {organicKeywordCoverage.map((keyword) => <small key={keyword}>{keyword}</small>)}

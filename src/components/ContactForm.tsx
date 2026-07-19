@@ -7,7 +7,7 @@ type State = "idle" | "loading" | "success" | "error";
 const topics = [
   "Production support",
   "Account or credit help",
-  "Managed delivery request",
+  "AI + Human QA request",
   "Partnership or launch question",
   "Security or login issue"
 ];

@@ -6,7 +6,7 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
   title: "AI Tool Alternatives for Video, Website, Ecommerce and Campaigns | Crelavo",
-  description: "Compare Crelavo with popular AI tools and discover alternatives for AI product videos, ecommerce campaigns, website production, ad creative, social assets and managed delivery.",
+  description: "Compare Crelavo with popular AI tools and discover alternatives for AI product videos, ecommerce campaigns, website production, ad creative, social assets and AI + human QA delivery.",
   keywords: alternativeHubKeywords,
   alternates: { canonical: "/alternatives" },
   openGraph: {
@@ -35,7 +35,7 @@ export default async function AlternativesPage() {
           <span className="badge">AI tool alternatives</span>
           <h1>Crelavo alternatives for AI video, ecommerce campaigns, websites and creative production</h1>
           <p className="section-lead">
-            Compare Crelavo with popular AI tools and find the right path for product videos, Shopify/Amazon/Trendyol campaigns, website production, app concepts, ad creative, social assets and managed delivery.
+            Compare Crelavo with popular AI tools and find the right path for product videos, Shopify/Amazon/Trendyol campaigns, website production, app concepts, ad creative, social assets and AI + human QA delivery.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/dashboard/assistant-workspace">Start a Crelavo request</Link>

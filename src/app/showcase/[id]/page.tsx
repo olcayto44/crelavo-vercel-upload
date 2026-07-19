@@ -29,7 +29,7 @@ function buildShowcaseKeywords(item: { title: string; description: string; longD
       "AI video production samples",
       "website and app production samples",
       "ecommerce campaign samples",
-      "managed creative delivery examples"
+      "AI human QA delivery examples"
     ];
   }
 
@@ -50,7 +50,7 @@ function buildShowcaseKeywords(item: { title: string; description: string; longD
       "production workspace demo",
       "asset library showcase",
       "assistant workflow example",
-      "managed delivery workflow",
+      "AI human QA delivery workflow",
       "project tracking preview"
     ];
   }

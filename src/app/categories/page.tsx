@@ -86,7 +86,7 @@ export default async function CategoriesPage() {
             <span className="badge">Production categories</span>
             <h1>AI production categories for video, websites, apps, ecommerce campaigns and brand assets</h1>
             <p className="section-lead">
-              Crelavo is now a broader AI production platform: AI video generator workflows, AI website builder pages, AI app production, Shopify/Amazon/Trendyol ecommerce campaigns, Text-to-Campaign, AI Agents, Global Localization, visuals, brand kits, document packs and admin-panel projects can all start from one managed request.
+              Crelavo is now a broader AI production platform: AI video generator workflows, AI website builder pages, AI app production, Shopify/Amazon/Trendyol ecommerce campaigns, Text-to-Campaign, AI Agents, Global Localization, visuals, brand kits, document packs and admin-panel projects can all start from one AI + Human Quality Assurance request.
             </p>
           </div>
           <div className="promo-corner-slot categories-promo-slot"><CampaignPromoSlot /></div>

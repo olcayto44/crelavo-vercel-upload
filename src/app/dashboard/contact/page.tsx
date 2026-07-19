@@ -15,8 +15,8 @@ const contactOptions = [
     href: "/dashboard/credits"
   },
   {
-    title: "Managed delivery request",
-    description: "Start a new managed production brief for websites, mobile apps, SaaS panels, product campaigns, videos, voice, or brand kits.",
+    title: "AI + Human QA request",
+    description: "Start a new expert-reviewed production brief for websites, mobile apps, SaaS panels, product campaigns, videos, voice, or brand kits.",
     action: "Start production",
     href: "/dashboard/assistant-workspace"
   }
@@ -29,7 +29,7 @@ export default function DashboardContactPage() {
         <span className="badge">Contact</span>
         <h1 style={{ marginBottom: 8 }}>Contact Crelavo</h1>
         <p style={{ color: "var(--muted)", marginTop: 0 }}>
-          Choose the fastest support path for your production, account, or managed delivery request. Public contact details can be managed from the admin content area later.
+          Choose the fastest support path for your production, account, or AI + human QA request. Public contact details can be managed from the admin content area later.
         </p>
       </section>
 

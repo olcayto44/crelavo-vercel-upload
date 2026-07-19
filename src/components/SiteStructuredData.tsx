@@ -9,7 +9,7 @@ export function SiteStructuredData() {
         "@id": `${siteUrl}/#organization`,
         name: "Crelavo",
         url: siteUrl,
-        description: "AI production studio for websites, apps, e-commerce product campaigns, ad videos, avatars, visuals, voice and managed creative delivery.",
+        description: "AI production studio for websites, apps, e-commerce product campaigns, ad videos, avatars, visuals, voice and AI + human QA delivery.",
         slogan: "From idea to production. From product link to campaign.",
         sameAs: []
       },

@@ -513,7 +513,7 @@ const strategicSeoPages: ServicePage[] = [
     turkishTitle: "Yapay Zeka E-Ticaret Kampanya Oluşturucu",
     badge: "Ecommerce campaign generator",
     keyword: "AI Ecommerce Campaign Generator",
-    summary: "Turn ecommerce product links into campaign briefs, ad angles, product videos, captions, landing page copy and managed creative delivery workflows.",
+    summary: "Turn ecommerce product links into campaign briefs, ad angles, product videos, captions, landing page copy and AI + human QA delivery workflows.",
     primaryCtaLabel: "Start ecommerce campaign",
     primaryCtaHref: `${assistantBase}?mode=commerce&category=campaign&idea=AI%20ecommerce%20campaign%20generator`,
     secondaryCtaHref: "/pricing",

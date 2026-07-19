@@ -20,7 +20,7 @@ export const launchDistributionChannels = [
     keyword: "AI directory submission",
     timing: "Immediately after public pages are stable",
     primaryUrls: ["/", "/tools", "/categories", "/ai-video-generator", "/ai-product-video-generator", "/ai-website-builder"],
-    copyAngle: "Crelavo as an AI production studio for video, websites, apps, ecommerce campaigns and managed delivery.",
+    copyAngle: "Crelavo as an AI production studio for video, websites, apps, ecommerce campaigns and AI + human QA delivery.",
     guardrail: "Manual submission only; use consistent product name, description and category tags."
   },
   {
@@ -89,7 +89,7 @@ export const launchDistributionChannels = [
 ];
 
 export const launchCopyPack = {
-  directoryOneLiner: "Crelavo is an AI production studio for websites, apps, product videos, ecommerce campaigns, brand kits and managed creative delivery.",
+  directoryOneLiner: "Crelavo is an AI production studio for websites, apps, product videos, ecommerce campaigns, brand kits and AI + human QA delivery.",
   linkedinPost: [
     "I’m building Crelavo as an AI production studio for teams that need more than one generator.",
     "The goal is to connect websites, apps, product videos, ecommerce campaigns, free tools, samples and delivery workflows in one place.",

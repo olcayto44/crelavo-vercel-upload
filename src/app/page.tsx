@@ -28,21 +28,24 @@ const homepageGoalWizard = [
     description: "Localize product ads, hooks, visuals and campaign direction for another country.",
     cta: "Start global campaign",
     href: "/dashboard/assistant-workspace?idea=I%20want%20to%20sell%20my%20product%20internationally&category=cultural_localization&mode=media",
-    badge: "Global ecommerce"
+    badge: "Recommended for global sellers",
+    step: "01"
   },
   {
     title: "I want to test my existing ad",
     description: "Score your ad hook, CTA, visual clarity and conversion weaknesses before spending more budget.",
     cta: "Score my ad",
     href: "/dashboard/assistant-workspace?idea=I%20want%20to%20test%20my%20existing%20ad&category=ad_score_checker&mode=media",
-    badge: "Free lead magnet"
+    badge: "Fastest free entry",
+    step: "02"
   },
   {
     title: "I want to create from scratch",
     description: "Create a product video, website, landing page, campaign pack, virtual model visual or launch asset from one brief.",
     cta: "Start from scratch",
     href: "/dashboard/assistant-workspace?idea=I%20want%20to%20create%20from%20scratch&mode=media",
-    badge: "Omni Assistant"
+    badge: "Best for new ideas",
+    step: "03"
   }
 ];
 
@@ -102,7 +105,7 @@ const homeFeaturePathCopy: Record<string, { title: string; description: string; 
   },
   "crelavo-academy": {
     title: "Crelavo Academy for AI product video, UGC ads and ecommerce marketing",
-    description: "Learn product video workflows, hook strategy, UGC ad planning and credit-based production paths before starting a managed Crelavo request.",
+    description: "Learn product video workflows, hook strategy, UGC ad planning and credit-based production paths before starting an expert-reviewed Crelavo request.",
     tags: ["AI marketing course", "UGC lessons", "video workflow"]
   },
   "community-showcase": {
@@ -162,7 +165,7 @@ export default async function HomePage() {
             <span className="badge"><Sparkles size={16} /> Crelavo — AI production studio for websites, apps, e-commerce and campaigns</span>
             <h1>Launch websites, apps and product campaigns from one AI production studio.</h1>
             <p>
-              Turn ideas, briefs, Shopify, Amazon or Trendyol product links into managed websites, mobile apps, e-commerce assets, ad videos, visuals, voice-over content and campaign-ready delivery packages.
+              Turn ideas, briefs, Shopify, Amazon or Trendyol product links into AI + human QA reviewed websites, mobile apps, e-commerce assets, ad videos, visuals, voice-over content and campaign-ready delivery packages.
             </p>
             <div className="home-highlight-row">
               {platformHighlights.map((item, index) => <span key={item}>{index > 0 ? " • " : ""}{item}</span>)}
@@ -172,21 +175,22 @@ export default async function HomePage() {
           </section>
 
           <section className="container section home-section-tight clean-feed-section home-goal-wizard" aria-labelledby="home-goal-wizard-heading">
-            <div className="sample-video-head">
+            <div className="sample-video-head home-goal-wizard-head">
               <div>
                 <span className="badge"><Sparkles size={15} /> Start with your goal</span>
                 <h2 id="home-goal-wizard-heading">What do you want Crelavo to do first?</h2>
-                <p className="section-lead">Skip the category maze. Choose the outcome and Omni Assistant will open the right production path.</p>
+                <p className="section-lead">Skip the category maze. Pick one outcome and Omni Assistant will open the right production path instantly.</p>
               </div>
-              <span className="badge">AI speed + human quality assurance</span>
+              <span className="badge home-goal-qa-badge">AI speed + human quality assurance</span>
             </div>
-            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            <div className="home-goal-wizard-grid">
               {homepageGoalWizard.map((goal, index) => (
-                <HardReloadLink className={`card admin-category-card production-pricing-card tools-tone-${index % 5}`} href={goal.href} key={goal.title}>
+                <HardReloadLink className={`home-goal-card home-goal-card-${index + 1}`} href={goal.href} key={goal.title}>
+                  <span className="home-goal-step">{goal.step}</span>
                   <span className="badge">{goal.badge}</span>
                   <h3>{goal.title}</h3>
                   <p>{goal.description}</p>
-                  <span className="text-link">{goal.cta}</span>
+                  <span className="home-goal-cta">{goal.cta}</span>
                 </HardReloadLink>
               ))}
             </div>

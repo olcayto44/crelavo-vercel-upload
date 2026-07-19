@@ -68,7 +68,7 @@ export async function SiteFooter() {
         ) : null}
         <div className="site-footer-brand footer-brand-bottom-right">
           <HardReloadLink href="/" className="site-footer-brand-link"><strong>Crelavo</strong></HardReloadLink>
-          <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for websites, mobile apps, e-commerce product campaigns, Shopify product link ads, Amazon product campaigns and Trendyol product videos">Global AI production studio for websites, mobile apps, e-commerce product campaigns, Shopify/Amazon/Trendyol product links, ad videos, avatars, visuals, voice-over and managed creative delivery.</p>
+          <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for websites, mobile apps, e-commerce product campaigns, Shopify product link ads, Amazon product campaigns and Trendyol product videos">Global AI production studio for websites, mobile apps, e-commerce product campaigns, Shopify/Amazon/Trendyol product links, ad videos, avatars, visuals, voice-over and AI + human QA delivery.</p>
           <div className="footer-commerce-shortcuts" aria-label="E-commerce campaign shortcuts">
             <HardReloadLink href="/dashboard/assistant-workspace?idea=Shopify%20product%20link%20ad&category=campaign&mode=commerce">Shopify campaign</HardReloadLink>
             <HardReloadLink href="/dashboard/assistant-workspace?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>
@@ -80,7 +80,7 @@ export async function SiteFooter() {
 
       <div className="site-footer-bottom">
         <span>Copyright © 2026 Crelavo. All rights reserved.</span>
-        <span>AI production studio for websites, apps, e-commerce campaigns, AI video and managed delivery.</span>
+        <span>AI production studio for websites, apps, e-commerce campaigns, AI video and AI + human QA delivery.</span>
       </div>
     </footer>
   );
