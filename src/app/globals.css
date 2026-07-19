@@ -276,6 +276,24 @@ img, video {
   transform: scale(1);
 }
 
+.crelavo-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .82;
+}
+
+.crelavo-hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(2,6,23,.18), rgba(2,6,23,.74) 62%),
+    linear-gradient(90deg, rgba(2,6,23,.58), rgba(2,6,23,.16) 48%, rgba(2,6,23,.56)),
+    linear-gradient(180deg, rgba(2,6,23,.52), rgba(2,6,23,.22) 45%, rgba(2,6,23,.74));
+}
+
 .scene-cyan {
   background: radial-gradient(circle at 70% 42%, rgba(34,211,238,.34), transparent 30%);
 }
@@ -409,16 +427,24 @@ img, video {
 }
 
 .crelavo-premium-hero-inner {
-  min-height: min(760px, calc(100vh - 74px));
+  min-height: min(820px, calc(100vh - 74px));
   display: grid;
-  grid-template-columns: minmax(0, .98fr) minmax(320px, .58fr);
-  gap: 34px;
-  align-items: center;
-  padding: 70px 0;
+  place-items: center;
+  padding: 86px 0 72px;
 }
 
 .crelavo-hero-copy {
-  max-width: 760px;
+  max-width: 980px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 36px;
+  padding: clamp(22px, 4vw, 48px);
+  background: rgba(2,6,23,.34);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 34px 100px rgba(0,0,0,.26);
 }
 
 .crelavo-hero-copy h1 {

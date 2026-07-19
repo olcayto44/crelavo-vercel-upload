@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Globe2, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const heroScenes = [
@@ -12,6 +12,7 @@ const heroScenes = [
     cta: "Create product video",
     href: "/ai-product-video-generator",
     tone: "cyan",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501597287558067-1784501597267.mp4",
     tags: ["Product URL", "Ad score", "Storyboard", "Delivery"]
   },
   {
@@ -21,6 +22,7 @@ const heroScenes = [
     cta: "Plan localization",
     href: "/ai-cultural-localization",
     tone: "purple",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501600346691878-1784501600336.mp4",
     tags: ["Country fit", "Localized hooks", "Market proof", "Human QA"]
   },
   {
@@ -30,6 +32,7 @@ const heroScenes = [
     cta: "Start with Assistant",
     href: "/dashboard/assistant-workspace",
     tone: "green",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501593829539623-1784501593820.mp4",
     tags: ["Video", "Website", "Voiceover", "Final ZIP"]
   }
 ];
@@ -51,51 +54,25 @@ export function CrelavoPremiumHero() {
       <div className="crelavo-hero-bg" aria-hidden="true">
         {heroScenes.map((scene, index) => (
           <div className={`crelavo-hero-scene ${index === activeIndex ? "active" : ""} scene-${scene.tone}`} key={scene.title}>
-            <div className="crelavo-hero-orb hero-orb-main" />
-            <div className="crelavo-hero-orb hero-orb-secondary" />
-            <div className="crelavo-hero-interface">
-              <div className="hero-interface-top">
-                <span>{scene.kicker}</span>
-                <small>AI + Human QA</small>
-              </div>
-              <div className="hero-interface-main">
-                <div className="hero-preview-window">
-                  <Play size={28} />
-                  <strong>{scene.tags[0]}</strong>
-                </div>
-                <div className="hero-stack">
-                  {scene.tags.map((tag) => <span key={tag}>{tag}</span>)}
-                </div>
-              </div>
-              <div className="hero-timeline"><i /><i /><i /><i /></div>
-            </div>
+            <video className="crelavo-hero-video" src={scene.videoUrl} muted loop playsInline autoPlay preload={index === 0 ? "metadata" : "none"} />
+            <div className="crelavo-hero-video-overlay" />
           </div>
         ))}
       </div>
 
       <div className="container crelavo-premium-hero-inner">
         <div className="crelavo-hero-copy">
-          <span className="badge"><Sparkles size={15} /> Crelavo AI Production Studio</span>
-          <h1>Create videos, websites, ads and campaign assets from one AI workspace.</h1>
-          <p>Premium production paths for ecommerce teams, creators and businesses — with AI speed, human quality assurance, clear credits and delivery-ready outputs.</p>
+          <span className="badge"><Sparkles size={15} /> Crelavo Yapay Zeka Üretim Stüdyosu</span>
+          <h1>Tek bir yapay zeka çalışma alanından videolar, web siteleri, reklamlar ve kampanya materyalleri oluşturun.</h1>
+          <p>E-ticaret ekipleri, içerik oluşturucular ve işletmeler için yapay zeka hızı, insan kalite güvencesi, net kredi bilgisi ve teslimata hazır çıktılar.</p>
           <div className="crelavo-hero-actions">
-            <Link className="btn" href="/dashboard/assistant-workspace">Start with Assistant <ArrowRight size={16} /></Link>
-            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score my ad free</Link>
-            <Link className="btn secondary" href="/pricing">View pricing</Link>
+            <Link className="btn" href="/dashboard/assistant-workspace">Asistan ile başlayın <ArrowRight size={16} /></Link>
+            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Reklamımı ücretsiz puanla</Link>
+            <Link className="btn secondary" href="/pricing">Fiyatları görüntüle</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
-            {["Product videos", "Ad scoring", "Virtual models", "Localization", "Websites", "Voiceover", "Campaign assets"].map((item) => <span key={item}>{item}</span>)}
+            {["Ürün videoları", "Reklam puanlaması", "Sanal modeller", "Yerelleştirme", "Web siteleri", "Seslendirme", "Kampanya varlıkları"].map((item) => <span key={item}>{item}</span>)}
           </div>
-        </div>
-
-        <div className="crelavo-hero-live-card" aria-live="polite">
-          <span><Globe2 size={15} /> {activeScene.kicker}</span>
-          <h2>{activeScene.title}</h2>
-          <p>{activeScene.text}</p>
-          <div className="crelavo-hero-tags">
-            {activeScene.tags.map((tag) => <small key={tag}><BadgeCheck size={13} /> {tag}</small>)}
-          </div>
-          <Link className="btn" href={activeScene.href}>{activeScene.cta}</Link>
           <div className="crelavo-hero-dots" aria-label="Hero scenes">
             {heroScenes.map((scene, index) => (
               <button key={scene.title} type="button" className={index === activeIndex ? "active" : ""} onClick={() => setActiveIndex(index)} aria-label={`Show ${scene.kicker}`} />
@@ -103,6 +80,7 @@ export function CrelavoPremiumHero() {
           </div>
         </div>
       </div>
+
     </section>
   );
 }
