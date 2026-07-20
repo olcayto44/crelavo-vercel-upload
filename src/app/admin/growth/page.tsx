@@ -36,13 +36,13 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage premium hero, focused wizard and lightweight conversion flow are live</h2>
-        <p style={{ color: "var(--muted)" }}>The homepage now starts with a premium video hero, keeps the three-path wizard, removes repeated heavy showcase/sample sections, and routes deeper content into Tools, Categories, Free Tools and Pricing through the side rail.</p>
+        <h2>Homepage premium hero, lightweight flow and AEO schema are live</h2>
+        <p style={{ color: "var(--muted)" }}>The homepage starts with a premium video hero, keeps the three-path wizard, moves deeper content into focused pages, and now has stronger Organization, WebSite, WebPage, SoftwareApplication, Service, ItemList, FAQPage and pricing OfferCatalog schema.</p>
         <div className="admin-info-grid">
           <div><span>Hero</span><strong>Premium video</strong><small>Three short clips create the first impression without old duplicate hero copy.</small></div>
           <div><span>Conversion</span><strong>Goal wizard</strong><small>Visitors still choose global campaign, free ad score or start from scratch.</small></div>
-          <div><span>Homepage weight</span><strong>Reduced</strong><small>Long showcase sliders, sample grid and affiliate block moved out of the main homepage flow.</small></div>
-          <div><span>Navigation</span><strong>Side rail</strong><small>Tools, categories, pricing, blog and contact stay reachable without crowding the page.</small></div>
+          <div><span>AEO schema</span><strong>Structured data</strong><small>Homepage graph now connects app, service, FAQ, production paths and actions.</small></div>
+          <div><span>Pricing schema</span><strong>OfferCatalog</strong><small>/pricing exposes credit packages with clearer WebPage and offer data.</small></div>
         </div>
       </section>
 

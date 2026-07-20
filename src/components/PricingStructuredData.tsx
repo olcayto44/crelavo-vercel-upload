@@ -1,6 +1,6 @@
 import { packages, topUpPackages } from "@/lib/data";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com";
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 
 export function PricingStructuredData() {
   const offers = [...packages, ...topUpPackages].map((item) => ({
@@ -16,8 +16,9 @@ export function PricingStructuredData() {
     itemOffered: {
       "@type": "SoftwareApplication",
       name: `Crelavo ${item.name}`,
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web"
+      applicationCategory: ["BusinessApplication", "MultimediaApplication"],
+      operatingSystem: "Web",
+      provider: { "@id": `${siteUrl}/#organization` }
     },
     priceSpecification: {
       "@type": "PriceSpecification",
@@ -30,10 +31,25 @@ export function PricingStructuredData() {
 
   const schema = {
     "@context": "https://schema.org",
-    "@type": "OfferCatalog",
-    name: "Crelavo pricing and AI production credit packages",
-    url: `${siteUrl}/pricing`,
-    itemListElement: offers
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${siteUrl}/pricing#webpage`,
+        url: `${siteUrl}/pricing`,
+        name: "Crelavo pricing and credit packages",
+        description: "Compare Crelavo credit packages, subscriptions, production estimates and delivery-ready AI + human QA production paths.",
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: { "@id": `${siteUrl}/#app` },
+        inLanguage: "en-US"
+      },
+      {
+        "@type": "OfferCatalog",
+        "@id": `${siteUrl}/pricing#offer-catalog`,
+        name: "Crelavo pricing and AI production credit packages",
+        url: `${siteUrl}/pricing`,
+        itemListElement: offers
+      }
+    ]
   };
 
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
