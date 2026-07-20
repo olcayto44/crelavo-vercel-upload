@@ -18,7 +18,13 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceSl
   return {
     title: `${page.title} for ${page.bestFor} | Crelavo`,
     description: `${page.summary} Explore ${page.keyword} keywords, categories, pricing, examples and managed AI production delivery paths.`,
-    alternates: { canonical: `/${page.slug}` },
+    alternates: {
+      canonical: `/${page.slug}`,
+      languages: {
+        "en-US": `/${page.slug}`,
+        "x-default": `/${page.slug}`
+      }
+    },
     openGraph: { title: page.title, description: page.summary, url: `/${page.slug}`, type: "website" },
     robots: noindex ? { index: false, follow: true } : { index: true, follow: true }
   };

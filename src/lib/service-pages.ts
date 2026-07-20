@@ -412,6 +412,11 @@ const strategicSeoPages: ServicePage[] = [
     ],
     examples: ["Amazon supplement ad", "Amazon kitchen gadget video", "Amazon comparison clip", "Marketplace product launch"],
     seoPriority: "high",
+    faqItems: [
+      { question: "Can Crelavo turn an Amazon listing into a product video brief?", answer: "Yes. Crelavo can use an Amazon listing, product benefits, buyer objections and review-style signals to prepare a marketplace video script, creative direction and delivery checklist." },
+      { question: "Is this only for Amazon ads?", answer: "No. The Amazon product ad workflow can support listing videos, social retargeting, TikTok/Reels/Shorts creative, comparison angles and marketplace launch assets." },
+      { question: "Does Crelavo make unsupported product claims?", answer: "No. The workflow should stay aligned with the listing, supplied product facts and safe claim language so the final ad direction does not invent unsupported promises." }
+    ],
     internalLinks: [
       { label: "AI Product Video Generator", href: "/ai-product-video-generator" },
       { label: "Amazon product page guide", href: "/blog/amazon-product-page-to-ai-ad-video-guide" },
@@ -443,6 +448,11 @@ const strategicSeoPages: ServicePage[] = [
     ],
     examples: ["Trendyol fashion product video", "Turkish beauty product ad", "Marketplace gadget video", "Local ecommerce campaign"],
     seoPriority: "high",
+    faqItems: [
+      { question: "Can Crelavo prepare product video ideas from a Trendyol product page?", answer: "Yes. Crelavo can use a Trendyol product page, product benefits, buyer context and campaign goal to prepare localized hooks, short-form script direction and product video delivery notes." },
+      { question: "Is the Trendyol video workflow only for Turkey?", answer: "It is optimized for Turkish ecommerce and Trendyol-style marketplace selling, but the same structure can also support broader marketplace product video campaigns." },
+      { question: "Can this become a TikTok or Reels ad?", answer: "Yes. The Trendyol product video workflow can be adapted into vertical TikTok, Reels, Shorts, Meta ad or product page preview formats depending on the selected production package." }
+    ],
     internalLinks: [
       { label: "AI Ecommerce Builder", href: "/ai-ecommerce-builder" },
       { label: "Trendyol product video guide", href: "/blog/trendyol-product-video-campaign-guide" },

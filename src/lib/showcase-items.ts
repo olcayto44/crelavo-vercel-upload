@@ -8,6 +8,7 @@ export type ShowcaseItem = HomeShowcaseSlide & {
   videoTitle: string;
   videoDescription: string;
   videoUrl?: string;
+  webmUrl?: string;
   highlights: string[];
   workflow: string[];
   bestFor: string[];
@@ -210,9 +211,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["Ad score and hook review", "CTA and offer clarity notes", "Video-ready creative brief", "Uses existing credit packages"],
     workflow: ["Open the feature page", "Review the scoring path", "Create a credit package", "Receive score report or improved ad brief"],
     bestFor: ["TikTok ads", "Meta ads", "Product videos", "Ecommerce campaigns"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/ai-ad-performance-score-checker"
   },
   {
@@ -232,9 +233,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["AI model photos", "Fashion and jewelry visuals", "Catalog image packs", "Uses existing credit packages"],
     workflow: ["Open the feature page", "Choose virtual model image scope", "Create a credit package", "Receive image pack delivery"],
     bestFor: ["Fashion sellers", "Jewelry brands", "Beauty products", "Ecommerce catalogs"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/ai-virtual-model-studio"
   },
   {
@@ -254,9 +255,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["Country-specific hooks", "Localized script packs", "Global campaign briefs", "Uses existing credit packages"],
     workflow: ["Open the feature page", "Choose target country or market", "Create a credit package", "Receive localization pack or brief"],
     bestFor: ["Cross-border ecommerce", "Localized ads", "Global product videos", "International campaigns"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/ai-cultural-localization"
   },
   {
@@ -276,9 +277,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["Seasonal campaign briefs", "Product launch calendar", "Hook and script packs", "Uses existing credit packages"],
     workflow: ["Open the feature page", "Choose campaign season or launch goal", "Create a credit package", "Receive calendar or campaign plan"],
     bestFor: ["Seasonal ads", "Product launches", "Ecommerce planning", "Social campaigns"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/ai-campaign-calendar"
   },
   {
@@ -297,9 +298,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["AI marketing lessons", "Product video education", "UGC ad strategy", "Credit-based upsell path"],
     workflow: ["Open Academy", "Learn the workflow", "Choose template or production request", "Buy credits when ready"],
     bestFor: ["New users", "Shopify sellers", "Creators", "Marketing teams"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/crelavo-academy"
   },
   {
@@ -318,9 +319,9 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     highlights: ["Manually approved public examples", "UGC, product video and website proof", "Template reuse and similar-style path", "Credit-based production packages"],
     workflow: ["Browse approved showcase", "Choose a reusable template angle", "Confirm credit range and request details", "Receive AI + human QA production delivery"],
     bestFor: ["Example-driven buyers", "Agencies", "Ecommerce brands", "Template reuse", "Social proof"],
-    primaryCtaLabel: "Paketi oluştur",
+    primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "Sayfayı incele",
+    secondaryCtaLabel: "View page",
     secondaryCtaHref: "/community-showcase"
   },
   {

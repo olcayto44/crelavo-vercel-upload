@@ -99,6 +99,7 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
   const keywords = buildShowcaseKeywords(item);
   const relatedItems = showcaseItems.filter((entry) => entry.group === item.group && entry.id !== item.id).slice(0, 3);
   const showcaseVideoUrl = item.videoUrl || fallbackShowcaseVideoUrl;
+  const showcaseWebmUrl = item.webmUrl;
 
   return (
     <>
@@ -119,8 +120,11 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
               <Link className="btn secondary" href={item.secondaryCtaHref}>{item.secondaryCtaLabel}</Link>
             </div>
           </div>
-          <div className="showcase-video-panel" aria-label={`${item.title} video preview`}>
-            <video className="showcase-detail-video" src={showcaseVideoUrl} controls playsInline preload="metadata" poster={item.imageUrl} aria-label={`Crelavo showcase video preview for ${item.title}`} />
+          <div className="showcase-video-panel" aria-label={`Crelavo AI product video showcase preview for ${item.title}`}>
+            <video className="showcase-detail-video" controls playsInline preload="none" poster={item.imageUrl} aria-label={`Crelavo AI product video showcase for ${item.title}`}>
+              {showcaseWebmUrl ? <source src={showcaseWebmUrl} type="video/webm" /> : null}
+              <source src={showcaseVideoUrl} type="video/mp4" />
+            </video>
           </div>
         </section>
 

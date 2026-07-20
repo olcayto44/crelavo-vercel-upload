@@ -46,18 +46,6 @@ const icons = {
   admin_project: LayoutDashboard
 };
 
-const categoryPreviewVideos = [
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200446193878757-1783200446163.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200475974783117-1783200475940.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4"
-];
-
-function categoryPreviewVideo(typeId: string) {
-  const index = Math.abs(Array.from(typeId).reduce((total, char) => total + char.charCodeAt(0), 0)) % categoryPreviewVideos.length;
-  return categoryPreviewVideos[index];
-}
-
 const categoryOptions: Record<string, string[]> = {
   campaign: ["Shopify product link", "Amazon product link", "Trendyol product link", "Product link ad", "Store/social publish"],
   ai_agent: ["AI influencer", "Daily social manager", "Trend monitor", "Voice/personality", "Approval flow"],
@@ -148,8 +136,8 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 
   return (
     <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-      <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${type.label} video preview`}>
-        <video className="sample-card-video" src={categoryPreviewVideo(type.id)} muted loop playsInline preload="metadata" />
+      <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${type.label} preview`}>
+        <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
         <small>{type.label}</small>
         <strong>Preview</strong>
       </div>
@@ -168,7 +156,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
           </div>
         ))}
       </div>
-      <HardReloadLink className="btn" href="/dashboard/credits">Paketi oluştur</HardReloadLink>
+      <HardReloadLink className="btn" href="/dashboard/credits">Create package</HardReloadLink>
     </div>
   );
 }

@@ -62,16 +62,16 @@ export function CrelavoPremiumHero() {
 
       <div className="container crelavo-premium-hero-inner">
         <div className="crelavo-hero-copy">
-          <span className="badge"><Sparkles size={15} /> Crelavo Yapay Zeka Üretim Stüdyosu</span>
-          <h1>Tek bir yapay zeka çalışma alanından videolar, web siteleri, reklamlar ve kampanya materyalleri oluşturun.</h1>
-          <p>E-ticaret ekipleri, içerik oluşturucular ve işletmeler için yapay zeka hızı, insan kalite güvencesi, net kredi bilgisi ve teslimata hazır çıktılar.</p>
+          <span className="badge"><Sparkles size={15} /> Crelavo AI Production Studio</span>
+          <h1>Create videos, websites, ads and campaign assets from one AI workspace.</h1>
+          <p>AI speed, human quality assurance, clear credit guidance and delivery-ready outputs for ecommerce teams, creators and businesses.</p>
           <div className="crelavo-hero-actions">
-            <Link className="btn" href="/dashboard/assistant-workspace">Asistan ile başlayın <ArrowRight size={16} /></Link>
-            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Reklamımı ücretsiz puanla</Link>
-            <Link className="btn secondary" href="/pricing">Fiyatları görüntüle</Link>
+            <Link className="btn" href="/dashboard/assistant-workspace">Start with Assistant <ArrowRight size={16} /></Link>
+            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score my ad for free</Link>
+            <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
-            {["Ürün videoları", "Reklam puanlaması", "Sanal modeller", "Yerelleştirme", "Web siteleri", "Seslendirme", "Kampanya varlıkları"].map((item) => <span key={item}>{item}</span>)}
+            {["Product videos", "Ad scoring", "Virtual models", "Localization", "Websites", "Voice-over", "Campaign assets"].map((item) => <span key={item}>{item}</span>)}
           </div>
           <div className="crelavo-hero-dots" aria-label="Hero scenes">
             {heroScenes.map((scene, index) => (

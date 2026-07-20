@@ -94,7 +94,7 @@ export default async function ToolsPage() {
                 <span className="badge">{page.primaryKeyword}</span>
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>
-                <span className="text-link">Sayfayı incele</span>
+                <span className="text-link">View page</span>
               </Link>
             ))}
           </div>

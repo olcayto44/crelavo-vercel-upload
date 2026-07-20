@@ -20,6 +20,7 @@ export type SampleVideo = {
   features: string[];
   href: string;
   videoUrl?: string;
+  webmUrl?: string;
   thumbnailUrl?: string;
   aspectRatio?: string;
   platformTargets?: string[];

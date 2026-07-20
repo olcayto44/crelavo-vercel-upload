@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ServicePageStructuredData } from "@/components/ServicePageStructuredData";
 import type { ServicePage } from "@/lib/service-pages";
+import { caseStudyProofs, testimonialProofs } from "@/lib/social-proof";
 
 const relatedPages = [
   { href: "/ai-website-builder", label: "AI Website Builder" },
@@ -95,6 +96,40 @@ function buildLongTailKeywords(page: ServicePage) {
   ];
 }
 
+function buildMarketplaceGuide(page: ServicePage) {
+  const slug = page.slug;
+  if (!["shopify-product-link-to-ad-video", "amazon-product-ad-video", "trendyol-product-video", "ai-ecommerce-builder"].includes(slug)) return null;
+
+  const marketplace = slug.includes("shopify") ? "Shopify" : slug.includes("amazon") ? "Amazon" : slug.includes("trendyol") ? "Trendyol" : "ecommerce marketplace";
+  const audience = slug.includes("shopify")
+    ? "Shopify store owners, DTC brands and dropshipping teams"
+    : slug.includes("amazon")
+      ? "Amazon sellers, marketplace brands and product launch teams"
+      : slug.includes("trendyol")
+        ? "Trendyol sellers, Turkish ecommerce shops and marketplace teams"
+        : "ecommerce operators, marketplace sellers and product-led brands";
+  const productSource = slug.includes("shopify") ? "a Shopify product URL" : slug.includes("amazon") ? "an Amazon listing" : slug.includes("trendyol") ? "a Trendyol product page" : "a product page, marketplace listing or store catalog";
+  const proofSignals = slug.includes("shopify")
+    ? "product images, offer structure, reviews, product benefits, bundles, variants and shipping promises"
+    : slug.includes("amazon")
+      ? "listing bullets, review patterns, comparison points, problem-solution claims and trust signals"
+      : slug.includes("trendyol")
+        ? "marketplace title, buyer expectations, local offer framing, benefit hierarchy and social proof"
+        : "product benefits, customer objections, price/value signals, reviews and campaign context";
+
+  return {
+    title: `${marketplace} video solution guide for product-led campaigns`,
+    paragraphs: [
+      `${marketplace} product video campaigns need more than a generic AI video prompt. ${audience} usually start with ${productSource}, but the page alone does not automatically become a strong ad. Crelavo treats the product page as the source of a structured production brief: what the product is, who should care, which benefit should appear first, which objection must be handled and what kind of visual proof should be shown before the call to action. This makes the workflow useful for search visitors who want a marketplace-specific video solution, not a broad AI video generator with no ecommerce context.`,
+      `The first step is extracting the correct selling angle from ${proofSignals}. Instead of turning every detail into a crowded video, Crelavo separates the brief into hook, problem, proof, product moment, offer and CTA. A skincare product might need close-up texture and trust language, a kitchen gadget might need a fast before-and-after demonstration, and a fashion product might need model-style context, size confidence and lifestyle framing. This category-specific structure helps the final video feel like a marketplace ad, not a random animated clip.`,
+      `The second step is platform adaptation. A ${marketplace} campaign may need TikTok, Reels, Shorts, Meta ad, product page embed or marketplace retargeting versions. The same product can require different pacing: a five-second hook for cold traffic, a 15-second explainer for retargeting, a 30-second product story for warm audiences or a static thumbnail for catalog discovery. Crelavo keeps those formats connected to credit estimates and delivery expectations so the user understands what can be prepared before full production starts.`,
+      `The third step is creative QA. Marketplace sellers often lose performance because the video says too much, shows the product too late or uses a CTA that does not match the buyer journey. Crelavo’s AI + human QA positioning is designed to catch these issues early: unclear claims, weak first-three-second hooks, missing product proof, poor platform fit, unhelpful captions or a mismatch between the listing and the ad promise. This is especially important when the product comes from a real store or marketplace page, because the ad should support the actual offer instead of inventing unsupported claims.`,
+      `The fourth step is delivery. A useful ${marketplace} video solution should produce more than one file. It should leave the user with a production-ready script, shot direction, caption/CTA notes, thumbnail guidance, preview expectations, revision logic and a clear route into dashboard delivery. That is why this page links to pricing, campaign categories, product video generators, ecommerce guides and sample pages. The goal is to help the user move from product page research into a managed production workflow with fewer guesses and clearer credit planning.`,
+      `For SEO, this guide also gives Google more context about the page. The page is not only about “AI video”; it is about ${marketplace} product video workflows, marketplace ad creative, product-link-to-video conversion, ecommerce campaign planning and delivery-ready production. Those terms help separate the page from generic AI video tools and make it more relevant for buyers who already know the marketplace they sell on. When the user is ready, the assistant workflow can collect the product link, target audience, platform, style, delivery format and credit package so the request starts with the right production information.`
+    ]
+  };
+}
+
 function buildSeoArticle(page: ServicePage) {
   const [firstSection, secondSection] = page.sections;
   return [
@@ -131,6 +166,7 @@ function buildSeoArticle(page: ServicePage) {
 
 export function ServicePageView({ page }: { page: ServicePage }) {
   const article = buildSeoArticle(page);
+  const marketplaceGuide = buildMarketplaceGuide(page);
   const longTailKeywords = buildLongTailKeywords(page);
   const related = relatedPages.filter((item) => item.href !== `/${page.slug}`).slice(0, 4);
   const visibleCategoryLinks = categoryLinks.filter((item) => item.href !== `/${page.slug}`).slice(0, 6);
@@ -172,6 +208,30 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         </div>
       </section>
 
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+        <span className="badge">Proof and case studies</span>
+        <h2>Why teams use Crelavo before full production</h2>
+        <p>These conservative proof blocks connect each service page to approved examples, role-based testimonials and case-study paths without making unsupported revenue or ROAS claims.</p>
+        <div className="admin-category-grid">
+          {testimonialProofs.slice(0, 2).map((item) => (
+            <div className="card admin-category-card" key={item.name}>
+              <span className="badge">{item.role}</span>
+              <h3>{item.name}</h3>
+              <p>“{item.quote}”</p>
+              <p><strong>{item.result}</strong></p>
+            </div>
+          ))}
+          {caseStudyProofs.slice(0, 2).map((item) => (
+            <Link className="card admin-category-card" href={item.href} key={item.title}>
+              <span className="badge">{item.segment}</span>
+              <h3>{item.title}</h3>
+              <p><strong>Before:</strong> {item.before}</p>
+              <p><strong>After:</strong> {item.after}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="card admin-wide-card service-category-links" style={{ marginTop: 18 }}>
         <span className="badge">Important categories</span>
         <h2>Browse related Crelavo categories before starting {page.title}</h2>
@@ -205,6 +265,14 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <div className="card admin-category-card"><span className="badge">Outputs</span><h2>What Crelavo prepares</h2>{page.outputs.map((item) => <p key={item}>{item}</p>)}</div>
         <div className="card admin-category-card"><span className="badge">Delivery</span><h2>How it can be delivered</h2>{page.delivery.map((item) => <p key={item}>{item}</p>)}</div>
       </section>
+
+      {marketplaceGuide ? (
+        <article className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+          <span className="badge">Marketplace video guide</span>
+          <h2>{marketplaceGuide.title}</h2>
+          {marketplaceGuide.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+        </article>
+      ) : null}
 
       <article className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
         <span className="badge">Service guide</span>

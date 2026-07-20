@@ -74,6 +74,7 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
   const createSimilarHref = assistantWorkspaceHref(`${sample.title} like this sample`, "media", sample.category);
   const related = sampleVideos.filter((item) => item.id !== sample.id).slice(0, 3);
   const sampleVideoUrl = sample.videoUrl || fallbackSampleDetailVideoUrl;
+  const sampleWebmUrl = sample.webmUrl;
   const keywords = buildSampleKeywords(sample);
 
   return (
@@ -97,8 +98,11 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
               <div><span>Credit fit</span><strong>{sample.credits}</strong></div>
             </div>
           </div>
-          <div className="sample-detail-player-card" aria-label={`${sample.title} video preview`}>
-            <video className="sample-detail-player-video" src={sampleVideoUrl} controls playsInline preload="metadata" poster={sample.thumbnailUrl} aria-label={`Crelavo sample video preview for ${sample.title} in ${sample.category}`} />
+          <div className="sample-detail-player-card" aria-label={`Crelavo AI product video sample preview for ${sample.title}`}>
+            <video className="sample-detail-player-video" controls playsInline preload="none" poster={sample.thumbnailUrl} aria-label={`Crelavo AI product video sample for ${sample.title} in ${sample.category}`}>
+              {sampleWebmUrl ? <source src={sampleWebmUrl} type="video/webm" /> : null}
+              <source src={sampleVideoUrl} type="video/mp4" />
+            </video>
           </div>
         </section>
 

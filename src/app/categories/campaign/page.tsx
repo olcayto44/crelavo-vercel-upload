@@ -13,8 +13,8 @@ const campaignUseCases = [
     text: "Turn Amazon listing details, product benefits, review angles and marketplace positioning into a video-first campaign brief for sellers who need faster creative testing."
   },
   {
-    title: "Trendyol product video and Turkish ecommerce ads",
-    text: "Target lower-competition Turkish ecommerce searches such as Trendyol ürün linkinden reklam videosu, Trendyol yapay zeka ürün videosu and marketplace campaign production."
+    title: "Trendyol product video and marketplace ecommerce ads",
+    text: "Target lower-competition marketplace ecommerce searches such as Trendyol product link ad video, Trendyol AI product video and marketplace campaign production."
   }
 ];
 
@@ -65,7 +65,7 @@ export default async function CampaignCategoryPage() {
           <span className="badge">High-intent ecommerce use cases</span>
           <h2>What this campaign category is for</h2>
           <p>
-            The goal is to capture specific ecommerce searches instead of only broad AI video keywords. A seller searching for product link to ad video, Shopify TikTok ad generator, Amazon product ad video or Trendyol ürün videosu should land on a page that explains the exact workflow and sends them into Crelavo.
+            The goal is to capture specific ecommerce searches instead of only broad AI video keywords. A seller searching for product link to ad video, Shopify TikTok ad generator, Amazon product ad video or Trendyol product video should land on a page that explains the exact workflow and sends them into Crelavo.
           </p>
           <div className="delivery-step-grid">
             {campaignUseCases.map((item) => (

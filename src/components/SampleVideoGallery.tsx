@@ -39,6 +39,10 @@ function samplePreviewUrl(item: SampleVideo, index: number) {
   return item.videoUrl || fallbackSampleVideoUrls[index % fallbackSampleVideoUrls.length];
 }
 
+function samplePosterAlt(item: SampleVideo) {
+  return `Crelavo AI product video poster for ${item.title} ${item.category} sample`;
+}
+
 function playPreview(event: MouseEvent<HTMLAnchorElement>) {
   const video = event.currentTarget.querySelector("video");
   video?.play().catch(() => undefined);
@@ -88,10 +92,10 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
           <Link className="sample-video-card sample-video-card-cinematic" href={`/samples/${item.id}`} key={item.id} onMouseEnter={allowVideoPreview ? playPreview : undefined} onMouseLeave={allowVideoPreview ? pausePreview : undefined}>
             <div className="sample-video-preview sample-video-preview-cinematic">
               {item.thumbnailUrl ? (
-                <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={`Crelavo ${item.category} sample video poster for ${item.title}`} loading="lazy" decoding="async" />
+                <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={samplePosterAlt(item)} loading="lazy" decoding="async" />
               ) : <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />}
               {allowVideoPreview ? (
-                <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="metadata" poster={item.thumbnailUrl} />
+                <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="none" poster={item.thumbnailUrl} aria-label={`Crelavo AI product video hover preview for ${item.title}`} />
               ) : null}
               <span className="sample-video-play"><PlayCircle size={34} /></span>
               <small>{item.category}</small>

@@ -44,18 +44,6 @@ function categorySlides(slides: CategoryShowcaseSlide[]) {
   return configured.length ? configured : categoryShowcaseItems;
 }
 
-const featurePreviewVideos = [
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200446193878757-1783200446163.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200475974783117-1783200475940.mp4",
-  "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4"
-];
-
-function featurePreviewVideo(slug: string) {
-  const index = Math.abs(Array.from(slug).reduce((total, char) => total + char.charCodeAt(0), 0)) % featurePreviewVideos.length;
-  return featurePreviewVideos[index];
-}
-
 const deliverySteps = [
   {
     icon: PackageCheck,
@@ -143,7 +131,7 @@ export default async function CategoriesPage() {
             {phaseOneFeaturePages.slice(0, 6).map((page) => (
               <div className={`card production-pricing-card production-tone-${page.slug}`} key={page.slug}>
                 <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
-                  <video className="sample-card-video" src={featurePreviewVideo(page.slug)} muted loop playsInline preload="metadata" />
+                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
                   <small>{page.badge}</small>
                   <strong>Preview</strong>
                 </div>
@@ -161,8 +149,8 @@ export default async function CategoriesPage() {
                     </div>
                   ))}
                 </div>
-                <Link className="btn" href="/dashboard/credits">Paketi oluştur</Link>
-                <Link className="btn secondary" href={`/${page.slug}`}>Sayfayı incele</Link>
+                <Link className="btn" href="/dashboard/credits">Create package</Link>
+                <Link className="btn secondary" href={`/${page.slug}`}>View page</Link>
               </div>
             ))}
           </div>
