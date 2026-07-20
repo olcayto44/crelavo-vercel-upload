@@ -3318,6 +3318,22 @@ body.admin-route > .site-footer {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 18px;
 }
+.balanced-footer-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: start;
+}
+.footer-core-services {
+  min-width: 0;
+}
+.footer-brand-bottom-copy {
+  max-width: 1120px;
+}
+.footer-commerce-row {
+  justify-content: flex-start;
+}
+.footer-social-text-links {
+  display: grid !important;
+}
 .site-footer-group,
 .footer-help-drawer {
   min-width: 0;
@@ -3337,7 +3353,7 @@ body.admin-route > .site-footer {
 .footer-help-drawer button,
 .footer-help-trigger {
   display: inline-flex;
-  width: max-content;
+  width: fit-content;
   max-width: 100%;
   color: #aeb8cc;
   background: transparent !important;
@@ -3347,6 +3363,8 @@ body.admin-route > .site-footer {
   padding: 0;
   text-align: left;
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
   font: inherit;
   cursor: pointer;
 }
