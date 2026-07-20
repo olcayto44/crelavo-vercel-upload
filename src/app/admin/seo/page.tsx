@@ -7,7 +7,8 @@ const seoModules = [
   { title: "Robots.txt", file: "src/app/robots.ts", fields: ["Allow rules", "Disallow admin/api/dashboard/auth", "Sitemap URL", "Crawler policy"] },
   { title: "Google Search Console", file: "manual submission", fields: ["Domain property", "Sitemap submit status", "URL inspection", "Indexing notes"] },
   { title: "Google Analytics / Tag Manager", file: "layout script area", fields: ["GA measurement ID", "GTM container ID", "Cookie consent", "Conversion events"] },
-  { title: "Open Graph", file: "social preview config", fields: ["OG title", "OG description", "OG image", "Twitter card"] }
+  { title: "Open Graph", file: "social preview config", fields: ["OG title", "OG description", "OG image", "Twitter card"] },
+  { title: "Cultural localization proof", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Before/after proof block", "Localized campaign internal links", "Ecommerce checklist blog CTA", "Campaign category CTA"] }
 ];
 
 export default function AdminSeoPage() {

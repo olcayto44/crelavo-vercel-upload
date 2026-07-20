@@ -36,13 +36,13 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage premium hero, lightweight flow and AEO schema are live</h2>
-        <p style={{ color: "var(--muted)" }}>The homepage starts with a premium video hero, keeps the three-path wizard, moves deeper content into focused pages, and now has stronger Organization, WebSite, WebPage, SoftwareApplication, Service, ItemList, FAQPage and pricing OfferCatalog schema.</p>
+        <h2>Homepage AEO schema and cultural localization proof are live</h2>
+        <p style={{ color: "var(--muted)" }}>The homepage has stronger structured data, and the first orta ölçekli UX/SEO item adds a before/after proof section to the AI Cultural Localization page with internal links into Assistant, campaign category and the ecommerce checklist blog path.</p>
         <div className="admin-info-grid">
           <div><span>Hero</span><strong>Premium video</strong><small>Three short clips create the first impression without old duplicate hero copy.</small></div>
-          <div><span>Conversion</span><strong>Goal wizard</strong><small>Visitors still choose global campaign, free ad score or start from scratch.</small></div>
           <div><span>AEO schema</span><strong>Structured data</strong><small>Homepage graph now connects app, service, FAQ, production paths and actions.</small></div>
-          <div><span>Pricing schema</span><strong>OfferCatalog</strong><small>/pricing exposes credit packages with clearer WebPage and offer data.</small></div>
+          <div><span>Localization proof</span><strong>Before / after</strong><small>/ai-cultural-localization now shows generic vs market-specific campaign proof.</small></div>
+          <div><span>SEO/admin</span><strong>Tracked</strong><small>Admin SEO module includes the cultural localization proof block and blog/internal CTA checklist.</small></div>
         </div>
       </section>
 

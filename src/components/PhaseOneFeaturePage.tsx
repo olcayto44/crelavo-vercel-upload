@@ -50,6 +50,47 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
           </section>
         ) : null}
 
+        {page.slug === "ai-cultural-localization" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">Before / after proof</span>
+            <h2>Show how one product message changes for different markets</h2>
+            <p style={{ color: "var(--muted)" }}>
+              Cultural localization needs visual proof, not only SEO copy. This proof block compares the same ecommerce product before localization and after Crelavo adapts the hook, CTA, proof angle, pacing and buyer trust message for specific markets.
+            </p>
+            <div className="admin-category-grid">
+              <div className="card admin-category-card production-pricing-card">
+                <div className="sample-video-preview sample-video-preview-cinematic" aria-label="Before localization preview">
+                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
+                  <small>Before</small>
+                  <strong>Generic global ad</strong>
+                </div>
+                <h3>Before localization</h3>
+                <p>Same hook, same claim, same CTA and same visual rhythm for every market. The message may be clear, but buyer trust, cultural proof and local urgency are weak.</p>
+              </div>
+              <div className="card admin-category-card production-pricing-card">
+                <div className="sample-video-preview sample-video-preview-cinematic" aria-label="After localization preview">
+                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
+                  <small>After</small>
+                  <strong>Market-specific campaign</strong>
+                </div>
+                <h3>After Crelavo localization</h3>
+                <p>Country-specific hook, local buyer objection, proof angle, CTA wording, visual pace and AI + human QA notes are prepared before production credits are spent.</p>
+              </div>
+            </div>
+            <div className="admin-info-grid" style={{ marginTop: 16 }}>
+              <div><span>Hook</span><strong>Local buying trigger</strong><small>Different first sentence for Germany, USA, Gulf, Japan or Turkey.</small></div>
+              <div><span>Proof</span><strong>Market trust signal</strong><small>Reviews, guarantees, before/after logic or local usage context.</small></div>
+              <div><span>Visuals</span><strong>Country fit</strong><small>Pace, framing, product context and lifestyle direction are adapted.</small></div>
+              <div><span>Output</span><strong>Production brief</strong><small>The result becomes a dashboard-ready localized campaign request.</small></div>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=cultural_localization&idea=Localize%20my%20product%20campaign">Prepare localization brief</Link>
+              <Link className="btn secondary" href="/blog/shopify-amazon-trendyol-ai-campaign-checklist">Open ecommerce checklist</Link>
+              <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
+            </div>
+          </section>
+        ) : null}
+
         <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
           <span className="badge">Niche keyword cluster</span>
           <h2>{page.primaryKeyword} keywords and long-tail SEO paths</h2>
