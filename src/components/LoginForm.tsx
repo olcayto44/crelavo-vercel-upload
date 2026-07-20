@@ -19,7 +19,7 @@ export function LoginForm() {
 
     const { error } = await supabaseBrowser().auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${siteUrl || window.location.origin}/` }
+      options: { redirectTo: `${siteUrl || window.location.origin}/dashboard/assistant-workspace?welcome=google_trial_credit` }
     });
 
     if (error) {
@@ -78,8 +78,12 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit}>
+      <div className="card" style={{ marginBottom: 14, background: "rgba(34,211,238,.08)" }}>
+        <span className="badge">Google one-click entry</span>
+        <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Continue with Google to enter Assistant Workspace quickly. New eligible users receive 1,000 one-time Assistant trial credits for planning/chat only, not production rendering.</p>
+      </div>
       <div className="auth-provider-grid">
-        <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("google")} disabled={state === "loading"}>Continue with Google</button>
+        <button className="btn auth-google-btn" type="button" onClick={() => continueWithProvider("google")} disabled={state === "loading"}>Continue with Google</button>
         <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("github")} disabled={state === "loading"}>Continue with GitHub</button>
         <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("azure")} disabled={state === "loading"}>Continue with Microsoft</button>
       </div>

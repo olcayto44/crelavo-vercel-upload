@@ -16,45 +16,54 @@ export function getClientIp(request: Request) {
 
 export async function grantWelcomeAssistantCreditsOnce({ supabase, userId, email, ipAddress }: GrantWelcomeAssistantCreditsInput) {
   const cleanEmail = email.trim().toLowerCase();
+  const cleanIp = ipAddress.trim() || "unknown";
   if (!userId || !cleanEmail) return { granted: false, credits: 0, reason: "missing_user" };
 
   const { data: existingClaim, error: claimReadError } = await supabase
     .from("welcome_credit_claims")
-    .select("id")
-    .or(`user_id.eq.${userId},email.eq.${cleanEmail}`)
+    .select("id, user_id, email, ip_address")
+    .or(`user_id.eq.${userId},email.eq.${cleanEmail},ip_address.eq.${cleanIp}`)
+    .limit(1)
     .maybeSingle();
 
   if (claimReadError) throw claimReadError;
   if (existingClaim) return { granted: false, credits: 0, reason: "already_claimed" };
 
-  const { data: balanceRow, error: balanceReadError } = await supabase
+  const { data: assistantBalanceRow, error: assistantBalanceReadError } = await supabase
+    .from("assistant_credit_balances")
+    .select("balance")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (assistantBalanceReadError) throw assistantBalanceReadError;
+  if ((assistantBalanceRow?.balance ?? 0) > 0) return { granted: false, credits: 0, reason: "existing_assistant_balance" };
+
+  const { data: productionBalanceRow, error: productionBalanceReadError } = await supabase
     .from("credit_balances")
     .select("balance, reserved")
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (balanceReadError) throw balanceReadError;
+  if (productionBalanceReadError) throw productionBalanceReadError;
+  if (productionBalanceRow) return { granted: false, credits: 0, reason: "existing_balance" };
 
-  if (balanceRow) return { granted: false, credits: 0, reason: "existing_balance" };
-
-  const reserved = 0;
-  const nextBalance = WELCOME_ASSISTANT_CREDITS;
+  const nextAssistantBalance = WELCOME_ASSISTANT_CREDITS;
 
   const { error: balanceError } = await supabase
-    .from("credit_balances")
-    .upsert({ user_id: userId, balance: nextBalance, reserved, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    .from("assistant_credit_balances")
+    .upsert({ user_id: userId, balance: nextAssistantBalance, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 
   if (balanceError) throw balanceError;
 
   const { error: eventError } = await supabase
     .from("credit_events")
-    .insert({ user_id: userId, type: "adjustment", amount: WELCOME_ASSISTANT_CREDITS, note: "Welcome AI Assistant credits" });
+    .insert({ user_id: userId, type: "adjustment", amount: WELCOME_ASSISTANT_CREDITS, note: "Welcome AI Assistant trial credits" });
 
   if (eventError) throw eventError;
 
   const { error: claimError } = await supabase
     .from("welcome_credit_claims")
-    .insert({ user_id: userId, email: cleanEmail, ip_address: ipAddress || "unknown", credits_granted: WELCOME_ASSISTANT_CREDITS });
+    .insert({ user_id: userId, email: cleanEmail, ip_address: cleanIp, credits_granted: WELCOME_ASSISTANT_CREDITS });
 
   if (claimError) {
     const message = String(claimError.message ?? "");
@@ -64,5 +73,5 @@ export async function grantWelcomeAssistantCreditsOnce({ supabase, userId, email
     throw claimError;
   }
 
-  return { granted: true, credits: WELCOME_ASSISTANT_CREDITS, balance: nextBalance };
+  return { granted: true, credits: WELCOME_ASSISTANT_CREDITS, assistantBalance: nextAssistantBalance };
 }

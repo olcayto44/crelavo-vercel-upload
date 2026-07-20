@@ -9,6 +9,7 @@ import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeSho
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
+import { caseStudyProofs, socialProofMetrics, testimonialProofs } from "@/lib/social-proof";
 
 const homepageGoalWizard = [
   {
@@ -159,6 +160,43 @@ export default async function HomePage() {
                   </HardReloadLink>
                 );
               })}
+            </div>
+          </section>
+
+          <section className="container section home-section-tight clean-feed-section" aria-labelledby="home-social-proof-heading">
+            <div className="sample-video-head">
+              <div>
+                <span className="badge"><Sparkles size={15} /> Social proof</span>
+                <h2 id="home-social-proof-heading">Proof, testimonials and case-study paths before full production</h2>
+                <p className="section-lead">Crelavo now shows conservative proof blocks: role-based testimonials, approved example paths and case-study routes that connect directly to credits, free tools and Assistant Workspace.</p>
+              </div>
+              <HardReloadLink className="btn secondary" href="/community-showcase">Open proof hub</HardReloadLink>
+            </div>
+            <div className="admin-info-grid" style={{ marginTop: 16 }}>
+              {socialProofMetrics.map((metric) => (
+                <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.note}</small></div>
+              ))}
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {testimonialProofs.map((item) => (
+                <div className="card admin-category-card" key={item.name}>
+                  <span className="badge">{item.role}</span>
+                  <h3>{item.name}</h3>
+                  <p>“{item.quote}”</p>
+                  <p><strong>{item.result}</strong></p>
+                </div>
+              ))}
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {caseStudyProofs.map((item) => (
+                <HardReloadLink className="card admin-category-card" href={item.href} key={item.title}>
+                  <span className="badge">{item.segment}</span>
+                  <h3>{item.title}</h3>
+                  <p><strong>Before:</strong> {item.before}</p>
+                  <p><strong>After:</strong> {item.after}</p>
+                  <span className="text-link">{item.cta}</span>
+                </HardReloadLink>
+              ))}
             </div>
           </section>
 

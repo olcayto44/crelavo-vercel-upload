@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { communityShowcaseAdminChecklist, communityShowcaseTemplates } from "@/lib/community-showcase";
+import { caseStudyProofs, socialProofAdminChecklist, testimonialProofs } from "@/lib/social-proof";
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
@@ -59,6 +60,20 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Admin checklist</h3>
         <ul>{communityShowcaseAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">4. Grup / Final-stage item 2</span>
+        <h2>Social proof, testimonials and case-study blocks</h2>
+        <p style={{ color: "var(--muted)" }}>Homepage proof blocks are now connected to approved examples, conservative role-based testimonials and case-study paths without making unverified revenue claims.</p>
+        <div className="admin-info-grid">
+          <div><span>Testimonials</span><strong>{testimonialProofs.length} proof cards</strong><small>Role-based MVP testimonials until real quotes are approved.</small></div>
+          <div><span>Case studies</span><strong>{caseStudyProofs.length} paths</strong><small>Ad scoring, localization and Community Showcase proof routes.</small></div>
+          <div><span>Guardrail</span><strong>No fake metrics</strong><small>No ROAS or conversion percentage without verified source.</small></div>
+          <div><span>CTA path</span><strong>Proof → request</strong><small>Every proof block links to a live tool, showcase or pricing path.</small></div>
+        </div>
+        <h3>Admin checklist</h3>
+        <ul>{socialProofAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
