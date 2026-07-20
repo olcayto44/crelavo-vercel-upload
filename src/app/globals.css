@@ -3445,7 +3445,22 @@ body.admin-route > .site-footer {
   gap: 8px;
   padding: 18px;
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(15,23,42,.05), rgba(15,23,42,.92));
+  background:
+    radial-gradient(circle at 18% 18%, rgba(34,211,238,.72), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(168,85,247,.62), transparent 30%),
+    radial-gradient(circle at 52% 72%, rgba(34,197,94,.34), transparent 34%),
+    linear-gradient(135deg, #07111f, #1e293b 48%, #312e81);
+}
+.sample-video-preview-cinematic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.16), transparent 32%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 54px);
+  opacity: .75;
 }
 .sample-card-video {
   position: absolute !important;

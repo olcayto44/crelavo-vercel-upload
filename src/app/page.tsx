@@ -5,6 +5,7 @@ import { FaqStructuredData } from "@/components/FaqStructuredData";
 import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
+import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
@@ -34,6 +35,14 @@ const homepageGoalWizard = [
     badge: "Best for new ideas",
     step: "03"
   }
+];
+
+const appLauncherSlides: HomeShowcaseSlide[] = [
+  { title: "Explore", kicker: "Samples", description: "Browse large sample outputs and open dedicated detail pages.", href: "/showcase/explore-samples", tone: "cyan", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192157407622951-1783192157402.png" },
+  { title: "Assets", kicker: "Materials", description: "Use images, videos, audio references and documents across productions.", href: "/showcase/assets-library", tone: "green", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192199380895416-1783192199376.png" },
+  { title: "Omni", kicker: "Assistant", description: "Tell Crelavo what you want to create and let the system route the workflow.", href: "/showcase/omni-assistant", tone: "blue", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192218134042523-1783192218131.png" },
+  { title: "Generate", kicker: "Create", description: "Start video, web, app, brand file or visual production from one hub.", href: "/dashboard/assistant-workspace", tone: "pink", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192231039044746-1783192231031.png" },
+  { title: "Workspace", kicker: "Live tracking", description: "Track live productions, revisions, outputs and final delivery packages.", href: "/showcase/live-workspace", tone: "amber", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192247858193551-1783192247854.png" }
 ];
 
 const featuredTools = [
@@ -107,6 +116,8 @@ export default async function HomePage() {
               ))}
             </div>
           </section>
+
+          <HomeShowcaseSlider title="Explore Crelavo" subtitle="A light moving showcase for samples, assets, Omni Assistant, generation and workspace tracking." slides={appLauncherSlides} />
 
           <section className="container section home-section-tight clean-feed-section">
             <div className="sample-video-head">
