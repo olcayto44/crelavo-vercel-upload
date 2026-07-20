@@ -434,6 +434,156 @@ export const alternativePages: AlternativePage[] = [
     relatedSlugs: ["adcreative-ai-alternative", "canva-alternative", "product-video-generator-alternative"]
   },
   {
+    slug: "crelavo-vs-runway",
+    competitor: "Runway",
+    category: "Crelavo vs AI video company",
+    title: "Crelavo vs Runway",
+    metaTitle: "Crelavo vs Runway for Ecommerce Product Video Workflows",
+    metaDescription: "Compare Crelavo vs Runway for AI video generation, product ads, ecommerce campaign briefs, managed delivery and AI + human QA production workflows.",
+    h1: "Crelavo vs Runway for ecommerce product video and campaign delivery",
+    summary: "Crelavo vs Runway is a high-intent comparison for teams that need AI video connected to product links, campaign briefs, captions, delivery notes and human QA instead of only generative video experimentation.",
+    bestFor: "ecommerce sellers, agencies and founders comparing AI video companies for campaign-ready output",
+    competitorFit: "Runway is strong for generative video experiments, creative video editing and visual exploration.",
+    crelavoFit: "Crelavo is better when the video must become a product campaign with hook, proof, CTA, delivery path and review context.",
+    primaryKeyword: "Crelavo vs Runway",
+    secondaryKeywords: ["Runway vs Crelavo", "Runway alternative for ecommerce video", "AI video company comparison", "AI product video workflow"],
+    h2Sections: [
+      { title: "AI video generation versus campaign production", body: "Runway helps users create and experiment with AI video. Crelavo focuses on routing product context into a production request with ecommerce hooks, marketplace angles, captions and delivery notes.", bullets: ["Product link to campaign brief", "AI + human QA delivery", "Marketplace-specific ad video paths"] },
+      { title: "When Crelavo is the better fit", body: "Use Crelavo when the buyer journey starts from a Shopify, Amazon, Trendyol or product page and the team needs a clear ad video workflow instead of isolated clip generation.", bullets: ["Ecommerce campaign planning", "Credit and delivery visibility", "Internal links to product video pages"] }
+    ],
+    comparison: commonComparison("Runway"),
+    faq: [
+      { question: "Is Crelavo a direct Runway replacement?", answer: "No. Runway is a generative video platform. Crelavo is positioned as a managed AI production studio for product videos, ecommerce campaigns and delivery workflows." },
+      { question: "Which is better for Shopify product ads?", answer: "Crelavo is more focused on Shopify product-link-to-ad workflows, campaign hooks and ecommerce delivery context." }
+    ],
+    relatedSlugs: ["runway-alternative", "best-ai-product-video-generators", "product-video-generator-alternative"]
+  },
+  {
+    slug: "crelavo-vs-heygen",
+    competitor: "HeyGen",
+    category: "Crelavo vs AI video company",
+    title: "Crelavo vs HeyGen",
+    metaTitle: "Crelavo vs HeyGen for AI Videos and Product Campaigns",
+    metaDescription: "Compare Crelavo vs HeyGen for avatar videos, ecommerce product ads, campaign assets, localization workflows and managed AI + human QA delivery.",
+    h1: "Crelavo vs HeyGen for talking videos, product campaigns and managed production",
+    summary: "Crelavo vs HeyGen helps buyers compare avatar/talking video workflows with a broader Crelavo production system for product videos, ecommerce campaigns, website assets and delivery-ready requests.",
+    bestFor: "teams that need talking video as one asset inside a larger ecommerce or launch campaign",
+    competitorFit: "HeyGen is often used for avatars, presenter-style videos, localization and talking-video content.",
+    crelavoFit: "Crelavo is better when the project also needs product visuals, ad hooks, landing copy, marketplace campaign context and dashboard delivery.",
+    primaryKeyword: "Crelavo vs HeyGen",
+    secondaryKeywords: ["HeyGen vs Crelavo", "HeyGen alternative for product video", "AI avatar video comparison", "AI video production studio"],
+    h2Sections: [
+      { title: "Avatar video versus full campaign output", body: "A presenter video can explain a product, but ecommerce teams often need product scenes, offer structure, captions, thumbnails, landing copy and revision context. Crelavo organizes those needs in one request path.", bullets: ["Avatar and non-avatar video paths", "Product ad brief support", "Social and landing page output"] },
+      { title: "Best comparison intent", body: "This page is for users comparing AI video companies and deciding whether they need a self-serve avatar tool or a broader production workflow.", bullets: ["Ecommerce video campaigns", "Launch asset packages", "AI + human QA delivery"] }
+    ],
+    comparison: commonComparison("HeyGen"),
+    faq: [
+      { question: "Does Crelavo replace HeyGen avatars?", answer: "Crelavo can support talking-video style requests, but it is positioned more broadly around campaign and ecommerce production." },
+      { question: "When should a team choose Crelavo?", answer: "Choose Crelavo when the video must connect to product pages, campaign copy, social ads, websites or app launch assets." }
+    ],
+    relatedSlugs: ["heygen-alternative", "synthesia-alternative", "crelavo-vs-runway"]
+  },
+  {
+    slug: "crelavo-vs-synthesia",
+    competitor: "Synthesia",
+    category: "Crelavo vs AI video company",
+    title: "Crelavo vs Synthesia",
+    metaTitle: "Crelavo vs Synthesia for Business Videos and Campaign Assets",
+    metaDescription: "Compare Crelavo vs Synthesia for business videos, product campaigns, ecommerce assets, website/app production and managed AI delivery workflows.",
+    h1: "Crelavo vs Synthesia for business video, ecommerce campaigns and creative production",
+    summary: "Crelavo vs Synthesia compares presenter-style business video workflows with a broader Crelavo system for product ads, campaign assets, websites, apps and AI + human QA delivery.",
+    bestFor: "businesses that need video plus campaign assets, not only presenter videos",
+    competitorFit: "Synthesia is known for AI avatar and presenter-style business video production.",
+    crelavoFit: "Crelavo is better when the same request must include product ad direction, social assets, landing pages, app or website production and delivery notes.",
+    primaryKeyword: "Crelavo vs Synthesia",
+    secondaryKeywords: ["Synthesia vs Crelavo", "Synthesia alternative for ecommerce", "AI business video comparison", "managed AI video production"],
+    h2Sections: [
+      { title: "Presenter video versus multi-asset production", body: "Synthesia-style output is useful for business explainers. Crelavo expands the production scope into ecommerce ads, website/app assets, product videos and campaign material.", bullets: ["Business video plus campaign copy", "Product ad and ecommerce support", "Dashboard delivery structure"] },
+      { title: "Who should compare these platforms?", body: "Teams searching Crelavo vs Synthesia usually want AI business video but may also need a broader managed production system.", bullets: ["Marketing teams", "Ecommerce teams", "Startup launch teams"] }
+    ],
+    comparison: commonComparison("Synthesia"),
+    faq: [
+      { question: "Is Crelavo only for business videos?", answer: "No. Crelavo covers video, ecommerce campaigns, websites, apps, brand assets and delivery workflows." },
+      { question: "Why choose Crelavo over a presenter-video tool?", answer: "Choose Crelavo when the video is part of a larger campaign or production package." }
+    ],
+    relatedSlugs: ["synthesia-alternative", "crelavo-vs-heygen", "best-ai-production-studio-alternatives"]
+  },
+  {
+    slug: "best-shopify-video-generator-tools",
+    competitor: "Shopify video creation tools",
+    category: "Best tools comparison",
+    title: "Best Shopify video generator tools",
+    metaTitle: "Best Shopify Video Generator Tools for Product Ads | Crelavo",
+    metaDescription: "Compare the best Shopify video generator tools for product pages, product-link-to-ad workflows, social ads, UGC-style videos and ecommerce campaign delivery.",
+    h1: "Best Shopify video generator tools for product ads and ecommerce campaigns",
+    summary: "This page targets merchants comparing the best Shopify video generator tools and explains why Crelavo is useful when a product URL needs to become a campaign-ready video brief, hook, caption and delivery request.",
+    bestFor: "Shopify merchants, DTC teams and ecommerce agencies comparing product video tools",
+    competitorFit: "Shopify video creation tools can help create videos, embed product media or edit social clips.",
+    crelavoFit: "Crelavo is better when Shopify product context must become a managed ad video workflow with campaign copy, proof, CTA and QA.",
+    primaryKeyword: "best Shopify video generator tools",
+    secondaryKeywords: ["best Shopify video creation tools", "Shopify product video generator", "Shopify product link to ad video", "AI video tools for Shopify"],
+    h2Sections: [
+      { title: "What Shopify sellers should compare", body: "A useful Shopify video tool should understand product context, buyer objections, offer structure, platform format and delivery expectations. Crelavo connects those pieces before production starts.", bullets: ["Product URL intake", "Short-form ad direction", "Credit and delivery clarity"] },
+      { title: "Where Crelavo fits in the Shopify stack", body: "Crelavo can sit between product page research and final creative delivery, helping the seller prepare hooks, captions, video direction and reusable campaign assets.", bullets: ["Shopify campaign funnel", "AI ad scorer entry", "Product video generator path"] }
+    ],
+    comparison: commonComparison("Shopify video creation tools"),
+    faq: [
+      { question: "What is the best Shopify video generator for campaign briefs?", answer: "Crelavo is designed for product-link-to-campaign workflows where the video needs hook, proof, CTA and delivery context." },
+      { question: "Does this page claim Crelavo is a live Shopify app?", answer: "No. It focuses on the public workflow and acquisition path while Shopify API/app-store work remains part of the integration roadmap." }
+    ],
+    relatedSlugs: ["shopify-video-app-alternative", "product-video-generator-alternative", "crelavo-vs-runway"]
+  },
+  {
+    slug: "best-ai-product-video-generators",
+    competitor: "AI product video generators",
+    category: "Best tools comparison",
+    title: "Best AI product video generators",
+    metaTitle: "Best AI Product Video Generators for Ecommerce Campaigns | Crelavo",
+    metaDescription: "Compare the best AI product video generators for ecommerce sellers, product ads, Shopify/Amazon/Trendyol campaigns, social clips and managed delivery.",
+    h1: "Best AI product video generators for ecommerce campaigns and product ads",
+    summary: "This listicle-style comparison targets buyers searching for the best AI product video generators and routes them toward Crelavo product-video, marketplace and campaign workflows.",
+    bestFor: "ecommerce sellers and agencies comparing product video platforms before spending production budget",
+    competitorFit: "AI product video generators may create short clips from images, templates, text prompts or product data.",
+    crelavoFit: "Crelavo is better when product video needs to connect to campaign angle, marketplace proof, captions, landing copy, pricing and delivery QA.",
+    primaryKeyword: "best AI product video generators",
+    secondaryKeywords: ["AI product video generator", "best product video generator", "ecommerce product video tools", "AI product ad video maker"],
+    h2Sections: [
+      { title: "How to evaluate AI product video generators", body: "Compare tools by product intake, ecommerce context, campaign copy, platform adaptation, revision path, delivery handoff and whether the output supports real ad decisions.", bullets: ["Product proof and offer clarity", "TikTok/Reels/Shorts formats", "Human QA and delivery notes"] },
+      { title: "Why Crelavo is included", body: "Crelavo is not only a clip generator. It helps turn product context into a managed campaign request with video, hook, caption, page and delivery connections.", bullets: ["Shopify, Amazon and Trendyol paths", "Free ad scorer funnel", "Assistant Workspace handoff"] }
+    ],
+    comparison: commonComparison("AI product video generators"),
+    faq: [
+      { question: "What should ecommerce teams look for in AI product video generators?", answer: "Look for product context, strong hooks, proof handling, platform formats, revision logic and delivery clarity, not only fast clip generation." },
+      { question: "Is Crelavo only for one product video?", answer: "No. Crelavo can connect product video requests to campaign assets, landing copy, marketplace pages and dashboard delivery." }
+    ],
+    relatedSlugs: ["product-video-generator-alternative", "best-shopify-video-generator-tools", "shopify-video-app-alternative"]
+  },
+  {
+    slug: "best-ecommerce-video-creation-tools",
+    competitor: "Ecommerce video creation tools",
+    category: "Best tools comparison",
+    title: "Best ecommerce video creation tools",
+    metaTitle: "Best Ecommerce Video Creation Tools for Product Campaigns | Crelavo",
+    metaDescription: "Compare ecommerce video creation tools for product ads, marketplace campaigns, Shopify/Amazon/Trendyol sellers, UGC-style clips and managed AI production.",
+    h1: "Best ecommerce video creation tools for product campaigns and marketplace sellers",
+    summary: "This page strengthens programmatic SEO for ecommerce video creation searches and points visitors to Crelavo workflows for product ads, marketplace videos, UGC-style demos and campaign delivery.",
+    bestFor: "Shopify, Amazon, Trendyol and DTC sellers comparing ecommerce video tools",
+    competitorFit: "Ecommerce video creation tools may focus on editing, templates, product media embeds or self-serve clip generation.",
+    crelavoFit: "Crelavo is better when sellers need a campaign-ready brief, product proof, CTA, social format, delivery expectation and human QA review.",
+    primaryKeyword: "best ecommerce video creation tools",
+    secondaryKeywords: ["ecommerce video tools", "product ad video tools", "AI ecommerce video generator", "marketplace product video tools"],
+    h2Sections: [
+      { title: "Ecommerce video tools need campaign context", body: "A product video should not be disconnected from the offer, audience, product proof and marketplace environment. Crelavo keeps those decisions inside the production request.", bullets: ["Marketplace-specific briefs", "UGC and product demo paths", "Ad hook and CTA support"] },
+      { title: "Internal Crelavo paths for ecommerce video", body: "Visitors can continue into Shopify, Amazon, Trendyol, AI product video, campaign category and free ad scoring pages.", bullets: ["Shopify product link ad video", "Amazon product ad video", "Trendyol product video"] }
+    ],
+    comparison: commonComparison("ecommerce video creation tools"),
+    faq: [
+      { question: "Which ecommerce video creation tool is best for managed delivery?", answer: "Crelavo is positioned for managed AI + human QA production with product context, delivery notes and dashboard handoff." },
+      { question: "Can Crelavo support marketplace sellers?", answer: "Yes. Public workflow pages already cover Shopify, Amazon, Trendyol and general ecommerce product video paths." }
+    ],
+    relatedSlugs: ["best-ai-product-video-generators", "best-shopify-video-generator-tools", "product-video-generator-alternative"]
+  },
+  {
     slug: "best-ai-production-studio-alternatives",
     competitor: "AI production studio tools",
     category: "AI production studio",
@@ -479,5 +629,11 @@ export const alternativeHubKeywords = [
   "AI website builder alternative",
   "ecommerce campaign generator alternative",
   "AI ad creative alternative",
+  "Crelavo vs Runway",
+  "Crelavo vs HeyGen",
+  "Crelavo vs Synthesia",
+  "best Shopify video generator tools",
+  "best AI product video generators",
+  "best ecommerce video creation tools",
   "best AI production studio alternatives"
 ];

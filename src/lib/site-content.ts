@@ -100,6 +100,18 @@ export const footerGroups: FooterGroup[] = [
     ]
   },
   {
+    title: "Alternatives and Comparisons",
+    links: [
+      { label: "All AI Tool Alternatives", href: "/alternatives" },
+      { label: "Crelavo vs Runway", href: "/alternatives/crelavo-vs-runway" },
+      { label: "Crelavo vs HeyGen", href: "/alternatives/crelavo-vs-heygen" },
+      { label: "Crelavo vs Synthesia", href: "/alternatives/crelavo-vs-synthesia" },
+      { label: "Best Shopify Video Generator Tools", href: "/alternatives/best-shopify-video-generator-tools" },
+      { label: "Best AI Product Video Generators", href: "/alternatives/best-ai-product-video-generators" },
+      { label: "Best Ecommerce Video Creation Tools", href: "/alternatives/best-ecommerce-video-creation-tools" }
+    ]
+  },
+  {
     title: "Free Tools",
     links: [
       { label: "Free Tools Hub", href: "/free-tools" },
@@ -133,7 +145,8 @@ export const footerGroups: FooterGroup[] = [
       { label: "Usage Rules", href: "/pricing" },
       { label: "Contact / Support", href: "/contact" },
       { label: "Blog / Content", href: "/blog" },
-      { label: "API and Integrations", href: "/dashboard/connections" },
+      { label: "API Documentation", href: "/api-documentation" },
+      { label: "Dashboard Connections", href: "/dashboard/connections" },
       { label: "Partner Program", href: "/affiliate" }
     ]
   }

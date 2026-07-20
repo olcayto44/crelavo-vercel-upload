@@ -49,7 +49,7 @@ export default async function AlternativesPage() {
           <span className="badge">SEO comparison hub</span>
           <h2>Alternative pages for high-intent comparison searches</h2>
           <p>
-            These pages support searches like Canva alternative, Runway alternative, Synthesia alternative, AI product video generator alternative, AI website builder alternative and Shopify video app alternative. Each page links back to Crelavo categories, tools, ecommerce product video pages, pricing and the assistant workspace.
+            These pages support searches like Canva alternative, Runway alternative, Synthesia alternative, Crelavo vs Runway, Crelavo vs HeyGen, best Shopify video generator tools, best AI product video generators, AI website builder alternative and Shopify video app alternative. Each page links back to Crelavo categories, tools, ecommerce product video pages, pricing and the assistant workspace.
           </p>
           <div className="category-option-row">
             {alternativeHubKeywords.map((keyword) => <small key={keyword}>{keyword}</small>)}

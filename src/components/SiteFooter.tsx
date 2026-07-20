@@ -42,10 +42,23 @@ export async function SiteFooter() {
           </nav>
         </div>
         <div className="site-footer-group">
+          <h3>Alternatives</h3>
+          <nav>
+            <HardReloadLink href="/alternatives">All alternatives</HardReloadLink>
+            <HardReloadLink href="/alternatives/crelavo-vs-runway">Crelavo vs Runway</HardReloadLink>
+            <HardReloadLink href="/alternatives/crelavo-vs-heygen">Crelavo vs HeyGen</HardReloadLink>
+            <HardReloadLink href="/alternatives/crelavo-vs-synthesia">Crelavo vs Synthesia</HardReloadLink>
+            <HardReloadLink href="/alternatives/best-shopify-video-generator-tools">Best Shopify video tools</HardReloadLink>
+            <HardReloadLink href="/alternatives/best-ai-product-video-generators">Best AI product video generators</HardReloadLink>
+            <HardReloadLink href="/alternatives/best-ecommerce-video-creation-tools">Best ecommerce video tools</HardReloadLink>
+          </nav>
+        </div>
+        <div className="site-footer-group">
           <h3>Company</h3>
           <nav>
             <HardReloadLink href="/contact">Contact</HardReloadLink>
             <HardReloadLink href="/blog">Blog</HardReloadLink>
+            <HardReloadLink href="/api-documentation">API documentation</HardReloadLink>
             <HardReloadLink href="/affiliate">Partner program</HardReloadLink>
           </nav>
         </div>
