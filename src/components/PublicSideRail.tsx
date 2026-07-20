@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, CircleDollarSign, Contact, Cpu, Drone, Gift, Home, LayoutGrid, Newspaper, RadioTower, Rocket, Sparkles, Wrench } from "lucide-react";
+import { Bot, CircleDollarSign, Contact, Cpu, Drone, Gift, Home, LayoutGrid, Newspaper, RadioTower, Rocket, Sparkles, WandSparkles, Wrench } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const publicRailItems = [
   { label: "Home", href: "/", icon: Home },
   { label: "Categories", href: "/categories", icon: LayoutGrid },
   { label: "Tools", href: "/tools", icon: Wrench },
+  { label: "Feature Paths", href: "/tools#feature-paths", icon: WandSparkles },
   { label: "Free Tools", href: "/free-tools", icon: Gift },
   { label: "Pricing / Credits", href: "/pricing", icon: CircleDollarSign },
   { label: "Start with Assistant", href: "/dashboard/assistant-workspace", icon: Sparkles },

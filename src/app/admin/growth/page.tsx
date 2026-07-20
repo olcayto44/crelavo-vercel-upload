@@ -36,13 +36,13 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage wizard, AI + Human QA, Ad Scorer, pricing clarity and mobile speed are live</h2>
-        <p style={{ color: "var(--muted)" }}>The homepage now gives visitors three clear paths, public trust copy positions delivery as AI speed plus human quality assurance, the AI Ad Scorer is strengthened as a free lead magnet, pricing includes simple credit estimates, and heavy video previews now use safer mobile/static loading.</p>
+        <h2>Homepage premium hero, focused wizard and lightweight conversion flow are live</h2>
+        <p style={{ color: "var(--muted)" }}>The homepage now starts with a premium video hero, keeps the three-path wizard, removes repeated heavy showcase/sample sections, and routes deeper content into Tools, Categories, Free Tools and Pricing through the side rail.</p>
         <div className="admin-info-grid">
-          <div><span>Live page</span><strong>/</strong><small>Goal wizard sits under the hero section and collapses cleanly on mobile.</small></div>
-          <div><span>Free ad score</span><strong>Lead magnet</strong><small>Routes to /free-tools/ad-performance-score-checker before paid production.</small></div>
-          <div><span>Pricing clarity</span><strong>Credit calculator</strong><small>/pricing now shows example credit estimates and quick video math.</small></div>
-          <div><span>Mobile speed</span><strong>Static fallback</strong><small>Sample videos avoid mobile autoplay/metadata load and use preview images or gradients.</small></div>
+          <div><span>Hero</span><strong>Premium video</strong><small>Three short clips create the first impression without old duplicate hero copy.</small></div>
+          <div><span>Conversion</span><strong>Goal wizard</strong><small>Visitors still choose global campaign, free ad score or start from scratch.</small></div>
+          <div><span>Homepage weight</span><strong>Reduced</strong><small>Long showcase sliders, sample grid and affiliate block moved out of the main homepage flow.</small></div>
+          <div><span>Navigation</span><strong>Side rail</strong><small>Tools, categories, pricing, blog and contact stay reachable without crowding the page.</small></div>
         </div>
       </section>
 

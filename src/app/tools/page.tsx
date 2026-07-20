@@ -77,17 +77,24 @@ export default async function ToolsPage() {
           </div>
         </section>
 
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 18 }}>
-          <span className="badge">New feature Phase 1 SEO</span>
-          <h2>Roadmap tool pages for scoring, virtual models, localization, campaign planning and community proof</h2>
+        <section id="feature-paths" className="production-hero-card clean-feed-section" style={{ marginTop: 18 }}>
+          <span className="badge">New Crelavo feature paths</span>
+          <h2>AI ad scoring, virtual model visuals, cultural localization and campaign planning tools for ecommerce teams</h2>
           <p>
-            These Phase 1 pages create searchable entry points before the MVP delivery layer. Each page explains the request path, likely credit model and how the feature can later become API-powered automation.
+            Use these niche Crelavo entry points to validate ad ideas, prepare market-specific creative, plan seasonal campaigns and turn examples into credit-based production requests.
           </p>
-          <div className="plan-feature-groups">
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {phaseOneFeaturePages.map((page) => (
-              <Link href={`/${page.slug}`} key={page.slug}>
-                <b>{page.title}</b>
-                <small>{page.primaryKeyword}</small>
+              <Link className="card admin-category-card production-pricing-card" href={`/${page.slug}`} key={page.slug}>
+                <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
+                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
+                  <small>{page.badge}</small>
+                  <strong>Preview</strong>
+                </div>
+                <span className="badge">{page.primaryKeyword}</span>
+                <h3>{page.title}</h3>
+                <p>{page.summary}</p>
+                <span className="text-link">Sayfayı incele</span>
               </Link>
             ))}
           </div>
