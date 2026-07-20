@@ -98,7 +98,7 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
             </div>
           </div>
           <div className="sample-detail-player-card" aria-label={`${sample.title} video preview`}>
-            <video className="sample-detail-player-video" src={sampleVideoUrl} controls playsInline preload="metadata" poster={sample.thumbnailUrl} />
+            <video className="sample-detail-player-video" src={sampleVideoUrl} controls playsInline preload="metadata" poster={sample.thumbnailUrl} aria-label={`Crelavo sample video preview for ${sample.title} in ${sample.category}`} />
           </div>
         </section>
 

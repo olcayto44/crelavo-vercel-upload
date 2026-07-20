@@ -59,8 +59,8 @@ export const adminSupportedDeliveryTemplates = [
   },
   {
     title: "Community Showcase delivery",
-    adminAction: "Approve one public example, one template reuse angle and one similar-style route.",
-    deliverable: "Approved showcase item, similar-style guidance and reuse-ready request prompt.",
+    adminAction: "Approve one public example, extract one reusable template angle, confirm the credit range and route the similar-style request into Assistant Workspace.",
+    deliverable: "Approved showcase item, template reuse guidance, credit estimate and reuse-ready request prompt.",
     apiNeeded: 0
   }
 ];

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { communityShowcaseAdminChecklist, communityShowcaseApprovalFlow, communityShowcaseTemplates } from "@/lib/community-showcase";
 import type { PhaseOneFeaturePage } from "@/lib/feature-phase-one";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -125,6 +126,50 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
               <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=cultural_localization&idea=Localize%20my%20product%20campaign">Prepare localization brief</Link>
               <Link className="btn secondary" href="/blog/shopify-amazon-trendyol-ai-campaign-checklist">Open ecommerce checklist</Link>
               <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
+            </div>
+          </section>
+        ) : null}
+
+        {page.slug === "community-showcase" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">Manual approval + template credits</span>
+            <h2>Turn approved public examples into reusable production templates</h2>
+            <p style={{ color: "var(--muted)" }}>
+              Community Showcase now works as a controlled trust and revenue loop: examples stay manually approved, each public proof item gets a reusable template angle, and similar-style requests move into credit-based AI + human QA production.
+            </p>
+            <div className="admin-info-grid">
+              <div><span>Approval</span><strong>Manual first</strong><small>No item appears publicly before privacy, rights and quality review.</small></div>
+              <div><span>Template reuse</span><strong>Prompt-ready</strong><small>Every showcase item explains how a visitor can request a similar output.</small></div>
+              <div><span>Credit economy</span><strong>Estimate shown</strong><small>Reusable examples point to an expected Crelavo credit range before work starts.</small></div>
+              <div><span>Rewards</span><strong>Credits before cash</strong><small>Creator or customer rewards can start as manually approved Crelavo credits.</small></div>
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {communityShowcaseTemplates.map((template) => (
+                <div className="card admin-category-card production-pricing-card" key={template.title}>
+                  <span className="badge">{template.category}</span>
+                  <h3>{template.title}</h3>
+                  <p><strong>{template.creditRange}</strong></p>
+                  <p>{template.reusePath}</p>
+                  <p>{template.proofAngle}</p>
+                </div>
+              ))}
+            </div>
+            <h3>Approval flow</h3>
+            <div className="delivery-step-grid">
+              {communityShowcaseApprovalFlow.map((item) => (
+                <div className="delivery-step-card" key={item.step}>
+                  <span className="badge">{item.owner}</span>
+                  <h3>{item.step}</h3>
+                  <p>{item.check}</p>
+                </div>
+              ))}
+            </div>
+            <h3>Admin checklist</h3>
+            <ul>{communityShowcaseAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <Link className="btn" href="/dashboard/assistant-workspace?mode=media&category=community_showcase&idea=Use%20this%20approved%20showcase%20style%20as%20a%20new%20credit-based%20production%20request">Use a showcase style</Link>
+              <Link className="btn secondary" href="/pricing">View credit packages</Link>
+              <Link className="btn secondary" href="/showcase/explore-samples">Open sample proof</Link>
             </div>
           </section>
         ) : null}

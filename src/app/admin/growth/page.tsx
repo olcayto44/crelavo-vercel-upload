@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
+import { communityShowcaseAdminChecklist, communityShowcaseTemplates } from "@/lib/community-showcase";
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
@@ -35,15 +36,29 @@ export default function AdminGrowthPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage AEO, localization proof, Academy engine and programmatic SEO are live</h2>
-        <p style={{ color: "var(--muted)" }}>The first three orta ölçekli UX/SEO items are now represented: localization before/after proof, Academy lesson-to-production content engine, and programmatic SEO landing page templates for platform, industry, country and free-tool searches.</p>
+        <span className="badge">4. Grup / UX conversion</span>
+        <h2>Community Showcase template and credit economy is now mapped</h2>
+        <p style={{ color: "var(--muted)" }}>Localization proof, Academy content engine, programmatic SEO, visual SEO and the first final-stage Community Showcase reuse loop are now represented across public pages and admin growth tracking.</p>
         <div className="admin-info-grid">
           <div><span>Localization proof</span><strong>Before / after</strong><small>/ai-cultural-localization shows generic vs market-specific campaign proof.</small></div>
           <div><span>Academy engine</span><strong>Learn → tool → brief</strong><small>/crelavo-academy connects lesson clusters to Blog, Free Tools and Assistant.</small></div>
-          <div><span>Programmatic SEO</span><strong>Niche templates</strong><small>/blog now includes page templates for platform, industry, country and problem searches.</small></div>
-          <div><span>SEO/admin</span><strong>Tracked</strong><small>Admin SEO and Site Content panels document the new content and landing-page engine work.</small></div>
+          <div><span>Programmatic SEO</span><strong>Niche templates</strong><small>/blog includes platform, industry, country and problem-search templates.</small></div>
+          <div><span>Community Showcase</span><strong>Manual template credits</strong><small>/community-showcase now explains approved examples, reuse templates and credit ranges.</small></div>
         </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">4. Grup / Final-stage item 1</span>
+        <h2>Manual Community Showcase economy</h2>
+        <p style={{ color: "var(--muted)" }}>Use this to publish only approved examples, extract reusable template logic and route similar-style requests into credit packages before API automation exists.</p>
+        <div className="admin-info-grid">
+          <div><span>Templates</span><strong>{communityShowcaseTemplates.length} reuse paths</strong><small>UGC, ad scoring, website hero and localization templates.</small></div>
+          <div><span>Approval</span><strong>Admin reviewed</strong><small>Privacy, rights, quality and claim safety before public display.</small></div>
+          <div><span>Credit loop</span><strong>Estimate first</strong><small>Each template has a visible credit range before production starts.</small></div>
+          <div><span>Reward guardrail</span><strong>Credits first</strong><small>Creator/customer rewards stay manual and credit-based before cash payout logic.</small></div>
+        </div>
+        <h3>Admin checklist</h3>
+        <ul>{communityShowcaseAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

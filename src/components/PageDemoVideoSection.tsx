@@ -41,7 +41,7 @@ export function PageDemoVideoSection({ sample, badge, title, description, fallba
       </div>
       {sample?.videoUrl ? (
         <div className="showcase-video-panel" aria-label={`${title} video preview`}>
-          <video className="showcase-detail-video" src={sample.videoUrl} poster={sample.thumbnailUrl} controls playsInline preload="metadata" />
+          <video className="showcase-detail-video" src={sample.videoUrl} poster={sample.thumbnailUrl} controls playsInline preload="metadata" aria-label={`Crelavo ${title} demo video preview for ${videoTitle}`} />
         </div>
       ) : (
         <div className="showcase-info-card" aria-label={`${title} preview details`}>

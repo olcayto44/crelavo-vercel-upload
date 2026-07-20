@@ -88,7 +88,7 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
           <Link className="sample-video-card sample-video-card-cinematic" href={`/samples/${item.id}`} key={item.id} onMouseEnter={allowVideoPreview ? playPreview : undefined} onMouseLeave={allowVideoPreview ? pausePreview : undefined}>
             <div className="sample-video-preview sample-video-preview-cinematic">
               {item.thumbnailUrl ? (
-                <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={`${item.title} static preview`} loading="lazy" decoding="async" />
+                <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={`Crelavo ${item.category} sample video poster for ${item.title}`} loading="lazy" decoding="async" />
               ) : <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />}
               {allowVideoPreview ? (
                 <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="metadata" poster={item.thumbnailUrl} />

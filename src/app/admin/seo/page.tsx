@@ -10,7 +10,8 @@ const seoModules = [
   { title: "Open Graph", file: "social preview config", fields: ["OG title", "OG description", "OG image", "Twitter card"] },
   { title: "Cultural localization proof", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Before/after proof block", "Localized campaign internal links", "Ecommerce checklist blog CTA", "Campaign category CTA"] },
   { title: "Academy content engine", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Lesson cluster cards", "Free tool CTAs", "Blog hub CTA", "Assistant brief CTA"] },
-  { title: "Programmatic SEO engine", file: "src/app/blog/page.tsx", fields: ["Platform + product video template", "Industry + campaign asset template", "Country + localization template", "Problem + free tool template"] }
+  { title: "Programmatic SEO engine", file: "src/app/blog/page.tsx", fields: ["Platform + product video template", "Industry + campaign asset template", "Country + localization template", "Problem + free tool template"] },
+  { title: "Visual SEO / alt text", file: "public media components", fields: ["Sample gallery poster alt", "Showcase video aria-label", "Sample detail video aria-label", "Page demo video aria-label"] }
 ];
 
 export default function AdminSeoPage() {

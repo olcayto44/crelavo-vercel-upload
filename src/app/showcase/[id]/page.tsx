@@ -120,7 +120,7 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
             </div>
           </div>
           <div className="showcase-video-panel" aria-label={`${item.title} video preview`}>
-            <video className="showcase-detail-video" src={showcaseVideoUrl} controls playsInline preload="metadata" poster={item.imageUrl} />
+            <video className="showcase-detail-video" src={showcaseVideoUrl} controls playsInline preload="metadata" poster={item.imageUrl} aria-label={`Crelavo showcase video preview for ${item.title}`} />
           </div>
         </section>
 
