@@ -36,13 +36,13 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Acil UX conversion</span>
-        <h2>Homepage AEO schema and cultural localization proof are live</h2>
-        <p style={{ color: "var(--muted)" }}>The homepage has stronger structured data, and the first orta ölçekli UX/SEO item adds a before/after proof section to the AI Cultural Localization page with internal links into Assistant, campaign category and the ecommerce checklist blog path.</p>
+        <h2>Homepage AEO, localization proof, Academy engine and programmatic SEO are live</h2>
+        <p style={{ color: "var(--muted)" }}>The first three orta ölçekli UX/SEO items are now represented: localization before/after proof, Academy lesson-to-production content engine, and programmatic SEO landing page templates for platform, industry, country and free-tool searches.</p>
         <div className="admin-info-grid">
-          <div><span>Hero</span><strong>Premium video</strong><small>Three short clips create the first impression without old duplicate hero copy.</small></div>
-          <div><span>AEO schema</span><strong>Structured data</strong><small>Homepage graph now connects app, service, FAQ, production paths and actions.</small></div>
-          <div><span>Localization proof</span><strong>Before / after</strong><small>/ai-cultural-localization now shows generic vs market-specific campaign proof.</small></div>
-          <div><span>SEO/admin</span><strong>Tracked</strong><small>Admin SEO module includes the cultural localization proof block and blog/internal CTA checklist.</small></div>
+          <div><span>Localization proof</span><strong>Before / after</strong><small>/ai-cultural-localization shows generic vs market-specific campaign proof.</small></div>
+          <div><span>Academy engine</span><strong>Learn → tool → brief</strong><small>/crelavo-academy connects lesson clusters to Blog, Free Tools and Assistant.</small></div>
+          <div><span>Programmatic SEO</span><strong>Niche templates</strong><small>/blog now includes page templates for platform, industry, country and problem searches.</small></div>
+          <div><span>SEO/admin</span><strong>Tracked</strong><small>Admin SEO and Site Content panels document the new content and landing-page engine work.</small></div>
         </div>
       </section>
 

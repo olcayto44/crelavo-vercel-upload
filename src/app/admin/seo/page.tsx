@@ -8,7 +8,9 @@ const seoModules = [
   { title: "Google Search Console", file: "manual submission", fields: ["Domain property", "Sitemap submit status", "URL inspection", "Indexing notes"] },
   { title: "Google Analytics / Tag Manager", file: "layout script area", fields: ["GA measurement ID", "GTM container ID", "Cookie consent", "Conversion events"] },
   { title: "Open Graph", file: "social preview config", fields: ["OG title", "OG description", "OG image", "Twitter card"] },
-  { title: "Cultural localization proof", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Before/after proof block", "Localized campaign internal links", "Ecommerce checklist blog CTA", "Campaign category CTA"] }
+  { title: "Cultural localization proof", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Before/after proof block", "Localized campaign internal links", "Ecommerce checklist blog CTA", "Campaign category CTA"] },
+  { title: "Academy content engine", file: "src/components/PhaseOneFeaturePage.tsx", fields: ["Lesson cluster cards", "Free tool CTAs", "Blog hub CTA", "Assistant brief CTA"] },
+  { title: "Programmatic SEO engine", file: "src/app/blog/page.tsx", fields: ["Platform + product video template", "Industry + campaign asset template", "Country + localization template", "Problem + free tool template"] }
 ];
 
 export default function AdminSeoPage() {

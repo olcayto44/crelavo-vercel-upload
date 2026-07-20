@@ -212,6 +212,25 @@ export default async function BlogPage() {
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Programmatic SEO landing pages</span>
+          <h2>Niche landing page engine for product, platform and use-case searches</h2>
+          <p>
+            Crelavo can scale organic acquisition by combining platform keywords, production types and buyer intent into focused landing pages. Each page should answer one search need, link to the right category, include a free tool or checklist, and move qualified users into Assistant Workspace or Pricing.
+          </p>
+          <div className="admin-info-grid">
+            <div><span>Template A</span><strong>Platform + product video</strong><small>Shopify, Amazon, Trendyol, WooCommerce and marketplace-specific product video pages.</small></div>
+            <div><span>Template B</span><strong>Industry + campaign asset</strong><small>Beauty, fashion, SaaS, local service, real estate and education campaign pages.</small></div>
+            <div><span>Template C</span><strong>Country + localization</strong><small>German, Gulf, Japan, USA or Turkey market adaptation pages.</small></div>
+            <div><span>Template D</span><strong>Problem + free tool</strong><small>Ad hook score, product description, caption, landing page copy and campaign checklist searches.</small></div>
+          </div>
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            <Link className="card admin-category-card" href="/shopify-ai-product-video-app"><span className="badge">Platform page</span><h3>Shopify AI product video app</h3><p>Product URL to ad video demand for Shopify sellers.</p></Link>
+            <Link className="card admin-category-card" href="/woocommerce-ai-product-video-plugin"><span className="badge">Plugin page</span><h3>WooCommerce AI product video plugin</h3><p>WordPress store owners looking for product video automation.</p></Link>
+            <Link className="card admin-category-card" href="/ai-cultural-localization"><span className="badge">Localization page</span><h3>Country-specific campaign localization</h3><p>Market adaptation proof, hooks and production brief CTAs.</p></Link>
+          </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">Launch distribution guide</span>
           <h2>AI tool launch plan, SaaS launch distribution and organic traffic plan</h2>
           <p>

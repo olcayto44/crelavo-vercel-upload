@@ -50,6 +50,44 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
           </section>
         ) : null}
 
+        {page.slug === "crelavo-academy" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">SEO content engine</span>
+            <h2>Turn Crelavo Academy into a learning hub that feeds production demand</h2>
+            <p style={{ color: "var(--muted)" }}>
+              The Academy page now explains the content engine behind Crelavo: beginner lessons create organic traffic, each lesson links to a related free tool or production path, and the best learners can move into credit-based AI + human QA production.
+            </p>
+            <div className="admin-info-grid">
+              <div><span>Lesson cluster</span><strong>Product video basics</strong><small>Teach product links, hooks, proof points and short-form ad structure.</small></div>
+              <div><span>Lesson cluster</span><strong>Ecommerce localization</strong><small>Teach country-specific buyer psychology before paid localization briefs.</small></div>
+              <div><span>Lesson cluster</span><strong>AI creative workflow</strong><small>Teach prompt, storyboard, voice, visuals and delivery handoff basics.</small></div>
+              <div><span>Conversion path</span><strong>Learn → tool → brief</strong><small>Each lesson sends users to Free Tools, Assistant Workspace or Pricing.</small></div>
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              <Link className="card admin-category-card" href="/blog/shopify-product-link-to-ai-video-guide">
+                <span className="badge">Lesson 01</span>
+                <h3>Shopify product link to AI video</h3>
+                <p>Teach sellers how product pages become ad hooks, video briefs and delivery-ready creative packages.</p>
+              </Link>
+              <Link className="card admin-category-card" href="/blog/shopify-amazon-trendyol-ai-campaign-checklist">
+                <span className="badge">Lesson 02</span>
+                <h3>Marketplace campaign checklist</h3>
+                <p>Teach ecommerce teams what to prepare before requesting Shopify, Amazon or Trendyol campaign assets.</p>
+              </Link>
+              <Link className="card admin-category-card" href="/ai-cultural-localization">
+                <span className="badge">Lesson 03</span>
+                <h3>Cultural localization proof</h3>
+                <p>Teach why hooks, CTA, proof and buyer trust need to change by market.</p>
+              </Link>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+              <Link className="btn" href="/blog">Open content hub</Link>
+              <Link className="btn secondary" href="/free-tools">Open free tools</Link>
+              <Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Turn%20this%20lesson%20into%20a%20production%20brief">Turn lesson into brief</Link>
+            </div>
+          </section>
+        ) : null}
+
         {page.slug === "ai-cultural-localization" ? (
           <section className="card admin-wide-card" style={{ marginTop: 18 }}>
             <span className="badge">Before / after proof</span>

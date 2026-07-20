@@ -8,7 +8,7 @@ export default function AdminSiteContentPage() {
       <section className="card admin-wide-card">
         <span className="badge">Content Management</span>
         <h3>Public site content</h3>
-        <p style={{ color: "var(--muted)", marginTop: 0 }}>This panel manages top navigation, homepage moving showcase slides, blog topics, media slots and footer help content through the platform_configs table. Blog topics can be added, removed and re-ordered from here.</p>
+        <p style={{ color: "var(--muted)", marginTop: 0 }}>This panel manages top navigation, homepage moving showcase slides, blog topics, media slots and footer help content through the platform_configs table. Blog topics can be added, removed and re-ordered from here; the public Blog / Content page now also carries Academy and programmatic SEO engine sections.</p>
         <AdminSiteContentManager initialContent={defaultSiteContentConfig} />
       </section>
     </AdminShell>
