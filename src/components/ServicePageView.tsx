@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ServicePageStructuredData } from "@/components/ServicePageStructuredData";
 import type { ServicePage } from "@/lib/service-pages";
-import { caseStudyProofs, testimonialProofs } from "@/lib/social-proof";
+import { caseStudyProofs, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
 const relatedPages = [
   { href: "/ai-website-builder", label: "AI Website Builder" },
@@ -213,6 +213,14 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <h2>Why teams use Crelavo before full production</h2>
         <p>These conservative proof blocks connect each service page to approved examples, role-based testimonials and case-study paths without making unsupported revenue or ROAS claims.</p>
         <div className="admin-category-grid">
+          {trustedProofSlots.slice(0, 2).map((slot) => (
+            <div className="card admin-category-card" key={slot.label}>
+              <span className="badge">{slot.segment}</span>
+              <h3>{slot.label}</h3>
+              <p><strong>{slot.status}</strong></p>
+              <p>{slot.note}</p>
+            </div>
+          ))}
           {testimonialProofs.slice(0, 2).map((item) => (
             <div className="card admin-category-card" key={item.name}>
               <span className="badge">{item.role}</span>

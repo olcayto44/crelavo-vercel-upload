@@ -9,7 +9,7 @@ import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeSho
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { caseStudyProofs, socialProofMetrics, testimonialProofs } from "@/lib/social-proof";
+import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
 const homepageGoalWizard = [
   {
@@ -175,6 +175,16 @@ export default async function HomePage() {
             <div className="admin-info-grid" style={{ marginTop: 16 }}>
               {socialProofMetrics.map((metric) => (
                 <div key={metric.label}><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.note}</small></div>
+              ))}
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {trustedProofSlots.map((slot) => (
+                <div className="card admin-category-card" key={slot.label}>
+                  <span className="badge">{slot.segment}</span>
+                  <h3>{slot.label}</h3>
+                  <p><strong>{slot.status}</strong></p>
+                  <p>{slot.note}</p>
+                </div>
               ))}
             </div>
             <div className="admin-category-grid" style={{ marginTop: 16 }}>

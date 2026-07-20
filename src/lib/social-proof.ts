@@ -20,6 +20,19 @@ export type CaseStudyProof = {
   href: string;
 };
 
+export type TrustedProofSlot = {
+  label: string;
+  segment: string;
+  status: string;
+  note: string;
+};
+
+export type VerifiedMetricSlot = {
+  label: string;
+  sourceRequired: string;
+  displayRule: string;
+};
+
 export const socialProofMetrics: SocialProofMetric[] = [
   {
     label: "Proof categories",
@@ -59,6 +72,51 @@ export const testimonialProofs: TestimonialProof[] = [
   }
 ];
 
+export const trustedProofSlots: TrustedProofSlot[] = [
+  {
+    label: "Shopify seller logo slot",
+    segment: "Ecommerce proof",
+    status: "Awaiting approved customer logo",
+    note: "Use only after a real Shopify seller gives written permission for public display."
+  },
+  {
+    label: "Amazon seller logo slot",
+    segment: "Marketplace proof",
+    status: "Awaiting approved customer logo",
+    note: "Keep hidden or placeholder-only until a real Amazon seller approves the logo and quote."
+  },
+  {
+    label: "DTC brand proof slot",
+    segment: "Product video proof",
+    status: "Awaiting approved brand story",
+    note: "Publish after the customer approves the before/after story and asset usage rights."
+  },
+  {
+    label: "Agency partner proof slot",
+    segment: "Delivery proof",
+    status: "Awaiting partner approval",
+    note: "Use for an agency or production partner only after the relationship and wording are verified."
+  }
+];
+
+export const verifiedMetricSlots: VerifiedMetricSlot[] = [
+  {
+    label: "Cost reduction claim",
+    sourceRequired: "Customer-approved ad account or campaign report",
+    displayRule: "Do not publish percentage claims such as lower CAC, ROAS lift or cost reduction until the source is verified."
+  },
+  {
+    label: "Revenue or conversion lift",
+    sourceRequired: "Customer-approved analytics screenshot or written case-study approval",
+    displayRule: "Show as a private admin note until the customer approves the exact metric and time window."
+  },
+  {
+    label: "Time saved / faster production",
+    sourceRequired: "Customer quote, delivery log or internal production comparison",
+    displayRule: "Use only with a clear baseline and avoid vague superlatives."
+  }
+];
+
 export const caseStudyProofs: CaseStudyProof[] = [
   {
     title: "Weak product ad to stronger campaign brief",
@@ -91,5 +149,7 @@ export const socialProofAdminChecklist = [
   "Use role-based proof labels instead of fake names when the quote is an internal MVP proof placeholder.",
   "Connect every case study to a live URL, free tool, showcase page or pricing path.",
   "Replace placeholder proof with real customer approval screenshots after launch review.",
-  "Do not claim revenue lift, ROAS or conversion percentage unless the source is verified."
+  "Do not claim revenue lift, ROAS or conversion percentage unless the source is verified.",
+  "Keep logo slots as placeholders until each Shopify, Amazon, DTC or agency customer gives explicit public permission.",
+  "Store every metric source before publishing percentage claims on the homepage, alternatives pages or service pages."
 ];

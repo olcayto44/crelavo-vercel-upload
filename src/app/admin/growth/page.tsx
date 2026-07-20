@@ -1,7 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { communityShowcaseAdminChecklist, communityShowcaseTemplates } from "@/lib/community-showcase";
-import { caseStudyProofs, socialProofAdminChecklist, testimonialProofs } from "@/lib/social-proof";
+import { caseStudyProofs, socialProofAdminChecklist, testimonialProofs, trustedProofSlots, verifiedMetricSlots } from "@/lib/social-proof";
 import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelPlan, trackingEventDefinitions } from "@/lib/analytics-tracking";
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
@@ -68,9 +68,30 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>Homepage proof blocks are now connected to approved examples, conservative role-based testimonials and case-study paths without making unverified revenue claims.</p>
         <div className="admin-info-grid">
           <div><span>Testimonials</span><strong>{testimonialProofs.length} proof cards</strong><small>Role-based MVP testimonials until real quotes are approved.</small></div>
+          <div><span>Logo slots</span><strong>{trustedProofSlots.length} approval slots</strong><small>Shopify, Amazon, DTC and agency proof placeholders.</small></div>
+          <div><span>Metric slots</span><strong>{verifiedMetricSlots.length} locked claims</strong><small>No CAC, ROAS or revenue claims until source approval.</small></div>
           <div><span>Case studies</span><strong>{caseStudyProofs.length} paths</strong><small>Ad scoring, localization and Community Showcase proof routes.</small></div>
-          <div><span>Guardrail</span><strong>No fake metrics</strong><small>No ROAS or conversion percentage without verified source.</small></div>
-          <div><span>CTA path</span><strong>Proof → request</strong><small>Every proof block links to a live tool, showcase or pricing path.</small></div>
+        </div>
+        <h3>Approved logo slots</h3>
+        <div className="admin-category-grid">
+          {trustedProofSlots.map((slot) => (
+            <div className="card admin-category-card" key={slot.label}>
+              <span className="badge">{slot.segment}</span>
+              <h3>{slot.label}</h3>
+              <p><strong>{slot.status}</strong></p>
+              <p>{slot.note}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Verified metric rules</h3>
+        <div className="admin-category-grid">
+          {verifiedMetricSlots.map((slot) => (
+            <div className="card admin-category-card" key={slot.label}>
+              <h3>{slot.label}</h3>
+              <p><strong>Required source:</strong> {slot.sourceRequired}</p>
+              <p>{slot.displayRule}</p>
+            </div>
+          ))}
         </div>
         <h3>Admin checklist</h3>
         <ul>{socialProofAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
