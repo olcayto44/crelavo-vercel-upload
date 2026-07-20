@@ -3321,12 +3321,19 @@ body.admin-route > .site-footer {
 .balanced-footer-grid {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   align-items: start;
+  column-gap: 22px;
+  row-gap: 24px;
 }
-.footer-core-services {
+.footer-core-services,
+.balanced-footer-grid .site-footer-group {
   min-width: 0;
 }
 .footer-brand-bottom-copy {
-  max-width: 1120px;
+  max-width: none;
+  width: 100%;
+}
+.footer-brand-bottom-copy .site-footer-description {
+  max-width: 100%;
 }
 .footer-commerce-row {
   justify-content: flex-start;
@@ -3549,8 +3556,11 @@ body.admin-route > .site-footer {
 @media (max-width: 1100px) {
   .sample-video-card-cinematic,
   .sample-video-card-cinematic:nth-child(n) { grid-column: span 6; }
+  .balanced-footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
+  .balanced-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   .footer-brand-bottom-right {
     grid-column: auto;
     grid-template-columns: 1fr;

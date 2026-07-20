@@ -1,9 +1,6 @@
 import { HardReloadLink } from "@/components/HardReloadLink";
-import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export async function SiteFooter() {
-  const siteContent = await getConfiguredSiteContentConfig();
-  const activeSocialLinks = siteContent.socialLinks.filter((link) => link.active);
   return (
     <footer className="container footer clean-feed-section site-footer">
       <div className="site-footer-grid balanced-footer-grid">
@@ -82,7 +79,6 @@ export async function SiteFooter() {
             <a href="https://www.youtube.com/" target="_blank" rel="noreferrer">YouTube</a>
             <a href="https://www.tiktok.com/" target="_blank" rel="noreferrer">TikTok</a>
             <a href="https://x.com/" target="_blank" rel="noreferrer">X / Twitter</a>
-            {activeSocialLinks.map((link) => <a href={link.href} key={`${link.label}-${link.href}`} target="_blank" rel="noreferrer">{link.label}</a>)}
           </nav>
         </div>
       </div>
@@ -96,7 +92,7 @@ export async function SiteFooter() {
 
       <div className="site-footer-brand footer-brand-bottom-copy">
         <HardReloadLink href="/" className="site-footer-brand-link"><strong>Crelavo</strong></HardReloadLink>
-        <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for websites, mobile apps, ecommerce product campaigns, Shopify product link ads, Amazon product campaigns and Trendyol product videos">Global AI production studio for websites, mobile apps, ecommerce product campaigns, Shopify/Amazon/Trendyol product links, ad videos, avatars, visuals, voice-over and AI + human QA delivery.</p>
+        <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for ecommerce, launch assets, product videos and managed creative workflows">Crelavo is a global AI production studio for websites, mobile apps, ecommerce product campaigns, Shopify/Amazon/Trendyol product links, ad videos, avatars, visuals, voice-over and AI + human QA delivery. Teams can plan product-link-to-video campaigns, launch assets, UGC-style creator content, cultural localization, campaign calendars, community showcase templates, API/integration roadmaps, ad scoring workflows, virtual model concepts and social distribution packs from one managed creative system.</p>
       </div>
 
       <div className="site-footer-bottom">
