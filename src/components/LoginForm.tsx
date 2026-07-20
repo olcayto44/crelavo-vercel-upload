@@ -82,7 +82,7 @@ export function LoginForm() {
         <span className="badge">Google one-click entry</span>
         <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Continue with Google to enter Assistant Workspace quickly. New eligible users receive 1,000 one-time Assistant trial credits for planning/chat only, not production rendering.</p>
       </div>
-      <div className="auth-provider-grid">
+      <div className="auth-provider-grid login-provider-grid">
         <button className="btn auth-google-btn" type="button" onClick={() => continueWithProvider("google")} disabled={state === "loading"}>Continue with Google</button>
         <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("github")} disabled={state === "loading"}>Continue with GitHub</button>
         <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("azure")} disabled={state === "loading"}>Continue with Microsoft</button>

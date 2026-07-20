@@ -33,9 +33,9 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
               <Link className="btn secondary" href={next}>Preview production request</Link>
             </div>
           ) : null}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, margin: "16px 0 18px" }}>
-            <Link className="btn" href="/auth/login">Member login</Link>
-            <Link className="btn secondary" href="/affiliate">Apply as partner</Link>
+          <div className="auth-login-mode-row">
+            <Link className="btn" href="/auth/login">Sign in</Link>
+            <Link className="btn secondary" href={registerHref}>Create account</Link>
           </div>
           <div id="member-login">
             <LoginForm />

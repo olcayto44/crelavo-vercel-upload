@@ -763,6 +763,53 @@ label {
   display: grid;
 }
 
+body.auth-route > .site-footer {
+  display: none !important;
+}
+
+body.auth-route main.section {
+  padding-top: 28px;
+  padding-bottom: 32px;
+}
+
+.auth-card {
+  padding: 22px;
+}
+
+.auth-login-mode-row,
+.auth-provider-grid.login-provider-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+
+.auth-provider-grid.login-provider-grid .btn,
+.auth-login-mode-row .btn {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
+  white-space: normal;
+}
+
+.auth-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  background: rgba(148,163,184,.22);
+}
+
 .brief-two-col, .payment-layout, .assistant-production-console {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
