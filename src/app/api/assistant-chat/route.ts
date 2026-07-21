@@ -31,7 +31,7 @@ function normalizeTurkishQuery(value: string) {
 }
 
 function hasTurkishQuestionWords(normalized: string) {
-  return /(peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|kredi|maliyet|fiyat|para|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk)/.test(normalized);
+  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|kredi|maliyet|fiyat|para|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
 }
 
 function isCreditCostQuestion(message: string) {
@@ -124,14 +124,26 @@ function languageName(code: string) {
 
 function fallbackReply(message: string, language: string) {
   if (isMaterialUploadQuestion(message)) return materialUploadFallbackReply(message, language);
-  if (language === "tr" || hasTurkishQuestionWords(normalizeTurkishQuery(message))) {
-    return "Bunu net cevaplayabilmem için bir cümle daha detay verir misin?";
+  const normalized = normalizeTurkishQuery(message);
+  const text = message.toLocaleLowerCase("tr-TR").trim();
+  const replyLanguage = language === "tr" || hasTurkishQuestionWords(normalized) || /[çğıöşü]/i.test(message) ? "tr" : language;
+
+  if (replyLanguage === "tr") {
+    if (/^(selam|merhaba|sa|slm|hey)\b/.test(text)) return "Selam, buradayım. Ne yapmak istediğini yaz ya da sesli söyle; ben kısa ve net yardımcı olayım.";
+    if (/^(nasılsın|nasilsin|naber|ne haber|iyimisin|iyi misin)\b/.test(text)) return "İyiyim, buradayım. Sen ne yapmak istiyorsun?";
+    if (/neden\s+türkçe\s+yazmıyorsun|neden\s+turkce\s+yazmiyorsun/.test(normalized)) return "Haklısın, Türkçe devam edeceğim. Sen Türkçe yazdığında veya konuştuğunda ben de Türkçe cevap vereceğim.";
+    if (/sen\s+nerenin\s+asistanısın|sen\s+nerenin\s+asistanisin|kimsin|nesin/.test(normalized)) return "Ben Crelavo çalışma alanındaki yapay zekâ asistanıyım. Site, üretim, API, video, reklam, kredi, dashboard ve proje işleri için sana adım adım yardımcı olurum.";
+    if (/yardım|yardim|ne yapabilirsin|nasıl çalış|nasil calis/.test(normalized)) return "Bana normal cümleyle yazman veya sesli söylemen yeterli. Üretim fikrini, site sorununu veya API adımını anlayıp seni doğru adıma götürürüm.";
+    if (/devam|tamam|olur|evet|başla|basla/.test(normalized) && normalized.split(/\s+/).length <= 4) return "Tamam, devam ediyorum. Son hedefe göre kısa ve net ilerleyeceğim.";
+    return "Buradayım. Sorunu ya da yapmak istediğin işi yaz; üretimse akışa çeviririm, soruysa doğrudan cevaplarım.";
   }
-  if (language === "de") return "Bitte füge einen Satz mehr Kontext hinzu, damit ich dir genau antworten kann.";
-  if (language === "es") return "Añade una frase más de contexto para poder responderte con precisión.";
-  if (language === "fr") return "Ajoute une phrase de contexte pour que je puisse te répondre précisément.";
-  if (language === "ar") return "أضف جملة توضيحية أخرى حتى أتمكن من الإجابة بدقة.";
-  return "Please add one more sentence of context so I can answer accurately.";
+  if (replyLanguage === "de") return "Ich bin hier. Schreib oder sprich kurz, was du brauchst; ich helfe dir Schritt für Schritt.";
+  if (replyLanguage === "es") return "Estoy aquí. Escribe o di lo que necesitas y te guiaré paso a paso.";
+  if (replyLanguage === "fr") return "Je suis là. Écris ou dis ce dont tu as besoin et je te guide simplement.";
+  if (replyLanguage === "ar") return "أنا هنا. اكتب أو قل ما تحتاجه وسأساعدك خطوة بخطوة.";
+  if (/hello|hi|hey/.test(text)) return "Hi, I’m here. Tell me what you want to create or fix, and I’ll guide you clearly.";
+  if (/how are you/.test(text)) return "I’m good, I’m here and ready to help. What would you like to do next?";
+  return "I’m here. Tell me what you want to create, fix, or understand, and I’ll guide you clearly.";
 }
 
 async function generateChatReply(message: string, language: string, history: { role: "user" | "assistant"; content: string }[], userContextPrompt = "") {
@@ -214,7 +226,7 @@ export async function POST(request: Request) {
   const history: { role: "user" | "assistant"; content: string }[] = Array.isArray(body.messages)
     ? body.messages.map((item: { role?: string; content?: string }) => ({ role: item.role === "assistant" ? "assistant" as const : "user" as const, content: String(item.content ?? "").slice(0, 1200) })).filter((item: { content: string }) => item.content.trim())
     : [];
-  const freeConversationalQuestion = false;
+  const freeConversationalQuestion = isFreeConversationalQuestion(message);
   const requiredCredits = freeConversationalQuestion ? 0 : CHAT_CREDITS[mode];
 
   if (!userId || !userEmail) return Response.json({ error: "Please log in before using the AI Assistant." }, { status: 401 });

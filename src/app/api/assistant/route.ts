@@ -76,6 +76,52 @@ function localSuggestion(idea: string, mode: AssistantMode): AssistantSuggestion
   }, idea, mode);
 }
 
+function normalizeConversationText(value: string) {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isGeneralAssistantChat(idea: string) {
+  const normalized = normalizeConversationText(idea);
+  const hasQuestionSignal = /\?/.test(idea) || /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|kimsin|nerenin|neden|nasil|nedir|ne demek|hangi|kim|nerede|kac|yorum|fikir|oneri|tavsiye|anlat|acikla|what|why|how|who|which|where|when|advice|recommend)/.test(normalized);
+  const hasProductionSignal = /(uret|olustur|tasarla|video|reklam|kampanya|website|web sitesi|site|saas|uygulama|app|avatar|gorsel|logo|brand|document|pdf|shopify|amazon|trendyol)/.test(normalized);
+  return hasQuestionSignal && !hasProductionSignal;
+}
+
+function generalAssistantSuggestion(idea: string, mode: AssistantMode): AssistantSuggestion {
+  const language = detectLanguage(idea);
+  const normalized = normalizeConversationText(idea);
+  const turkish = language === "Turkish" || /[çğıöşü]/i.test(idea) || /(selam|merhaba|nasilsin|iyimisin|kimsin|nerenin|turkce|neden|nasil|nedir|yorum|fikir|oneri|tavsiye)/.test(normalized);
+  const assistantReply = turkish
+    ? (/^(selam|merhaba|sa|slm|hey)\b/.test(normalized)
+      ? "Selam, buradayım. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin."
+      : /(kimsin|nerenin)/.test(normalized)
+        ? "Ben Crelavo içindeki yapay zekâ asistanıyım; sadece site formu değil, genel sohbet, fikir, yorum, kod ve üretim akışlarında da yardımcı olurum."
+        : "Sorunu aldım. Bunu üretim formuna zorlamadan normal asistan gibi cevaplayacağım; üretim komutuysa tek prompt veya sesli komutla çalışma alanına taşıyacağım.")
+    : "I’m here. I can answer general questions, discuss ideas, help with code, or route a real production request into the workspace.";
+  return normalizeSuggestion({
+    category: "AI Agents",
+    style: "Premium SaaS",
+    duration: "Project based",
+    quality: "Premium",
+    suggestedPrompt: idea,
+    note: turkish ? "Genel sohbet olarak yanıtlandı; üretim kredisi harcanmadı." : "Answered as general chat; no production credits were spent.",
+    assistantReply,
+    action: "browse_catalog",
+    route: "/dashboard/assistant-workspace",
+    automationLevel: "conversation",
+    nextStep: turkish ? "İstersen tek prompt veya sesli komutla üretim başlat" : "Start production with one prompt or voice command if needed"
+  }, idea, mode);
+}
+
 async function openAiSuggestion(idea: string, mode: AssistantMode, history: { role: "user" | "assistant"; content: string }[] = []): Promise<AssistantSuggestion | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -159,6 +205,17 @@ export async function POST(request: Request) {
     if (profileError) throw profileError;
 
     await grantWelcomeAssistantCreditsOnce({ supabase, userId, email: userEmail, ipAddress: getClientIp(request) });
+
+    if (isGeneralAssistantChat(idea)) {
+      return Response.json({
+        suggestion: generalAssistantSuggestion(idea, mode),
+        chargedCredits: 0,
+        chargeSource: "conversation",
+        assistantBalance: null,
+        balance: null,
+        available: null
+      });
+    }
 
     const { data: assistantBalanceRow, error: assistantBalanceError } = await supabase
       .from("assistant_credit_balances")

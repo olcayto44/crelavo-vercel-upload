@@ -127,6 +127,13 @@ type AssistantCreditState = {
   redirect: string | null;
 };
 
+type StartedProductionState = {
+  id: string;
+  detailUrl: string;
+  status: "created" | "automation_started" | "automation_warning";
+  message: string;
+} | null;
+
 const emptyAssistantCreditState: AssistantCreditState = {
   chargedCredits: null,
   chargeSource: null,
@@ -686,7 +693,8 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
 function isLikelyTurkish(text: string, activeLanguage = "") {
   if (activeLanguage === "tr") return true;
   const clean = text.toLocaleLowerCase("tr-TR");
-  return /[çğıöşü]/i.test(text) || /\b(ben|bana|bir|ve|ile|için|icin|istiyorum|oluştur|olustur|yap|video|reklam|ürün|urun|site|uygulama|kredi|fiyat|paket|ödeme|odeme|konuş|konus|devam|tamam|nasıl|nasil|peki|biz|insanlar|türkiye|turkiye|askerlik|evren|gezegenler|yıldızlar|yildizlar|uzay|seslendirme|altyazı|altyazi|dakika|saniye)\b/.test(clean);
+  const normalized = normalizeTurkishQuery(text);
+  return /[çğıöşü]/i.test(text) || /\b(ben|bana|beni|benim|sen|sana|seni|senin|biz|bize|bizi|bir|ve|ile|için|icin|şey|sey|istiyorum|isterim|istediğim|istedigim|soracağım|soracagim|sorayım|sorayim|soru|cevap|yorum|fikir|öneri|oneri|tavsiye|anlat|açıkla|acikla|nedir|neden|niye|nasıl|nasil|hangi|hangisi|kim|kimsin|nerenin|nerede|nerde|neresi|ne zaman|kaç|kac|olur mu|olurmu|mi|mı|mu|mü|oluştur|olustur|yap|video|reklam|ürün|urun|site|uygulama|kredi|fiyat|paket|ödeme|odeme|konuş|konus|sesli|ses|devam|tamam|evet|hayır|hayir|peki|selam|merhaba|naber|nasılsın|nasilsin|iyimisin|türkçe|turkce|yazmıyorsun|yazmiyorsun|insanlar|türkiye|turkiye|dünya|dunya|askerlik|evren|gezegenler|yıldızlar|yildizlar|uzay|seslendirme|altyazı|altyazi|dakika|saniye)\b/.test(clean) || /(iyi misin|ne haber|ne demek|ne yapabilirim|ne yapabiliriz|yardim eder misin|yardım eder misin|yardimci olur musun|yardımcı olur musun|sen nerenin asistanisin|sen nerenin asistanısın)/.test(normalized);
 }
 
 type WorkspaceIntent = "greeting" | "help" | "consultation" | "production_request" | "start_confirmation";
@@ -920,7 +928,7 @@ function normalizeTurkishQuery(value: string) {
 }
 
 function hasTurkishQuestionWords(normalized: string) {
-  return /(peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk)/.test(normalized);
+  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
 }
 
 function isGeneralInformationQuestion(message: string) {
@@ -941,11 +949,7 @@ function informationalReply(message: string, language: string) {
 
 function safeConversationalFallbackReply(message: string, language: string, turnCount: number, recentContext = "") {
   if (isMaterialUploadQuestion(message, recentContext)) return materialUploadFallbackReply(message, language);
-  const replyLanguage = responseLanguage(message, language);
-  if (replyLanguage === "tr") {
-    return "Bunu net cevaplayabilmem için bir cümle daha detay verir misin?";
-  }
-  return "Please add one more sentence of context so I can answer accurately.";
+  return publicConversationalReply(message, language, turnCount);
 }
 
 function publicConversationalReply(message: string, language: string, turnCount: number) {
@@ -956,8 +960,10 @@ function publicConversationalReply(message: string, language: string, turnCount:
   const infoReply = informationalReply(message, language);
   if (infoReply) return infoReply;
   if (replyLanguage === "tr") {
-    if (/^(selam|merhaba|sa|slm|hey)\b/.test(text)) return "Selam, buradayım. Ne yapmak istediğini yazabilirsin.";
-    if (/^(nasılsın|nasilsin|naber|ne haber)\b/.test(text)) return "İyiyim, buradayım. Sen ne yapmak istiyorsun?";
+    if (/^(selam|merhaba|sa|slm|hey)\b/.test(text)) return "Selam, buradayım. Ne yapmak istediğini yazabilir ya da sesli söyleyebilirsin.";
+    if (/^(nasılsın|nasilsin|naber|ne haber|iyimisin|iyi misin)\b/.test(text)) return "İyiyim, buradayım. Sen ne yapmak istiyorsun?";
+    if (/neden\s+türkçe\s+yazmıyorsun|neden\s+turkce\s+yazmiyorsun/.test(normalizeTurkishQuery(message))) return "Haklısın, Türkçe devam edeceğim. Sen Türkçe yazdığında veya sesli konuştuğunda ben de Türkçe cevap vereceğim.";
+    if (/sen\s+nerenin\s+asistanısın|sen\s+nerenin\s+asistanisin|kimsin|nesin/.test(normalizeTurkishQuery(message))) return "Ben Crelavo çalışma alanındaki yapay zekâ asistanıyım. Site, üretim, API, video, reklam, kredi, dashboard ve proje işleri için sana adım adım yardımcı olurum.";
     if (/^(sana\s+)?(bir\s+)?(şey|sey)\s+(istemek|isteyeceğim|isteyecegim|soracağım|soracagim)\s+istiyorum/.test(text)) return "Tabii, söyle. Ne istiyorsun?";
     if (/growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/.test(text)) return "Bunu Growth Intelligence hizmeti olarak ele alabiliriz. Bu normal kredi top-up değil; ama aktif hak/kredi uygunluğu olan kullanıcıya sonuç dashboard’da PDF/dosya raporu olarak teslim edilir. Rakip URL’leri, public reklam/fiyat/landing page sinyalleri, haftalık PDF rapor ve aksiyon önerileriyle ilerler.";
 if (/youtube|tiktok|kanal|takip|izlenme|para kazan|kazandıran|kazandiran|niş|nis/.test(text)) return "Anladım, burada kategori seçtirmekten önce hedefi netleştirmek gerekiyor: izlenme, takipçi ve gelir potansiyeline göre birkaç kanal fikrini karşılaştırıp en güçlü yolu önereceğim.";
@@ -973,13 +979,13 @@ if (/youtube|tiktok|kanal|takip|izlenme|para kazan|kazandıran|kazandiran|niş|n
     if (/kredi|fiyat|paket|ödeme|odeme/.test(text)) return signals.length ? `Kredi tahminini ${signals.join(", ")} kapsamına göre çıkarırım. Ödeme kısmı üretime geçerken ayrı görünür.` : "Kredi tahminini kapsama göre çıkarırım. Ödeme kısmı üretime geçerken ayrı görünür.";
     if (/devam|tamam|olur|evet|başla|basla/.test(text) && text.split(/\s+/).length <= 4) return signals.length ? `Tamam, ${signals.join(", ")} detaylarını koruyarak devam ediyorum.` : "Tamam, devam ediyorum. Son yazdığın hedefe göre toparlayacağım.";
     if (/video|reklam|avatar|animasyon|site|website|saas|ürün|urun|kampanya|müzik|muzik|konuşmalı|konusmali|içecek|icecek|tavuk|yemek|gıda|gida|restoran|menü|menu|kafe|cafe/.test(text)) return `Anladım${signalText}. Bunu yapılabilir bir üretim akışına çevireceğim; gerekirse sadece kritik materyal veya hedefi sorarım.`;
-    return "Sorunu aldım. Üretim isteği değilse doğrudan cevap vereceğim; üretim isteğiyse ayrıca belirtince akışa alırım.";
+    return "Buradayım. Site işi, üretim, kod, fikir, genel soru veya yorum fark etmez; normal cümleyle yaz, doğrudan cevap vereyim ya da gerekiyorsa işi akışa çevireyim.";
   }
-  if (/hello|hi|hey/.test(text)) return "Hi, I’m listening. What would you like to create or debug?";
+  if (/hello|hi|hey/.test(text)) return "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here.";
   if (/code|bug|error|debug|api|component|react|next|supabase|database|sql/.test(text)) return "Yes, I can help with code too. Send the error, file name, or change you want; I’ll summarize the cause, fix, and suggestions.";
-  if (/how can you help|what can you do|help/.test(text)) return "Tell me the idea or code issue normally. I’ll choose the category, prepare options, explain the fix, and keep the next step clear.";
+  if (/how can you help|what can you do|help/.test(text)) return "Ask normally: general questions, opinions, code issues, business ideas, or production requests. I’ll answer directly when it’s a question and only turn it into a workflow when it’s a real production task.";
   if (/continue|ok|yes|start/.test(text)) return "Okay, I’ll continue and keep the setup simple.";
-  return "Got it. Add a little more detail and I’ll shape it into the right production path.";
+  return "I’m here. Ask a general question, share an idea, request a comment, debug code, or start a production task; I’ll answer directly instead of forcing everything into a form.";
 }
 
 function conversationalReplyForIntent(intent: WorkspaceIntent, language: string, turnCount: number) {
@@ -1074,12 +1080,13 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
   const voiceTranscriptReceivedRef = useRef(false);
   const voiceTimeoutRef = useRef<number | null>(null);
   const [input, setInput] = useState(initialIdea || "I want to produce a short ad video for my product.");
-  const [activeLanguage, setActiveLanguage] = useState("en");
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi, I’m listening. Tell me what you want to create; I’ll keep it short and guide you step by step." }
-  ]);
+  const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const language = getStoredLanguage();
+    return [{ role: "assistant", content: language === "tr" ? "Selam, dinliyorum. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin; kısa ve net cevap vereceğim." : "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
+  });
   const [activeStep, setActiveStep] = useState(0);
-  const [status, setStatus] = useState("Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
+  const [status, setStatus] = useState(() => getStoredLanguage() === "tr" ? "Canlı üretim çalışma alanı hazır. Asistanla serbestçe sohbet edebilirsin; üretim başlamadan önce kısa onay görünür." : "Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
   const [isLoading, setIsLoading] = useState(false);
   const [lastRoute, setLastRoute] = useState("/dashboard/assistant-workspace");
   const [selectedProductionType, setSelectedProductionType] = useState("video");
@@ -1141,8 +1148,10 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
   const [lastOrchestratorPlan, setLastOrchestratorPlan] = useState<AssistantOrchestratorResponse | null>(null);
   const [assistantConversationId, setAssistantConversationId] = useState("");
   const [productionCreditAvailable, setProductionCreditAvailable] = useState<number | null>(null);
-  const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
-  const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRatesConfig>(defaultDeliveryCreditRatesConfig);
+const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
+const [chatRailOpen, setChatRailOpen] = useState(false);
+const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
+const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRatesConfig>(defaultDeliveryCreditRatesConfig);
   const [configuredProductionPackages, setConfiguredProductionPackages] = useState<ProductionPackage[]>(productionPackages);
   const materials = activePlatformMaterials();
   const siteToolOptions = footerGroups.flatMap((group) => group.links.map((link) => link.label));
@@ -1257,8 +1266,8 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
 
   useEffect(() => {
     setActiveLanguage(getStoredLanguage());
-    function handleLanguageChange(event: Event) {
-      setActiveLanguage((event as CustomEvent<string>).detail || getStoredLanguage());
+    function handleLanguageChange() {
+      setActiveLanguage(getStoredLanguage());
     }
     window.addEventListener("clipora-language-change", handleLanguageChange);
     return () => window.removeEventListener("clipora-language-change", handleLanguageChange);
@@ -1945,16 +1954,24 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
         const automationError = await automationResponse.json().catch(() => ({}));
         setStartState("error");
         setStartError(automationError.error ?? "The production record was created, but automation could not be started. You can check it again from the live workspace.");
+        setStartedProduction({
+          id: productionId,
+          detailUrl: `/dashboard/productions/${productionId}`,
+          status: "automation_warning",
+          message: "Production record was created, but automation needs attention."
+        });
+        setStartModalOpen(false);
         return;
       }
-      try {
-        window.history.scrollRestoration = "manual";
-        window.sessionStorage.setItem("clipora-scroll-top-next", "1");
-      } catch {
-        // Ignore storage limitations and continue navigation.
-      }
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      window.location.href = `/dashboard/productions/${productionId}`;
+      setStartState("idle");
+      setStartModalOpen(false);
+      setStartedProduction({
+        id: productionId,
+        detailUrl: `/dashboard/productions/${productionId}`,
+        status: "automation_started",
+        message: "Production started. You can stay here or open the detailed production workspace."
+      });
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
   }
 
@@ -2393,7 +2410,7 @@ async function startRawMicrophoneFallback() {
   }
 
   return (
-    <div className="assistant-workspace">
+    <div className={chatRailOpen ? "assistant-workspace chat-open" : "assistant-workspace chat-collapsed"}>
       <section className="assistant-live-stage">
         <div className="assistant-stage-head studio-stage-head">
           <span className="badge"><Sparkles size={14} /> Crelavo AI Production Studio</span>
@@ -2406,9 +2423,24 @@ async function startRawMicrophoneFallback() {
             <span className="badge">Production command</span>
           <h2>Write the brief, choose quality, start production.</h2>
           <p>A cleaner Kling / Seedance-style workflow: the user describes the goal, while Crelavo prepares the production type, quality tier and provider route behind the scenes.</p>
-            <div className="studio-prompt-preview">
+            <label className="studio-prompt-input">
               <span>Describe what you want to create...</span>
-              <small>{input || initialIdea || "Turn my product link into a TikTok ad video with voice, music and a strong CTA."}</small>
+              <textarea
+                className="notranslate"
+                data-no-translate="true"
+                translate="no"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                onKeyDown={handleInputKeyDown}
+                placeholder="Turn my product link into a TikTok ad video with voice, music and a strong CTA..."
+              />
+            </label>
+            <div className="studio-command-actions">
+              <button className="btn" type="button" onClick={() => sendCommand()} disabled={isLoading || !input.trim()}>{isLoading ? "Preparing..." : "Send to assistant"}</button>
+              <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Tune options</button>
             </div>
             <div className="studio-quality-strip" aria-label="Quality tiers">
               {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
@@ -2420,12 +2452,33 @@ async function startRawMicrophoneFallback() {
             <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality}</span>
             <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start production</button>
             <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Open options</button>
+            {startedProduction ? (
+              <div className="studio-started-card">
+                <small>{startedProduction.status === "automation_warning" ? "Needs attention" : "Production started"}</small>
+                <strong>{startedProduction.message}</strong>
+                <a className="btn secondary" href={startedProduction.detailUrl}>View production detail</a>
+              </div>
+            ) : null}
           </aside>
+        </section>
+
+        <section className="studio-preview-plan" aria-label="Production preview plan">
+          <div>
+            <span className="badge">Preview / Production Plan</span>
+            <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
+            <p>{input || initialIdea || "Write a brief above to generate a clearer production plan."}</p>
+          </div>
+          <div className="studio-preview-metrics">
+            <span><small>Quality</small><strong>{selectedQuality}</strong></span>
+            <span><small>Duration / scope</small><strong>{selectedDuration}</strong></span>
+            <span><small>Format route</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
+            <span><small>Estimated credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+          </div>
         </section>
 
         <section className="studio-quick-path-grid" aria-label="Production quick paths">
           {studioQuickPaths.map((path) => (
-            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => applyCategorySelection(path.category)}>
+            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setInput((current) => current || path.description); }}>
               <strong>{path.label}</strong>
               <span>{path.description}</span>
             </button>
@@ -2718,8 +2771,14 @@ async function startRawMicrophoneFallback() {
         ) : null}
       </section>
 
-      <aside className="assistant-chat-rail">
-        <div className="assistant-chat-head"><Bot size={18} /><strong>Assistant conversation</strong></div>
+      {!chatRailOpen ? (
+        <button className="assistant-floating-open" type="button" onClick={() => setChatRailOpen(true)}>
+          <Bot size={16} /> Open assistant
+        </button>
+      ) : null}
+
+      <aside className={chatRailOpen ? "assistant-chat-rail open" : "assistant-chat-rail collapsed"}>
+        <div className="assistant-chat-head"><span><Bot size={18} /><strong>Assistant conversation</strong></span><button className="assistant-rail-close" type="button" onClick={() => setChatRailOpen(false)}>Close</button></div>
         <div className="assistant-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
           {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
           {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Thinking...</div> : null}

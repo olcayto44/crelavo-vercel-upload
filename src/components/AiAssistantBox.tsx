@@ -6,6 +6,7 @@ import { Bot, Mic, Send, Sparkles } from "lucide-react";
 import { estimateCredits } from "@/lib/credits";
 import { addOns, premiumMaterialOptionsByType, premiumMaterialTypes, qualityOptions } from "@/lib/data";
 import { supabaseBrowser } from "@/lib/supabase";
+import { getStoredLanguage } from "@/lib/i18n";
 
 type AssistantSuggestion = {
   category: string;
@@ -76,13 +77,50 @@ const fallbackSuggestion: AssistantSuggestion = {
   nextStep: "Start the fully automatic production request"
 };
 
-function isTurkishText(text: string) {
-  return /[çğıöşüÇĞİÖŞÜ]/.test(text) || /\b(merhaba|selam|istiyorum|yap|olsun|görsel|ürün|reklam|kredi|asistan)\b/i.test(text);
+function normalizeTurkishText(text: string) {
+  return text
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function buildReply(suggestion: AssistantSuggestion, userText: string) {
+function isTurkishText(text: string, activeLanguage = "") {
+  if (activeLanguage === "tr") return true;
+  const normalized = normalizeTurkishText(text);
+  return /[çğıöşüÇĞİÖŞÜ]/.test(text) || /\b(merhaba|selam|naber|nasilsin|iyimisin|iyi misin|kimsin|nerenin|turkce|ben|bana|sen|sana|istiyorum|istedigim|soru|cevap|yorum|fikir|oneri|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|kim|yap|olsun|gorsel|urun|reklam|kredi|asistan|sesli|konus|devam|tamam)\b/i.test(normalized);
+}
+
+function isGeneralChatMessage(text: string) {
+  const normalized = normalizeTurkishText(text);
+  const hasQuestionSignal = /\?/.test(text) || /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|kimsin|nerenin|neden|nasil|nedir|ne demek|hangi|kim|nerede|kac|yorum|fikir|oneri|tavsiye|anlat|acikla|what|why|how|who|which|where|when|advice|recommend)/.test(normalized);
+  const hasProductionSignal = /(uret|olustur|tasarla|video|reklam|kampanya|website|web sitesi|site|saas|uygulama|app|avatar|gorsel|logo|brand|document|pdf|shopify|amazon|trendyol)/.test(normalized);
+  return hasQuestionSignal && !hasProductionSignal;
+}
+
+function localGeneralReply(text: string, activeLanguage = "") {
+  const normalized = normalizeTurkishText(text);
+  if (isTurkishText(text, activeLanguage)) {
+    if (/^(selam|merhaba|sa|slm|hey)\b/.test(normalized)) return "Selam, buradayım. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin.";
+    if (/^(nasilsin|iyimisin|iyi misin|naber|ne haber)\b/.test(normalized)) return "İyiyim, buradayım. Ne konuşmak veya üretmek istiyorsun?";
+    if (/(kimsin|nerenin)/.test(normalized)) return "Ben Crelavo içindeki yapay zekâ asistanıyım; ama sadece site formu değil, genel sohbet, fikir, yorum, kod ve üretim akışlarında da yardımcı olurum.";
+    return "Sorunu aldım. Bunu üretim formuna zorlamadan normal asistan gibi cevaplayacağım; üretim komutuysa tek prompt veya sesli komutla çalışma alanına taşıyacağım.";
+  }
+  if (/hello|hi|hey/i.test(text)) return "Hi, I’m here. You can ask general questions, discuss ideas, debug code, or start production with one prompt or voice command.";
+  return "I’m here. I’ll answer this as a normal assistant instead of forcing it into a production form; if it is a production request, I’ll route it into the workspace.";
+}
+
+function buildReply(suggestion: AssistantSuggestion, userText: string, activeLanguage = "") {
   if (suggestion.assistantReply?.trim()) return suggestion.assistantReply;
-  return `I recommend ${suggestion.category} with a ${suggestion.style} style and ${suggestion.duration} duration. ${suggestion.note}`;
+  if (isGeneralChatMessage(userText)) return localGeneralReply(userText, activeLanguage);
+  return isTurkishText(userText, activeLanguage)
+    ? `${suggestion.category} için ${suggestion.style} stil ve ${suggestion.duration} kapsam öneriyorum. ${suggestion.note}`
+    : `I recommend ${suggestion.category} with a ${suggestion.style} style and ${suggestion.duration} duration. ${suggestion.note}`;
 }
 
 export function AiAssistantBox() {
@@ -91,10 +129,12 @@ export function AiAssistantBox() {
   const voiceTranscriptReceivedRef = useRef(false);
   const voiceTimeoutRef = useRef<number | null>(null);
   const [input, setInput] = useState("I want a fully automatic campaign from a Shopify product link.");
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: "assistant", content: fallbackSuggestion.assistantReply ?? "Hello, write what you want to produce." }
-  ]);
-  const [status, setStatus] = useState("Write any site task: production, credits, payment, delivery, account, Shopify, campaign, AI agent or operations. The assistant chooses the right fully automatic action.");
+  const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const language = getStoredLanguage();
+    return [{ role: "assistant", content: language === "tr" ? "Selam, buradayım. Genel soru, fikir, kod, site işi veya tek prompt/sesli üretim komutu yazabilirsin." : (fallbackSuggestion.assistantReply ?? "Hello, write what you want to produce.") }];
+  });
+  const [status, setStatus] = useState(() => getStoredLanguage() === "tr" ? "Yazılı veya sesli tek komut ver: soruysa cevaplarım, üretimse doğru çalışma alanına taşırım." : "Write or speak one command: if it is a question I answer it; if it is production I route it to the right workspace.");
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<AssistantSuggestion>(fallbackSuggestion);
@@ -110,6 +150,15 @@ export function AiAssistantBox() {
   const [selectedMaterialOption, setSelectedMaterialOption] = useState("None");
   const [requestStatus, setRequestStatus] = useState("");
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+
+  useEffect(() => {
+    setActiveLanguage(getStoredLanguage());
+    const handleLanguageChange = () => {
+      setActiveLanguage(getStoredLanguage());
+    };
+    window.addEventListener("clipora-language-change", handleLanguageChange);
+    return () => window.removeEventListener("clipora-language-change", handleLanguageChange);
+  }, []);
 
   useEffect(() => {
     const chatWindow = chatWindowRef.current;
@@ -147,19 +196,23 @@ export function AiAssistantBox() {
       return;
     }
 
-    const prefersTurkish = isTurkishText(cleanInput);
+    const prefersTurkish = isTurkishText(cleanInput, activeLanguage);
 
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: cleanInput }];
     setMessages(nextMessages);
-      setActivityItems([
+      setActivityItems(prefersTurkish ? [
+        mode === "voice" ? "Sesli komut alındı." : "Yazılı komut alındı.",
+        "Asistan bunun sohbet mi üretim isteği mi olduğunu ayırıyor.",
+        "Üretimse tek komutla doğru çalışma alanına taşıyacak."
+      ] : [
         mode === "voice" ? "Voice request received." : "Written request received.",
-        "Smart assistant is identifying the intent, required action and correct page.",
-        "Preparing the next step for the fully automatic flow."
+        "The assistant is identifying whether this is chat or production.",
+        "If it is production, one command routes it to the right workspace."
       ]);
 
     setInput("");
     setIsLoading(true);
-    setStatus(mode === "voice" ? "Assistant is thinking - 150 credits..." : "Assistant is thinking - 100 credits...");
+    setStatus(prefersTurkish ? (isGeneralChatMessage(cleanInput) ? "Asistan normal sohbet cevabı hazırlıyor." : "Asistan tek komutla üretim yolunu hazırlıyor.") : (isGeneralChatMessage(cleanInput) ? "Assistant is preparing a normal chat answer." : "Assistant is preparing the one-command production route."));
 
     try {
       const { data: userData, error: userError } = await supabaseBrowser().auth.getUser();
@@ -197,7 +250,7 @@ export function AiAssistantBox() {
       }
 
       const nextSuggestion = data.suggestion ?? fallbackSuggestion;
-      const reply = buildReply(nextSuggestion, cleanInput);
+      const reply = buildReply(nextSuggestion, cleanInput, activeLanguage);
       setSuggestion(nextSuggestion);
       setSelectedStyle(nextSuggestion.style || "Cinematic");
       setSelectedDuration(nextSuggestion.duration || "30 seconds");
@@ -320,7 +373,7 @@ async function startVoiceCommand() {
     try {
       await requestAssistantMicrophonePermission();
       const recognition = new Recognition();
-      recognition.lang = "en-US";
+      recognition.lang = activeLanguage === "tr" ? "tr-TR" : activeLanguage === "de" ? "de-DE" : activeLanguage === "es" ? "es-ES" : activeLanguage === "fr" ? "fr-FR" : activeLanguage === "ar" ? "ar-SA" : "en-US";
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
       voiceTranscriptReceivedRef.current = false;
@@ -337,7 +390,7 @@ async function startVoiceCommand() {
         setIsListening(false);
         if (transcript) {
           voiceTranscriptReceivedRef.current = true;
-          setStatus(`Detected text: ${transcript}`);
+          setStatus(isTurkishText(transcript, activeLanguage) ? `Algılanan metin: ${transcript}` : `Detected text: ${transcript}`);
           sendMessage("voice", transcript);
         } else {
           handleAssistantVoiceNoTranscript();
