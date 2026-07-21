@@ -772,18 +772,20 @@ body.auth-route main.section {
   padding-bottom: 32px;
 }
 
-body.auth-route main.auth-screen {
-  width: min(100% - 32px, 520px);
+main.auth-screen {
+  width: min(100% - 32px, 520px) !important;
+  max-width: 520px !important;
   min-height: calc(100svh - 92px);
   display: grid;
   align-items: center;
+  justify-items: center;
   padding-top: 14px;
   padding-bottom: 18px;
 }
 
-.auth-card {
-  width: 100%;
-  max-width: 520px;
+main.auth-screen .auth-card {
+  width: 100% !important;
+  max-width: 520px !important;
   padding: 20px;
   margin: 0 auto;
 }

@@ -22,8 +22,8 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
   return (
     <>
       <Header />
-      <main className="container section auth-screen">
-        <div className="card auth-card">
+      <main className="container section auth-screen" style={{ width: "min(100% - 32px, 520px)", maxWidth: 520, minHeight: "calc(100svh - 92px)", display: "grid", alignItems: "center", justifyItems: "center" }}>
+        <div className="card auth-card" style={{ width: "100%", maxWidth: 520 }}>
           <h1>Member login</h1>
           <p style={{ color: "var(--muted)" }}>Choose how you want to continue.</p>
           {next ? (
