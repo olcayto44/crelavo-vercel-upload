@@ -5208,20 +5208,32 @@ html body .dashboard-postlaunch-shell .dashboard-topbar {
 }
 html body .dashboard-postlaunch-shell .social-export-grid,
 html body .dashboard-postlaunch-shell .shorts-growth-grid,
+html body .dashboard-postlaunch-shell .custom-agent-grid,
+html body .dashboard-postlaunch-shell .premium-expansion-grid,
 html body .dashboard-postlaunch-shell .connection-grid,
 html body .dashboard-postlaunch-shell .ads-roas-grid,
-html body .dashboard-postlaunch-shell .ads-target-grid {
+html body .dashboard-postlaunch-shell .ads-target-grid,
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)) !important;
   gap: 16px !important;
 }
 html body .dashboard-postlaunch-shell .social-export-card,
 html body .dashboard-postlaunch-shell .shorts-growth-card,
+html body .dashboard-postlaunch-shell .custom-agent-card,
+html body .dashboard-postlaunch-shell .premium-expansion-card,
+html body .dashboard-postlaunch-shell .brand-kit-card,
 html body .dashboard-postlaunch-shell .connection-card,
 html body .dashboard-postlaunch-shell .roas-alert-card {
   overflow: visible !important;
 }
 html body .dashboard-postlaunch-shell .social-export-card h3,
 html body .dashboard-postlaunch-shell .shorts-growth-card h3,
+html body .dashboard-postlaunch-shell .custom-agent-card h3,
+html body .dashboard-postlaunch-shell .premium-expansion-card h3,
+html body .dashboard-postlaunch-shell .brand-kit-card h3,
+html body .dashboard-postlaunch-shell .brand-kit-card p,
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid strong,
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid em,
 html body .dashboard-postlaunch-shell .connection-card h3,
 html body .dashboard-postlaunch-shell .connection-card p,
 html body .dashboard-postlaunch-shell .roas-alert-card h3,
@@ -5263,6 +5275,36 @@ html body .dashboard-postlaunch-shell .social-export-detail-list strong {
 html body .dashboard-postlaunch-shell .field,
 html body .dashboard-postlaunch-shell .connection-selected-platform {
   min-width: 0 !important;
+}
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid {
+  display: grid;
+  margin: 14px 0;
+}
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid span {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(125,211,252,.14);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(15,23,42,.48);
+}
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid small {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #020617;
+  background: #67e8f9;
+  font-weight: 900;
+}
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid strong {
+  color: #fff;
+}
+html body .dashboard-postlaunch-shell .brand-kit-flow-grid em {
+  color: #cbd5e1;
+  font-style: normal;
+  line-height: 1.4;
 }
 @media (max-width: 1180px) {
   html body .dashboard-shell-layout.container.section {

@@ -3,7 +3,7 @@ import { BrandKitPanel } from "@/components/BrandKitPanel";
 
 export default function BrandKitPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Brand kit planning</span>
         <h2>Brand assets for future production templates</h2>

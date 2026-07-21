@@ -30,9 +30,16 @@ export function BrandKitPanel() {
   }
 
   return (
-    <form className="card" onSubmit={save}>
+    <form className="card brand-kit-card" onSubmit={save}>
       <span className="badge">🎨 Brand Kit</span>
       <h3>Logo, renk ve fontlarını render sistemine bağla</h3>
+      <p className="workspace-action-note">Bu alan marka varlıklarını tek yerde toplar. Render sağlayıcıları bağlanana kadar değerler üretim brief’i ve manuel teslim notu olarak kullanılır.</p>
+      <div className="brand-kit-flow-grid">
+        <span><small>1</small><strong>Logo</strong><em>PNG veya herkese açık dosya URL’i</em></span>
+        <span><small>2</small><strong>Colors</strong><em>Primary, secondary ve subtitle renkleri</em></span>
+        <span><small>3</small><strong>Typography</strong><em>Font adı veya font dosyası URL’i</em></span>
+        <span><small>4</small><strong>Reuse</strong><em>Video, website, ad ve social export akışında tekrar kullanılır</em></span>
+      </div>
       <div className="field"><label>Logo URL (.png)</label><input name="logo_url" placeholder="https://.../logo.png" /></div>
       <div className="brief-two-col">
         <div className="field"><label>Primary color</label><input name="primary_color" defaultValue="#22d3ee" /></div>
