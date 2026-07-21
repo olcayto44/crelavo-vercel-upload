@@ -166,13 +166,28 @@ export default async function BlogPage() {
   </div>
 
           ) : (
-            <img src={topic.videoPoster || topic.image} alt={topic.imageAlt} loading={index < 2 ? "eager" : "lazy"} />
+            <Link href={topic.ctaHref} aria-label={`Open related Crelavo workflow for ${topic.title}`}>
+              <img src={topic.videoPoster || topic.image} alt={`${topic.imageAlt} - linked to ${topic.ctaLabel}`} loading={index < 2 ? "eager" : "lazy"} />
+            </Link>
           )}
 
                 </figure>
               </article>
             );
           })}
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Next step</span>
+          <h2>Turn any guide into a dashboard production brief</h2>
+          <p>
+            Blog traffic should not stop at reading. Use the next step links to move from a guide into pricing, a product-link workflow or dashboard/create with a clearer production brief.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link className="btn" href="/dashboard/create?idea=Turn%20this%20Crelavo%20guide%20into%20a%20production%20brief">Start from a guide</Link>
+            <Link className="btn secondary" href="/pricing">Check pricing</Link>
+            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score an ad free</Link>
+          </div>
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>

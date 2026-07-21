@@ -136,7 +136,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 
   return (
       <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-        <div className={`category-card-visual category-visual-${type.id}`} aria-label={`${type.label} visual preview`}>
+        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`} aria-label={`Start ${type.label} production from category visual`}>
           <div className="category-visual-orb category-visual-orb-one" aria-hidden="true" />
           <div className="category-visual-orb category-visual-orb-two" aria-hidden="true" />
           <div className="category-visual-panel category-visual-panel-main">
@@ -147,7 +147,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
           <div className="category-visual-strip" aria-hidden="true">
             {(categoryOptions[type.id] ?? []).slice(0, 3).map((option) => <span key={`${type.id}-visual-${option}`}>{option}</span>)}
           </div>
-        </div>
+        </HardReloadLink>
         <Icon color="currentColor" />
       <span className="badge">{type.startingCredits > 0 ? `From ${type.startingCredits.toLocaleString()} credits` : "Service plan pricing"}</span>
       <h3>{type.label}</h3>

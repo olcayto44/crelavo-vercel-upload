@@ -130,7 +130,7 @@ export default async function CategoriesPage() {
           <div className="production-pricing-grid">
             {phaseOneFeaturePages.slice(0, 6).map((page) => (
               <div className={`card production-pricing-card production-tone-${page.slug}`} key={page.slug}>
-                <div className={`feature-card-visual feature-visual-${page.slug}`} aria-label={`${page.title} visual preview`}>
+                <Link className={`feature-card-visual feature-visual-${page.slug}`} href={`/${page.slug}`} aria-label={`Open ${page.title} visual SEO page`}>
                   <div className="feature-visual-frame feature-visual-frame-large">
                     <span>{page.badge}</span>
                     <strong>{page.title}</strong>
@@ -138,7 +138,7 @@ export default async function CategoriesPage() {
                   <div className="feature-visual-metrics" aria-hidden="true">
                     {page.keywords.slice(0, 3).map((keyword) => <small key={`${page.slug}-visual-${keyword}`}>{keyword}</small>)}
                   </div>
-                </div>
+                </Link>
                 <span className="badge">Uses existing credit packages</span>
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>

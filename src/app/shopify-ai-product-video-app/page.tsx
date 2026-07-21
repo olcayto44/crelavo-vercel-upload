@@ -15,6 +15,13 @@ const checklist = [
 
 const keywords = ["Shopify video app", "Shopify AI video app", "Shopify product video app", "Shopify product link video", "AI Shopify ad video", "Shopify product ads", "ecommerce video app"];
 
+const shopifyFaqs = [
+  { question: "What does a Shopify AI product video app do?", answer: "It helps a Shopify merchant turn product page context into product video briefs, ad hooks, captions, landing copy and ecommerce campaign assets." },
+  { question: "Can I start before a Shopify app install exists?", answer: "Yes. A merchant can start with the Shopify product-link workflow or Chrome extension funnel, then keep app preparation as the deeper store handoff path." },
+  { question: "What should the app send to Crelavo?", answer: "The useful handoff is product URL, title, images, description, store context, target platform and campaign goal." },
+  { question: "Where should the merchant go after this page?", answer: "The strongest next step is the Shopify product-link ad video workflow, then pricing or dashboard/create for a production brief." }
+];
+
 export const metadata: Metadata = {
   title: "Shopify AI Product Video App Preparation | Crelavo",
   description: "Crelavo Shopify AI product video app preparation for product-link-to-video workflows, ecommerce campaign assets, app store positioning, OAuth scopes and store handoff steps.",
@@ -96,6 +103,18 @@ export default async function ShopifyAiProductVideoAppPage() {
             <Link href="/categories/campaign"><b>Campaign category</b><small>Product-link campaign hub</small></Link>
             <Link href="/ai-product-video-generator"><b>AI product video generator</b><small>Product video workflow</small></Link>
             <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery options</small></Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+          <span className="badge">FAQ</span>
+          <h2>Shopify AI product video app questions</h2>
+          <div className="plan-feature-groups">
+            {shopifyFaqs.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/create?idea=Shopify%20product%20link%20to%20AI%20video">Start Shopify video brief</Link>
+            <Link className="btn secondary" href="/pricing">Check packages</Link>
           </div>
         </section>
       </main>

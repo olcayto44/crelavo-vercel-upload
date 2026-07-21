@@ -113,13 +113,12 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <h1>{tool.title} for {tool.category}, ecommerce campaigns and production workflows</h1>
           <p>{tool.description}</p>
           <p className="section-lead">Use this page for long-tail searches like {longTailKeywords.slice(0, 4).join(", ")} before turning the result into a Crelavo production request.</p>
-          {tool.slug === "ad-performance-score-checker" ? (
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-              <Link className="btn" href="#free-ad-score">Score my ad free</Link>
-              <Link className="btn secondary" href="/ai-ad-performance-score-checker">See ad scorer workflow</Link>
-              <Link className="btn secondary" href="/ai-product-video-generator">Create video after score</Link>
-            </div>
-          ) : null}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            {tool.slug === "ad-performance-score-checker" ? <Link className="btn" href="#free-ad-score">Score my ad free</Link> : <Link className="btn" href="#free-ad-score">Use free tool</Link>}
+            <Link className="btn secondary" href={tool.slug === "ad-performance-score-checker" ? "/ai-ad-performance-score-checker" : "/dashboard/create?idea=Turn%20my%20free%20tool%20result%20into%20a%20production%20brief"}>{tool.slug === "ad-performance-score-checker" ? "See ad scorer workflow" : "Turn result into brief"}</Link>
+            <Link className="btn secondary" href="/ai-product-video-generator">Create video after result</Link>
+            <Link className="btn secondary" href="/pricing">Check packages</Link>
+          </div>
         </section>
 
         {tool.slug === "ad-performance-score-checker" ? (
@@ -217,6 +216,10 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
             <Link className="feature-link-card" href="/pricing">
               <span>View Crelavo packages</span>
               <small>Check credits and production package options before launch.</small>
+            </Link>
+            <Link className="feature-link-card" href={`/dashboard/create?idea=${encodeURIComponent(`${tool.title} result to production brief`)}`}>
+              <span>Send result to dashboard/create</span>
+              <small>Use the free output as the first brief for managed production.</small>
             </Link>
           </div>
         </section>

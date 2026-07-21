@@ -26,6 +26,13 @@ const launchChecklist = [
   "Track clicks with UTM parameters so the traffic funnel can be measured."
 ];
 
+const extensionFaqs = [
+  { question: "Why use a Chrome extension for product-link video?", answer: "It reaches sellers while they are already reviewing product pages, so the product URL and campaign intent can move into Crelavo with less friction." },
+  { question: "Which pages should the extension support first?", answer: "The clearest first targets are Shopify product admin pages, Amazon product pages and ecommerce product URLs that can become campaign briefs." },
+  { question: "Does the extension need to do full production?", answer: "No. The best first role is acquisition and clean handoff: open Crelavo with product context ready for review." },
+  { question: "What should users do after clicking the extension CTA?", answer: "They should review the brief in dashboard/create, estimate scope and choose pricing or a production package when ready." }
+];
+
 export const metadata: Metadata = {
   title: "Chrome Extension Funnel for Product Link to AI Video | Crelavo",
   description: "Crelavo Chrome extension funnel concept for Shopify, Amazon and ecommerce sellers who want to generate AI product videos and campaign assets from a product page.",
@@ -95,6 +102,16 @@ export default async function ChromeExtensionPage() {
             <Link href="/blog/ecommerce-product-page-to-video-workflow"><b>Product page to video workflow</b><small>Guide for ecommerce product URLs</small></Link>
             <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Shopify App Store preparation path</small></Link>
             <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>WordPress plugin preparation path</small></Link>
+            <Link href="/pricing"><b>Pricing and credits</b><small>Review packages before production</small></Link>
+            <Link href="/dashboard/create"><b>Start dashboard brief</b><small>Turn product-page traffic into a production request</small></Link>
+          </div>
+        </section>
+
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">FAQ</span>
+          <h2>Chrome extension product-link video questions</h2>
+          <div className="plan-feature-groups">
+            {extensionFaqs.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
           </div>
         </section>
       </main>

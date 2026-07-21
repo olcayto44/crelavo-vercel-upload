@@ -33,6 +33,13 @@ const intakeFields = [
   "Manual review status before being added to a creator pool"
 ];
 
+const creatorFaqs = [
+  { question: "Who should apply to the AI UGC creator program?", answer: "Product demo creators, UGC ad actors, multilingual presenters and niche ecommerce creators with portfolio links can apply." },
+  { question: "Does Crelavo use creators without consent?", answer: "No. Consent, usage rights and manual review are required before any creator is considered for client-facing production." },
+  { question: "Which content styles matter most?", answer: "Product demos, hook-led UGC ads, unboxing, testimonials, TikTok/Reels reads and localized ecommerce videos are the most useful categories." },
+  { question: "Where should brands go if they need UGC ads?", answer: "Brands should open the campaign category, AI product video generator or dashboard/create to prepare a product campaign brief." }
+];
+
 export const metadata: Metadata = {
   title: "AI UGC Creator Program for Product Demo Actors | Crelavo",
   description: "Join the Crelavo AI UGC creator program for product demo creators, UGC ad actors, ecommerce video creators, TikTok/Reels product demos and AI video actor sourcing.",
@@ -122,6 +129,16 @@ export default async function AiUgcCreatorProgramPage() {
             <Link href="/ai-product-video-generator"><b>AI Product Video Generator</b><small>Product video workflow</small></Link>
             <Link href="/categories/campaign"><b>Ecommerce campaign category</b><small>Product-link ad campaign hub</small></Link>
             <Link href="/blog/shopify-amazon-trendyol-ai-campaign-checklist"><b>AI ecommerce campaign checklist</b><small>Prepare product campaign inputs</small></Link>
+            <Link href="/dashboard/create?idea=UGC%20product%20demo%20campaign"><b>Start UGC campaign brief</b><small>Move creator-style ad demand into dashboard/create</small></Link>
+            <Link href="/pricing"><b>Pricing and packages</b><small>Review production delivery before launch</small></Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+          <span className="badge">FAQ</span>
+          <h2>AI UGC creator program questions</h2>
+          <div className="plan-feature-groups">
+            {creatorFaqs.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
           </div>
         </section>
       </main>

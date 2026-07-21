@@ -15,6 +15,13 @@ const checklist = [
 
 const keywords = ["WooCommerce video plugin", "WooCommerce AI video", "WooCommerce product video", "WordPress product video", "AI product video plugin", "WooCommerce ad video", "ecommerce video plugin"];
 
+const wooCommerceFaqs = [
+  { question: "What does a WooCommerce AI product video plugin prepare?", answer: "It prepares the path for WordPress store owners to send product context into Crelavo for product videos, hooks, captions and campaign files." },
+  { question: "Is the product page URL enough for a useful video brief?", answer: "The URL is the starting point. The best brief also includes target platform, audience, offer, proof points and any reference style." },
+  { question: "How does this connect to Shopify and Chrome extension pages?", answer: "Shopify and WooCommerce cover store-specific handoff, while the Chrome extension page covers the fastest product-page traffic capture path." },
+  { question: "What is the next step for a WooCommerce seller?", answer: "Read the product page workflow, then open dashboard/create or pricing to prepare the production package." }
+];
+
 export const metadata: Metadata = {
   title: "WooCommerce AI Product Video Plugin Preparation | Crelavo",
   description: "Crelavo WooCommerce AI product video plugin preparation for WordPress stores, product page to video workflows, ecommerce campaign assets and plugin submission steps.",
@@ -96,6 +103,18 @@ export default async function WooCommerceAiProductVideoPluginPage() {
             <Link href="/categories/campaign"><b>Campaign category</b><small>Product-link campaign hub</small></Link>
             <Link href="/chrome-extension"><b>Chrome extension funnel</b><small>Fastest acquisition path before plugins</small></Link>
             <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery options</small></Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+          <span className="badge">FAQ</span>
+          <h2>WooCommerce AI product video plugin questions</h2>
+          <div className="plan-feature-groups">
+            {wooCommerceFaqs.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/create?idea=WooCommerce%20product%20page%20to%20AI%20video">Start WooCommerce brief</Link>
+            <Link className="btn secondary" href="/pricing">Check packages</Link>
           </div>
         </section>
       </main>
