@@ -213,7 +213,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["TikTok ads", "Meta ads", "Product videos", "Ecommerce campaigns"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/ai-ad-performance-score-checker"
   },
   {
@@ -235,7 +235,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["Fashion sellers", "Jewelry brands", "Beauty products", "Ecommerce catalogs"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/ai-virtual-model-studio"
   },
   {
@@ -257,7 +257,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["Cross-border ecommerce", "Localized ads", "Global product videos", "International campaigns"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/ai-cultural-localization"
   },
   {
@@ -279,7 +279,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["Seasonal ads", "Product launches", "Ecommerce planning", "Social campaigns"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/ai-campaign-calendar"
   },
   {
@@ -300,7 +300,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["New users", "Shopify sellers", "Creators", "Marketing teams"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/crelavo-academy"
   },
   {
@@ -321,7 +321,7 @@ export const categoryShowcaseItems: ShowcaseItem[] = [
     bestFor: ["Example-driven buyers", "Agencies", "Ecommerce brands", "Template reuse", "Social proof"],
     primaryCtaLabel: "Create package",
     primaryCtaHref: "/dashboard/credits",
-    secondaryCtaLabel: "View page",
+    secondaryCtaLabel: "Open feature page",
     secondaryCtaHref: "/community-showcase"
   },
   {
