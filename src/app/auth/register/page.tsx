@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Header } from "@/components/Header";
 import { RegisterForm } from "@/components/RegisterForm";
 
 type RegisterSearchParams = { next?: string | string[] };
@@ -20,29 +19,23 @@ export default async function RegisterPage({ searchParams }: { searchParams?: Pr
   const loginHref = next ? `/auth/login?next=${encodeURIComponent(next)}` : "/auth/login";
 
   return (
-    <>
-      <Header />
-      <main className="container section auth-screen" style={{ width: "min(100% - 32px, 520px)", maxWidth: 520, minHeight: "calc(100svh - 92px)", display: "grid", alignItems: "center", justifyItems: "center" }}>
-        <div className="card auth-card" style={{ width: "100%", maxWidth: 520 }}>
-          <h1>Register</h1>
-          <p style={{ color: "var(--muted)" }}>Choose how you want to start.</p>
-          {next ? (
-            <div className="card" style={{ margin: "14px 0", background: "rgba(34,211,238,.08)" }}>
-              <span className="badge">Free tool result saved</span>
-              <p style={{ color: "var(--muted)" }}>Create your account, then continue the selected free tool result in Assistant Workspace.</p>
-              <Link className="btn secondary" href={next}>Preview production request</Link>
-            </div>
-          ) : null}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, margin: "16px 0 18px" }}>
-            <Link className="btn" href="/auth/register">Create account</Link>
-            <Link className="btn secondary" href="/affiliate">Apply as partner</Link>
+    <main className="auth-standalone-screen">
+      <Link className="auth-standalone-logo" href="/">Crelavo</Link>
+      <section className="card auth-standalone-card auth-register-card">
+        <h1>Create account</h1>
+        <p style={{ color: "var(--muted)", marginTop: 6 }}>Create your account and continue to the production dashboard.</p>
+        {next ? (
+          <div className="card" style={{ margin: "12px 0", background: "rgba(34,211,238,.08)", padding: 14 }}>
+            <span className="badge">Free tool result saved</span>
+            <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Create your account, then continue the selected free tool result in Assistant Workspace.</p>
+            <Link className="btn secondary" href={next}>Preview request</Link>
           </div>
-          <div id="create-account">
-            <RegisterForm />
-          </div>
-          <p style={{ color: "var(--muted)" }}>Already have an account? <Link href={loginHref}>Sign in</Link></p>
+        ) : null}
+        <div id="create-account">
+          <RegisterForm />
         </div>
-      </main>
-    </>
+        <p style={{ color: "var(--muted)", marginBottom: 0 }}>Already have an account? <Link href={loginHref}>Sign in</Link></p>
+      </section>
+    </main>
   );
 }

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Header } from "@/components/Header";
 import { LoginForm } from "@/components/LoginForm";
 
 type LoginSearchParams = { next?: string | string[] };
@@ -20,29 +19,23 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
   const registerHref = next ? `/auth/register?next=${encodeURIComponent(next)}` : "/auth/register";
 
   return (
-    <>
-      <Header />
-      <main className="container section auth-screen" style={{ width: "min(100% - 32px, 520px)", maxWidth: 520, minHeight: "calc(100svh - 92px)", display: "grid", alignItems: "center", justifyItems: "center" }}>
-        <div className="card auth-card" style={{ width: "100%", maxWidth: 520 }}>
-          <h1>Member login</h1>
-          <p style={{ color: "var(--muted)" }}>Choose how you want to continue.</p>
-          {next ? (
-            <div className="card" style={{ margin: "14px 0", background: "rgba(34,211,238,.08)" }}>
-              <span className="badge">Continue your production request</span>
-              <p style={{ color: "var(--muted)" }}>After signing in, continue with the free tool result already prepared for Assistant Workspace.</p>
-              <Link className="btn secondary" href={next}>Preview production request</Link>
-            </div>
-          ) : null}
-          <div className="auth-login-mode-row">
-            <Link className="btn" href="/auth/login">Sign in</Link>
-            <Link className="btn secondary" href={registerHref}>Create account</Link>
+    <main className="auth-standalone-screen">
+      <Link className="auth-standalone-logo" href="/">Crelavo</Link>
+      <section className="card auth-standalone-card">
+        <h1>Member login</h1>
+        <p style={{ color: "var(--muted)", marginTop: 6 }}>Sign in to open your production dashboard.</p>
+        {next ? (
+          <div className="card" style={{ margin: "12px 0", background: "rgba(34,211,238,.08)", padding: 14 }}>
+            <span className="badge">Continue your production request</span>
+            <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>After signing in, continue the prepared Assistant Workspace request.</p>
+            <Link className="btn secondary" href={next}>Preview request</Link>
           </div>
-          <div id="member-login">
-            <LoginForm />
-          </div>
-          <p style={{ color: "var(--muted)" }}>Do not have an account? <Link href={registerHref}>Register</Link></p>
+        ) : null}
+        <div id="member-login">
+          <LoginForm />
         </div>
-      </main>
-    </>
+        <p style={{ color: "var(--muted)", marginBottom: 0 }}>Do not have an account? <Link href={registerHref}>Register</Link></p>
+      </section>
+    </main>
   );
 }
