@@ -15,7 +15,7 @@ export default async function CreateProductionPage({ searchParams }: PageProps) 
   const initialType = firstParam(params?.type) || firstParam(params?.category) || "AI Video";
 
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell production-create-shell">
       <ProductionStudio initialIdea={initialIdea} initialType={initialType} />
     </DashboardShell>
   );

@@ -6415,8 +6415,11 @@ html body .automation-brief-card pre {
 .production-studio-shell {
   display: grid;
   gap: 20px;
-  width: min(1760px, calc(100vw - 44px));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
+  overflow-x: clip;
 }
 .production-studio-hero,
 .production-studio-panel {
@@ -6445,14 +6448,21 @@ html body .automation-brief-card pre {
 }
 .production-studio-grid {
   display: grid;
-  grid-template-columns: minmax(250px, .55fr) minmax(460px, 1.25fr) minmax(320px, .7fr);
+  grid-template-columns: minmax(220px, .55fr) minmax(0, 1.25fr) minmax(280px, .7fr);
   gap: 18px;
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 .production-studio-panel {
   display: grid;
   gap: 14px;
   padding: 18px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
 }
 .production-studio-panel label {
   display: grid;
@@ -6596,6 +6606,11 @@ html body .automation-brief-card pre {
   margin-bottom: 8px;
   color: #020617;
   background: #67e8f9;
+}
+@media (max-width: 1450px) {
+  .production-create-shell .production-studio-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 @media (max-width: 1300px) {
   .production-studio-grid {
