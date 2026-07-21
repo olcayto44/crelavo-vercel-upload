@@ -29,6 +29,24 @@ const defaultDeliveryPreviewItems = [
   "Revision path"
 ];
 
+const studioQuickPaths = [
+  { label: "Product Video", description: "Turn a product link, image or listing into a social ad video.", category: "campaign", mode: "commerce" },
+  { label: "UGC Sales Video", description: "Create creator-style product proof, hook, CTA and voice direction.", category: "video", mode: "media" },
+  { label: "AI Avatar Video", description: "Prepare a talking sales avatar with voice, script and delivery options.", category: "talking_video", mode: "media" },
+  { label: "AI Drone-Style", description: "Generate aerial-style location or product motion without real drone shooting.", category: "drone_video", mode: "media" },
+  { label: "Campaign Pack", description: "Plan hooks, captions, ad angles, visuals and launch assets together.", category: "campaign", mode: "commerce" },
+  { label: "Voice / Dubbing", description: "Create voice-over, dubbing, subtitles or localized narration paths.", category: "voice_clone", mode: "media" }
+];
+
+const studioQualityTiers = ["Fast", "Standard", "Pro", "Cinematic", "Ultra"];
+
+const studioProviderSignals = [
+  { label: "Video engines", value: "Auto routing", status: "Kling / Seedance style" },
+  { label: "Voice", value: "Ready", status: "ElevenLabs" },
+  { label: "Publishing", value: "Configured", status: "TikTok / YouTube / Meta" },
+  { label: "Avatar", value: "Pending", status: "D-ID / provider review" }
+];
+
 const deliveryHandoffItems = [
   "Dashboard delivery tracking",
   "Admin-managed status",
@@ -2377,14 +2395,55 @@ async function startRawMicrophoneFallback() {
   return (
     <div className="assistant-workspace">
       <section className="assistant-live-stage">
-        <div className="assistant-stage-head">
+        <div className="assistant-stage-head studio-stage-head">
           <span className="badge"><Sparkles size={14} /> Crelavo AI Production Studio</span>
-          <h1>What do you want to create?</h1>
-          <p>Enter a production command, choose a quick path, then start the managed production flow.</p>
+          <h1>What do you want to create with Crelavo?</h1>
+          <p>Create videos, avatars, campaign assets, product ads and social content from one clean production workspace.</p>
         </div>
 
+        <section className="studio-command-center">
+          <div className="studio-command-main">
+            <span className="badge">Production command</span>
+          <h2>Write the brief, choose quality, start production.</h2>
+          <p>A cleaner Kling / Seedance-style workflow: the user describes the goal, while Crelavo prepares the production type, quality tier and provider route behind the scenes.</p>
+            <div className="studio-prompt-preview">
+              <span>Describe what you want to create...</span>
+              <small>{input || initialIdea || "Turn my product link into a TikTok ad video with voice, music and a strong CTA."}</small>
+            </div>
+            <div className="studio-quality-strip" aria-label="Quality tiers">
+              {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
+            </div>
+          </div>
+          <aside className="studio-credit-card">
+            <small>Estimated reserve</small>
+            <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
+            <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality}</span>
+            <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start production</button>
+            <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Open options</button>
+          </aside>
+        </section>
+
+        <section className="studio-quick-path-grid" aria-label="Production quick paths">
+          {studioQuickPaths.map((path) => (
+            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => applyCategorySelection(path.category)}>
+              <strong>{path.label}</strong>
+              <span>{path.description}</span>
+            </button>
+          ))}
+        </section>
+
+        <section className="studio-provider-strip" aria-label="Provider status summary">
+          {studioProviderSignals.map((item) => (
+            <div key={item.label}>
+              <small>{item.label}</small>
+              <strong>{item.value}</strong>
+              <span>{item.status}</span>
+            </div>
+          ))}
+        </section>
+
         <>
-        <div className="live-production-board">
+        <div className="live-production-board compact-studio-steps">
           {defaultSteps.map((step, index) => (
             <div className={`live-step ${index <= activeStep ? "active" : ""}`} key={step}>
               <span>{index + 1}</span>

@@ -5638,3 +5638,183 @@ html body .automation-brief-card pre {
   }
 }
 
+/* Crelavo Production Studio refresh: clean Kling/Seedance-style workspace entry. */
+.studio-stage-head {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(125,211,252,.16);
+  border-radius: 28px;
+  padding: clamp(18px, 3vw, 30px);
+  background:
+    radial-gradient(circle at 12% 15%, rgba(34,211,238,.20), transparent 34%),
+    radial-gradient(circle at 85% 0%, rgba(168,85,247,.18), transparent 32%),
+    linear-gradient(135deg, rgba(15,23,42,.92), rgba(2,6,23,.72));
+}
+.studio-stage-head p {
+  max-width: 760px;
+  color: #cbd5e1;
+  font-size: 16px;
+}
+.studio-command-center {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 14px;
+  align-items: stretch;
+}
+.studio-command-main,
+.studio-credit-card,
+.studio-quick-card,
+.studio-provider-strip > div {
+  border: 1px solid rgba(125,211,252,.16);
+  border-radius: 24px;
+  background: rgba(2,6,23,.48);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.studio-command-main {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+.studio-command-main h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(26px, 3vw, 42px);
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+.studio-command-main p {
+  margin: 0;
+  max-width: 820px;
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+.studio-prompt-preview {
+  display: grid;
+  gap: 8px;
+  min-height: 116px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 22px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(15,23,42,.56));
+}
+.studio-prompt-preview span {
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.studio-prompt-preview small {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.studio-quality-strip,
+.studio-quick-path-grid,
+.studio-provider-strip {
+  display: grid;
+  gap: 10px;
+}
+.studio-quality-strip {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.studio-quality-strip button {
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: #dbeafe;
+  background: rgba(255,255,255,.055);
+  cursor: pointer;
+  font-weight: 900;
+}
+.studio-quality-strip button.active,
+.studio-quality-strip button:hover {
+  color: #fff;
+  border-color: rgba(34,211,238,.62);
+  background: linear-gradient(135deg, rgba(34,211,238,.22), rgba(124,92,255,.22));
+}
+.studio-credit-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  align-content: center;
+}
+.studio-credit-card small,
+.studio-provider-strip small {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.studio-credit-card strong {
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+}
+.studio-credit-card span,
+.studio-provider-strip span,
+.studio-quick-card span {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.studio-quick-path-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.studio-quick-card {
+  display: grid;
+  gap: 7px;
+  min-height: 118px;
+  padding: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.studio-quick-card strong {
+  color: #fff;
+  font-size: 16px;
+}
+.studio-quick-card.active,
+.studio-quick-card:hover {
+  border-color: rgba(34,211,238,.55);
+  background: linear-gradient(135deg, rgba(34,211,238,.14), rgba(168,85,247,.12));
+}
+.studio-provider-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.studio-provider-strip > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+.studio-provider-strip strong {
+  color: #fff;
+  font-size: 15px;
+}
+.compact-studio-steps {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.compact-studio-steps .live-step {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+.compact-studio-steps .live-step strong {
+  font-size: 12px;
+  line-height: 1.25;
+}
+.compact-studio-steps .live-step small {
+  font-size: 11px;
+}
+@media (max-width: 1100px) {
+  .studio-command-center,
+  .studio-quick-path-grid,
+  .studio-provider-strip,
+  .compact-studio-steps {
+    grid-template-columns: 1fr;
+  }
+  .studio-quality-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
