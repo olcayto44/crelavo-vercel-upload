@@ -6,7 +6,7 @@ import { dashboardNextBestActions, growthRewardReadiness, lifecycleNudges, reten
 
 export default function DashboardGrowthPage() {
   return (
-    <DashboardShell className="dashboard-sidebar-lift">
+    <DashboardShell className="dashboard-sidebar-lift dashboard-postlaunch-shell">
       <section className="card">
         <span className="badge">Retention / growth hub</span>
         <h2>Earn, return and continue building with Crelavo</h2>
@@ -50,7 +50,7 @@ export default function DashboardGrowthPage() {
           <span className="badge">Referral MVP</span>
           <h3>Referral and affiliate tracking</h3>
           <p>Referral links can track signups and first production starts while Whop remains the active payment path. Paid commission automation waits for manual Whop E2E validation.</p>
-          <p className="workspace-action-note warning">Lemon is postponed. API automation comes later after the API-dışı 2. Grup work is complete.</p>
+          <p className="workspace-action-note warning">Lemon is postponed. API automation comes later after the non-API launch cleanup group is complete.</p>
           <Link className="btn secondary" href="/dashboard/partners">Open partner program</Link>
         </div>
       </section>
