@@ -5314,6 +5314,35 @@ html body .tools-catalog-page.public-funnel-page {
   overflow-x: clip !important;
   box-sizing: border-box !important;
 }
+
+html body main.container.section.service-page-detail,
+html body main.container.section:not(.dashboard-shell-layout):not(.dashboard-postlaunch-shell):not(.admin-shell-layout):not(.assistant-production-page):not(.assistant-full-page),
+html body main.container.legal-page,
+html body main.container.clean-feed-section {
+  width: min(1280px, calc(100vw - 32px)) !important;
+  max-width: calc(100vw - 32px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
+  box-sizing: border-box !important;
+}
+
+html body :is(main.container.section.service-page-detail, main.container.section:not(.dashboard-shell-layout):not(.dashboard-postlaunch-shell):not(.admin-shell-layout):not(.assistant-production-page):not(.assistant-full-page), main.container.legal-page, main.container.clean-feed-section) > *,
+html body :is(main.container.section.service-page-detail, main.container.section:not(.dashboard-shell-layout):not(.dashboard-postlaunch-shell):not(.admin-shell-layout):not(.assistant-production-page):not(.assistant-full-page), main.container.legal-page, main.container.clean-feed-section) :is(.clean-feed-section, .production-hero-card, .card, .plan-feature-groups, .delivery-step-grid, .admin-category-grid, .admin-info-grid) {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html body :is(main.container.section.service-page-detail, main.container.section:not(.dashboard-shell-layout):not(.dashboard-postlaunch-shell):not(.admin-shell-layout):not(.assistant-production-page):not(.assistant-full-page), main.container.legal-page, main.container.clean-feed-section) :is(.plan-feature-groups, .delivery-step-grid, .admin-category-grid, .admin-info-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)) !important;
+}
+
+html body :is(main.container.section.service-page-detail, main.container.section:not(.dashboard-shell-layout):not(.dashboard-postlaunch-shell):not(.admin-shell-layout):not(.assistant-production-page):not(.assistant-full-page), main.container.legal-page, main.container.clean-feed-section) :is(a, p, h1, h2, h3, small, span, li) {
+  overflow-wrap: anywhere !important;
+}
+
 html body .public-home-page {
   width: 100% !important;
   max-width: 100% !important;
