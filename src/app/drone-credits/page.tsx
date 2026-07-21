@@ -5,6 +5,12 @@ import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { dronePurchasePackages } from "@/lib/data";
 
+export const metadata = {
+  title: "Drone and Satellite Video Packages | Crelavo",
+  description: "Choose Crelavo drone and satellite video packages for route reveals, map intros, location flyovers and managed visual production briefs.",
+  alternates: { canonical: "/drone-credits" }
+};
+
 function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US")}`;
 }

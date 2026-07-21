@@ -5,71 +5,50 @@ export async function SiteFooter() {
     <footer className="container footer clean-feed-section site-footer">
       <div className="site-footer-grid balanced-footer-grid">
         <div className="site-footer-group footer-core-services">
-          <h3>Core services</h3>
+          <h3>Start here</h3>
           <nav>
-            <HardReloadLink href="/products/website">Website production</HardReloadLink>
-            <HardReloadLink href="/ai-product-video-generator">AI product video generator</HardReloadLink>
-            <HardReloadLink href="/shopify-product-link-to-ad-video">Shopify product video</HardReloadLink>
-            <HardReloadLink href="/amazon-product-ad-video">Amazon product ad video</HardReloadLink>
-            <HardReloadLink href="/trendyol-product-video">Trendyol product video</HardReloadLink>
-            <HardReloadLink href="/chrome-extension">Chrome extension funnel</HardReloadLink>
-            <HardReloadLink href="/shopify-ai-product-video-app">Shopify AI video app</HardReloadLink>
-            <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce video plugin</HardReloadLink>
-            <HardReloadLink href="/ai-ugc-creator-program">AI UGC creator program</HardReloadLink>
+            <HardReloadLink href="/dashboard/create">Start production brief</HardReloadLink>
+            <HardReloadLink href="/pricing">Pricing and credits</HardReloadLink>
+            <HardReloadLink href="/free-tools/ad-performance-score-checker">Free AI ad scorer</HardReloadLink>
+            <HardReloadLink href="/blog">AI production guides</HardReloadLink>
           </nav>
         </div>
         <div className="site-footer-group footer-core-services">
-          <h3>Core services 2</h3>
+          <h3>E-commerce workflows</h3>
           <nav>
-            <HardReloadLink href="/ai-tool-launch-distribution-plan">AI tool launch plan</HardReloadLink>
-            <HardReloadLink href="/ai-social-media-launch-plan">AI social media launch</HardReloadLink>
-            <HardReloadLink href="/pinterest-youtube-visual-distribution-plan">Pinterest YouTube plan</HardReloadLink>
-            <HardReloadLink href="/ai-ad-performance-score-checker">AI ad score checker</HardReloadLink>
-            <HardReloadLink href="/ai-virtual-model-studio">AI virtual model studio</HardReloadLink>
-            <HardReloadLink href="/ai-cultural-localization">AI cultural localization</HardReloadLink>
-            <HardReloadLink href="/ai-campaign-calendar">AI campaign calendar</HardReloadLink>
-            <HardReloadLink href="/crelavo-academy">Crelavo Academy</HardReloadLink>
-            <HardReloadLink href="/community-showcase">Community showcase</HardReloadLink>
-            <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales agent</HardReloadLink>
+            <HardReloadLink href="/ai-product-video-generator">AI product video generator</HardReloadLink>
+            <HardReloadLink href="/shopify-ai-product-video-app">Shopify AI product video app</HardReloadLink>
+            <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce video plugin</HardReloadLink>
+            <HardReloadLink href="/chrome-extension">Chrome extension funnel</HardReloadLink>
+            <HardReloadLink href="/ai-ugc-creator-program">AI UGC creator program</HardReloadLink>
           </nav>
         </div>
         <div className="site-footer-group">
-          <h3>Alternatives</h3>
+          <h3>Core production</h3>
           <nav>
-            <HardReloadLink href="/alternatives">All alternatives</HardReloadLink>
+            <HardReloadLink href="/ai-video-generator">AI video production</HardReloadLink>
+            <HardReloadLink href="/ai-website-builder">AI website builder</HardReloadLink>
+            <HardReloadLink href="/ai-app-builder">AI app builder</HardReloadLink>
+            <HardReloadLink href="/categories">Production categories</HardReloadLink>
+            <HardReloadLink href="/tools">Tools catalog</HardReloadLink>
+          </nav>
+        </div>
+        <div className="site-footer-group">
+          <h3>Compare tools</h3>
+          <nav>
+            <HardReloadLink href="/alternatives">AI tool alternatives</HardReloadLink>
             <HardReloadLink href="/alternatives/crelavo-vs-runway">Crelavo vs Runway</HardReloadLink>
             <HardReloadLink href="/alternatives/crelavo-vs-heygen">Crelavo vs HeyGen</HardReloadLink>
-            <HardReloadLink href="/alternatives/crelavo-vs-synthesia">Crelavo vs Synthesia comparison</HardReloadLink>
-            <HardReloadLink href="/alternatives/best-shopify-video-generator-tools">Best Shopify video tools</HardReloadLink>
-            <HardReloadLink href="/alternatives/best-ai-product-video-generators">Best AI product video generators</HardReloadLink>
-            <HardReloadLink href="/alternatives/best-ecommerce-video-creation-tools">Best ecommerce video tools</HardReloadLink>
           </nav>
         </div>
         <div className="site-footer-group">
-          <h3>Platform</h3>
-          <nav>
-            <HardReloadLink href="/pricing">Pricing</HardReloadLink>
-            <HardReloadLink href="/tools">Tools</HardReloadLink>
-            <HardReloadLink href="/alternatives">Alternatives</HardReloadLink>
-            <HardReloadLink href="/categories">Categories</HardReloadLink>
-            <HardReloadLink href="/showcase/explore-samples">Samples</HardReloadLink>
-          </nav>
-        </div>
-        <div className="site-footer-group">
-          <h3>Company</h3>
+          <h3>Company and legal</h3>
           <nav>
             <HardReloadLink href="/contact">Contact</HardReloadLink>
-            <HardReloadLink href="/blog">Blog</HardReloadLink>
-            <HardReloadLink href="/api-documentation">API documentation</HardReloadLink>
-          </nav>
-        </div>
-        <div className="site-footer-group">
-          <h3>Legal</h3>
-          <nav>
+            <HardReloadLink href="/showcase/explore-samples">Samples</HardReloadLink>
             <HardReloadLink href="/terms">Terms of Service</HardReloadLink>
             <HardReloadLink href="/privacy">Privacy Policy</HardReloadLink>
-            <HardReloadLink href="/refund-policy">Refund / Cancellation Policy</HardReloadLink>
-            <HardReloadLink href="/cookie-policy">Cookie Policy</HardReloadLink>
+            <HardReloadLink href="/refund-policy">Refund policy</HardReloadLink>
           </nav>
         </div>
         <div className="site-footer-group footer-social-group">
@@ -92,7 +71,7 @@ export async function SiteFooter() {
 
       <div className="site-footer-brand footer-brand-bottom-copy">
         <HardReloadLink href="/" className="site-footer-brand-link"><strong>Crelavo</strong></HardReloadLink>
-        <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for ecommerce, launch assets, product videos and managed creative workflows">Crelavo is a global AI production studio for websites, mobile apps, ecommerce product campaigns, Shopify/Amazon/Trendyol product links, ad videos, avatars, visuals, voice-over and AI + human QA delivery. Teams can plan product-link-to-video campaigns, launch assets, UGC-style creator content, cultural localization, campaign calendars, community showcase templates, managed integration plans, ad scoring workflows, virtual model concepts and social distribution packs from one managed creative system.</p>
+        <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for ecommerce, app, website and campaign delivery">Crelavo is an AI production studio for ecommerce product videos, campaign briefs, websites, app assets and dashboard delivery. Teams can start with a free score, pricing review or focused production brief instead of searching through every tool at once.</p>
       </div>
 
       <div className="site-footer-bottom">

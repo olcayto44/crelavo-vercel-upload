@@ -2,7 +2,8 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Privacy Policy | Crelavo",
-  description: "Crelavo Privacy Policy for accounts, production requests, payments, support and AI-assisted digital delivery."
+  description: "Crelavo Privacy Policy for accounts, production requests, payments, support and AI-assisted digital delivery.",
+  alternates: { canonical: "/privacy" }
 };
 
 export default function PrivacyPage() {

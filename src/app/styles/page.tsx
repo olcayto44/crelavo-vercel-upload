@@ -3,6 +3,12 @@ import { Layers, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
+export const metadata = {
+  title: "Production Style Directions | Crelavo",
+  description: "Choose Crelavo production style directions for websites, apps, visuals, brand kits, documents, dashboards and AI video work.",
+  alternates: { canonical: "/styles" }
+};
+
 const platformStyles = [
   {
     name: "Premium SaaS",

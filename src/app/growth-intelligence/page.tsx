@@ -8,7 +8,8 @@ import { hasWhopPlan } from "@/lib/whop";
 
 export const metadata = {
   title: "AI Growth Intelligence Agent | Crelavo",
-  description: "Monitor competitors, price changes, public ads, landing pages and market signals with an autonomous AI growth intelligence agent and weekly executive PDF reports."
+  description: "Monitor competitors, price changes, public ads, landing pages and market signals with an autonomous AI growth intelligence agent and weekly executive PDF reports.",
+  alternates: { canonical: "/growth-intelligence" }
 };
 
 function formatUsd(value: number) {

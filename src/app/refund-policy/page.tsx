@@ -2,7 +2,8 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Refund / Cancellation Policy | Crelavo",
-  description: "Crelavo refund, cancellation and subscription policy for active payment provider payments, credit packages and managed production services."
+  description: "Crelavo refund, cancellation and subscription policy for active payment provider payments, credit packages and managed production services.",
+  alternates: { canonical: "/refund-policy" }
 };
 
 export default function RefundPolicyPage() {

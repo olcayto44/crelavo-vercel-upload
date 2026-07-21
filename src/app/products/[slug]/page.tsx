@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { footerInfoPageMap, footerInfoPages } from "@/lib/footer-info-pages";
@@ -6,13 +7,27 @@ export function generateStaticParams() {
   return footerInfoPages.map((page) => ({ slug: page.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const page = footerInfoPageMap.get(slug);
   if (!page) return {};
+  const canonical = `/products/${page.slug}`;
   return {
     title: `${page.title} | Crelavo`,
-    description: page.summary
+    description: page.summary,
+    alternates: { canonical },
+    openGraph: {
+      title: `${page.title} | Crelavo`,
+      description: page.summary,
+      url: canonical,
+      type: "website"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${page.title} | Crelavo`,
+      description: page.summary
+    },
+    robots: { index: true, follow: true }
   };
 }
 

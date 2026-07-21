@@ -6,6 +6,12 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { liveSalesServicePlans } from "@/lib/data";
 import { hasWhopPlan } from "@/lib/whop";
 
+export const metadata = {
+  title: "AI Live Sales Agent Plans | Crelavo",
+  description: "Choose Crelavo AI live sales agent service plans for avatar host setup, live FAQ planning, product selling flows and monthly live-commerce support.",
+  alternates: { canonical: "/live-sales-credits" }
+};
+
 function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US")}`;
 }

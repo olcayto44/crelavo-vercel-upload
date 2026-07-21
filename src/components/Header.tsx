@@ -61,10 +61,10 @@ export function Header({ navLinks = defaultPublicNavLinks }: HeaderProps) {
           <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
             <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" />
             <div className="tools-mega-menu">
-              {footerGroups.slice(0, 5).map((group) => (
+              {footerGroups.slice(0, 3).map((group) => (
                 <div className="tools-mega-group" key={group.title}>
                   <strong>{group.title}</strong>
-                  {group.links.slice(0, 6).map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
+                  {group.links.slice(0, 4).map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
                 </div>
               ))}
             </div>

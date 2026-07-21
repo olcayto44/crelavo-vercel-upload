@@ -4,7 +4,8 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata = {
   title: "Billing and cancellation | Crelavo",
-  description: "How to manage Crelavo Whop subscriptions, cancel during the 24-hour preview, and understand preview fees, credits and renewal timing."
+  description: "How to manage Crelavo Whop subscriptions, cancel during the 24-hour preview, and understand preview fees, credits and renewal timing.",
+  alternates: { canonical: "/whop-billing" }
 };
 
 const subscriptionSteps = [

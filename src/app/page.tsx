@@ -1,4 +1,4 @@
-import { Boxes, Clapperboard, Grid3X3, Image, Layers3, MonitorPlay, Plane, RadioTower, Sparkles, Wand2 } from "lucide-react";
+import { Clapperboard, Grid3X3, Plane, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
@@ -47,14 +47,11 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
 ];
 
 const featuredTools = [
-  { title: "AI Video Generator", href: "/tools/ai-video-generator", icon: Clapperboard },
-  { title: "AI Avatar Video Studio", href: "/tools/talking-video", icon: MonitorPlay },
-  { title: "Drone Shoot", href: "/drone-credits", icon: Plane },
-  { title: "Avatar Live Stream", href: "/live-sales-credits", icon: RadioTower },
-  { title: "Image & Visual Pack", href: "/tools/image-visual-pack", icon: Image },
-  { title: "Website Builder", href: "/tools/website-builder", icon: Wand2 },
-  { title: "SaaS / App Builder", href: "/tools/saas-app-builder", icon: Layers3 },
-  { title: "Brand & Files", href: "/tools/brand-files", icon: Boxes }
+  { title: "Product Video Workflow", href: "/ai-product-video-generator", icon: Clapperboard },
+  { title: "Free Ad Scorer", href: "/free-tools/ad-performance-score-checker", icon: Sparkles },
+  { title: "Localization Brief", href: "/ai-cultural-localization", icon: Plane },
+  { title: "Website / App Assets", href: "/ai-website-builder", icon: Wand2 },
+  { title: "Full Tools Catalog", href: "/tools", icon: Grid3X3 }
 ];
 
 const lightweightHomeCards = [

@@ -2,7 +2,8 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Cookie Policy | Crelavo",
-  description: "Crelavo Cookie Policy for required session cookies, preferences, analytics and security-related technologies."
+  description: "Crelavo Cookie Policy for required session cookies, preferences, analytics and security-related technologies.",
+  alternates: { canonical: "/cookie-policy" }
 };
 
 export default function CookiePolicyPage() {

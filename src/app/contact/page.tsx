@@ -3,6 +3,12 @@ import { Header } from "@/components/Header";
 import { ContactForm } from "@/components/ContactForm";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
+export const metadata = {
+  title: "Contact Crelavo | Production Support and Account Help",
+  description: "Reach Crelavo support for production delivery, account help, AI + human QA creative requests and launch preparation.",
+  alternates: { canonical: "/contact" }
+};
+
 const contactCards = [
   {
     title: "Production support",

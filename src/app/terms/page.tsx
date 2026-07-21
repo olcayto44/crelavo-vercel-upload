@@ -2,7 +2,8 @@ import Link from "next/link";
 
 export const metadata = {
   title: "Terms of Service | Crelavo",
-  description: "Crelavo Terms of Service for AI production studio subscriptions, credit packages, managed services and digital delivery."
+  description: "Crelavo Terms of Service for AI production studio subscriptions, credit packages, managed services and digital delivery.",
+  alternates: { canonical: "/terms" }
 };
 
 export default function TermsPage() {

@@ -63,15 +63,15 @@ export function CrelavoPremiumHero() {
       <div className="container crelavo-premium-hero-inner">
         <div className="crelavo-hero-copy">
           <span className="badge"><Sparkles size={15} /> Crelavo AI Production Studio</span>
-          <h1>Create videos, websites, ads and campaign assets from one AI workspace.</h1>
-          <p>AI speed, human quality assurance, clear credit guidance and delivery-ready outputs for ecommerce teams, creators and businesses.</p>
+          <h1>Crelavo: AI Production Studio for E-Commerce, Apps and Campaigns</h1>
+          <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
           <div className="crelavo-hero-actions">
             <Link className="btn" href="/dashboard/create">Start production <ArrowRight size={16} /></Link>
             <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score my ad for free</Link>
             <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
-            {["Product videos", "Ad scoring", "Virtual models", "Localization", "Websites", "Voice-over", "Campaign assets"].map((item) => <span key={item}>{item}</span>)}
+            {["Product videos", "Campaign briefs", "Website/app assets", "Localization", "Dashboard delivery"].map((item) => <span key={item}>{item}</span>)}
           </div>
           <div className="crelavo-hero-dots" aria-label="Hero scenes">
             {heroScenes.map((scene, index) => (
