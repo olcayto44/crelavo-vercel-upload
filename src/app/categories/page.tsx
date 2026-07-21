@@ -130,10 +130,14 @@ export default async function CategoriesPage() {
           <div className="production-pricing-grid">
             {phaseOneFeaturePages.slice(0, 6).map((page) => (
               <div className={`card production-pricing-card production-tone-${page.slug}`} key={page.slug}>
-                <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
-                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
-                  <small>{page.badge}</small>
-                  <strong>Preview</strong>
+                <div className={`feature-card-visual feature-visual-${page.slug}`} aria-label={`${page.title} visual preview`}>
+                  <div className="feature-visual-frame feature-visual-frame-large">
+                    <span>{page.badge}</span>
+                    <strong>{page.title}</strong>
+                  </div>
+                  <div className="feature-visual-metrics" aria-hidden="true">
+                    {page.keywords.slice(0, 3).map((keyword) => <small key={`${page.slug}-visual-${keyword}`}>{keyword}</small>)}
+                  </div>
                 </div>
                 <span className="badge">Uses existing credit packages</span>
                 <h3>{page.title}</h3>

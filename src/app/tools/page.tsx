@@ -38,7 +38,7 @@ export default async function ToolsPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section tools-page tools-catalog-page">
+      <main className="container section tools-page tools-catalog-page public-funnel-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Tools catalog</span>
           <h1>AI tools catalog for product videos, websites, apps, ecommerce campaigns and brand production</h1>
@@ -46,7 +46,7 @@ export default async function ToolsPage() {
             Browse Crelavo tools by production area: AI product video generator, Shopify product link to ad video, Amazon product ad video, Trendyol product video, AI website builder, AI app builder, AI ecommerce builder, brand kit builder and social media campaign workflows. Each tool opens a focused information page first, then the user can continue into the production workspace, category page, dashboard or credit page.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace">Start a request</Link>
+            <Link className="btn" href="/dashboard/create">Start a request</Link>
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/alternatives">AI tool alternatives</Link>
             <Link className="btn secondary" href="/chrome-extension">Chrome extension funnel</Link>
@@ -86,10 +86,14 @@ export default async function ToolsPage() {
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {phaseOneFeaturePages.map((page) => (
               <Link className="card admin-category-card production-pricing-card" href={`/${page.slug}`} key={page.slug}>
-                <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${page.title} preview`}>
-                  <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
-                  <small>{page.badge}</small>
-                  <strong>Preview</strong>
+                <div className={`feature-card-visual feature-visual-${page.slug}`} aria-label={`${page.title} visual preview`}>
+                  <div className="feature-visual-frame feature-visual-frame-large">
+                    <span>{page.badge}</span>
+                    <strong>{page.title}</strong>
+                  </div>
+                  <div className="feature-visual-metrics" aria-hidden="true">
+                    {page.keywords.slice(0, 3).map((keyword) => <small key={`${page.slug}-tools-visual-${keyword}`}>{keyword}</small>)}
+                  </div>
                 </div>
                 <span className="badge">{page.primaryKeyword}</span>
                 <h3>{page.title}</h3>

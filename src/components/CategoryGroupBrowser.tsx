@@ -135,13 +135,20 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
   const packages = configuredPackages.length ? configuredPackages : fallbackPackages;
 
   return (
-    <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-      <div className="sample-video-preview sample-video-preview-cinematic" aria-label={`${type.label} preview`}>
-        <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />
-        <small>{type.label}</small>
-        <strong>Preview</strong>
-      </div>
-      <Icon color="currentColor" />
+      <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
+        <div className={`category-card-visual category-visual-${type.id}`} aria-label={`${type.label} visual preview`}>
+          <div className="category-visual-orb category-visual-orb-one" aria-hidden="true" />
+          <div className="category-visual-orb category-visual-orb-two" aria-hidden="true" />
+          <div className="category-visual-panel category-visual-panel-main">
+            <Icon size={34} color="currentColor" />
+            <strong>{type.label}</strong>
+            <small>{type.startingCredits > 0 ? `${type.startingCredits.toLocaleString()}+ credits` : "Service path"}</small>
+          </div>
+          <div className="category-visual-strip" aria-hidden="true">
+            {(categoryOptions[type.id] ?? []).slice(0, 3).map((option) => <span key={`${type.id}-visual-${option}`}>{option}</span>)}
+          </div>
+        </div>
+        <Icon color="currentColor" />
       <span className="badge">{type.startingCredits > 0 ? `From ${type.startingCredits.toLocaleString()} credits` : "Service plan pricing"}</span>
       <h3>{type.label}</h3>
       <p>{type.description}</p>
