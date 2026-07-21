@@ -134,7 +134,19 @@ export function RequestsTable() {
         {mode === "live" ? "Showing your automatic video productions." : mode === "login" ? "Sign in to view your requests." : mode === "error" ? "Requests could not be loaded." : "Loading requests."}
       </p>
       {message ? <p className="form-message">{message}</p> : null}
-      <table className="table">
+      {rows.length === 0 ? (
+        <div className="card workspace-empty-note" style={{ display: "grid", gap: 12, marginTop: 12 }}>
+          <span className="badge">No recent video requests</span>
+          <h3>{mode === "login" ? "Sign in or start a production brief" : "Create the first tracked production"}</h3>
+          <p style={{ color: "var(--muted)", margin: 0 }}>Use this area after automatic video jobs begin. If you are preparing a website, app, visual pack, brand kit, or campaign, start from the full production brief so delivery notes stay connected.</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a className="btn" href="/dashboard/create">Start production</a>
+            <a className="btn secondary" href="/dashboard/productions">Open production center</a>
+            <a className="btn secondary" href="/dashboard/credits">Check credits</a>
+          </div>
+        </div>
+      ) : null}
+      {rows.length > 0 ? <table className="table">
         <thead><tr><th>Project</th><th>Type</th><th>Status</th><th>Preview</th><th>Credits</th><th>Delivery</th><th>Action</th></tr></thead>
         <tbody>
           {rows.map((item) => (
@@ -189,7 +201,7 @@ export function RequestsTable() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table> : null}
     </>
   );
 }

@@ -60,8 +60,24 @@ export function CreditBalanceCard() {
       <strong>{mode === "loading" ? "..." : credits.available}</strong>
       <p>Available balance</p>
       {mode === "live" ? <small>Total: {credits.balance} · Reserved: {credits.reserved}</small> : null}
-      {mode === "login" ? <small>You need to sign in.</small> : null}
-      {mode === "error" ? <small>Credit data could not be loaded.</small> : null}
+      {mode === "live" && credits.available <= 0 ? (
+        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+          <small>Start with a credit review before opening a paid production.</small>
+          <a className="btn secondary" href="/dashboard/credits">Review credit plans</a>
+        </div>
+      ) : null}
+      {mode === "login" ? (
+        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+          <small>You need to sign in.</small>
+          <a className="btn secondary" href="/auth/login">Sign in to load credits</a>
+        </div>
+      ) : null}
+      {mode === "error" ? (
+        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+          <small>Credit data could not be loaded.</small>
+          <a className="btn secondary" href="/dashboard/credits">Open credits page</a>
+        </div>
+      ) : null}
     </div>
   );
 }

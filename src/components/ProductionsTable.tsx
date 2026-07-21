@@ -212,19 +212,6 @@ export function ProductionsTable() {
     setMessage(`Production cancelled. Charged: ${data.cancellation_fee ?? 0} credits, released: ${data.refund_amount ?? 0} credits.`);
   }
 
-if (mode === "loading") return <p style={{ color: "var(--muted)" }}>Loading productions...</p>;
-if (mode === "login") return <p style={{ color: "var(--muted)" }}>Sign in to view your productions.</p>;
-if (mode === "error") return <p className="form-message">{message}</p>;
-
-if (rows.length === 0) {
-  return <p style={{ color: "var(--muted)" }}>No productions yet. Start a video, website, mobile app, visual pack, brand kit, document, or campaign from the AI Assistant.</p>;
-}
-
-  const readyCount = rows.filter((item) => item.status === "ready" || item.delivery_link || item.delivery_zip_url).length;
-  const activeCount = rows.filter((item) => !["ready", "failed", "cancelled"].includes(item.status)).length;
-  const previewCount = rows.filter((item) => item.preview_url).length;
-  const waitingCount = rows.filter((item) => item.approval_status === "waiting" || item.status === "queued").length;
-  const failedCount = rows.filter((item) => ["failed", "cancelled"].includes(item.status)).length;
   const filteredRows = useMemo(() => rows.filter((item) => {
     if (filter === "active") return !["ready", "failed", "cancelled"].includes(item.status);
     if (filter === "waiting") return item.approval_status === "waiting" || item.status === "queued";
@@ -233,6 +220,31 @@ if (rows.length === 0) {
     if (filter === "failed") return ["failed", "cancelled"].includes(item.status);
     return true;
   }), [rows, filter]);
+
+  if (mode === "loading") return <p style={{ color: "var(--muted)" }}>Loading productions...</p>;
+  if (mode === "login") return <p style={{ color: "var(--muted)" }}>Sign in to view your productions.</p>;
+  if (mode === "error") return <p className="form-message">{message}</p>;
+
+  if (rows.length === 0) {
+    return (
+      <div className="card workspace-empty-note" style={{ display: "grid", gap: 12 }}>
+        <span className="badge">No productions yet</span>
+        <h3>Start with one focused production brief</h3>
+        <p style={{ color: "var(--muted)", margin: 0 }}>Choose a video, website, mobile app, visual pack, brand kit, document, or campaign path. Credits are estimated first and reserved only after the production step is confirmed.</p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <a className="btn" href="/dashboard/create">Start production brief</a>
+          <a className="btn secondary" href="/dashboard/credits">Check credits first</a>
+          <a className="btn secondary" href="/dashboard/assistant-workspace?providerTest=1">Run low-cost test</a>
+        </div>
+      </div>
+    );
+  }
+
+  const readyCount = rows.filter((item) => item.status === "ready" || item.delivery_link || item.delivery_zip_url).length;
+  const activeCount = rows.filter((item) => !["ready", "failed", "cancelled"].includes(item.status)).length;
+  const previewCount = rows.filter((item) => item.preview_url).length;
+  const waitingCount = rows.filter((item) => item.approval_status === "waiting" || item.status === "queued").length;
+  const failedCount = rows.filter((item) => ["failed", "cancelled"].includes(item.status)).length;
   const filterItems = [
     { key: "all" as const, label: "All", count: rows.length },
     { key: "active" as const, label: "Active", count: activeCount },
@@ -260,7 +272,17 @@ if (rows.length === 0) {
           </button>
         ))}
       </div>
-      {filteredRows.length === 0 ? <p className="workspace-empty-note">No productions in this filter.</p> : null}
+      {filteredRows.length === 0 ? (
+        <div className="card workspace-empty-note" style={{ display: "grid", gap: 10 }}>
+          <strong>No productions in this filter.</strong>
+          <p style={{ color: "var(--muted)", margin: 0 }}>Switch back to all productions, start a new brief, or check credits before opening the next job.</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button className="btn secondary" type="button" onClick={() => setFilter("all")}>Show all productions</button>
+            <a className="btn" href="/dashboard/create">Start new production</a>
+            <a className="btn secondary" href="/dashboard/credits">Open credits</a>
+          </div>
+        </div>
+      ) : null}
       <div className="productions-card-grid">
         {filteredRows.map((item) => {
           const approvalOptions = item.approval_options ?? [];

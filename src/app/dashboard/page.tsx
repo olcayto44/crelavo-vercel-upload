@@ -181,9 +181,9 @@ export default function DashboardPage() {
       </div>
       <div className="kpi">
         <CreditBalanceCard />
-        <div className="card"><span>Active</span><strong>2</strong><p>Requests in production</p></div>
-        <div className="card"><span>Ready</span><strong>1</strong><p>Delivered videos</p></div>
-        <div className="card"><span>Spent</span><strong>340</strong><p>Credits used this month</p></div>
+        <div className="card"><span>Next step</span><strong>Brief</strong><p>Start one focused request before provider work begins.</p></div>
+        <div className="card"><span>Safety check</span><strong>Confirm</strong><p>Review scope and credit reserve before production starts.</p></div>
+        <div className="card"><span>Delivery</span><strong>Files</strong><p>Track previews, source packages, README notes and final outputs.</p></div>
       </div>
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Next best actions</span>
