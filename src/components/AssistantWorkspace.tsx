@@ -889,7 +889,7 @@ function isLegacyVoiceErrorMessage(message: string) {
 }
 
 function isLegacyAssistantPlaceholderMessage(message: string) {
-  return /Buradayım\. Son mesajına göre|Seni anladım\. Eğer bu bir soruysa|Sorunu aldım\. Üretim isteği değilse|Üretimin doğru cevabı yoktur|soğutucu akışkan/i.test(message);
+  return /Buradayım\. Son mesajına göre|Seni anladım\. Eğer bu bir soruysa|Sorunu aldım\. Üretim isteği değilse|Üretimin doğru cevabı yoktur|soğutucu akışkan|Bunu net cevaplayabilmem için|Please add one more sentence|Evet, gönderebilirsin\.\s*Fotoğraf|Tabii, kod tarafında da yardımcı olurum/i.test(message);
 }
 
 function cleanAssistantMessages(messages: Message[]) {
@@ -952,7 +952,12 @@ function informationalReply(message: string, language: string) {
 }
 
 function safeConversationalFallbackReply(message: string, language: string, turnCount: number, recentContext = "") {
+  const normalized = normalizeTurkishQuery(message);
+  const context = normalizeTurkishQuery(recentContext);
   if (isMaterialUploadQuestion(message, recentContext)) return materialUploadFallbackReply(message, language);
+  if (/(nasil yapacagiz|nasil yapariz|peki nasil|ne yapacagiz|siradaki adim)/.test(normalized) && /(tiktok|video|reklam|kampanya|urun|production|uretim)/.test(context)) {
+    return "Şöyle ilerleyeceğiz: önce videonun hedefini netleştiririz, sonra kısa bir hook/senaryo çıkarırız, formatı TikTok/Reels gibi seçeriz, ses-müzik-altyazı ayarını belirleriz ve en son üretimi başlatırız.";
+  }
   return publicConversationalReply(message, language, turnCount);
 }
 
@@ -968,6 +973,9 @@ function publicConversationalReply(message: string, language: string, turnCount:
     if (/^(nasılsın|nasilsin|naber|ne haber|iyimisin|iyi misin)\b/.test(text)) return "İyiyim, buradayım. Sen ne yapmak istiyorsun?";
     if (/neden\s+türkçe\s+yazmıyorsun|neden\s+turkce\s+yazmiyorsun/.test(normalizeTurkishQuery(message))) return "Haklısın, Türkçe devam edeceğim. Sen Türkçe yazdığında veya sesli konuştuğunda ben de Türkçe cevap vereceğim.";
     if (/sen\s+nerenin\s+asistanısın|sen\s+nerenin\s+asistanisin|kimsin|nesin/.test(normalizeTurkishQuery(message))) return "Ben Crelavo çalışma alanındaki yapay zekâ asistanıyım. Site, üretim, API, video, reklam, kredi, dashboard ve proje işleri için sana adım adım yardımcı olurum.";
+    if (/canim\s+sikkin|canım\s+sıkkın|moralim\s+bozuk|keyfim\s+yok/.test(normalizeTurkishQuery(message))) return "Üzüldüm. İstersen biraz anlat; dinlerim. Hemen çözüm üretmek zorunda değiliz, önce neyin canını sıktığını beraber netleştirebiliriz.";
+    if (/api.*(nasil|nereden|alinir|alabilirim|basvur|olustur)|nasil.*api.*(alinir|alabilirim|olusturulur)/.test(normalizeTurkishQuery(message))) return "API almak için genelde şu yol izlenir: ilgili platformda developer hesabı açılır, yeni app/project oluşturulur, gerekli izinler/scopes seçilir, callback/domain doğrulaması yapılır, sonra client key/secret veya API key alınır. Hangi API’yi almak istediğini söylersen adımlarını tek tek yazarım.";
+    if (/istanbul.*deprem.*(ne zaman|en son)|en son.*istanbul.*deprem/.test(normalizeTurkishQuery(message))) return "Canlı deprem verisine bağlı olmadan kesin ‘en son’ bilgisini garanti edemem. En doğru güncel bilgi için Kandilli Rasathanesi veya AFAD son depremler sayfasına bakmak gerekir. İstersen sana nereden kontrol edeceğini adım adım gösterebilirim.";
     if (/^(sana\s+)?(bir\s+)?(şey|sey)\s+(istemek|isteyeceğim|isteyecegim|soracağım|soracagim)\s+istiyorum/.test(text)) return "Tabii, söyle. Ne istiyorsun?";
     if (/growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/.test(text)) return "Bunu Growth Intelligence hizmeti olarak ele alabiliriz. Bu normal kredi top-up değil; ama aktif hak/kredi uygunluğu olan kullanıcıya sonuç dashboard’da PDF/dosya raporu olarak teslim edilir. Rakip URL’leri, public reklam/fiyat/landing page sinyalleri, haftalık PDF rapor ve aksiyon önerileriyle ilerler.";
 if (/youtube|tiktok|kanal|takip|izlenme|para kazan|kazandıran|kazandiran|niş|nis/.test(text)) return "Anladım, burada kategori seçtirmekten önce hedefi netleştirmek gerekiyor: izlenme, takipçi ve gelir potansiyeline göre birkaç kanal fikrini karşılaştırıp en güçlü yolu önereceğim.";
@@ -1083,7 +1091,8 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const voiceTranscriptReceivedRef = useRef(false);
   const voiceTimeoutRef = useRef<number | null>(null);
-const [input, setInput] = useState(initialIdea || "I want to produce a short ad video for my product.");
+const [input, setInput] = useState(initialIdea || "");
+const [productionBrief, setProductionBrief] = useState(initialIdea || "");
 const [chatInput, setChatInput] = useState("");
 const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -1161,7 +1170,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const materials = activePlatformMaterials();
   const siteToolOptions = footerGroups.flatMap((group) => group.links.map((link) => link.label));
   const selectedTypeForEstimate = productionTypeFromSelection();
-  const selectionForEstimate = { input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
+  const selectionForEstimate = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
   const selectedPackageForEstimate = packageIdFromSelection(selectedTypeForEstimate, selectionForEstimate, configuredProductionPackages);
   const selectedProduction = productionTypes.find((item) => item.id === selectedProductionType);
   const selectedPackage = configuredProductionPackages.find((item) => item.id === selectedPackageForEstimate) ?? productionPackages.find((item) => item.id === selectedPackageForEstimate);
@@ -1875,9 +1884,9 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   }
 
   async function startProduction() {
-    const clean = input.trim() || messages.filter((message) => message.role === "user").at(-1)?.content || "Assistant workspace production";
+    const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
     const productionType = productionTypeFromSelection();
-    const selection = { input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
+    const selection = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
     const packageId = packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
@@ -1997,6 +2006,9 @@ const intent = followUpProduction ? "production_request" : detectWorkspaceIntent
 const isStartConfirmation = intent === "start_confirmation";
 const conversationalOnly = intent === "greeting" || intent === "help" || intent === "consultation" || isStartConfirmation;
 const conversationalReplyKind = intent === "greeting" ? "greeting" : intent === "help" ? "help" : "consultation";
+if (intent === "production_request" || followUpProduction) {
+  setProductionBrief((current) => current && followUpProduction ? `${current}\n${clean}` : clean);
+}
 const optionSummary = selectedOptionSummary();
 const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Production follow-up detail" : "Production request"}: ${clean}\n\nRecent context:\n${messages.slice(-6).map((item) => `${item.role}: ${item.content}`).join("\n")}\n\nProduction options:\n${optionSummary}`;
 
@@ -2478,7 +2490,7 @@ async function startRawMicrophoneFallback() {
           <div>
             <span className="badge">Preview / Production Plan</span>
             <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-            <p>{input || initialIdea || "Write a brief above to generate a clearer production plan."}</p>
+            <p>{productionBrief || "Henüz üretim brief’i yok. Normal sohbeti sağdaki Assistant conversation alanından yap; üretim için üstteki alana ürün/video/site hedefini yaz."}</p>
           </div>
           <div className="studio-preview-metrics">
             <span><small>Quality</small><strong>{selectedQuality}</strong></span>
@@ -2490,7 +2502,7 @@ async function startRawMicrophoneFallback() {
 
         <section className="studio-quick-path-grid" aria-label="Production quick paths">
           {studioQuickPaths.map((path) => (
-            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setInput((current) => current || path.description); }}>
+            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setInput((current) => current || path.description); setProductionBrief((current) => current || path.description); }}>
               <strong>{path.label}</strong>
               <span>{path.description}</span>
             </button>

@@ -41,9 +41,11 @@ function isCreditCostQuestion(message: string) {
 
 function isMaterialUploadQuestion(message: string) {
   const normalized = normalizeTurkishQuery(message);
-  const asksHow = /(nasil|nereden|nereye|gonderecegim|yukleyecegim|atacagim|ekleyecegim|kac sny|kac saniye|ne konusmam|ne soylemem|kayit)/.test(normalized);
+  const isPlainChat = /^(selam|merhaba|sa|slm|hey|nasilsin|iyimisin|iyi misin|naber|ne haber|kimsin|nesin|ben sana baska bir sey sormak istiyorum|baska bir sey soracagim|sana bir sey soracagim|soru soracagim|soru sormak istiyorum)\b/.test(normalized);
+  if (isPlainChat) return false;
+  const asksHow = /(nasil|nereden|nereye|gonderecegim|yukleyecegim|atacagim|ekleyecegim|kac sny|kac saniye|ne konusmam|ne soylemem|kayit|gonderebilir miyim|yukleyebilir miyim|atabilir miyim)/.test(normalized);
   const hasMaterial = /(fotograf|foto|gorsel|resim|ses|sesim|ses kaydi|voice|audio|video kaydi|dosya|materyal)/.test(normalized);
-  return asksHow && hasMaterial;
+  return (asksHow && hasMaterial) || (hasMaterial && /gonder|yukle|at|ekle/.test(normalized));
 }
 
 function materialUploadFallbackReply(message: string, language: string) {
@@ -133,6 +135,9 @@ function fallbackReply(message: string, language: string) {
     if (/^(nasılsın|nasilsin|naber|ne haber|iyimisin|iyi misin)\b/.test(text)) return "İyiyim, buradayım. Sen ne yapmak istiyorsun?";
     if (/neden\s+türkçe\s+yazmıyorsun|neden\s+turkce\s+yazmiyorsun/.test(normalized)) return "Haklısın, Türkçe devam edeceğim. Sen Türkçe yazdığında veya konuştuğunda ben de Türkçe cevap vereceğim.";
     if (/sen\s+nerenin\s+asistanısın|sen\s+nerenin\s+asistanisin|kimsin|nesin/.test(normalized)) return "Ben Crelavo çalışma alanındaki yapay zekâ asistanıyım. Site, üretim, API, video, reklam, kredi, dashboard ve proje işleri için sana adım adım yardımcı olurum.";
+    if (/canim\s+sikkin|moralim\s+bozuk|keyfim\s+yok/.test(normalized)) return "Üzüldüm. İstersen biraz anlat; dinlerim. Hemen çözüm üretmek zorunda değiliz, önce neyin canını sıktığını beraber netleştirebiliriz.";
+    if (/api.*(nasil|nereden|alinir|alabilirim|basvur|olustur)|nasil.*api.*(alinir|alabilirim|olusturulur)/.test(normalized)) return "API almak için genelde developer hesabı açılır, yeni app/project oluşturulur, gerekli izinler seçilir, domain/callback doğrulaması yapılır ve sonra API key veya client secret alınır. Hangi API olduğunu söylersen adımları tek tek yazarım.";
+    if (/istanbul.*deprem.*(ne zaman|en son)|en son.*istanbul.*deprem/.test(normalized)) return "Canlı deprem verisine bağlı olmadan kesin ‘en son’ bilgisini garanti edemem. Güncel kontrol için Kandilli Rasathanesi veya AFAD son depremler sayfasına bakmak gerekir.";
     if (/yardım|yardim|ne yapabilirsin|nasıl çalış|nasil calis/.test(normalized)) return "Bana normal cümleyle yazman veya sesli söylemen yeterli. Üretim fikrini, site sorununu veya API adımını anlayıp seni doğru adıma götürürüm.";
     if (/devam|tamam|olur|evet|başla|basla/.test(normalized) && normalized.split(/\s+/).length <= 4) return "Tamam, devam ediyorum. Son hedefe göre kısa ve net ilerleyeceğim.";
     return "Buradayım. Sorunu ya da yapmak istediğin işi yaz; üretimse akışa çeviririm, soruysa doğrudan cevaplarım.";
