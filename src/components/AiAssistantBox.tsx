@@ -528,6 +528,10 @@ async function startVoiceCommand() {
           <div className="assistant-status" data-no-translate="true">{status}</div>
         </div>
       <div className="assistant-input-card">
+        <div className="assistant-chat-flow-head">
+          <strong>{activeLanguage === "tr" ? "Chat akışı" : "Chat flow"}</strong>
+          <span>{activeLanguage === "tr" ? "Soruysa normal cevap, üretimse tek komutla workspace akışı." : "General questions get normal answers; production commands route to workspace."}</span>
+        </div>
         <div className="assistant-chat-window" ref={chatWindowRef}>
           {messages.map((message, index) => (
             <div className={`assistant-message ${message.role}`} key={`${message.role}-${index}`}>

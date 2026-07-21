@@ -96,17 +96,18 @@ function isGeneralAssistantChat(idea: string) {
   return hasQuestionSignal && !hasProductionSignal;
 }
 
-function generalAssistantSuggestion(idea: string, mode: AssistantMode): AssistantSuggestion {
+function generalAssistantSuggestion(idea: string, mode: AssistantMode, generatedReply = ""): AssistantSuggestion {
   const language = detectLanguage(idea);
   const normalized = normalizeConversationText(idea);
   const turkish = language === "Turkish" || /[çğıöşü]/i.test(idea) || /(selam|merhaba|nasilsin|iyimisin|kimsin|nerenin|turkce|neden|nasil|nedir|yorum|fikir|oneri|tavsiye)/.test(normalized);
-  const assistantReply = turkish
+  const fallbackReply = turkish
     ? (/^(selam|merhaba|sa|slm|hey)\b/.test(normalized)
       ? "Selam, buradayım. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin."
       : /(kimsin|nerenin)/.test(normalized)
         ? "Ben Crelavo içindeki yapay zekâ asistanıyım; sadece site formu değil, genel sohbet, fikir, yorum, kod ve üretim akışlarında da yardımcı olurum."
         : "Sorunu aldım. Bunu üretim formuna zorlamadan normal asistan gibi cevaplayacağım; üretim komutuysa tek prompt veya sesli komutla çalışma alanına taşıyacağım.")
     : "I’m here. I can answer general questions, discuss ideas, help with code, or route a real production request into the workspace.";
+  const assistantReply = generatedReply.trim() || fallbackReply;
   return normalizeSuggestion({
     category: "AI Agents",
     style: "Premium SaaS",
@@ -120,6 +121,31 @@ function generalAssistantSuggestion(idea: string, mode: AssistantMode): Assistan
     automationLevel: "conversation",
     nextStep: turkish ? "İstersen tek prompt veya sesli komutla üretim başlat" : "Start production with one prompt or voice command if needed"
   }, idea, mode);
+}
+
+async function openAiGeneralReply(idea: string, history: { role: "user" | "assistant"; content: string }[] = []): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return "";
+  const language = detectLanguage(idea);
+  const recentHistory = history.slice(-8).map((message) => ({ role: message.role, content: message.content }));
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_ASSISTANT_MODEL ?? "gpt-4o-mini",
+      messages: [
+        { role: "system", content: `You are Crelavo's normal conversational assistant. Answer like ChatGPT: understand the user's latest message and reply naturally in ${language}. Do not force general questions into production forms. If it is a greeting, greet back. If it is a question, answer it directly. If it is an opinion or idea request, give useful thoughts. Keep it short unless the user asks for detail.` },
+        ...recentHistory,
+        { role: "user", content: idea }
+      ]
+    })
+  });
+  if (!response.ok) return "";
+  const data = await response.json();
+  return String(data.choices?.[0]?.message?.content ?? "").trim();
 }
 
 async function openAiSuggestion(idea: string, mode: AssistantMode, history: { role: "user" | "assistant"; content: string }[] = []): Promise<AssistantSuggestion | null> {
@@ -207,8 +233,9 @@ export async function POST(request: Request) {
     await grantWelcomeAssistantCreditsOnce({ supabase, userId, email: userEmail, ipAddress: getClientIp(request) });
 
     if (isGeneralAssistantChat(idea)) {
+      const generatedReply = await openAiGeneralReply(idea, history).catch(() => "");
       return Response.json({
-        suggestion: generalAssistantSuggestion(idea, mode),
+        suggestion: generalAssistantSuggestion(idea, mode, generatedReply),
         chargedCredits: 0,
         chargeSource: "conversation",
         assistantBalance: null,

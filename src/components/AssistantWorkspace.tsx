@@ -721,10 +721,14 @@ function isOutfitColorQuestion(message: string) {
 }
 
 function isMaterialUploadQuestion(message: string, recentContext = "") {
-  const normalized = normalizeTurkishQuery(`${recentContext} ${message}`);
-  const asksHow = /(nasil|nereden|nereye|gonderecegim|yukleyecegim|atacagim|ekleyecegim|kac sny|kac saniye|ne konusmam|ne soylemem|kayit)/.test(normalized);
-  const hasMaterial = /(fotograf|foto|gorsel|resim|ses|sesim|ses kaydi|voice|audio|video kaydi|dosya|materyal)/.test(normalized);
-  return asksHow && hasMaterial;
+  const current = normalizeTurkishQuery(message);
+  const context = normalizeTurkishQuery(recentContext);
+  const isPlainChat = /^(selam|merhaba|sa|slm|hey|nasilsin|iyimisin|iyi misin|naber|ne haber|kimsin|nesin|ben sana baska bir sey sormak istiyorum|baska bir sey soracagim|sana bir sey soracagim|soru soracagim|soru sormak istiyorum)\b/.test(current);
+  if (isPlainChat) return false;
+  const asksHowNow = /(nasil|nereden|nereye|gonderecegim|yukleyecegim|atacagim|ekleyecegim|kac sny|kac saniye|ne konusmam|ne soylemem|kayit|gonderebilir miyim|yukleyebilir miyim|atabilir miyim)/.test(current);
+  const hasMaterialNow = /(fotograf|foto|gorsel|resim|ses|sesim|ses kaydi|voice|audio|video kaydi|dosya|materyal)/.test(current);
+  const recentMaterialTopic = /(fotograf|foto|gorsel|resim|ses|sesim|ses kaydi|voice|audio|video kaydi|dosya|materyal|upload material|materyal yukle)/.test(context);
+  return (asksHowNow && hasMaterialNow) || (hasMaterialNow && /gonder|yukle|at|ekle/.test(current)) || (asksHowNow && recentMaterialTopic && current.split(/\s+/).length > 3);
 }
 
 function materialUploadFallbackReply(message: string, language: string) {
@@ -1079,8 +1083,9 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const voiceTranscriptReceivedRef = useRef(false);
   const voiceTimeoutRef = useRef<number | null>(null);
-  const [input, setInput] = useState(initialIdea || "I want to produce a short ad video for my product.");
-  const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
+const [input, setInput] = useState(initialIdea || "I want to produce a short ad video for my product.");
+const [chatInput, setChatInput] = useState("");
+const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [messages, setMessages] = useState<Message[]>(() => {
     const language = getStoredLanguage();
     return [{ role: "assistant", content: language === "tr" ? "Selam, dinliyorum. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin; kısa ve net cevap vereceğim." : "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
@@ -1975,8 +1980,8 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     }
   }
 
-  async function sendCommand(text?: string, mode: "quick" | "voice" = "quick") {
-    const clean = (text ?? input).trim();
+  async function sendCommand(text?: string, mode: "quick" | "voice" = "quick", source: "chat" | "production" = "chat") {
+    const clean = (text ?? (source === "production" ? input : chatInput)).trim();
     if (!clean || isLoading) return;
 
     const safety = validateProductionSafety([clean]);
@@ -2005,7 +2010,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
     if (followUpProduction) {
       const followUpDuration = durationFromFollowUp(clean);
       if (followUpDuration) setSelectedDuration(followUpDuration);
-      if (!followUpDuration) {
+      if (!followUpDuration && source === "production") {
         setInput((current) => current ? `${current}\n${clean}` : clean);
         setDynamicWizard((current) => current.open ? { ...current, subject: current.subject ? `${current.subject} · ${clean}` : clean } : current);
       }
@@ -2020,7 +2025,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
     const nextVisibleMessages: Message[] = conversationalOnly ? nextMessages : [...nextMessages, { role: "assistant", content: assistantVisibleReply }];
     const assistantPayloadMessages: Message[] = [...messages, { role: "user", content: enrichedClean }];
     setMessages(nextVisibleMessages);
-    setInput("");
+    if (source === "chat") setChatInput("");
     setIsLoading(conversationalOnly);
     setStatus(wantsNoMaterial ? "Extra material was skipped; the assistant is continuing." : conversationalOnly ? (responseLanguage(clean, activeLanguage) === "tr" ? "Asistan cevap hazırlıyor." : "Assistant is preparing an answer.") : (responseLanguage(clean, activeLanguage) === "tr" ? "Asistan cevabı hazırladı." : "Assistant reply prepared."));
     if (!conversationalOnly) setActiveStep((current) => Math.min(current + 1, defaultSteps.length - 1));
@@ -2297,8 +2302,8 @@ async function startRawMicrophoneFallback() {
         if (transcript) {
           voiceTranscriptReceivedRef.current = true;
           setStatus(activeLanguage === "tr" ? `Algılanan metin: ${transcript}` : `Detected text: ${transcript}`);
-          setInput(transcript);
-          sendCommand(transcript, "voice");
+          setChatInput(transcript);
+          sendCommand(transcript, "voice", "chat");
         } else {
           handleVoiceNoTranscript();
         }
@@ -2317,10 +2322,17 @@ async function startRawMicrophoneFallback() {
     }
   }
 
-  function handleInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+  function handleChatInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      sendCommand();
+      sendCommand(undefined, "quick", "chat");
+    }
+  }
+
+  function handleProductionInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendCommand(undefined, "quick", "production");
     }
   }
 
@@ -2434,12 +2446,12 @@ async function startRawMicrophoneFallback() {
                 autoCapitalize="off"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleInputKeyDown}
+                onKeyDown={handleProductionInputKeyDown}
                 placeholder="Turn my product link into a TikTok ad video with voice, music and a strong CTA..."
               />
             </label>
             <div className="studio-command-actions">
-              <button className="btn" type="button" onClick={() => sendCommand()} disabled={isLoading || !input.trim()}>{isLoading ? "Preparing..." : "Send to assistant"}</button>
+              <button className="btn" type="button" onClick={() => sendCommand(undefined, "quick", "production")} disabled={isLoading || !input.trim()}>{isLoading ? "Preparing..." : "Send to assistant"}</button>
               <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Tune options</button>
             </div>
             <div className="studio-quality-strip" aria-label="Quality tiers">
@@ -2783,14 +2795,14 @@ async function startRawMicrophoneFallback() {
           {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
           {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Thinking...</div> : null}
         </div>
-        <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleInputKeyDown} placeholder="Write a production command..." />
+        <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder={activeLanguage === "tr" ? "Normal soru sor, fikir yaz veya üretim komutu ver..." : "Ask normally, share an idea, or give a production command..."} />
         <div className="assistant-chat-actions">
           <label className={`chat-attach-button ${uploadState === "loading" ? "loading" : ""}`} title={activeLanguage === "tr" ? "Dosya ekle" : "Attach file"} aria-label={activeLanguage === "tr" ? "Dosya ekle" : "Attach file"}>
             <Paperclip size={17} />
             <input accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/aac,audio/ogg,audio/mp4,video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp" disabled={uploadState === "loading"} onChange={(event) => uploadUserMaterial(event.target.files)} type="file" />
           </label>
           <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? (activeLanguage === "tr" ? "Dinleniyor..." : activeLanguage === "de" ? "Höre zu..." : activeLanguage === "es" ? "Escuchando..." : activeLanguage === "fr" ? "Écoute..." : activeLanguage === "ar" ? "جارٍ الاستماع..." : "Listening...") : (activeLanguage === "tr" ? "Ses" : activeLanguage === "de" ? "Sprache" : activeLanguage === "es" ? "Voz" : activeLanguage === "fr" ? "Voix" : activeLanguage === "ar" ? "صوت" : "Voice")}</button>
-          <button className="btn compact-chat-action" type="button" onClick={() => sendCommand()} disabled={isLoading}><Send size={15} /> Send</button>
+          <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
         </div>
         {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
         {(uploadedMaterials.length || chatSummaryChips.length || chatPlanReady) ? (
