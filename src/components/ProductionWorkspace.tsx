@@ -725,6 +725,18 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
       </section>
 
       <aside className="production-workspace-side">
+        <div className="production-job-overview-card">
+          <span className="badge">Job control</span>
+          <h2>Production status</h2>
+          <div className="production-job-status-list">
+            <span><small>Status</small><strong>{liveStatus}</strong></span>
+            <span><small>Credits reserved</small><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></span>
+            <span><small>Provider</small><strong>{providerStatus || (isWaitingProviderConfig ? "Provider pending" : "Auto routing")}</strong></span>
+            <span><small>Delivery</small><strong>{hasDelivery ? "Final ready" : hasPreview ? "Preview ready" : "Preparing"}</strong></span>
+          </div>
+          <p>{hasDelivery ? "Final files are ready for customer handoff." : hasPreview ? "Preview is ready; final delivery is still being prepared." : "Production is active or waiting for provider output."}</p>
+        </div>
+
         <form className="workspace-assistant-card" onSubmit={submitRevision}>
           <Bot size={20} />
           <h2>Assistant intervention area</h2>
