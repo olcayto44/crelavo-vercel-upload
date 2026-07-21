@@ -3,7 +3,7 @@ import { BulkGenerationPanel } from "@/components/BulkGenerationPanel";
 
 export default function BulkPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Phase 2 bulk planning</span>
         <h2>Bulk production queue planning</h2>

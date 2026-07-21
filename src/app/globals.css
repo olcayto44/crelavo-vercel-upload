@@ -5195,7 +5195,9 @@ html body .dashboard-postlaunch-shell .card,
 html body .dashboard-postlaunch-shell .admin-category-grid,
 html body .dashboard-postlaunch-shell .connection-grid,
 html body .dashboard-postlaunch-shell .ads-roas-grid,
-html body .dashboard-postlaunch-shell .admin-info-grid {
+html body .dashboard-postlaunch-shell .admin-info-grid,
+html body .dashboard-postlaunch-shell .bulk-planning-card,
+html body .dashboard-postlaunch-shell .dubbing-planning-card {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
@@ -5222,6 +5224,8 @@ html body .dashboard-postlaunch-shell .shorts-growth-card,
 html body .dashboard-postlaunch-shell .custom-agent-card,
 html body .dashboard-postlaunch-shell .premium-expansion-card,
 html body .dashboard-postlaunch-shell .brand-kit-card,
+html body .dashboard-postlaunch-shell .bulk-planning-card,
+html body .dashboard-postlaunch-shell .dubbing-planning-card,
 html body .dashboard-postlaunch-shell .connection-card,
 html body .dashboard-postlaunch-shell .roas-alert-card {
   overflow: visible !important;
@@ -5232,6 +5236,10 @@ html body .dashboard-postlaunch-shell .custom-agent-card h3,
 html body .dashboard-postlaunch-shell .premium-expansion-card h3,
 html body .dashboard-postlaunch-shell .brand-kit-card h3,
 html body .dashboard-postlaunch-shell .brand-kit-card p,
+html body .dashboard-postlaunch-shell .bulk-planning-card h3,
+html body .dashboard-postlaunch-shell .bulk-planning-card p,
+html body .dashboard-postlaunch-shell .dubbing-planning-card h3,
+html body .dashboard-postlaunch-shell .dubbing-planning-card p,
 html body .dashboard-postlaunch-shell .brand-kit-flow-grid strong,
 html body .dashboard-postlaunch-shell .brand-kit-flow-grid em,
 html body .dashboard-postlaunch-shell .connection-card h3,
@@ -5243,7 +5251,9 @@ html body .dashboard-postlaunch-shell .admin-info-grid small,
 html body .dashboard-postlaunch-shell .social-export-detail-list strong,
 html body .dashboard-postlaunch-shell .social-export-detail-list small,
 html body .dashboard-postlaunch-shell input,
-html body .dashboard-postlaunch-shell select {
+html body .dashboard-postlaunch-shell select,
+html body .dashboard-postlaunch-shell textarea,
+html body .dashboard-postlaunch-shell pre {
   max-width: 100% !important;
   overflow-wrap: anywhere !important;
   white-space: normal !important;
@@ -5279,6 +5289,15 @@ html body .dashboard-postlaunch-shell .connection-selected-platform {
 html body .dashboard-postlaunch-shell .brand-kit-flow-grid {
   display: grid;
   margin: 14px 0;
+}
+html body .dashboard-postlaunch-shell .postlaunch-action-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+html body .dashboard-postlaunch-shell .postlaunch-action-row .btn {
+  justify-content: center;
 }
 html body .dashboard-postlaunch-shell .brand-kit-flow-grid span {
   display: grid;

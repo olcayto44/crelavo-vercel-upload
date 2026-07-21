@@ -10,27 +10,32 @@ export function DubbingPanel() {
   async function start() {
     const { data: userData } = await supabaseBrowser().auth.getUser();
     const userId = userData.user?.id;
-    if (!userId) return setMessage("AI Dubbing için giriş yapmalısın.");
+    if (!userId) return setMessage("Sign in to prepare an AI dubbing job.");
     const response = await fetch("/api/lip-sync/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: userId, source_video_url: videoUrl, source_language: "tr", target_language: "en", provider: "heygen" })
     });
     const data = await response.json();
-    setMessage(response.ok ? `Lip-sync çeviri job başlatıldı: ${data.provider_job?.id ?? "queued"}` : data.error ?? "Lip-sync başlatılamadı.");
+    setMessage(response.ok ? `Lip-sync translation job prepared: ${data.provider_job?.id ?? "queued"}` : data.error ?? "Lip-sync could not be started.");
   }
 
   return (
-    <div className="card">
+    <div className="card dubbing-planning-card">
       <span className="badge">🗣️ Video Translate & Lip-Sync</span>
-      <h3>Reklam videosunu başka dile dudak senkronlu çevir</h3>
-      <p>Yüz net ve ışık iyi olduğunda HeyGen/ElevenLabs çeviri job’u daha kaliteli sonuç verir.</p>
-      <div className="field"><label>Kaynak video URL</label><input value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="https://.../final-video.mp4" /></div>
-      <div className="brief-two-col">
-        <div className="field"><label>Kaynak dil</label><select defaultValue="tr"><option value="tr">Türkçe</option><option value="en">İngilizce</option></select></div>
-        <div className="field"><label>Hedef dil</label><select defaultValue="en"><option value="en">İngilizce</option><option value="de">Almanca</option><option value="ar">Arapça</option></select></div>
+      <h3>Translate an ad video into another language with lip-sync planning</h3>
+      <p>Clear face visibility and good lighting improve future HeyGen/ElevenLabs dubbing quality. Provider execution stays gated by final API/env setup.</p>
+      <div className="brand-kit-flow-grid">
+        <span><small>1</small><strong>Source video</strong><em>Use a final or preview video URL with a clearly visible face.</em></span>
+        <span><small>2</small><strong>Language pair</strong><em>Choose source and target language for the future dubbing job.</em></span>
+        <span><small>3</small><strong>Provider gate</strong><em>Prepare the job now; real provider execution waits for API readiness.</em></span>
       </div>
-      <button className="btn" type="button" onClick={start}>Dudak Senkronlu Çeviriyi Başlat</button>
+      <div className="field"><label>Source video URL</label><input value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="https://.../final-video.mp4" /></div>
+      <div className="brief-two-col">
+        <div className="field"><label>Source language</label><select defaultValue="tr"><option value="tr">Turkish</option><option value="en">English</option></select></div>
+        <div className="field"><label>Target language</label><select defaultValue="en"><option value="en">English</option><option value="de">German</option><option value="ar">Arabic</option></select></div>
+      </div>
+      <button className="btn" type="button" onClick={start}>Prepare lip-sync translation</button>
       {message ? <p className="form-message">{message}</p> : null}
     </div>
   );

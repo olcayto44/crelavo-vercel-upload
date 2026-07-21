@@ -3,7 +3,7 @@ import { DubbingPanel } from "@/components/DubbingPanel";
 
 export default function DubbingPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Phase 2 dubbing planning</span>
         <h2>Dubbing and lip-sync workflow planning</h2>
