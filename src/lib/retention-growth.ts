@@ -4,7 +4,7 @@ export const retentionGrowthSummary = {
   title: "Retention and growth operating system",
   mode: "Whop active, API later",
   promise: "Bring users back, push them toward first production, and guide them to Whop packages without triggering real provider/API spend.",
-  guardrail: "No Lemon, no real payout, no automated API provider work in this phase."
+  guardrail: "Rewards, partner payouts and provider automation remain manual-review only until payment tracking, fraud checks and payout rules are fully verified."
 };
 
 export const lifecycleNudges = [

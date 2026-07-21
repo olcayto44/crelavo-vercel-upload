@@ -24,7 +24,7 @@ const contactOptions = [
 
 export default function DashboardContactPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <section className="card">
         <span className="badge">Contact</span>
         <h1 style={{ marginBottom: 8 }}>Contact Crelavo</h1>

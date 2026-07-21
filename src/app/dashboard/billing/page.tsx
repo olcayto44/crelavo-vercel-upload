@@ -8,14 +8,26 @@ export default async function BillingPage({ searchParams }: { searchParams?: Pro
   const selectedPackage = [...packages, ...topUpPackages].find((plan) => plan.id === selectedPackageName || plan.name === selectedPackageName);
 
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Billing</span>
         <h2>Subscriptions and credit top-ups</h2>
         <p>
           Start a monthly or yearly credit subscription, or buy one-time top-up credits whenever a production needs extra balance.
         </p>
+        <div className="url-action-center">
+          <Link className="btn" href="/dashboard/credits">View credit balance</Link>
+          <Link className="btn secondary" href="/dashboard/payment">Open payment page</Link>
+          <Link className="btn secondary" href="/dashboard/contact">Need billing help?</Link>
+        </div>
       </div>
+
+      <section className="payment-trust-flow" aria-label="Billing trust flow" style={{ marginTop: 18 }}>
+        <div><strong>1. Choose package</strong><span>Select subscription or one-time top-up before checkout.</span></div>
+        <div><strong>2. Payment confirmation</strong><span>Credits or service access are activated after payment/admin confirmation.</span></div>
+        <div><strong>3. Production reserve</strong><span>Production credits are still reserved only when a job is confirmed.</span></div>
+        <div><strong>4. Support path</strong><span>Billing questions route through credits, payment and contact pages.</span></div>
+      </section>
 
       {selectedPackage ? (
         <div className="card selected-billing-card">

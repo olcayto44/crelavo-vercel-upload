@@ -50,7 +50,7 @@ export default function DashboardGrowthPage() {
           <span className="badge">Referral MVP</span>
           <h3>Referral and affiliate tracking</h3>
           <p>Referral links can track signups and first production starts while Whop remains the active payment path. Paid commission automation waits for manual Whop E2E validation.</p>
-          <p className="workspace-action-note warning">Lemon is postponed. API automation comes later after the non-API launch cleanup group is complete.</p>
+          <p className="workspace-action-note warning">Referral and commission automation will be enabled only after payment tracking, fraud checks and payout review rules are fully verified.</p>
           <Link className="btn secondary" href="/dashboard/partners">Open partner program</Link>
         </div>
       </section>
