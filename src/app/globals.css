@@ -5292,15 +5292,15 @@ html body .showcase-detail-page .showcase-video-overlay {
 }
 
 /* Public funnel / pricing / service-page safety. */
-html body .public-funnel-page,
 html body .public-funnel-page.container.section,
 html body .service-page-detail.public-funnel-page,
 html body .pricing-page.public-funnel-page,
 html body .categories-funnel-page,
 html body .billing-help-page,
-html body .checkout-complete-page {
-  width: min(100% - 24px, 1680px) !important;
-  max-width: 1680px !important;
+html body .checkout-complete-page,
+html body .tools-catalog-page.public-funnel-page {
+  width: min(1280px, 100% - 32px) !important;
+  max-width: 1280px !important;
   margin-left: auto !important;
   margin-right: auto !important;
   min-width: 0 !important;
@@ -5417,8 +5417,8 @@ html body .admin-shell-layout .admin-category-card {
 
 /* Final dashboard spacing/alignment override. */
 html body .dashboard-shell-layout.container.section {
-  width: calc(100% - 24px) !important;
-  max-width: 1440px !important;
+  width: min(1280px, 100% - 32px) !important;
+  max-width: 1280px !important;
   margin: 0 auto !important;
   padding-top: 16px !important;
   padding-bottom: 28px !important;
@@ -5445,8 +5445,10 @@ html body .dashboard-shell-layout .dashboard-workspace {
   min-width: 0 !important;
 }
 html body .dashboard-postlaunch-shell.container.section {
-  width: min(100% - 24px, 1680px) !important;
-  max-width: 1680px !important;
+  width: min(1280px, 100% - 32px) !important;
+  max-width: 1280px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
   overflow-x: clip !important;
 }
 html body .dashboard-postlaunch-shell .dashboard-workspace,
