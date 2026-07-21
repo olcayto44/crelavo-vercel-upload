@@ -1,4 +1,5 @@
-import { redirect } from "next/navigation";
+import { DashboardShell } from "@/components/DashboardShell";
+import { ProductionStudio } from "@/components/ProductionStudio";
 
 type PageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -10,12 +11,12 @@ function firstParam(value: string | string[] | undefined) {
 
 export default async function CreateProductionPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const assistantParams = new URLSearchParams();
+  const initialIdea = firstParam(params?.idea);
+  const initialType = firstParam(params?.type) || firstParam(params?.category) || "AI Video";
 
-  for (const key of ["type", "category", "mode", "idea", "requestType", "providerTest"]) {
-    const value = firstParam(params?.[key]);
-    if (value) assistantParams.set(key, value);
-  }
-
-  redirect(`/dashboard/assistant-workspace${assistantParams.toString() ? `?${assistantParams.toString()}` : ""}`);
+  return (
+    <DashboardShell>
+      <ProductionStudio initialIdea={initialIdea} initialType={initialType} />
+    </DashboardShell>
+  );
 }

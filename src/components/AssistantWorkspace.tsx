@@ -2537,7 +2537,7 @@ async function startRawMicrophoneFallback() {
           <div>
             <span className="badge">Preview / Production Plan</span>
             <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-            <p>{productionBrief || "Henüz üretim brief’i yok. Normal sohbeti üstteki Assistant chat alanından yap; üretim için Production command alanına ürün/video/site hedefini yaz."}</p>
+            <p>{productionBrief || "No production brief yet. Use the Assistant chat area above for normal questions; write your product, video, website or campaign goal in Production command when you want to start production."}</p>
           </div>
           <div className="studio-preview-metrics">
             <span><small>Quality</small><strong>{selectedQuality}</strong></span>
