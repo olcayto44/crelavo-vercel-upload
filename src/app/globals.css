@@ -5193,7 +5193,9 @@ html body .dashboard-postlaunch-shell .production-hero-card,
 html body .dashboard-postlaunch-shell .compact-production-hero,
 html body .dashboard-postlaunch-shell .card,
 html body .dashboard-postlaunch-shell .admin-category-grid,
-html body .dashboard-postlaunch-shell .connection-grid {
+html body .dashboard-postlaunch-shell .connection-grid,
+html body .dashboard-postlaunch-shell .ads-roas-grid,
+html body .dashboard-postlaunch-shell .admin-info-grid {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
@@ -5205,17 +5207,27 @@ html body .dashboard-postlaunch-shell .dashboard-topbar {
   padding-bottom: 4px !important;
 }
 html body .dashboard-postlaunch-shell .social-export-grid,
-html body .dashboard-postlaunch-shell .connection-grid {
+html body .dashboard-postlaunch-shell .shorts-growth-grid,
+html body .dashboard-postlaunch-shell .connection-grid,
+html body .dashboard-postlaunch-shell .ads-roas-grid,
+html body .dashboard-postlaunch-shell .ads-target-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)) !important;
   gap: 16px !important;
 }
 html body .dashboard-postlaunch-shell .social-export-card,
-html body .dashboard-postlaunch-shell .connection-card {
+html body .dashboard-postlaunch-shell .shorts-growth-card,
+html body .dashboard-postlaunch-shell .connection-card,
+html body .dashboard-postlaunch-shell .roas-alert-card {
   overflow: visible !important;
 }
 html body .dashboard-postlaunch-shell .social-export-card h3,
+html body .dashboard-postlaunch-shell .shorts-growth-card h3,
 html body .dashboard-postlaunch-shell .connection-card h3,
 html body .dashboard-postlaunch-shell .connection-card p,
+html body .dashboard-postlaunch-shell .roas-alert-card h3,
+html body .dashboard-postlaunch-shell .roas-alert-card p,
+html body .dashboard-postlaunch-shell .admin-info-grid strong,
+html body .dashboard-postlaunch-shell .admin-info-grid small,
 html body .dashboard-postlaunch-shell .social-export-detail-list strong,
 html body .dashboard-postlaunch-shell .social-export-detail-list small,
 html body .dashboard-postlaunch-shell input,

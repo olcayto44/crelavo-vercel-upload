@@ -13,7 +13,7 @@ const socialTargets = [
 
 export default function AdsPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Post-launch social export</span>
         <h2>Social export and ads planning center</h2>
@@ -28,8 +28,15 @@ export default function AdsPage() {
       <section className="card" style={{ marginTop: 12 }}>
         <span className="badge">Supported social targets</span>
         <h3>Not a single channel, a multi-channel publishing center</h3>
-        <div className="admin-info-grid">
-          {socialTargets.map((target) => <div key={target}><span>Platform</span><strong>{target}</strong><small>Connection / publishing / ad target</small></div>)}
+        <div className="admin-info-grid ads-target-grid">
+          {socialTargets.map((target) => (
+            <div key={target}>
+              <span>Platform</span>
+              <strong>{target}</strong>
+              <small>Connection / publishing / ad target</small>
+              <small>Manual export/ad planning only until API/env setup is complete.</small>
+            </div>
+          ))}
         </div>
       </section>
 

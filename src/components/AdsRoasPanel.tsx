@@ -63,6 +63,7 @@ export function AdsRoasPanel() {
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
         <div className="field"><label>Daily budget</label><input value={dailyBudget} onChange={(event) => setDailyBudget(event.target.value)} /></div>
         <button className="btn" type="button" onClick={launch}>Create export/ad plan</button>
+        <Link className="btn secondary" href="/dashboard/social-export">Open social export checklist</Link>
       </div>
       <div className="card connection-card roas-alert-card">
         <span className="badge">ROAS planning</span>
