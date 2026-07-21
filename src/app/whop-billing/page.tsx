@@ -29,7 +29,7 @@ export default async function WhopBillingPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section pricing-page">
+      <main className="container section pricing-page public-funnel-page billing-help-page">
         <section className="blog-hero-panel">
           <span className="badge">Whop billing</span>
           <h1>Manage payment, preview and cancellation</h1>
@@ -74,7 +74,7 @@ export default async function WhopBillingPage() {
           </ol>
           <div className="button-nav" style={{ marginTop: 18 }}>
             <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Go to Whop</a>
-            <Link className="btn secondary" href="/contact">Contact support</Link>
+            <Link className="btn secondary" href="/dashboard/contact">Contact support</Link>
           </div>
         </section>
 

@@ -11,7 +11,7 @@ const publicRailItems = [
   { label: "Feature Paths", href: "/tools#feature-paths", icon: WandSparkles },
   { label: "Free Tools", href: "/free-tools", icon: Gift },
   { label: "Pricing / Credits", href: "/pricing", icon: CircleDollarSign },
-  { label: "Start with Assistant", href: "/dashboard/assistant-workspace", icon: Sparkles },
+  { label: "Start production", href: "/dashboard/create", icon: Sparkles },
   { label: "Growth Intelligence", href: "/growth-intelligence", icon: Rocket },
   { label: "Live Sales Plans", href: "/live-sales-credits", icon: RadioTower },
   { label: "Drone Plans", href: "/drone-credits", icon: Drone },

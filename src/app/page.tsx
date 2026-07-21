@@ -16,7 +16,7 @@ const homepageGoalWizard = [
     title: "I want to sell my product internationally",
     description: "Localize product ads, hooks, visuals and campaign direction for another country.",
     cta: "Start global campaign",
-    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20sell%20my%20product%20internationally&category=cultural_localization&mode=media",
+    href: "/dashboard/create?idea=I%20want%20to%20sell%20my%20product%20internationally&category=cultural_localization&mode=media",
     badge: "Recommended for global sellers",
     step: "01"
   },
@@ -32,7 +32,7 @@ const homepageGoalWizard = [
     title: "I want to create from scratch",
     description: "Create a product video, website, landing page, campaign pack, virtual model visual or launch asset from one brief.",
     cta: "Start from scratch",
-    href: "/dashboard/assistant-workspace?idea=I%20want%20to%20create%20from%20scratch&mode=media",
+    href: "/dashboard/create?idea=I%20want%20to%20create%20from%20scratch&mode=media",
     badge: "Best for new ideas",
     step: "03"
   }
@@ -42,7 +42,7 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
   { title: "Explore", kicker: "Samples", description: "Browse large sample outputs and open dedicated detail pages.", href: "/showcase/explore-samples", tone: "cyan", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192157407622951-1783192157402.png" },
   { title: "Assets", kicker: "Materials", description: "Use images, videos, audio references and documents across productions.", href: "/showcase/assets-library", tone: "green", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192199380895416-1783192199376.png" },
   { title: "Omni", kicker: "Assistant", description: "Tell Crelavo what you want to create and let the system route the workflow.", href: "/showcase/omni-assistant", tone: "blue", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192218134042523-1783192218131.png" },
-  { title: "Generate", kicker: "Create", description: "Start video, web, app, brand file or visual production from one hub.", href: "/dashboard/assistant-workspace", tone: "pink", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192231039044746-1783192231031.png" },
+  { title: "Generate", kicker: "Create", description: "Start video, web, app, brand file or visual production from one hub.", href: "/dashboard/create", tone: "pink", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192231039044746-1783192231031.png" },
   { title: "Workspace", kicker: "Live tracking", description: "Track live productions, revisions, outputs and final delivery packages.", href: "/showcase/live-workspace", tone: "amber", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192247858193551-1783192247854.png" }
 ];
 
@@ -90,7 +90,7 @@ export default async function HomePage() {
       <SiteStructuredData />
       <SplashAd />
       <Header navLinks={siteContent.navLinks} />
-      <main>
+      <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
           <aside className="ad-rail ad-rail-left"><AdSlot slotId="left-rail" /></aside>
           <aside className="ad-rail ad-rail-right"><AdSlot slotId="right-rail" /></aside>

@@ -29,8 +29,8 @@ const heroScenes = [
     kicker: "AI production workspace",
     title: "Videos, websites, apps and campaign assets in one system.",
     text: "Crelavo combines AI speed with human quality assurance for source handoff, preview links, final files, revisions and campaign-ready delivery.",
-    cta: "Start with Assistant",
-    href: "/dashboard/assistant-workspace",
+    cta: "Start production",
+    href: "/dashboard/create",
     tone: "green",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501593829539623-1784501593820.mp4",
     tags: ["Video", "Website", "Voiceover", "Final ZIP"]
@@ -66,7 +66,7 @@ export function CrelavoPremiumHero() {
           <h1>Create videos, websites, ads and campaign assets from one AI workspace.</h1>
           <p>AI speed, human quality assurance, clear credit guidance and delivery-ready outputs for ecommerce teams, creators and businesses.</p>
           <div className="crelavo-hero-actions">
-            <Link className="btn" href="/dashboard/assistant-workspace">Start with Assistant <ArrowRight size={16} /></Link>
+            <Link className="btn" href="/dashboard/create">Start production <ArrowRight size={16} /></Link>
             <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score my ad for free</Link>
             <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>

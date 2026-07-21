@@ -222,7 +222,7 @@ export default function DashboardPage() {
       <div className="card" style={{ marginTop: 20 }}>
         <h2>Recent video requests</h2>
         <RequestsTable />
-        <div style={{ marginTop: 18 }}><Link className="btn" href="/dashboard/assistant-workspace">Start live production</Link></div>
+        <div style={{ marginTop: 18 }}><Link className="btn" href="/dashboard/create">Start live production</Link></div>
       </div>
     </DashboardShell>
   );

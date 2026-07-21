@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function CheckoutCompletePage() {
   return (
-    <main className="container section pricing-page">
+    <main className="container section pricing-page public-funnel-page checkout-complete-page">
       <section className="card payment-checkout-card">
         <span className="badge">Payment status</span>
         <h1>Payment received — verification in progress</h1>
@@ -27,7 +27,7 @@ export default function CheckoutCompletePage() {
         </Suspense>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
           <Link className="btn" href="/dashboard/credits">Open credits</Link>
-          <Link className="btn secondary" href="/dashboard/assistant-workspace">Start a request</Link>
+          <Link className="btn secondary" href="/dashboard/create">Start a request</Link>
         </div>
       </section>
     </main>

@@ -5154,6 +5154,91 @@ html body .showcase-detail-page .showcase-video-overlay {
   }
 }
 
+/* Public funnel / pricing / service-page safety. */
+html body .public-funnel-page,
+html body .public-funnel-page.container.section,
+html body .service-page-detail.public-funnel-page,
+html body .pricing-page.public-funnel-page,
+html body .categories-funnel-page,
+html body .billing-help-page,
+html body .checkout-complete-page {
+  width: min(100% - 24px, 1680px) !important;
+  max-width: 1680px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  min-width: 0 !important;
+  overflow-x: clip !important;
+  box-sizing: border-box !important;
+}
+html body .public-home-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: clip !important;
+}
+html body .public-funnel-page .page-with-rails,
+html body .public-funnel-page .promo-top-layout,
+html body .public-funnel-page .production-hero-card,
+html body .public-funnel-page .blog-hero-panel,
+html body .public-funnel-page .card,
+html body .public-funnel-page .admin-category-grid,
+html body .public-funnel-page .admin-info-grid,
+html body .public-funnel-page .pricing-delivery-grid,
+html body .public-funnel-page .public-pricing-card-grid,
+html body .public-funnel-page .production-pricing-grid,
+html body .public-funnel-page .delivery-step-grid,
+html body .public-funnel-page .home-goal-wizard-grid,
+html body .public-funnel-page .home-tool-strip-grid,
+html body .public-funnel-page .plan-feature-groups {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html body .public-funnel-page .promo-top-layout,
+html body .public-funnel-page .pricing-delivery-grid,
+html body .public-funnel-page .public-pricing-card-grid,
+html body .public-funnel-page .production-pricing-grid,
+html body .public-funnel-page .delivery-step-grid,
+html body .public-funnel-page .admin-category-grid,
+html body .public-funnel-page .admin-info-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)) !important;
+}
+html body .public-funnel-page h1,
+html body .public-funnel-page h2,
+html body .public-funnel-page h3,
+html body .public-funnel-page p,
+html body .public-funnel-page a,
+html body .public-funnel-page span,
+html body .public-funnel-page strong,
+html body .public-funnel-page small,
+html body .public-funnel-page li,
+html body .public-funnel-page dd,
+html body .public-funnel-page dt,
+html body .public-funnel-page input,
+html body .public-funnel-page textarea,
+html body .public-funnel-page select {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+html body .public-funnel-page .button-nav {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
+html body .public-funnel-page .promo-corner-slot,
+html body .public-funnel-page .pricing-promo-slot,
+html body .public-funnel-page .categories-promo-slot {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+html body .public-funnel-page .ad-rail {
+  max-width: min(150px, 10vw) !important;
+}
+@media (max-width: 1180px) {
+  html body .public-funnel-page .ad-rail {
+    display: none !important;
+  }
+}
+
 /* Admin and dashboard spacing/alignment overrides. */
 html body .admin-shell-layout.container.section {
   width: min(100% - 24px, 1680px) !important;

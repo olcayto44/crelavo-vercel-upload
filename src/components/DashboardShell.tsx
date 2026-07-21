@@ -56,7 +56,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
       <aside className="dashboard-sidebar-card">
         <HardReloadLink className="logo" href="/dashboard"><span className="logo-mark">▶</span><span>Crelavo</span></HardReloadLink>
         <p>AI production planning, dashboard delivery, credits and post-launch growth tools.</p>
-        <HardReloadLink className="dashboard-primary-action" href="/dashboard/assistant-workspace">Start new production</HardReloadLink>
+        <HardReloadLink className="dashboard-primary-action" href="/dashboard/create">Start new production</HardReloadLink>
         <nav className="dashboard-nav-groups" aria-label="Dashboard menu">
           {navGroups.map((group) => (
             <section className="dashboard-nav-group" key={group.title}>

@@ -96,7 +96,7 @@ export default async function PricingPage() {
     <>
       <PricingStructuredData />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section pricing-page">
+      <main className="container section pricing-page public-funnel-page">
         <section className="promo-top-layout">
           <div>
             <span className="badge">Pricing & credits</span>
@@ -135,7 +135,7 @@ export default async function PricingPage() {
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace?idea=Estimate%20my%20credits%20before%20production">Estimate my project</Link>
+            <Link className="btn" href="/dashboard/create?idea=Estimate%20my%20credits%20before%20production">Estimate my project</Link>
             <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Start with free ad score</Link>
           </div>
         </section>
@@ -149,7 +149,7 @@ export default async function PricingPage() {
                 Crelavo is being prepared as a production delivery system, not a simple prompt tool. Depending on the package, the output can be delivered as preview links, final files, source packages, documentation, export-ready media and admin-tracked revision assets.
               </p>
             </div>
-            <Link className="btn secondary" href="/dashboard/assistant-workspace">Plan a delivery</Link>
+            <Link className="btn secondary" href="/dashboard/create">Plan a delivery</Link>
           </div>
           <div className="pricing-delivery-grid">
             {deliveryFormats.map((item) => (
@@ -288,7 +288,7 @@ export default async function PricingPage() {
                     </div>
                   ))}
                 </div>
-                <Link className="btn" href="/dashboard/assistant-workspace">Start request</Link>
+                <Link className="btn" href="/dashboard/create">Start request</Link>
               </div>
             ))}
           </div>

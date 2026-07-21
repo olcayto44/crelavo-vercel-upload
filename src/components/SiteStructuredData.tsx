@@ -62,7 +62,7 @@ export function SiteStructuredData() {
         inLanguage: "en-US",
         mainEntity: { "@id": `${siteUrl}/#app` },
         potentialAction: [
-          { "@type": "CreateAction", target: `${siteUrl}/dashboard/assistant-workspace`, name: "Start with Crelavo Assistant" },
+          { "@type": "CreateAction", target: `${siteUrl}/dashboard/create`, name: "Start Crelavo production" },
           { "@type": "AssessAction", target: `${siteUrl}/free-tools/ad-performance-score-checker`, name: "Score an ad for free" },
           { "@type": "ViewAction", target: `${siteUrl}/pricing`, name: "View Crelavo pricing and credits" }
         ]

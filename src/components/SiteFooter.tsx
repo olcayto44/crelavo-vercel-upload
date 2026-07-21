@@ -84,10 +84,10 @@ export async function SiteFooter() {
       </div>
 
       <div className="footer-commerce-shortcuts footer-commerce-row" aria-label="E-commerce campaign shortcuts">
-        <HardReloadLink href="/dashboard/assistant-workspace?idea=Shopify%20product%20link%20ad&category=campaign&mode=commerce">Shopify campaign</HardReloadLink>
-        <HardReloadLink href="/dashboard/assistant-workspace?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>
-        <HardReloadLink href="/dashboard/assistant-workspace?idea=Trendyol%20product%20video&category=campaign&mode=commerce">Trendyol video</HardReloadLink>
-        <HardReloadLink href="/dashboard/assistant-workspace?idea=Product%20link%20to%20ad%20video&category=campaign&mode=commerce">Product link ad</HardReloadLink>
+        <HardReloadLink href="/dashboard/create?idea=Shopify%20product%20link%20ad&category=campaign&mode=commerce">Shopify campaign</HardReloadLink>
+        <HardReloadLink href="/dashboard/create?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>
+        <HardReloadLink href="/dashboard/create?idea=Trendyol%20product%20video&category=campaign&mode=commerce">Trendyol video</HardReloadLink>
+        <HardReloadLink href="/dashboard/create?idea=Product%20link%20to%20ad%20video&category=campaign&mode=commerce">Product link ad</HardReloadLink>
       </div>
 
       <div className="site-footer-brand footer-brand-bottom-copy">

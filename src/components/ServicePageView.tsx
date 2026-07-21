@@ -33,9 +33,22 @@ const freeToolFunnelLinks = [
   { href: "/free-tools/seo-meta-title-generator", label: "SEO Meta Title Generator", keyword: "SEO meta title generator" }
 ];
 
+function normalizeProductionStartHref(href: string) {
+  return href.startsWith("/dashboard/assistant-workspace") ? href.replace("/dashboard/assistant-workspace", "/dashboard/create") : href;
+}
+
+function secondaryCtaLabel(href: string) {
+  const normalizedHref = normalizeProductionStartHref(href);
+  if (normalizedHref === "/pricing") return "View pricing and delivery options";
+  if (normalizedHref.startsWith("/dashboard/create")) return "Start this production path";
+  if (normalizedHref.startsWith("/dashboard")) return "Open related dashboard path";
+  return "Explore related options";
+}
+
 function exampleHref(baseHref: string, example: string) {
-  const separator = baseHref.includes("?") ? "&" : "?";
-  return `${baseHref}${separator}example=${encodeURIComponent(example)}`;
+  const normalizedHref = normalizeProductionStartHref(baseHref);
+  const separator = normalizedHref.includes("?") ? "&" : "?";
+  return `${normalizedHref}${separator}example=${encodeURIComponent(example)}`;
 }
 
 function buildLongTailKeywords(page: ServicePage) {
@@ -174,15 +187,15 @@ export function ServicePageView({ page }: { page: ServicePage }) {
   return (
     <>
       <ServicePageStructuredData page={page} />
-      <main className="container section service-page-detail">
+      <main className="container section service-page-detail public-funnel-page">
         <section className="production-hero-card admin-overview-hero service-hero-card">
         <span className="badge">{page.badge}</span>
         <h1>{page.title} for {page.bestFor}</h1>
         <p>{page.summary}</p>
         <p className="section-lead">Explore the {page.keyword} category for long-tail searches like {longTailKeywords.slice(1, 4).join(", ")}.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-          <Link className="btn" href={page.primaryCtaHref}>{page.primaryCtaLabel}</Link>
-          {page.secondaryCtaHref ? <Link className="btn secondary" href={page.secondaryCtaHref}>View pricing and delivery options</Link> : null}
+          <Link className="btn" href={normalizeProductionStartHref(page.primaryCtaHref)}>{page.primaryCtaLabel}</Link>
+          {page.secondaryCtaHref ? <Link className="btn secondary" href={normalizeProductionStartHref(page.secondaryCtaHref)}>{secondaryCtaLabel(page.secondaryCtaHref)}</Link> : null}
           <Link className="btn secondary" href="/tools">All tools</Link>
         </div>
       </section>
@@ -321,7 +334,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
           <span className="badge">Next paths</span>
           <h2>Continue from this service</h2>
           <div className="plan-feature-groups">
-            {page.internalLinks.map((item) => <Link href={item.href} key={`${item.label}-${item.href}`}><b>{item.label}</b><small>Open recommended path</small></Link>)}
+            {page.internalLinks.map((item) => <Link href={normalizeProductionStartHref(item.href)} key={`${item.label}-${item.href}`}><b>{item.label}</b><small>Open recommended path</small></Link>)}
           </div>
         </section>
       ) : null}
