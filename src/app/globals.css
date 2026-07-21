@@ -5496,6 +5496,19 @@ html body .social-chip-row {
   flex-wrap: wrap;
   align-content: flex-start;
 }
+html body .social-share-card {
+  display: grid;
+  gap: 12px;
+}
+html body .social-share-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+  gap: 9px;
+}
+html body .social-share-action-grid .btn {
+  justify-content: center;
+  text-align: center;
+}
 html body .production-live-steps span,
 html body .social-chip-row span {
   border: 1px solid rgba(125, 211, 252, 0.18);

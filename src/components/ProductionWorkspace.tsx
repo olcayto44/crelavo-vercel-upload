@@ -793,6 +793,13 @@ const [notice, setNotice] = useState("");
           <div className="social-chip-row">
             {["Instagram", "TikTok", "YouTube Shorts", "LinkedIn", "Facebook", "X"].map((platform) => <span key={platform}>{platform}</span>)}
           </div>
+          <div className="social-share-action-grid">
+            <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
+            <a className="btn secondary" href="/dashboard/social-export">Open social export pack</a>
+            <a className="btn secondary" href="/dashboard/ads">Send to ads center</a>
+            <a className="btn secondary" href="/dashboard/connections">Connect store/accounts</a>
+          </div>
+          {!deliveryUrl ? <p className="workspace-action-note warning">Final delivery is not ready yet. You can prepare the social plan now, then attach the final file when delivery opens.</p> : null}
         </div>
       </aside>
     </div>
