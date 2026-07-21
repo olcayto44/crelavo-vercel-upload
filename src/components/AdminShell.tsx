@@ -4,7 +4,7 @@ import { adminMenu, adminMenuGroups } from "@/lib/admin";
 
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   return (
-    <main className="container section">
+    <main className="container section admin-shell-layout">
       <div className="nav" style={{ paddingTop: 0 }}>
         <Link className="logo" href="/"><span className="logo-mark">▶</span><span>Crelavo Admin</span></Link>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

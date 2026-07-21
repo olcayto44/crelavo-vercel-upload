@@ -80,28 +80,28 @@ const workflowStarters = [
     badge: "Brand kit",
     title: "AI Brand Kit Builder",
     text: "Prepare brand voice, visual direction, content kit, reusable assets and dashboard delivery notes for a launch package.",
-    href: "/ai-brand-kit-builder",
+    href: "/dashboard/brand-kit",
     cta: "Open brand kit"
   },
   {
     badge: "Bulk tools",
     title: "AI Bulk Content Builder",
     text: "Plan batch content, CSV-driven production, multi-item exports and post-launch bulk automation preparation.",
-    href: "/ai-bulk-content-builder",
+    href: "/dashboard/bulk",
     cta: "Open bulk builder"
   },
   {
     badge: "Voice / dubbing",
     title: "AI Dubbing & Voice",
     text: "Prepare voiceover, dubbing, localization notes and audio-ready delivery workflows for future provider/API connection.",
-    href: "/ai-dubbing-voice",
+    href: "/dashboard/dubbing",
     cta: "Open dubbing"
   },
   {
     badge: "Ads planning",
     title: "AI Ads Planner",
     text: "Prepare paid ad campaign structure, ROAS notes, creative angles and post-launch ad workflow planning.",
-    href: "/ai-ads-planner",
+    href: "/dashboard/ads",
     cta: "Open ads planner"
   },
   {
@@ -154,11 +154,11 @@ const workflowStarters = [
     cta: "Open credits"
   },
   {
-    badge: "Whop billing",
-    title: "Billing / Cancel",
-    text: "Open Whop payment and cancellation instructions, including 24-hour preview cancellation, non-refundable setup fee rules and credit activation timing.",
-    href: "/whop-billing",
-    cta: "Open billing / cancel"
+    badge: "Billing",
+    title: "Billing & Account Help",
+    text: "Open credit packages, payment confirmation guidance, cancellation help and account support from the dashboard billing flow.",
+    href: "/dashboard/billing",
+    cta: "Open billing"
   },
   {
     badge: "Provider test",
@@ -171,7 +171,7 @@ const workflowStarters = [
 
 export default function DashboardPage() {
   return (
-    <DashboardShell className="dashboard-sidebar-lift">
+    <DashboardShell className="dashboard-sidebar-lift dashboard-postlaunch-shell">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", marginBottom: 20 }}>
         <div>
           <h1 style={{ margin: 0 }}>Dashboard</h1>

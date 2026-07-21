@@ -1,6 +1,6 @@
 import { HardReloadLink } from "@/components/HardReloadLink";
 
-// SEO smoke keeps the public category route visible: href: "/categories"
+// Dashboard navigation keeps user production, tools and account paths in one place.
 const navGroups = [
   {
     title: "Production",
@@ -9,7 +9,7 @@ const navGroups = [
     items: [
       ["Overview Dashboard", "/dashboard"],
       ["AI Assistant Workspace", "/dashboard/assistant-workspace"],
-      ["Start Live Production", "/categories"],
+      ["Start Live Production", "/dashboard/create"],
       ["Growth Intelligence", "/dashboard/growth-intelligence"],
       ["Live Sales Control", "/dashboard/live-sales-agent"],
       ["Drone Shoot Panel", "/dashboard/drone-shoot"],
@@ -41,7 +41,7 @@ const navGroups = [
     description: "Credits, subscription and settings",
     items: [
       ["Subscription & Credits", "/dashboard/credits"],
-      ["Billing / Cancel", "/whop-billing"],
+      ["Billing", "/dashboard/billing"],
       ["Contact", "/dashboard/contact"],
       ["Settings", "/dashboard/settings"]
     ]
@@ -76,7 +76,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
         <nav className="dashboard-topbar button-nav" aria-label="Dashboard quick navigation">
           <HardReloadLink className="btn secondary" href="/">Home</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/categories">Categories</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/pricing">Credits</HardReloadLink>
+          <HardReloadLink className="btn secondary" href="/dashboard/credits">Credits</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/live-sales-agent">Live Control</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/drone-shoot">Drone Shoot</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Assistant</HardReloadLink>
@@ -85,7 +85,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
           <HardReloadLink className="btn secondary" href="/dashboard/growth">Growth</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/partners">Partners</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard">Dashboard</HardReloadLink>
-          <HardReloadLink className="btn" href="/whop-billing">Billing / Cancel</HardReloadLink>
+          <HardReloadLink className="btn" href="/dashboard/billing">Billing</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/blog">Blog / Content</HardReloadLink>
         </nav>
         {children}

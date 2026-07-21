@@ -5154,6 +5154,45 @@ html body .showcase-detail-page .showcase-video-overlay {
   }
 }
 
+/* Admin and dashboard spacing/alignment overrides. */
+html body .admin-shell-layout.container.section {
+  width: min(100% - 24px, 1680px) !important;
+  max-width: 1680px !important;
+  margin: 0 auto !important;
+  overflow-x: clip !important;
+}
+html body .admin-shell-layout .admin-shell,
+html body .admin-shell-layout .admin-main-stack,
+html body .admin-shell-layout .admin-sidebar-card,
+html body .admin-shell-layout .production-hero-card,
+html body .admin-shell-layout .card,
+html body .admin-shell-layout .admin-category-grid,
+html body .admin-shell-layout .admin-info-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html body .admin-shell-layout h1,
+html body .admin-shell-layout h2,
+html body .admin-shell-layout h3,
+html body .admin-shell-layout p,
+html body .admin-shell-layout li,
+html body .admin-shell-layout a,
+html body .admin-shell-layout strong,
+html body .admin-shell-layout small,
+html body .admin-shell-layout code,
+html body .admin-shell-layout input,
+html body .admin-shell-layout select,
+html body .admin-shell-layout textarea,
+html body .admin-shell-layout pre {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+html body .admin-shell-layout .admin-category-card {
+  overflow: visible !important;
+}
+
 /* Final dashboard spacing/alignment override. */
 html body .dashboard-shell-layout.container.section {
   width: calc(100% - 24px) !important;

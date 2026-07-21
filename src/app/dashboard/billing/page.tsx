@@ -19,6 +19,7 @@ export default async function BillingPage({ searchParams }: { searchParams?: Pro
           <Link className="btn" href="/dashboard/credits">View credit balance</Link>
           <Link className="btn secondary" href="/dashboard/payment">Open payment page</Link>
           <Link className="btn secondary" href="/dashboard/contact">Need billing help?</Link>
+          <Link className="btn secondary" href="/whop-billing">Cancel / billing instructions</Link>
         </div>
       </div>
 
