@@ -91,7 +91,7 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
           <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Example: Turn my product link into a TikTok ad video with a strong hook, subtitles, voice-over and product close-ups..." />
           <div className="studio-reference-dropzone">
             <strong>Reference upload area</strong>
-            <span>Images, product links, voice/video references and brand files will attach here when provider APIs are ready.</span>
+            <span>Continue to production to attach images, product links, voice/video references and brand files in the live workspace material area.</span>
           </div>
           {estimateOpen ? (
             <div className="studio-estimate-trust-card">

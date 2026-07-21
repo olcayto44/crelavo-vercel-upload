@@ -126,8 +126,16 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
   const [message, setMessage] = useState("");
   const [targetPart, setTargetPart] = useState("General production");
   const [action, setAction] = useState("Request revision");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [notice, setNotice] = useState("");
+const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+const [notice, setNotice] = useState("");
+
+  function prepareSocialSharing() {
+    setTargetPart("Social media sharing");
+    setAction("Prepare social sharing");
+    setMessage("Prepare caption, hashtags, platform format and posting plan for the final output.");
+    setNotice("Social sharing request is ready below. Review it and send from the assistant intervention area.");
+    window.setTimeout(() => document.getElementById("social-share-panel")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  }
   const [localRevisions, setLocalRevisions] = useState<RevisionRequest[]>([]);
   const [pollingNote, setPollingNote] = useState("");
   const [providerStartNote, setProviderStartNote] = useState("");
@@ -775,11 +783,11 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
             {deliveryUrl ? <a className="btn secondary" href={deliveryUrl} target="_blank"><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
             <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("The part I want changed in the final output: "); }}><RefreshCcw size={15} /> Revise</button>
             {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
-            <button className="btn" type="button"><Share2 size={15} /> Share on social media</button>
+            <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button>
           </div>
         </div>
 
-        <div className="social-share-card">
+        <div className="social-share-card" id="social-share-panel">
           <h2>Social media sharing</h2>
           <p>When the final output is ready, caption, hashtags, platform format, and posting time are prepared here.</p>
           <div className="social-chip-row">
