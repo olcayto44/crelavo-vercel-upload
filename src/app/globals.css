@@ -5426,7 +5426,7 @@ html body .dashboard-shell-layout.container.section {
 }
 html body .dashboard-shell-layout .dashboard-sidebar-card {
   margin-top: 0 !important;
-  transform: translateY(-10px) !important;
+  transform: none !important;
   top: 72px !important;
   align-self: start !important;
 }

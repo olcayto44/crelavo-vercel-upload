@@ -6,7 +6,7 @@ import { dashboardNextBestActions, growthRewardReadiness, lifecycleNudges, reten
 
 export default function DashboardGrowthPage() {
   return (
-    <DashboardShell className="dashboard-sidebar-lift dashboard-postlaunch-shell">
+    <DashboardShell className="dashboard-postlaunch-shell">
       <section className="card">
         <span className="badge">Retention / growth hub</span>
         <h2>Earn, return and continue building with Crelavo</h2>

@@ -157,7 +157,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
   const payoutChangeEmail = `mailto:finance@crelavo.com?subject=${encodeURIComponent(`Affiliate payout details change request - ${partnerCode}`)}&body=${encodeURIComponent("Please review my affiliate payout details change request.\n\nPartner code:\nCurrent account holder:\nCurrent IBAN:\nRequested change:\nReason for change:\n")}`;
 
   return (
-    <DashboardShell className="dashboard-sidebar-lift dashboard-postlaunch-shell">
+    <DashboardShell className="dashboard-postlaunch-shell">
       <section className="card">
         <span className="badge">Partner Rewards</span>
         <h1 style={{ marginTop: 8 }}>Referral and partner program</h1>

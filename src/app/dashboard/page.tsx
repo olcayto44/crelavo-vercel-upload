@@ -171,7 +171,7 @@ const workflowStarters = [
 
 export default function DashboardPage() {
   return (
-    <DashboardShell className="dashboard-sidebar-lift dashboard-postlaunch-shell">
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", marginBottom: 20 }}>
         <div>
           <h1 style={{ margin: 0 }}>Dashboard</h1>
