@@ -5,6 +5,7 @@ import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
 import { OAuthWelcomeCreditClient } from "@/components/OAuthWelcomeCreditClient";
 import { PartnerReferralTracker } from "@/components/PartnerReferralTracker";
 import { PublicSideRail } from "@/components/PublicSideRail";
+import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
 import "./globals.css";
@@ -94,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PublicSideRail /></Suspense>
         {children}
-        <SiteFooter />
+        <RouteAwareFooter><SiteFooter /></RouteAwareFooter>
       </body>
     </html>
   );

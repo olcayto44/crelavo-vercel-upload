@@ -6,6 +6,7 @@ export function RouteAwareFooter({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hideFooter = Boolean(
     pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/auth") ||
     pathname?.startsWith("/dashboard/assistant-workspace")
   );
 
