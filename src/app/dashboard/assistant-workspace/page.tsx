@@ -38,9 +38,9 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
         <nav className="assistant-top-nav button-nav">
           <HardReloadLink className="btn secondary" href="/">Home</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/categories">Categories</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/pricing">Credits</HardReloadLink>
+          <HardReloadLink className="btn secondary" href="/dashboard/credits">Credits</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Assistant</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/categories">Start</HardReloadLink>
+          <HardReloadLink className="btn secondary" href="/dashboard/create">Start</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/productions">Productions</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard">Dashboard</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/blog">Blog / Content</HardReloadLink>
@@ -54,7 +54,7 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
           <p style={{ color: "var(--muted)" }}>Your selected {tool ? tool.replace(/-/g, " ") : "free tool"} result is already loaded below. Review the prompt, adjust delivery options and start a production package when ready.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
             <HardReloadLink className="btn secondary" href="/free-tools">Back to free tools</HardReloadLink>
-            <HardReloadLink className="btn secondary" href="/pricing">Check credits</HardReloadLink>
+            <HardReloadLink className="btn secondary" href="/dashboard/credits">Check credits</HardReloadLink>
           </div>
         </section>
       ) : null}
@@ -69,18 +69,18 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
           <div className="grid">
             <div className="card">
               <h2>Start production</h2>
-              <p>Open a clean Assistant Workspace session with a full page reload.</p>
-              <HardReloadLink className="btn" href="/dashboard/assistant-workspace?mode=project">Start production</HardReloadLink>
+              <p>Open the Production Studio first, then continue into the Assistant Workspace with options and credit estimate visible.</p>
+              <HardReloadLink className="btn" href="/dashboard/create">Start production</HardReloadLink>
             </div>
             <div className="card">
               <h2>Open categories</h2>
-              <p>Choose a production category first, then return to the workspace.</p>
+              <p>Choose a public category first, then return to the production workspace when ready.</p>
               <HardReloadLink className="btn secondary" href="/categories">Open category catalog</HardReloadLink>
             </div>
             <div className="card">
               <h2>Credit packages</h2>
               <p>Review credit packages before starting production.</p>
-              <HardReloadLink className="btn secondary" href="/pricing">Credit Packages</HardReloadLink>
+              <HardReloadLink className="btn secondary" href="/dashboard/credits">Credit Packages</HardReloadLink>
             </div>
           </div>
         </section>

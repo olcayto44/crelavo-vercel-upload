@@ -3,7 +3,7 @@ import { ProductionsTable } from "@/components/ProductionsTable";
 
 export default function MyProductionsPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card">
         <span className="badge">My Productions</span>
         <h2>Production command center</h2>

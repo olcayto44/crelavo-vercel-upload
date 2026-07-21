@@ -5247,6 +5247,41 @@ html body .dashboard-postlaunch-shell .dashboard-topbar {
   overflow-x: auto !important;
   padding-bottom: 4px !important;
 }
+html body .assistant-production-page.container.section,
+html body .assistant-full-page.container.section {
+  width: min(100% - 24px, 1760px) !important;
+  max-width: 1760px !important;
+  overflow-x: clip !important;
+}
+html body .assistant-production-page .assistant-top-nav,
+html body .assistant-production-page .assistant-workspace-topbar,
+html body .assistant-production-page .assistant-live-stage,
+html body .assistant-production-page .assistant-workspace,
+html body .assistant-production-page .studio-command-center,
+html body .assistant-production-page .assistant-inline-chat,
+html body .assistant-production-page .studio-preview-plan,
+html body .assistant-production-page .card {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html body .assistant-production-page .assistant-top-nav {
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
+html body .assistant-production-page h1,
+html body .assistant-production-page h2,
+html body .assistant-production-page h3,
+html body .assistant-production-page p,
+html body .assistant-production-page a,
+html body .assistant-production-page strong,
+html body .assistant-production-page small,
+html body .assistant-production-page textarea,
+html body .assistant-production-page input,
+html body .assistant-production-page select {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
 html body .dashboard-postlaunch-shell .social-export-grid,
 html body .dashboard-postlaunch-shell .shorts-growth-grid,
 html body .dashboard-postlaunch-shell .custom-agent-grid,
