@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Mic, Paperclip, Send, Sparkles } from "lucide-react";
+import { Bot, Mic, Send, Sparkles } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { blockedProductionMessage, validateProductionSafety } from "@/lib/content-safety";
 import { getStoredLanguage } from "@/lib/i18n";
@@ -1163,7 +1163,6 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [assistantConversationId, setAssistantConversationId] = useState("");
   const [productionCreditAvailable, setProductionCreditAvailable] = useState<number | null>(null);
 const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
-const [chatRailOpen, setChatRailOpen] = useState(false);
 const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
 const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRatesConfig>(defaultDeliveryCreditRatesConfig);
   const [configuredProductionPackages, setConfiguredProductionPackages] = useState<ProductionPackage[]>(productionPackages);
@@ -1213,13 +1212,6 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const hasKnownProductionCredits = typeof availableProductionCredits === "number";
   const productionCreditShortfall = hasKnownProductionCredits ? Math.max(0, costEstimate.totalCredits - (availableProductionCredits ?? 0)) : 0;
   const productionCreditInsufficient = hasKnownProductionCredits && productionCreditShortfall > 0;
-  const chatPlanReady = dynamicWizard.open || input.trim().length > 12 || messages.some((message) => message.role === "assistant" && /hazırl|plan|üretim|video|site|uygulama|animasyon|production/i.test(message.content));
-  const chatSummaryChips = [
-    selectedDuration ? `Süre: ${selectedDuration}` : null,
-    selectedStyle ? `Stil: ${selectedStyle}` : null,
-    `${costEstimate.totalCredits.toLocaleString()} kredi`,
-    productionCreditInsufficient ? `Eksik: ${productionCreditShortfall.toLocaleString()} kredi` : null
-  ].filter(Boolean) as string[];
 
   useEffect(() => {
     fetch("/api/delivery-credit-rates")
@@ -2434,13 +2426,36 @@ async function startRawMicrophoneFallback() {
   }
 
   return (
-    <div className={chatRailOpen ? "assistant-workspace chat-open" : "assistant-workspace chat-collapsed"}>
+    <div className="assistant-workspace chat-open">
       <section className="assistant-live-stage">
         <div className="assistant-stage-head studio-stage-head">
           <span className="badge"><Sparkles size={14} /> Crelavo AI Production Studio</span>
           <h1>What do you want to create with Crelavo?</h1>
           <p>Create videos, avatars, campaign assets, product ads and social content from one clean production workspace.</p>
         </div>
+
+        <section className="assistant-inline-chat" aria-label="Assistant chat flow">
+          <div className="assistant-inline-chat-head">
+            <div>
+              <span className="badge"><Bot size={14} /> Assistant chat</span>
+              <h2>Normal chat / questions</h2>
+              <p>Buraya selam, soru, API, fikir veya sesli komut yaz. Cevap akışı burada görünür; üretim brief’i aşağıdaki Production command alanından ayrı tutulur.</p>
+            </div>
+            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: activeLanguage === "tr" ? "Sohbet temizlendi. Sorunu veya yapmak istediğini yazabilirsin." : "Chat cleared. Ask anything or describe what you need." }])}>Chat’i temizle</button>
+          </div>
+          <div className="assistant-inline-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
+            {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">{activeLanguage === "tr" ? "Cevap hazırlanıyor..." : "Preparing reply..."}</div> : null}
+          </div>
+          <div className="assistant-inline-chat-input">
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder={activeLanguage === "tr" ? "Buraya normal soru yaz: selam, nasılsın, API nasıl alınır, TikTok videosu nasıl yapacağız..." : "Ask here: general question, API steps, production idea..."} />
+            <div className="assistant-inline-chat-actions">
+              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? (activeLanguage === "tr" ? "Dinleniyor..." : "Listening...") : (activeLanguage === "tr" ? "Ses" : "Voice")}</button>
+              <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
+            </div>
+          </div>
+          {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
+        </section>
 
         <section className="studio-command-center">
           <div className="studio-command-main">
@@ -2795,43 +2810,6 @@ async function startRawMicrophoneFallback() {
         ) : null}
       </section>
 
-      {!chatRailOpen ? (
-        <button className="assistant-floating-open" type="button" onClick={() => setChatRailOpen(true)}>
-          <Bot size={16} /> Open assistant
-        </button>
-      ) : null}
-
-      <aside className={chatRailOpen ? "assistant-chat-rail open" : "assistant-chat-rail collapsed"}>
-        <div className="assistant-chat-head"><span><Bot size={18} /><strong>Assistant conversation</strong></span><button className="assistant-rail-close" type="button" onClick={() => setChatRailOpen(false)}>Close</button></div>
-        <div className="assistant-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
-          {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
-          {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Thinking...</div> : null}
-        </div>
-        <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder={activeLanguage === "tr" ? "Normal soru sor, fikir yaz veya üretim komutu ver..." : "Ask normally, share an idea, or give a production command..."} />
-        <div className="assistant-chat-actions">
-          <label className={`chat-attach-button ${uploadState === "loading" ? "loading" : ""}`} title={activeLanguage === "tr" ? "Dosya ekle" : "Attach file"} aria-label={activeLanguage === "tr" ? "Dosya ekle" : "Attach file"}>
-            <Paperclip size={17} />
-            <input accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/aac,audio/ogg,audio/mp4,video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp" disabled={uploadState === "loading"} onChange={(event) => uploadUserMaterial(event.target.files)} type="file" />
-          </label>
-          <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? (activeLanguage === "tr" ? "Dinleniyor..." : activeLanguage === "de" ? "Höre zu..." : activeLanguage === "es" ? "Escuchando..." : activeLanguage === "fr" ? "Écoute..." : activeLanguage === "ar" ? "جارٍ الاستماع..." : "Listening...") : (activeLanguage === "tr" ? "Ses" : activeLanguage === "de" ? "Sprache" : activeLanguage === "es" ? "Voz" : activeLanguage === "fr" ? "Voix" : activeLanguage === "ar" ? "صوت" : "Voice")}</button>
-          <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
-        </div>
-        {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
-        {(uploadedMaterials.length || chatSummaryChips.length || chatPlanReady) ? (
-          <div className="chat-context-strip" data-no-translate="true">
-            {uploadedMaterials.slice(0, 4).map((material) => (
-              <span className="chat-context-chip material" key={material.file_url} title={material.title}>
-                {material.kind}: {material.title}
-                <button type="button" aria-label="Remove material" onClick={() => removeUploadedMaterial(material.file_url)}>×</button>
-              </span>
-            ))}
-            {uploadedMaterials.length > 4 ? <span className="chat-context-chip">+{uploadedMaterials.length - 4} dosya</span> : null}
-            {chatSummaryChips.map((chip) => <span className="chat-context-chip" key={chip}>{chip}</span>)}
-            {chatPlanReady ? <button className={productionCreditInsufficient ? "chat-ready-cta warning" : "chat-ready-cta"} type="button" onClick={() => setStartModalOpen(true)}>{productionCreditInsufficient ? "Planı gör · Kredi eksik" : "Plan hazır · Üretime başla"}</button> : null}
-          </div>
-        ) : null}
-
-      </aside>
 
     </div>
   );
