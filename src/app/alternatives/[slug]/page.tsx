@@ -102,6 +102,7 @@ export default async function AlternativeDetailPage({ params }: { params: Promis
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
           <span className="badge">Comparison table</span>
           <h2>Crelavo vs {page.competitor}: feature comparison</h2>
+          <p style={{ color: "var(--muted)" }}>This is a neutral workflow comparison, not a claim that one tool is best for every use case. Choose based on whether you need a self-serve tool or a managed production path with delivery context.</p>
           <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
               <thead>
@@ -121,6 +122,38 @@ export default async function AlternativeDetailPage({ params }: { params: Promis
                 ))}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">Decision guide</span>
+          <h2>When to choose Crelavo or {page.competitor}</h2>
+          <div className="admin-info-grid">
+            <div>
+              <span>Choose Crelavo when</span>
+              <strong>You need production delivery</strong>
+              <small>Use Crelavo when the project needs a brief, campaign context, credit guidance, dashboard delivery, source handoff notes or AI + human QA.</small>
+            </div>
+            <div>
+              <span>Choose {page.competitor} when</span>
+              <strong>You need its core tool workflow</strong>
+              <small>{page.competitorFit}</small>
+            </div>
+            <div>
+              <span>Before deciding</span>
+              <strong>Start with scope</strong>
+              <small>List the output type, channel, deadline, assets, review needs and whether a self-serve editor is enough.</small>
+            </div>
+            <div>
+              <span>Next action</span>
+              <strong>Compare cost and delivery</strong>
+              <small>Review credits, production scope and whether the output needs revisions, source files or launch-ready packaging.</small>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/create">Start a focused brief</Link>
+            <Link className="btn secondary" href="/pricing">Review pricing and credits</Link>
+            <Link className="btn secondary" href="/tools">Browse Crelavo tools</Link>
           </div>
         </section>
 

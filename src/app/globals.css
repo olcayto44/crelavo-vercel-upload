@@ -772,18 +772,36 @@ body.auth-route main.section {
   padding-bottom: 32px;
 }
 
+body.auth-route main.auth-screen {
+  width: min(100% - 32px, 520px);
+  min-height: calc(100svh - 92px);
+  display: grid;
+  align-items: center;
+  padding-top: 14px;
+  padding-bottom: 18px;
+}
+
 .auth-card {
-  padding: 22px;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+.auth-card h1 {
+  margin-bottom: 8px;
 }
 
 .auth-login-mode-row,
+.auth-provider-grid,
 .auth-provider-grid.login-provider-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  margin: 14px 0 16px;
+  margin: 12px 0 14px;
 }
 
+.auth-provider-grid .btn,
 .auth-provider-grid.login-provider-grid .btn,
 .auth-login-mode-row .btn {
   width: 100%;

@@ -70,6 +70,22 @@ export default async function AlternativesPage() {
           </div>
         </section>
 
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">How to compare</span>
+          <h2>Use alternatives pages as a decision guide, not only a tool list</h2>
+          <div className="admin-info-grid">
+            <div><span>Self-serve fit</span><strong>Editor or template needed</strong><small>Choose a specialist tool when the user wants to edit directly and does not need production delivery support.</small></div>
+            <div><span>Crelavo fit</span><strong>Brief-to-delivery needed</strong><small>Choose Crelavo when the project needs campaign context, asset planning, credit guidance, QA and dashboard handoff.</small></div>
+            <div><span>Before checkout</span><strong>Compare scope first</strong><small>Check output count, channel, deadline, source files, revision needs and whether the workflow requires human review.</small></div>
+            <div><span>Safe next step</span><strong>Start a focused brief</strong><small>Visitors can move from comparison intent into one clear Crelavo request instead of browsing every tool.</small></div>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/create">Start a focused brief</Link>
+            <Link className="btn secondary" href="/pricing">Review pricing</Link>
+            <Link className="btn secondary" href="/categories">Browse categories</Link>
+          </div>
+        </section>
+
         <section className="admin-category-grid" style={{ marginTop: 18 }}>
           {alternativePages.map((page) => (
             <Link className="card admin-category-card" href={`/alternatives/${page.slug}`} key={page.slug}>
