@@ -74,6 +74,13 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
 
       </div>
 
+      <section className="payment-trust-flow" aria-label="Checkout trust flow">
+        <div><strong>1. Secure checkout</strong><span>Card details stay with the active payment provider.</span></div>
+        <div><strong>2. Credit/account match</strong><span>Use the same Crelavo email so the payment can be matched quickly.</span></div>
+        <div><strong>3. Credits or service access</strong><span>{isServicePlan ? "Service access starts after preview/payment confirmation." : isProductionPackage ? "The managed production package is tracked separately from normal top-ups." : "Credits are added after payment confirmation."}</span></div>
+        <div><strong>4. Production confirmation</strong><span>Production credits are still reserved only when a job is confirmed.</span></div>
+      </section>
+
       <div className="payment-layout">
         <section className="card selected-billing-card payment-summary-card">
           <span className="badge">Selected package - {isServicePlan ? billing === "yearly" ? "Yearly service plan" : "Monthly service plan" : isProductionPackage ? "One-time production package" : isSubscription ? billing === "yearly" ? "Yearly subscription" : "Monthly subscription" : "One-time credit purchase"}</span>

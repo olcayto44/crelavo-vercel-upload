@@ -25,6 +25,7 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
   const [format, setFormat] = useState("9:16 Vertical");
   const [duration, setDuration] = useState("30 sec");
   const [referenceMode, setReferenceMode] = useState("Optional reference");
+  const [estimateOpen, setEstimateOpen] = useState(false);
 
   const estimatedCredits = useMemo(() => {
     const qualityFactor = quality === "Fast" ? 0.55 : quality === "Standard" ? 1 : quality === "Professional" ? 1.45 : quality === "Cinematic" ? 1.9 : 2.4;
@@ -92,9 +93,16 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
             <strong>Reference upload area</strong>
             <span>Images, product links, voice/video references and brand files will attach here when provider APIs are ready.</span>
           </div>
+          {estimateOpen ? (
+            <div className="studio-estimate-trust-card">
+              <strong>{estimatedCredits.toLocaleString()} credits estimated</strong>
+              <span>Credits are not charged on this screen. Continue to production to review the final reserve and confirm.</span>
+              <span>Provider/API readiness will be shown as ready or pending before the job workspace opens.</span>
+            </div>
+          ) : null}
           <div className="studio-generate-row">
             <Link className="btn" href={assistantWorkspaceHref}>Continue to production</Link>
-            <button className="btn secondary" type="button">Estimate credits</button>
+            <button className="btn secondary" type="button" onClick={() => setEstimateOpen((current) => !current)}>{estimateOpen ? "Hide estimate" : "Estimate credits"}</button>
             <Link className="btn secondary" href="/dashboard/productions">My productions</Link>
           </div>
         </main>
@@ -111,6 +119,12 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
             <div><small>Provider mode</small><strong>Auto routing</strong></div>
             <div><small>Status</small><strong>Ready / pending by provider</strong></div>
             <div><small>Delivery</small><strong>Dashboard + download</strong></div>
+          </div>
+          <div className="studio-trust-checklist">
+            <span>No charge before confirmation</span>
+            <span>Reserve shown before job creation</span>
+            <span>Provider pending states stay visible</span>
+            <span>Final delivery opens from My productions</span>
           </div>
           <p>No credits are charged before user confirmation. Missing providers will be shown as pending, not as working.</p>
         </aside>

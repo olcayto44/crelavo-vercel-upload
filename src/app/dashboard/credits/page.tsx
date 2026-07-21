@@ -20,6 +20,24 @@ export default function CreditsPage() {
         </div>
       </div>
 
+      <section className="credit-trust-strip" aria-label="Credit safety summary">
+        <div>
+          <span className="badge">Credit safety</span>
+          <h3>Estimate first, reserve only after confirmation</h3>
+          <p>Production screens show estimated credits before a job starts. Credits are reserved only when the user confirms production start.</p>
+        </div>
+        <div>
+          <span className="badge">Balance clarity</span>
+          <h3>Balance, reserved and available stay separate</h3>
+          <p>Available credits mean balance minus reserved credits, so users can see what is still usable before checkout.</p>
+        </div>
+        <div>
+          <span className="badge">Provider honesty</span>
+          <h3>Pending providers are shown as pending</h3>
+          <p>If a provider/API is not ready, the job workspace shows that state instead of implying the render is already running.</p>
+        </div>
+      </section>
+
       <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" />
 
       <div style={{ marginTop: 24 }}>

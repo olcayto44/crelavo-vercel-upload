@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 
 type ApprovalOption = {
@@ -85,6 +85,7 @@ export function ProductionsTable() {
   const [cancellingId, setCancellingId] = useState("");
   const [approvingId, setApprovingId] = useState("");
   const [refreshingId, setRefreshingId] = useState("");
+  const [filter, setFilter] = useState<"all" | "active" | "waiting" | "preview" | "ready" | "failed">("all");
 
   useEffect(() => {
     async function loadProductions() {
@@ -222,6 +223,24 @@ if (rows.length === 0) {
   const readyCount = rows.filter((item) => item.status === "ready" || item.delivery_link || item.delivery_zip_url).length;
   const activeCount = rows.filter((item) => !["ready", "failed", "cancelled"].includes(item.status)).length;
   const previewCount = rows.filter((item) => item.preview_url).length;
+  const waitingCount = rows.filter((item) => item.approval_status === "waiting" || item.status === "queued").length;
+  const failedCount = rows.filter((item) => ["failed", "cancelled"].includes(item.status)).length;
+  const filteredRows = useMemo(() => rows.filter((item) => {
+    if (filter === "active") return !["ready", "failed", "cancelled"].includes(item.status);
+    if (filter === "waiting") return item.approval_status === "waiting" || item.status === "queued";
+    if (filter === "preview") return Boolean(item.preview_url);
+    if (filter === "ready") return item.status === "ready" || Boolean(item.delivery_link || item.delivery_zip_url);
+    if (filter === "failed") return ["failed", "cancelled"].includes(item.status);
+    return true;
+  }), [rows, filter]);
+  const filterItems = [
+    { key: "all" as const, label: "All", count: rows.length },
+    { key: "active" as const, label: "Active", count: activeCount },
+    { key: "waiting" as const, label: "Waiting", count: waitingCount },
+    { key: "preview" as const, label: "Preview", count: previewCount },
+    { key: "ready" as const, label: "Ready", count: readyCount },
+    { key: "failed" as const, label: "Failed", count: failedCount }
+  ];
 
   return (
     <div className="productions-list-shell">
@@ -229,11 +248,21 @@ if (rows.length === 0) {
       <div className="productions-overview-row">
         <div><span>Total productions</span><strong>{rows.length}</strong></div>
         <div><span>Active jobs</span><strong>{activeCount}</strong></div>
+        <div><span>Waiting decisions</span><strong>{waitingCount}</strong></div>
         <div><span>Previews ready</span><strong>{previewCount}</strong></div>
         <div><span>Finals ready</span><strong>{readyCount}</strong></div>
       </div>
+      <div className="productions-filter-row" aria-label="Production status filters">
+        {filterItems.map((item) => (
+          <button className={filter === item.key ? "active" : ""} type="button" key={item.key} onClick={() => setFilter(item.key)}>
+            <span>{item.label}</span>
+            <strong>{item.count}</strong>
+          </button>
+        ))}
+      </div>
+      {filteredRows.length === 0 ? <p className="workspace-empty-note">No productions in this filter.</p> : null}
       <div className="productions-card-grid">
-        {rows.map((item) => {
+        {filteredRows.map((item) => {
           const approvalOptions = item.approval_options ?? [];
           const needsApproval = item.approval_status === "waiting" && Boolean(item.approval_question);
           const automationSteps = item.automation_steps ?? [];
@@ -289,11 +318,13 @@ if (rows.length === 0) {
                 </div>
               ) : null}
 
-              <a className="btn" href={`/dashboard/productions/${item.id}`}>Live production workspace</a>
-              {item.preview_url ? <a className="btn secondary" href={item.preview_url} target="_blank" rel="noreferrer">Live preview</a> : null}
-              {(item.delivery_link || item.delivery_zip_url) ? <a className="btn" href={(item.delivery_link || item.delivery_zip_url)!} target="_blank" rel="noreferrer">Open delivery</a> : <small style={{ color: "#fcd34d" }}>Automatic production is running. Delivery will appear here as one link.</small>}
-              {item.package_id === "campaign_product_ad_video" && !["ready", "failed", "cancelled"].includes(item.status) ? <button className="btn secondary" type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "Refreshing status…" : "Refresh status"}</button> : null}
-              {item.readme_url ? <a className="btn secondary" href={item.readme_url} target="_blank" rel="noreferrer">How to use</a> : null}
+              <div className="production-card-actions">
+                <a className="btn" href={`/dashboard/productions/${item.id}`}>Open workspace</a>
+                {item.preview_url ? <a className="btn secondary" href={item.preview_url} target="_blank" rel="noreferrer">Preview</a> : null}
+                {(item.delivery_link || item.delivery_zip_url) ? <a className="btn" href={(item.delivery_link || item.delivery_zip_url)!} target="_blank" rel="noreferrer">Open delivery</a> : <small>Delivery pending</small>}
+                {item.package_id === "campaign_product_ad_video" && !["ready", "failed", "cancelled"].includes(item.status) ? <button className="btn secondary" type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "Refreshing…" : "Refresh"}</button> : null}
+                {item.readme_url ? <a className="btn secondary" href={item.readme_url} target="_blank" rel="noreferrer">How to use</a> : null}
+              </div>
               {item.status === "ready" && item.package_id === "campaign_product_ad_video" ? (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   <button className="btn secondary" type="button" onClick={() => openRevisionRequest(item, "Change subtitle color", `Change the subtitle color for ${item.title}`)}>Change subtitle color</button>

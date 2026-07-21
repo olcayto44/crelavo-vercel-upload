@@ -6,8 +6,8 @@ export default function MyProductionsPage() {
     <DashboardShell>
       <div className="production-hero-card">
         <span className="badge">My Productions</span>
-        <h2>Live jobs, previews, and deliveries in one place</h2>
-        <p>Track videos, websites, mobile apps, visuals, brand kits, documents, and admin panel projects started from the AI Assistant. Ready items open directly into the live workspace, preview, or final delivery link.</p>
+        <h2>Production command center</h2>
+        <p>Track active jobs, waiting decisions, preview-ready outputs and final deliveries from one clean production hub. Open any job to continue in the live workspace.</p>
       </div>
       <div style={{ marginTop: 18 }}>
         <ProductionsTable />

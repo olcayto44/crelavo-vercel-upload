@@ -2506,9 +2506,16 @@ async function startRawMicrophoneFallback() {
               <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
               <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider mode</span>
             </div>
+            <div className="studio-credit-trust-panel">
+              <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Checking"}</strong></span>
+              <span><small>Reserved now</small><strong>0 credits</strong></span>
+              <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
+              {productionCreditInsufficient ? <p className="workspace-action-note error">Shortfall: {productionCreditShortfall.toLocaleString()} credits. Add credits or lower quality/duration before starting.</p> : <p className="workspace-action-note">No credits are reserved until you confirm the production start screen.</p>}
+            </div>
             <div className="studio-side-actions">
               <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
               <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Estimate Credits</button>
+              {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Add credits</a> : null}
               <a className="btn secondary" href="/dashboard/productions">Open Production Studio</a>
             </div>
             <div className="studio-side-status">
@@ -2811,6 +2818,12 @@ async function startRawMicrophoneFallback() {
               <div className="start-cost-preview">
                 <strong>{quickProviderTest ? "Low-cost paid test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
                 <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 5 sec / 720p / single output" : ""}</span>
+              </div>
+              <div className="production-start-trust-grid">
+                <span><b>1</b><strong>Confirm first</strong><small>No credit reserve is created before this screen.</small></span>
+                <span><b>2</b><strong>Reserve estimate</strong><small>Credits are reserved for provider/render cost control.</small></span>
+                <span><b>3</b><strong>Provider check</strong><small>Unavailable providers stay pending instead of pretending to work.</small></span>
+                <span><b>4</b><strong>Final delivery</strong><small>Unused reserved credits can be released by the production resolution flow.</small></span>
               </div>
               <pre className="start-option-preview">{selectedOptionSummary()}</pre>
               {productionCreditInsufficient ? <p className="workspace-action-note error">Insufficient credits for this production. Available: {(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: {costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.</p> : null}
