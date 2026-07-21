@@ -5183,6 +5183,75 @@ html body .dashboard-shell-layout .dashboard-workspace {
   align-self: start !important;
   min-width: 0 !important;
 }
+html body .dashboard-postlaunch-shell.container.section {
+  width: min(100% - 24px, 1680px) !important;
+  max-width: 1680px !important;
+  overflow-x: clip !important;
+}
+html body .dashboard-postlaunch-shell .dashboard-workspace,
+html body .dashboard-postlaunch-shell .production-hero-card,
+html body .dashboard-postlaunch-shell .compact-production-hero,
+html body .dashboard-postlaunch-shell .card,
+html body .dashboard-postlaunch-shell .admin-category-grid,
+html body .dashboard-postlaunch-shell .connection-grid {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+html body .dashboard-postlaunch-shell .dashboard-topbar {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
+html body .dashboard-postlaunch-shell .social-export-grid,
+html body .dashboard-postlaunch-shell .connection-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)) !important;
+  gap: 16px !important;
+}
+html body .dashboard-postlaunch-shell .social-export-card,
+html body .dashboard-postlaunch-shell .connection-card {
+  overflow: visible !important;
+}
+html body .dashboard-postlaunch-shell .social-export-card h3,
+html body .dashboard-postlaunch-shell .connection-card h3,
+html body .dashboard-postlaunch-shell .connection-card p,
+html body .dashboard-postlaunch-shell .social-export-detail-list strong,
+html body .dashboard-postlaunch-shell .social-export-detail-list small,
+html body .dashboard-postlaunch-shell input,
+html body .dashboard-postlaunch-shell select {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+html body .dashboard-postlaunch-shell .social-export-detail-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+html body .dashboard-postlaunch-shell .social-export-detail-list span {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(125,211,252,.14);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(15,23,42,.48);
+}
+html body .dashboard-postlaunch-shell .social-export-detail-list small {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+html body .dashboard-postlaunch-shell .social-export-detail-list strong {
+  color: #fff;
+  line-height: 1.4;
+}
+html body .dashboard-postlaunch-shell .field,
+html body .dashboard-postlaunch-shell .connection-selected-platform {
+  min-width: 0 !important;
+}
 @media (max-width: 1180px) {
   html body .dashboard-shell-layout.container.section {
     width: min(100% - 28px, 980px) !important;

@@ -4,7 +4,7 @@ import { launchBlockedNotes, socialExportPack } from "@/lib/growth-launch-system
 
 export default function DashboardSocialExportPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <section className="production-hero-card compact-production-hero">
         <span className="badge">Social media export pack</span>
         <h2>Platform-ready export notes for every approved production</h2>
@@ -16,8 +16,19 @@ export default function DashboardSocialExportPage() {
           <Link className="btn secondary" href="/dashboard/create">Create new production</Link>
         </div>
       </section>
-      <section className="admin-category-grid" style={{ marginTop: 20 }}>
-        {socialExportPack.map((item) => <div className="card admin-category-card" key={item.platform}><span className="badge">{item.format}</span><h3>{item.platform}</h3><p>{item.assets}</p><p className="workspace-action-note warning">{item.guardrail}</p></div>)}
+      <section className="admin-category-grid social-export-grid" style={{ marginTop: 20 }}>
+        {socialExportPack.map((item) => (
+          <div className="card admin-category-card social-export-card" key={item.platform}>
+            <span className="badge">{item.format}</span>
+            <h3>{item.platform}</h3>
+            <div className="social-export-detail-list">
+              <span><small>Format</small><strong>{item.format}</strong></span>
+              <span><small>Platform</small><strong>{item.platform}</strong></span>
+              <span><small>Included assets</small><strong>{item.assets}</strong></span>
+              <span><small>Publishing rule</small><strong>{item.guardrail}</strong></span>
+            </div>
+          </div>
+        ))}
       </section>
       <section className="card" style={{ marginTop: 20 }}><span className="badge">Blocked automation</span><ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul></section>
     </DashboardShell>

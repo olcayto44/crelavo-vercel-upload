@@ -1,8 +1,10 @@
 export const socialExportPack = [
-  { platform: "TikTok", format: "9:16 short video", assets: "Hook, caption, hashtags, cover text, CTA, export note", guardrail: "Manual publish only until account APIs are connected." },
-  { platform: "YouTube Shorts", format: "9:16 short video", assets: "Title, description, hashtags, pinned comment, chapters note", guardrail: "No auto-upload before YouTube OAuth and approval rules." },
-  { platform: "Instagram Reels", format: "9:16 / 4:5", assets: "Caption, hashtags, story teaser, bio CTA", guardrail: "No direct publishing until Meta connection is verified." },
-  { platform: "X / LinkedIn", format: "Text + image/video teaser", assets: "Founder post, thread outline, link CTA, UTM label", guardrail: "Manual post review before any scheduled publishing." }
+  { platform: "TikTok", format: "9:16 short video", assets: "Opening hook text, subtitles, hashtags, cover text, call-to-action, manual export note", guardrail: "Manual publish only until account APIs are connected." },
+  { platform: "YouTube Shorts", format: "9:16 short video", assets: "Title, description, hashtags, pinned comment, chapters note, manual upload note", guardrail: "No auto-upload before YouTube OAuth and approval rules." },
+  { platform: "Instagram Reels", format: "9:16 / 4:5", assets: "Caption, hashtags, story teaser, bio CTA, cover text, manual Reels export note", guardrail: "No direct publishing until Meta connection is verified." },
+  { platform: "Facebook / Meta Ads", format: "9:16 / 4:5 / 1:1 ad creative", assets: "Primary text, headline, description, CTA button idea, campaign objective note, manual ad upload checklist", guardrail: "Paid ad launch waits for Meta connection, payment rules and final API/env validation." },
+  { platform: "LinkedIn", format: "Text + image/video teaser", assets: "Founder/company post, B2B hook, link CTA, UTM label, comment prompt", guardrail: "Manual post review is required before any scheduled publishing." },
+  { platform: "X / Twitter", format: "Short post + media teaser", assets: "Short post, thread outline, hashtags, link CTA, UTM label, reply prompt", guardrail: "Manual post review is required before any scheduled publishing." }
 ];
 
 export const shortFormGrowthSystem = [

@@ -3,7 +3,7 @@ import { DashboardShell } from "@/components/DashboardShell";
 
 export default function ConnectionsPage() {
   return (
-    <DashboardShell>
+    <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Post-launch integrations</span>
         <h2>Connected accounts and store planning</h2>
