@@ -137,7 +137,7 @@ export default async function AffiliatePage() {
         <section className="card admin-wide-card" style={{ marginTop: 20 }}>
           <span className="badge">Variable commission</span>
           <h2>Commission changes by package margin and delivery cost</h2>
-          <p style={{ color: "var(--muted)" }}>Affiliate commission is not one fixed rate for every product. Lower-cost or high-margin recurring services can receive stronger rates, while custom or high provider/API cost packages may use lower commission or manual approval.</p>
+          <p style={{ color: "var(--muted)" }}>Affiliate commission is not one fixed rate for every product. Lower-cost or high-margin recurring services can receive stronger rates, while custom or high production-cost packages may use lower commission or manual approval.</p>
           <div className="admin-category-grid">
             {partnerPackageCommissionRules.map((rule) => (
               <div className="card admin-category-card" key={rule.packageGroup}>

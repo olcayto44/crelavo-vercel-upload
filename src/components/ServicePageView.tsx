@@ -81,7 +81,7 @@ function buildLongTailKeywords(page: ServicePage) {
     return [
       ...base,
       "AI website builder for landing pages",
-      "AI app builder for SaaS MVPs",
+      "AI app builder for SaaS launch plans",
       "AI website builder for small business",
       "AI SaaS landing page generator",
       "AI app prototype and dashboard builder",

@@ -17,7 +17,7 @@ export default function AdsPage() {
       <div className="production-hero-card compact-production-hero">
         <span className="badge">Post-launch social export</span>
         <h2>Social export and ads planning center</h2>
-        <p>Prepare platform-ready captions, hashtags, formats and campaign notes now. Direct publishing, ad launch and ROAS automation stay disabled until the final API/env setup after core launch cleanup.</p>
+        <p>Prepare platform-ready captions, hashtags, formats, campaign notes and account handoff details from one clean workspace.</p>
         <div className="url-action-center">
           <Link className="btn" href="/dashboard/connections">Connect social account</Link>
           <Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Produce%20social%20campaign">Produce social campaign</Link>
@@ -34,7 +34,7 @@ export default function AdsPage() {
               <span>Platform</span>
               <strong>{target}</strong>
               <small>Connection / publishing / ad target</small>
-              <small>Manual export/ad planning only until API/env setup is complete.</small>
+              <small>Export notes, creative specs and approval steps stay organized here.</small>
             </div>
           ))}
         </div>

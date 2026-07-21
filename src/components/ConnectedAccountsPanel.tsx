@@ -14,9 +14,9 @@ type ConnectedStore = {
 type SocialPlatform = "meta" | "instagram" | "tiktok" | "youtube" | "linkedin" | "x";
 
 const socialPlatforms: { id: SocialPlatform; label: string; helper: string; placeholder: string }[] = [
-  { id: "meta", label: "Facebook / Meta Ads", helper: "Future Facebook/Meta Ads export and campaign planning", placeholder: "Meta Business account / ad account name" },
-  { id: "instagram", label: "Instagram / Reels", helper: "Future Reels, stories and Instagram export planning", placeholder: "Instagram business account name" },
-  { id: "tiktok", label: "TikTok", helper: "Future TikTok organic/video ad planning", placeholder: "TikTok Ads or profile name" },
+  { id: "meta", label: "Facebook / Meta Ads", helper: "Meta export, ad account and campaign planning", placeholder: "Meta Business account / ad account name" },
+  { id: "instagram", label: "Instagram / Reels", helper: "Reels, stories and Instagram export planning", placeholder: "Instagram business account name" },
+  { id: "tiktok", label: "TikTok", helper: "TikTok organic/video ad planning", placeholder: "TikTok Ads or profile name" },
   { id: "youtube", label: "YouTube / Shorts", helper: "Shorts and channel video upload preparation", placeholder: "YouTube channel name" },
   { id: "linkedin", label: "LinkedIn", helper: "B2B post and company page planning", placeholder: "LinkedIn company page" },
   { id: "x", label: "X / Twitter", helper: "Tweet, media post and campaign export planning", placeholder: "X account or brand profile" }
@@ -61,7 +61,7 @@ export function ConnectedAccountsPanel() {
 
   async function connectAd(platformName: SocialPlatform) {
     const userId = await currentUserId();
-    if (!userId) return setMessage("You must sign in to prepare a future social media connection.");
+    if (!userId) return setMessage("You must sign in to prepare a social media connection.");
     setMessage(`${selectedSocial.label} planning record is being prepared...`);
 
     const response = await fetch("/api/ads/oauth/start", {
@@ -71,7 +71,7 @@ export function ConnectedAccountsPanel() {
     });
     const data = await response.json().catch(() => ({}));
     if (response.ok && data.url) window.location.href = data.url;
-    else setMessage(data.error ?? "OAuth connection is not live yet. Final API/env setup is required before direct account connection.");
+    else setMessage(data.error ?? "Connection could not be started. Check the account details or try again from the dashboard.");
   }
 
   async function connectStore() {
@@ -93,16 +93,16 @@ export function ConnectedAccountsPanel() {
       return;
     }
 
-    setMessage("Store target saved for export planning. Direct store push remains blocked until final API/env setup.");
+    setMessage("Store target saved for export planning and delivery handoff.");
     await loadStores();
   }
 
   return (
     <div className="grid connection-grid">
       <div className="card connection-card">
-        <span className="badge">Future social targets</span>
+        <span className="badge">Social targets</span>
         <h3>Prepare Facebook, Instagram, TikTok, YouTube, LinkedIn and X targets</h3>
-        <p>Choose the platform and account name for future export planning. Direct OAuth and publishing wait for final API/env setup.</p>
+        <p>Choose the platform and account name for export planning, approvals and campaign delivery notes.</p>
         <div className="field"><label>Platform</label><select value={selectedSocialPlatform} onChange={(event) => setSelectedSocialPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
         <div className="field"><label>Account / channel name</label><input value={socialAccountName} onChange={(event) => setSocialAccountName(event.target.value)} placeholder={selectedSocial.placeholder} /></div>
         <div className="field"><label>Planning goal</label><select value={socialGoal} onChange={(event) => setSocialGoal(event.target.value)}><option>Organic export planning</option><option>Paid ads planning</option><option>Organic + paid export planning</option><option>ROAS review planning only</option></select></div>
@@ -116,7 +116,7 @@ export function ConnectedAccountsPanel() {
       <div className="card connection-card">
         <span className="badge">E-commerce export target</span>
         <h3>Prepare Shopify / Amazon / Trendyol targets</h3>
-        <p>After production from a product link, visuals, videos, descriptions and ad assets can be exported manually now. Direct store push is post-launch/API dependent.</p>
+        <p>After production from a product link, visuals, videos, descriptions and ad assets can be prepared for store upload and campaign delivery.</p>
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value)}><option value="shopify">Shopify</option><option value="amazon">Amazon</option><option value="trendyol">Trendyol</option><option value="woocommerce">WooCommerce</option><option value="custom">Custom store</option></select></div>
         <div className="field"><label>Store name</label><input value={storeName} onChange={(event) => setStoreName(event.target.value)} /></div>
         <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} /></div>

@@ -35,7 +35,7 @@ const deliveryLocations = [
   "Final download buttons for ZIP/source/README",
   "Admin-managed production and delivery status",
   "Manual handoff links when a custom project needs external storage",
-  "Future API/webhook delivery for connected workflows"
+  "Connected workflow delivery and handoff links"
 ];
 
 type PublicPricingRow = {
@@ -69,7 +69,7 @@ const publicPricingRows: PublicPricingRow[] = [
     billing: "Monthly service plan",
     credits: "No included credits",
     setupFee: `$${plan.setupFeeUsd} setup fee`,
-    notes: `${plan.fairUseHours} fair-use live hours. Extra provider/API usage is pay-as-you-go after cost analysis.`
+    notes: `${plan.fairUseHours} fair-use live hours. Extra live-operation usage is pay-as-you-go after cost analysis.`
   })),
   ...growthIntelligencePlans.map((plan) => ({
     name: plan.name,

@@ -161,7 +161,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
       <section className="card">
         <span className="badge">Partner Rewards</span>
         <h1 style={{ marginTop: 8 }}>Referral and partner program</h1>
-          <p style={{ color: "var(--muted)" }}>This area is prepared for users and creators while Whop is the active payment path and payout APIs are still later. Once tracking is connected, approved partners can receive a unique referral link, campaign assets and commission reporting.</p>
+          <p style={{ color: "var(--muted)" }}>This area helps approved users and creators manage referral links, campaign assets, commission review and payout preparation from one partner dashboard.</p>
         <p className="workspace-action-note">Partner dashboard source: {source === "supabase" ? "Supabase partner profile, referral events and commission ledger" : "Sample fallback partner data"}</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href="/affiliate">Apply as partner</Link>
@@ -170,7 +170,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
       </section>
 
       <section className="admin-info-grid" style={{ marginTop: 20 }}>
-        <div><span>Your partner code</span><strong>{partnerCode}</strong><small>Referral link generated after tracking setup</small></div>
+        <div><span>Your partner code</span><strong>{partnerCode}</strong><small>Use this code in your approved referral links</small></div>
         <div><span>Referred members</span><strong>{ownReferrals.length}</strong><small>{paidReferrals.length} paid · {noPurchaseReferrals.length} no purchase yet</small></div>
         <div><span>Attributed sales</span><strong>${totalRevenue.toLocaleString()}</strong><small>Gross referred package value</small></div>
         <div><span>Estimated commission</span><strong>${totalCommission.toLocaleString()}</strong><small>Before final approval and Monday payout</small></div>
@@ -220,7 +220,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
             <div><span>Growth Intelligence link</span><strong style={{ wordBreak: "break-all" }}>{growthReferralUrl}</strong><small>Best high-ticket recurring service offer</small></div>
             <div><span>Partner slug</span><strong>{referralLink?.slug ?? partnerCode.toLowerCase()}</strong><small>{referralLink?.status.replaceAll("_", " ") ?? "ready after tracking"}</small></div>
           </div>
-          <p className="workspace-action-note warning" style={{ marginTop: 12 }}>Pre-API note: links and ref codes are prepared now. Paid attribution becomes fully automatic after Whop/referral provider tracking is connected.</p>
+          <p className="workspace-action-note warning" style={{ marginTop: 12 }}>Referral links and codes are prepared here. Paid attribution is reviewed against payment records before commissions are approved.</p>
         </div>
         <div className="card">
             <span className="badge">Creator asset pack</span>
@@ -236,7 +236,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Your referred members</span>
         <h2>See who signed up, who bought a package and what commission was earned</h2>
-        <p style={{ color: "var(--muted)" }}>This preview shows the future partner-side ledger. A referred member can appear here even if they registered but did not buy a package yet; commission is created only after a paid package is confirmed.</p>
+        <p style={{ color: "var(--muted)" }}>This partner ledger shows referral activity, paid package status and estimated commission before finance approval.</p>
         <div className="admin-category-grid">
           {ownReferrals.map((member) => (
             <div className="card admin-category-card" key={`${member.partnerCode}-${member.memberEmail}`}>

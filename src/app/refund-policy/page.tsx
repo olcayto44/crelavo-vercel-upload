@@ -17,16 +17,16 @@ export default function RefundPolicyPage() {
 
       <section className="card legal-content-card">
         <h2>1. Subscription cancellations</h2>
-        <p>Monthly and yearly subscriptions may start with a paid 24-hour preview. The setup fee is charged immediately, is non-refundable and covers preview access, one 10-second watermarked preview video and platform/API costs while downloads stay closed during preview. If you cancel within 24 hours, the main subscription does not start and the setup fee remains non-refundable. If you do not cancel within 24 hours, Whop automatically charges the selected monthly or yearly plan; later cancellation stops future renewals but does not automatically refund charges that have already been processed.</p>
+        <p>Monthly and yearly subscriptions may start with a paid 24-hour preview. The setup fee is charged immediately, is non-refundable and covers preview access, one 10-second watermarked preview video and platform operating costs while downloads stay closed during preview. If you cancel within 24 hours, the main subscription does not start and the setup fee remains non-refundable. If you do not cancel within 24 hours, Whop automatically charges the selected monthly or yearly plan; later cancellation stops future renewals but does not automatically refund charges that have already been processed.</p>
 
         <h2>2. One-time purchases</h2>
         <p>One-time top-up packages and one-time production packages do not renew automatically. They are intended for credit activation, provider work, managed production work or a specific digital delivery path.</p>
 
         <h2>3. Refund review window</h2>
-        <p>You may contact support within 14 days of purchase to request a refund review. A request is more likely to be eligible when no credits have been reserved or consumed, no provider/API cost has been incurred, no manual production work has started, no report has been delivered and no final output has been made available.</p>
+        <p>You may contact support within 14 days of purchase to request a refund review. A request is more likely to be eligible when no credits have been reserved or consumed, no production cost has been incurred, no manual production work has started, no report has been delivered and no final output has been made available.</p>
 
         <h2>4. When refunds are usually not available</h2>
-        <p>Refunds are usually not available after credits are reserved for a production request, provider/API work begins, manual research or production work starts, a Growth Intelligence report is delivered, a live-agent/service setup is initiated, a digital file/output is delivered or substantial platform resources have been consumed.</p>
+        <p>Refunds are usually not available after credits are reserved for a production request, production work begins, manual research or production work starts, a Growth Intelligence report is delivered, a live-agent/service setup is initiated, a digital file/output is delivered or substantial platform resources have been consumed.</p>
 
         <h2>5. Partial or discretionary refunds</h2>
         <p>When only part of a service has been used, Crelavo may review whether a partial refund, credit adjustment or account credit is appropriate. Any discretionary resolution depends on payment status, consumed resources, provider costs, delivered work and the specific package terms.</p>

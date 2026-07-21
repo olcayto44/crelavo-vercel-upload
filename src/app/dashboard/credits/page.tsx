@@ -32,9 +32,9 @@ export default function CreditsPage() {
           <p>Available credits mean balance minus reserved credits, so users can see what is still usable before checkout.</p>
         </div>
         <div>
-          <span className="badge">Provider honesty</span>
-          <h3>Pending providers are shown as pending</h3>
-          <p>If a provider/API is not ready, the job workspace shows that state instead of implying the render is already running.</p>
+          <span className="badge">Delivery honesty</span>
+          <h3>Status is shown clearly</h3>
+          <p>The job workspace separates planning, preview, production and delivery states so users know what is happening before credits are spent.</p>
         </div>
       </section>
 

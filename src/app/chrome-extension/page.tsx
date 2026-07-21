@@ -18,7 +18,7 @@ const extensionTargets = [
   }
 ];
 
-const mvpChecklist = [
+const launchChecklist = [
   "Detect supported product pages such as Shopify admin and Amazon product URLs.",
   "Show a lightweight Generate AI Video for this Product button.",
   "Open Crelavo with the product URL prefilled in the assistant workspace.",
@@ -55,8 +55,8 @@ export default async function ChromeExtensionPage() {
             <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Chrome%20extension%20product%20link%20video">Start extension campaign flow</Link>
             <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
             <Link className="btn secondary" href="/shopify-product-link-to-ad-video">Shopify workflow</Link>
-            <Link className="btn secondary" href="/shopify-ai-product-video-app">Shopify app roadmap</Link>
-            <Link className="btn secondary" href="/woocommerce-ai-product-video-plugin">WooCommerce plugin roadmap</Link>
+            <Link className="btn secondary" href="/shopify-ai-product-video-app">Shopify app preparation</Link>
+            <Link className="btn secondary" href="/woocommerce-ai-product-video-plugin">WooCommerce plugin preparation</Link>
           </div>
         </section>
 
@@ -74,12 +74,12 @@ export default async function ChromeExtensionPage() {
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">MVP scope</span>
+          <span className="badge">Launch scope</span>
           <h2>What should be built first</h2>
           <p>
             The first extension should stay focused on acquisition: it should not try to become the full production system. The goal is to create a high-intent click from a product page into the Crelavo workspace.
           </p>
-          <ul>{mvpChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+          <ul>{launchChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
@@ -89,12 +89,12 @@ export default async function ChromeExtensionPage() {
             Ecommerce sellers spend their time inside product pages, not inside random AI tool directories. A browser extension creates a direct acquisition funnel from the moment a seller is thinking about a product to the moment they ask Crelavo to create product videos, ad hooks and campaign assets.
           </p>
           <p>
-            The Chrome extension is the fastest product-page-to-video acquisition path now. Shopify App Store and WooCommerce plugin paths can become deeper installation channels later, after OAuth, store permissions, privacy and provider workflows are stable.
+            The Chrome extension is the fastest product-page-to-video acquisition path. Shopify App Store and WooCommerce plugin preparation pages document deeper installation channels, store permissions, privacy expectations and merchant handoff steps.
           </p>
           <div className="plan-feature-groups">
             <Link href="/blog/ecommerce-product-page-to-video-workflow"><b>Product page to video workflow</b><small>Guide for ecommerce product URLs</small></Link>
-            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Future Shopify App Store path</small></Link>
-            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>Future WordPress plugin path</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Shopify App Store preparation path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>WordPress plugin preparation path</small></Link>
           </div>
         </section>
       </main>

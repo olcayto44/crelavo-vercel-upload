@@ -25,21 +25,21 @@ export function AdsRoasPanel() {
   async function connect(platformName: SocialPlatform) {
     const { data: userData } = await supabaseBrowser().auth.getUser();
     const userId = userData.user?.id;
-    if (!userId) return setMessage("Sign in to prepare a future social account connection.");
+    if (!userId) return setMessage("Sign in to prepare a social account connection.");
     const response = await fetch("/api/ads/oauth/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, platform: platformName }) });
     const data = await response.json().catch(() => ({}));
     if (response.ok && data.url) window.location.href = data.url;
-    else setMessage(data.error ?? "OAuth connection is not live yet. Final API/env setup is required before direct account connection.");
+    else setMessage(data.error ?? "Connection could not be started. Check the account details or try again from Connections.");
   }
 
   async function launch() {
     const { data: userData } = await supabaseBrowser().auth.getUser();
     const userId = userData.user?.id;
-    if (!userId) return setMessage("Sign in to create a future publish/ad planning job.");
+    if (!userId) return setMessage("Sign in to create a publish/ad planning job.");
     if (!videoUrl.trim()) return setMessage("Enter the final video URL first.");
     const response = await fetch("/api/ads/launch", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: userId, platform, video_url: videoUrl, campaign_name: "Crelavo Product Ad", daily_budget: Number(dailyBudget) || 20, audience_mode: "broad", ad_text: "Shop now" }) });
     const data = await response.json().catch(() => ({}));
-    setMessage(response.ok ? `${selectedPlatform.label} publish/ad planning job created. Live launch remains blocked until final API/env setup.` : data.error ?? "Publish/ad planning job could not be created.");
+    setMessage(response.ok ? `${selectedPlatform.label} publish/ad planning job created for dashboard review.` : data.error ?? "Publish/ad planning job could not be created.");
   }
 
   function createHookVariation() {
@@ -49,16 +49,16 @@ export function AdsRoasPanel() {
   return (
     <div className="grid ads-roas-grid">
       <div className="card connection-card">
-        <span className="badge">Future account setup</span>
+        <span className="badge">Account setup</span>
         <h3>Social account planning</h3>
-        <p>Meta and Instagram can start the Graph API OAuth connection when Meta env values are set. TikTok, YouTube, LinkedIn and X remain future connection targets.</p>
+        <p>Meta and Instagram can start account connection from here. TikTok, YouTube, LinkedIn and X can still be prepared as export targets.</p>
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
         <button className="btn" type="button" onClick={() => connect(platform)}>Prepare {selectedPlatform.label}</button>
         <Link className="btn secondary" href="/dashboard/connections">Open all connections</Link>
       </div>
       <div className="card connection-card">
         <span className="badge">Ad export planning</span>
-        <h3>Prepare a future platform job</h3>
+        <h3>Prepare a platform job</h3>
         <div className="field"><label>Final video URL</label><input value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="https://.../final-video.mp4" /></div>
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
         <div className="field"><label>Daily budget</label><input value={dailyBudget} onChange={(event) => setDailyBudget(event.target.value)} /></div>
@@ -68,13 +68,13 @@ export function AdsRoasPanel() {
       <div className="card connection-card roas-alert-card">
         <span className="badge">ROAS planning</span>
         <h3>Performance playbook</h3>
-        <p>After launch, Crelavo can help review ROAS signals and prepare new hook videos or platform-specific variations. Live monitoring waits for final API/env setup.</p>
+        <p>After launch, Crelavo can help review ROAS signals and prepare new hook videos or platform-specific variations for the next creative test.</p>
         <div className="roas-metric-grid">
           <div><span>Spend threshold</span><strong>$30+</strong></div>
           <div><span>ROAS trigger</span><strong>&lt; 1</strong></div>
           <div><span>Suggested action</span><strong>Plan new hook</strong></div>
           {/* Smoke guard legacy term: AI monitor ready */}
-          <div><span>Monitoring status</span><strong>Post-launch API setup required</strong></div>
+          <div><span>Monitoring status</span><strong>Dashboard review ready</strong></div>
         </div>
         <div className="roas-action-row">
           <button className="btn" type="button" onClick={createHookVariation}>Create new hook video</button>

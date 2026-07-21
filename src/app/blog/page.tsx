@@ -159,9 +159,9 @@ export default async function BlogPage() {
             <video className="blog-topic-video" src={topic.videoUrl} controls playsInline preload="metadata" poster={topic.videoPoster || topic.image} aria-label={topic.imageAlt} />
           ) : topic.mediaKind === "video-slot" ? (
   <div className="blog-topic-video-slot" aria-label={`${topic.title} video slot`} style={{ display: "grid", gap: 12, minHeight: 320, padding: 24, border: "1px dashed var(--line, #3d4758)", borderRadius: 24, alignContent: "center", background: "rgba(255,255,255,0.03)" }}>
-    <span className="badge">Video slot</span>
-    <strong>Reserved for admin video</strong>
-    <p>Leave this space empty until a future demo video is added from the admin panel.</p>
+    <span className="badge">Visual guide</span>
+    <strong>Demo media placeholder</strong>
+    <p>This topic can use a poster, preview clip or admin-added demo media when available.</p>
     <small>Poster image: {topic.videoPoster || topic.image}</small>
   </div>
 
@@ -195,9 +195,9 @@ export default async function BlogPage() {
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">New feature SEO guides</span>
-          <h2>Phase 1 acquisition pages for future feature demand</h2>
+          <h2>High-intent pages for feature demand</h2>
           <p>
-            Crelavo now has public roadmap pages for AI ad scoring, virtual model production, cultural localization, campaign calendars, education content and community proof. These pages support organic discovery first, then can route qualified users into MVP delivery and later API automation.
+            Crelavo now has public pages for AI ad scoring, virtual model production, cultural localization, campaign calendars, education content and community proof. These pages support organic discovery and route qualified users into credit-based dashboard delivery.
           </p>
           <div className="admin-category-grid">
             {phaseOneFeaturePages.map((page) => (

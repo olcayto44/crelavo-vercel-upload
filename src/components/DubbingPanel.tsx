@@ -24,11 +24,11 @@ export function DubbingPanel() {
     <div className="card dubbing-planning-card">
       <span className="badge">🗣️ Video Translate & Lip-Sync</span>
       <h3>Translate an ad video into another language with lip-sync planning</h3>
-      <p>Clear face visibility and good lighting improve future HeyGen/ElevenLabs dubbing quality. Provider execution stays gated by final API/env setup.</p>
+      <p>Clear face visibility and good lighting improve dubbing quality. This panel collects the source video, language pair and delivery notes before review.</p>
       <div className="brand-kit-flow-grid">
         <span><small>1</small><strong>Source video</strong><em>Use a final or preview video URL with a clearly visible face.</em></span>
-        <span><small>2</small><strong>Language pair</strong><em>Choose source and target language for the future dubbing job.</em></span>
-        <span><small>3</small><strong>Provider gate</strong><em>Prepare the job now; real provider execution waits for API readiness.</em></span>
+        <span><small>2</small><strong>Language pair</strong><em>Choose source and target language for the dubbing request.</em></span>
+        <span><small>3</small><strong>Review package</strong><em>Prepare the job with clear scope, language and delivery notes.</em></span>
       </div>
       <div className="field"><label>Source video URL</label><input value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="https://.../final-video.mp4" /></div>
       <div className="brief-two-col">

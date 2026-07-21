@@ -5,9 +5,9 @@ export default function DubbingPage() {
   return (
     <DashboardShell className="dashboard-postlaunch-shell">
       <div className="production-hero-card compact-production-hero">
-        <span className="badge">Phase 2 dubbing planning</span>
+        <span className="badge">Dubbing workspace</span>
         <h2>Dubbing and lip-sync workflow planning</h2>
-        <p>This area documents future dubbing/lip-sync jobs. Real provider execution requires final voice/video API setup and should remain post-launch until core payment and production E2E are complete.</p>
+        <p>Prepare source video, language pair, voice direction and delivery notes so dubbing requests can move cleanly into dashboard production review.</p>
       </div>
       <DubbingPanel />
     </DashboardShell>

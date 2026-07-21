@@ -10,26 +10,26 @@ const checklist = [
   "Admin settings page that opens the Crelavo campaign workspace",
   "Privacy policy, data deletion and store uninstall handling",
   "App review copy, screenshots, support email and billing explanation",
-  "Manual MVP first; deeper API automation after provider/payment confidence"
+  "Manual product-link workflow first; app handoff and support assets stay simple"
 ];
 
 const keywords = ["Shopify video app", "Shopify AI video app", "Shopify product video app", "Shopify product link video", "AI Shopify ad video", "Shopify product ads", "ecommerce video app"];
 
 export const metadata: Metadata = {
-  title: "Shopify AI Product Video App Roadmap | Crelavo",
-  description: "Crelavo Shopify AI product video app roadmap for product-link-to-video workflows, ecommerce campaign assets, app store preparation, OAuth scopes and future integration steps.",
+  title: "Shopify AI Product Video App Preparation | Crelavo",
+  description: "Crelavo Shopify AI product video app preparation for product-link-to-video workflows, ecommerce campaign assets, app store positioning, OAuth scopes and store handoff steps.",
   keywords,
   alternates: { canonical: "/shopify-ai-product-video-app" },
   openGraph: {
-    title: "Shopify AI Product Video App Roadmap | Crelavo",
+    title: "Shopify AI Product Video App Preparation | Crelavo",
     description: "Plan the Crelavo Shopify app path for product link to AI product video and ecommerce campaign workflows.",
     url: "/shopify-ai-product-video-app",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "Shopify AI Product Video App Roadmap | Crelavo",
-    description: "Shopify video app roadmap for Crelavo product-link-to-video workflows."
+    title: "Shopify AI Product Video App Preparation | Crelavo",
+    description: "Shopify video app preparation for Crelavo product-link-to-video workflows."
   }
 };
 
@@ -41,10 +41,10 @@ export default async function ShopifyAiProductVideoAppPage() {
       <Header navLinks={siteContent.navLinks} />
       <main className="container section service-page-detail">
         <section className="production-hero-card admin-overview-hero service-hero-card">
-          <span className="badge">Shopify app roadmap</span>
-          <h1>Shopify AI product video app roadmap for product-link-to-video campaigns</h1>
+          <span className="badge">Shopify app preparation</span>
+          <h1>Shopify AI product video app preparation for product-link-to-video campaigns</h1>
           <p className="section-lead">
-            This page defines the future Shopify App Store path for Crelavo: merchants should be able to move from a Shopify product page into AI product videos, TikTok ad hooks, Reels creatives, captions, landing copy and ecommerce campaign assets.
+            This page defines the Shopify App Store preparation path for Crelavo: merchants can move from a Shopify product page into AI product videos, TikTok ad hooks, Reels creatives, captions, landing copy and ecommerce campaign assets.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/shopify-product-link-to-ad-video">Open Shopify product video workflow</Link>
@@ -67,20 +67,20 @@ export default async function ShopifyAiProductVideoAppPage() {
         </section>
 
         <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
-          <span className="badge">Roadmap</span>
-          <h2>Manual workflow now, Shopify App Store path later</h2>
+          <span className="badge">Preparation path</span>
+          <h2>Product-link workflow and Shopify App Store preparation</h2>
           <p>
-            The fastest current path is manual product link input plus the Chrome extension funnel. The Shopify App Store path can come later when OAuth, product read scopes, privacy review, billing messaging and support operations are ready.
+            The fastest current path is manual product link input plus the Chrome extension funnel. The Shopify App Store preparation path documents OAuth, product read scopes, privacy review, billing messaging and support operations for a clean merchant handoff.
           </p>
           <h2>What the Shopify app should do first</h2>
           <p>
-            The first version should not become a full automation system. It should pass a product page context into Crelavo so the seller can start a campaign request with the product URL already prepared.
+            The first version should stay focused on a clear merchant action. It should pass product page context into Crelavo so the seller can start a campaign request with the product URL already prepared.
           </p>
           <div className="delivery-step-grid">
             {checklist.map((item) => (
               <div className="delivery-step-card" key={item}>
                 <h3>{item}</h3>
-                <p>Required before the Shopify app path becomes a public installable integration.</p>
+                <p>Supports a review-ready Shopify app preparation package.</p>
               </div>
             ))}
           </div>
@@ -92,7 +92,7 @@ export default async function ShopifyAiProductVideoAppPage() {
           <div className="plan-feature-groups">
             <Link href="/shopify-product-link-to-ad-video"><b>Shopify product link to ad video</b><small>Main Shopify product video page</small></Link>
             <Link href="/blog/shopify-product-link-to-ai-video-guide"><b>Shopify product link guide</b><small>SEO guide for Shopify product video searches</small></Link>
-            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>Future WordPress/WooCommerce plugin path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>WordPress/WooCommerce plugin preparation path</small></Link>
             <Link href="/categories/campaign"><b>Campaign category</b><small>Product-link campaign hub</small></Link>
             <Link href="/ai-product-video-generator"><b>AI product video generator</b><small>Product video workflow</small></Link>
             <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery options</small></Link>

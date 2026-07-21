@@ -108,11 +108,11 @@ export default async function ToolsPage() {
           <span className="badge">Ecommerce integration paths</span>
           <h2>Shopify, WooCommerce, Amazon and Trendyol product video workflows</h2>
           <p>
-            These paths connect product-page-to-video keywords with Crelavo's ecommerce campaign workflows, Shopify app roadmap, WooCommerce plugin roadmap and marketplace product video pages.
+            These paths connect product-page-to-video keywords with Crelavo's ecommerce campaign workflows, Shopify app preparation, WooCommerce plugin positioning and marketplace product video pages.
           </p>
           <div className="plan-feature-groups">
-            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Future Shopify App Store path</small></Link>
-            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>Future WordPress plugin path</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify AI product video app</b><small>Shopify product-video app preparation path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce AI product video plugin</b><small>WordPress product-video plugin preparation path</small></Link>
             <Link href="/blog/ecommerce-product-page-to-video-workflow"><b>Product page to video workflow</b><small>SEO guide for product URL campaigns</small></Link>
             <Link href="/blog/shopify-amazon-trendyol-ai-campaign-checklist"><b>AI ecommerce campaign checklist</b><small>Multi-platform campaign preparation</small></Link>
             <Link href="/ai-ugc-creator-program"><b>AI UGC creator program</b><small>Creator sourcing for UGC product demo ads</small></Link>

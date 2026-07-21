@@ -54,10 +54,10 @@ const drawerContent: Record<DrawerKey, { title: string; badge: string; intro: st
   api: {
     title: "API and Integrations",
     badge: "Recommendation",
-    intro: "My recommendation is to present this as managed integrations first, then add public API docs later when the developer API is ready.",
+    intro: "My recommendation is to present this as managed integrations first, with developer documentation introduced only when the technical access path is ready.",
     items: [
       { question: "What should be listed here now?", answer: "Shopify, Amazon, Trendyol, WooCommerce, Meta Ads, TikTok, YouTube Shorts, Whop, AI video providers, voice providers and storage/delivery integrations." },
-      { question: "Should we promise a public API now?", answer: "Not yet. It is better to say managed integrations are available or planned, and publish API documentation only after authentication, rate limits and billing rules are ready." },
+      { question: "Should we promise open developer access now?", answer: "Not yet. It is better to say managed integrations are available and publish technical documentation only after authentication, rate limits and billing rules are ready." },
       { question: "What is the best positioning?", answer: "Crelavo connects production, commerce, ads, payments and AI providers through managed integrations from one dashboard." }
     ]
   }

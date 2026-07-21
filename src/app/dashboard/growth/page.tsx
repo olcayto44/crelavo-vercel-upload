@@ -47,10 +47,10 @@ export default function DashboardGrowthPage() {
           <ul>{watermarkPolicy.map((rule) => <li key={rule}>{rule}</li>)}</ul>
         </div>
         <div className="card">
-          <span className="badge">Referral MVP</span>
+          <span className="badge">Referral rewards</span>
           <h3>Referral and affiliate tracking</h3>
-          <p>Referral links can track signups and first production starts while Whop remains the active payment path. Paid commission automation waits for manual Whop E2E validation.</p>
-          <p className="workspace-action-note warning">Referral and commission automation will be enabled only after payment tracking, fraud checks and payout review rules are fully verified.</p>
+          <p>Referral links can track signups and first production starts while partner rewards stay under finance review.</p>
+          <p className="workspace-action-note warning">Commission review uses payment tracking, fraud checks and payout approval rules before any payout is released.</p>
           <Link className="btn secondary" href="/dashboard/partners">Open partner program</Link>
         </div>
       </section>

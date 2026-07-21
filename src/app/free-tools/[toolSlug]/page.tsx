@@ -116,7 +116,7 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           {tool.slug === "ad-performance-score-checker" ? (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
               <Link className="btn" href="#free-ad-score">Score my ad free</Link>
-              <Link className="btn secondary" href="/ai-ad-performance-score-checker">See ad scorer roadmap</Link>
+              <Link className="btn secondary" href="/ai-ad-performance-score-checker">See ad scorer workflow</Link>
               <Link className="btn secondary" href="/ai-product-video-generator">Create video after score</Link>
             </div>
           ) : null}

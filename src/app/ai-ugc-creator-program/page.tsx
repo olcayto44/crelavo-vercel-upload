@@ -35,7 +35,7 @@ const intakeFields = [
 
 export const metadata: Metadata = {
   title: "AI UGC Creator Program for Product Demo Actors | Crelavo",
-  description: "Join the Crelavo AI UGC creator program for product demo creators, UGC ad actors, ecommerce video creators, TikTok/Reels product demos and future AI video actor sourcing.",
+  description: "Join the Crelavo AI UGC creator program for product demo creators, UGC ad actors, ecommerce video creators, TikTok/Reels product demos and AI video actor sourcing.",
   keywords: creatorKeywords,
   alternates: { canonical: "/ai-ugc-creator-program" },
   openGraph: {
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AI UGC Creator Program | Crelavo",
-    description: "Apply for future Crelavo UGC creator, product demo actor and ecommerce video creator opportunities."
+    description: "Apply for Crelavo UGC creator, product demo actor and ecommerce video creator opportunities."
   }
 };
 
@@ -62,10 +62,10 @@ export default async function AiUgcCreatorProgramPage() {
           <span className="badge">AI UGC creator program</span>
           <h1>AI UGC creator program for product demo actors and ecommerce video creators</h1>
           <p className="section-lead">
-            Crelavo is preparing a creator sourcing path for future ecommerce UGC ads, product demo videos, TikTok/Reels creator reads, short-form product campaigns and AI-assisted video production workflows.
+            Crelavo is preparing a creator sourcing path for ecommerce UGC ads, product demo videos, TikTok/Reels creator reads, short-form product campaigns and AI-assisted video production workflows.
           </p>
           <p>
-            This page targets niche searches like AI UGC creator, product demo creator, AI actor casting, ecommerce UGC ads and TikTok UGC creator while keeping the first phase manual, permission-based and safe.
+            This page targets niche searches like AI UGC creator, product demo creator, AI actor casting, ecommerce UGC ads and TikTok UGC creator while keeping intake manual, permission-based and safe.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/contact?topic=ugc-creator-program">Apply or contact Crelavo</Link>
@@ -91,7 +91,7 @@ export default async function AiUgcCreatorProgramPage() {
           <span className="badge">Creator categories</span>
           <h2>Who the Crelavo creator pool is for</h2>
           <p>
-            The first phase is not an open marketplace or automatic casting system. It is a structured sourcing page for creators and actors who may later support product videos, UGC ads, ecommerce campaigns, live-commerce tests and localized product demos.
+            This is not an open marketplace or automatic casting system. It is a structured sourcing page for creators and actors who support product videos, UGC ads, ecommerce campaigns, live-commerce tests and localized product demos.
           </p>
           <div className="delivery-step-grid">
             {creatorTypes.map((item) => (
@@ -107,7 +107,7 @@ export default async function AiUgcCreatorProgramPage() {
           <span className="badge">Manual intake checklist</span>
           <h2>AI UGC actor crowdsourcing intake fields</h2>
           <p>
-            Every creator should be reviewed manually before any production use. Consent, usage rights, category fit, language, portfolio links and platform style matter more than scale in the first phase.
+            Every creator should be reviewed manually before any production use. Consent, usage rights, category fit, language, portfolio links and platform style matter more than scale in the intake process.
           </p>
           <ul>{intakeFields.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>

@@ -4,7 +4,7 @@ import { DashboardShell } from "@/components/DashboardShell";
 const settingsSections = [
   {
     title: "Brand defaults",
-    description: "Keep logo, colors and font notes ready for future videos, websites, ads and social export packs.",
+    description: "Keep logo, colors and font notes ready for videos, websites, ads and social export packs.",
     href: "/dashboard/brand-kit",
     action: "Open brand kit"
   },
@@ -34,7 +34,7 @@ export default function SettingsPage() {
       <section className="production-hero-card compact-production-hero">
         <span className="badge">Settings</span>
         <h2>Account and production settings</h2>
-        <p>Use this page as the control point for brand defaults, production setup, credits and support routing. Deeper automation settings will appear only after provider/API readiness is complete.</p>
+        <p>Use this page as the control point for brand defaults, production setup, credits and support routing.</p>
       </section>
 
       <section className="admin-category-grid share-earn-grid" style={{ marginTop: 20 }}>

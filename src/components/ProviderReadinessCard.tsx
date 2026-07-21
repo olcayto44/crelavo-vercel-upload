@@ -58,7 +58,7 @@ export function ProviderReadinessCard() {
       <div>
         <span className="badge">Provider status</span>
         <h3>Real production connections</h3>
-        <p>If a provider key is missing, Crelavo keeps the request in safe planning mode instead of failing. When final API setup is complete, real provider jobs can start from the same workflow.</p>
+        <p>If a production connection is missing, Crelavo keeps the request in safe planning mode instead of failing. The same workflow can continue when the final handoff is ready.</p>
       </div>
       {loading ? <p>Loading provider status…</p> : (
         <div className="provider-ready-grid">

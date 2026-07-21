@@ -29,7 +29,7 @@ export default function DashboardContactPage() {
         <span className="badge">Contact</span>
         <h1 style={{ marginBottom: 8 }}>Contact Crelavo</h1>
         <p style={{ color: "var(--muted)", marginTop: 0 }}>
-          Choose the fastest support path for your production, account, or AI + human QA request. Public contact details can be managed from the admin content area later.
+          Choose the fastest support path for your production, account, or AI + human QA request. Public contact details are managed from the admin content area.
         </p>
       </section>
 

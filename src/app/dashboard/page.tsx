@@ -16,7 +16,7 @@ const workflowStarters = [
   {
     badge: "App builder",
     title: "AI App Builder",
-    text: "Start a mobile app, web app, admin panel or SaaS MVP plan with modules, screens, source package and delivery tracking.",
+    text: "Start a mobile app, web app, admin panel or SaaS launch plan with modules, screens, source package and delivery tracking.",
     href: "/ai-app-builder",
     cta: "Open app builder"
   },
@@ -93,7 +93,7 @@ const workflowStarters = [
   {
     badge: "Voice / dubbing",
     title: "AI Dubbing & Voice",
-    text: "Prepare voiceover, dubbing, localization notes and audio-ready delivery workflows for future provider/API connection.",
+    text: "Prepare voiceover, dubbing, localization notes and audio-ready delivery workflows for managed production handoff.",
     href: "/dashboard/dubbing",
     cta: "Open dubbing"
   },
@@ -121,7 +121,7 @@ const workflowStarters = [
   {
     badge: "Connections",
     title: "AI Channel Connections",
-    text: "Prepare future Meta, TikTok, Shopify, Amazon, Trendyol and store connection targets before final API setup.",
+    text: "Prepare Meta, TikTok, Shopify, Amazon, Trendyol and store connection targets for export and campaign handoff.",
     href: "/dashboard/connections",
     cta: "Open connections"
   },
@@ -135,7 +135,7 @@ const workflowStarters = [
   {
     badge: "Partners",
     title: "Partner Program",
-    text: "Prepare referral links, creator assets, future commission tracking and partner rewards before payout API setup.",
+    text: "Prepare referral links, creator assets, commission review and partner rewards from one dashboard area.",
     href: "/dashboard/partners",
     cta: "Open partners"
   },

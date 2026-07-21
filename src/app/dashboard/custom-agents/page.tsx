@@ -8,7 +8,7 @@ export default function DashboardCustomAgentsPage() {
       <section className="production-hero-card compact-production-hero">
         <span className="badge">Custom agents</span>
         <h2>Reusable agent plans without unsafe autonomous actions</h2>
-        <p>Custom agents are prepared as brief/planning workflows first. Autonomous publishing, scraping or provider-heavy work stays blocked until API readiness and review rules are active.</p>
+        <p>Custom agents are prepared as reusable brief, approval and workflow plans so brand, ecommerce, live sales and growth requests stay safe and reviewable.</p>
         <div className="url-action-center"><Link className="btn" href="/admin/agents">Open admin agents</Link><Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Custom%20AI%20agent">Plan custom agent</Link></div>
       </section>
       <section className="admin-category-grid custom-agent-grid" style={{ marginTop: 20 }}>
@@ -20,7 +20,7 @@ export default function DashboardCustomAgentsPage() {
               <span><small>Purpose</small><strong>{item.purpose}</strong></span>
               <span><small>Inputs</small><strong>{item.inputs}</strong></span>
               <span><small>Status</small><strong>{item.status}</strong></span>
-              <span><small>Safety rule</small><strong>Autonomous publishing, scraping and provider-heavy execution stay blocked until API readiness and review rules are active.</strong></span>
+              <span><small>Safety rule</small><strong>Every agent keeps human review, approval steps and clear delivery boundaries before execution.</strong></span>
             </div>
           </div>
         ))}

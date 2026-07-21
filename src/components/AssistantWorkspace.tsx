@@ -510,9 +510,9 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
   },
   live_sales_agent: {
     title: "AI live sales agent options",
-    note: "Autonomous live-stream brand agent service plans for product links, live chat replies, avatar persona, multilingual sales and live-commerce operations. Plans include fair-use live hours but no credit balance; extra provider/API live hours are pay-as-you-go.",
-    modules: ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "OBS/stream setup", "Provider/API readiness", "Product FAQ/objection handling", "Multilingual sales script", "Pay-as-you-go API cost analysis", "Extra live-hour add-on plan"],
-    features: ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Voice/avatar direction", "Human fallback policy", "Compliance review", "Fair-use hours policy", "Pay-as-you-go API cost estimate", "Revision right"],
+    note: "Autonomous live-stream brand agent service plans for product links, live chat replies, avatar persona, multilingual sales and live-commerce operations. Plans include fair-use live hours but no credit balance; extra live-operation hours are pay-as-you-go.",
+    modules: ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "OBS/stream setup", "Production handoff readiness", "Product FAQ/objection handling", "Multilingual sales script", "Pay-as-you-go operation cost analysis", "Extra live-hour add-on plan"],
+    features: ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Voice/avatar direction", "Human fallback policy", "Compliance review", "Fair-use hours policy", "Pay-as-you-go operation cost estimate", "Revision right"],
     platforms: ["TikTok Live", "YouTube Live", "Twitch", "Instagram Live", "Multi-platform"],
     quality: ["Starter $249/mo - 10h fair use", "Pro $799/mo - 40h fair use", "Agency $2499/mo - 120h fair use"],
     style: ["Friendly sales host", "Luxury brand advisor", "Gen Z TikTok seller", "Expert consultant", "Influencer-style host", "Multilingual support agent"],
@@ -1154,7 +1154,7 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [liveSalesInteractionMode, setLiveSalesInteractionMode] = useState("Live chat FAQ + sales replies");
   const [liveSalesStreamGoal, setLiveSalesStreamGoal] = useState("Product sales");
   const [liveSalesHumanFallback, setLiveSalesHumanFallback] = useState("Escalate refunds, complaints and sensitive claims to a human");
-  const [liveSalesProviderReadiness, setLiveSalesProviderReadiness] = useState("Provider/API readiness later");
+  const [liveSalesProviderReadiness, setLiveSalesProviderReadiness] = useState("Production handoff to prepare");
   const [liveSalesCtaOffer, setLiveSalesCtaOffer] = useState("");
   const [liveSalesComplianceNotes, setLiveSalesComplianceNotes] = useState("AI disclosure + human fallback policy");
   const [dramaFormat, setDramaFormat] = useState("Short drama");
@@ -1851,7 +1851,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
         `Live sales provider readiness: ${liveSalesProviderReadiness}`,
         `Live sales CTA/discount: ${liveSalesCtaOffer.trim() || "Not specified"}`,
         `Live sales compliance notes: ${liveSalesComplianceNotes.trim() || "AI disclosure + human fallback policy"}`,
-        "Live sales credit policy: No included credits; subscription includes fair-use live hours and extra provider/API hours are pay-as-you-go after cost analysis."
+        "Live sales credit policy: No included credits; subscription includes fair-use live hours and extra live-operation hours are pay-as-you-go after cost analysis."
       ] : []),
       ...(selectedProductionType === "drama" ? [
         `Drama format: ${dramaFormat}`,
@@ -2732,7 +2732,7 @@ async function startRawMicrophoneFallback() {
               {selectedProductionType === "drone_video" ? <div className="category-specific-option-panel">
                 <span className="badge">Drone location details</span>
                 <h3>Map, route and marked area</h3>
-                <p>Add plain text location details now. A live map picker can be connected later without changing the production flow.</p>
+                <p>Add plain text location details now. A live map picker can be connected without changing the production flow.</p>
                 <label className="workspace-upload-control">
                   <span>Location / address / coordinates</span>
                   <input value={droneLocation} onChange={(event) => setDroneLocation(event.target.value)} placeholder="Example: İstanbul Bosphorus, 41.0438, 29.0094" />
@@ -2774,7 +2774,7 @@ async function startRawMicrophoneFallback() {
                 {renderOptionGrid("Avatar / host persona", ["Friendly sales host", "Luxury brand advisor", "Gen Z TikTok seller", "Expert consultant", "Influencer-style host", "Multilingual support agent"], (value) => liveSalesPersona === value, setLiveSalesPersona)}
                 {renderOptionGrid("Avatar source", ["Create new AI avatar", "Use uploaded self avatar", "Use uploaded product spokesperson", "Use avatar reference image", "Choose existing brand avatar", "No avatar, voice/chat only"], (value) => liveSalesAvatarSource === value, setLiveSalesAvatarSource)}
                 {renderOptionGrid("Avatar visual style", ["Realistic brand host", "Luxury studio presenter", "TikTok creator style", "Professional consultant", "Animated mascot avatar", "Custom in prompt"], (value) => liveSalesAvatarStyle === value, setLiveSalesAvatarStyle)}
-                {renderOptionGrid("Voice source", ["Choose AI voice", "Use uploaded own voice", "Create cloned voice later", "Female AI voice", "Male AI voice", "No voice, chat agent only"], (value) => liveSalesVoiceSource === value, setLiveSalesVoiceSource)}
+                {renderOptionGrid("Voice source", ["Choose AI voice", "Use uploaded own voice", "Create cloned voice with consent", "Female AI voice", "Male AI voice", "No voice, chat agent only"], (value) => liveSalesVoiceSource === value, setLiveSalesVoiceSource)}
                 {renderOptionGrid("Voice / language", ["English multilingual support", "Turkish + English", "30-language support plan", "Female brand voice", "Male brand voice", "Custom in prompt"], (value) => liveSalesVoiceLanguage === value, setLiveSalesVoiceLanguage)}
                 {renderOptionGrid("Voice tone", ["Friendly persuasive sales voice", "Luxury calm advisor", "Energetic TikTok seller", "Expert consultant", "Soft customer support", "Custom in prompt"], (value) => liveSalesVoiceTone === value, setLiveSalesVoiceTone)}
                 {renderOptionGrid("Background / set", ["Modern virtual studio", "Product showroom", "Luxury retail background", "Clean e-commerce backdrop", "Uploaded background visual", "Custom in prompt"], (value) => liveSalesBackground === value, setLiveSalesBackground)}
@@ -2782,7 +2782,7 @@ async function startRawMicrophoneFallback() {
                 {renderOptionGrid("Subtitle / caption option", ["Optional live captions", "Always show subtitles", "No subtitles", "Bilingual subtitles", "Product CTA captions", "Custom in prompt"], (value) => liveSalesSubtitleOption === value, setLiveSalesSubtitleOption)}
                 {renderOptionGrid("Interaction mode", ["Live chat FAQ + sales replies", "Product demo script + chat replies", "Objection handling + discount CTA", "Human fallback escalation", "Comment moderation + lead capture", "Custom in prompt"], (value) => liveSalesInteractionMode === value, setLiveSalesInteractionMode)}
                 {renderOptionGrid("Live stream goal", ["Product sales", "Lead capture", "Product education", "Campaign launch", "Community Q&A", "Custom in prompt"], (value) => liveSalesStreamGoal === value, setLiveSalesStreamGoal)}
-                {renderOptionGrid("Provider readiness", ["Provider/API readiness later", "Avatar provider selected", "Voice provider selected", "OBS/RTMP setup needed", "Catalog/chat API needed", "Fully custom stack"], (value) => liveSalesProviderReadiness === value, setLiveSalesProviderReadiness)}
+                {renderOptionGrid("Production handoff", ["Production handoff to prepare", "Avatar setup selected", "Voice setup selected", "OBS/RTMP setup needed", "Catalog/chat connection needed", "Fully custom stack"], (value) => liveSalesProviderReadiness === value, setLiveSalesProviderReadiness)}
                 <label className="workspace-upload-control">
                   <span>Human fallback / escalation rules</span>
                   <textarea value={liveSalesHumanFallback} onChange={(event) => setLiveSalesHumanFallback(event.target.value)} placeholder="Example: Escalate refunds, angry customers, medical/legal questions and payment issues to a human operator." />

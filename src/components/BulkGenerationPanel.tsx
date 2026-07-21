@@ -29,11 +29,11 @@ export function BulkGenerationPanel() {
     <div className="card bulk-planning-card">
       <span className="badge">📦 Bulk Generation Engine</span>
       <h3>Bulk video production from a CSV / Excel product list</h3>
-      <p>Each product link is prepared as a separate job. Broken links are caught during validation before provider/API cost is created.</p>
+      <p>Each product link is prepared as a separate job. Broken links are caught during validation before production cost is created.</p>
       <div className="brand-kit-flow-grid">
         <span><small>1</small><strong>Validate CSV</strong><em>Check columns, rows and broken product links first.</em></span>
-        <span><small>2</small><strong>Prepare queue</strong><em>Create a controlled batch without pretending provider execution is live.</em></span>
-        <span><small>3</small><strong>Review output</strong><em>Use production workspace and delivery notes when provider jobs are connected.</em></span>
+        <span><small>2</small><strong>Prepare queue</strong><em>Create a controlled batch with review-ready production notes.</em></span>
+        <span><small>3</small><strong>Review output</strong><em>Use production workspace and delivery notes for the final handoff.</em></span>
       </div>
       <div className="field"><label>CSV content</label><textarea value={csv} onChange={(event) => setCsv(event.target.value)} /></div>
       <div className="postlaunch-action-row">

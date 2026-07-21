@@ -211,7 +211,7 @@ const [notice, setNotice] = useState("");
   const previewUrlLower = previewUrl.toLowerCase();
   const previewKind = previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : previewUrl ? "web" : "pending";
   const nextLiveStep = isWaitingProviderConfig
-    ? "Production scope and delivery package are ready, but real provider/API configuration is still missing. Demo delivery can be downloaded until providers are connected."
+    ? "Production scope and delivery package are ready. Demo delivery can be downloaded while the final production handoff is prepared."
     : isQueuedForRenderSlot
     ? "This production is safely queued for the next render slot. The page can be left open or closed; completion email is sent when ready."
     : hasDelivery

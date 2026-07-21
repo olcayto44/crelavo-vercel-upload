@@ -19,7 +19,7 @@ export default function DashboardPremiumExpansionPage() {
             <div className="social-export-detail-list">
               <span><small>Output</small><strong>{item.output}</strong></span>
               <span><small>Safety rule</small><strong>{item.safety}</strong></span>
-              <span><small>Automation status</small><strong>Planning and brief creation now; deeper automation waits for final API/env setup.</strong></span>
+              <span><small>Delivery status</small><strong>Planning, brief creation and review-ready handoff are available from the dashboard.</strong></span>
             </div>
           </div>
         ))}

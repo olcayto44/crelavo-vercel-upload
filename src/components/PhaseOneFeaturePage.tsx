@@ -12,11 +12,11 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
       <Header navLinks={siteContent.navLinks} />
       <main className="container section service-page-detail">
         <section className="production-hero-card admin-overview-hero service-hero-card">
-          <span className="badge">{page.badge} · Phase 1 SEO</span>
+          <span className="badge">{page.badge} · Crelavo category</span>
           <h1>{page.h1}</h1>
           <p className="section-lead">{page.summary}</p>
           <p>
-            This is the SEO, category and roadmap layer. The MVP layer can deliver real reports, scripts, visuals, briefs or files through admin/assistant-assisted production before full API automation is added later.
+            This category turns a focused ecommerce or growth need into a practical Crelavo request: reports, scripts, visuals, briefs or files can be prepared through dashboard delivery and AI + human QA review.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             {page.slug === "ai-ad-performance-score-checker" ? (
@@ -24,7 +24,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
                 <Link className="btn" href="/free-tools/ad-performance-score-checker">Run the free ad score now</Link>
                 <Link className="btn secondary" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Score%20my%20ad%20and%20turn%20it%20into%20a%20stronger%20campaign">Turn score into campaign</Link>
               </>
-            ) : <Link className="btn" href="/dashboard/assistant-workspace">Start a request</Link>}
+            ) : <Link className="btn" href="/dashboard/create">Start a request</Link>}
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/tools">Open tools</Link>
           </div>
@@ -181,7 +181,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             {[page.primaryKeyword, ...page.keywords].map((keyword) => (
               <div className="card admin-category-card" key={keyword}>
                 <h3>{keyword}</h3>
-                <p>Connected to Crelavo category, MVP delivery, credit pricing and future API automation paths.</p>
+                <p>Connected to Crelavo category pages, credit pricing, dashboard requests and managed delivery paths.</p>
               </div>
             ))}
           </div>
@@ -201,17 +201,17 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
-          <span className="badge">Phase 2 MVP delivery</span>
-          <h2>What users can receive in the MVP version</h2>
+          <span className="badge">Managed delivery</span>
+          <h2>What users can receive from this path</h2>
           <p>
-            MVP does not mean a fake product. It means a smaller but real delivery path: the user submits a request, Crelavo prepares the output with admin/assistant support, and the user receives usable digital deliverables.
+            Each request is scoped into a usable delivery package: the user submits the need, Crelavo prepares the output with AI + human QA support, and the user receives practical digital deliverables in the dashboard.
           </p>
           <ul>{page.mvpDeliverables.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
           <span className="badge">Credits and pricing</span>
-          <h2>Suggested credit model</h2>
+          <h2>Credit package guidance</h2>
           <ul>{page.creditModel.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 

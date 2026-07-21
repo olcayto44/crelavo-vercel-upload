@@ -105,8 +105,8 @@ export default async function CampaignCategoryPage() {
             <Link href="/blog/shopify-product-link-to-ai-video-guide"><b>Shopify product video guide</b><small>Shopify product link to AI video SEO path</small></Link>
             <Link href="/blog/amazon-product-page-to-ai-ad-video-guide"><b>Amazon product ad guide</b><small>Amazon product page to AI ad video path</small></Link>
             <Link href="/blog/trendyol-product-video-campaign-guide"><b>Trendyol product video guide</b><small>Turkish ecommerce product video path</small></Link>
-            <Link href="/shopify-ai-product-video-app"><b>Shopify app roadmap</b><small>Future App Store integration path</small></Link>
-            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce plugin roadmap</b><small>Future WordPress plugin integration path</small></Link>
+            <Link href="/shopify-ai-product-video-app"><b>Shopify app preparation</b><small>App Store product-video positioning path</small></Link>
+            <Link href="/woocommerce-ai-product-video-plugin"><b>WooCommerce plugin preparation</b><small>WordPress product-video positioning path</small></Link>
           </div>
         </section>
       </main>
