@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { StaticFaqStructuredData } from "@/components/StaticFaqStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 const extensionTargets = [
@@ -50,6 +51,7 @@ export default async function ChromeExtensionPage() {
 
   return (
     <>
+      <StaticFaqStructuredData pagePath="/chrome-extension" pageTitle="Chrome Extension Product Link to AI Video" items={extensionFaqs} />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section">
         <section className="production-hero-card clean-feed-section">

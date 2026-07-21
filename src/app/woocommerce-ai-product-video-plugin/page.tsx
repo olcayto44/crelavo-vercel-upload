@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { StaticFaqStructuredData } from "@/components/StaticFaqStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 const checklist = [
@@ -45,6 +46,7 @@ export default async function WooCommerceAiProductVideoPluginPage() {
 
   return (
     <>
+      <StaticFaqStructuredData pagePath="/woocommerce-ai-product-video-plugin" pageTitle="WooCommerce AI Product Video Plugin Preparation" items={wooCommerceFaqs} />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section service-page-detail">
         <section className="production-hero-card admin-overview-hero service-hero-card">

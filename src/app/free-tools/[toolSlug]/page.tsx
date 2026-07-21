@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FreeToolGenerator } from "@/components/FreeToolGenerator";
 import { FreeToolStructuredData } from "@/components/FreeToolStructuredData";
 import { Header } from "@/components/Header";
+import { StaticFaqStructuredData } from "@/components/StaticFaqStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { freeToolMap, freeTools } from "@/lib/free-tools";
 
@@ -103,9 +104,16 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
   if (!tool) notFound();
   const siteContent = await getConfiguredSiteContentConfig();
   const longTailKeywords = buildFreeToolKeywords(tool);
+  const freeToolFaqItems = [
+    { question: "Do I need an account to use the free result?", answer: "You can generate a quick starting result on the public page. Creating an account lets you carry the selected result into Crelavo Assistant Workspace and continue toward production." },
+    { question: "Can this replace a final production brief?", answer: "No. The free result is a starting point. The assistant can turn it into a fuller production request with deliverables, preview, credits, files and revision notes." },
+    { question: "Can I use Shopify, Amazon or Trendyol links?", answer: "Yes. You can paste a product link or product notes. The free tool creates script and campaign angles from the text you provide; deeper production happens after you continue into Crelavo." },
+    { question: "What is the next step after I like a result?", answer: "Use the production CTA to send the selected result into Assistant Workspace, then choose preview, credits or a full delivery package when you are ready." }
+  ];
   return (
     <>
       <FreeToolStructuredData tool={tool} />
+      <StaticFaqStructuredData pagePath={`/free-tools/${tool.slug}`} pageTitle={tool.title} items={freeToolFaqItems} />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section tools-page free-tool-detail-page">
         <section className="production-hero-card admin-overview-hero">
@@ -228,10 +236,7 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <span className="badge">FAQ</span>
           <h2>{tool.title} questions</h2>
           <div className="plan-feature-groups">
-            <div><b>Do I need an account to use the free result?</b><small>You can generate a quick starting result on the public page. Creating an account lets you carry the selected result into Crelavo Assistant Workspace and continue toward production.</small></div>
-            <div><b>Can this replace a final production brief?</b><small>No. The free result is a starting point. The assistant can turn it into a fuller production request with deliverables, preview, credits, files and revision notes.</small></div>
-            <div><b>Can I use Shopify, Amazon or Trendyol links?</b><small>Yes. You can paste a product link or product notes. The free tool creates script and campaign angles from the text you provide; deeper provider-based production happens after you continue into Crelavo.</small></div>
-            <div><b>What is the next step after I like a result?</b><small>Use the production CTA to send the selected result into Assistant Workspace, then choose preview, credits or a full delivery package when you are ready.</small></div>
+            {freeToolFaqItems.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
           </div>
         </section>
       </main>

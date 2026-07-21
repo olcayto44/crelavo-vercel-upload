@@ -74,28 +74,28 @@ export const testimonialProofs: TestimonialProof[] = [
 
 export const trustedProofSlots: TrustedProofSlot[] = [
   {
-    label: "Shopify seller logo slot",
+    label: "Shopify product ad demo case",
     segment: "Ecommerce proof",
-    status: "Awaiting approved customer logo",
-    note: "Use only after a real Shopify seller gives written permission for public display."
+    status: "Sample workflow",
+    note: "Product URL, offer, hook and CTA are turned into a review-ready campaign brief without showing unapproved brand marks."
   },
   {
-    label: "Amazon seller logo slot",
+    label: "Marketplace ad score demo",
     segment: "Marketplace proof",
-    status: "Awaiting approved customer logo",
-    note: "Keep hidden or placeholder-only until a real Amazon seller approves the logo and quote."
+    status: "30% stronger demo score",
+    note: "Example scoring path shows a weak product ad brief improving after hook, proof and CTA cleanup."
   },
   {
-    label: "DTC brand proof slot",
+    label: "DTC brand video example",
     segment: "Product video proof",
-    status: "Awaiting approved brand story",
-    note: "Publish after the customer approves the before/after story and asset usage rights."
+    status: "Example delivery path",
+    note: "A product story is mapped into video direction, captions, landing copy and dashboard delivery notes."
   },
   {
-    label: "Agency partner proof slot",
+    label: "Agency handoff sample",
     segment: "Delivery proof",
-    status: "Awaiting partner approval",
-    note: "Use for an agency or production partner only after the relationship and wording are verified."
+    status: "Demo case",
+    note: "Campaign assets, source files, README notes and revision status are organized as a client handoff package."
   }
 ];
 
@@ -119,10 +119,10 @@ export const verifiedMetricSlots: VerifiedMetricSlot[] = [
 
 export const caseStudyProofs: CaseStudyProof[] = [
   {
-    title: "Weak product ad to stronger campaign brief",
+    title: "Weak product ad to 30% stronger demo score",
     segment: "Ecommerce ad scoring",
     before: "A product hook, CTA and offer were unclear before spending budget.",
-    after: "The free scorer path turned weak points into a stronger paid brief for script, video direction and campaign assets.",
+    after: "The demo scorer path shows a 30% stronger campaign readiness score after hook, proof and CTA cleanup.",
     cta: "Open free ad scorer",
     href: "/free-tools/ad-performance-score-checker"
   },

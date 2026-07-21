@@ -98,7 +98,7 @@ export default async function ToolsPage() {
                 <span className="badge">{page.primaryKeyword}</span>
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>
-                <span className="text-link">View page</span>
+                <span className="text-link">Open {page.primaryKeyword} workflow</span>
               </Link>
             ))}
           </div>

@@ -160,9 +160,9 @@ export default async function BlogPage() {
           ) : topic.mediaKind === "video-slot" ? (
   <div className="blog-topic-video-slot" aria-label={`${topic.title} video slot`} style={{ display: "grid", gap: 12, minHeight: 320, padding: 24, border: "1px dashed var(--line, #3d4758)", borderRadius: 24, alignContent: "center", background: "rgba(255,255,255,0.03)" }}>
     <span className="badge">Visual guide</span>
-    <strong>Demo media placeholder</strong>
-    <p>This topic can use a poster, preview clip or admin-added demo media when available.</p>
-    <small>Poster image: {topic.videoPoster || topic.image}</small>
+    <strong>Visual workflow preview</strong>
+    <p>This guide connects to a poster, preview clip or workflow image that explains the next production step.</p>
+    <small>Linked visual: {topic.title}</small>
   </div>
 
           ) : (

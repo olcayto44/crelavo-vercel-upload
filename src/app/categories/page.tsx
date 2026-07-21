@@ -113,7 +113,7 @@ export default async function CategoriesPage() {
               <div className="delivery-step-card" key={page.slug}>
                 <h3>{page.title}</h3>
                 <p>{page.summary}</p>
-                <Link className="btn secondary" href={`/categories/${page.slug}`}>Open page</Link>
+                <Link className="btn secondary" href={`/categories/${page.slug}`}>Open {page.keyword} category page</Link>
               </div>
             ))}
           </div>
@@ -154,7 +154,7 @@ export default async function CategoriesPage() {
                   ))}
                 </div>
                 <Link className="btn" href="/dashboard/credits">Create package</Link>
-                <Link className="btn secondary" href={`/${page.slug}`}>View page</Link>
+                <Link className="btn secondary" href={`/${page.slug}`}>View {page.primaryKeyword} guide</Link>
               </div>
             ))}
           </div>
