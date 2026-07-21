@@ -1751,6 +1751,10 @@ body.admin-route > .site-footer {
   position: sticky;
   top: 18px;
   align-self: start;
+  max-height: calc(100vh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
 }
 
 .dashboard-primary-action, .dashboard-home-link, .dashboard-nav-link, .dashboard-nav-group-head {
@@ -4355,6 +4359,9 @@ html body .pricing-page .page-demo-video-section .showcase-video-overlay {
 
   .dashboard-sidebar-card {
     position: static;
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
   }
 }
 
@@ -5427,8 +5434,11 @@ html body .dashboard-shell-layout.container.section {
 html body .dashboard-shell-layout .dashboard-sidebar-card {
   margin-top: 0 !important;
   transform: none !important;
-  top: 72px !important;
+  top: 18px !important;
   align-self: start !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
 }
 html body .dashboard-shell-layout.dashboard-sidebar-lift .dashboard-sidebar-card {
   transform: translateY(-26px) !important;
@@ -5450,6 +5460,12 @@ html body .dashboard-postlaunch-shell.container.section {
   margin-left: auto !important;
   margin-right: auto !important;
   overflow-x: clip !important;
+}
+html body .dashboard-postlaunch-shell .dashboard-sidebar-card {
+  top: 18px !important;
+  transform: none !important;
+  max-height: calc(100vh - 36px) !important;
+  overflow-y: auto !important;
 }
 html body .dashboard-postlaunch-shell .dashboard-workspace,
 html body .dashboard-postlaunch-shell .production-hero-card,
