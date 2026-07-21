@@ -694,7 +694,7 @@ function isLikelyTurkish(text: string, activeLanguage = "") {
   if (activeLanguage === "tr") return true;
   const clean = text.toLocaleLowerCase("tr-TR");
   const normalized = normalizeTurkishQuery(text);
-  return /[çğıöşü]/i.test(text) || /\b(ben|bana|beni|benim|sen|sana|seni|senin|biz|bize|bizi|bir|ve|ile|için|icin|şey|sey|istiyorum|isterim|istediğim|istedigim|soracağım|soracagim|sorayım|sorayim|soru|cevap|yorum|fikir|öneri|oneri|tavsiye|anlat|açıkla|acikla|nedir|neden|niye|nasıl|nasil|hangi|hangisi|kim|kimsin|nerenin|nerede|nerde|neresi|ne zaman|kaç|kac|olur mu|olurmu|mi|mı|mu|mü|oluştur|olustur|yap|video|reklam|ürün|urun|site|uygulama|kredi|fiyat|paket|ödeme|odeme|konuş|konus|sesli|ses|devam|tamam|evet|hayır|hayir|peki|selam|merhaba|naber|nasılsın|nasilsin|iyimisin|türkçe|turkce|yazmıyorsun|yazmiyorsun|insanlar|türkiye|turkiye|dünya|dunya|askerlik|evren|gezegenler|yıldızlar|yildizlar|uzay|seslendirme|altyazı|altyazi|dakika|saniye)\b/.test(clean) || /(iyi misin|ne haber|ne demek|ne yapabilirim|ne yapabiliriz|yardim eder misin|yardım eder misin|yardimci olur musun|yardımcı olur musun|sen nerenin asistanisin|sen nerenin asistanısın)/.test(normalized);
+  return /[çğıöşü]/i.test(text) || /\b(ben|bana|beni|benim|sen|sana|seni|senin|biz|bize|bizi|bir|ve|ile|için|icin|şey|sey|istiyorum|isterim|istediğim|istedigim|soracağım|soracagim|sorayım|sorayim|soru|cevap|yorum|fikir|öneri|oneri|onerirsin|onerirsiniz|tavsiye|anlat|açıkla|acikla|nedir|neden|niye|nasıl|nasil|hangi|hangisi|kim|kimsin|nerenin|nerede|nerde|neresi|ne zaman|kaç|kac|olur mu|olurmu|mi|mı|mu|mü|oluştur|olustur|yap|video|reklam|ürün|urun|site|uygulama|kredi|fiyat|paket|ödeme|odeme|konuş|konus|sesli|ses|devam|tamam|evet|hayır|hayir|peki|selam|merhaba|naber|nasılsın|nasilsin|iyimisin|türkçe|turkce|yazmıyorsun|yazmiyorsun|insanlar|türkiye|turkiye|dünya|dunya|bursa|bursanin|meshur|meshurdur|takipci|izlenim|izlenme|askerlik|evren|gezegenler|yıldızlar|yildizlar|uzay|seslendirme|altyazı|altyazi|dakika|saniye)\b/.test(clean) || /(iyi misin|ne haber|ne demek|ne yapabilirim|ne yapabiliriz|ne onerirsin|ne önerirsin|sen ne onerirsin|sen ne önerirsin|yardim eder misin|yardım eder misin|yardimci olur musun|yardımcı olur musun|sen nerenin asistanisin|sen nerenin asistanısın)/.test(normalized);
 }
 
 type WorkspaceIntent = "greeting" | "help" | "consultation" | "production_request" | "start_confirmation";
@@ -932,7 +932,7 @@ function normalizeTurkishQuery(value: string) {
 }
 
 function hasTurkishQuestionWords(normalized: string) {
-  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
+  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|bursa|bursanin|meshur|meshurdur|neyi meshur|takipci|izlenim|izlenme|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|onerirsin|onerirsiniz|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
 }
 
 function isGeneralInformationQuestion(message: string) {
@@ -940,7 +940,7 @@ function isGeneralInformationQuestion(message: string) {
   const normalized = normalizeTurkishQuery(message);
   const asksCapability = /(yapabilir misin|yapabilirmisin|istedigim seyleri|istedigim seyler|benim istedigim)/.test(normalized);
   const hasProductionAction = /\b(yap|yapar misin|uret|olustur|hazirla|tasarla|kur|build|create|generate|make|produce)\b/.test(normalized) && !asksCapability;
-  const hasQuestionSignal = /\?/.test(text) || isOutfitColorQuestion(message) || /(mi|mu|nedir|ne demek|neden|niye|nasil|ne yapabilirim|ne yapabiliriz|ne yapmali|ne iyi gelir|neler iyi gelir|iyi gelir|tavsiye|oneri|kac|kimdir|kim|hangisi|hangi|hngi|nerenin|nereli|nerede|nerde|neresi|neresinde|neresindedir|ne tarafinda|hangi tarafta|ne zaman|say|listele|bilgi almak|ogrenmek|anlatir misin|aciklar misin|bolgesinde|bolgesi|nufus|soyundan|geliyoruz|askerlik|suruyor|surer|ulke|araba mark|markalari|kadin|erkek|yapabilir misin|yapabilirmisin|istedigim|giyilir|giyinilir|ustune|kombin|what is|why|how|who|which|where|when|list|explain|learn|advice|recommend)/.test(normalized);
+  const hasQuestionSignal = /\?/.test(text) || isOutfitColorQuestion(message) || /(mi|mu|nedir|ne demek|neden|niye|nasil|ne yapabilirim|ne yapabiliriz|ne yapmali|ne iyi gelir|neler iyi gelir|iyi gelir|tavsiye|oneri|onerirsin|onerirsiniz|sen ne onerirsin|kac|kimdir|kim|hangisi|hangi|hngi|nerenin|nereli|nerede|nerde|neresi|neresinde|neresindedir|ne tarafinda|hangi tarafta|ne zaman|neyle meshur|neyi meshur|meshur|meshurdur|say|listele|bilgi almak|ogrenmek|anlatir misin|aciklar misin|bolgesinde|bolgesi|nufus|soyundan|geliyoruz|askerlik|suruyor|surer|ulke|araba mark|markalari|kadin|erkek|yapabilir misin|yapabilirmisin|istedigim|giyilir|giyinilir|ustune|kombin|what is|why|how|who|which|where|when|list|explain|learn|advice|recommend)/.test(normalized);
   return hasQuestionSignal && !hasProductionAction;
 }
 
@@ -951,14 +951,27 @@ function informationalReply(message: string, language: string) {
   return "";
 }
 
+function unavailableConversationalFallback(message: string, language: string) {
+  const normalized = normalizeTurkishQuery(message);
+  const replyLanguage = responseLanguage(message, language);
+  if (replyLanguage === "tr" || hasTurkishQuestionWords(normalized)) {
+    if (/^(selam|merhaba|sa|slm|hey)\b/.test(normalized)) return "Selam, buradayım. Şu an uzak AI cevabı alınamasa da mesajını aldım; tekrar yazarsan gerçek asistan cevabını deneyeceğim.";
+    if (/^(nasilsin|iyimisin|iyi misin|naber|ne haber)\b/.test(normalized)) return "İyiyim, buradayım. Şu an uzak AI cevabı alınamadı; bağlantı gelince soruna normal asistan gibi cevap vereceğim.";
+    return "Şu an gerçek AI cevabı alınamadı. Yanlış kategori cevabı vermek yerine bunu açık söylüyorum; lütfen tekrar dene veya biraz sonra yeniden gönder.";
+  }
+  return "The real AI reply is unavailable right now. I won’t fake a category answer; please try again shortly.";
+}
+
 function safeConversationalFallbackReply(message: string, language: string, turnCount: number, recentContext = "") {
   const normalized = normalizeTurkishQuery(message);
   const context = normalizeTurkishQuery(recentContext);
   if (isMaterialUploadQuestion(message, recentContext)) return materialUploadFallbackReply(message, language);
-  if (/(nasil yapacagiz|nasil yapariz|peki nasil|ne yapacagiz|siradaki adim)/.test(normalized) && /(tiktok|video|reklam|kampanya|urun|production|uretim)/.test(context)) {
-    return "Şöyle ilerleyeceğiz: önce videonun hedefini netleştiririz, sonra kısa bir hook/senaryo çıkarırız, formatı TikTok/Reels gibi seçeriz, ses-müzik-altyazı ayarını belirleriz ve en son üretimi başlatırız.";
+  if (/(takipci|izlenim|izlenme|onerirsin|onerin|tavsiyen|sen ne onerirsin|ne onerirsin|nasil yapacagiz|nasil yapariz|peki nasil|ne yapacagiz|siradaki adim)/.test(normalized) && /(tiktok|video|reklam|kampanya|shorts|reels|production|uretim)/.test(context)) {
+    return responseLanguage(message, language) === "tr"
+      ? "Gerçek AI cevabı şu an alınamadı. Normalde burada bağlamı okuyup doğrudan tavsiye vermem gerekiyor; lütfen tekrar gönder, bağlantı gelirse bu kez gerçek cevap üreteceğim."
+      : "The real AI reply is unavailable right now. Please send it again and I’ll answer with context when the remote assistant responds.";
   }
-  return publicConversationalReply(message, language, turnCount);
+  return unavailableConversationalFallback(message, language);
 }
 
 function publicConversationalReply(message: string, language: string, turnCount: number) {
@@ -976,6 +989,8 @@ function publicConversationalReply(message: string, language: string, turnCount:
     if (/canim\s+sikkin|canım\s+sıkkın|moralim\s+bozuk|keyfim\s+yok/.test(normalizeTurkishQuery(message))) return "Üzüldüm. İstersen biraz anlat; dinlerim. Hemen çözüm üretmek zorunda değiliz, önce neyin canını sıktığını beraber netleştirebiliriz.";
     if (/api.*(nasil|nereden|alinir|alabilirim|basvur|olustur)|nasil.*api.*(alinir|alabilirim|olusturulur)/.test(normalizeTurkishQuery(message))) return "API almak için genelde şu yol izlenir: ilgili platformda developer hesabı açılır, yeni app/project oluşturulur, gerekli izinler/scopes seçilir, callback/domain doğrulaması yapılır, sonra client key/secret veya API key alınır. Hangi API’yi almak istediğini söylersen adımlarını tek tek yazarım.";
     if (/istanbul.*deprem.*(ne zaman|en son)|en son.*istanbul.*deprem/.test(normalizeTurkishQuery(message))) return "Canlı deprem verisine bağlı olmadan kesin ‘en son’ bilgisini garanti edemem. En doğru güncel bilgi için Kandilli Rasathanesi veya AFAD son depremler sayfasına bakmak gerekir. İstersen sana nereden kontrol edeceğini adım adım gösterebilirim.";
+    if (/bursa.*(neyi|neyle).*(meshur|meshurdur)|bursanin.*(neyi|neyle).*(meshur|meshurdur)/.test(normalizeTurkishQuery(message))) return "Bursa en çok İskender kebabı, kestane şekeri, pideli köfte, İnegöl köftesi, şeftalisi, Uludağ’ı, Cumalıkızık köyü ve tarihi Osmanlı mirasıyla meşhur. Kısa cevap: yemek tarafında İskender ve kestane şekeri ilk akla gelenler.";
+    if (/(sen ne onerirsin|ne onerirsin|tavsiyen ne|senin tavsiyen)/.test(normalizeTurkishQuery(message))) return "Benim önerim: hedefi önce netleştir, sonra küçük bir deneme yap. Eğer video/iş fikri konuşuyorsak tek büyük iş yerine 3-5 kısa seçenek üretip en güçlü olanı test etmek daha mantıklı.";
     if (/^(sana\s+)?(bir\s+)?(şey|sey)\s+(istemek|isteyeceğim|isteyecegim|soracağım|soracagim)\s+istiyorum/.test(text)) return "Tabii, söyle. Ne istiyorsun?";
     if (/growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/.test(text)) return "Bunu Growth Intelligence hizmeti olarak ele alabiliriz. Bu normal kredi top-up değil; ama aktif hak/kredi uygunluğu olan kullanıcıya sonuç dashboard’da PDF/dosya raporu olarak teslim edilir. Rakip URL’leri, public reklam/fiyat/landing page sinyalleri, haftalık PDF rapor ve aksiyon önerileriyle ilerler.";
 if (/youtube|tiktok|kanal|takip|izlenme|para kazan|kazandıran|kazandiran|niş|nis/.test(text)) return "Anladım, burada kategori seçtirmekten önce hedefi netleştirmek gerekiyor: izlenme, takipçi ve gelir potansiyeline göre birkaç kanal fikrini karşılaştırıp en güçlü yolu önereceğim.";

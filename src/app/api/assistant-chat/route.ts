@@ -31,7 +31,7 @@ function normalizeTurkishQuery(value: string) {
 }
 
 function hasTurkishQuestionWords(normalized: string) {
-  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|kredi|maliyet|fiyat|para|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
+  return /(selam|merhaba|naber|nasilsin|iyimisin|iyi misin|ne haber|kimsin|nerenin|turkce|yazmiyorsun|peki|biz|insanlar|soyundan|geliyoruz|turkiye|dunya|ulke|araba|marka|kadin|erkek|askerlik|asker|ne kadar|suruyor|surer|kac|yasar|yilan|zehir|zehirli|zehirsiz|tavuk|yumurta|civciv|sehir|nufus|nerede|neresi|bolge|bursa|bursanin|meshur|meshurdur|neyi meshur|takipci|izlenim|izlenme|kredi|maliyet|fiyat|para|fotograf|gorsel|ses kaydi|sesim|dosya|materyal|yukleyecegim|gonderecegim|sort|tisort|gomlek|giyilir|giyinilir|kombin|renk|soru|cevap|yorum|fikir|oneri|onerirsin|onerirsiniz|tavsiye|anlat|acikla|nedir|neden|nasil|hangi|hangisi|kim|ne zaman)/.test(normalized);
 }
 
 function isCreditCostQuestion(message: string) {
@@ -81,7 +81,7 @@ function isFreeConversationalQuestion(message: string) {
   const asksCapability = /(yapabilir misin|yapabilirmisin|istedigim seyleri|istedigim seyler|benim istedigim)/.test(normalized);
   const hasProductionAction = /\b(yap|yapar misin|uret|olustur|hazirla|tasarla|kur|build|create|generate|make|produce)\b/.test(normalized) && !asksCapability;
   const isCodeSupport = /(kod|code|bug|hata|debug|api|component|react|next|supabase|veritabani|sql|cozebilir misin|yardimci olur musun|bakabilir misin|duzeltir misin|sikinti|problem|calismazsa)/.test(normalized);
-  const isGeneralQuestion = /\?/.test(text) || isOutfitColorQuestion(message) || /(mi|mu|nedir|ne demek|neden|niye|nasil|ne yapabilirim|ne yapabiliriz|ne yapmali|ne iyi gelir|neler iyi gelir|iyi gelir|tavsiye|oneri|kac|kimdir|kim|hangisi|hangi|hngi|nerenin|nereli|nerede|nerde|neresi|neresinde|neresindedir|ne tarafinda|hangi tarafta|ne zaman|say|listele|bilgi almak|ogrenmek|anlatir misin|aciklar misin|bolgesinde|bolgesi|nufus|soyundan|geliyoruz|askerlik|suruyor|surer|ihtiyac|talep|indirecek|pesinden|ulke|araba mark|markalari|kadin|erkek|yapabilir misin|yapabilirmisin|istedigim|giyilir|giyinilir|ustune|kombin|what is|why|how|who|which|where|when|list|explain|learn|advice|recommend)/.test(normalized);
+  const isGeneralQuestion = /\?/.test(text) || isOutfitColorQuestion(message) || /(mi|mu|nedir|ne demek|neden|niye|nasil|ne yapabilirim|ne yapabiliriz|ne yapmali|ne iyi gelir|neler iyi gelir|iyi gelir|tavsiye|oneri|onerirsin|onerirsiniz|sen ne onerirsin|kac|kimdir|kim|hangisi|hangi|hngi|nerenin|nereli|nerede|nerde|neresi|neresinde|neresindedir|ne tarafinda|hangi tarafta|ne zaman|neyle meshur|neyi meshur|meshur|meshurdur|say|listele|bilgi almak|ogrenmek|anlatir misin|aciklar misin|bolgesinde|bolgesi|nufus|soyundan|geliyoruz|askerlik|suruyor|surer|ihtiyac|talep|indirecek|pesinden|ulke|araba mark|markalari|kadin|erkek|yapabilir misin|yapabilirmisin|istedigim|giyilir|giyinilir|ustune|kombin|what is|why|how|who|which|where|when|list|explain|learn|advice|recommend)/.test(normalized);
   return isCodeSupport || isAppIdeaDemandQuestion(message) || (isGeneralQuestion && !hasProductionAction);
 }
 
@@ -124,6 +124,16 @@ function languageName(code: string) {
   return "English";
 }
 
+function detectReplyLanguage(message: string, preferred = "") {
+  const normalized = normalizeTurkishQuery(message);
+  if (/[\u0600-\u06ff]/.test(message)) return "ar";
+  if (/[çğıöşüÇĞİÖŞÜ]/.test(message) || hasTurkishQuestionWords(normalized)) return "tr";
+  if (/\b(hallo|guten|danke|bitte|warum|wie|was|wer|welche|empfiehlst)\b/i.test(message)) return "de";
+  if (/\b(hola|gracias|por que|porque|como|qué|que|recomiendas)\b/i.test(message)) return "es";
+  if (/\b(bonjour|merci|pourquoi|comment|quoi|recommandes)\b/i.test(message)) return "fr";
+  return preferred || "en";
+}
+
 function fallbackReply(message: string, language: string) {
   if (isMaterialUploadQuestion(message)) return materialUploadFallbackReply(message, language);
   const normalized = normalizeTurkishQuery(message);
@@ -138,6 +148,8 @@ function fallbackReply(message: string, language: string) {
     if (/canim\s+sikkin|moralim\s+bozuk|keyfim\s+yok/.test(normalized)) return "Üzüldüm. İstersen biraz anlat; dinlerim. Hemen çözüm üretmek zorunda değiliz, önce neyin canını sıktığını beraber netleştirebiliriz.";
     if (/api.*(nasil|nereden|alinir|alabilirim|basvur|olustur)|nasil.*api.*(alinir|alabilirim|olusturulur)/.test(normalized)) return "API almak için genelde developer hesabı açılır, yeni app/project oluşturulur, gerekli izinler seçilir, domain/callback doğrulaması yapılır ve sonra API key veya client secret alınır. Hangi API olduğunu söylersen adımları tek tek yazarım.";
     if (/istanbul.*deprem.*(ne zaman|en son)|en son.*istanbul.*deprem/.test(normalized)) return "Canlı deprem verisine bağlı olmadan kesin ‘en son’ bilgisini garanti edemem. Güncel kontrol için Kandilli Rasathanesi veya AFAD son depremler sayfasına bakmak gerekir.";
+    if (/bursa.*(neyi|neyle).*(meshur|meshurdur)|bursanin.*(neyi|neyle).*(meshur|meshurdur)/.test(normalized)) return "Bursa en çok İskender kebabı, kestane şekeri, pideli köfte, İnegöl köftesi, şeftalisi, Uludağ’ı, Cumalıkızık köyü ve Osmanlı mirasıyla meşhur. Kısa cevap: İskender ve kestane şekeri ilk akla gelenler.";
+    if (/(takipci|izlenim|izlenme|sen ne onerirsin|ne onerirsin|tavsiyen ne|senin tavsiyen)/.test(normalized)) return "Ben olsam hedefi takipçi + izlenme olarak kurarım. TikTok’ta ilk aşamada satış videosu değil, seri içerik daha iyi çalışır: 3 saniyelik güçlü hook, tek konu, hızlı tempo, altyazı ve net CTA. İlk deneme için 5 video fikri çıkarıp en güçlüsünü üretime çevirebiliriz.";
     if (/yardım|yardim|ne yapabilirsin|nasıl çalış|nasil calis/.test(normalized)) return "Bana normal cümleyle yazman veya sesli söylemen yeterli. Üretim fikrini, site sorununu veya API adımını anlayıp seni doğru adıma götürürüm.";
     if (/devam|tamam|olur|evet|başla|basla/.test(normalized) && normalized.split(/\s+/).length <= 4) return "Tamam, devam ediyorum. Son hedefe göre kısa ve net ilerleyeceğim.";
     return "Buradayım. Sorunu ya da yapmak istediğin işi yaz; üretimse akışa çeviririm, soruysa doğrudan cevaplarım.";
@@ -152,8 +164,11 @@ function fallbackReply(message: string, language: string) {
 }
 
 async function generateChatReply(message: string, language: string, history: { role: "user" | "assistant"; content: string }[], userContextPrompt = "") {
+  const replyLanguage = detectReplyLanguage(message, language);
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return fallbackReply(message, language);
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured for assistant chat.");
+  }
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -166,7 +181,7 @@ async function generateChatReply(message: string, language: string, history: { r
       messages: [
         {
           role: "system",
-          content: `You are Crelavo's conversational AI assistant inside a production and software workspace. Reply naturally like a helpful human assistant, not like a form bot. Use ${languageName(language)} only. Keep replies short, friendly and useful. Default to 4-5 short lines maximum; avoid long paragraphs, essays, or dense blocks. If the topic needs detail, give the first few bullets and ask if the user wants more. If the user greets you, greet back naturally. If the user asks how it works, explain briefly. If the user has a production idea, help clarify it but do not dump form fields. If the user asks how to send/upload photos, voice, video, files, or materials, NEVER say uploads are unavailable; tell them to use the workspace Upload material / Materials area. Mention supported media like JPG/PNG for photos, MP3/WAV/MP4/MOV/WEBM for audio/video, and say 20-60 seconds of clean voice is usually enough for a voice reference. If the user asks what to say in a voice sample, provide a short sample script. If the user asks a general information question such as geography, science, dates, definitions, 'why/how/what is', answer directly and briefly; do not turn it into a production flow. If the user asks about health or sensitive medical topics, recognize terms like kanser|kemoterapi|radyoterapi|ameliyat|onkoloji and answer cautiously: give general information, recommend a qualified doctor, and flag emergencies. For common first-aid questions like burnum|burun|nose bleeding, keep it practical; for example, in Turkish say: "Burun kanamasında genelde dik oturup başı hafif öne eğmek, burnun yumuşak kısmına 10-15 dakika bası yapmak ve kan yutmayı önlemek önerilir; kanama durmazsa veya ciddi travma varsa acile başvur." If the user asks about Crelavo categories, packages, credits, which tool to use, what a service does, or where to click, answer using the catalog context below. If the user asks about code, bugs, APIs, React, Next.js, Supabase, SQL, deployment, or implementation ideas, answer as a practical coding assistant: explain the likely cause, suggest a fix, mention risks, and propose the next step. Do not pretend you can see files unless the user provides code or context. Do not repeat the same sentence. Do not mention login, email verification or credits unless the user asks about payment/credits or existing delivery access.\n\n${buildAssistantKnowledgePrompt()}\n\n${userContextPrompt}`
+          content: `You are Crelavo's built-in AI assistant, but you must behave like ChatGPT or Gemini: a general-purpose conversational assistant that can also help with Crelavo production work. Use ${languageName(replyLanguage)} only. Answer the user's actual latest message directly and use recent conversation as context. Do not behave like a category menu, form bot, or production wizard unless the user explicitly asks to start or plan a production. General questions, personal chat, advice requests, geography, dates, APIs, business ideas, recommendations, and follow-up questions must receive normal helpful answers. If the user says “what do you recommend?” or “sen ne önerirsin?”, infer what they are referring to from the conversation and give a concrete recommendation. If the user wants a TikTok/video/marketing idea, advise like a practical creator/marketer first; only then offer to turn it into a production brief. If the user greets you, greet back naturally. If the user asks how it works, explain briefly. If the user has a production idea, help clarify it but do not dump form fields. If the user asks how to send/upload photos, voice, video, files, or materials, NEVER say uploads are unavailable; tell them to use the workspace Upload material / Materials area. Mention supported media like JPG/PNG for photos, MP3/WAV/MP4/MOV/WEBM for audio/video, and say 20-60 seconds of clean voice is usually enough for a voice reference. If the user asks what to say in a voice sample, provide a short sample script. If the user asks a general information question such as geography, science, dates, definitions, 'why/how/what is', answer directly and briefly; do not turn it into a production flow. If the user asks about health or sensitive medical topics, recognize terms like kanser|kemoterapi|radyoterapi|ameliyat|onkoloji and answer cautiously: give general information, recommend a qualified doctor, and flag emergencies. For common first-aid questions like burnum|burun|nose bleeding, keep it practical; for example, in Turkish say: "Burun kanamasında genelde dik oturup başı hafif öne eğmek, burnun yumuşak kısmına 10-15 dakika bası yapmak ve kan yutmayı önlemek önerilir; kanama durmazsa veya ciddi travma varsa acile başvur." If the user asks about Crelavo categories, packages, credits, which tool to use, what a service does, or where to click, answer using the catalog context below. If the user asks about code, bugs, APIs, React, Next.js, Supabase, SQL, deployment, or implementation ideas, answer as a practical coding assistant: explain the likely cause, suggest a fix, mention risks, and propose the next step. Do not pretend you can see files unless the user provides code or context. Do not repeat the same sentence. Do not mention login, email verification or credits unless the user asks about payment/credits or existing delivery access.\n\n${buildAssistantKnowledgePrompt()}\n\n${userContextPrompt}`
         },
         ...history.slice(-8),
         { role: "user", content: message }
@@ -174,9 +189,14 @@ async function generateChatReply(message: string, language: string, history: { r
     })
   });
 
-  if (!response.ok) return fallbackReply(message, language);
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Assistant AI request failed: ${response.status} ${detail.slice(0, 300)}`);
+  }
   const data = await response.json();
-  return String(data.choices?.[0]?.message?.content ?? "").trim() || fallbackReply(message, language);
+  const reply = String(data.choices?.[0]?.message?.content ?? "").trim();
+  if (!reply) throw new Error("Assistant AI returned an empty reply.");
+  return reply;
 }
 
 export async function GET(request: Request) {
@@ -231,8 +251,8 @@ export async function POST(request: Request) {
   const history: { role: "user" | "assistant"; content: string }[] = Array.isArray(body.messages)
     ? body.messages.map((item: { role?: string; content?: string }) => ({ role: item.role === "assistant" ? "assistant" as const : "user" as const, content: String(item.content ?? "").slice(0, 1200) })).filter((item: { content: string }) => item.content.trim())
     : [];
-  const freeConversationalQuestion = isFreeConversationalQuestion(message);
-  const requiredCredits = freeConversationalQuestion ? 0 : CHAT_CREDITS[mode];
+  const freeConversationalQuestion = true;
+  const requiredCredits = 0;
 
   if (!userId || !userEmail) return Response.json({ error: "Please log in before using the AI Assistant." }, { status: 401 });
   const guardConfig = apiCostGuardConfig();
