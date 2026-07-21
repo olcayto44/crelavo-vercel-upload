@@ -6059,3 +6059,119 @@ html body .automation-brief-card pre {
   }
 }
 
+/* Workspace full-width + compact desktop layout after removing side assistant */
+.assistant-workspace.chat-open,
+.assistant-workspace.chat-collapsed,
+.assistant-workspace {
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: none;
+}
+.assistant-live-stage {
+  width: min(1760px, calc(100vw - 44px));
+  margin: 0 auto;
+  padding: clamp(18px, 2.2vw, 30px);
+  grid-template-columns: minmax(360px, .82fr) minmax(0, 1.18fr);
+  align-items: stretch;
+}
+.studio-stage-head,
+.studio-preview-plan,
+.studio-quick-path-grid,
+.studio-provider-strip,
+.compact-studio-steps,
+.production-options-panel,
+.material-choice-panel {
+  grid-column: 1 / -1;
+}
+.assistant-inline-chat {
+  grid-column: 1;
+  margin: 0;
+  align-self: stretch;
+}
+.studio-command-center {
+  grid-column: 2;
+  grid-template-columns: minmax(0, 1.35fr) minmax(330px, .65fr);
+  gap: 16px;
+  align-self: stretch;
+}
+.assistant-inline-chat-log {
+  max-height: 260px;
+}
+.studio-command-main,
+.studio-credit-card {
+  min-height: 100%;
+}
+.studio-side-summary {
+  align-content: stretch;
+}
+.studio-side-block,
+.studio-side-status,
+.studio-side-recent {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  padding: 13px;
+  background: rgba(15,23,42,.58);
+}
+.studio-side-block.primary {
+  background: linear-gradient(135deg, rgba(34,211,238,.16), rgba(124,92,255,.13));
+}
+.studio-side-actions {
+  display: grid;
+  gap: 9px;
+}
+.studio-side-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+.studio-side-status span,
+.studio-side-recent span,
+.studio-side-recent a {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.studio-side-status b {
+  color: #fff;
+  margin-right: 6px;
+}
+.studio-side-recent a {
+  color: #93c5fd;
+  font-weight: 800;
+}
+.studio-quick-path-grid {
+  grid-template-columns: repeat(6, minmax(135px, 1fr));
+}
+.studio-quick-card {
+  min-height: 104px;
+}
+.studio-provider-strip {
+  display: none;
+}
+.compact-studio-steps {
+  display: none;
+}
+@media (max-width: 1380px) {
+  .assistant-live-stage,
+  .studio-command-center {
+    grid-template-columns: 1fr;
+  }
+  .assistant-inline-chat,
+  .studio-command-center {
+    grid-column: 1 / -1;
+  }
+  .studio-quick-path-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .assistant-live-stage {
+    width: min(100%, calc(100vw - 22px));
+  }
+  .studio-quick-path-grid,
+  .studio-quality-strip {
+    grid-template-columns: 1fr;
+  }
+}
+

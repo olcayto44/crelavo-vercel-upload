@@ -2500,12 +2500,29 @@ async function startRawMicrophoneFallback() {
               {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
             </div>
           </div>
-          <aside className="studio-credit-card">
-            <small>Estimated reserve</small>
-            <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
-            <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality}</span>
-            <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start production</button>
-            <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Open options</button>
+          <aside className="studio-credit-card studio-side-summary">
+            <div className="studio-side-block primary">
+              <small>Estimated credits</small>
+              <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
+              <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider mode</span>
+            </div>
+            <div className="studio-side-actions">
+              <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
+              <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Estimate Credits</button>
+              <a className="btn secondary" href="/dashboard/productions">Open Production Studio</a>
+            </div>
+            <div className="studio-side-status">
+              <small>Provider status</small>
+              <span><b>Video</b> Ready / auto routing</span>
+              <span><b>Voice</b> Ready</span>
+              <span><b>Avatar</b> Provider pending</span>
+              <span><b>Publishing</b> App review required</span>
+            </div>
+            <div className="studio-side-recent">
+              <small>Recent productions</small>
+              <span>No recent production yet</span>
+              <a href="/dashboard/productions">View all productions</a>
+            </div>
             {startedProduction ? (
               <div className="studio-started-card">
                 <small>{startedProduction.status === "automation_warning" ? "Needs attention" : "Production started"}</small>
@@ -2520,7 +2537,7 @@ async function startRawMicrophoneFallback() {
           <div>
             <span className="badge">Preview / Production Plan</span>
             <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-            <p>{productionBrief || "Henüz üretim brief’i yok. Normal sohbeti sağdaki Assistant conversation alanından yap; üretim için üstteki alana ürün/video/site hedefini yaz."}</p>
+            <p>{productionBrief || "Henüz üretim brief’i yok. Normal sohbeti üstteki Assistant chat alanından yap; üretim için Production command alanına ürün/video/site hedefini yaz."}</p>
           </div>
           <div className="studio-preview-metrics">
             <span><small>Quality</small><strong>{selectedQuality}</strong></span>
