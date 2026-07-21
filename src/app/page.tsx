@@ -81,6 +81,24 @@ const lightweightHomeCards = [
   }
 ];
 
+const homeDeliveryTrust = [
+  {
+    badge: "1",
+    title: "Start with one clear brief",
+    description: "Choose a goal, paste a product link or describe the asset you need. Crelavo keeps the request focused before production starts."
+  },
+  {
+    badge: "2",
+    title: "Review scope before credits move",
+    description: "Credit estimates, format choices and delivery expectations are shown before the final production reserve is confirmed."
+  },
+  {
+    badge: "3",
+    title: "Receive dashboard delivery",
+    description: "Outputs are organized as preview links, final downloads, source files, README notes or revision-ready delivery packages."
+  }
+];
+
 export default async function HomePage() {
   const siteContent = await getConfiguredSiteContentConfig();
 
@@ -114,6 +132,26 @@ export default async function HomePage() {
                   <p>{goal.description}</p>
                   <span className="home-goal-cta">{goal.cta}</span>
                 </HardReloadLink>
+              ))}
+            </div>
+          </section>
+
+          <section className="container section home-section-tight clean-feed-section">
+            <div className="sample-video-head">
+              <div>
+                <span className="badge"><Sparkles size={15} /> How delivery works</span>
+                <h2>Know what happens before you spend credits</h2>
+                <p className="section-lead">Crelavo should feel safe before checkout: clear brief, visible scope, dashboard delivery and revision-ready handoff.</p>
+              </div>
+              <HardReloadLink className="btn" href="/dashboard/create">Start a production brief</HardReloadLink>
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {homeDeliveryTrust.map((item) => (
+                <div className="card admin-category-card" key={item.title}>
+                  <span className="badge">Step {item.badge}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </div>
               ))}
             </div>
           </section>

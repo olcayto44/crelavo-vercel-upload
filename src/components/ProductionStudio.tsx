@@ -18,6 +18,21 @@ const qualityOptions = ["Fast", "Standard", "Professional", "Cinematic", "Ultra"
 const formatOptions = ["9:16 Vertical", "16:9 Landscape", "1:1 Square", "4:5 Social", "Custom"];
 const durationOptions = ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "Project based"];
 
+const createTrustSteps = [
+  "No credit charge on this screen",
+  "Final reserve is reviewed before job confirmation",
+  "Reference files and product links stay attached to the request",
+  "Final outputs are delivered from My productions"
+];
+
+const createBriefTips = [
+  "Product or brand name",
+  "Target platform or size",
+  "Main promise or offer",
+  "Reference link, image or example style",
+  "What must be included or avoided"
+];
+
 export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }: { initialIdea?: string; initialType?: string }) {
   const [prompt, setPrompt] = useState(initialIdea);
   const [type, setType] = useState(initialType || "AI Video");
@@ -84,20 +99,23 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
 
         <main className="production-studio-panel studio-center-panel">
           <div>
-            <span className="badge">Prompt</span>
+            <span className="badge">Brief builder</span>
             <h2>Describe the production</h2>
-            <p>Write what you want to create. Crelavo will keep the production type, quality, format and delivery plan together.</p>
+            <p>Write what you want to create. Crelavo will keep the production type, quality, format, credit estimate and delivery plan together before confirmation.</p>
           </div>
           <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Example: Turn my product link into a TikTok ad video with a strong hook, subtitles, voice-over and product close-ups..." />
           <div className="studio-reference-dropzone">
             <strong>Reference upload area</strong>
             <span>Continue to production to attach images, product links, voice/video references and brand files in the live workspace material area.</span>
           </div>
+          <div className="studio-trust-checklist studio-brief-tip-list">
+            {createBriefTips.map((item) => <span key={item}>{item}</span>)}
+          </div>
           {estimateOpen ? (
             <div className="studio-estimate-trust-card">
               <strong>{estimatedCredits.toLocaleString()} credits estimated</strong>
               <span>Credits are not charged on this screen. Continue to production to review the final reserve and confirm.</span>
-              <span>Provider/API readiness will be shown as ready or pending before the job workspace opens.</span>
+              <span>Delivery readiness and any required review steps stay visible before the job workspace opens.</span>
             </div>
           ) : null}
           <div className="studio-generate-row">
@@ -114,19 +132,16 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
             <span>{format}</span>
             <small>{quality} · {duration}</small>
           </div>
-          <div className="studio-preview-list">
-            <div><small>Estimated credits</small><strong>{estimatedCredits.toLocaleString()}</strong></div>
-            <div><small>Provider mode</small><strong>Auto routing</strong></div>
-            <div><small>Status</small><strong>Ready / pending by provider</strong></div>
-            <div><small>Delivery</small><strong>Dashboard + download</strong></div>
-          </div>
-          <div className="studio-trust-checklist">
-            <span>No charge before confirmation</span>
-            <span>Reserve shown before job creation</span>
-            <span>Provider pending states stay visible</span>
-            <span>Final delivery opens from My productions</span>
-          </div>
-          <p>No credits are charged before user confirmation. Missing providers will be shown as pending, not as working.</p>
+            <div className="studio-preview-list">
+              <div><small>Estimated credits</small><strong>{estimatedCredits.toLocaleString()}</strong></div>
+              <div><small>Routing</small><strong>Workspace handoff</strong></div>
+              <div><small>Status</small><strong>Review before confirmation</strong></div>
+              <div><small>Delivery</small><strong>Dashboard + download</strong></div>
+            </div>
+            <div className="studio-trust-checklist">
+              {createTrustSteps.map((item) => <span key={item}>{item}</span>)}
+            </div>
+            <p>No credits are charged before user confirmation. The next screen keeps the final reserve, materials and delivery notes connected to the same production request.</p>
         </aside>
       </div>
     </section>

@@ -38,6 +38,25 @@ const deliveryLocations = [
   "Connected workflow delivery and handoff links"
 ];
 
+const pricingTrustPoints = [
+  {
+    title: "No surprise production reserve",
+    text: "Credits are estimated first, then reserved only when the production request is confirmed."
+  },
+  {
+    title: "Preview before final delivery",
+    text: "Preview links, watermarked samples or review notes can appear before the final download package opens."
+  },
+  {
+    title: "AI + human QA handoff",
+    text: "Requests are structured for AI speed, then tracked with admin notes, revision status and final delivery context."
+  },
+  {
+    title: "Files you can actually use",
+    text: "Depending on the package, delivery can include exports, source files, captions, README/setup notes and ZIP handoff."
+  }
+];
+
 type PublicPricingRow = {
   name: string;
   price: string;
@@ -106,6 +125,24 @@ export default async function PricingPage() {
             </p>
           </div>
           <div className="promo-corner-slot pricing-promo-slot"><CampaignPromoSlot /></div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">Buyer confidence</span>
+          <h2>What you get before, during and after production</h2>
+          <p className="section-lead">Pricing is tied to a dashboard workflow, not a blind one-click generation promise. You can estimate scope, review delivery expectations and keep revisions connected to the same production record.</p>
+          <div className="admin-category-grid" style={{ marginTop: 18 }}>
+            {pricingTrustPoints.map((item) => (
+              <div className="card admin-category-card" key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/create?idea=Help%20me%20choose%20the%20right%20Crelavo%20package">Help me choose a package</Link>
+            <Link className="btn secondary" href="/dashboard/productions">View delivery workspace</Link>
+          </div>
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
@@ -242,7 +279,7 @@ export default async function PricingPage() {
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
           <span className="badge">Partner Program</span>
           <h2>Are you an AI or no-code creator?</h2>
-          <p style={{ color: "var(--muted)" }}>Apply for early partner access now. Referral links, creator assets and commission terms are being prepared so the program can start quickly after tracking and payout APIs are connected.</p>
+          <p style={{ color: "var(--muted)" }}>Apply for early partner access now. Referral links, creator assets and commission terms are prepared around manual review, 30-day hold and finance approval.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
             <Link className="btn" href="/affiliate">Join the partner program</Link>
             <Link className="btn secondary" href="/dashboard/growth">View referral rewards</Link>
