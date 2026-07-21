@@ -75,7 +75,7 @@ const integrationGroups: IntegrationGroup[] = [
     title: "Social publishing and ad channel APIs",
     description: "Social publishing, content distribution and ad platform connections for post-launch growth automation.",
     items: [
-      { name: "Meta Graph API", status: "pending", useCase: "Facebook/Instagram page, content and campaign integration path." },
+      { name: "Meta Graph API", status: "available", useCase: "Facebook/Instagram OAuth callback, page/ad account discovery and connected account preparation path." },
       { name: "YouTube Data API", status: "pending", useCase: "YouTube Shorts metadata, publishing and channel content workflows." },
       { name: "TikTok Content Posting API", status: "pending", useCase: "TikTok publishing workflow after app approval and permission setup." },
       { name: "TikTok Ads API", status: "planned", useCase: "Ad campaign signal connection and paid growth measurement." },

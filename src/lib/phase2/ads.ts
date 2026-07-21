@@ -1,6 +1,10 @@
 import { optionalEnv, requireEnv } from "@/lib/providers/env";
 import type { AdLaunchInput, AdPlatform, RoasMetrics } from "./types";
 
+function metaGraphVersion() {
+  return optionalEnv("META_GRAPH_API_VERSION") || "v20.0";
+}
+
 export function adOAuthUrl(platform: AdPlatform, state: string) {
   const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
 
@@ -10,7 +14,7 @@ export function adOAuthUrl(platform: AdPlatform, state: string) {
     const scope = encodeURIComponent(platform === "instagram"
       ? "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management"
       : "ads_management,ads_read,business_management,pages_show_list,pages_read_engagement");
-    return `https://www.facebook.com/v20.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${encodeURIComponent(state)}`;
+    return `https://www.facebook.com/${metaGraphVersion()}/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${encodeURIComponent(state)}`;
   }
 
   if (platform === "tiktok") {

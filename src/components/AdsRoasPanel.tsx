@@ -51,7 +51,7 @@ export function AdsRoasPanel() {
       <div className="card connection-card">
         <span className="badge">Future account setup</span>
         <h3>Social account planning</h3>
-        <p>Select the future Facebook/Meta Ads, Instagram, TikTok, YouTube, LinkedIn or X target. Live OAuth connection waits for final API/env setup.</p>
+        <p>Meta and Instagram can start the Graph API OAuth connection when Meta env values are set. TikTok, YouTube, LinkedIn and X remain future connection targets.</p>
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
         <button className="btn" type="button" onClick={() => connect(platform)}>Prepare {selectedPlatform.label}</button>
         <Link className="btn secondary" href="/dashboard/connections">Open all connections</Link>
