@@ -484,7 +484,7 @@ const [notice, setNotice] = useState("");
             {previewKind === "video" ? (
               <video src={previewUrl} controls playsInline poster="" />
             ) : previewKind === "image" ? (
-              <img src={previewUrl} alt="Production preview" />
+              <img src={previewUrl} alt={isProjectProduction ? "Crelavo customer project preview image" : "Crelavo generated production preview image"} />
             ) : previewKind === "web" ? (
               <iframe src={previewUrl} title="Production preview" loading="lazy" />
             ) : (

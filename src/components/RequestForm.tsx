@@ -952,7 +952,7 @@ setPreviewApproved(false);
           <h3>See the idea before final production</h3>
           <div className="preview-frame">
             {previewImageUrl ? (
-              <img src={previewImageUrl} alt="Generated visual preview" className="preview-image" />
+              <img src={previewImageUrl} alt={`Crelavo ${toolCategory} ${videoType} visual preview in ${style || "selected style"}`} className="preview-image" />
             ) : (
               <div className="preview-scene">
                 <strong>{style || "Selected style"}</strong>

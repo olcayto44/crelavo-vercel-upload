@@ -365,7 +365,7 @@ export function AdminRequestsTable() {
 
           <div className="card" style={{ padding: 16, marginBottom: 12, background: "rgba(34,211,238,0.06)", borderColor: "rgba(34,211,238,0.24)" }}>
             <strong style={{ display: "block", marginBottom: 10 }}>Automatic Generation</strong>
-            {selected.preview_image_url ? <img src={selected.preview_image_url} alt="Generated preview" className="admin-preview-image" /> : <p style={{ color: "var(--muted)", marginTop: 0 }}>No preview image generated yet.</p>}
+            {selected.preview_image_url ? <img src={selected.preview_image_url} alt={`${selected.title} generated production preview`} className="admin-preview-image" /> : <p style={{ color: "var(--muted)", marginTop: 0 }}>No preview image generated yet.</p>}
             <DetailGrid
               title="Generation Details"
               items={[

@@ -165,7 +165,7 @@ export function RequestsTable() {
               <td>
                 {item.preview_image_url ? (
                   <div className="request-preview-cell">
-                    <img src={item.preview_image_url} alt="Request preview" />
+                    <img src={item.preview_image_url} alt={`${item.title} production request preview image`} />
                     <small>{item.preview_approved ? "Preview approved" : item.preview_status ?? "Preview pending"}</small>
                   </div>
                 ) : <span style={{ color: "var(--muted)" }}>No preview</span>}
