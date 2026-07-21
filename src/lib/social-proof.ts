@@ -7,7 +7,7 @@ export type SocialProofMetric = {
 export type TestimonialProof = {
   name: string;
   role: string;
-  quote: string;
+  scenario: string;
   result: string;
 };
 
@@ -53,22 +53,22 @@ export const socialProofMetrics: SocialProofMetric[] = [
 
 export const testimonialProofs: TestimonialProof[] = [
   {
-    name: "Ecommerce founder",
+    name: "Ecommerce planning scenario",
     role: "Product video request",
-    quote: "I needed a clearer ad direction before buying production credits. The Crelavo flow made the hook, product proof and next video brief easier to understand.",
-    result: "Ad score result moved into a production-ready campaign brief."
+    scenario: "A product team needs clearer ad direction before buying production credits, including hook, product proof and the next video brief.",
+    result: "Ad score result moves into a production-ready campaign brief."
   },
   {
-    name: "Marketplace seller",
+    name: "Marketplace localization scenario",
     role: "Localization brief",
-    quote: "The same product message did not work for every country. The localization path helped us prepare market-specific hooks and buyer trust notes before production.",
-    result: "One global ad idea became a localized campaign direction."
+    scenario: "A marketplace seller needs to adapt one product message for different countries with market-specific hooks and buyer trust notes.",
+    result: "One global ad idea becomes a localized campaign direction."
   },
   {
-    name: "Startup team",
+    name: "Startup launch scenario",
     role: "Website + launch assets",
-    quote: "We wanted one place to connect website copy, visuals and launch assets. The credit estimate and human QA framing made the scope easier to approve.",
-    result: "Website hero and launch asset request mapped into a tracked package."
+    scenario: "A startup team needs to connect website copy, visuals, launch assets, credit estimate and human QA framing in one request.",
+    result: "Website hero and launch asset request maps into a tracked package."
   }
 ];
 
@@ -82,8 +82,8 @@ export const trustedProofSlots: TrustedProofSlot[] = [
   {
     label: "Marketplace ad score demo",
     segment: "Marketplace proof",
-    status: "30% stronger demo score",
-    note: "Example scoring path shows a weak product ad brief improving after hook, proof and CTA cleanup."
+    status: "30% stronger sample score",
+    note: "Sample scoring path shows a weak product ad brief improving inside the demo after hook, proof and CTA cleanup."
   },
   {
     label: "DTC brand video example",
@@ -119,10 +119,10 @@ export const verifiedMetricSlots: VerifiedMetricSlot[] = [
 
 export const caseStudyProofs: CaseStudyProof[] = [
   {
-    title: "Weak product ad to 30% stronger demo score",
+    title: "Weak product ad to 30% stronger sample score",
     segment: "Ecommerce ad scoring",
-    before: "A product hook, CTA and offer were unclear before spending budget.",
-    after: "The demo scorer path shows a 30% stronger campaign readiness score after hook, proof and CTA cleanup.",
+    before: "A product hook, CTA and offer are unclear inside the sample scoring path.",
+    after: "The demo scorer path shows a 30% stronger sample readiness score after hook, proof and CTA cleanup.",
     cta: "Open free ad scorer",
     href: "/free-tools/ad-performance-score-checker"
   },
@@ -145,10 +145,10 @@ export const caseStudyProofs: CaseStudyProof[] = [
 ];
 
 export const socialProofAdminChecklist = [
-  "Keep testimonials conservative until real customer quotes are approved.",
-  "Use role-based proof labels instead of fake names when the quote is an internal MVP proof placeholder.",
+  "Keep public proof scenarios separate from real customer testimonials until quotes are approved.",
+  "Use role-based scenario labels instead of fake names when the proof is an internal MVP example.",
   "Connect every case study to a live URL, free tool, showcase page or pricing path.",
-  "Replace placeholder proof with real customer approval screenshots after launch review.",
+  "Replace sample proof scenarios with real customer approval screenshots after launch review.",
   "Do not claim revenue lift, ROAS or conversion percentage unless the source is verified.",
   "Keep logo slots as placeholders until each Shopify, Amazon, DTC or agency customer gives explicit public permission.",
   "Store every metric source before publishing percentage claims on the homepage, alternatives pages or service pages."

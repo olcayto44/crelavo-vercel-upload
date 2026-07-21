@@ -64,11 +64,11 @@ export default function AdminGrowthPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">4. Grup / Final-stage item 2</span>
-        <h2>Social proof, testimonials and case-study blocks</h2>
-        <p style={{ color: "var(--muted)" }}>Homepage proof blocks are now connected to approved examples, conservative role-based testimonials and case-study paths without making unverified revenue claims.</p>
+        <h2>Social proof, sample scenarios and case-study blocks</h2>
+        <p style={{ color: "var(--muted)" }}>Homepage proof blocks are now connected to approved examples, conservative sample planning scenarios and case-study paths without making unverified revenue claims.</p>
         <div className="admin-info-grid">
-          <div><span>Testimonials</span><strong>{testimonialProofs.length} proof cards</strong><small>Role-based MVP testimonials until real quotes are approved.</small></div>
-          <div><span>Logo slots</span><strong>{trustedProofSlots.length} approval slots</strong><small>Shopify, Amazon, DTC and agency proof placeholders.</small></div>
+          <div><span>Scenarios</span><strong>{testimonialProofs.length} proof cards</strong><small>Role-based MVP scenarios until real customer quotes are approved.</small></div>
+          <div><span>Logo slots</span><strong>{trustedProofSlots.length} approval slots</strong><small>Shopify, Amazon, DTC and agency proof samples until public permission is approved.</small></div>
           <div><span>Metric slots</span><strong>{verifiedMetricSlots.length} locked claims</strong><small>No CAC, ROAS or revenue claims until source approval.</small></div>
           <div><span>Case studies</span><strong>{caseStudyProofs.length} paths</strong><small>Ad scoring, localization and Community Showcase proof routes.</small></div>
         </div>

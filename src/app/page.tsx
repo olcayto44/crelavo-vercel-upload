@@ -202,8 +202,8 @@ export default async function HomePage() {
             <div className="sample-video-head">
               <div>
                 <span className="badge"><Sparkles size={15} /> Social proof</span>
-                <h2 id="home-social-proof-heading">Proof, testimonials and case-study paths before full production</h2>
-                <p className="section-lead">Crelavo now shows conservative proof blocks: role-based testimonials, approved example paths and case-study routes that connect directly to credits, free tools and Assistant Workspace.</p>
+                <h2 id="home-social-proof-heading">Proof scenarios and case-study paths before full production</h2>
+                <p className="section-lead">Crelavo now shows conservative proof blocks: sample planning scenarios, approved example paths and case-study routes that connect directly to credits, free tools and Assistant Workspace.</p>
               </div>
               <HardReloadLink className="btn secondary" href="/community-showcase">Open proof hub</HardReloadLink>
             </div>
@@ -227,7 +227,7 @@ export default async function HomePage() {
                 <div className="card admin-category-card" key={item.name}>
                   <span className="badge">{item.role}</span>
                   <h3>{item.name}</h3>
-                  <p>“{item.quote}”</p>
+                  <p>{item.scenario}</p>
                   <p><strong>{item.result}</strong></p>
                 </div>
               ))}

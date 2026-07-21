@@ -224,7 +224,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
       <section className="card admin-wide-card" style={{ marginTop: 18 }}>
         <span className="badge">Proof and case studies</span>
         <h2>Why teams use Crelavo before full production</h2>
-        <p>These conservative proof blocks connect each service page to approved examples, role-based testimonials and case-study paths without making unsupported revenue or ROAS claims.</p>
+        <p>These conservative proof blocks connect each service page to approved examples, sample planning scenarios and case-study paths without making unsupported revenue or ROAS claims.</p>
         <div className="admin-category-grid">
           {trustedProofSlots.slice(0, 2).map((slot) => (
             <div className="card admin-category-card" key={slot.label}>
@@ -238,7 +238,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
             <div className="card admin-category-card" key={item.name}>
               <span className="badge">{item.role}</span>
               <h3>{item.name}</h3>
-              <p>“{item.quote}”</p>
+              <p>{item.scenario}</p>
               <p><strong>{item.result}</strong></p>
             </div>
           ))}
