@@ -11,8 +11,11 @@ type CreditPlan = {
   price: string;
   priceUsd?: number;
   credits: number;
+  yearlyCredits?: number;
   description: string;
   estimatedOutput?: string;
+  yearlyEstimatedOutput?: string;
+  yearlyDealLabel?: string;
   videoSpec?: string;
   mediaIncluded?: string;
   modelAccess?: string[];
@@ -37,7 +40,7 @@ function planPrice(plan: CreditPlan, billingMode: "monthly" | "yearly") {
 }
 
 function planCredits(plan: CreditPlan, billingMode: "monthly" | "yearly") {
-  return billingMode === "monthly" ? plan.credits : plan.credits * 12;
+  return billingMode === "monthly" ? plan.credits : plan.yearlyCredits ?? plan.credits * 12;
 }
 
 export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plans: CreditPlan[]; ctaLabel?: string }) {
@@ -74,6 +77,8 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plan
           const normalizedPlanName = plan.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
           const planTone = plan.planType === "topup" ? `topup-${normalizedPlanName}` : isRecommended ? "recommended" : normalizedPlanName;
           const previewNotice = whopPreviewNotice(plan, effectiveBilling);
+          const yearlyDealLabel = billingMode === "yearly" && plan.yearlyDealLabel ? plan.yearlyDealLabel : "";
+          const estimatedOutput = billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput;
           return (
             <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : billingMode === "monthly" ? "24-hour preview + monthly" : "24-hour preview + yearly - 2 months free"}</span>
@@ -81,9 +86,10 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plan
               <strong>{price}</strong>
               <p className="plan-credit-line"><b>{credits.toLocaleString()} credits</b> are added to the account.</p>
               {previewNotice ? <p className="plan-savings-line">{previewNotice}</p> : null}
+              {yearlyDealLabel ? <p className="plan-savings-line flash-deal-line">{yearlyDealLabel}</p> : null}
               {plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
               <div className="plan-value-stack compact">
-                {plan.estimatedOutput ? <div><span>Estimated output</span><b>{plan.estimatedOutput}</b></div> : null}
+                {estimatedOutput ? <div><span>Estimated output</span><b>{estimatedOutput}</b></div> : null}
                 {plan.videoSpec ? <div><span>Video quality/duration</span><b>{plan.videoSpec}</b></div> : null}
                 {plan.mediaIncluded ? <div><span>Material + audio</span><b>{plan.mediaIncluded}</b></div> : null}
                 {typeof plan.concurrentTasks === "number" ? <div><span>Concurrent task</span><b>{plan.concurrentTasks} simultaneous jobs</b></div> : null}

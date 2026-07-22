@@ -71,7 +71,7 @@ const publicPricingRows: PublicPricingRow[] = [
     name: plan.name,
     price: `$${plan.priceUsd}/mo · $${plan.priceUsd * 10}/yr`,
     billing: "Monthly plan or yearly plan with 2 months free",
-    credits: `${plan.credits.toLocaleString()} credits monthly · ${(plan.credits * 12).toLocaleString()} credits yearly`,
+    credits: `${plan.credits.toLocaleString()} credits monthly · ${("yearlyCredits" in plan && typeof plan.yearlyCredits === "number" ? plan.yearlyCredits : plan.credits * 12).toLocaleString()} credits yearly`,
     setupFee: `$${plan.setupFeeUsd} 24-hour preview setup fee`,
     notes: "Preview includes one 10-second watermarked video. Downloads are closed during preview and open only after the selected subscription starts."
   })),

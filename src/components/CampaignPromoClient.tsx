@@ -13,6 +13,10 @@ type CampaignPromoProps = {
   durationDays?: number;
   storageKey?: string;
   countdownLabel?: string;
+  priceBadge?: string;
+  kicker?: string;
+  bonusPrimary?: string;
+  bonusSecondary?: string;
 };
 
 function formatRemaining(ms: number) {
@@ -43,7 +47,7 @@ function initialEndTime(input: { endsAt?: string; durationDays?: number; storage
   }
 }
 
-export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in" }: CampaignPromoProps) {
+export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in", priceBadge = "$79", kicker = "Don’t miss it — the timer is running", bonusPrimary = "+3,000 bonus", bonusSecondary = "Usually 9,000" }: CampaignPromoProps) {
   const resolvedStorageKey = `${storageKey}-${href}`;
   const [endTime] = useState(() => initialEndTime({ endsAt, durationDays, storageKey: resolvedStorageKey }));
   const [remaining, setRemaining] = useState(() => formatRemaining(endTime - Date.now()));
@@ -61,14 +65,14 @@ export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, d
       <div className="campaign-promo-orb two" aria-hidden="true" />
       <div className="campaign-promo-topline">
         <span className="campaign-promo-pulse">{eyebrow}</span>
-        <span className="campaign-promo-price">$79</span>
+        <span className="campaign-promo-price">{priceBadge}</span>
       </div>
       <div className="campaign-promo-main">
-        <span className="campaign-promo-kicker">Don’t miss it — the timer is running</span>
+        <span className="campaign-promo-kicker">{kicker}</span>
         <h3>{title}</h3>
         <div className="campaign-promo-bonus-row" aria-label="Campaign bonus details">
-          <span>+3,000 bonus</span>
-          <span>Usually 9,000</span>
+          <span>{bonusPrimary}</span>
+          <span>{bonusSecondary}</span>
         </div>
         <p>{body}</p>
       </div>

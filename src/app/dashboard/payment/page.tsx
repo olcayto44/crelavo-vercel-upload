@@ -24,12 +24,12 @@ function planPrice(plan: { name?: string; price: string; priceUsd?: number; plan
   return billing === "yearly" ? `${formatUsd(plan.priceUsd * 10)}${seatSuffix}/yr` : `$${plan.priceUsd}${seatSuffix}/mo`;
 }
 
-function planCredits(plan: { credits: number; planType?: string }, billing: BillingMode) {
+function planCredits(plan: { credits: number; yearlyCredits?: number; planType?: string }, billing: BillingMode) {
   if (["topup", "production_one_time", "service_subscription"].includes(String(plan.planType))) return plan.credits;
-  return billing === "yearly" ? plan.credits * 12 : plan.credits;
+  return billing === "yearly" ? plan.yearlyCredits ?? plan.credits * 12 : plan.credits;
 }
 
-function creditUnitPrice(plan: { priceUsd?: number; credits: number; planType?: string; serviceCategory?: string }, billing: BillingMode) {
+function creditUnitPrice(plan: { priceUsd?: number; credits: number; yearlyCredits?: number; planType?: string; serviceCategory?: string }, billing: BillingMode) {
   if (plan.planType === "service_subscription") return plan.serviceCategory === "growth_intelligence" ? "No included credits; competitor monitoring and report delivery apply." : "No included credits; fair-use live hours apply.";
   if (plan.planType === "production_one_time") return "Managed production package; not a general credit top-up.";
   if (!plan.priceUsd) return "Payment setup pending";

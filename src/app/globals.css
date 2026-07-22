@@ -964,6 +964,16 @@ main.auth-screen .auth-card {
   margin: 8px 0;
 }
 
+.flash-deal-line {
+  border: 1px solid rgba(245, 158, 11, .34);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: #fef3c7;
+  background: linear-gradient(135deg, rgba(245, 158, 11, .16), rgba(15, 23, 42, .50));
+  font-weight: 900;
+  box-shadow: 0 14px 30px rgba(245, 158, 11, .12);
+}
+
 .dashboard-shell, .payment-page, .admin-main-stack {
   gap: 16px;
   display: grid;

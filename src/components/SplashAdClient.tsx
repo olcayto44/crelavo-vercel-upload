@@ -19,21 +19,29 @@ type SplashPromoPayload = {
   durationDays?: number;
   storageKey?: string;
   countdownLabel?: string;
+  priceBadge?: string;
+  kicker?: string;
+  bonusPrimary?: string;
+  bonusSecondary?: string;
 };
 
 function parseSplashPromo(code: string) {
   try {
     const value = JSON.parse(code) as SplashPromoPayload;
     return {
-      eyebrow: String(value.eyebrow || "Limited-time launch offer"),
-      title: String(value.title || "12,000 credits are live"),
-      body: String(value.body || "Start your 24-hour preview for just $10. The Business plan now gives 12,000 credits instead of the usual 9,000."),
-      cta: String(value.cta || "Start preview for $10"),
-      href: String(value.href || "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"),
+      eyebrow: String(value.eyebrow || "LIMITED TIME ONLY: VIP AGENCY BUNDLE"),
+      title: String(value.title || "Scale your e-commerce video production to the moon"),
+      body: String(value.body || "Stop wasting thousands on video editors or slow rendering tools. Generate around 300 AI product video drafts and variations for Shopify & Amazon, run 12 simultaneous tasks, and manage your whole team in one workspace."),
+      cta: String(value.cta || "START 24-HOUR TEAM PREVIEW FOR $20"),
+      href: String(value.href || "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,
       durationDays: Number(value.durationDays ?? 7),
-      storageKey: String(value.storageKey || "crelavo-business-12000-countdown"),
-      countdownLabel: String(value.countdownLabel || "Offer ends in")
+      storageKey: String(value.storageKey || "crelavo-team-annual-174000-countdown"),
+      countdownLabel: String(value.countdownLabel || "VIP deal ends in"),
+      priceBadge: String(value.priceBadge || "$1,300/yr"),
+      kicker: String(value.kicker || "Pay less, get 30,000 BONUS credits"),
+      bonusPrimary: String(value.bonusPrimary || "174,000 credits today"),
+      bonusSecondary: String(value.bonusSecondary || "Regular: 144,000")
     };
   } catch {
     return null;
