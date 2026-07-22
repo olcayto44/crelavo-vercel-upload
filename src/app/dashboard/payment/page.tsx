@@ -37,6 +37,12 @@ function creditUnitPrice(plan: { priceUsd?: number; credits: number; yearlyCredi
   return `$${((price / planCredits(plan, billing)) * 1000).toFixed(2)} / 1,000 credits`;
 }
 
+const previewConfidenceSteps = [
+  { title: "Preview first", text: "The preview fee starts a 24-hour test window so the buyer can check access before the full subscription continues." },
+  { title: "Downloads stay controlled", text: "Preview access is intentionally limited; final downloads open after the selected plan starts and payment is confirmed." },
+  { title: "Same email match", text: "The checkout email should match the Crelavo account email so admin review can connect the payment quickly during early launch." }
+];
+
 export default async function PaymentPage({ searchParams }: { searchParams?: Promise<{ package?: string; billing?: string }> }) {
   const params = await searchParams;
   const selectedPackageId = params?.package ?? packages[0].id;
@@ -79,6 +85,19 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
         <div><strong>2. Credit/account match</strong><span>Use the same Crelavo email so the payment can be matched quickly.</span></div>
         <div><strong>3. Credits or service access</strong><span>{isServicePlan ? "Service access starts after preview/payment confirmation." : isProductionPackage ? "The managed production package is tracked separately from normal top-ups." : "Credits are added after payment confirmation."}</span></div>
         <div><strong>4. Production confirmation</strong><span>Production credits are still reserved only when a job is confirmed.</span></div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+        <span className="badge">Preview confidence</span>
+        <h2>What the 24-hour preview means</h2>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {previewConfidenceSteps.map((step) => (
+            <div className="card admin-category-card" key={step.title}>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <div className="payment-layout">

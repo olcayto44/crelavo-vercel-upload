@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Clapperboard, Grid3X3, Plane, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
@@ -10,6 +11,24 @@ import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
+
+export const metadata: Metadata = {
+  title: "Crelavo AI Production Platform for Ecommerce Ads, Product Videos and Campaigns",
+  description: "Start with free AI ad scoring, test Crelavo with a $10 or $20 preview, then scale ecommerce product videos, UGC ads, landing pages and campaign assets with credits.",
+  keywords: ["AI product video generator", "AI ad scorer", "ecommerce video ads", "Shopify product video", "Amazon product video", "UGC ad scripts", "AI campaign generator"],
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Crelavo AI Production Platform for Ecommerce Ads and Product Videos",
+    description: "Score ads free, test a preview, then scale product videos, UGC ads and ecommerce campaign assets.",
+    url: "/",
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Crelavo AI Production Platform",
+    description: "Free ad scoring, low-risk preview checkout and credit-based AI production for ecommerce teams."
+  }
+};
 
 const homepageGoalWizard = [
   {

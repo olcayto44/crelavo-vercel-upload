@@ -31,6 +31,15 @@ const competitorKeywordAds = [
   { keyword: "Vids AI alternative", headline: "Vids AI Alternative for Shopify and Amazon Sellers" }
 ];
 
+const apiFreeSeoAudit = [
+  { area: "Homepage metadata", status: "done", note: "Custom title, description, keywords, canonical, Open Graph and Twitter metadata are now set on the homepage." },
+  { area: "Free tool funnel", status: "done", note: "Free tools now point users toward $10 Business preview and $20 Team Annual preview paths." },
+  { area: "Payment clarity", status: "done", note: "Checkout page explains what the 24-hour preview means before full subscription continuation." },
+  { area: "Heading structure", status: "watch", note: "Public pages use one main h1 per page; admin cards can use repeated h2/h3 because they are internal dashboards." },
+  { area: "Schema coverage", status: "watch", note: "Homepage, pricing and free tools already use structured data components; future new landing pages should include matching schema where available." },
+  { area: "Placeholder risk", status: "watch", note: "Remaining placeholder text found by scan is inside admin/internal input placeholders or operational notes, not public buyer-facing hero copy." }
+];
+
 function statusLabel(status: string) {
   if (status === "ready_for_build") return "Ready for build";
   if (status === "blocked_by_payment") return "Blocked by payment";
@@ -415,6 +424,21 @@ export default function AdminGrowthPage() {
         <ul>{aiDirectorySubmissionKit.publicLinks.map((link) => <li key={link}>{link}</li>)}</ul>
         <h3>Guardrails</h3>
         <ul>{aiDirectorySubmissionKit.launchGuardrails.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">API-free SEO audit</span>
+        <h2>Public SEO and conversion cleanup before API work</h2>
+        <p style={{ color: "var(--muted)" }}>Track the API-free checks that were requested from the SEO critique: metadata, heading structure, schema coverage, placeholder risk and preview CTAs.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {apiFreeSeoAudit.map((item) => (
+            <div className="card admin-category-card" key={item.area}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.area}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

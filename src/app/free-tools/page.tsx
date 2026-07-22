@@ -11,6 +11,21 @@ export const metadata: Metadata = {
   alternates: { canonical: "/free-tools" }
 };
 
+const freeToolPreviewOffers = [
+  {
+    title: "$10 Business preview",
+    text: "Best for a single seller testing ecommerce ad drafts, product video variations and campaign assets before the $79 monthly plan continues.",
+    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
+    cta: "Start $10 preview"
+  },
+  {
+    title: "$20 Team Annual preview",
+    text: "Best for agencies and ecommerce teams testing the 174,000-credit annual workflow, 12 simultaneous tasks and team workspace before yearly billing continues.",
+    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
+    cta: "Start $20 preview"
+  }
+];
+
 export default async function FreeToolsPage() {
   const siteContent = await getConfiguredSiteContentConfig();
   return (
@@ -35,7 +50,17 @@ export default async function FreeToolsPage() {
             <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script, product idea or ad score.</small></div>
             <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output or ad score is carried into Assistant Workspace.</small></div>
             <div><span>Step 3</span><strong>Start production</strong><small>Turn the result into a delivery plan, credits and final package.</small></div>
-            <div><span>Step 4</span><strong>Buy credits when ready</strong><small>Payment Link launch uses the same Crelavo account email.</small></div>
+            <div><span>Step 4</span><strong>Test with a preview</strong><small>Start with a $10 Business preview or $20 Team preview before committing to the full plan.</small></div>
+          </div>
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            {freeToolPreviewOffers.map((offer) => (
+              <Link className="card admin-category-card" href={offer.href} key={offer.title}>
+                <span className="badge">Preview path</span>
+                <h3>{offer.title}</h3>
+                <p>{offer.text}</p>
+                <span className="text-link">{offer.cta}</span>
+              </Link>
+            ))}
           </div>
         </section>
 
