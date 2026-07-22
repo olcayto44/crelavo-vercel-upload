@@ -20,15 +20,15 @@ function parsePromoPayload(code: string): (CampaignPromoPayload & { eyebrow: str
     const value = JSON.parse(code) as CampaignPromoPayload;
     const durationDays = Number(value.durationDays ?? DEFAULT_PROMO_DAYS);
     return {
-      eyebrow: String(value.eyebrow || "Sınırlı süreli kampanya"),
-      title: String(value.title || "12.000 kredi şimdi açık"),
-      body: String(value.body || "24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi."),
-      cta: String(value.cta || "$10 ile önizlemeyi başlat"),
+      eyebrow: String(value.eyebrow || "Limited-time launch offer"),
+      title: String(value.title || "12,000 credits are live"),
+      body: String(value.body || "Start your 24-hour preview for just $10. The Business plan now gives 12,000 credits instead of the usual 9,000."),
+      cta: String(value.cta || "Start preview for $10"),
       href: String(value.href || "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,
       durationDays: Number.isFinite(durationDays) ? durationDays : DEFAULT_PROMO_DAYS,
       storageKey: String(value.storageKey || "crelavo-business-12000-countdown"),
-      countdownLabel: String(value.countdownLabel || "Kalan süre")
+      countdownLabel: String(value.countdownLabel || "Offer ends in")
     };
   } catch {
     return null;

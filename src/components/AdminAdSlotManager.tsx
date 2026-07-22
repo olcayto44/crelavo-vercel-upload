@@ -15,10 +15,10 @@ type CampaignPromoPayload = {
 };
 
 const defaultCampaignPromoPayload: CampaignPromoPayload = {
-  eyebrow: "Sınırlı süreli kampanya",
-  title: "12.000 kredi şimdi açık",
-  body: "24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi.",
-  cta: "$10 ile önizlemeyi başlat",
+  eyebrow: "Limited-time launch offer",
+  title: "12,000 credits are live",
+  body: "Start your 24-hour preview for just $10. The Business plan now gives 12,000 credits instead of the usual 9,000.",
+  cta: "Start preview for $10",
   href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
   endsAt: "2026-12-31T23:59:59Z"
 };

@@ -16,12 +16,12 @@ type CampaignPromoProps = {
 };
 
 function formatRemaining(ms: number) {
-  if (ms <= 0) return "00 gün 00 sa 00 dk";
+  if (ms <= 0) return "00d 00h 00m";
   const totalMinutes = Math.floor(ms / 60000);
   const days = Math.floor(totalMinutes / 1440);
   const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
-  return `${String(days).padStart(2, "0")} gün ${String(hours).padStart(2, "0")} sa ${String(minutes).padStart(2, "0")} dk`;
+  return `${String(days).padStart(2, "0")}d ${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`;
 }
 
 function initialEndTime(input: { endsAt?: string; durationDays?: number; storageKey: string }) {
@@ -43,7 +43,7 @@ function initialEndTime(input: { endsAt?: string; durationDays?: number; storage
   }
 }
 
-export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Kalan süre" }: CampaignPromoProps) {
+export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in" }: CampaignPromoProps) {
   const resolvedStorageKey = `${storageKey}-${href}`;
   const [endTime] = useState(() => initialEndTime({ endsAt, durationDays, storageKey: resolvedStorageKey }));
   const [remaining, setRemaining] = useState(() => formatRemaining(endTime - Date.now()));
@@ -64,11 +64,11 @@ export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, d
         <span className="campaign-promo-price">$79</span>
       </div>
       <div className="campaign-promo-main">
-        <span className="campaign-promo-kicker">Fırsatı kaçırma — süre başladı</span>
+        <span className="campaign-promo-kicker">Don’t miss it — the timer is running</span>
         <h3>{title}</h3>
         <div className="campaign-promo-bonus-row" aria-label="Campaign bonus details">
-          <span>+3.000 bonus</span>
-          <span>Normalde 9.000</span>
+          <span>+3,000 bonus</span>
+          <span>Usually 9,000</span>
         </div>
         <p>{body}</p>
       </div>
