@@ -7,10 +7,17 @@ type CreditState = {
   balance: number;
   reserved: number;
   available: number;
+  current_subscription_credits: number;
+  rolled_over_credits: number;
+  topup_credits: number;
+  bonus_credits: number;
+  rollover_cap: number;
+  subscription_status: string;
+  billing_cycle_ends_at: string | null;
 };
 
 export function CreditBalanceCard() {
-  const [credits, setCredits] = useState<CreditState>({ balance: 0, reserved: 0, available: 0 });
+  const [credits, setCredits] = useState<CreditState>({ balance: 0, reserved: 0, available: 0, current_subscription_credits: 0, rolled_over_credits: 0, topup_credits: 0, bonus_credits: 0, rollover_cap: 0, subscription_status: "inactive", billing_cycle_ends_at: null });
   const [mode, setMode] = useState("loading");
 
   useEffect(() => {
@@ -29,7 +36,14 @@ export function CreditBalanceCard() {
             setCredits({
               balance: data.balance ?? 0,
               reserved: data.reserved ?? 0,
-              available: data.available ?? 0
+              available: data.available ?? 0,
+              current_subscription_credits: data.current_subscription_credits ?? 0,
+              rolled_over_credits: data.rolled_over_credits ?? 0,
+              topup_credits: data.topup_credits ?? 0,
+              bonus_credits: data.bonus_credits ?? 0,
+              rollover_cap: data.rollover_cap ?? 0,
+              subscription_status: data.subscription_status ?? "inactive",
+              billing_cycle_ends_at: data.billing_cycle_ends_at ?? null
             });
             setMode("live");
             return;
@@ -42,7 +56,8 @@ export function CreditBalanceCard() {
     function onCreditsUpdated(event: Event) {
       const detail = (event as CustomEvent<{ available?: number; balance?: number; reserved?: number }>).detail;
       if (typeof detail?.available === "number") {
-        setCredits({ balance: detail.balance ?? detail.available, reserved: detail.reserved ?? 0, available: detail.available });
+        const available = detail.available;
+        setCredits((current) => ({ ...current, balance: detail.balance ?? available, reserved: detail.reserved ?? 0, available }));
         setMode("live");
         return;
       }
@@ -60,6 +75,14 @@ export function CreditBalanceCard() {
       <strong>{mode === "loading" ? "..." : credits.available}</strong>
       <p>Available balance</p>
       {mode === "live" ? <small>Total: {credits.balance} · Reserved: {credits.reserved}</small> : null}
+      {mode === "live" ? (
+        <div style={{ display: "grid", gap: 4, marginTop: 10 }}>
+          <small>Monthly: {credits.current_subscription_credits.toLocaleString()} · Rollover: {credits.rolled_over_credits.toLocaleString()}</small>
+          <small>Top-up: {credits.topup_credits.toLocaleString()} · Bonus: {credits.bonus_credits.toLocaleString()}</small>
+          {credits.rollover_cap > 0 ? <small>Rollover cap: {credits.rollover_cap.toLocaleString()} · Status: {credits.subscription_status}</small> : null}
+          {credits.billing_cycle_ends_at ? <small>Next cycle: {new Date(credits.billing_cycle_ends_at).toLocaleDateString()}</small> : null}
+        </div>
+      ) : null}
       {mode === "live" && credits.available <= 0 ? (
         <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
           <small>Start with a credit review before opening a paid production.</small>

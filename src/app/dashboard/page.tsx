@@ -5,6 +5,27 @@ import { SignOutButton } from "@/components/SignOutButton";
 import { CreditBalanceCard } from "@/components/CreditBalanceCard";
 import { dashboardNextBestActions } from "@/lib/retention-growth";
 
+const dashboardConversionShortcuts = [
+  {
+    title: "I need the cheapest safe test",
+    text: "Use the free ad score first, then start the $10 Business preview if the hook is strong enough.",
+    href: "/free-tools/ad-performance-score-checker",
+    cta: "Score ad free"
+  },
+  {
+    title: "I am ready to test one brand",
+    text: "Open the Business preview path for 12,000 credits and one focused ecommerce production test.",
+    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
+    cta: "Start Business preview"
+  },
+  {
+    title: "I need agency-scale output",
+    text: "Open the Team Annual preview path for 174,000 credits, 12 simultaneous tasks and bulk client/product workflows.",
+    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
+    cta: "Start Team preview"
+  }
+];
+
 const workflowStarters = [
   {
     badge: "Website builder",
@@ -185,6 +206,20 @@ export default function DashboardPage() {
         <div className="card"><span>Safety check</span><strong>Confirm</strong><p>Review scope and credit reserve before production starts.</p></div>
         <div className="card"><span>Delivery</span><strong>Files</strong><p>Track previews, source packages, README notes and final outputs.</p></div>
       </div>
+      <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">Conversion shortcuts</span>
+        <h2>Choose the next action without searching the dashboard</h2>
+        <p style={{ color: "var(--muted)" }}>These three paths match the main launch funnel: free score, Business preview or Team Annual preview.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {dashboardConversionShortcuts.map((item) => (
+            <Link className="card admin-category-card" href={item.href} key={item.title}>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+              <span className="text-link">{item.cta}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Next best actions</span>
         <h2>Keep building from where users usually drop off</h2>

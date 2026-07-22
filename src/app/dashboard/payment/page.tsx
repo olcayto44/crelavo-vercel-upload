@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
+import { rolloverPolicyText } from "@/lib/credit-rollover";
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 import { allCreditProducts, dronePurchasePackages, findPaymentProduct, growthIntelligencePlans, liveSalesServicePlans, packages } from "@/lib/data";
 import { billingTermsText } from "@/lib/legal";
@@ -43,6 +44,12 @@ const previewConfidenceSteps = [
   { title: "Same email match", text: "The checkout email should match the Crelavo account email so admin review can connect the payment quickly during early launch." }
 ];
 
+const checkoutHesitationAnswers = [
+  { question: "What if I picked the wrong plan?", answer: "Start with Business if you only need one brand or a small product test. Choose Team Annual only when bulk ecommerce or agency production is the goal." },
+  { question: "When are credits used?", answer: "Credits are added after payment confirmation, but production credits are reserved only after a specific production request is confirmed." },
+  { question: "What should I do before checkout?", answer: "If the ad idea is not ready, use the free AI Ad Scorer first. If the direction is clear, start the preview checkout." }
+];
+
 export default async function PaymentPage({ searchParams }: { searchParams?: Promise<{ package?: string; billing?: string }> }) {
   const params = await searchParams;
   const selectedPackageId = params?.package ?? packages[0].id;
@@ -60,6 +67,7 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
   const isSubscription = selectedPackage.planType === "subscription" || isServicePlan;
   const packageFamily = isServicePlan ? isGrowthService ? growthIntelligencePlans : liveSalesServicePlans : isProductionPackage ? dronePurchasePackages : allCreditProducts;
   const previewNotice = whopPreviewNotice(selectedPackage, billing);
+  const rolloverNotice = rolloverPolicyText(selectedPackage, billing);
 
   return (
     <DashboardShell className="payment-dashboard-shell">
@@ -110,6 +118,7 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
           {isProductionPackage && "productionCredits" in selectedPackage ? <p><strong>{Number(selectedPackage.productionCredits).toLocaleString()} credits equivalent</strong> is used as the internal production guide, but this is not a general credit top-up.</p> : null}
           {!isServicePlan && !isProductionPackage ? <p><strong>{displayCredits.toLocaleString()} credits</strong> will be added to the account after payment confirmation.</p> : null}
           {previewNotice ? <p><strong>Start 24-Hour Preview.</strong> {previewNotice}</p> : null}
+          <p><strong>Unused credit protection.</strong> {rolloverNotice}</p>
           <p>{creditUnitPrice(selectedPackage, billing)}</p>
           {isSubscription && billing === "yearly" && selectedPackage.priceUsd ? <p>With yearly billing, you receive 12 months of access and pay {formatUsd(selectedPackage.priceUsd * 10)} instead of {formatUsd(selectedPackage.priceUsd * 12)}. 2 months are free and the plan renews yearly.</p> : null}
           {isServicePlan ? <p>{isGrowthService ? `This intelligence service plan renews ${billing === "yearly" ? "yearly" : "monthly"} until cancelled. Scraping, monitoring, report generation and alert limits follow the selected plan.` : `This live-agent service plan renews ${billing === "yearly" ? "yearly" : "monthly"} until cancelled. Extra live-operation hours are handled as pay-as-you-go after cost analysis.`}</p> : null}
@@ -136,6 +145,23 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
           </p>
         </section>
       </div>
+
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+        <span className="badge">Before you continue</span>
+        <h2>Common checkout questions</h2>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {checkoutHesitationAnswers.map((item) => (
+            <div className="card admin-category-card" key={item.question}>
+              <h3>{item.question}</h3>
+              <p>{item.answer}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+          <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score the ad first</Link>
+          <Link className="btn secondary" href="/pricing">Compare plans again</Link>
+        </div>
+      </section>
 
       <div className="card" style={{ marginTop: 18 }}>
         <h3>Choose another package</h3>

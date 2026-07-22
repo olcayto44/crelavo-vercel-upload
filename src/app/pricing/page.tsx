@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
 import { productionPackageHref } from "@/lib/assistant-links";
+import { creditRolloverSummaryRows, topupRolloverSummaryRows, rolloverPolicyText } from "@/lib/credit-rollover";
 import { dronePurchasePackages, growthIntelligencePlans, liveSalesServicePlans, packages, topUpPackages } from "@/lib/data";
 import { creditCalculatorExamples, productionCreditGuide, quickCreditMath } from "@/lib/pricing";
 import { productionPackages, productionTypes } from "@/lib/production";
@@ -57,6 +58,27 @@ const pricingTrustPoints = [
   }
 ];
 
+const pricingDecisionCards = [
+  {
+    title: "Choose Business if you are testing one brand",
+    text: "$79/month with 12,000 credits is the safer path for solo sellers, small Shopify stores and first product video tests.",
+    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
+    cta: "Start $10 Business preview"
+  },
+  {
+    title: "Choose Team Annual if you run many client or product tests",
+    text: "$1,300/year gives 174,000 credits, 12 simultaneous tasks and the agency bundle for bulk ecommerce video production.",
+    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
+    cta: "Start $20 Team preview"
+  },
+  {
+    title: "Not ready to pay yet? Score the ad first",
+    text: "Use the free AI Ad Scorer to check hook, CTA and proof quality before spending credits on production.",
+    href: "/free-tools/ad-performance-score-checker",
+    cta: "Run free ad score"
+  }
+];
+
 type PublicPricingRow = {
   name: string;
   price: string;
@@ -73,14 +95,14 @@ const publicPricingRows: PublicPricingRow[] = [
     billing: "Monthly plan or yearly plan with 2 months free",
     credits: `${plan.credits.toLocaleString()} credits monthly · ${("yearlyCredits" in plan && typeof plan.yearlyCredits === "number" ? plan.yearlyCredits : plan.credits * 12).toLocaleString()} credits yearly`,
     setupFee: `$${plan.setupFeeUsd} 24-hour preview setup fee`,
-    notes: "Preview includes one 10-second watermarked video. Downloads are closed during preview and open only after the selected subscription starts."
+    notes: `Preview includes one 10-second watermarked video. Downloads are closed during preview and open only after the selected subscription starts. ${rolloverPolicyText(plan, "monthly")}`
   })),
   ...topUpPackages.map((plan) => ({
     name: plan.name,
     price: `$${plan.priceUsd}`,
     billing: "One-time purchase",
     credits: `${plan.credits.toLocaleString()} credits`,
-    notes: "Does not renew automatically."
+    notes: rolloverPolicyText(plan, "one_time")
   })),
   ...liveSalesServicePlans.map((plan) => ({
     name: plan.name,
@@ -128,6 +150,22 @@ export default async function PricingPage() {
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">Choose faster</span>
+          <h2>Pick the safest next step for your situation</h2>
+          <p className="section-lead">This block removes the main pricing hesitation: start free if the creative angle is not ready, use Business for one brand, or use Team Annual when the goal is agency-scale production.</p>
+          <div className="admin-category-grid" style={{ marginTop: 18 }}>
+            {pricingDecisionCards.map((item) => (
+              <Link className="card admin-category-card" href={item.href} key={item.title}>
+                <span className="badge">Decision path</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+                <span className="text-link">{item.cta}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
           <span className="badge">Buyer confidence</span>
           <h2>What you get before, during and after production</h2>
           <p className="section-lead">Pricing is tied to a dashboard workflow, not a blind one-click generation promise. You can estimate scope, review delivery expectations and keep revisions connected to the same production record.</p>
@@ -142,6 +180,29 @@ export default async function PricingPage() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/dashboard/create?idea=Help%20me%20choose%20the%20right%20Crelavo%20package">Help me choose a package</Link>
             <Link className="btn secondary" href="/dashboard/productions">View delivery workspace</Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">Unused credits rollover</span>
+          <h2>No monthly credit waste while your subscription stays active</h2>
+          <p className="section-lead">Monthly plan credits roll over to the next billing cycle when renewal succeeds, capped at 3x the monthly credit allowance. Annual credits stay available during the active 12-month subscription period, and top-up credits stay separate for 12 months.</p>
+          <div className="admin-category-grid" style={{ marginTop: 18 }}>
+            {creditRolloverSummaryRows().map((item) => (
+              <div className="card admin-category-card" key={item.packageId}>
+                <span className="badge">{item.packageName}</span>
+                <h3>{item.monthlyCap.toLocaleString()} max monthly rollover cap</h3>
+                <p>{item.monthlyText}</p>
+                <p>{item.yearlyText}</p>
+              </div>
+            ))}
+            {topupRolloverSummaryRows().map((item) => (
+              <div className="card admin-category-card" key={item.packageId}>
+                <span className="badge">Top-up</span>
+                <h3>{item.packageName}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
           </div>
         </section>
 

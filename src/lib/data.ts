@@ -823,7 +823,7 @@ export const packages = [
     relaxMode: "Standard render queue for low-priority drafts when provider capacity allows.",
     renderQueue: "Priority render queue",
     teamFeatures: ["Single user workspace"],
-    usage: ["Priority render queue", "Direct final request without mandatory trailer step", "Good for first product-link ad tests", "Covers lightweight visuals, subtitles and previews", "Best for solo creators validating the workflow"]
+    usage: ["Priority render queue", "Unused credits roll over while subscription remains active, up to 7,500 credits", "Direct final request without mandatory trailer step", "Good for first product-link ad tests", "Covers lightweight visuals, subtitles and previews", "Best for solo creators validating the workflow"]
   },
   {
     id: "business",
@@ -846,7 +846,7 @@ export const packages = [
     relaxMode: "Fastest shared render queue for lower-priority drafts while credits cover premium outputs.",
     renderQueue: "Fastest render queue",
     teamFeatures: ["Brand kit memory", "Reusable campaign templates"],
-    usage: ["Fastest render queue", "Direct final production or optional draft preview", "Enough for regular campaign and MV experiments", "Supports premium video or several standard jobs", "Best for creators and small brands"]
+    usage: ["Fastest render queue", "Unused credits roll over while subscription remains active, up to 36,000 credits", "Direct final production or optional draft preview", "Enough for regular campaign and MV experiments", "Supports premium video or several standard jobs", "Best for creators and small brands"]
   },
   {
     id: "ultra",
@@ -869,7 +869,7 @@ export const packages = [
     relaxMode: "Fastest render queue for draft generations and lower-priority variations.",
     renderQueue: "Fastest render queue",
     teamFeatures: ["Shared asset library", "Brand kit governance", "Client delivery workspace"],
-    usage: ["Fastest render queue", "Final-output first workflow, no forced trailer gate", "Built for bulk product campaigns and client work", "Supports cinematic video, app/site/source-file jobs", "Best for agencies and e-commerce teams"]
+    usage: ["Fastest render queue", "Unused credits roll over while subscription remains active, up to 75,000 credits", "Final-output first workflow, no forced trailer gate", "Built for bulk product campaigns and client work", "Supports cinematic video, app/site/source-file jobs", "Best for agencies and e-commerce teams"]
   },
   {
     id: "team",
@@ -895,7 +895,7 @@ export const packages = [
     relaxMode: "Dedicated production priority for lower-priority drafts across the workspace.",
     renderQueue: "Dedicated production priority",
     teamFeatures: ["Seat management", "Credit usage controls", "Project permissions", "Shared board and brand kit", "Real-time review workflow"],
-    usage: ["Dedicated production priority", "Team can submit final production directly", "Built for teams", "Controls credits by member/project", "Best for agencies managing client outputs"]
+    usage: ["Dedicated production priority", "Monthly credits roll over while active up to 36,000 credits; Team Annual credits stay available across the active 12-month period", "Team can submit final production directly", "Built for teams", "Controls credits by member/project", "Best for agencies managing client outputs"]
   }
 ];
 

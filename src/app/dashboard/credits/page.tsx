@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
 import { DashboardShell } from "@/components/DashboardShell";
+import { creditRolloverSummaryRows, topupRolloverSummaryRows } from "@/lib/credit-rollover";
 import { packages, topUpPackages } from "@/lib/data";
 import { productionCreditGuide } from "@/lib/pricing";
 import { productionPackages, productionTypes } from "@/lib/production";
@@ -13,7 +14,7 @@ export default function CreditsPage() {
       <div className="card">
         <h2>Credits and plans</h2>
         <p style={{ color: "var(--muted)" }}>Choose a normal credit plan first. Avatar live sales plans stay separate as service plans; Drone / Satellite Video credit packs stay on a separate purchase page but add credits like other top-ups.</p>
-        <p style={{ color: "var(--muted)" }}>Paid 24-hour previews include one 10-second watermarked preview video with downloads closed. Yearly plans give 12 months of access while charging for 10 months, so 2 months are free.</p>
+        <p style={{ color: "var(--muted)" }}>Paid 24-hour previews include one 10-second watermarked preview video with downloads closed. Yearly plans give 12 months of access while charging for 10 months, so 2 months are free. Unused monthly subscription credits roll over while the subscription remains active, annual credits stay available during the active yearly period, and top-up credits stay separate for 12 months.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
           <Link className="btn secondary" href="/live-sales-credits">Open live sales plans</Link>
           <Link className="btn secondary" href="/drone-credits">Open drone packages</Link>
@@ -35,6 +36,28 @@ export default function CreditsPage() {
           <span className="badge">Delivery honesty</span>
           <h3>Status is shown clearly</h3>
           <p>The job workspace separates planning, preview, production and delivery states so users know what is happening before credits are spent.</p>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 24 }}>
+        <span className="badge">Rollover rules</span>
+        <h2>Unused credits do not disappear immediately</h2>
+        <div className="admin-category-grid" style={{ marginTop: 14 }}>
+          {creditRolloverSummaryRows().map((item) => (
+            <div className="card admin-category-card" key={item.packageId}>
+              <span className="badge">{item.packageName}</span>
+              <h3>{item.monthlyCap.toLocaleString()} monthly rollover cap</h3>
+              <p>{item.monthlyText}</p>
+              <p>{item.yearlyText}</p>
+            </div>
+          ))}
+          {topupRolloverSummaryRows().map((item) => (
+            <div className="card admin-category-card" key={item.packageId}>
+              <span className="badge">Top-up</span>
+              <h3>{item.packageName}</h3>
+              <p>{item.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     const { data: currentBalance, error: balanceReadError } = await supabase
       .from("credit_balances")
-      .select("balance, reserved")
+      .select("balance, reserved, bonus_credits")
       .eq("user_id", profile.id)
       .maybeSingle();
 
@@ -67,6 +67,8 @@ export async function POST(request: Request) {
     const current = currentBalance?.balance ?? 0;
     const nextBalance = Math.max(0, current + amount);
     const nextReserved = currentBalance?.reserved ?? 0;
+    const currentBonus = currentBalance?.bonus_credits ?? 0;
+    const nextBonusCredits = action === "add" ? currentBonus + Math.abs(amount) : Math.max(0, currentBonus - Math.abs(amount));
 
     const { data: balance, error: balanceError } = await supabase
       .from("credit_balances")
@@ -74,9 +76,10 @@ export async function POST(request: Request) {
         user_id: profile.id,
         balance: nextBalance,
         reserved: nextReserved,
+        bonus_credits: nextBonusCredits,
         updated_at: new Date().toISOString()
       }, { onConflict: "user_id" })
-      .select("balance, reserved, updated_at")
+      .select("balance, reserved, bonus_credits, updated_at")
       .single();
 
     if (balanceError) throw balanceError;

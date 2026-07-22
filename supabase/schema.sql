@@ -16,6 +16,17 @@ create table credit_balances (
   user_id uuid primary key references profiles(id) on delete cascade,
   balance integer not null default 0,
   reserved integer not null default 0,
+  current_subscription_credits integer not null default 0,
+  rolled_over_credits integer not null default 0,
+  topup_credits integer not null default 0,
+  bonus_credits integer not null default 0,
+  rollover_cap integer not null default 0,
+  subscription_status text not null default 'inactive',
+  billing_cycle_ends_at timestamptz,
+  active_subscription_package text,
+  active_subscription_billing text,
+  last_rollover_at timestamptz,
+  topup_expires_at timestamptz,
   updated_at timestamptz not null default now()
 );
 

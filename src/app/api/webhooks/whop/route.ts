@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
+import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail, sendPaymentReceiptEmail } from "@/lib/payment-email";
 import { business12000LaunchAffiliateCampaign, calculatePartnerCommission, normalizePartnerCode } from "@/lib/partner-program";
@@ -410,25 +411,26 @@ async function addCredits(input: {
 
   const { data: balanceRow, error: balanceReadError } = await supabase
     .from("credit_balances")
-    .select("balance, reserved")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, rollover_cap, subscription_status, billing_cycle_ends_at, active_subscription_package, active_subscription_billing")
     .eq("user_id", profile.id)
     .maybeSingle();
 
   if (balanceReadError) throw balanceReadError;
 
-  const currentBalance = Number(balanceRow?.balance ?? 0) || 0;
-  const currentReserved = Number(balanceRow?.reserved ?? 0) || 0;
-  const nextBalance = currentBalance + input.credits;
+  const bucketUpdate = applyCreditPurchaseToBuckets({
+    row: balanceRow,
+    product: input.product,
+    billing: input.billing === "yearly" ? "yearly" : input.billing === "one_time" ? "one_time" : "monthly",
+    credits: input.credits
+  });
 
   const { data: balance, error: balanceError } = await supabase
     .from("credit_balances")
     .upsert({
       user_id: profile.id,
-      balance: nextBalance,
-      reserved: currentReserved,
-      updated_at: new Date().toISOString()
+      ...bucketUpdate
     }, { onConflict: "user_id" })
-    .select("balance, reserved, updated_at")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, rollover_cap, billing_cycle_ends_at, updated_at")
     .single();
 
   if (balanceError) throw balanceError;
@@ -558,12 +560,48 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditActivationEmailResult };
 }
 
+async function clearCreditsAfterMembershipEnd(payment: WhopObject) {
+  const email = customerEmail(payment);
+  if (!email) return { skipped: true, reason: "missing_customer_email" };
+  const profile = await profileByEmail(email, customerName(payment));
+  if (!profile) return { skipped: true, reason: "crelavo_user_not_found" };
+
+  const supabase = supabaseAdmin();
+  const { data: balanceRow, error: balanceReadError } = await supabase
+    .from("credit_balances")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, billing_cycle_ends_at")
+    .eq("user_id", profile.id)
+    .maybeSingle();
+  if (balanceReadError) throw balanceReadError;
+
+  const update = clearSubscriptionCreditBuckets({ row: balanceRow });
+  const expiredAmount = Number(balanceRow?.current_subscription_credits ?? 0) + Number(balanceRow?.rolled_over_credits ?? 0);
+  const { data: balance, error: balanceError } = await supabase
+    .from("credit_balances")
+    .upsert({ user_id: profile.id, ...update }, { onConflict: "user_id" })
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, subscription_status, updated_at")
+    .single();
+  if (balanceError) throw balanceError;
+
+  if (expiredAmount > 0) {
+    await supabase.from("credit_events").insert({
+      user_id: profile.id,
+      type: "adjustment",
+      amount: -expiredAmount,
+      note: `Subscription credits expired after Whop membership end | membership=${membershipId(payment) || "unknown"}`
+    });
+  }
+
+  return { cleared: true, profile, balance, expiredAmount };
+}
+
 async function handleAttentionEvent(event: string, payment: WhopObject, webhookId: string) {
   const planId = planIdFromPayment(payment);
   const mappedPlan = whopProductForPlanId(planId);
   const product = mappedPlan ? findPaymentProduct(mappedPlan.productId) : null;
+  const creditClearResult = event === "membership.deactivated" ? await clearCreditsAfterMembershipEnd(payment).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "credit_clear_failed" })) : null;
 
-  return sendAdminPaymentNotificationEmail({
+  const emailResult = await sendAdminPaymentNotificationEmail({
     eventType: event,
     customerEmail: customerEmail(payment),
     customerName: customerName(payment),
@@ -580,6 +618,8 @@ async function handleAttentionEvent(event: string, payment: WhopObject, webhookI
     paymentIntentId: paymentId(payment) || null,
     status: paymentStatus(payment) || membershipStatus(payment)
   });
+
+  return { emailResult, creditClearResult };
 }
 
 export async function POST(request: Request) {
