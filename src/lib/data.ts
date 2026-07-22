@@ -132,7 +132,19 @@ export const addOns = [
   "Custom location",
   "Accessories styling",
   "Presenter voice-over language",
-  "AI presenter setup"
+  "AI presenter setup",
+  "Dashboard link delivery",
+  "MP4 video delivery",
+  "MP3 audio delivery",
+  "WAV audio delivery",
+  "PNG/JPG image delivery",
+  "PDF document delivery",
+  "ZIP delivery package",
+  "README / handoff notes",
+  "Source files delivery",
+  "Web/app source package",
+  "Extended file storage",
+  "Full managed handoff"
 ];
 
 export const conversationalDialogModes = [

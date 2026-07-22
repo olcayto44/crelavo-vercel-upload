@@ -212,7 +212,19 @@ const addOnPremium: Record<string, number> = {
   "Custom location": 3000,
   "Accessories styling": 500,
   "Presenter voice-over language": 1000,
-  "AI presenter setup": 3000
+  "AI presenter setup": 3000,
+  "Dashboard link delivery": 0,
+  "MP4 video delivery": 500,
+  "MP3 audio delivery": 300,
+  "WAV audio delivery": 500,
+  "PNG/JPG image delivery": 300,
+  "PDF document delivery": 500,
+  "ZIP delivery package": 500,
+  "README / handoff notes": 1500,
+  "Source files delivery": 5000,
+  "Web/app source package": 10000,
+  "Extended file storage": 1000,
+  "Full managed handoff": 25000
 };
 
 const conversationalModePremium: Record<string, number> = {
@@ -934,28 +946,90 @@ function perSecondRate(input: CreditEstimateInput) {
   return 55;
 }
 
+function premiumValue(table: Record<string, number>, value?: string) {
+  return value ? table[value] ?? 0 : 0;
+}
+
 function fixedFeatureCredits(input: CreditEstimateInput, seconds: number) {
-  const addOns = new Set(input.addOns ?? []);
+  const selectedAddOns = new Set(input.addOns ?? []);
   let total = 0;
 
-  if (addOns.has("Voice-over") || input.videoType === "Seslendirme" || input.videoType === "AI Conversational Presenter") {
-    total += Math.ceil(seconds / 60) * 2;
+  for (const addOn of selectedAddOns) {
+    if (addOn === "Extra revision") continue;
+    total += addOnPremium[addOn] ?? 0;
   }
-  if (addOns.has("Basic subtitles") || addOns.has("Styled subtitles") || addOns.has("Multi-language subtitles") || input.captionStyle) {
-    total += 1;
+
+  if (selectedAddOns.has("Extra revision")) {
+    total += Math.max(addOnPremium["Extra revision"] ?? 0, Math.ceil(seconds * perSecondRate(input) * 0.5));
   }
-  if (addOns.has("Sound effects") || input.sfxIntensity) total += 2;
-  if (addOns.has("Background music") || input.bgmMood) total += 2;
-  if (addOns.has("Script writing")) total += 2;
-  if (addOns.has("Extra revision")) total += Math.ceil((seconds * perSecondRate(input)) * 0.5);
-  if (input.premiumMaterialType && input.premiumMaterialType !== "No premium material") total += 1;
+
+  if (input.videoType === "Seslendirme" || input.videoType === "AI Conversational Presenter") {
+    total += Math.max(addOnPremium["Voice-over"] ?? 0, Math.ceil(seconds / 60) * 500);
+  }
+
+  total += premiumValue(conversationalModePremium, input.conversationalMode);
+  total += premiumValue(conversationalVoicePremium, input.conversationalVoice);
+  total += Math.max(0, input.extraLanguageCount ?? 0) * extraLanguagePremium;
+
+  total += premiumValue(lightingPremium, input.lightingStyle);
+  total += premiumValue(cameraMovementPremium, input.cameraMovement);
+  total += premiumValue(motionIntensityPremium, input.motionIntensity);
+  total += premiumValue(transitionPremium, input.transitionStyle);
+  total += premiumValue(sfxPremium, input.sfxIntensity);
+  total += premiumValue(brandingPremium, input.brandingIntensity);
+  total += premiumValue(captionStylePremium, input.captionStyle);
+  total += premiumValue(bgmMoodPremium, input.bgmMood);
+  total += premiumValue(frameRatePremium, input.frameRate);
+  total += premiumValue(aspectOutputPremium, input.aspectOutput);
+  total += premiumValue(presenterAppearancePremium, input.presenterAppearance);
+  total += premiumValue(colorPalettePremium, input.colorPalette);
+  total += premiumValue(fontChoicePremium, input.fontChoice);
+  total += premiumValue(voiceAccentPremium, input.voiceAccent);
+  total += premiumValue(voiceEmotionPremium, input.voiceEmotion);
+  total += premiumValue(voicePacePremium, input.voicePace);
+  total += premiumValue(voiceAgePremium, input.voiceAgeRange);
+
+  total += premiumValue(dramaFormatPremium, input.dramaFormat);
+  total += premiumValue(dramaEpisodeDurationPremium, input.dramaEpisodeDuration);
+  total += premiumValue(dramaGenrePremium, input.dramaGenre);
+  total += premiumValue(dramaTonePremium, input.dramaTone);
+  total += premiumValue(dramaVoiceModePremium, input.dramaVoiceMode);
+  total += premiumValue(dramaLanguagePremium, input.dramaLanguage);
+  total += premiumValue(dramaMaterialPremium, input.dramaMaterialLevel);
+  total += premiumValue(dramaEnvironmentPremium, input.dramaEnvironmentLevel);
+  total += premiumValue(dramaSoundDesignPremium, input.dramaSoundDesignLevel);
+  total += premiumValue(dramaComplexityPremium, input.dramaProductionComplexity);
+  total += premiumValue(dramaCharacterCountPremium, input.dramaCharacterCount);
+  total += premiumValue(dramaCharacterTypePremium, input.dramaCharacterType);
+  total += premiumValue(dramaMainCharacterPremium, input.dramaMainCharacterProfile);
+  total += premiumValue(dramaSettingPremium, input.dramaSettingType);
+  total += premiumValue(dramaLocationCountPremium, input.dramaLocationCount);
+  total += premiumValue(dramaPropPremium, input.dramaPropLevel);
+  total += premiumValue(dramaDialogueStylePremium, input.dramaDialogueStyle);
+  total += premiumValue(dramaVoiceCountPremium, input.dramaVoiceCount);
+  total += premiumValue(dramaSubtitlePremium, input.dramaSubtitleMode);
+  total += premiumValue(dramaLanguageCountPremium, input.dramaLanguageCount);
+  total += premiumValue(dramaVehiclePremium, input.dramaVehicleOption);
+  total += premiumValue(dramaLuxuryAssetPremium, input.dramaLuxuryAsset);
+  total += premiumValue(dramaUserActorPremium, input.dramaUserActor);
+  total += premiumValue(dramaWardrobePremium, input.dramaWardrobeLevel);
+  total += premiumValue(dramaStuntPremium, input.dramaStuntLevel);
+
+  if (input.premiumMaterialType && input.premiumMaterialType !== "No premium material") {
+    total += Math.max(500, premiumValue(premiumMaterialOptionPremium, input.premiumMaterialOption));
+  }
 
   return total;
 }
 
 export function estimateCredits(input: CreditEstimateInput) {
   const seconds = durationSeconds[input.duration ?? ""] ?? 60;
+  const baseCredits = baseByType[input.videoType ?? ""] ?? 0;
+  const categoryCredits = categoryPremium[input.toolCategory ?? ""] ?? 0;
+  const styleCredits = premiumValue(stylePremium, input.style);
   const videoCredits = seconds * perSecondRate(input);
   const featureCredits = fixedFeatureCredits(input, seconds);
-  return Math.max(1, Math.ceil(videoCredits + featureCredits));
+  const minimumCredits = minimumForInput(input);
+
+  return roundUpToTen(Math.max(minimumCredits, baseCredits + categoryCredits + styleCredits + videoCredits + featureCredits));
 }
