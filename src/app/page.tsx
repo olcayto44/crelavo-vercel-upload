@@ -54,6 +54,30 @@ const featuredTools = [
   { title: "Full Tools Catalog", href: "/tools", icon: Grid3X3 }
 ];
 
+const paidGrowthFunnelCards = [
+  {
+    badge: "Free tool entry",
+    title: "Score your ad before buying production credits",
+    description: "Use the free AI Ad Scorer to find weak hooks, CTA gaps and proof problems before moving into the $10 Business preview or $20 Team preview.",
+    href: "/free-tools/ad-performance-score-checker",
+    cta: "Run the free ad score"
+  },
+  {
+    badge: "Meta Sales hook",
+    title: "$20 Team Annual preview for agencies",
+    description: "For Shopify, Amazon FBA and WooCommerce teams: test the Team Annual workflow for 24 hours before the $1,300 yearly plan continues.",
+    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
+    cta: "Start $20 team preview"
+  },
+  {
+    badge: "Business launch offer",
+    title: "$79 Business now includes 12,000 credits",
+    description: "A lower-risk monthly path for small brands that want to generate product ad drafts, social variations and campaign assets before scaling up.",
+    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
+    cta: "Start $10 business preview"
+  }
+];
+
 const lightweightHomeCards = [
   {
     badge: "Free entry",
@@ -128,6 +152,27 @@ export default async function HomePage() {
                   <h3>{goal.title}</h3>
                   <p>{goal.description}</p>
                   <span className="home-goal-cta">{goal.cta}</span>
+                </HardReloadLink>
+              ))}
+            </div>
+          </section>
+
+          <section className="container section home-section-tight clean-feed-section" aria-labelledby="home-paid-growth-funnel-heading">
+            <div className="sample-video-head">
+              <div>
+                <span className="badge"><Sparkles size={15} /> Paid traffic funnel</span>
+                <h2 id="home-paid-growth-funnel-heading">Start free, test with a preview, then scale only when the creative works</h2>
+                <p className="section-lead">Crelavo is now positioned for Meta Sales traffic: free ad scoring, low-risk Whop previews and clear upgrade paths for Shopify, Amazon and agency teams.</p>
+              </div>
+              <HardReloadLink className="btn" href="/free-tools/ad-performance-score-checker">Open free Ad Scorer</HardReloadLink>
+            </div>
+            <div className="admin-category-grid" style={{ marginTop: 16 }}>
+              {paidGrowthFunnelCards.map((item) => (
+                <HardReloadLink className="card admin-category-card" href={item.href} key={item.title}>
+                  <span className="badge">{item.badge}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <span className="text-link">{item.cta}</span>
                 </HardReloadLink>
               ))}
             </div>

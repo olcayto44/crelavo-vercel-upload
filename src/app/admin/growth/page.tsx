@@ -11,6 +11,26 @@ import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
 
+const metaSalesLaunchPlan = [
+  { label: "Campaign objective", value: "Sales", note: "Use Website conversion; do not split the first $50/day budget across channels." },
+  { label: "Optimization event", value: "$20 preview purchase", note: "Fallback target: Initiate Checkout until Meta has enough purchase data." },
+  { label: "Budget", value: "$50/day Advantage+", note: "One campaign pool first; avoid fragmenting the learning phase." },
+  { label: "Audience", value: "US, UK, CA, AU", note: "English only; Shopify, Amazon FBA, WooCommerce, Dropshipping + Business Page Admins." }
+];
+
+const paidCreativeHooks = [
+  { title: "Direct product demo", script: "Paste link. Get AI Video in 10 seconds.", note: "Show Shopify product link pasted into Crelavo, then the AI ad video full screen." },
+  { title: "UGC cost-saver", script: "I stopped paying $200 per video for my Amazon products. I tried Crelavo for just $10 and generated 20 drafts in minutes.", note: "Natural English voice, creator-style screen recording, link below CTA." },
+  { title: "Team Annual preview", script: "Test Crelavo’s agency bundle for $20. Get access to the 174,000-credit Team Annual workflow before the yearly plan continues.", note: "Push the splash funnel: $20 preview, 2 months free, 30,000 bonus credits." }
+];
+
+const competitorKeywordAds = [
+  { keyword: "HeyGen alternatives", headline: "Best HeyGen Alternative - Try Crelavo for $10" },
+  { keyword: "Runway Gen-3 alternative", headline: "Runway Alternative for Product Video Ads" },
+  { keyword: "Oxolo vs", headline: "Oxolo vs Crelavo for Ecommerce Video" },
+  { keyword: "Vids AI alternative", headline: "Vids AI Alternative for Shopify and Amazon Sellers" }
+];
+
 function statusLabel(status: string) {
   if (status === "ready_for_build") return "Ready for build";
   if (status === "blocked_by_payment") return "Blocked by payment";
@@ -395,6 +415,38 @@ export default function AdminGrowthPage() {
         <ul>{aiDirectorySubmissionKit.publicLinks.map((link) => <li key={link}>{link}</li>)}</ul>
         <h3>Guardrails</h3>
         <ul>{aiDirectorySubmissionKit.launchGuardrails.map((rule) => <li key={rule}>{rule}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Meta Sales launch plan</span>
+        <h2>$50/day paid traffic plan for the $20 Team Annual preview funnel</h2>
+        <p style={{ color: "var(--muted)" }}>Use one Meta Sales campaign first. The ad hook is low-risk preview access, while the site splash pushes the 174,000-credit Team Annual offer. Google/TikTok wait until Meta has early conversion signal.</p>
+        <div className="admin-info-grid">
+          {metaSalesLaunchPlan.map((item) => (
+            <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong><small>{item.note}</small></div>
+          ))}
+        </div>
+        <h3>First creative hooks</h3>
+        <div className="admin-category-grid">
+          {paidCreativeHooks.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">Creative</span>
+              <h3>{item.title}</h3>
+              <p><strong>{item.script}</strong></p>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Google competitor keywords to prepare, not launch first</h3>
+        <div className="admin-category-grid">
+          {competitorKeywordAds.map((item) => (
+            <div className="card admin-category-card" key={item.keyword}>
+              <span className="badge">Search keyword</span>
+              <h3>{item.keyword}</h3>
+              <p>{item.headline}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
