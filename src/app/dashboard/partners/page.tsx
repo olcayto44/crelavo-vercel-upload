@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
-import { DEFAULT_PARTNER_CODE, cleanPartnerCode, normalizePartnerCode, partnerAssets, partnerCodeLookupCandidates, partnerCommissionDefaults, partnerLaunchChecklist, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerWorkflowStages } from "@/lib/partner-program";
+import { DEFAULT_PARTNER_CODE, business12000LaunchAffiliateCampaign, cleanPartnerCode, normalizePartnerCode, partnerAssets, partnerCodeLookupCandidates, partnerCommissionDefaults, partnerLaunchChecklist, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerWorkflowStages } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +73,7 @@ async function loadPartnerDashboardData(requestedCode: string, siteUrl: string):
       primaryPath: canonicalizePartnerPath(linkByType.get("main")?.path, canonicalCode, `/?ref=${canonicalCode}`),
       affiliatePath: canonicalizePartnerPath(linkByType.get("affiliate")?.path, canonicalCode, `/affiliate?ref=${canonicalCode}`),
       growthIntelligencePath: canonicalizePartnerPath(linkByType.get("growth_intelligence")?.path, canonicalCode, `/growth-intelligence?ref=${canonicalCode}`),
+      business12000CampaignPath: `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=${canonicalCode}&utm_source=affiliate&utm_medium=partner`,
       dashboardPath: `/dashboard/partners?code=${canonicalCode}`,
       shareText: `Try Crelavo with my partner link: ${siteUrl}/?ref=${canonicalCode}`,
       note: profile?.partner_name ? `${profile.partner_name} partner dashboard` : "Live Supabase partner dashboard"
@@ -154,6 +155,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
   const primaryReferralUrl = `${siteUrl}${referralLink?.primaryPath ?? `/?ref=${partnerCode}`}`;
   const affiliateReferralUrl = `${siteUrl}${referralLink?.affiliatePath ?? `/affiliate?ref=${partnerCode}`}`;
   const growthReferralUrl = `${siteUrl}${referralLink?.growthIntelligencePath ?? `/growth-intelligence?ref=${partnerCode}`}`;
+  const business12000ReferralUrl = `${siteUrl}${referralLink?.business12000CampaignPath ?? `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=${partnerCode}`}`;
   const payoutChangeEmail = `mailto:finance@crelavo.com?subject=${encodeURIComponent(`Affiliate payout details change request - ${partnerCode}`)}&body=${encodeURIComponent("Please review my affiliate payout details change request.\n\nPartner code:\nCurrent account holder:\nCurrent IBAN:\nRequested change:\nReason for change:\n")}`;
 
   return (
@@ -174,6 +176,18 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
         <div><span>Referred members</span><strong>{ownReferrals.length}</strong><small>{paidReferrals.length} paid · {noPurchaseReferrals.length} no purchase yet</small></div>
         <div><span>Attributed sales</span><strong>${totalRevenue.toLocaleString()}</strong><small>Gross referred package value</small></div>
         <div><span>Estimated commission</span><strong>${totalCommission.toLocaleString()}</strong><small>Before final approval and Monday payout</small></div>
+      </section>
+
+      <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">Special launch campaign</span>
+        <h2>$79 Business package gives 12,000 credits</h2>
+        <p style={{ color: "var(--muted)" }}>This special campaign is valid only for the Business monthly launch offer. When a referred customer buys this package, the partner earns 15% after the 30-day hold if the sale is not refunded, cancelled, chargebacked, unpaid or fraud/abuse flagged.</p>
+        <div className="admin-info-grid">
+          <div><span>Customer offer</span><strong>${business12000LaunchAffiliateCampaign.saleAmountUsd} / {business12000LaunchAffiliateCampaign.credits.toLocaleString()} credits</strong><small>Normal Business credit amount was {business12000LaunchAffiliateCampaign.normalCredits.toLocaleString()}</small></div>
+          <div><span>Your commission</span><strong>{business12000LaunchAffiliateCampaign.commissionPercent}%</strong><small>${business12000LaunchAffiliateCampaign.commissionUsd.toFixed(2)} estimated per approved sale</small></div>
+          <div><span>Payout status</span><strong>{business12000LaunchAffiliateCampaign.payoutStatus.replaceAll("_", " ")}</strong><small>30-day hold and $50 minimum payout still apply</small></div>
+          <div><span>Campaign link</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Share this link for the $79 / 12,000 credits offer</small></div>
+        </div>
       </section>
 
       <section className="card" style={{ marginTop: 20 }}>
@@ -218,6 +232,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
             <div><span>Main referral link</span><strong style={{ wordBreak: "break-all" }}>{primaryReferralUrl}</strong><small>General Crelavo homepage link</small></div>
             <div><span>Affiliate page link</span><strong style={{ wordBreak: "break-all" }}>{affiliateReferralUrl}</strong><small>For inviting other partners or explaining the program</small></div>
             <div><span>Growth Intelligence link</span><strong style={{ wordBreak: "break-all" }}>{growthReferralUrl}</strong><small>Best high-ticket recurring service offer</small></div>
+            <div><span>$79 / 12,000 credits campaign</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Special Business launch offer, 15% commission</small></div>
             <div><span>Partner slug</span><strong>{referralLink?.slug ?? partnerCode.toLowerCase()}</strong><small>{referralLink?.status.replaceAll("_", " ") ?? "ready after tracking"}</small></div>
           </div>
           <p className="workspace-action-note warning" style={{ marginTop: 12 }}>Referral links and codes are prepared here. Paid attribution is reviewed against payment records before commissions are approved.</p>

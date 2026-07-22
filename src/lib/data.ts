@@ -832,7 +832,7 @@ export const packages = [
     price: "$79/mo",
     priceUsd: 79,
     setupFeeUsd: 10,
-    credits: 9000,
+    credits: 12000,
     planType: "subscription",
     monthlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_YEARLY",

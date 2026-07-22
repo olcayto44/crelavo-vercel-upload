@@ -16,10 +16,22 @@ function formatUsd(value: number) {
   return `$${value.toLocaleString("en-US")}`;
 }
 
-export default async function WhopCheckoutPage({ searchParams }: { searchParams?: Promise<{ planId?: string; returnUrl?: string }> }) {
+const trackingParamKeys = ["utmSource", "utmMedium", "utmCampaign", "utmTerm", "utmContent", "fbclid", "gclid", "gbraid", "wbraid", "firstTouchPath"] as const;
+
+export default async function WhopCheckoutPage({ searchParams }: { searchParams?: Promise<{ planId?: string; returnUrl?: string; ref?: string; campaign?: string; [key: string]: string | undefined }> }) {
   const params = await searchParams;
   const planId = String(params?.planId ?? "").trim();
-  const returnUrl = String(params?.returnUrl ?? "https://www.crelavo.com/checkout/complete").trim();
+  const partnerCode = String(params?.ref ?? "").trim();
+  const campaign = String(params?.campaign ?? "").trim();
+  const returnUrlBase = String(params?.returnUrl ?? "https://www.crelavo.com/checkout/complete").trim();
+  const returnUrlObject = new URL(returnUrlBase);
+  if (partnerCode) returnUrlObject.searchParams.set("ref", partnerCode);
+  if (campaign) returnUrlObject.searchParams.set("campaign", campaign);
+  for (const key of trackingParamKeys) {
+    const value = String(params?.[key] ?? "").trim();
+    if (value) returnUrlObject.searchParams.set(key, value);
+  }
+  const returnUrl = returnUrlObject.toString();
   const mappedPlan = planId ? whopProductForPlanId(planId) : null;
   const product = mappedPlan ? findPaymentProduct(mappedPlan.productId) : null;
   const isSubscription = mappedPlan?.billing === "monthly" || mappedPlan?.billing === "yearly";
@@ -43,12 +55,18 @@ export default async function WhopCheckoutPage({ searchParams }: { searchParams?
             <strong>{product.name}</strong>
             <small>{isSubscription ? `Preview/setup fee today: ${formatUsd(previewSummary.setupFeeUsd)} — non-refundable.` : "One-time purchase; no automatic renewal."}</small>
             {isSubscription ? <small>{previewNotice}</small> : null}
+            {partnerCode || campaign ? <small>Affiliate attribution: {partnerCode || "no partner code"}{campaign ? ` · campaign=${campaign}` : ""}</small> : null}
           </div>
         ) : null}
         {planId ? (
           <>
             <Script async defer src="https://js.whop.com/static/checkout/loader.js" />
-            <div data-whop-checkout-plan-id={planId} data-whop-checkout-return-url={returnUrl} />
+            <div
+              data-whop-checkout-plan-id={planId}
+              data-whop-checkout-return-url={returnUrl}
+              data-partner-code={partnerCode}
+              data-campaign={campaign}
+            />
           </>
         ) : (
           <div className="workspace-action-note error">

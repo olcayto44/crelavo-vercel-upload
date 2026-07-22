@@ -28,8 +28,15 @@ export function hasWhopPlan(productId: string, billing: BillingMode) {
   return Boolean(whopPlanIdForProduct(productId, billing));
 }
 
-export function whopCheckoutPath(planId: string, returnUrl: string) {
+export function whopCheckoutPath(planId: string, returnUrl: string, metadata?: { partnerCode?: string; campaign?: string; adAttribution?: Record<string, string> }) {
   const params = new URLSearchParams({ planId, returnUrl });
+  if (metadata?.partnerCode) params.set("ref", metadata.partnerCode);
+  if (metadata?.campaign) params.set("campaign", metadata.campaign);
+  if (metadata?.adAttribution) {
+    for (const [key, value] of Object.entries(metadata.adAttribution)) {
+      if (value) params.set(key, value);
+    }
+  }
   return `/checkout/whop?${params.toString()}`;
 }
 

@@ -1170,6 +1170,78 @@ main.auth-screen .auth-card {
   color: #0f172a;
 }
 
+.splash-ad-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 6, 23, .72);
+  backdrop-filter: blur(14px);
+}
+
+.splash-ad-modal {
+  position: relative;
+  width: min(640px, 100%);
+  border: 1px solid rgba(251, 191, 36, .46);
+  border-radius: 30px;
+  padding: 18px;
+  background: radial-gradient(circle at top left, rgba(251, 191, 36, .28), transparent 36%), rgba(15, 23, 42, .94);
+  box-shadow: 0 32px 110px rgba(0, 0, 0, .55), 0 0 70px rgba(245, 158, 11, .22);
+}
+
+.splash-ad-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .32);
+  border-radius: 999px;
+  color: #fff7ed;
+  background: rgba(15, 23, 42, .74);
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.splash-ad-modal .ad-slot-label {
+  display: inline-flex;
+  margin: 0 0 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #fef3c7;
+  background: rgba(251, 191, 36, .14);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.splash-ad-modal .campaign-promo-card {
+  min-height: 330px;
+}
+
+@media (max-width: 720px) {
+  .splash-ad-backdrop {
+    padding: 12px;
+  }
+
+  .splash-ad-modal {
+    border-radius: 24px;
+    padding: 14px;
+  }
+
+  .splash-ad-modal .campaign-promo-card {
+    min-height: auto;
+    padding-top: 44px;
+  }
+}
+
 .campaign-promo-admin-preview {
   color: #fef3c7;
   display: grid;
@@ -4129,79 +4201,238 @@ html body .pricing-page .page-demo-video-section .showcase-video-overlay {
   color: #dbeafe;
 }
 
-/* Keep the campaign / sale slot visibly yellow after the restore. */
+/* Premium campaign banner: no generated image, CSS-only visual. */
 .campaign-promo-card {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   height: 100%;
-  min-height: 270px;
+  min-height: 292px;
   overflow: hidden;
-  border: 1px solid rgba(251, 191, 36, .45);
-  border-radius: 26px;
-  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 30px;
+  padding: 22px;
   color: #fff7ed;
   background:
-    radial-gradient(circle at 20% 0%, rgba(251,191,36,.46), transparent 34%),
-    radial-gradient(circle at 100% 10%, rgba(249,115,22,.30), transparent 38%),
-    linear-gradient(145deg, rgba(120,53,15,.96), rgba(30,41,59,.96) 62%, rgba(15,23,42,.98));
-  box-shadow: 0 26px 70px rgba(245, 158, 11, .22), inset 0 0 0 1px rgba(255,255,255,.10);
+    linear-gradient(135deg, rgba(255,255,255,.12), transparent 20%),
+    radial-gradient(circle at 18% 12%, rgba(245, 158, 11, .34), transparent 28%),
+    radial-gradient(circle at 88% 14%, rgba(59, 130, 246, .26), transparent 30%),
+    radial-gradient(circle at 84% 88%, rgba(20, 184, 166, .18), transparent 34%),
+    linear-gradient(145deg, #020617 0%, #0f172a 42%, #111827 100%);
+  box-shadow: 0 34px 90px rgba(2, 6, 23, .46), 0 0 0 1px rgba(255,255,255,.12) inset, 0 0 62px rgba(245, 158, 11, .18);
+  isolation: isolate;
+  animation: campaignCardGlow 2.6s ease-in-out infinite;
 }
 .campaign-promo-card::before {
   content: "";
   position: absolute;
-  inset: -1px;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,.20), transparent);
-  transform: translateX(-70%);
-  animation: campaignFlash 2.8s ease-in-out infinite;
+  inset: -2px;
+  background: linear-gradient(120deg, transparent 12%, rgba(255,255,255,.22) 28%, rgba(245,158,11,.14) 36%, transparent 48%);
+  transform: translateX(-78%) rotate(4deg);
+  animation: campaignFlash 3.4s ease-in-out infinite;
   pointer-events: none;
+  z-index: 0;
+}
+.campaign-promo-card::after {
+  content: "12K";
+  position: absolute;
+  right: -18px;
+  bottom: -34px;
+  color: rgba(245, 158, 11, .10);
+  font-size: 126px;
+  font-weight: 1000;
+  line-height: .8;
+  letter-spacing: -.08em;
+  pointer-events: none;
+  z-index: 0;
+  animation: campaignBigNumberPulse 2.2s ease-in-out infinite;
 }
 .campaign-promo-card > * { position: relative; z-index: 1; }
+.campaign-promo-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(2px);
+  opacity: .86;
+  pointer-events: none;
+  z-index: 0;
+}
+.campaign-promo-orb.one {
+  width: 118px;
+  height: 118px;
+  left: -40px;
+  top: 42px;
+  background: radial-gradient(circle, rgba(245, 158, 11, .55), transparent 68%);
+  animation: campaignOrbFloat 3.2s ease-in-out infinite;
+}
+.campaign-promo-orb.two {
+  width: 142px;
+  height: 142px;
+  right: -52px;
+  top: -36px;
+  background: radial-gradient(circle, rgba(59, 130, 246, .42), transparent 70%);
+  animation: campaignOrbFloat 3.8s ease-in-out infinite reverse;
+}
+.campaign-promo-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
 .campaign-promo-pulse {
   display: inline-flex;
   width: max-content;
   max-width: 100%;
   min-width: 0;
   overflow-wrap: anywhere;
-  border: 1px solid rgba(254, 240, 138, .72);
+  border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: #fff7ed;
+  background: rgba(15, 23, 42, .42);
+  font-size: 10px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  box-shadow: 0 0 26px rgba(255,255,255,.16);
+  backdrop-filter: blur(12px);
+}
+.campaign-promo-price {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  height: 48px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 999px;
+  color: #0f172a;
+  background: linear-gradient(135deg, #fff7ed, #facc15 58%, #d97706);
+  font-size: 22px;
+  font-weight: 1000;
+  box-shadow: 0 12px 30px rgba(250, 204, 21, .36);
+  transform: rotate(3deg);
+  animation: campaignPricePop 1.6s ease-in-out infinite;
+}
+.campaign-promo-kicker {
+  display: block;
+  margin-bottom: 5px;
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.campaign-promo-card h3 {
+  margin: 0;
+  max-width: 11ch;
+  color: #ffffff;
+  font-size: clamp(33px, 4.3vw, 56px);
+  line-height: .88;
+  letter-spacing: -.07em;
+  text-shadow: 0 8px 28px rgba(0,0,0,.38), 0 0 26px rgba(250, 204, 21, .28);
+  animation: campaignHeadlineFlash 2s ease-in-out infinite;
+}
+.campaign-promo-bonus-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.campaign-promo-bonus-row span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, .38);
   border-radius: 999px;
   padding: 7px 10px;
-  color: #451a03;
-  background: linear-gradient(135deg, #fde68a, #f59e0b);
+  color: #111827;
+  background: linear-gradient(135deg, #fef3c7, #fbbf24 60%, #d97706);
   font-size: 11px;
   font-weight: 1000;
   text-transform: uppercase;
-  letter-spacing: .06em;
-  box-shadow: 0 0 26px rgba(251,191,36,.42);
+  letter-spacing: .04em;
+  box-shadow: 0 12px 26px rgba(251, 191, 36, .34);
+  animation: campaignMiniBadgeFlash 1.9s ease-in-out infinite;
 }
-.campaign-promo-card h3 {
-  margin: 4px 0;
-  font-size: clamp(26px, 3vw, 38px);
-  line-height: 1;
-  letter-spacing: -.04em;
+.campaign-promo-bonus-row span:nth-child(2) {
+  color: #fff7ed;
+  background: rgba(15, 23, 42, .48);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #f59e0b;
+  animation-delay: .28s;
 }
 .campaign-promo-card p {
-  margin: 0;
+  margin: 10px 0 0;
+  max-width: 38ch;
   color: #ffedd5;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.45;
 }
 .campaign-promo-countdown {
   display: grid;
-  gap: 4px;
-  border: 1px solid rgba(254,240,138,.24);
-  border-radius: 16px;
-  padding: 10px;
-  background: rgba(15,23,42,.44);
+  gap: 5px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(15,23,42,.48);
+  box-shadow: 0 16px 34px rgba(0,0,0,.18) inset;
+  backdrop-filter: blur(12px);
 }
-.campaign-promo-countdown span { color: #fed7aa; font-size: 11px; font-weight: 900; text-transform: uppercase; }
-.campaign-promo-countdown strong { color: #fef3c7; font-size: 18px; }
-.campaign-promo-card .btn { background: linear-gradient(135deg, #f59e0b, #f97316); color: #111827; border-color: rgba(254,240,138,.44); }
-@keyframes campaignFlash { 50% { filter: brightness(1.2); } }
+.campaign-promo-countdown span { color: #fef3c7; font-size: 11px; font-weight: 1000; text-transform: uppercase; letter-spacing: .08em; }
+.campaign-promo-countdown strong { color: #ffffff; font-size: 21px; letter-spacing: .02em; }
+.campaign-promo-card .campaign-promo-cta {
+  justify-content: center;
+  width: 100%;
+  border: 0;
+  border-radius: 18px;
+  color: #111827;
+  background: linear-gradient(135deg, #fef3c7, #f59e0b 56%, #b45309);
+  box-shadow: 0 18px 38px rgba(249, 115, 22, .36);
+  font-weight: 1000;
+  animation: campaignCtaPulse 1.8s ease-in-out infinite;
+}
+.campaign-promo-card .campaign-promo-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+@keyframes campaignFlash {
+  0%, 52% { transform: translateX(-82%) rotate(4deg); opacity: 0; }
+  64% { opacity: .86; }
+  100% { transform: translateX(82%) rotate(4deg); opacity: 0; }
+}
+@keyframes campaignCardGlow {
+  0%, 100% { box-shadow: 0 34px 90px rgba(2,6,23,.46), 0 0 0 1px rgba(255,255,255,.12) inset, 0 0 62px rgba(245,158,11,.18); filter: saturate(1); }
+  50% { box-shadow: 0 42px 112px rgba(2,6,23,.62), 0 0 0 1px rgba(245,158,11,.24) inset, 0 0 78px rgba(245,158,11,.30); filter: saturate(1.08); }
+}
+@keyframes campaignBigNumberPulse {
+  0%, 100% { transform: scale(1); opacity: .10; }
+  50% { transform: scale(1.06); opacity: .18; }
+}
+@keyframes campaignOrbFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(12px, -10px, 0) scale(1.12); }
+}
+@keyframes campaignPricePop {
+  0%, 100% { transform: rotate(3deg) scale(1); }
+  45% { transform: rotate(-2deg) scale(1.08); }
+  60% { transform: rotate(3deg) scale(1.02); }
+}
+@keyframes campaignHeadlineFlash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+@keyframes campaignCtaPulse {
+  0%, 100% { box-shadow: 0 18px 38px rgba(245,158,11,.30); }
+  50% { box-shadow: 0 22px 52px rgba(245,158,11,.48), 0 0 22px rgba(251,191,36,.24); }
+}
+@keyframes campaignMiniBadgeFlash {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  50% { transform: translateY(-1px) scale(1.04); filter: brightness(1.22); }
+}
 
 @media (max-width: 900px) {
   .promo-top-layout {
@@ -4232,19 +4463,30 @@ html body .pricing-page .page-demo-video-section .showcase-video-overlay {
   .campaign-promo-card {
     min-height: auto;
     height: auto;
-    padding: 14px;
-    gap: 10px;
-    border-radius: 20px;
+    padding: 16px;
+    gap: 11px;
+    border-radius: 22px;
+  }
+
+  .campaign-promo-price {
+    min-width: 62px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .campaign-promo-kicker {
+    font-size: 10px;
   }
 
   .campaign-promo-card h3 {
-    font-size: clamp(22px, 7vw, 30px);
-    line-height: 1.04;
+    max-width: 12ch;
+    font-size: clamp(28px, 9vw, 38px);
+    line-height: .92;
   }
 
   .campaign-promo-card p {
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 13px;
+    line-height: 1.38;
   }
 
   .campaign-promo-countdown {

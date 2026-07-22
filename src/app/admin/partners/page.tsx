@@ -5,7 +5,7 @@ import { PartnerApplicationStatusActions } from "@/components/PartnerApplication
 import { PartnerCommissionSimulator } from "@/components/PartnerCommissionSimulator";
 import { PartnerCommissionStatusActions } from "@/components/PartnerCommissionStatusActions";
 import { PartnerPayoutDetailsForm } from "@/components/PartnerPayoutDetailsForm";
-import { calculatePartnerCommission, partnerApiVisibilityRoadmap, partnerApplicationFields, partnerAssets, partnerChannelPriority, partnerCommissionDefaults, partnerCommissionTiers, partnerCreatorAssetPack, partnerEmailCampaignTemplates, partnerInboxRoutingRules, partnerLaunchChecklist, partnerLaunchSequence, partnerManualOperationChecklist, partnerManualOperationQueues, partnerPackageCommissionRules, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerPerformanceSummary, partnerProgramPolicy, partnerPurchaseAttribution, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerStatusCommissionAdjustments, partnerWhopOptimizationPlan, samplePartnerApplications } from "@/lib/partner-program";
+import { business12000LaunchAffiliateCampaign, calculatePartnerCommission, partnerApiVisibilityRoadmap, partnerApplicationFields, partnerAssets, partnerChannelPriority, partnerCommissionDefaults, partnerCommissionTiers, partnerCreatorAssetPack, partnerEmailCampaignTemplates, partnerInboxRoutingRules, partnerLaunchChecklist, partnerLaunchSequence, partnerManualOperationChecklist, partnerManualOperationQueues, partnerPackageCommissionRules, partnerPaymentProfiles, partnerPayoutReportingWindows, partnerPerformanceSummary, partnerProgramPolicy, partnerPurchaseAttribution, partnerReadinessChecks, partnerReferralLinks, partnerReferredMembers, partnerStatusCommissionAdjustments, partnerWhopOptimizationPlan, samplePartnerApplications } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -163,6 +163,7 @@ async function loadPartnerReferralLinks(siteUrl: string): Promise<{ referralLink
         primaryPath: `/?ref=${row.partner_code}`,
         affiliatePath: `/affiliate?ref=${row.partner_code}`,
         growthIntelligencePath: `/growth-intelligence?ref=${row.partner_code}`,
+        business12000CampaignPath: `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=${row.partner_code}&utm_source=affiliate&utm_medium=partner`,
         dashboardPath: `/dashboard/partners?code=${row.partner_code}`,
         status: row.status,
         shareText: `Use my Crelavo partner link to try AI production workflows: ${siteUrl}/?ref=${row.partner_code}`,
@@ -289,6 +290,7 @@ export default async function AdminPartnersPage() {
   const { commissions: adminCommissions, source: commissionLedgerSource } = await loadCommissionLedger();
   const { paymentProfiles: adminPaymentProfiles, source: paymentProfileSource } = await loadPartnerPaymentProfiles();
   const commissionExamples = [
+    { label: "$79 / 12,000 credits campaign", amount: business12000LaunchAffiliateCampaign.saleAmountUsd, category: "subscription campaign", packageName: business12000LaunchAffiliateCampaign.packageName, status: "paid" },
     { label: "Credit / top-up", amount: 25, category: "credit", packageName: "Creator Top-up", status: "paid" },
     { label: "Standard production", amount: 199, category: "production", packageName: "Ultra monthly", status: "paid" },
     { label: "Growth Intelligence", amount: 499, category: "growth intelligence", packageName: "Growth Intelligence Agent monthly", status: "paid" },
@@ -306,6 +308,18 @@ export default async function AdminPartnersPage() {
           <div><span>Tracked referred members</span><strong>{trackedReferredMembers}</strong><small>{noPurchaseMembers} signed up without purchase yet</small></div>
           <div><span>Commission model</span><strong>{partnerCommissionDefaults.plannedRange}</strong><small>Rates vary by package cost/margin</small></div>
           <div><span>Payout day</span><strong>{partnerCommissionDefaults.payoutDay}</strong><small>{partnerCommissionDefaults.payoutCutoff}</small></div>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Special campaign commission</span>
+        <h2>$79 Business launch package pays 15% affiliate commission</h2>
+        <p style={{ color: "var(--muted)" }}>This rule is only for the Business monthly campaign that gives 12,000 credits instead of 9,000. Admin should see every real sale in the manual commission ledger below with customer email, package, sale date, payment reference, payout window and payout status.</p>
+        <div className="admin-info-grid">
+          <div><span>Package sold</span><strong>{business12000LaunchAffiliateCampaign.packageName}</strong><small>Package ID: {business12000LaunchAffiliateCampaign.packageId}</small></div>
+          <div><span>Customer pays</span><strong>${business12000LaunchAffiliateCampaign.saleAmountUsd}</strong><small>{business12000LaunchAffiliateCampaign.credits.toLocaleString()} credits added when eligible</small></div>
+          <div><span>Partner commission</span><strong>{business12000LaunchAffiliateCampaign.commissionPercent}%</strong><small>${business12000LaunchAffiliateCampaign.commissionUsd.toFixed(2)} estimated per approved sale</small></div>
+          <div><span>Payout rule</span><strong>{business12000LaunchAffiliateCampaign.payoutStatus.replaceAll("_", " ")}</strong><small>30-day hold, $50 minimum, refund/cancel voids commission</small></div>
         </div>
       </section>
 
@@ -504,6 +518,7 @@ export default async function AdminPartnersPage() {
               <p><strong>Main link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.primaryPath}</span></p>
               <p><strong>Affiliate link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.affiliatePath}</span></p>
               <p><strong>Growth Intelligence link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.growthIntelligencePath}</span></p>
+              <p><strong>$79 / 12,000 credits campaign link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.business12000CampaignPath}</span></p>
               <p><strong>Suggested text:</strong> {link.shareText}</p>
               <p>{link.note}</p>
             </div>

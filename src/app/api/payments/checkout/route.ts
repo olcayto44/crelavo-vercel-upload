@@ -4,11 +4,16 @@ import { createLemonSqueezyCheckout, isLemonSqueezyEnabled, lemonVariantEnvForPr
 import { supabaseAdmin } from "@/lib/supabase";
 import { whopCheckoutPath, whopPlanIdForProduct, whopReturnPath } from "@/lib/whop";
 import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
+import { normalizePartnerCode } from "@/lib/partner-program";
 
 function normalizeBilling(value: unknown): BillingMode {
   if (value === "yearly") return "yearly";
   if (value === "one_time") return "one_time";
   return "monthly";
+}
+
+function safeTrackingValue(value: unknown, maxLength = 180) {
+  return String(value ?? "").trim().replace(/[^a-zA-Z0-9_./:?#=&%-]/g, "").slice(0, maxLength);
 }
 
 function serviceCategoryForProduct(product: unknown) {
@@ -27,6 +32,21 @@ export async function POST(request: Request) {
   const body = await request.json();
   const productId = String(body.productId ?? body.packageId ?? body.package ?? "").trim();
   const billing = normalizeBilling(body.billing);
+  const partnerCode = normalizePartnerCode(body.partnerCode ?? body.ref);
+  const campaign = String(body.campaign ?? "").trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+  const attribution = typeof body.attribution === "object" && body.attribution ? body.attribution as Record<string, unknown> : {};
+  const adAttribution = {
+    utmSource: safeTrackingValue(attribution.utmSource, 80),
+    utmMedium: safeTrackingValue(attribution.utmMedium, 80),
+    utmCampaign: safeTrackingValue(attribution.utmCampaign || campaign, 100),
+    utmTerm: safeTrackingValue(attribution.utmTerm, 120),
+    utmContent: safeTrackingValue(attribution.utmContent, 120),
+    fbclid: safeTrackingValue(attribution.fbclid, 220),
+    gclid: safeTrackingValue(attribution.gclid, 220),
+    gbraid: safeTrackingValue(attribution.gbraid, 220),
+    wbraid: safeTrackingValue(attribution.wbraid, 220),
+    firstTouchPath: safeTrackingValue(attribution.firstTouchPath, 220)
+  };
 
   try {
     const { data: packageConfigRow } = await supabaseAdmin()
@@ -81,7 +101,7 @@ export async function POST(request: Request) {
       const origin = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin || "https://www.crelavo.com";
       const returnUrl = new URL(whopReturnPath, origin).toString();
       return Response.json({
-        url: whopCheckoutPath(whopPlanId, returnUrl),
+        url: whopCheckoutPath(whopPlanId, returnUrl, { partnerCode, campaign, adAttribution }),
         mode: checkoutMode,
         product: product.name,
         provider: "whop",

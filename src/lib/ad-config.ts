@@ -20,8 +20,8 @@ export const defaultAdSlots: AdSlotConfig[] = [
   { id: "content", name: "In-content ad slot", placement: "Home page between sample videos and categories", size: "728x90 or responsive", width: 728, height: 90, status: "passive", code: "<div class=\"demo-ad-creative\"><strong>IN-CONTENT AD</strong><span>728x90 or responsive</span></div>", notes: "For article, content or sponsor banners. No close overlay." },
   { id: "sidebar", name: "Sidebar ad slot", placement: "Dashboard/admin sidebar plan", size: "300x250", width: 300, height: 250, status: "passive", code: "<div class=\"demo-ad-creative box\"><strong>SIDEBAR AD</strong><span>300x250</span></div>", notes: "Medium rectangle slot for dashboard or admin side areas. No close overlay." },
   { id: "footer", name: "Footer ad slot", placement: "Above the home page footer", size: "970x250 or responsive", width: 970, height: 250, status: "passive", code: "<div class=\"demo-ad-creative large\"><strong>FOOTER AD</strong><span>970x250 or responsive</span></div>", notes: "For lower-page sponsor or partner ads. No close overlay." },
-  { id: "splash", name: "Medium splash/banner ad", placement: "Medium ad area after the home page hero", size: "640x360 desktop, 320x250 mobile", width: 640, height: 360, status: "passive", code: "<div class=\"demo-ad-creative splash\"><strong>MEDIUM SPLASH/BANNER</strong><span>640x360 desktop · 320x250 mobile</span></div>", notes: "Not full-screen; no close button needed. It appears as a centered popup only when enabled." },
-  { id: "campaign-promo", name: "Flashing campaign promo", placement: "Home, categories and pricing top-right promo area", size: "320x220 countdown", width: 320, height: 220, status: "active", code: "{\"eyebrow\":\"Launch offer\",\"title\":\"Launch credit sale\",\"body\":\"Use this promo slot for package discounts, launch offers and limited credit campaigns.\",\"cta\":\"View packages\",\"href\":\"/pricing\",\"durationDays\":14}", notes: "Admin can enable/disable/pause this slot. Edit structured campaign fields to change campaign copy, link and countdown duration. Legacy endsAt values are still supported for manually scheduled campaigns." },
+  { id: "splash", name: "$79 / 12,000 credits splash campaign", placement: "Home page visitor splash popup", size: "640x360 desktop, 320x250 mobile", width: 640, height: 360, status: "active", code: "{\"eyebrow\":\"Sınırlı süreli kampanya\",\"title\":\"12.000 kredi şimdi açık\",\"body\":\"24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi.\",\"cta\":\"$10 ile önizlemeyi başlat\",\"href\":\"/dashboard/payment?package=business&billing=monthly&campaign=business-12000\",\"durationDays\":7,\"storageKey\":\"crelavo-business-12000-countdown\",\"countdownLabel\":\"Kalan süre\"}", notes: "Centered splash popup with upper-right close button. Same browser sees it up to 3 times per day. Countdown starts from the visitor's first view when no fixed endsAt is set." },
+  { id: "campaign-promo", name: "$79 / 12,000 credits campaign promo", placement: "Home, categories and pricing top-right promo area", size: "320x220 countdown", width: 320, height: 220, status: "active", code: "{\"eyebrow\":\"Sınırlı süreli kampanya\",\"title\":\"12.000 kredi şimdi açık\",\"body\":\"24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi.\",\"cta\":\"$10 ile önizlemeyi başlat\",\"href\":\"/dashboard/payment?package=business&billing=monthly&campaign=business-12000\",\"durationDays\":7,\"storageKey\":\"crelavo-business-12000-countdown\",\"countdownLabel\":\"Kalan süre\"}", notes: "Admin can enable/disable/pause this slot. Structured campaign fields control copy, checkout link and visitor-based countdown duration. Legacy endsAt values are still supported for manually scheduled campaigns." },
   { id: "left-rail", name: "Left rail ad slot", placement: "Desktop left edge", size: "160x600", width: 160, height: 600, status: "passive", code: "<div class=\"demo-ad-creative rail\"><strong>LEFT RAIL AD</strong><span>160x600</span></div>", notes: "For wide skyscraper ads. Visible only on wide screens; no close overlay." },
   { id: "right-rail", name: "Right rail ad slot", placement: "Desktop right edge", size: "160x600", width: 160, height: 600, status: "passive", code: "<div class=\"demo-ad-creative rail\"><strong>RIGHT RAIL AD</strong><span>160x600</span></div>", notes: "For wide skyscraper ads. Visible only on wide screens; no close overlay." }
 ];
@@ -29,6 +29,35 @@ export const defaultAdSlots: AdSlotConfig[] = [
 type ConfigPayload = {
   slots?: AdSlotConfig[];
 };
+
+const launchCampaignDefaults = new Map(defaultAdSlots.filter((slot) => ["splash", "campaign-promo"].includes(slot.id)).map((slot) => [slot.id, slot]));
+
+function shouldUpgradeLaunchCampaignSlot(slot: AdSlotConfig) {
+  if (!launchCampaignDefaults.has(slot.id)) return false;
+  const signature = `${slot.name} ${slot.code} ${slot.notes}`.toLowerCase();
+  return !slot.code.trim()
+    || signature.includes("medium splash/banner")
+    || signature.includes("medium splash")
+    || signature.includes("launch credit sale")
+    || signature.includes("limited credit campaigns")
+    || signature.includes("flash launch deal")
+    || signature.includes("get 3,000 bonus credits")
+    || signature.includes("grab 12,000 credits")
+    || signature.includes("view packages");
+}
+
+function applyLaunchCampaignDefaults(slots: AdSlotConfig[]) {
+  const upgraded = slots.map((slot) => {
+    const campaignDefault = launchCampaignDefaults.get(slot.id);
+    return campaignDefault && shouldUpgradeLaunchCampaignSlot(slot) ? campaignDefault : slot;
+  });
+
+  for (const campaignDefault of launchCampaignDefaults.values()) {
+    if (!upgraded.some((slot) => slot.id === campaignDefault.id)) upgraded.push(campaignDefault);
+  }
+
+  return upgraded;
+}
 
 function isAdSlot(value: unknown): value is AdSlotConfig {
   if (!value || typeof value !== "object") return false;
@@ -63,7 +92,7 @@ export function normalizeAdSlots(input: unknown): AdSlotConfig[] {
     const sanitized = sanitizeAdSlotCode(baseSlot);
     return { ...baseSlot, ...sanitized };
   }).filter((item) => item.id && item.name);
-  return normalized.length ? normalized : defaultAdSlots;
+  return normalized.length ? applyLaunchCampaignDefaults(normalized) : defaultAdSlots;
 }
 
 export function getAdRotationPool(slots: AdSlotConfig[], slotId: string) {

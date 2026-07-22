@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 const SESSION_KEY = "clipora_live_session_id";
 const ATTRIBUTION_KEY = "clipora_attribution";
-const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref"] as const;
+const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "fbclid", "gclid", "gbraid", "wbraid"] as const;
 
 type AttributionPayload = {
   utmSource: string;
@@ -14,6 +14,11 @@ type AttributionPayload = {
   utmTerm: string;
   utmContent: string;
   ref: string;
+  fbclid: string;
+  gclid: string;
+  gbraid: string;
+  wbraid: string;
+  landingUrl: string;
   firstTouchAt: string;
   firstTouchPath: string;
 };
@@ -48,6 +53,11 @@ function captureAttribution(searchParams: URLSearchParams | null, path: string):
     utmTerm: searchParams?.get("utm_term") || stored?.utmTerm || "",
     utmContent: searchParams?.get("utm_content") || stored?.utmContent || "",
     ref: searchParams?.get("ref") || stored?.ref || "",
+    fbclid: searchParams?.get("fbclid") || stored?.fbclid || "",
+    gclid: searchParams?.get("gclid") || stored?.gclid || "",
+    gbraid: searchParams?.get("gbraid") || stored?.gbraid || "",
+    wbraid: searchParams?.get("wbraid") || stored?.wbraid || "",
+    landingUrl: stored?.landingUrl || (typeof window !== "undefined" ? window.location.href : path),
     firstTouchAt: stored?.firstTouchAt || new Date().toISOString(),
     firstTouchPath: stored?.firstTouchPath || path
   };

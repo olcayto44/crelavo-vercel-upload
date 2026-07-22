@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 
+const REF_CODE_KEY = "clipora_partner_ref";
+const ATTRIBUTION_KEY = "clipora_attribution";
+
+function readAttribution() {
+  try {
+    const raw = window.localStorage.getItem(ATTRIBUTION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 type PaymentCheckoutButtonProps = {
   productId: string;
   billing: "monthly" | "yearly" | "one_time";
@@ -16,10 +28,15 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
     setState("loading");
     setMessage("");
 
+    const currentParams = new URLSearchParams(window.location.search);
+    const attribution = readAttribution();
+    const partnerCode = currentParams.get("ref") || window.localStorage.getItem(REF_CODE_KEY) || attribution?.ref || "";
+    const campaign = currentParams.get("campaign") || attribution?.utmCampaign || "";
+
     const response = await fetch("/api/payments/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, billing })
+      body: JSON.stringify({ productId, billing, partnerCode, campaign, attribution })
     });
     const data = await response.json().catch(() => ({}));
 

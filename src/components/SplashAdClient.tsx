@@ -2,10 +2,42 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { CampaignPromoClient } from "@/components/CampaignPromoClient";
 import type { AdSlotConfig } from "@/lib/ad-config";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
+}
+
+type SplashPromoPayload = {
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  cta?: string;
+  href?: string;
+  endsAt?: string;
+  durationDays?: number;
+  storageKey?: string;
+  countdownLabel?: string;
+};
+
+function parseSplashPromo(code: string) {
+  try {
+    const value = JSON.parse(code) as SplashPromoPayload;
+    return {
+      eyebrow: String(value.eyebrow || "Sınırlı süreli kampanya"),
+      title: String(value.title || "12.000 kredi şimdi açık"),
+      body: String(value.body || "24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi."),
+      cta: String(value.cta || "$10 ile önizlemeyi başlat"),
+      href: String(value.href || "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"),
+      endsAt: value.endsAt ? String(value.endsAt) : undefined,
+      durationDays: Number(value.durationDays ?? 7),
+      storageKey: String(value.storageKey || "crelavo-business-12000-countdown"),
+      countdownLabel: String(value.countdownLabel || "Kalan süre")
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
@@ -19,10 +51,12 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
   useEffect(() => {
     if (slot.status !== "active" || !slot.code.trim()) return;
 
-    if (window.matchMedia("(max-width: 768px)").matches) return;
+    const storageKey = `crelavo-splash-${todayKey()}`;
+    let triggered = false;
 
-    const storageKey = `clipora-splash-${todayKey()}`;
-    const timer = window.setTimeout(() => {
+    const showSplash = () => {
+      if (triggered) return;
+      triggered = true;
       try {
         const currentCount = Number(window.localStorage.getItem(storageKey) ?? "0");
         if (currentCount >= 3) return;
@@ -31,8 +65,19 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
         // If storage is blocked, still show the active splash slot instead of hiding it.
       }
       setVisible(true);
-    }, 2200);
-    return () => window.clearTimeout(timer);
+    };
+
+    const handleScroll = () => {
+      if (window.scrollY >= 180) showSplash();
+    };
+
+    const timer = window.setTimeout(showSplash, 12000);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, [slot]);
 
   useEffect(() => {
@@ -46,12 +91,13 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
 
   if (!mounted || !visible) return null;
 
+  const promo = parseSplashPromo(slot.code);
   const popup = (
     <aside className="splash-ad-backdrop" aria-label={slot.name} role="dialog" aria-modal="true">
       <div className="splash-ad-modal">
-        <button className="splash-ad-close" type="button" onClick={() => setVisible(false)} aria-label="Close ad">x</button>
-        <span className="ad-slot-label">Ad · {slot.size} · Daily limit 3 views</span>
-        <div className="ad-slot-code" dangerouslySetInnerHTML={{ __html: slot.code }} />
+        <button className="splash-ad-close" type="button" onClick={() => setVisible(false)} aria-label="Close ad">×</button>
+        <span className="ad-slot-label">Launch campaign · Daily limit 3 views</span>
+        {promo ? <CampaignPromoClient {...promo} /> : <div className="ad-slot-code" dangerouslySetInnerHTML={{ __html: slot.code }} />}
       </div>
     </aside>
   );

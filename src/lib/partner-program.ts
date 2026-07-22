@@ -25,6 +25,21 @@ export function partnerCodeLookupCandidates(value: unknown) {
   return Array.from(new Set([normalized, cleaned].filter(Boolean)));
 }
 
+export const business12000LaunchAffiliateCampaign = {
+  id: "business-12000",
+  packageId: "business",
+  packageName: "Business monthly - $79 / 12,000 credits launch campaign",
+  saleAmountUsd: 79,
+  credits: 12000,
+  normalCredits: 9000,
+  commissionPercent: 15,
+  commissionUsd: 11.85,
+  roundedCommissionUsd: 12,
+  payoutStatus: "pending_30_day_hold",
+  payoutRule: "Only this $79 / 12,000 credits campaign uses the special 15% affiliate rate. Commission is pending for 30 days and void if refunded, cancelled, chargebacked, unpaid or fraud/abuse flagged.",
+  checkoutPath: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"
+};
+
 export const partnerCommissionDefaults = {
   plannedRange: "15-30% by product type, margin and delivery risk",
   defaultDraftPercent: 20,
@@ -59,6 +74,7 @@ export const partnerProgramPolicy = {
 
 export function commissionRateForPurchase(category: string, packageName = "") {
   const text = `${category} ${packageName}`.toLowerCase();
+  if (/business.*12000|12000.*business|business.*12,000|12,000.*business|business.*launch campaign|business.*campaign/.test(text)) return business12000LaunchAffiliateCampaign.commissionPercent;
   if (/credit|top.?up|starter monthly|creator/.test(text)) return 15;
   if (/starter production|starter|basic/.test(text)) return 20;
   if (/custom|managed|agency|manual|heavy/.test(text)) return 15;
@@ -84,6 +100,13 @@ export function calculatePartnerCommission(amountUsd: number, category: string, 
 }
 
 export const partnerPackageCommissionRules = [
+  {
+    packageGroup: "$79 / 12,000 credits launch campaign",
+    examplePackages: [business12000LaunchAffiliateCampaign.packageName],
+    marginProfile: "campaign margin protected because extra credits are included",
+    defaultPercent: business12000LaunchAffiliateCampaign.commissionPercent,
+    note: business12000LaunchAffiliateCampaign.payoutRule
+  },
   {
     packageGroup: "Low-cost digital credit plans",
     examplePackages: ["Starter monthly", "Creator Top-up", "Business monthly"],
@@ -482,6 +505,7 @@ export const partnerReferralLinks = [
     primaryPath: "/?ref=CRELAVO-AITOOLS",
     affiliatePath: "/affiliate?ref=CRELAVO-AITOOLS",
     growthIntelligencePath: "/growth-intelligence?ref=CRELAVO-AITOOLS&utm_source=affiliate&utm_medium=creator&utm_campaign=growth_intelligence",
+    business12000CampaignPath: `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=CRELAVO-AITOOLS&utm_source=affiliate&utm_medium=creator`,
     dashboardPath: "/dashboard/partners",
     shareText: "Try Crelavo for AI videos, websites, apps and Growth Intelligence. Use my partner link to start.",
     note: "Use this for AI tool review videos and free-tool conversion funnels."
@@ -493,6 +517,7 @@ export const partnerReferralLinks = [
     primaryPath: "/?ref=CRELAVO-NOCODE",
     affiliatePath: "/affiliate?ref=CRELAVO-NOCODE",
     growthIntelligencePath: "/growth-intelligence?ref=CRELAVO-NOCODE&utm_source=affiliate&utm_medium=tiktok&utm_campaign=growth_intelligence",
+    business12000CampaignPath: `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=CRELAVO-NOCODE&utm_source=affiliate&utm_medium=tiktok`,
     dashboardPath: "/dashboard/partners",
     shareText: "Build production-ready AI assets, websites and growth campaigns with Crelavo. Start with my partner link.",
     note: "Use this for no-code tutorials, SaaS builder content and TikTok demos."
@@ -504,6 +529,7 @@ export const partnerReferralLinks = [
     primaryPath: "/?ref=CRELAVO-AGENCY",
     affiliatePath: "/affiliate?ref=CRELAVO-AGENCY",
     growthIntelligencePath: "/growth-intelligence?ref=CRELAVO-AGENCY&utm_source=affiliate&utm_medium=agency&utm_campaign=growth_intelligence",
+    business12000CampaignPath: `${business12000LaunchAffiliateCampaign.checkoutPath}&ref=CRELAVO-AGENCY&utm_source=affiliate&utm_medium=agency`,
     dashboardPath: "/dashboard/partners",
     shareText: "Use Crelavo Growth Intelligence to monitor public competitor signals and receive executive reports. Start with my partner link.",
     note: "Best for agencies, consultants and ecommerce growth partners promoting recurring service plans."
@@ -543,7 +569,7 @@ export const partnerPerformanceSummary = [
     payingUsers: 11,
     totalRevenueUsd: 1189,
     estimatedCommissionUsd: 356.7,
-    lastConversion: "Business monthly",
+    lastConversion: business12000LaunchAffiliateCampaign.packageName,
     nextAction: "Keep launch cap at 30% unless executive margin review approves an override."
   },
   {
@@ -609,6 +635,21 @@ export const partnerReferredMembers = [
     period: "weekly"
   },
   {
+    partnerCode: "CRELAVO-NOCODE",
+    memberName: "Studio Owner",
+    memberEmail: "studio-owner@example.com",
+    signupDate: "2026-07-09",
+    sourceChannel: "$79 / 12,000 credits campaign link",
+    status: "paid",
+    purchasedPlan: business12000LaunchAffiliateCampaign.packageName,
+    packageCategory: "Business launch campaign",
+    purchaseAmountUsd: business12000LaunchAffiliateCampaign.saleAmountUsd,
+    commissionPercent: business12000LaunchAffiliateCampaign.commissionPercent,
+    commissionUsd: business12000LaunchAffiliateCampaign.commissionUsd,
+    payoutStatus: business12000LaunchAffiliateCampaign.payoutStatus,
+    period: "weekly"
+  },
+  {
     partnerCode: "CRELAVO-AGENCY",
     memberName: "Enterprise Buyer",
     memberEmail: "enterprise-buyer@example.com",
@@ -646,10 +687,10 @@ export const partnerPurchaseAttribution = [
     partnerCode: "CRELAVO-NOCODE",
     memberEmail: "studio-owner@example.com",
     signupPlan: "Free / welcome credits",
-    purchasedPlan: "Business monthly",
-    purchaseAmountUsd: 79,
-    commissionPercent: 25,
-    commissionUsd: 19.75,
+    purchasedPlan: business12000LaunchAffiliateCampaign.packageName,
+    purchaseAmountUsd: business12000LaunchAffiliateCampaign.saleAmountUsd,
+    commissionPercent: business12000LaunchAffiliateCampaign.commissionPercent,
+    commissionUsd: business12000LaunchAffiliateCampaign.commissionUsd,
     status: "pending_30_day_hold"
   },
   {

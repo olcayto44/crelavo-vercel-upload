@@ -15,11 +15,11 @@ type CampaignPromoPayload = {
 };
 
 const defaultCampaignPromoPayload: CampaignPromoPayload = {
-  eyebrow: "Limited campaign",
-  title: "Launch credit sale",
-  body: "Use this promo slot for package discounts, launch offers and limited credit campaigns.",
-  cta: "View packages",
-  href: "/pricing",
+  eyebrow: "Sınırlı süreli kampanya",
+  title: "12.000 kredi şimdi açık",
+  body: "24 saatlik önizlemeyi sadece $10’a başlat. Normalde 9.000 kredi olan Business paketi kampanyada 12.000 kredi.",
+  cta: "$10 ile önizlemeyi başlat",
+  href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
   endsAt: "2026-12-31T23:59:59Z"
 };
 

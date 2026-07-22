@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
+import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail, sendPaymentReceiptEmail } from "@/lib/payment-email";
-import { calculatePartnerCommission, normalizePartnerCode } from "@/lib/partner-program";
+import { business12000LaunchAffiliateCampaign, calculatePartnerCommission, normalizePartnerCode } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
 
@@ -194,6 +195,20 @@ function membershipStatus(payment: WhopObject) {
   return firstString(paymentMembership(payment).status, payment.membership_status);
 }
 
+function paymentTrackingValue(payment: WhopObject, key: string) {
+  const metadata = nestedObject(payment, "metadata");
+  const customFields = nestedObject(payment, "custom_fields");
+  const checkout = nestedObject(payment, "checkout");
+  const checkoutMetadata = nestedObject(checkout, "metadata");
+  const membership = paymentMembership(payment);
+  const membershipMetadata = nestedObject(membership, "metadata");
+  return firstString(payment[key], metadata[key], customFields[key], checkoutMetadata[key], membershipMetadata[key]);
+}
+
+function paymentCampaign(payment: WhopObject) {
+  return firstString(paymentTrackingValue(payment, "campaign"), paymentTrackingValue(payment, "utmCampaign"), paymentTrackingValue(payment, "utm_campaign"));
+}
+
 function paymentPartnerCode(payment: WhopObject) {
   const metadata = nestedObject(payment, "metadata");
   const customFields = nestedObject(payment, "custom_fields");
@@ -252,8 +267,9 @@ async function recordPartnerCommissionFromPayment(input: { payment: WhopObject; 
   if (existingError) throw existingError;
   if (existing?.id) return { skipped: true, reason: "commission_already_recorded", commissionId: existing.id };
 
-  const purchaseCategory = input.product.planType;
-  const packageName = input.product.name;
+  const isBusiness12000Campaign = input.product.id === business12000LaunchAffiliateCampaign.packageId && amountUsd === business12000LaunchAffiliateCampaign.saleAmountUsd;
+  const purchaseCategory = isBusiness12000Campaign ? "subscription campaign" : input.product.planType;
+  const packageName = isBusiness12000Campaign ? business12000LaunchAffiliateCampaign.packageName : input.product.name;
   const commission = calculatePartnerCommission(amountUsd, purchaseCategory, packageName, input.status || "paid");
   if (commission.commissionUsd <= 0) return { skipped: true, reason: commission.eligibility };
 
@@ -273,7 +289,7 @@ async function recordPartnerCommissionFromPayment(input: { payment: WhopObject; 
       payment_reference: input.paymentReference,
       payout_status: "pending_review",
       payout_window: payoutWindow,
-      admin_notes: `Auto-created from Whop webhook. Eligibility: ${commission.eligibility}`
+      admin_notes: `Auto-created from Whop webhook. Eligibility: ${commission.eligibility}${isBusiness12000Campaign ? "; special campaign=business-12000" : ""}`
     })
     .select("id,partner_code,commission_amount,payout_status")
     .single();
@@ -299,6 +315,10 @@ async function recordPartnerCommissionFromPayment(input: { payment: WhopObject; 
   });
 
   return { recorded: true, commission: data };
+}
+
+function conversionSourceUrl(payment: WhopObject) {
+  return firstString(paymentTrackingValue(payment, "sourceUrl"), paymentTrackingValue(payment, "landingUrl"), process.env.NEXT_PUBLIC_APP_URL, "https://www.crelavo.com");
 }
 
 function creditsForProduct(product: Product, billing: string) {
@@ -487,8 +507,27 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "partner_commission_record_failed" }));
 
   const activationDecision = shouldAddCredits(product, mappedPlan.billing, payment);
+  const amountUsd = inferWhopAmountUsd(amount, product, mappedPlan.billing);
+  const adConversionEventName = activationDecision.add ? "business_paid" : activationDecision.reason === "preview_setup_payment_no_full_credits" ? "preview_paid" : null;
+  const adConversionResult = adConversionEventName ? await sendPaidAdConversions({
+    eventName: adConversionEventName,
+    eventId: `whop:${paymentReference}:${adConversionEventName}`,
+    valueUsd: amountUsd,
+    currency: paymentCurrency(payment).toUpperCase(),
+    email,
+    productId: product.id,
+    packageName: product.name,
+    partnerCode: paymentPartnerCode(payment),
+    campaign: paymentCampaign(payment),
+    fbclid: paymentTrackingValue(payment, "fbclid"),
+    gclid: paymentTrackingValue(payment, "gclid"),
+    gbraid: paymentTrackingValue(payment, "gbraid"),
+    wbraid: paymentTrackingValue(payment, "wbraid"),
+    sourceUrl: conversionSourceUrl(payment)
+  }) : [{ provider: "meta" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }, { provider: "google_ads" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }];
+
   if (!activationDecision.add) {
-    return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, activation: { activated: false, reason: activationDecision.reason, productId: product.id } };
+    return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation: { activated: false, reason: activationDecision.reason, productId: product.id } };
   }
 
   const credits = creditsForProduct(product, mappedPlan.billing);
@@ -515,7 +554,7 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
       })
     : { skipped: true, reason: activation.reason };
 
-  return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, activation, creditActivationEmailResult };
+  return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditActivationEmailResult };
 }
 
 async function handleAttentionEvent(event: string, payment: WhopObject, webhookId: string) {
