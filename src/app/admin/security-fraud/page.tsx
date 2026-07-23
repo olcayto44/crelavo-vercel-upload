@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
-import { securityAbuseFraudControls } from "@/lib/launch-final-controls";
+import { apiAfterKeysReviewList, apiAutomationSafetyGates, securityAbuseFraudControls } from "@/lib/launch-final-controls";
 
 function statusClass(status: string) {
   if (status === "active" || status === "policy_ready") return "ready";
@@ -26,9 +26,31 @@ export default function AdminSecurityFraudPage() {
         </div>
       </section>
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">API automation safety gates</span>
+        <h2>Keep automation off until each high-risk path is proven</h2>
+        <p style={{ color: "var(--muted)" }}>Use this before buying or connecting provider APIs. The goal is to prevent leaked keys, duplicate credits, unverified rewards, provider overspend and unsafe clean-export unlocks.</p>
+        <div className="admin-info-grid" style={{ marginTop: 14 }}>
+          {apiAutomationSafetyGates.map((gate) => (
+            <div key={gate.step}>
+              <span>{gate.owner}</span>
+              <strong>{gate.step}</strong>
+              <small>{gate.check}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">After keys are added</span>
+        <h2>API-day review list</h2>
+        <ul>{apiAfterKeysReviewList.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Fast links</span>
         <div className="url-action-center">
-          <Link className="btn" href="/admin/api-guard">API Guard</Link>
+          <Link className="btn" href="/admin/final-api-checklist">Final API Checklist</Link>
+          <Link className="btn secondary" href="/admin/api-guard">API Guard</Link>
           <Link className="btn secondary" href="/admin/credits">Credit Operations</Link>
           <Link className="btn secondary" href="/admin/partners">Partner Program</Link>
           <Link className="btn secondary" href="/terms">Terms</Link>

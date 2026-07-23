@@ -22,6 +22,28 @@ type EmailTemplate = {
   smokeStep: string;
 };
 
+type ReadinessGate = {
+  title: string;
+  owner: string;
+  check: string;
+};
+
+const apiAutomationReadinessGates: ReadinessGate[] = [
+  { title: "Secrets stay server-side", owner: "Owner", check: "Provider, Whop, Resend, Supabase service-role and render keys must exist only in Vercel/env or local .env.local; never in client bundles, docs, screenshots or chat." },
+  { title: "Whop is payment source of record", owner: "Finance", check: "Preview activation, subscription status, cancellation visibility, idempotency and credit grants must be driven by verified Whop events before automation is enabled." },
+  { title: "Credits never trust client payloads", owner: "Backend", check: "Package price, credit amount, reward credit, coupon claim and clean-export access must be recalculated server-side from package/payment records." },
+  { title: "Provider spend has a stop switch", owner: "Operations", check: "Run a low-cost success job and a failure job for each selected provider; confirm API Guard, admin review and fallback messaging before paid traffic." },
+  { title: "Viral loops remain manual until proven", owner: "Growth", check: "Referral credits, coupon hunt, share-to-earn, partner commission and abandoned checkout recovery stay manual or consent-safe until fraud and attribution checks pass." },
+  { title: "Preview watermark gates clean export", owner: "Product", check: "Watermarked preview export can be generated for proof; watermark-free final export opens only after paid plan eligibility and delivery rules are confirmed." }
+];
+
+const providerFailoverChecklist: ReadinessGate[] = [
+  { title: "Primary provider selected", owner: "Owner", check: "Choose one active video/generation provider for launch and document why it is first: cost, quality, API reliability and commercial usage rights." },
+  { title: "Fallback provider account prepared", owner: "Owner", check: "Create at least one fallback account or manual fulfillment route for video/image/render if the primary provider blocks, fails or rate-limits launch traffic." },
+  { title: "Failure path tested", owner: "Operations", check: "Force one provider error and confirm the production moves to admin review without spending extra credits or promising automatic delivery." },
+  { title: "Cost ceiling verified", owner: "Finance", check: "Confirm per-job credit ceilings, daily user limits and provider cost assumptions before ads or influencer traffic send users into production." }
+];
+
 const resendEmailTemplates: EmailTemplate[] = [
   {
     label: "Welcome / access",
@@ -164,12 +186,22 @@ export function buildFinalApiChecklist() {
       ]
     },
     {
-      title: "Lemon Squeezy checkout and package variants",
-      description: "Paid plans, top-ups, webhook events and manual entitlement reconciliation.",
+      title: "Whop checkout, preview and webhook automation",
+      description: "Active payment source, 24-hour preview lifecycle, verified events and credit entitlement safety.",
       items: [
-        item("Lemon Squeezy API keys", ["LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID"], "API checkout requires Lemon Squeezy API and store identifiers. Direct checkout URLs can be used as a safe early-launch fallback.", "Run one Lemon Squeezy test checkout from pricing or dashboard payment."),
-        item("Lemon Squeezy webhook secret", ["LEMON_SQUEEZY_WEBHOOK_SECRET"], "Webhook signatures protect payment receipt/admin notification events.", "Send order_created and subscription events to /api/lemon-squeezy/webhook."),
-        item("Lemon Squeezy package variant IDs", lemonVariantEnvNames(), "Every admin package needs a matching Lemon variant ID for API checkout. Early launch can use direct Lemon checkout URLs from /admin/packages instead.", "Open /admin/packages, click Check payment env and confirm either direct checkout links are configured or missing env names are resolved.")
+        item("Whop API access", ["WHOP_API_KEY"], "Whop remains the active checkout, subscription and payment source for launch. API access is needed for reconciliation and account/payment lookup.", "Confirm Whop API lookup can find a test payment/subscription without exposing secret values."),
+        item("Whop webhook secret", ["WHOP_WEBHOOK_SECRET"], "Webhook signatures protect payment, subscription, cancellation and preview lifecycle events.", "Send required Whop events to /api/webhooks/whop and confirm invalid signatures are rejected."),
+        item("Active payment provider", ["PAYMENT_PROVIDER"], "Production must keep PAYMENT_PROVIDER=whop until a later migration is intentionally approved.", "Confirm /admin and checkout copy show Whop as the source of record, not Lemon or a mixed provider state."),
+        item("Webhook idempotency and credit gate", ["WHOP_WEBHOOK_SECRET", "SUPABASE_SERVICE_ROLE_KEY"], "Credits, preview access and subscription activation must be granted once per verified payment event, never from client checkout parameters.", "Replay the same test event and confirm duplicate credits, duplicate commissions and duplicate preview activation do not happen.")
+      ]
+    },
+    {
+      title: "Parked Lemon Squeezy fallback",
+      description: "Code can remain present, but Lemon should not become the active payment path until Whop launch is stable.",
+      items: [
+        item("Lemon Squeezy API keys", ["LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID"], "Lemon is a parked/future fallback. Missing Lemon keys are not a Whop launch blocker while PAYMENT_PROVIDER=whop.", "Do not route live checkout to Lemon unless the owner intentionally starts a migration.", true),
+        item("Lemon Squeezy webhook secret", ["LEMON_SQUEEZY_WEBHOOK_SECRET"], "Keep webhook code dormant unless Lemon becomes active later.", "If Lemon is tested later, send order_created and subscription events to /api/lemon-squeezy/webhook.", true),
+        item("Lemon Squeezy package variant IDs", lemonVariantEnvNames(), "Variant IDs are future migration data, not required for the current Whop-first API day.", "Leave missing unless Lemon migration is scheduled after Whop/payment/provider launch is stable.", true)
       ]
     },
     {
@@ -183,13 +215,24 @@ export function buildFinalApiChecklist() {
     },
     {
       title: "First-phase AI and provider keys",
-      description: "Initial 9-service launch plan: OpenAI, Runway/video, image generation, Voice/TTS, video editing/render, Lemon Squeezy, Supabase, Resend and Storage/CDN.",
+      description: "Initial launch provider plan: planning, video, image, voice/TTS, editing/render and storage/CDN with explicit cost and failure gates.",
       items: [
         item("OpenAI assistant/planning", ["OPENAI_API_KEY"], "Assistant chat, brief, production planning, script, strategy and prompt generation use OpenAI in the first API phase.", "Run Assistant Workspace planning with a real test user and confirm no provider fallback error."),
         providerItem(),
         item("Image generation provider", ["OPENAI_API_KEY"], "First phase image generation/editing uses OpenAI Images unless IMAGE_PROVIDER is changed later.", "Run one image generation/editing E2E after final API setup."),
         item("Voice/TTS provider", ["ELEVENLABS_API_KEY"], "Voice-over, narration, dubbing and ad voice flows need the first phase voice provider.", "Run one low-cost voice-over test."),
-        item("Video editing/render provider", ["SHOTSTACK_API_KEY"], "Cut, trim, crop, subtitle burn-in, audio merge and final export automation need the render provider.", "Run one cut/crop/subtitle/export render test.")
+        item("Video editing/render provider", ["SHOTSTACK_API_KEY"], "Cut, trim, crop, subtitle burn-in, audio merge and final export automation need the render provider.", "Run one cut/crop/subtitle/export render test."),
+        item("Provider routing selector", ["VIDEO_PROVIDER"], "A single primary provider should be explicit before live traffic; fallback routes can exist but must not silently spend without admin awareness.", "Open /api/providers/readiness and confirm selected provider, missing keys and fallback note are understandable.", true)
+      ]
+    },
+    {
+      title: "Growth automation fraud gates",
+      description: "Referral credits, coupon hunt, share-to-earn, partner commission, checkout recovery and clean export must stay server-verified.",
+      items: [
+        item("Referral and reward ledger", ["SUPABASE_SERVICE_ROLE_KEY"], "Referral +100, upgrade +2,000, share-to-earn and case-study credits must be awarded from server/admin review paths only.", "Try a self-referral or duplicate event in staging and confirm no automatic credit is granted."),
+        item("Partner commission review", ["SUPABASE_SERVICE_ROLE_KEY"], "Partner commission must remain pending until payment, refund, cancellation, chargeback and finance checks pass.", "Replay a payment/commission reference and confirm duplicate commission rows are blocked."),
+        item("Checkout recovery email", ["RESEND_API_KEY", "SUPPORT_FROM_EMAIL"], "Abandoned checkout recovery can send only consent-safe, honest reminder email; no fake saved bonus, fake scarcity or guaranteed discount.", "Send one internal recovery email test and confirm opt-out/support fallback wording."),
+        item("Watermark and clean-export gate", ["SHOTSTACK_API_KEY"], "Preview exports can carry Made with Crelavo AI watermark; watermark-free export must require paid eligibility.", "Run one preview-style render and confirm the clean export CTA does not unlock from client state alone.", true)
       ]
     }
   ];
@@ -219,22 +262,27 @@ export function buildFinalApiChecklist() {
     ],
     liveE2EOrder: [
       "Confirm /admin/launch-readiness has no unexpected missing blocker.",
-      "Open /admin/packages and confirm Check payment env returns no unexpected missing Lemon variant/direct checkout values.",
+      "Open /admin/final-api-checklist and resolve Whop, Supabase service-role, Resend and selected provider blockers first.",
+      "Confirm PAYMENT_PROVIDER=whop and never route live checkout to parked Lemon env by accident.",
       "Register/login with a real confirmed test user.",
       "Run Assistant Workspace planning.",
       "Start one production with enough credits or a test package.",
-      "Run one Lemon Squeezy checkout and verify order/subscription notification plus manual entitlement reconciliation.",
-      "Verify customer receipt and owner/admin payment notification emails.",
+      "Run one Whop checkout/webhook test and verify preview activation, subscription mapping, idempotency and manual entitlement reconciliation.",
+      "Verify customer receipt, owner/admin payment notification and support fallback emails.",
       "Complete one provider-success production and verify production-ready email plus delivery links.",
-      "Test cancellation, provider failure/admin review and manual delivery update paths."
+      "Force one provider failure/admin review path and confirm credits, delivery, retries and support messaging stay safe.",
+      "Test cancellation visibility, clean-export eligibility, referral reward review and manual delivery update paths."
     ],
     stillBlockedUntilKeys: [
-      "Real Lemon Squeezy checkout and webhook E2E.",
-      "Paid credit purchase, subscription event and manual entitlement reconciliation E2E.",
+      "Real Whop checkout, webhook signature and subscription lifecycle E2E.",
+      "Paid credit purchase, preview activation and manual entitlement reconciliation E2E.",
       "Resend production email delivery.",
       "Live domain redirects, auth callbacks and Search Console verification.",
-      "Real AI/video provider success path."
+      "Real AI/video provider success and forced-failure paths.",
+      "Automatic referral/coupon/share-to-earn rewards and clean-export unlocks."
     ],
+    apiAutomationReadinessGates,
+    providerFailoverChecklist,
     resendEmailTemplates,
     resendSmokeChecklist,
     groups: groupsWithStatus

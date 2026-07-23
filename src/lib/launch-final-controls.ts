@@ -3,9 +3,20 @@ export const securityAbuseFraudControls = [
   { area: "Payment-first production", status: "active", check: "Provider work stays blocked until credits are reserved or payment eligibility is confirmed." },
   { area: "Preview/download guard", status: "active", check: "24-hour preview keeps downloads/source/zip closed while preview remains available." },
   { area: "Route budgets", status: "active", check: "Assistant, automation start/status and production APIs use API cost/rate guard limits." },
-  { area: "Rewards", status: "manual_review", check: "Share-to-earn remains manual review; no automatic reward credits before abuse/fraud checks." },
+  { area: "Whop webhook trust", status: "manual_review", check: "Credits, preview access and subscriptions must come from verified Whop signatures and idempotent server processing, never client payloads." },
+  { area: "Provider failover", status: "manual_review", check: "Before live spend, test one provider success and one forced failure so admin review, retry and fallback messaging are proven." },
+  { area: "Rewards", status: "manual_review", check: "Share-to-earn, referral +100/+2,000, coupon claims and case-study rewards remain manual review before abuse/fraud checks." },
   { area: "Partner commission", status: "manual_review", check: "Whop partner commission records are pending_review and duplicate payment references are blocked." },
+  { area: "Clean export gate", status: "manual_review", check: "Made with Crelavo AI preview watermark can be public proof; watermark-free final export requires paid eligibility and server-side access checks." },
   { area: "Sensitive outputs", status: "policy_ready", check: "Voice/face/style clone and competitor analysis require rights/compliance review." }
+];
+
+export const apiAutomationSafetyGates = [
+  { step: "Env placement", owner: "Owner", check: "Add real keys only in Vercel/env or local .env.local; never paste secret values into chat, client code or screenshots." },
+  { step: "Whop event replay", owner: "Finance", check: "Replay the same test webhook and confirm duplicate credits, duplicate partner commissions and duplicate preview activations are blocked." },
+  { step: "Credit recalculation", owner: "Backend", check: "Confirm package credits, reward credits, coupon discounts and clean-export access are recalculated server-side from trusted records." },
+  { step: "Provider forced failure", owner: "Operations", check: "Force one provider failure and confirm the job moves to admin review without charging extra credits or promising instant delivery." },
+  { step: "Growth automation hold", owner: "Growth", check: "Keep referral, coupon hunt, share-to-earn and abandoned checkout automation manual/consent-safe until attribution and fraud checks pass." }
 ];
 
 export const monitoringBackupLoggingControls = [
@@ -62,9 +73,12 @@ export const lemonFinalControls = [
 ];
 
 export const apiAfterKeysReviewList = [
-  "Provider API keys: OpenAI / Runway / ElevenLabs / Shotstack and any selected image/video/render providers.",
+  "Whop API key + WHOP_WEBHOOK_SECRET with signature rejection, idempotency and subscription/cancellation lifecycle tests.",
+  "Provider API keys: OpenAI / Runway or selected video provider / ElevenLabs / Shotstack and any selected image/render providers.",
   "Full production provider E2E with authenticated user and real production ID.",
+  "Forced provider failure path: admin review, no duplicate credit spend, safe support messaging and fallback decision.",
   "Delivery owner/admin access test with real production ID and owner token.",
+  "Referral, coupon hunt, share-to-earn, partner commission and clean-export unlock tests must prove server-side trust before automation.",
   "External error logging sink such as Sentry/Logtail after account/env setup.",
   "Social OAuth/API publishing after Meta/TikTok/YouTube keys and approval rules.",
   "Lemon only after Whop/payment/provider launch is stable."

@@ -177,8 +177,9 @@ const growthCommandCenterPillars = [
 ];
 
 const apiPhaseRoadmap = [
-  { title: "Provider API procurement", status: "today_priority", note: "Finish provider/API account creation and key collection for video, image, speech/music, lip-sync, email and payment-related workflows. Store secrets only in Vercel/env, never in client code or chat." },
-  { title: "Whop payment + webhook automation", status: "api_required", note: "Verify Whop webhook signature, payment events, idempotency, subscription status mapping, preview activation and cancellation visibility before granting credits." },
+  { title: "Final API readiness checklist", status: "today_priority", note: "Start from /admin/final-api-checklist and /admin/security-fraud before buying or connecting keys: Whop signatures, server-side credits, provider failover, Resend smoke tests, clean export and growth automation gates must be visible first." },
+  { title: "Provider API procurement", status: "today_priority", note: "Finish provider/API account creation and key collection for video, image, speech/music, lip-sync, email and payment-related workflows. Store secrets only in Vercel/env, never in client code or chat. Prepare at least one fallback/manual fulfillment path before paid traffic." },
+  { title: "Whop payment + webhook automation", status: "api_required", note: "Verify Whop webhook signature, payment events, idempotency, subscription status mapping, preview activation and cancellation visibility before granting credits. Replay events to prove duplicate credits or commissions cannot happen." },
   { title: "Referral credit automation", status: "api_required", note: "Generate user-specific referral links, track invited signup/payment, block self-referral and award +100/+2,000 credits only after verification." },
   { title: "Coupon hunt claim engine", status: "api_required", note: "Create real campaign toggles, limited coupon codes, claim logging, expiry checks and abuse controls before showing hidden promo campaigns publicly." },
   { title: "Watermarked preview export", status: "api_required", note: "Render tasteful Made with Crelavo AI watermark on preview exports and unlock clean export only for eligible paid Business/Team access." },

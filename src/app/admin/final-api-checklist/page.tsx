@@ -38,6 +38,34 @@ export default function FinalApiChecklistPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Automation gates</span>
+        <h2>Do not enable automatic provider spend or rewards until these are true</h2>
+        <div className="admin-info-grid">
+          {checklist.apiAutomationReadinessGates.map((gate) => (
+            <div key={gate.title}>
+              <span>{gate.owner}</span>
+              <strong>{gate.title}</strong>
+              <small>{gate.check}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Provider failover</span>
+        <h2>Primary provider, fallback and forced-failure checks</h2>
+        <div className="admin-info-grid">
+          {checklist.providerFailoverChecklist.map((gate) => (
+            <div key={gate.title}>
+              <span>{gate.owner}</span>
+              <strong>{gate.title}</strong>
+              <small>{gate.check}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Next missing env/actions</span>
         <h2>Resolve these first on final API day</h2>
         <div className="admin-category-grid">
