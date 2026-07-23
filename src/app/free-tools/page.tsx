@@ -25,6 +25,24 @@ export const metadata: Metadata = {
   }
 };
 
+const couponHuntCards = [
+  {
+    title: "Hidden preview code campaign",
+    text: "On real campaign days, Crelavo can hide limited preview promo codes inside the Free AI Ad Scorer results. The campaign must be time-boxed and codes must actually exist before this copy is promoted.",
+    href: "/free-tools/ad-performance-score-checker"
+  },
+  {
+    title: "Use the score before checkout",
+    text: "The user gets a useful ad score first, then sees the preview path only after understanding which hook, proof point or CTA should be improved.",
+    href: "/free-tools/ad-performance-score-checker"
+  },
+  {
+    title: "Safe FOMO guardrail",
+    text: "Use wording like 'campaign-day hidden codes' or 'up to 50% off when active'. Do not show fake scarcity, expired codes or permanent daily resets.",
+    href: "/admin/growth"
+  }
+];
+
 const freeToolPreviewOffers = [
   {
     title: "$10 Business preview",
@@ -81,6 +99,21 @@ export default async function FreeToolsPage() {
                 <h3>{offer.title}</h3>
                 <p>{offer.text}</p>
                 <span className="text-link">{offer.cta}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+          <span className="badge">Campaign-day Coupon Hunt</span>
+          <h2>Turn the Free AI Ad Scorer into a high-intent preview funnel</h2>
+          <p style={{ color: "var(--muted)" }}>When a real Whop promo campaign is active, the Free AI Ad Scorer can tease hidden preview codes after users generate useful ad feedback. This keeps visitors engaged without pretending a fake discount exists.</p>
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            {couponHuntCards.map((item) => (
+              <Link className="card admin-category-card" href={item.href} key={item.title}>
+                <span className="badge">Controlled FOMO</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
               </Link>
             ))}
           </div>

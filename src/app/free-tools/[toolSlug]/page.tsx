@@ -174,6 +174,17 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
               <div><span>3</span><strong>Keep selected result</strong><small>The chosen score is sent into Assistant Workspace automatically.</small></div>
               <div><span>4</span><strong>Upgrade when ready</strong><small>Create improved angles, preview video direction and production package.</small></div>
             </div>
+            <div className="workspace-action-note" style={{ marginTop: 14 }}>
+              <span className="badge">Campaign-day Coupon Hunt</span>
+              <h3>Hidden preview codes can appear only when a real campaign is active</h3>
+              <p>
+                This page is ready for a controlled coupon hunt: users generate an ad score first, then campaign copy can reveal a real limited Whop promo code when one exists. Do not promise a discount unless the promo code is live.
+              </p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <Link className="btn secondary" href="/dashboard/payment?package=business&billing=monthly&campaign=ad-scorer-preview">Start Business preview</Link>
+                <Link className="btn secondary" href="/dashboard/payment?package=team&billing=yearly&campaign=ad-scorer-team-preview">Start Team preview</Link>
+              </div>
+            </div>
           </section>
         ) : null}
 
