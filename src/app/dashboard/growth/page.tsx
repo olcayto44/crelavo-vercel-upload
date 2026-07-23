@@ -4,6 +4,13 @@ import { rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { dashboardNextBestActions, growthRewardReadiness, lifecycleNudges, retentionGrowthSummary } from "@/lib/retention-growth";
 
+const viralGrowthCommandCards = [
+  { title: "Invite-friend credits", status: "Manual review", text: "+100 starter credits for both verified users and +2,000 bonus credits after a referred Business/Team upgrade, once automation is ready." },
+  { title: "Watermarked preview sharing", status: "Preview loop", text: "Approved preview outputs can carry Made with Crelavo AI branding so small sellers share Crelavo while larger teams upgrade for clean exports." },
+  { title: "Partner and affiliate path", status: "Tracked links", text: "Approved partners use referral links and campaign assets; commissions remain finance-reviewed with hold, refund and chargeback checks." },
+  { title: "Community showcase", status: "Proof loop", text: "Approved examples can become public proof, reusable templates and case-study fuel without exposing private client assets." }
+];
+
 export default function DashboardGrowthPage() {
   return (
     <DashboardShell className="dashboard-postlaunch-shell">
@@ -12,6 +19,26 @@ export default function DashboardGrowthPage() {
         <h2>Earn, return and continue building with Crelavo</h2>
         <p style={{ color: "var(--muted)" }}>{retentionGrowthSummary.promise}</p>
         <p className="workspace-action-note warning">{retentionGrowthSummary.guardrail}</p>
+      </section>
+
+      <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">Viral Growth Command Center</span>
+        <h2>Use every happy user as a safe growth channel</h2>
+        <p style={{ color: "var(--muted)" }}>This is the dashboard-level map for referral, watermark, affiliate and showcase loops. It keeps the funnel visible now, while real credit awards remain manual until API tracking and fraud checks are connected.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {viralGrowthCommandCards.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+          <Link className="btn" href="/dashboard/share-to-earn">Open share-to-earn</Link>
+          <Link className="btn secondary" href="/dashboard/partners">Open partners</Link>
+          <Link className="btn secondary" href="/community-showcase">View showcase</Link>
+        </div>
       </section>
 
       <section className="card" style={{ marginTop: 20 }}>

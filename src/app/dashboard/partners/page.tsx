@@ -171,6 +171,21 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
         </div>
       </section>
 
+      <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">Referral loop rules</span>
+        <h2>Credit rewards and affiliate commissions are separate</h2>
+        <p style={{ color: "var(--muted)" }}>Use this page for approved partner links and commission tracking. Viral credit rewards such as +100 starter credits or +2,000 upgrade bonus credits stay manual-review until referral automation, Whop payment matching and abuse checks are connected.</p>
+        <div className="admin-info-grid" style={{ marginTop: 14 }}>
+          <div><span>Invite-friend credit</span><strong>Manual reward review</strong><small>Starter/bonus credits require verified signup or confirmed paid upgrade.</small></div>
+          <div><span>Partner commission</span><strong>Finance approval</strong><small>Commission uses partner code attribution, 30-day hold and payout review.</small></div>
+          <div><span>Abuse guard</span><strong>No self-referral</strong><small>Duplicate accounts, suspicious IP/device and chargebacks block rewards.</small></div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+          <Link className="btn" href="/dashboard/share-to-earn">Open viral credits</Link>
+          <Link className="btn secondary" href="/affiliate">Review affiliate terms</Link>
+        </div>
+      </section>
+
       <section className="admin-info-grid" style={{ marginTop: 20 }}>
         <div><span>Your partner code</span><strong>{partnerCode}</strong><small>Use this code in your approved referral links</small></div>
         <div><span>Referred members</span><strong>{ownReferrals.length}</strong><small>{paidReferrals.length} paid · {noPurchaseReferrals.length} no purchase yet</small></div>
