@@ -58,6 +58,14 @@ const leadCaptureFunnelPlan = [
   { title: "Follow-up", status: "manual", note: "Use captured leads for weekly strategy emails, Whop Business/Team preview retargeting and honest opt-out-ready lifecycle messages." }
 ];
 
+const previewSupportBoxPlan = [
+  { title: "Crelavo site guide", status: "built", note: "Floating support box now opens with Crelavo logo/name and acts as a site-specific guide for pages, pricing, credits, affiliate, billing, cancellation and production questions." },
+  { title: "URL-aware routing", status: "built", note: "Question matching includes a Crelavo URL directory; after answering, the box offers to route the user and redirects only after an affirmative reply like yes/evet/tamam/yönlendir." },
+  { title: "Package, campaign and credit knowledge", status: "built", note: "Answers include Pro, Business, Ultra, Team Annual, 24-hour preview offer logic, 12,000 Business credits, 174,000 Team Annual credits, top-ups, live sales, Growth Intelligence, drone packs, premium material and per-second credit guidance." },
+  { title: "Safe payment routing", status: "built", note: "Billing, cancellation and refund-adjacent questions route users to Whop, /whop-billing, /dashboard/billing or /dashboard/contact instead of risky improvised answers." },
+  { title: "Future live chat", status: "later", note: "If traffic grows, connect Crisp/Tawk/Intercom or human support; until then the widget is clear that human review goes through support." }
+];
+
 const whopLaunchRiskControls = [
   { title: "Visible cancel button", status: "built", note: "Dashboard billing and payment screens now show Cancel Preview / Subscription links to Whop plus a public /whop-billing instruction page to reduce panic and chargeback risk." },
   { title: "23rd-hour reminder", status: "manual_required", note: "Configure Whop/Resend/n8n reminder around 3 hours before preview ends: do nothing to continue, cancel link if they want to stop. This is a trust and dispute-prevention email." },
@@ -67,6 +75,12 @@ const whopLaunchRiskControls = [
   { title: "Concurrent render capacity", status: "technical_check", note: "Before paid weekend traffic, verify 12 concurrent tasks per agency will not break provider rate limits; queue must degrade gracefully instead of throwing provider errors." },
   { title: "Ad timezone scheduling", status: "manual_required", note: "For US/UK/AU traffic, schedule Meta launch around target market morning, especially EST/PST Saturday 08:00-09:00, not Turkey local morning by default." },
   { title: "Mobile wallet checkout", status: "manual_required", note: "Confirm Whop checkout exposes Apple Pay and Google Pay for mobile traffic so preview purchase does not depend on manual card typing." }
+];
+
+const launchRetentionConversionIdeas = [
+  { title: "VIP Agency Hub", status: "manual_ready", note: "Add a private Telegram/Discord community link after Whop preview purchase and in the first email. Position it as a real support/community layer for agencies, prompt tips and first-video optimization." },
+  { title: "Competitor switch promo codes", status: "manual_ready", note: "Create controlled Whop promo codes such as HEYGEN20 or SWITCHTOCRELAVO for unhappy competitor users. Use only in honest comment replies; keep abuse, margin and expiry controls." },
+  { title: "ROAS and hook score overlay", status: "planned", note: "Turn output screens and AI Ad Scorer into marketing-performance dashboards: Video Conversion Score, Estimated ROAS Boost and Hook Rate next to generated videos, not only download buttons." }
 ];
 
 function statusLabel(status: string) {
@@ -193,6 +207,21 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>Capture paid-traffic visitors who are not ready to buy yet, preserve attribution and route them into ecommerce video strategy follow-up before the API/provider phase.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {leadCaptureFunnelPlan.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Preview support box</span>
+        <h2>Crelavo-specific support guide with direct answers and page URLs</h2>
+        <p style={{ color: "var(--muted)" }}>Use the floating support box as a safe first-response layer: it answers Crelavo-specific questions directly, recommends the relevant URL and offers to guide the user to that page without pretending that a live human or unrestricted AI is answering billing-sensitive questions.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {previewSupportBoxPlan.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>
@@ -506,6 +535,21 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>Track the high-risk details before sending paid traffic to the $20 Team Annual preview: visible cancellation, reminder email, net payout assumptions, fraud controls, provider capacity, timezone timing, mobile exit-intent and mobile wallet checkout.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {whopLaunchRiskControls.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Launch retention and conversion ideas</span>
+        <h2>Community, competitor switch offers and ROAS-style value framing</h2>
+        <p style={{ color: "var(--muted)" }}>These ideas are high-upside but should stay controlled: real community access, honest competitor-response promo codes and marketing-performance indicators that make Crelavo feel like a sales advisor, not only a video tool.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {launchRetentionConversionIdeas.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>
