@@ -51,7 +51,7 @@ const geoAssistantDiscoveryBacklog = [
 ];
 
 const leadCaptureFunnelPlan = [
-  { title: "Exit-intent trigger", status: "built", note: "Public pages show the offer after 20 seconds plus desktop exit intent, with a 7-day localStorage frequency cap and protected-route exclusions." },
+  { title: "Exit-intent trigger", status: "built", note: "Public pages show the offer after 15 seconds, desktop mouse-exit, mobile quick scroll-up/pull-down intent and a 45-second fallback, with a 7-day localStorage frequency cap and protected-route exclusions." },
   { title: "Lead magnet", status: "built", note: "Offer copy captures ecommerce video ad guide interest plus a trial credit offer before users leave paid traffic pages." },
   { title: "Storage and attribution", status: "built", note: "POST /api/leads/exit-intent stores email, consent, UTM, referrer, landing page and click IDs in lead_captures." },
   { title: "Abuse guardrails", status: "required", note: "Honeypot, IP/email rate limit and consent are active; trial credits must still be activated after signup/admin review, not anonymously granted." },
@@ -61,6 +61,9 @@ const leadCaptureFunnelPlan = [
 const whopLaunchRiskControls = [
   { title: "Visible cancel button", status: "built", note: "Dashboard billing and payment screens now show Cancel Preview / Subscription links to Whop plus a public /whop-billing instruction page to reduce panic and chargeback risk." },
   { title: "23rd-hour reminder", status: "manual_required", note: "Configure Whop/Resend/n8n reminder around 3 hours before preview ends: do nothing to continue, cancel link if they want to stop. This is a trust and dispute-prevention email." },
+  { title: "Whop net payout model", status: "finance_check", note: "Model high-ticket payout after card fees: a $1,300 Team Annual sale may net roughly $1,260 after about 2.7% + $0.30 and transfer/payment fees; API budget should use net cash, not gross revenue." },
+  { title: "Whop fraud controls", status: "manual_required", note: "Before global ads, confirm Whop Risk/Fraud Management blocks suspicious cards, VPN/proxy patterns and stolen-card attempts so $20 previews do not trigger payment-provider risk flags." },
+  { title: "Mobile exit-intent capture", status: "built", note: "Exit-intent lead capture now includes mobile quick scroll-up and pull-down intent triggers, plus a fallback timer, so Instagram/Facebook mobile visitors can still see the guide/trial-credit offer." },
   { title: "Concurrent render capacity", status: "technical_check", note: "Before paid weekend traffic, verify 12 concurrent tasks per agency will not break provider rate limits; queue must degrade gracefully instead of throwing provider errors." },
   { title: "Ad timezone scheduling", status: "manual_required", note: "For US/UK/AU traffic, schedule Meta launch around target market morning, especially EST/PST Saturday 08:00-09:00, not Turkey local morning by default." },
   { title: "Mobile wallet checkout", status: "manual_required", note: "Confirm Whop checkout exposes Apple Pay and Google Pay for mobile traffic so preview purchase does not depend on manual card typing." }
@@ -500,7 +503,7 @@ export default function AdminGrowthPage() {
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Whop launch risk controls</span>
         <h2>Chargeback, preview cancellation and launch-capacity safeguards</h2>
-        <p style={{ color: "var(--muted)" }}>Track the high-risk details before sending paid traffic to the $20 Team Annual preview: visible cancellation, reminder email, provider capacity, timezone timing and mobile wallet checkout.</p>
+        <p style={{ color: "var(--muted)" }}>Track the high-risk details before sending paid traffic to the $20 Team Annual preview: visible cancellation, reminder email, net payout assumptions, fraud controls, provider capacity, timezone timing, mobile exit-intent and mobile wallet checkout.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {whopLaunchRiskControls.map((item) => (
             <div className="card admin-category-card" key={item.title}>

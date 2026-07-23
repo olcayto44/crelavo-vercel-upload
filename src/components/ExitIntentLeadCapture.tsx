@@ -63,27 +63,61 @@ export function ExitIntentLeadCapture() {
     if (window.localStorage.getItem(SUBMITTED_KEY) === "true" || recentlySeen()) return;
 
     let armed = false;
-    const armTimer = window.setTimeout(() => {
-      armed = true;
-    }, 20_000);
+    let lastScrollY = window.scrollY;
+    let lastScrollAt = Date.now();
+    let touchStartY = 0;
 
-    const fallbackTimer = window.setTimeout(() => {
+    const triggerLeadCapture = () => {
       if (!armed || visible) return;
-      window.localStorage.setItem(SEEN_KEY, String(Date.now()));
-      setVisible(true);
-    }, 45_000);
-
-    const onMouseOut = (event: MouseEvent) => {
-      if (!armed || visible || event.clientY > 0) return;
       window.localStorage.setItem(SEEN_KEY, String(Date.now()));
       setVisible(true);
     };
 
+    const armTimer = window.setTimeout(() => {
+      armed = true;
+    }, 15_000);
+
+    const fallbackTimer = window.setTimeout(() => {
+      triggerLeadCapture();
+    }, 45_000);
+
+    const onMouseOut = (event: MouseEvent) => {
+      if (event.clientY > 0) return;
+      triggerLeadCapture();
+    };
+
+    const onScroll = () => {
+      const now = Date.now();
+      const currentY = window.scrollY;
+      const movedUpQuickly = lastScrollY - currentY > 90 && now - lastScrollAt < 700;
+      const meaningfulDepth = lastScrollY > 220;
+      lastScrollY = currentY;
+      lastScrollAt = now;
+      if (movedUpQuickly && meaningfulDepth) triggerLeadCapture();
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      touchStartY = event.touches[0]?.clientY ?? 0;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const currentY = event.touches[0]?.clientY ?? touchStartY;
+      const pulledDownNearTop = currentY - touchStartY > 90 && window.scrollY < 160;
+      if (pulledDownNearTop) triggerLeadCapture();
+    };
+
     document.addEventListener("mouseout", onMouseOut);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+
     return () => {
       window.clearTimeout(armTimer);
       window.clearTimeout(fallbackTimer);
       document.removeEventListener("mouseout", onMouseOut);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
     };
   }, [allowedPath, visible]);
 
