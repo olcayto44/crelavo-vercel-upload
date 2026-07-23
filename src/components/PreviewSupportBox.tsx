@@ -46,7 +46,10 @@ const siteDirectory = [
   { label: "Drone credits", href: "/drone-credits", keywords: ["drone", "satellite", "harita", "map", "location"] },
   { label: "Affiliate", href: "/affiliate", keywords: ["affiliate", "partner", "commission", "komisyon", "referans", "creator"] },
   { label: "VIP Agency Hub invite", href: "/dashboard/contact", keywords: ["vip agency hub", "agency hub", "discord", "telegram", "community", "topluluk", "invite", "davet", "promo code", "switch20", "discount", "indirim"] },
-  { label: "Viral credits and referral rewards", href: "/dashboard/credits", keywords: ["invite friend", "referral credits", "viral credit", "davet", "arkadaş davet", "bonus kredi", "watermark", "made with crelavo", "coupon hunt", "kupon", "abandoned checkout", "sepet"] },
+  { label: "Dashboard viral growth", href: "/dashboard/growth", keywords: ["viral growth", "growth rewards", "reward center", "viral loop", "büyüme ödül", "buyume odul", "growth command"] },
+  { label: "Share-to-earn rewards", href: "/dashboard/share-to-earn", keywords: ["share to earn", "share-to-earn", "paylaş kazan", "paylas kazan", "invite friend", "arkadaş davet", "arkadas davet", "bonus kredi", "watermarked preview", "made with crelavo"] },
+  { label: "Partner dashboard", href: "/dashboard/partners", keywords: ["partner dashboard", "affiliate dashboard", "partner panel", "referral link", "partner code", "affiliate link", "komisyon", "payout"] },
+  { label: "Viral credits and referral rewards", href: "/dashboard/share-to-earn", keywords: ["invite friend", "referral credits", "viral credit", "davet", "arkadaş davet", "bonus kredi", "watermark", "made with crelavo", "coupon hunt", "kupon", "abandoned checkout", "sepet"] },
   { label: "Showcase", href: "/showcase/explore-samples", keywords: ["showcase", "sample", "örnek", "ornek", "demo", "case"] },
   { label: "Alternatives", href: "/alternatives", keywords: ["alternative", "alternatif", "compare", "vs", "rakip"] },
   { label: "Shopify app page", href: "/shopify-ai-product-video-app", keywords: ["shopify app", "shopify", "app store"] },
@@ -335,16 +338,55 @@ const supportAnswers: SupportAnswer[] = [
     ]
   },
   {
+    id: "share-to-earn",
+    title: "Share-to-earn and invite-friend credits",
+    keywords: ["share to earn", "share-to-earn", "paylaş kazan", "paylas kazan", "invite friend", "arkadaş davet", "arkadas davet", "davet et", "referral credits", "bonus kredi", "+100", "+2,000", "2000 bonus", "kredi kazan"],
+    answer: "Share-to-earn akışı manuel inceleme ile çalışır: doğrulanmış arkadaş davetinde iki taraf için starter kredi, Business/Team yükseltmede bonus kredi ve onaylı preview/case-study paylaşımlarında manuel ödül incelemesi vardır. Otomatik kredi basımı yok; email, ödeme ve abuse kontrolleri gerekir.",
+    primaryUrl: "/dashboard/share-to-earn",
+    primaryLabel: "Share-to-earn rewards",
+    links: [
+      { label: "Share-to-earn", href: "/dashboard/share-to-earn" },
+      { label: "Credits dashboard", href: "/dashboard/credits" },
+      { label: "Growth hub", href: "/dashboard/growth" }
+    ]
+  },
+  {
+    id: "partner-rewards",
+    title: "Partner links, referrals and payout rules",
+    keywords: ["partner dashboard", "affiliate dashboard", "partner panel", "partner code", "referral link", "affiliate link", "komisyon", "commission", "payout", "ödeme alma", "odeme alma", "partner reward", "finance approval"],
+    answer: "Partner komisyonu ile viral kredi ödülü ayrı tutulur. Partner linkleri signup/satış atfı için kullanılır; komisyonlar 30 gün hold, refund/cancel/chargeback ve finance review sonrası değerlendirilir. Arkadaş daveti kredileri ise otomasyon hazır olana kadar manuel reward review ile ilerler.",
+    primaryUrl: "/dashboard/partners",
+    primaryLabel: "Partner dashboard",
+    links: [
+      { label: "Partner dashboard", href: "/dashboard/partners" },
+      { label: "Affiliate terms", href: "/affiliate" },
+      { label: "Share-to-earn", href: "/dashboard/share-to-earn" }
+    ]
+  },
+  {
+    id: "watermarked-preview-share",
+    title: "Watermarked preview sharing and clean exports",
+    keywords: ["watermarked preview", "watermark", "filigran", "made with crelavo", "clean export", "temiz export", "preview paylaş", "preview paylas", "share preview", "case study", "community showcase"],
+    answer: "Preview çıktıları onaylıysa Made with Crelavo AI watermark ile paylaşılabilir; bu hem proof loop hem de share-to-earn incelemesi için kullanılabilir. Temiz/final export ise seçilen plan başladıktan ve ödeme uygunluğu doğrulandıktan sonra açılır. Özel müşteri varlıkları showcase’e izinsiz taşınmamalıdır.",
+    primaryUrl: "/dashboard/share-to-earn",
+    primaryLabel: "Watermarked preview loop",
+    links: [
+      { label: "Share-to-earn", href: "/dashboard/share-to-earn" },
+      { label: "Community showcase", href: "/community-showcase" },
+      { label: "Preview checkout", href: "/dashboard/payment" }
+    ]
+  },
+  {
     id: "viral-rewards",
     title: "Viral credits, coupons and watermarked previews",
     keywords: ["invite friend", "referral", "referral credits", "viral credit", "bonus kredi", "arkadaş davet", "arkadas davet", "davet", "coupon hunt", "kupon", "promo hunt", "hidden code", "watermark", "made with crelavo", "abandoned checkout", "sepet", "checkout email", "hangi paket", "store volume", "mağaza hacmi", "magaza hacmi"],
-    answer: "Crelavo growth planında 4 güvenli viral mekanik var: arkadaş davetiyle manuel onaylı bonus kredi, kampanya günlerinde gerçek kupon avı, preview çıktılarında Made with Crelavo AI watermark + upgrade CTA, ve ödeme sayfasını terk eden kullanıcılar için izinli abandoned-checkout email. Paket seçimi de mağaza hacmine göre yönlendirilir: beginner için Pro, büyüyen mağaza için Business, scaling marka için Ultra, ajans/power seller için Team.",
-    primaryUrl: "/dashboard/credits",
+    answer: "Crelavo growth planında güvenli viral mekanikler var: share-to-earn, arkadaş davetiyle manuel onaylı bonus kredi, gerçek kampanya günlerinde kupon avı, Made with Crelavo AI watermarked preview paylaşımı ve izinli checkout recovery. Ödüller otomatik verilmez; doğrulama, ödeme eşleşmesi ve abuse kontrolü gerekir.",
+    primaryUrl: "/dashboard/share-to-earn",
     primaryLabel: "Viral credits and rewards",
     links: [
-      { label: "Credit rewards", href: "/dashboard/credits" },
       { label: "Share-to-earn", href: "/dashboard/share-to-earn" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "Growth rewards", href: "/dashboard/growth" },
+      { label: "Partner dashboard", href: "/dashboard/partners" },
       { label: "Free ad score", href: "/free-tools/ad-performance-score-checker" }
     ]
   },
@@ -405,12 +447,12 @@ const supportAnswers: SupportAnswer[] = [
 ];
 
 const quickQuestionsByLang: Record<Lang, string[]> = {
-  tr: ["Cancel preview", "Paket fiyatları", "Ekstra kredi gerekir mi?", "Affiliate komisyonları", "Üretim durumum nerede?"],
-  en: ["Cancel preview", "Plan prices", "Do premium features cost extra?", "Affiliate commissions", "Where is my production?"],
-  de: ["Preview kündigen", "Paketpreise", "Kosten Premium-Funktionen extra?", "Affiliate-Provisionen", "Wo ist meine Produktion?"],
-  fr: ["Annuler le preview", "Prix des plans", "Les options premium coûtent-elles plus?", "Commissions affiliées", "Où est ma production?"],
-  es: ["Cancelar preview", "Precios de planes", "¿Las funciones premium cuestan extra?", "Comisiones de afiliado", "¿Dónde está mi producción?"],
-  pt: ["Cancelar preview", "Preços dos planos", "Recursos premium custam extra?", "Comissões de afiliado", "Onde está minha produção?"]
+  tr: ["Share-to-earn nedir?", "Paket fiyatları", "Preview nasıl iptal edilir?", "Affiliate komisyonları", "Üretim durumum nerede?"],
+  en: ["What is share-to-earn?", "Plan prices", "How do I cancel preview?", "Affiliate commissions", "Where is my production?"],
+  de: ["Was ist Share-to-earn?", "Paketpreise", "Preview kündigen", "Affiliate-Provisionen", "Wo ist meine Produktion?"],
+  fr: ["Qu’est-ce que share-to-earn?", "Prix des plans", "Annuler le preview", "Commissions affiliées", "Où est ma production?"],
+  es: ["¿Qué es share-to-earn?", "Precios de planes", "Cancelar preview", "Comisiones de afiliado", "¿Dónde está mi producción?"],
+  pt: ["O que é share-to-earn?", "Preços dos planos", "Cancelar preview", "Comissões de afiliado", "Onde está minha produção?"]
 };
 
 const localizedContent: Record<string, Partial<Record<Lang, { title: string; answer: string }>>> = {
@@ -547,8 +589,21 @@ const localizedContent: Record<string, Partial<Record<Lang, { title: string; ans
     es: { title: "ROAS, ad score y performance", answer: "Crelavo busca apoyar performance de marketing, no solo entregar archivos. El AI Ad Performance Score Checker gratis analiza hook, CTA y debilidades creativas. En el futuro puede mostrar Video Conversion Score, Estimated ROAS Boost y Hook Rate." },
     pt: { title: "ROAS, ad score e performance", answer: "A Crelavo busca apoiar performance de marketing, não só entregar arquivos. O AI Ad Performance Score Checker grátis analisa hook, CTA e fraquezas criativas. No futuro pode mostrar Video Conversion Score, Estimated ROAS Boost e Hook Rate." }
   },
+"share-to-earn": {
+  tr: { title: "Share-to-earn ve arkadaş daveti kredileri", answer: "Share-to-earn akışı manuel inceleme ile çalışır: doğrulanmış arkadaş daveti, Business/Team yükseltme bonusu ve onaylı preview/case-study paylaşımları için kredi incelemesi vardır. Otomatik kredi basımı yok; email, ödeme ve abuse kontrolleri gerekir." },
+  en: { title: "Share-to-earn and invite-friend credits", answer: "Share-to-earn runs with manual review: verified friend invites, Business/Team upgrade bonuses and approved preview/case-study shares can be reviewed for credit rewards. Credits are not minted automatically; email, payment and abuse checks are required." }
+},
+"partner-rewards": {
+  tr: { title: "Partner linkleri, referral ve payout kuralları", answer: "Partner komisyonu ile viral kredi ödülü ayrıdır. Partner linkleri signup/satış atfı için kullanılır; komisyonlar 30 gün hold, refund/cancel/chargeback ve finance review sonrası değerlendirilir. Arkadaş daveti kredileri manuel reward review ile ilerler." },
+  en: { title: "Partner links, referrals and payout rules", answer: "Partner commissions and viral credit rewards are separate. Partner links attribute signups or sales; commissions are reviewed after a 30-day hold, refund/cancel/chargeback checks and finance approval. Invite-friend credits stay under manual reward review." }
+},
+"watermarked-preview-share": {
+  tr: { title: "Watermarked preview paylaşımı ve temiz export", answer: "Onaylı preview çıktıları Made with Crelavo AI watermark ile paylaşılabilir; bu proof loop ve share-to-earn incelemesi için kullanılabilir. Temiz/final export seçilen plan başladıktan ve ödeme uygunluğu doğrulandıktan sonra açılır." },
+  en: { title: "Watermarked preview sharing and clean exports", answer: "Approved preview outputs can be shared with the Made with Crelavo AI watermark for the proof loop and share-to-earn review. Clean/final exports unlock after the selected plan starts and payment eligibility is confirmed." }
+},
 "viral-rewards": {
-  en: { title: "Viral credits, coupons and watermarked previews", answer: "Crelavo can use safe viral mechanics: manually reviewed invite-friend credit rewards, real campaign-day coupon hunts, Made with Crelavo AI watermarked previews with upgrade CTA, and consent-based abandoned-checkout recovery emails. Package guidance can match store maturity: Pro for beginners, Business for growing stores, Ultra for scaling brands, Team for agencies." },
+  tr: { title: "Viral krediler, kuponlar ve watermarked preview", answer: "Crelavo’da güvenli viral mekanikler vardır: share-to-earn, manuel onaylı arkadaş daveti kredisi, gerçek kampanya günlerinde kupon avı, Made with Crelavo AI watermarked preview paylaşımı ve izinli checkout recovery. Ödüller otomatik verilmez; doğrulama ve abuse kontrolü gerekir." },
+  en: { title: "Viral credits, coupons and watermarked previews", answer: "Crelavo can use safe viral mechanics: share-to-earn, manually reviewed invite-friend credit rewards, real campaign-day coupon hunts, Made with Crelavo AI watermarked previews and consent-based abandoned-checkout recovery. Rewards are not automatic; verification and abuse checks are required." },
   de: { title: "Virale Credits, Coupons und Watermark Previews", answer: "Crelavo kann sichere Viral-Mechaniken nutzen: manuell geprüfte Invite-Friend Credits, echte Coupon-Hunts an Kampagnentagen, Made with Crelavo AI Watermark Previews mit Upgrade CTA und consent-basierte Abandoned-Checkout E-Mails." },
   fr: { title: "Crédits viraux, coupons et previews watermark", answer: "Crelavo peut utiliser des mécaniques virales sûres : crédits d’invitation avec revue manuelle, coupon hunts réels les jours de campagne, previews Made with Crelavo AI avec watermark et CTA upgrade, emails abandoned-checkout avec consentement." },
   es: { title: "Créditos virales, cupones y previews con watermark", answer: "Crelavo puede usar mecánicas virales seguras: créditos por invitar amigos con revisión manual, coupon hunts reales en días de campaña, previews Made with Crelavo AI con watermark y CTA de upgrade, emails de checkout abandonado con consentimiento." },
