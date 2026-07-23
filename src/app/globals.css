@@ -6820,39 +6820,46 @@ html body .automation-brief-card pre {
 }
 .assistant-inline-chat {
   display: grid;
-  grid-template-rows: auto minmax(320px, 42vh) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 14px;
   border: 1px solid rgba(125, 211, 252, .18);
   border-radius: 26px;
   padding: 18px;
   margin: 18px 0;
-  min-height: auto;
+  min-height: 560px;
   background: linear-gradient(135deg, rgba(15, 23, 42, .92), rgba(30, 41, 59, .74));
   box-shadow: 0 18px 50px rgba(0, 0, 0, .24);
 }
 .assistant-inline-chat-head {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
 }
 .assistant-inline-chat-head h2 {
-  margin: 8px 0 6px;
+  margin: 6px 0 4px;
   color: #fff;
-  font-size: clamp(22px, 3vw, 34px);
+  font-size: clamp(20px, 1.8vw, 26px);
+  line-height: 1.1;
 }
 .assistant-inline-chat-head p {
   margin: 0;
   color: #cbd5e1;
-  line-height: 1.5;
-  max-width: 760px;
+  font-size: 13px;
+  line-height: 1.35;
+  max-width: 560px;
+}
+.compact-chat-clear {
+  white-space: nowrap;
+  padding-inline: 14px;
 }
 .assistant-inline-chat-log {
   display: grid;
   align-content: start;
   gap: 10px;
-  min-height: 320px;
-  max-height: 42vh;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   border: 1px solid rgba(255,255,255,.1);
   border-radius: 20px;
@@ -6940,7 +6947,7 @@ html body .automation-brief-card pre {
   margin: 0 auto;
   padding: clamp(18px, 2.2vw, 30px);
   grid-template-columns: minmax(360px, .82fr) minmax(0, 1.18fr);
-  align-items: start;
+  align-items: stretch;
 }
 .studio-stage-head,
 .studio-preview-plan,
@@ -6954,17 +6961,17 @@ html body .automation-brief-card pre {
 .assistant-inline-chat {
   grid-column: 1;
   margin: 0;
-  align-self: start;
+  align-self: stretch;
 }
 .studio-command-center {
   grid-column: 2;
   grid-template-columns: minmax(0, 1.35fr) minmax(330px, .65fr);
   gap: 16px;
-  align-self: start;
+  align-self: stretch;
 }
 .assistant-inline-chat-log {
-  min-height: clamp(320px, 38vh, 460px);
-  max-height: 42vh;
+  min-height: 0;
+  max-height: none;
 }
 .studio-command-main,
 .studio-credit-card {

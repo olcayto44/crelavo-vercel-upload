@@ -776,21 +776,22 @@ function productionFollowUpReply(message: string, language: string) {
   const duration = durationFromFollowUp(message);
   const durationText = duration === "2 min" ? "2 dakika" : duration === "10 min" ? "10 dakika" : duration === "60 sec" ? "60 saniye" : duration;
   if (responseLanguage(message, language) === "tr") {
-    if (duration) return `Tamam, süreyi ${durationText} olarak aldım. Bu bilgiyi mevcut video/proje akışına ekliyorum.`;
-    if (/(goruntu|gorsel|goruntulu|kamerali|kamera|yuzum|ben gorun|konusarak)/.test(normalized)) return "Tamam, görüntülü olacağını aldım. Yani sadece ses kaydı değil; senin görüntün/konuşman da video planına dahil edilecek.";
-    if (/(sesli|sadece ses|ses kaydi)/.test(normalized)) return "Tamam, ses kaydı bilgisini aldım. Bunu mevcut video planına seslendirme girdisi olarak bağlıyorum.";
-    if (/(altyazi|cince|almanca|ingilizce|turkce)/.test(normalized)) return "Tamam, dil/altyazı bilgisini mevcut video akışına ekliyorum.";
-    if (/(evren|gezegen|yildiz|uzay|galaksi|astronomi)/.test(normalized)) return "Tamam, konuyu uzay / evren / gezegenler / yıldızlar ekseninde aldım. Bunu mevcut shorts video akışına bağlıyorum.";
-    return "Tamam, bunu önceki üretim isteğinin devam bilgisi olarak aldım ve akışa ekliyorum.";
+    if (duration) return `Tamam, süreyi ${durationText} olarak aldım. Brief'e ekledim; konu ve stil de varsa üretim planını netleştirip başlatma adımına geçeceğim.`;
+    if (/(kendi goruntumu istemiyorum|kendi goruntum istemiyorum|kendi goruntu istemiyorum|yapay olsun|yapay goruntu|yapay gorsel|ai olsun|kendi cekimim yok|materyal istemiyorum)/.test(normalized)) return "Tamam, kendi görüntün kullanılmayacak. Video tamamen yapay/sinematik görsellerle planlanacak; voice-over, altyazı ve müzik brief'e bağlı kalacak.";
+    if (/(altyazi|cince|almanca|ingilizce|turkce|voiceover|voice over|seslendirme)/.test(normalized)) return "Tamam, dil/seslendirme/altyazı bilgisini brief'e ekledim. Bunu genel tavsiye olarak bırakmayacağım; üretim planında voice-over, altyazı ve video sahneleri birlikte hazırlanacak.";
+    if (/(goruntu|gorsel|goruntulu|kamerali|kamera|yuzum|ben gorun|konusarak)/.test(normalized)) return "Tamam, görüntü bilgisini aldım. Kendi görüntün istenmiyorsa yapay/sinematik sahnelerle ilerleyeceğim; kendi görüntün istenirse ayrıca materyal isterim.";
+    if (/(sesli|sadece ses|ses kaydi)/.test(normalized)) return "Tamam, ses bilgisini brief'e ekledim. Seslendirme gerekiyorsa metin + voice-over akışıyla planlayacağım.";
+    if (/(evren|gezegen|yildiz|uzay|galaksi|astronomi)/.test(normalized)) return "Tamam, konuyu uzay / evren / gezegenler ekseninde aldım. Bunu shorts video brief'ine bağlıyorum.";
+    return "Tamam, bunu önceki üretim isteğinin brief'ine ekledim. Başla dediğinde tekrar soru sormadan üretim kontrol adımına geçeceğim.";
   }
-  if (duration) return `Got it, I set the duration to ${duration} and will keep it attached to the current production request.`;
-  return "Got it, I will keep this as follow-up detail for the current production request.";
+  if (duration) return `Got it, I set the duration to ${duration} and attached it to the production brief.`;
+  return "Got it, I attached this to the current production brief and will move to the start step when you confirm.";
 }
 
 function detectWorkspaceIntent(message: string): WorkspaceIntent {
   const text = message.toLocaleLowerCase("tr-TR").trim();
   const normalized = text.replace(/[.!?]+$/g, "").trim();
-  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|start|confirm|create production)$/i.test(normalized);
+  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|evet başla|evet basla|hemen başla|hemen basla|start|confirm|create production)$/i.test(normalized);
   const hasNewSubjectAfterHadi = /^hadi\s+\S+/.test(normalized) && !/^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et)$/i.test(normalized);
   if (/^(selam|merhaba|hello|hi|hey|sa|slm|günaydın|gunaydin|iyi akşamlar|iyi aksamlar)\b/.test(text)) return "greeting";
   if (/^(nasılsın|nasilsin|naber|ne haber|how are you)\b/.test(text)) return "greeting";
@@ -2021,14 +2022,33 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
 
     const wantsNoMaterial = /istemiyorum|gerek yok|olmasın|hayır|devam et/i.test(clean);
     if (isStartConfirmation && dynamicWizard.open) {
+      const startReply = activeLanguage === "tr"
+        ? "Tamam, tekrar soru sormuyorum. Mevcut brief ile üretim/kredi kontrol adımını açıyorum."
+        : "Understood. I will not ask again; I am opening the production/credit check step for the current brief.";
+      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: startReply }]);
+      if (source === "chat") setChatInput("");
+      setStatus(activeLanguage === "tr" ? "Üretim kontrol adımı açılıyor." : "Opening production check step.");
       requestDynamicWizardCredits();
+      return;
     }
     if (!conversationalOnly && !followUpProduction) {
       openDynamicWizardFromMessage(clean);
     }
     if (followUpProduction) {
       const followUpDuration = durationFromFollowUp(clean);
+      const followUpNormalized = normalizeTurkishQuery(clean);
       if (followUpDuration) setSelectedDuration(followUpDuration);
+      if (/(sinematik|cinematic|film gibi|premium)/.test(followUpNormalized)) {
+        setSelectedStyle("Cinematic");
+        setSelectedQuality("Cinematic");
+      }
+      if (/(ultra|en iyi|maksimum kalite|maximum quality)/.test(followUpNormalized)) setSelectedQuality("Ultra");
+      if (/(pro|profesyonel|professional)/.test(followUpNormalized)) setSelectedQuality("Pro");
+      if (/(ingilizce|english|seslendirme|voiceover|voice over|sesli anlatim|sesli anlatım)/.test(followUpNormalized)) setSelectedFeatures((current) => current.includes("Voice-over") ? current : [...current, "Voice-over"]);
+      if (/(altyazi|subtitle|subtitles)/.test(followUpNormalized)) setSelectedFeatures((current) => current.includes("Subtitles") ? current : [...current, "Subtitles"]);
+      if (/(fon muzik|fon müzik|muzik|müzik|music|background music)/.test(followUpNormalized)) setSelectedFeatures((current) => current.includes("Music") ? current : [...current, "Music"]);
+      if (/(kapak|cover|thumbnail|hook|kanca)/.test(followUpNormalized)) setSelectedFeatures((current) => current.includes("Cover visual") ? current : [...current, "Cover visual"]);
+      if (/(yapay|ai olsun|kendi goruntumu istemiyorum|kendi cekimim yok)/.test(followUpNormalized)) setSelectedModules((current) => Array.from(new Set([...current, "AI video", "Visual/image pack"])));
       if (!followUpDuration && source === "production") {
         setInput((current) => current ? `${current}\n${clean}` : clean);
         setDynamicWizard((current) => current.open ? { ...current, subject: current.subject ? `${current.subject} · ${clean}` : clean } : current);
@@ -2453,19 +2473,19 @@ async function startRawMicrophoneFallback() {
           <div className="assistant-inline-chat-head">
             <div>
               <span className="badge"><Bot size={14} /> Assistant chat</span>
-              <h2>Normal chat / questions</h2>
-              <p>Buraya selam, soru, API, fikir veya sesli komut yaz. Cevap akışı burada görünür; üretim brief’i aşağıdaki Production command alanından ayrı tutulur.</p>
+              <h2>Chat</h2>
+              <p>Ask a question, request API help, share an idea, or send a voice command. Production briefs stay in the Production command panel.</p>
             </div>
-            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: activeLanguage === "tr" ? "Sohbet temizlendi. Sorunu veya yapmak istediğini yazabilirsin." : "Chat cleared. Ask anything or describe what you need." }])}>Chat’i temizle</button>
+            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Ask anything or describe what you need." }])}>Clear chat</button>
           </div>
           <div className="assistant-inline-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
-            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">{activeLanguage === "tr" ? "Cevap hazırlanıyor..." : "Preparing reply..."}</div> : null}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Preparing reply...</div> : null}
           </div>
           <div className="assistant-inline-chat-input">
-            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder={activeLanguage === "tr" ? "Buraya normal soru yaz: selam, nasılsın, API nasıl alınır, TikTok videosu nasıl yapacağız..." : "Ask here: general question, API steps, production idea..."} />
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder="Ask here: general question, API steps, production idea..." />
             <div className="assistant-inline-chat-actions">
-              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? (activeLanguage === "tr" ? "Dinleniyor..." : "Listening...") : (activeLanguage === "tr" ? "Ses" : "Voice")}</button>
+              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? "Listening..." : "Voice"}</button>
               <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
             </div>
           </div>
