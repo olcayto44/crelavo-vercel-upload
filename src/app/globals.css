@@ -6820,13 +6820,14 @@ html body .automation-brief-card pre {
 }
 .assistant-inline-chat {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
-  gap: 14px;
+  grid-template-rows: auto minmax(220px, 320px) auto auto;
+  gap: 12px;
   border: 1px solid rgba(125, 211, 252, .18);
-  border-radius: 26px;
-  padding: 18px;
+  border-radius: 24px;
+  padding: 16px;
   margin: 18px 0;
-  min-height: 560px;
+  min-height: auto;
+  max-height: 560px;
   background: linear-gradient(135deg, rgba(15, 23, 42, .92), rgba(30, 41, 59, .74));
   box-shadow: 0 18px 50px rgba(0, 0, 0, .24);
 }
@@ -6947,7 +6948,7 @@ html body .automation-brief-card pre {
   margin: 0 auto;
   padding: clamp(18px, 2.2vw, 30px);
   grid-template-columns: minmax(360px, .82fr) minmax(0, 1.18fr);
-  align-items: stretch;
+  align-items: start;
 }
 .studio-stage-head,
 .studio-preview-plan,
@@ -6961,17 +6962,17 @@ html body .automation-brief-card pre {
 .assistant-inline-chat {
   grid-column: 1;
   margin: 0;
-  align-self: stretch;
+  align-self: start;
 }
 .studio-command-center {
   grid-column: 2;
   grid-template-columns: minmax(0, 1.35fr) minmax(330px, .65fr);
   gap: 16px;
-  align-self: stretch;
+  align-self: start;
 }
 .assistant-inline-chat-log {
-  min-height: 0;
-  max-height: none;
+  min-height: 220px;
+  max-height: 320px;
 }
 .studio-command-main,
 .studio-credit-card {
