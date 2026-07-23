@@ -2,13 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FreeToolsHubStructuredData } from "@/components/FreeToolsHubStructuredData";
 import { Header } from "@/components/Header";
+import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { freeTools } from "@/lib/free-tools";
 
 export const metadata: Metadata = {
   title: "Free AI Tools for Ad References, TikTok Hooks, Product Descriptions and Ecommerce Ads | Crelavo",
   description: "Use free AI tools for ad reference analysis, TikTok hooks, UGC ad scripts, product descriptions, prompts, SEO meta titles, landing page copy, ecommerce campaigns, captions and brand slogans, then continue into Crelavo production workflows.",
-  alternates: { canonical: "/free-tools" }
+  alternates: { canonical: "/free-tools" },
+  openGraph: {
+    title: "Free AI Tools for Ad References and Ecommerce Ads | Crelavo",
+    description: "Use free AI tools for ad reference analysis, TikTok hooks, product descriptions and ecommerce campaigns.",
+    url: "/free-tools",
+    type: "website",
+    images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: "Crelavo free AI tools dashboard preview" }]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free AI Tools for Ad References and Ecommerce Ads | Crelavo",
+    description: "Use free AI tools for ad reference analysis, TikTok hooks, product descriptions and ecommerce campaigns.",
+    images: [defaultSearchThumbnail.path]
+  }
 };
 
 const freeToolPreviewOffers = [
@@ -31,6 +45,13 @@ export default async function FreeToolsPage() {
   return (
     <>
       <FreeToolsHubStructuredData />
+      <PageThumbnailStructuredData
+        pagePath="/free-tools"
+        pageTitle="Free AI Tools for Ad References and Ecommerce Ads | Crelavo"
+        pageDescription="Use free AI tools for ad reference analysis, TikTok hooks, product descriptions and ecommerce campaigns."
+        imageAlt="Crelavo free AI tools dashboard preview"
+        pageType="CollectionPage"
+      />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section tools-page free-tools-page">
         <section className="production-hero-card admin-overview-hero">

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { Header } from "@/components/Header";
@@ -9,6 +10,26 @@ import { dronePurchasePackages, growthIntelligencePlans, liveSalesServicePlans, 
 import { creditCalculatorExamples, productionCreditGuide, quickCreditMath } from "@/lib/pricing";
 import { productionPackages, productionTypes } from "@/lib/production";
 import { PricingStructuredData } from "@/components/PricingStructuredData";
+import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
+
+export const metadata: Metadata = {
+  title: "Crelavo Pricing and AI Production Credits",
+  description: "Compare Crelavo credit packages, preview checkout paths, rollover rules and production delivery options for ecommerce videos, websites, apps and campaign assets.",
+  alternates: { canonical: "/pricing" },
+  openGraph: {
+    title: "Crelavo Pricing and AI Production Credits",
+    description: "Compare Crelavo credit packages, preview checkout paths, rollover rules and production delivery options.",
+    url: "/pricing",
+    type: "website",
+    images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: "Crelavo pricing and credits dashboard preview" }]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Crelavo Pricing and AI Production Credits",
+    description: "Compare Crelavo credit packages, preview checkout paths, rollover rules and production delivery options.",
+    images: [defaultSearchThumbnail.path]
+  }
+};
 
 const standalonePurchaseTypeIds = new Set(["live_sales_agent", "drone_video"]);
 
@@ -136,6 +157,12 @@ export default async function PricingPage() {
   return (
     <>
       <PricingStructuredData />
+      <PageThumbnailStructuredData
+        pagePath="/pricing"
+        pageTitle="Crelavo Pricing and AI Production Credits"
+        pageDescription="Compare Crelavo credit packages, preview checkout paths, rollover rules and production delivery options."
+        imageAlt="Crelavo pricing and credits dashboard preview"
+      />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section pricing-page public-funnel-page">
         <section className="promo-top-layout">

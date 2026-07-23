@@ -72,7 +72,7 @@ export const metadata: Metadata = {
     siteName,
     type: "website",
     locale: "en_US",
-    images: [{ url: "/showcase/ai-production-studio.webp", width: 1200, height: 630, alt: "Crelavo AI production studio preview" }]
+    images: [{ url: "/showcase/ai-production-studio.webp", width: 1792, height: 1024, alt: "Crelavo AI production studio preview" }]
   },
   twitter: {
     card: "summary_large_image",

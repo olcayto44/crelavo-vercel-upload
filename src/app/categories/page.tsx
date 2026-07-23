@@ -5,6 +5,7 @@ import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
+import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { categoryShowcaseItems } from "@/lib/showcase-items";
 import { getConfiguredCategoryPages } from "@/lib/category-pages-loader";
@@ -26,12 +27,14 @@ export const metadata: Metadata = {
     title: "AI Production Categories | Crelavo",
     description: "Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets.",
     url: "/categories",
-    type: "website"
+    type: "website",
+    images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: "Crelavo AI production categories dashboard preview" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Production Categories | Crelavo",
-    description: "Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets."
+    description: "Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets.",
+    images: [defaultSearchThumbnail.path]
   }
 };
 
@@ -67,6 +70,13 @@ export default async function CategoriesPage() {
 
   return (
     <>
+      <PageThumbnailStructuredData
+        pagePath="/categories"
+        pageTitle="AI Production Categories | Crelavo"
+        pageDescription="Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets."
+        imageAlt="Crelavo AI production categories dashboard preview"
+        pageType="CollectionPage"
+      />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section public-funnel-page categories-funnel-page">
         <section className="promo-top-layout">

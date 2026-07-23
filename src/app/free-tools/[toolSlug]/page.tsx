@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FreeToolGenerator } from "@/components/FreeToolGenerator";
 import { FreeToolStructuredData } from "@/components/FreeToolStructuredData";
 import { Header } from "@/components/Header";
+import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 import { StaticFaqStructuredData } from "@/components/StaticFaqStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { freeToolMap, freeTools } from "@/lib/free-tools";
@@ -94,7 +95,19 @@ export async function generateMetadata({ params }: { params: Promise<{ toolSlug:
     title: `${tool.title} for ${tool.category} | Free AI Tool | Crelavo`,
     description: `${tool.description} Use this free tool for ${keywords}, then continue into Crelavo production categories, pricing and delivery workflows.`,
     alternates: { canonical: `/free-tools/${tool.slug}` },
-    openGraph: { title: tool.title, description: tool.description, url: `/free-tools/${tool.slug}`, type: "website" }
+    openGraph: {
+      title: tool.title,
+      description: tool.description,
+      url: `/free-tools/${tool.slug}`,
+      type: "website",
+      images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: `${tool.title} Crelavo dashboard preview` }]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: tool.title,
+      description: tool.description,
+      images: [defaultSearchThumbnail.path]
+    }
   };
 }
 
@@ -114,6 +127,12 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
     <>
       <FreeToolStructuredData tool={tool} />
       <StaticFaqStructuredData pagePath={`/free-tools/${tool.slug}`} pageTitle={tool.title} items={freeToolFaqItems} />
+      <PageThumbnailStructuredData
+        pagePath={`/free-tools/${tool.slug}`}
+        pageTitle={tool.title}
+        pageDescription={tool.description}
+        imageAlt={`${tool.title} Crelavo dashboard preview`}
+      />
       <Header navLinks={siteContent.navLinks} />
       <main className="container section tools-page free-tool-detail-page">
         <section className="production-hero-card admin-overview-hero">

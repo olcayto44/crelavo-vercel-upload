@@ -670,61 +670,63 @@ export function PreviewSupportBox() {
 
   const t = uiText[currentLang];
   const localizedAnswer = contentFor(answer, currentLang);
-  const quickQuestions = quickQuestionsByLang[currentLang];
+  const quickQuestions = quickQuestionsByLang[currentLang].slice(0, 3);
   const primaryAbsoluteUrl = absoluteUrl(answer.primaryUrl);
+  const compactAnswer = localizedAnswer.answer.length > 220 ? `${localizedAnswer.answer.slice(0, 217)}...` : localizedAnswer.answer;
+  const compactLinks = answer.links.slice(0, 2);
 
   return (
-    <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 70, width: "min(410px, calc(100vw - 32px))", maxHeight: "calc(100dvh - 36px)" }}>
+    <div style={{ position: "fixed", right: 14, bottom: 14, zIndex: 70, width: "min(340px, calc(100vw - 28px))" }}>
       {open ? (
-        <div className="card" style={{ border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 22px 70px rgba(0,0,0,0.32)", background: "rgba(12, 18, 32, 0.96)", maxHeight: "calc(100dvh - 36px)", overflowY: "auto", overscrollBehavior: "contain" }}>
+        <div className="card" style={{ border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 18px 52px rgba(0,0,0,0.3)", background: "rgba(12, 18, 32, 0.96)", overflow: "hidden", padding: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
             <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
               <span className="logo-mark" style={{ flex: "0 0 auto", marginTop: 2 }}>▶</span>
               <div>
                 <span className="badge">{t.badge}</span>
-                <h3 style={{ margin: "10px 0 6px" }}>{t.heading}</h3>
-                <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>{t.intro}</p>
+                <h3 style={{ margin: "8px 0 4px", fontSize: 16 }}>{t.heading}</h3>
+                <p style={{ color: "var(--muted)", margin: 0, fontSize: 12, lineHeight: 1.35 }}>{t.intro}</p>
               </div>
             </div>
-            <button type="button" aria-label={t.close} onClick={() => setOpen(false)} style={{ border: 0, borderRadius: 999, width: 32, height: 32, cursor: "pointer", background: "rgba(255,255,255,0.12)", color: "var(--text)" }}>×</button>
+            <button type="button" aria-label={t.close} onClick={() => setOpen(false)} style={{ border: 0, borderRadius: 999, width: 34, height: 34, cursor: "pointer", background: "rgba(255,255,255,0.18)", color: "var(--text)", flex: "0 0 auto", fontSize: 20, lineHeight: "34px" }}>×</button>
           </div>
 
-          <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, marginTop: 14 }}>
+          <form onSubmit={onSubmit} style={{ display: "grid", gap: 8, marginTop: 10 }}>
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder={t.placeholder}
-              style={{ width: "100%", borderRadius: 14, border: "1px solid rgba(255,255,255,0.16)", padding: "12px 14px", background: "rgba(255,255,255,0.06)", color: "var(--text)" }}
+              style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(255,255,255,0.16)", padding: "10px 12px", background: "rgba(255,255,255,0.06)", color: "var(--text)", fontSize: 13 }}
             />
-            <button className="primary-button" type="submit">{t.button}</button>
+            <button className="primary-button" type="submit" style={{ padding: "10px 12px" }}>{t.button}</button>
           </form>
 
-          <div className="workspace-action-note" style={{ marginTop: 14 }}>
-            <strong>{redirecting ? t.redirecting : localizedAnswer.title}</strong>
+          <div className="workspace-action-note" style={{ marginTop: 10, padding: 12 }}>
+            <strong style={{ fontSize: 13 }}>{redirecting ? t.redirecting : localizedAnswer.title}</strong>
             {redirecting ? (
               <p style={{ marginBottom: 0 }}>{t.redirectMessage(primaryAbsoluteUrl)}</p>
             ) : (
               <>
-                <p style={{ marginBottom: 8 }}>{localizedAnswer.answer}</p>
-                <p style={{ marginBottom: 0 }}>{t.redirectOffer(primaryAbsoluteUrl)}</p>
+                <p style={{ margin: "6px 0", fontSize: 12, lineHeight: 1.4 }}>{compactAnswer}</p>
+                <p style={{ marginBottom: 0, fontSize: 12, lineHeight: 1.35 }}>{t.redirectOffer(primaryAbsoluteUrl)}</p>
               </>
             )}
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-            {answer.links.map((link) => link.external ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {compactLinks.map((link) => link.external ? (
               <a className="secondary-button" href={link.href} target={link.href.startsWith("mailto:") ? undefined : "_blank"} rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"} key={`${link.label}-${link.href}`}>{link.label}</a>
             ) : (
               <Link className="secondary-button" href={link.href} key={`${link.label}-${link.href}`}>{link.label}</Link>
             ))}
           </div>
 
-          <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
-            <small style={{ color: "var(--muted)" }}>{t.bestPage}: {primaryAbsoluteUrl}</small>
+          <div style={{ display: "grid", gap: 4, marginTop: 8 }}>
+            <small style={{ color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.bestPage}: {primaryAbsoluteUrl}</small>
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-            {quickQuestions.map((question) => <button type="button" className="btn secondary" style={{ padding: "8px 10px", fontSize: 12 }} onClick={() => ask(question)} key={question}>{question}</button>)}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+            {quickQuestions.map((question) => <button type="button" className="btn secondary" style={{ padding: "6px 8px", fontSize: 11 }} onClick={() => ask(question)} key={question}>{question}</button>)}
           </div>
         </div>
       ) : (

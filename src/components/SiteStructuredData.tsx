@@ -134,6 +134,8 @@ export function SiteStructuredData() {
         contentUrl: `${siteUrl}/showcase/ai-production-studio.webp`,
         name: "Crelavo AI production studio dashboard preview",
         caption: "Crelavo AI production studio for ecommerce product videos, campaign assets and dashboard delivery.",
+        width: 1792,
+        height: 1024,
         representativeOfPage: true
       },
       {
