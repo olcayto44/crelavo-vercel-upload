@@ -44,6 +44,7 @@ const siteDirectory = [
   { label: "Growth Intelligence", href: "/growth-intelligence", keywords: ["growth intelligence", "competitor", "rakip", "market intelligence", "monitoring"] },
   { label: "Drone credits", href: "/drone-credits", keywords: ["drone", "satellite", "harita", "map", "location"] },
   { label: "Affiliate", href: "/affiliate", keywords: ["affiliate", "partner", "commission", "komisyon", "referans", "creator"] },
+  { label: "VIP Agency Hub invite", href: "/dashboard/contact", keywords: ["vip agency hub", "agency hub", "discord", "telegram", "community", "topluluk", "invite", "davet", "promo code", "switch20", "discount", "indirim"] },
   { label: "Showcase", href: "/showcase/explore-samples", keywords: ["showcase", "sample", "örnek", "ornek", "demo", "case"] },
   { label: "Alternatives", href: "/alternatives", keywords: ["alternative", "alternatif", "compare", "vs", "rakip"] },
   { label: "Shopify app page", href: "/shopify-ai-product-video-app", keywords: ["shopify app", "shopify", "app store"] },
@@ -334,15 +335,15 @@ const supportAnswers: SupportAnswer[] = [
   {
     id: "community-promos",
     title: "VIP community and competitor switch offers",
-    keywords: ["discord", "telegram", "community", "topluluk", "vip", "agency hub", "promo", "promo code", "discount", "indirim", "heygen", "creatify", "competitor", "rakipten", "switch"],
-    answer: "Crelavo launch planında VIP Agency Hub gibi Discord/Telegram topluluğu ve rakipten gelen kullanıcılar için kontrollü Whop promo code fikirleri değerlendirilebilir. Bu operasyonel bir launch taktiğidir: topluluk linki ödeme sonrası/onboarding email’inde verilmeli; indirim kodları ise Whop promo code ile dürüst, manuel ve abuse kontrollü kullanılmalıdır.",
-    primaryUrl: "/affiliate",
-    primaryLabel: "Affiliate and partner page",
+    keywords: ["discord", "telegram", "community", "topluluk", "vip", "agency hub", "vip agency hub", "invite", "davet", "promo", "promo code", "discount", "indirim", "switch20", "heygen", "creatify", "competitor", "rakipten", "switch"],
+    answer: "Preview alıcıları için VIP Agency Hub daveti ödeme sonrası dashboard/email içinde görünebilir; link henüz aktif değilse support daveti manuel gönderir. SWITCH20 veya benzeri promo code’lar yalnızca kontrollü competitor-switch kampanyalarında kullanılabilir; her kullanıcıya garanti edilmez, abuse ve süre kontrolüyle yönetilir. Promo veya hub daveti için pricing ya da support sayfasını kontrol edin.",
+    primaryUrl: "/dashboard/contact",
+    primaryLabel: "Request VIP / promo help",
     links: [
-      { label: "Affiliate", href: "/affiliate" },
-      { label: "Community showcase", href: "/community-showcase" },
+      { label: "Request VIP / promo help", href: "/dashboard/contact" },
       { label: "Pricing", href: "/pricing" },
-      { label: "Contact support", href: "/dashboard/contact" }
+      { label: "Community showcase", href: "/community-showcase" },
+      { label: "Affiliate", href: "/affiliate" }
     ]
   },
   {
@@ -517,11 +518,11 @@ const localizedContent: Record<string, Partial<Record<Lang, { title: string; ans
     pt: { title: "ROAS, ad score e performance", answer: "A Crelavo busca apoiar performance de marketing, não só entregar arquivos. O AI Ad Performance Score Checker grátis analisa hook, CTA e fraquezas criativas. No futuro pode mostrar Video Conversion Score, Estimated ROAS Boost e Hook Rate." }
   },
   "community-promos": {
-    en: { title: "VIP community and competitor switch offers", answer: "Crelavo launch plans can include a VIP Agency Hub on Discord/Telegram and controlled Whop promo codes for users switching from competitors. Community access should be sent after purchase/onboarding; promo codes should be honest, manual and abuse-controlled." },
-    de: { title: "VIP Community und Wechselangebote", answer: "Crelavo Launch-Pläne können einen VIP Agency Hub auf Discord/Telegram und kontrollierte Whop Promo Codes für Wechsel von Wettbewerbern enthalten. Community-Zugang nach Kauf/Onboarding; Promo Codes ehrlich, manuell und abuse-kontrolliert." },
-    fr: { title: "Communauté VIP et offres switch", answer: "Le launch Crelavo peut inclure un VIP Agency Hub Discord/Telegram et des promo codes Whop contrôlés pour les utilisateurs venant de concurrents. Accès communauté après achat/onboarding ; codes honnêtes, manuels et contrôlés." },
-    es: { title: "Comunidad VIP y ofertas switch", answer: "El launch de Crelavo puede incluir un VIP Agency Hub en Discord/Telegram y promo codes Whop controlados para usuarios que vienen de competidores. Acceso tras compra/onboarding; códigos honestos, manuales y con control anti-abuso." },
-    pt: { title: "Comunidade VIP e ofertas switch", answer: "O launch da Crelavo pode incluir VIP Agency Hub no Discord/Telegram e promo codes Whop controlados para usuários vindos de concorrentes. Acesso após compra/onboarding; códigos honestos, manuais e com controle anti-abuso." }
+    en: { title: "VIP community and competitor switch offers", answer: "Preview buyers may see a VIP Agency Hub invite in the dashboard or payment email; if the link is not active yet, support can send it manually. SWITCH20 or similar promo codes are only for controlled competitor-switch campaigns, not guaranteed for every user, and are managed with expiry and abuse checks." },
+    de: { title: "VIP Community und Wechselangebote", answer: "Preview-Käufer können den VIP Agency Hub Invite im Dashboard oder in der Zahlungs-E-Mail sehen; wenn der Link noch nicht aktiv ist, kann Support ihn manuell senden. SWITCH20 oder ähnliche Promo Codes gelten nur für kontrollierte Competitor-Switch-Kampagnen, nicht garantiert für jeden Nutzer, mit Ablauf- und Abuse-Kontrolle." },
+    fr: { title: "Communauté VIP et offres switch", answer: "Les acheteurs preview peuvent voir l’invitation VIP Agency Hub dans le dashboard ou l’email de paiement ; si le lien n’est pas encore actif, le support peut l’envoyer manuellement. SWITCH20 ou codes similaires sont réservés aux campagnes competitor-switch contrôlées, sans garantie pour chaque utilisateur, avec expiration et contrôle anti-abus." },
+    es: { title: "Comunidad VIP y ofertas switch", answer: "Los compradores preview pueden ver la invitación VIP Agency Hub en el dashboard o email de pago; si el enlace aún no está activo, soporte puede enviarlo manualmente. SWITCH20 o códigos similares solo se usan en campañas controladas de cambio desde competidores, no están garantizados para todos y tienen caducidad y control anti-abuso." },
+    pt: { title: "Comunidade VIP e ofertas switch", answer: "Compradores preview podem ver o convite VIP Agency Hub no dashboard ou email de pagamento; se o link ainda não estiver ativo, o suporte pode enviar manualmente. SWITCH20 ou códigos similares são usados apenas em campanhas controladas de troca de concorrente, não são garantidos para todos e têm expiração e controle anti-abuso." }
   },
   human: {
     en: { title: "Need human support", answer: "This box is not live human chat; it is a fast Crelavo guide. For account, billing, production or delivery questions that need review, send a support request with your account email, payment reference or production ID." },

@@ -11,6 +11,8 @@ export const metadata = {
 };
 
 export default function CheckoutCompletePage() {
+  const vipAgencyHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
+
   return (
     <main className="container section pricing-page public-funnel-page checkout-complete-page">
       <section className="card payment-checkout-card">
@@ -25,6 +27,18 @@ export default function CheckoutCompletePage() {
         <Suspense fallback={null}>
           <WhopPaymentReconcileStatus />
         </Suspense>
+        <div className="workspace-action-note" style={{ marginTop: 18 }}>
+          <span className="badge">VIP Agency Hub</span>
+          <h3>Join the preview buyer hub</h3>
+          <p>
+            Preview buyers can join the VIP Agency Hub for prompt tips, first-video feedback and ecommerce ad examples after checkout.
+          </p>
+          {vipAgencyHubUrl ? (
+            <a className="btn secondary" href={vipAgencyHubUrl} target="_blank" rel="noreferrer">Open VIP Agency Hub</a>
+          ) : (
+            <Link className="btn secondary" href="/dashboard/contact">Request invite</Link>
+          )}
+        </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
           <Link className="btn" href="/dashboard/credits">Open credits</Link>
           <Link className="btn secondary" href="/dashboard/create">Start a request</Link>

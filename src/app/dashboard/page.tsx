@@ -191,6 +191,8 @@ const workflowStarters = [
 ];
 
 export default function DashboardPage() {
+  const vipAgencyHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
+
   return (
     <DashboardShell className="dashboard-postlaunch-shell">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", marginBottom: 20 }}>
@@ -218,6 +220,22 @@ export default function DashboardPage() {
               <span className="text-link">{item.cta}</span>
             </Link>
           ))}
+        </div>
+      </section>
+      <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">VIP Agency Hub</span>
+        <h2>Get first-video feedback and prompt tips after preview checkout</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Preview buyers can use the private agency hub for ecommerce ad examples, prompt direction, launch notes and first-output optimization. If the hub URL is not configured yet, request an invite from support.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+          {vipAgencyHubUrl ? (
+            <a className="btn" href={vipAgencyHubUrl} target="_blank" rel="noreferrer">Open VIP Agency Hub</a>
+          ) : (
+            <Link className="btn" href="/dashboard/contact">Request invite</Link>
+          )}
+          <Link className="btn secondary" href="/community-showcase">View community showcase</Link>
+          <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score an ad first</Link>
         </div>
       </section>
       <section className="card" style={{ marginTop: 20 }}>

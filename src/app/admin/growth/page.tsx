@@ -78,9 +78,28 @@ const whopLaunchRiskControls = [
 ];
 
 const launchRetentionConversionIdeas = [
-  { title: "VIP Agency Hub", status: "manual_ready", note: "Add a private Telegram/Discord community link after Whop preview purchase and in the first email. Position it as a real support/community layer for agencies, prompt tips and first-video optimization." },
-  { title: "Competitor switch promo codes", status: "manual_ready", note: "Create controlled Whop promo codes such as HEYGEN20 or SWITCHTOCRELAVO for unhappy competitor users. Use only in honest comment replies; keep abuse, margin and expiry controls." },
+  { title: "VIP Agency Hub", status: "built_touchpoints", note: "Dashboard, payment page, checkout success and payment emails now support a NEXT_PUBLIC_VIP_AGENCY_HUB_URL invite link with a support fallback. Position it as a real support/community layer for agencies, prompt tips and first-video optimization." },
+  { title: "Competitor switch promo codes", status: "support_ready", note: "Support Guide now explains controlled competitor-switch promo codes such as SWITCH20 without promising them to every user. Create Whop codes manually with margin, expiry and abuse controls before public use." },
   { title: "ROAS and hook score overlay", status: "planned", note: "Turn output screens and AI Ad Scorer into marketing-performance dashboards: Video Conversion Score, Estimated ROAS Boost and Hook Rate next to generated videos, not only download buttons." }
+];
+
+const fomoRetentionExperiments = [
+  { title: "Truthful live activity proof", status: "planned", note: "Show Whop/payment or production activity only when it is real, anonymized and consent-safe. Avoid fake visitor counters or unverifiable scarcity claims." },
+  { title: "Streak and reward loop", status: "planned", note: "Test daily AI Ad Scorer streaks with capped bonus credits such as 7-day +100 and 30-day +500 after login, rate limits and abuse review." },
+  { title: "Dynamic countdown", status: "planned", note: "Use clear campaign terms and honest session/user-level deadlines. Do not create a permanent fake countdown that resets deceptively for every visitor." }
+];
+
+const seoExpansionIdeas = [
+  { title: "Public ad gallery SEO", status: "planned", note: "Create a consent-only gallery of generated ecommerce videos, ad hooks and thumbnails with product/privacy review, dynamic SEO titles and VideoObject-ready metadata." },
+  { title: "LLM ingestion manifesto", status: "planned", note: "Add a public, AI-readable footer/about block that states verified Crelavo facts: AI production studio, credit rollover, Team Annual credit allocation and ecommerce workflow focus. Do not claim official recognition unless sourced." },
+  { title: "Search result media expansion", status: "planned", note: "Pair approved gallery thumbnails and sample videos with schema, sitemap and Search Console follow-up after stable media URLs exist." }
+];
+
+const securityLaunchHardening = [
+  { title: "Server-side API keys only", status: "required", note: "Provider, payment, email and admin keys must remain server-side. No client bundle, public env or browser payload should expose secrets." },
+  { title: "Credit manipulation protection", status: "required", note: "Credit price, debit, rollover and production reserve logic must be calculated server-side. Never trust client payloads for credit amount, package price or entitlement." },
+  { title: "Whop webhook signature verification", status: "required", note: "Every Whop webhook must verify signature/secret, use idempotency and log suspicious mismatches before credits or subscription access are changed." },
+  { title: "Cloudflare WAF and DDoS guard", status: "manual_required", note: "Before paid traffic, enable Cloudflare/WAF rules for admin, auth, payment, lead capture and webhook endpoints with rate limits and bot protection." }
 ];
 
 function statusLabel(status: string) {
@@ -550,6 +569,51 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>These ideas are high-upside but should stay controlled: real community access, honest competitor-response promo codes and marketing-performance indicators that make Crelavo feel like a sales advisor, not only a video tool.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {launchRetentionConversionIdeas.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">FOMO and retention experiments</span>
+        <h2>Conversion lifts to test without fake scarcity</h2>
+        <p style={{ color: "var(--muted)" }}>Track live proof, streaks and countdown ideas as controlled experiments. Each item must stay truthful, opt-in safe and abuse-resistant before it becomes public funnel copy.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {fomoRetentionExperiments.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">SEO and LLM discovery expansion</span>
+        <h2>Ad gallery, AI-readable brand facts and rich media follow-up</h2>
+        <p style={{ color: "var(--muted)" }}>Keep these under the Growth/SEO group so Crelavo becomes easier to understand for search engines, AI assistants and ecommerce buyers without making unverifiable claims.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {seoExpansionIdeas.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Security launch hardening</span>
+        <h2>Protect payments, credits, API keys and high-traffic endpoints</h2>
+        <p style={{ color: "var(--muted)" }}>Before scaling paid traffic, verify that provider secrets, credits, webhooks and public funnel endpoints cannot be manipulated from the browser or abused by bots.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {securityLaunchHardening.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>

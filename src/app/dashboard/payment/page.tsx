@@ -69,6 +69,7 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
   const packageFamily = isServicePlan ? isGrowthService ? growthIntelligencePlans : liveSalesServicePlans : isProductionPackage ? dronePurchasePackages : allCreditProducts;
   const previewNotice = whopPreviewNotice(selectedPackage, billing);
   const rolloverNotice = rolloverPolicyText(selectedPackage, billing);
+  const vipAgencyHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
 
   return (
     <DashboardShell className="payment-dashboard-shell">
@@ -106,6 +107,18 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
               <p>{step.text}</p>
             </div>
           ))}
+        </div>
+        <div className="workspace-action-note" style={{ marginTop: 16 }}>
+          <span className="badge">VIP Agency Hub</span>
+          <h3>After checkout, use the buyer hub for faster first-output direction</h3>
+          <p>
+            Preview buyers can receive prompt tips, ecommerce ad examples and first-video feedback through the VIP Agency Hub. The invite link is shown when configured; otherwise support can send the correct invite manually.
+          </p>
+          {vipAgencyHubUrl ? (
+            <a className="btn secondary" href={vipAgencyHubUrl} target="_blank" rel="noreferrer">Open VIP Agency Hub</a>
+          ) : (
+            <Link className="btn secondary" href="/dashboard/contact">Request hub invite</Link>
+          )}
         </div>
       </section>
 

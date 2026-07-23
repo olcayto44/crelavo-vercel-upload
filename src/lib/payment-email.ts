@@ -69,6 +69,7 @@ export async function sendPaymentReceiptEmail(input: PaymentReceiptEmailInput) {
   const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
   const supportEmail = process.env.SUPPORT_EMAIL || "support@crelavo.com";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const vipHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
   const customerName = input.customerName?.trim() || "Crelavo customer";
   const amount = formatMoney(input.amountTotal, input.currency);
   const receiptLine = input.receiptUrl ? `Payment receipt: ${input.receiptUrl}` : "Payment receipt: available from your payment provider confirmation.";
@@ -95,6 +96,11 @@ export async function sendPaymentReceiptEmail(input: PaymentReceiptEmailInput) {
         "You can return to your Crelavo dashboard here:",
         `${appUrl}/dashboard/credits`,
         "",
+        ...(vipHubUrl ? [
+          "VIP Agency Hub for prompt tips, ecommerce ad examples and first-video feedback:",
+          vipHubUrl,
+          ""
+        ] : []),
         `If you have billing questions, contact ${supportEmail}.`
       ].join("\n")
     })
@@ -116,6 +122,7 @@ export async function sendCreditActivationEmail(input: CreditActivationEmailInpu
   const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
   const supportEmail = process.env.SUPPORT_EMAIL || "support@crelavo.com";
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const vipHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
   const customerName = input.customerName?.trim() || "Crelavo customer";
   const receiptLine = input.receiptReference?.trim()
     ? `Payment receipt/reference: ${input.receiptReference.trim()}`
@@ -148,6 +155,11 @@ export async function sendCreditActivationEmail(input: CreditActivationEmailInpu
         "You can review your credits here:",
         `${appUrl}/dashboard/credits`,
         "",
+        ...(vipHubUrl ? [
+          "VIP Agency Hub for prompt tips, ecommerce ad examples and first-video feedback:",
+          vipHubUrl,
+          ""
+        ] : []),
         "If you need a billing correction, invoice update, or payment support, reply with your payment receipt email or contact:",
         supportEmail
       ].join("\n")
