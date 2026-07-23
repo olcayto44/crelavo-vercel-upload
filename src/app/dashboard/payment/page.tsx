@@ -38,6 +38,15 @@ function creditUnitPrice(plan: { priceUsd?: number; credits: number; yearlyCredi
   return `$${((price / planCredits(plan, billing)) * 1000).toFixed(2)} / 1,000 credits`;
 }
 
+function checkoutPlanFit(planName: string) {
+  const clean = planName.toLowerCase();
+  if (clean.includes("pro")) return "Pro is best for early Shopify beginners and small tests. If you need clean exports for a growing store, compare Business before checkout.";
+  if (clean.includes("business")) return "Business is the recommended clean-export path for one growing store or one active brand.";
+  if (clean.includes("ultra")) return "Ultra is for scaling brands that need more production capacity before moving into agency-scale Team workflows.";
+  if (clean.includes("team")) return "Team Annual is for agencies, power sellers and bulk ecommerce production that need clean client-ready output at scale.";
+  return "Use this package when it matches your current production need; compare plans again if you are unsure.";
+}
+
 const previewConfidenceSteps = [
   { title: "Preview first", text: "The preview fee starts a 24-hour test window so the buyer can check access before the full subscription continues." },
   { title: "Cancel clearly", text: "If the buyer does not want the main subscription to start, they can cancel from Whop before the 24-hour preview ends." },
@@ -108,6 +117,19 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
             </div>
           ))}
         </div>
+        {isSubscription ? (
+          <div className="workspace-action-note" style={{ marginTop: 16 }}>
+            <span className="badge">Watermark and clean export</span>
+            <h3>Preview can stay watermarked; clean exports open after the plan starts</h3>
+            <p>
+              The 24-hour preview is for checking access and direction. If you need client-ready or ad-ready clean files, Business is the safer first upgrade for one brand and Team Annual is the agency-scale export path.
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <Link className="btn secondary" href="/pricing">Compare clean export paths</Link>
+              <Link className="btn secondary" href="/dashboard/contact">Ask which plan fits</Link>
+            </div>
+          </div>
+        ) : null}
         <div className="workspace-action-note" style={{ marginTop: 16 }}>
           <span className="badge">VIP Agency Hub</span>
           <h3>After checkout, use the buyer hub for faster first-output direction</h3>
@@ -127,6 +149,10 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
           <span className="badge">Selected package - {isServicePlan ? billing === "yearly" ? "Yearly service plan" : "Monthly service plan" : isProductionPackage ? "One-time production package" : isSubscription ? billing === "yearly" ? "Yearly subscription" : "Monthly subscription" : "One-time credit purchase"}</span>
           <h3>{selectedPackage.name}</h3>
           <strong>{displayPrice}</strong>
+          <div className="workspace-action-note" style={{ marginTop: 12 }}>
+            <span className="badge">Plan fit</span>
+            <p style={{ marginBottom: 0 }}>{checkoutPlanFit(selectedPackage.name)}</p>
+          </div>
           {isLiveSalesService && "fairUseHours" in selectedPackage ? <p><strong>{selectedPackage.fairUseHours} fair-use live hours/month</strong> are included. No production credits are added.</p> : null}
           {isGrowthService && "competitorLimit" in selectedPackage ? <p><strong>{selectedPackage.competitorLimit}</strong> · {"monitoringFrequency" in selectedPackage ? selectedPackage.monitoringFrequency : "Scheduled monitoring"}. No production credits are added.</p> : null}
           {isProductionPackage && "productionCredits" in selectedPackage ? <p><strong>{Number(selectedPackage.productionCredits).toLocaleString()} credits equivalent</strong> is used as the internal production guide, but this is not a general credit top-up.</p> : null}

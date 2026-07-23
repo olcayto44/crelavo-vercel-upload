@@ -81,7 +81,7 @@ const pricingTrustPoints = [
 
 const pricingDecisionCards = [
   {
-    title: "Choose Business if you are testing one brand",
+    title: "Choose Business if you want clean exports for one brand",
     text: "$79/month with 12,000 credits is the safer path for solo sellers, small Shopify stores and first product video tests.",
     href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
     cta: "Start $10 Business preview"
@@ -108,6 +108,24 @@ type PublicPricingRow = {
   setupFee?: string;
   notes: string;
 };
+
+const cleanExportUpsellCards = [
+  {
+    title: "Preview mode",
+    badge: "Watermarked sample",
+    text: "The 24-hour preview is for checking access and direction. Preview outputs can stay watermarked and downloads remain controlled before the main plan starts."
+  },
+  {
+    title: "Business clean export",
+    badge: "Best first upgrade",
+    text: "Business is the clean-export path for one store or one brand: remove the Crelavo watermark after the subscription starts and production is confirmed."
+  },
+  {
+    title: "Team agency export",
+    badge: "Client-ready handoff",
+    text: "Team Annual is positioned for agencies and power sellers that need clean client delivery, bulk workflows, source handoff and high credit capacity."
+  }
+];
 
 const publicPricingRows: PublicPricingRow[] = [
   ...packages.map((plan) => ({
@@ -216,6 +234,25 @@ export default async function PricingPage() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/dashboard/create?idea=Help%20me%20choose%20the%20right%20Crelavo%20package">Help me choose a package</Link>
             <Link className="btn secondary" href="/dashboard/productions">View delivery workspace</Link>
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">Watermark and clean export path</span>
+          <h2>Preview safely, then upgrade when you need clean files</h2>
+          <p className="section-lead">The preview should reduce risk without giving away the full delivery package. Buyers can test direction first, then move to Business or Team when they need clean, client-ready exports.</p>
+          <div className="admin-category-grid" style={{ marginTop: 18 }}>
+            {cleanExportUpsellCards.map((item) => (
+              <div className="card admin-category-card" key={item.title}>
+                <span className="badge">{item.badge}</span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+            <Link className="btn" href="/dashboard/payment?package=business&billing=monthly&campaign=clean-export-business">Remove watermark with Business</Link>
+            <Link className="btn secondary" href="/dashboard/payment?package=team&billing=yearly&campaign=agency-clean-export">Agency clean export path</Link>
           </div>
         </section>
 
