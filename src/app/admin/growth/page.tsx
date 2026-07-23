@@ -183,7 +183,7 @@ const apiPhaseRoadmap = [
   { title: "Coupon hunt claim engine", status: "api_required", note: "Create real campaign toggles, limited coupon codes, claim logging, expiry checks and abuse controls before showing hidden promo campaigns publicly." },
   { title: "Watermarked preview export", status: "api_required", note: "Render tasteful Made with Crelavo AI watermark on preview exports and unlock clean export only for eligible paid Business/Team access." },
   { title: "AI Ad Re-Creator pipeline", status: "api_required", note: "Upload/link intake, audio transcription, visual/scene timing analysis, safe structure extraction, rewritten script, original media generation and localization require provider APIs." },
-  { title: "Abandoned checkout recovery", status: "api_or_n8n_required", note: "Use Whop native automation if available; otherwise log pre-checkout intent and send Resend/n8n recovery emails only when email/consent exists." }
+  { title: "Abandoned checkout recovery", status: "api_or_n8n_required", note: "First verify whether Whop exposes abandoned checkout events or native recovery emails. If not, log Crelavo pre-checkout intent with package, email/consent, UTM and timestamp, then send one Resend/n8n recovery email after about 1 hour only when compliant. Copy must avoid fake saved bonuses, fake scarcity or guaranteed discounts." }
 ];
 
 function statusLabel(status: string) {

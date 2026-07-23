@@ -24,6 +24,21 @@ const whopMenuNames = [
   "Cancel membership / Cancel subscription"
 ];
 
+const checkoutRecoveryRules = [
+  {
+    title: "Only if email or consent exists",
+    text: "Crelavo should send recovery emails only when the user has provided an email or the checkout provider exposes a compliant abandoned-checkout event. No unknown-user tracking claims."
+  },
+  {
+    title: "No fake saved bonus claims",
+    text: "Use safe wording such as 'your selected preview setup is still available' instead of promising a reserved bonus, locked discount or guaranteed coupon unless it truly exists."
+  },
+  {
+    title: "One helpful reminder",
+    text: "The first recovery email should be a helpful 1-hour reminder with a secure checkout link, billing clarity and cancellation instructions, not aggressive spam."
+  }
+];
+
 export default async function WhopBillingPage() {
   const siteContent = await getConfiguredSiteContentConfig();
 
@@ -77,6 +92,28 @@ export default async function WhopBillingPage() {
           <div className="button-nav" style={{ marginTop: 18 }}>
             <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Go to Whop</a>
             <Link className="btn secondary" href="/dashboard/contact">Contact support</Link>
+          </div>
+        </section>
+
+        <section className="card" style={{ marginTop: 24 }}>
+          <span className="badge">Checkout recovery / abandoned checkout</span>
+          <h2>If checkout is not completed, reminders must stay honest and consent-safe</h2>
+          <p style={{ color: "var(--muted)" }}>
+            Crelavo can prepare abandoned-checkout recovery for Whop or n8n/Resend, but it should only run when the user has provided an email or the payment provider exposes a compliant event. Recovery copy must explain the selected preview setup, not invent fake urgency.
+          </p>
+          <div className="admin-category-grid" style={{ marginTop: 16 }}>
+            {checkoutRecoveryRules.map((item) => (
+              <div className="card admin-category-card" key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="workspace-action-note" style={{ marginTop: 16 }}>
+            <strong>Safe recovery email example:</strong>
+            <p style={{ marginBottom: 0 }}>
+              You left your Crelavo preview setup before checkout was completed. Your selected package page is still available for the next 24 hours. Complete secure checkout when you are ready, or review cancellation and preview rules first.
+            </p>
           </div>
         </section>
 

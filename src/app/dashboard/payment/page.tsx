@@ -187,6 +187,10 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
               <Link className="btn secondary" href="/whop-billing">Cancellation steps</Link>
             </div>
           ) : null}
+          <div className="workspace-action-note" style={{ marginTop: 12 }}>
+            <p><strong>If you leave checkout unfinished:</strong> Crelavo may only send a recovery reminder when your email/consent or a compliant Whop checkout event exists. The reminder should link back to secure checkout and never invent a fake saved bonus or guaranteed discount.</p>
+            <Link className="btn secondary" href="/whop-billing">Recovery email rules</Link>
+          </div>
           <p style={{ color: "var(--muted)", margin: 0 }}>
             Card details are entered on the secure checkout page of the active payment provider. Crelavo does not store raw card numbers. Use the same email as your Crelavo account so admin review can match the payment quickly during early launch.
           </p>
