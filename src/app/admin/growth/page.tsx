@@ -125,6 +125,67 @@ const aiAdRecreatorSafetyRules = [
   { title: "Abuse and takedown path", status: "required", note: "Log reference source, generated brief and user confirmation; provide support/takedown review flow for IP complaints before scaling this feature." }
 ];
 
+const growthCommandCenterPillars = [
+  {
+    title: "Conversion Engine",
+    priority: "P0",
+    status: "live_plus_next_copy",
+    livePieces: "24-hour preview, Support Guide, exit-intent capture, store-volume pricing labels, VIP hub touchpoints.",
+    nextAction: "Tighten pricing/payment copy with clean-export upsell and safer package choice guidance.",
+    guardrail: "No fake scarcity; preview, cancellation and billing terms must stay clear."
+  },
+  {
+    title: "Viral Growth Loop",
+    priority: "P0",
+    status: "ui_seeded_manual",
+    livePieces: "Invite-friend cards on dashboard/credits, share-to-earn links, affiliate surfaces, VIP Agency Hub, Community Showcase.",
+    nextAction: "Keep rewards manual until referral tracking, fraud checks and credit automation are ready.",
+    guardrail: "No automatic bonus credits without email/payment verification and abuse review."
+  },
+  {
+    title: "Free Tools SEO Funnel",
+    priority: "P0",
+    status: "live_seo_entry",
+    livePieces: "Free AI Ad Scorer, Ad Reference Analyzer, free tools hub, search thumbnail/schema signals and Assistant Workspace CTAs.",
+    nextAction: "Add coupon-hunt campaign copy only for real campaign windows and connect free-tool outputs to preview CTA.",
+    guardrail: "Coupon scarcity must be real, time-boxed and not permanently reset."
+  },
+  {
+    title: "AI Ad Re-Creator Moat",
+    priority: "P1",
+    status: "seo_entry_built_api_needed",
+    livePieces: "Ad Reference Analyzer, safe public positioning, admin roadmap and Support Guide routing.",
+    nextAction: "After API procurement, build upload/transcription/structure extraction and original ad brief generation.",
+    guardrail: "Extract structure only; never reuse competitor footage, logos, music, faces, voice or exact copy."
+  },
+  {
+    title: "Trust & Billing Control",
+    priority: "P0",
+    status: "live_copy_plus_manual_checks",
+    livePieces: "Whop billing page, cancel visibility, preview policy copy, payment emails and support routing.",
+    nextAction: "Verify Whop abandoned-checkout options and add n8n/Resend fallback only with consent/email capture.",
+    guardrail: "No misleading refund, saved-bonus or guaranteed-discount claims."
+  },
+  {
+    title: "Security & Abuse Protection",
+    priority: "P0",
+    status: "checklist_ready_api_required",
+    livePieces: "Admin security hardening checklist, credit manipulation notes, webhook signature reminders and Cloudflare/WAF backlog.",
+    nextAction: "During API integration, verify server-side provider keys, Whop signature checks, rate limits and referral/coupon abuse controls.",
+    guardrail: "Never trust client payloads for credits, prices, package access, coupons or rewards."
+  }
+];
+
+const apiPhaseRoadmap = [
+  { title: "Provider API procurement", status: "today_priority", note: "Finish provider/API account creation and key collection for video, image, speech/music, lip-sync, email and payment-related workflows. Store secrets only in Vercel/env, never in client code or chat." },
+  { title: "Whop payment + webhook automation", status: "api_required", note: "Verify Whop webhook signature, payment events, idempotency, subscription status mapping, preview activation and cancellation visibility before granting credits." },
+  { title: "Referral credit automation", status: "api_required", note: "Generate user-specific referral links, track invited signup/payment, block self-referral and award +100/+2,000 credits only after verification." },
+  { title: "Coupon hunt claim engine", status: "api_required", note: "Create real campaign toggles, limited coupon codes, claim logging, expiry checks and abuse controls before showing hidden promo campaigns publicly." },
+  { title: "Watermarked preview export", status: "api_required", note: "Render tasteful Made with Crelavo AI watermark on preview exports and unlock clean export only for eligible paid Business/Team access." },
+  { title: "AI Ad Re-Creator pipeline", status: "api_required", note: "Upload/link intake, audio transcription, visual/scene timing analysis, safe structure extraction, rewritten script, original media generation and localization require provider APIs." },
+  { title: "Abandoned checkout recovery", status: "api_or_n8n_required", note: "Use Whop native automation if available; otherwise log pre-checkout intent and send Resend/n8n recovery emails only when email/consent exists." }
+];
+
 function statusLabel(status: string) {
   if (status === "ready_for_build") return "Ready for build";
   if (status === "blocked_by_payment") return "Blocked by payment";
@@ -147,6 +208,38 @@ export default function AdminGrowthPage() {
           <div><span>P1</span><strong>Share-to-earn</strong><small>Capped reward credits for verified sharing actions.</small></div>
           <div><span>P1</span><strong>Referral / affiliate</strong><small>Track referral journey now; connect paid attribution after Whop/payment tests.</small></div>
           <div><span>P2</span><strong>Analytics</strong><small>Usage and provider signals before revenue metrics.</small></div>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Crelavo Growth & Revenue Command Center</span>
+        <h2>One control panel for conversion, viral growth, SEO, trust and API readiness</h2>
+        <p style={{ color: "var(--muted)" }}>This is the main big group. It separates what is already live, what can still be done API-free, what needs API/provider work, and which guardrails must not be skipped during launch.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {growthCommandCenterPillars.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.priority} · {item.status}</span>
+              <h3>{item.title}</h3>
+              <p><strong>Live pieces:</strong> {item.livePieces}</p>
+              <p><strong>Next action:</strong> {item.nextAction}</p>
+              <p><strong>Guardrail:</strong> {item.guardrail}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">API phase roadmap</span>
+        <h2>API-dependent work saved for the next integration phase</h2>
+        <p style={{ color: "var(--muted)" }}>These items should not be faked with frontend copy. They need real provider keys, webhook verification, server-side credit logic, fraud checks or n8n/email automation before they become automatic.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {apiPhaseRoadmap.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
         </div>
       </section>
 
