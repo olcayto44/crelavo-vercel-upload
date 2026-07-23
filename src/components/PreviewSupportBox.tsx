@@ -674,9 +674,9 @@ export function PreviewSupportBox() {
   const primaryAbsoluteUrl = absoluteUrl(answer.primaryUrl);
 
   return (
-    <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 70, width: "min(410px, calc(100vw - 32px))" }}>
+    <div style={{ position: "fixed", right: 18, bottom: 18, zIndex: 70, width: "min(410px, calc(100vw - 32px))", maxHeight: "calc(100dvh - 36px)" }}>
       {open ? (
-        <div className="card" style={{ border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 22px 70px rgba(0,0,0,0.32)", background: "rgba(12, 18, 32, 0.96)" }}>
+        <div className="card" style={{ border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 22px 70px rgba(0,0,0,0.32)", background: "rgba(12, 18, 32, 0.96)", maxHeight: "calc(100dvh - 36px)", overflowY: "auto", overscrollBehavior: "contain" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
             <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
               <span className="logo-mark" style={{ flex: "0 0 auto", marginTop: 2 }}>▶</span>
