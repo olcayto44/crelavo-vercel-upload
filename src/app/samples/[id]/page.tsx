@@ -14,7 +14,28 @@ export function generateStaticParams() {
   return sampleVideos.map((item) => ({ id: item.id }));
 }
 
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 const fallbackSampleDetailVideoUrl = "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4";
+
+function SampleVideoStructuredData({ sample, videoUrl }: { sample: (typeof sampleVideos)[number]; videoUrl: string }) {
+  const pageUrl = `${siteUrl}/samples/${sample.id}`;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "@id": `${pageUrl}#video`,
+    name: `${sample.title} sample video`,
+    description: `${sample.description} Crelavo AI product video sample for ${sample.category}.`,
+    thumbnailUrl: [sample.thumbnailUrl],
+    uploadDate: "2026-07-05T00:00:00.000Z",
+    contentUrl: videoUrl,
+    embedUrl: pageUrl,
+    url: pageUrl,
+    publisher: { "@type": "Organization", name: "Crelavo", url: siteUrl },
+    potentialAction: { "@type": "WatchAction", target: pageUrl }
+  };
+
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+}
 
 function buildSampleKeywords(sample: { title: string; category: string; format: string; duration: string; quality: string; features: string[] }) {
   const base = [
@@ -80,6 +101,7 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
   return (
     <>
       <SiteStructuredData />
+      <SampleVideoStructuredData sample={sample} videoUrl={sampleVideoUrl} />
       <Header navLinks={siteContent.navLinks} />
       <main className="sample-detail-page">
         <section className="container sample-detail-hero">

@@ -11,7 +11,28 @@ export function generateStaticParams() {
   return showcaseItems.map((item) => ({ id: item.id }));
 }
 
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 const fallbackShowcaseVideoUrl = "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4";
+
+function ShowcaseVideoStructuredData({ item, videoUrl }: { item: (typeof showcaseItems)[number]; videoUrl: string }) {
+  const pageUrl = `${siteUrl}/showcase/${item.id}`;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "@id": `${pageUrl}#video`,
+    name: item.videoTitle || `${item.title} showcase video`,
+    description: item.videoDescription || item.longDescription,
+    thumbnailUrl: [item.imageUrl],
+    uploadDate: "2026-07-05T00:00:00.000Z",
+    contentUrl: videoUrl,
+    embedUrl: pageUrl,
+    url: pageUrl,
+    publisher: { "@type": "Organization", name: "Crelavo", url: siteUrl },
+    potentialAction: { "@type": "WatchAction", target: pageUrl }
+  };
+
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+}
 
 function buildShowcaseKeywords(item: { title: string; description: string; longDescription: string; bestFor: string[] }) {
   const base = [
@@ -104,6 +125,7 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
   return (
     <>
       <SiteStructuredData />
+      <ShowcaseVideoStructuredData item={item} videoUrl={showcaseVideoUrl} />
       <Header navLinks={siteContent.navLinks} />
       <main className="showcase-detail-page">
         <section className={`container showcase-detail-hero tone-${item.tone}`}>

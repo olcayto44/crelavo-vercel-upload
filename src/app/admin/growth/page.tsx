@@ -35,9 +35,19 @@ const apiFreeSeoAudit = [
   { area: "Homepage metadata", status: "done", note: "Custom title, description, keywords, canonical, Open Graph and Twitter metadata are now set on the homepage." },
   { area: "Free tool funnel", status: "done", note: "Free tools now point users toward $10 Business preview and $20 Team Annual preview paths." },
   { area: "Payment clarity", status: "done", note: "Checkout page explains what the 24-hour preview means before full subscription continuation." },
+  { area: "AI bot crawl access", status: "done", note: "robots.txt explicitly allows GPTBot, ClaudeBot, PerplexityBot and Google-Extended on public pages while keeping admin, API, dashboard and auth private." },
+  { area: "Schema coverage", status: "done", note: "Homepage SoftwareApplication/Product/ImageObject schema and alternative-page SoftwareApplication/Product/FAQ/Breadcrumb schema are strengthened for GEO and rich result signals." },
+  { area: "Competitor comparison pages", status: "done", note: "Crelavo vs Creatify, Luma, Pippit and Provid.AI pages are added with AI-readable comparison copy, credit rollover and 24-hour preview positioning." },
   { area: "Heading structure", status: "watch", note: "Public pages use one main h1 per page; admin cards can use repeated h2/h3 because they are internal dashboards." },
-  { area: "Schema coverage", status: "watch", note: "Homepage, pricing and free tools already use structured data components; future new landing pages should include matching schema where available." },
   { area: "Placeholder risk", status: "watch", note: "Remaining placeholder text found by scan is inside admin/internal input placeholders or operational notes, not public buyer-facing hero copy." }
+];
+
+const geoAssistantDiscoveryBacklog = [
+  { title: "AI directory submissions", status: "manual", note: "Submit Crelavo to There’s An AI For That, Futurepedia, Product Hunt, Toolify and Ben’s Bites after launch positioning is stable." },
+  { title: "Honest Reddit / Quora review loop", status: "manual", note: "Invite real users to share honest reviews in r/shopify, r/dropshipping, r/ecommerce, Quora and relevant founder communities; no spam or fake claims." },
+  { title: "Review reward idea", status: "planned", note: "Consider a capped bonus-credit reward for verified honest public reviews, with moderation and no requirement for positive-only comments." },
+  { title: "Search Console rich media follow-up", status: "planned", note: "After deploy, request indexing for homepage and comparison pages; monitor rich result media, favicon and thumbnail changes." },
+  { title: "VideoObject expansion", status: "planned", note: "When stable hosted video URLs and thumbnails are approved, add VideoObject schema to sample/showcase pages and consider a video sitemap." }
 ];
 
 function statusLabel(status: string) {
@@ -435,6 +445,21 @@ export default function AdminGrowthPage() {
             <div className="card admin-category-card" key={item.area}>
               <span className="badge">{item.status}</span>
               <h3>{item.area}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">GEO / AI assistant discovery</span>
+        <h2>Non-code discovery tasks for ChatGPT, Claude, Perplexity and Gemini visibility</h2>
+        <p style={{ color: "var(--muted)" }}>Code-level crawl, schema and comparison-page work is now represented. These remaining actions are manual growth tasks that should stay under the SEO/Growth group.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {geoAssistantDiscoveryBacklog.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
               <p>{item.note}</p>
             </div>
           ))}

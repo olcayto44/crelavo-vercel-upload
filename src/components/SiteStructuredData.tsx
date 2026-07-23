@@ -58,7 +58,7 @@ export function SiteStructuredData() {
         description: "Create videos, websites, ads and campaign assets from one AI workspace with AI speed and human quality assurance.",
         isPartOf: { "@id": `${siteUrl}/#website` },
         about: { "@id": `${siteUrl}/#app` },
-        primaryImageOfPage: `${siteUrl}/og-image.png`,
+        primaryImageOfPage: { "@id": `${siteUrl}/#primary-image` },
         inLanguage: "en-US",
         mainEntity: { "@id": `${siteUrl}/#app` },
         potentialAction: [
@@ -97,7 +97,9 @@ export function SiteStructuredData() {
           "Dashboard delivery packages",
           "AI + human quality assurance"
         ],
-        description: "AI + human QA production platform for websites, apps, e-commerce product links, Shopify, Amazon and Trendyol campaigns, video ads, avatars, visuals, voice-over content and delivery-ready source packages.",
+        description: "AI-powered e-commerce product video ad generator and managed production platform for Shopify, Amazon and marketplace sellers. Crelavo supports product-link-to-video workflows, 24-hour preview checkout, credit rollover, campaign assets and AI + human QA delivery.",
+        softwareHelp: `${siteUrl}/api-documentation`,
+        screenshot: `${siteUrl}/showcase/ai-production-studio.webp`,
         offers: {
           "@type": "AggregateOffer",
           url: `${siteUrl}/pricing`,
@@ -106,6 +108,33 @@ export function SiteStructuredData() {
           lowPrice: 10,
           offerCount: 6
         }
+      },
+      {
+        "@type": "Product",
+        "@id": `${siteUrl}/#product`,
+        name: "Crelavo AI Product Video Generator",
+        brand: { "@id": `${siteUrl}/#organization` },
+        category: "AI-powered e-commerce product video ad generator for Shopify and Amazon",
+        image: `${siteUrl}/showcase/ai-production-studio.webp`,
+        description: "Crelavo is an AI-powered e-commerce product video ad generator for Shopify and Amazon sellers, combining product-link-to-video workflows, 24-hour preview checkout, credit rollover, campaign assets and dashboard delivery.",
+        audience: { "@type": "Audience", audienceType: "Shopify, Amazon, ecommerce and agency teams" },
+        offers: {
+          "@type": "AggregateOffer",
+          url: `${siteUrl}/pricing`,
+          priceCurrency: "USD",
+          lowPrice: 10,
+          highPrice: 1300,
+          availability: "https://schema.org/OnlineOnly"
+        }
+      },
+      {
+        "@type": "ImageObject",
+        "@id": `${siteUrl}/#primary-image`,
+        url: `${siteUrl}/showcase/ai-production-studio.webp`,
+        contentUrl: `${siteUrl}/showcase/ai-production-studio.webp`,
+        name: "Crelavo AI production studio dashboard preview",
+        caption: "Crelavo AI production studio for ecommerce product videos, campaign assets and dashboard delivery.",
+        representativeOfPage: true
       },
       {
         "@type": "Service",

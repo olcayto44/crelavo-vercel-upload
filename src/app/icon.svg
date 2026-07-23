@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Crelavo logo">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="64" x2="432" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.52" stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="142" y1="92" x2="392" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#E0F2FE" stop-opacity="0.92"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#060B1A"/>
+  <rect x="34" y="34" width="444" height="444" rx="92" fill="url(#bg)"/>
+  <path d="M354 151c-28-24-64-37-104-37-87 0-154 61-154 142s67 142 154 142c42 0 80-14 108-40l-47-54c-16 14-36 22-60 22-44 0-77-29-77-70s33-70 77-70c23 0 43 8 58 21l45-56Z" fill="url(#shine)"/>
+  <path d="M330 241h92v56h-92v-56Z" fill="#E0F2FE" opacity="0.95"/>
+  <path d="M107 88h298c16 0 29 13 29 29v30H78v-30c0-16 13-29 29-29Z" fill="#FFFFFF" opacity="0.18"/>
+  <path d="M132 88l-34 59M218 88l-34 59M304 88l-34 59M390 88l-34 59" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" opacity="0.58"/>
+</svg>
