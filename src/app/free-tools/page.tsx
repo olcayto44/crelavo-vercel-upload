@@ -6,8 +6,8 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { freeTools } from "@/lib/free-tools";
 
 export const metadata: Metadata = {
-  title: "Free AI Tools for TikTok Hooks, Product Descriptions, Prompts and Ecommerce Ads | Crelavo",
-  description: "Use free AI tools for TikTok hooks, UGC ad scripts, product descriptions, prompts, SEO meta titles, landing page copy, ecommerce campaigns, captions and brand slogans, then continue into Crelavo production workflows.",
+  title: "Free AI Tools for Ad References, TikTok Hooks, Product Descriptions and Ecommerce Ads | Crelavo",
+  description: "Use free AI tools for ad reference analysis, TikTok hooks, UGC ad scripts, product descriptions, prompts, SEO meta titles, landing page copy, ecommerce campaigns, captions and brand slogans, then continue into Crelavo production workflows.",
   alternates: { canonical: "/free-tools" }
 };
 
@@ -35,10 +35,11 @@ export default async function FreeToolsPage() {
       <main className="container section tools-page free-tools-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Free AI tools</span>
-          <h1>Free AI tools for TikTok hooks, product descriptions, prompts, ecommerce ads and landing page copy</h1>
-          <p>Use free AI tools for hooks, prompts, product descriptions, captions, UGC ad scripts, SEO meta titles, landing page copy and brand ideas. Then turn the result into a full Crelavo production package with preview, final ZIP, source files, README and revision path.</p>
+          <h1>Free AI tools for ad references, TikTok hooks, product descriptions, prompts, ecommerce ads and landing page copy</h1>
+          <p>Use free AI tools for ad reference analysis, hooks, prompts, product descriptions, captions, UGC ad scripts, SEO meta titles, landing page copy and brand ideas. Then turn the result into a full Crelavo production package with preview, final ZIP, source files, README and revision path.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/free-tools/ad-performance-score-checker">Score an ad free</Link>
+            <Link className="btn" href="/free-tools/ad-reference-analyzer">Analyze ad reference</Link>
+            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score an ad free</Link>
             <Link className="btn secondary" href="/dashboard/assistant-workspace">Open Crelavo Assistant</Link>
             <Link className="btn secondary" href="/pricing">Get credits for full production</Link>
           </div>

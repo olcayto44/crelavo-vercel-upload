@@ -122,12 +122,28 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
           <p>{tool.description}</p>
           <p className="section-lead">Use this page for long-tail searches like {longTailKeywords.slice(0, 4).join(", ")} before turning the result into a Crelavo production request.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            {tool.slug === "ad-performance-score-checker" ? <Link className="btn" href="#free-ad-score">Score my ad free</Link> : <Link className="btn" href="#free-ad-score">Use free tool</Link>}
-            <Link className="btn secondary" href={tool.slug === "ad-performance-score-checker" ? "/ai-ad-performance-score-checker" : "/dashboard/create?idea=Turn%20my%20free%20tool%20result%20into%20a%20production%20brief"}>{tool.slug === "ad-performance-score-checker" ? "See ad scorer workflow" : "Turn result into brief"}</Link>
+            {tool.slug === "ad-reference-analyzer" ? <Link className="btn" href="#free-ad-score">Analyze reference ad</Link> : tool.slug === "ad-performance-score-checker" ? <Link className="btn" href="#free-ad-score">Score my ad free</Link> : <Link className="btn" href="#free-ad-score">Use free tool</Link>}
+            <Link className="btn secondary" href={tool.slug === "ad-reference-analyzer" ? "/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=AI%20Ad%20Re-Creator" : tool.slug === "ad-performance-score-checker" ? "/ai-ad-performance-score-checker" : "/dashboard/create?idea=Turn%20my%20free%20tool%20result%20into%20a%20production%20brief"}>{tool.slug === "ad-reference-analyzer" ? "Open Ad Re-Creator brief" : tool.slug === "ad-performance-score-checker" ? "See ad scorer workflow" : "Turn result into brief"}</Link>
             <Link className="btn secondary" href="/ai-product-video-generator">Create video after result</Link>
             <Link className="btn secondary" href="/pricing">Check packages</Link>
           </div>
         </section>
+
+        {tool.slug === "ad-reference-analyzer" ? (
+          <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+            <span className="badge">Reference Ad Transformer</span>
+            <h2>Extract the winning structure, not the copyrighted content</h2>
+            <div className="admin-info-grid">
+              <div><span>1</span><strong>Analyze structure</strong><small>Hook, pacing, scene order, proof moment and CTA logic.</small></div>
+              <div><span>2</span><strong>Block unsafe reuse</strong><small>No competitor footage, logos, music, faces, voice or exact copy.</small></div>
+              <div><span>3</span><strong>Rebuild for your product</strong><small>Use your own product, brand assets, rewritten script and new creative direction.</small></div>
+              <div><span>4</span><strong>Localize globally</strong><small>Prepare market-specific copy and voice direction for multiple regions.</small></div>
+            </div>
+            <div className="workspace-action-note" style={{ marginTop: 14 }}>
+              <strong>Safe positioning:</strong> Crelavo treats reference ads as inspiration for marketing structure only. The premium Ad Re-Creator path should generate a fresh, original variation instead of copying competitor media.
+            </div>
+          </section>
+        ) : null}
 
         {tool.slug === "ad-performance-score-checker" ? (
           <section className="card admin-wide-card" style={{ marginTop: 18 }}>

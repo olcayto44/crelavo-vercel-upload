@@ -21,7 +21,8 @@ const metaSalesLaunchPlan = [
 const paidCreativeHooks = [
   { title: "Direct product demo", script: "Paste link. Get AI Video in 10 seconds.", note: "Show Shopify product link pasted into Crelavo, then the AI ad video full screen." },
   { title: "UGC cost-saver", script: "I stopped paying $200 per video for my Amazon products. I tried Crelavo for just $10 and generated 20 drafts in minutes.", note: "Natural English voice, creator-style screen recording, link below CTA." },
-  { title: "Team Annual preview", script: "Test Crelavo’s agency bundle for $20. Get access to the 174,000-credit Team Annual workflow before the yearly plan continues.", note: "Push the splash funnel: $20 preview, 2 months free, 30,000 bonus credits." }
+  { title: "Team Annual preview", script: "Test Crelavo’s agency bundle for $20. Get access to the 174,000-credit Team Annual workflow before the yearly plan continues.", note: "Push the splash funnel: $20 preview, 2 months free, 30,000 bonus credits." },
+  { title: "Ad Re-Creator reference hook", script: "Found a video ad format that sells? Paste the reference into Crelavo, analyze the hook, pacing and CTA, then re-create a fresh original version for your own product.", note: "Use safe reference-transformer language. Do not say steal, spy or clone competitor media in public Meta ads." }
 ];
 
 const competitorKeywordAds = [
@@ -100,6 +101,20 @@ const securityLaunchHardening = [
   { title: "Credit manipulation protection", status: "required", note: "Credit price, debit, rollover and production reserve logic must be calculated server-side. Never trust client payloads for credit amount, package price or entitlement." },
   { title: "Whop webhook signature verification", status: "required", note: "Every Whop webhook must verify signature/secret, use idempotency and log suspicious mismatches before credits or subscription access are changed." },
   { title: "Cloudflare WAF and DDoS guard", status: "manual_required", note: "Before paid traffic, enable Cloudflare/WAF rules for admin, auth, payment, lead capture and webhook endpoints with rate limits and bot protection." }
+];
+
+const aiAdRecreatorRoadmap = [
+  { title: "Free Ad Reference Analyzer", status: "built_seo_entry", note: "Public /free-tools/ad-reference-analyzer now captures searches around competitor ad analysis, TikTok ad structure, ecommerce ad inspiration and safe reference transformation." },
+  { title: "Reference Ad Transformer MVP", status: "planned", note: "Accept reference link, transcript or MP4 notes, extract only hook, pacing, scene order, proof moment and CTA logic, then create an original Crelavo production brief." },
+  { title: "AI Ad Re-Creator premium flow", status: "planned", note: "Use the extracted structure with the user's Shopify/product URL, own brand assets, rewritten copy, new voiceover, new music and fresh AI visuals. Do not reuse competitor media." },
+  { title: "1-click global localization", status: "planned", note: "Turn one approved ad blueprint into localized US/UK, DE, FR, ES, PT and wider market variants with adapted tone, CTA, subtitle length and voice direction." }
+];
+
+const aiAdRecreatorSafetyRules = [
+  { title: "External naming", status: "required", note: "Use AI Ad Re-Creator, Ad Reference Analyzer or Reference Video Transformer publicly. Avoid aggressive ad-spy, steal or clone language in Meta ads and public SEO copy." },
+  { title: "Rights confirmation", status: "required", note: "Before MP4/link analysis, require confirmation that the user has rights or is using the content strictly as a reference for transformation. This supports compliance but does not replace technical filtering." },
+  { title: "No protected asset reuse", status: "required", note: "Do not reuse competitor footage, exact script, logo, face, voice, music, watermark or trademarked brand elements. Extract structure only and regenerate original assets." },
+  { title: "Abuse and takedown path", status: "required", note: "Log reference source, generated brief and user confirmation; provide support/takedown review flow for IP complaints before scaling this feature." }
 ];
 
 function statusLabel(status: string) {
@@ -569,6 +584,31 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>These ideas are high-upside but should stay controlled: real community access, honest competitor-response promo codes and marketing-performance indicators that make Crelavo feel like a sales advisor, not only a video tool.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {launchRetentionConversionIdeas.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">AI Ad Re-Creator / Reference Ad Transformer</span>
+        <h2>Turn winning ad references into original ecommerce creatives</h2>
+        <p style={{ color: "var(--muted)" }}>This is the safe productized version of the Ad Sniper idea: extract structure from a reference ad, then rebuild an original Crelavo creative with the user's own product, brand assets, rewritten copy and localization plan.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {aiAdRecreatorRoadmap.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+        <h3>Safety and platform guardrails</h3>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {aiAdRecreatorSafetyRules.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>

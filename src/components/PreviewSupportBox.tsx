@@ -31,6 +31,7 @@ const siteDirectory = [
   { label: "Contact support", href: "/dashboard/contact", keywords: ["support", "help", "destek", "yardım", "yardim", "contact", "iletişim", "iletisim"] },
   { label: "Free tools", href: "/free-tools", keywords: ["free", "tool", "ücretsiz", "ucretsiz", "araç", "arac"] },
   { label: "AI Ad Performance Score Checker", href: "/free-tools/ad-performance-score-checker", keywords: ["ad score", "score", "reklam skoru", "hook", "cta", "ad scorer"] },
+  { label: "AI Ad Reference Analyzer", href: "/free-tools/ad-reference-analyzer", keywords: ["ad reference", "reference ad", "competitor ad", "rakip reklam", "ad recreator", "ad re-creator", "clone ad", "reklam klon", "tiktok ad structure", "reference video transformer"] },
   { label: "Categories", href: "/categories", keywords: ["category", "categories", "kategori", "hizmet", "services"] },
   { label: "Campaign category", href: "/categories/campaign", keywords: ["campaign", "kampanya", "shopify", "amazon", "trendyol", "product link"] },
   { label: "AI video generator", href: "/ai-video-generator", keywords: ["video", "ai video", "video generator", "product video"] },
@@ -333,6 +334,20 @@ const supportAnswers: SupportAnswer[] = [
     ]
   },
   {
+    id: "ad-recreator",
+    title: "AI Ad Re-Creator and reference ad analysis",
+    keywords: ["ad reference", "reference ad", "competitor ad", "rakip reklam", "ad recreator", "ad re-creator", "clone ad", "reklam klon", "ad sniper", "reference video transformer", "tiktok ad structure", "winning ad"],
+    answer: "Crelavo rakip/referans reklamı birebir kopyalama aracı olarak konumlanmaz. Güvenli akış: referans videodan sadece hook, pacing, sahne sırası, kanıt noktası ve CTA mantığı çıkarılır; rakibin görüntüsü, logosu, müziği, yüzü, sesi ve birebir metni kullanılmadan kullanıcının kendi ürünü için özgün reklam brief’i hazırlanır. Ücretsiz başlangıç için Ad Reference Analyzer sayfasını kullanabilirsiniz.",
+    primaryUrl: "/free-tools/ad-reference-analyzer",
+    primaryLabel: "AI Ad Reference Analyzer",
+    links: [
+      { label: "Analyze ad reference", href: "/free-tools/ad-reference-analyzer" },
+      { label: "Free ad score", href: "/free-tools/ad-performance-score-checker" },
+      { label: "Campaign category", href: "/categories/campaign" },
+      { label: "Start production", href: "/dashboard/create" }
+    ]
+  },
+  {
     id: "community-promos",
     title: "VIP community and competitor switch offers",
     keywords: ["discord", "telegram", "community", "topluluk", "vip", "agency hub", "vip agency hub", "invite", "davet", "promo", "promo code", "discount", "indirim", "switch20", "heygen", "creatify", "competitor", "rakipten", "switch"],
@@ -516,6 +531,13 @@ const localizedContent: Record<string, Partial<Record<Lang, { title: string; ans
     fr: { title: "ROAS, ad score et performance", answer: "Crelavo vise la performance marketing, pas seulement le fichier final. Le AI Ad Performance Score Checker gratuit analyse hook, CTA et faiblesses créatives. Les écrans futurs peuvent afficher Video Conversion Score, Estimated ROAS Boost et Hook Rate." },
     es: { title: "ROAS, ad score y performance", answer: "Crelavo busca apoyar performance de marketing, no solo entregar archivos. El AI Ad Performance Score Checker gratis analiza hook, CTA y debilidades creativas. En el futuro puede mostrar Video Conversion Score, Estimated ROAS Boost y Hook Rate." },
     pt: { title: "ROAS, ad score e performance", answer: "A Crelavo busca apoiar performance de marketing, não só entregar arquivos. O AI Ad Performance Score Checker grátis analisa hook, CTA e fraquezas criativas. No futuro pode mostrar Video Conversion Score, Estimated ROAS Boost e Hook Rate." }
+  },
+  "ad-recreator": {
+    en: { title: "AI Ad Re-Creator and reference ad analysis", answer: "Crelavo does not position this as direct competitor copying. The safe flow extracts only hook, pacing, scene order, proof moment and CTA logic from a reference ad, then creates an original brief for your own product without reusing competitor footage, logos, music, faces, voice or exact copy." },
+    de: { title: "AI Ad Re-Creator und Referenzanalyse", answer: "Crelavo positioniert dies nicht als direktes Kopieren von Wettbewerbern. Der sichere Flow extrahiert nur Hook, Pacing, Szenenfolge, Proof Moment und CTA-Logik aus einer Referenzanzeige und erstellt dann ein originales Briefing für Ihr eigenes Produkt ohne fremdes Footage, Logos, Musik, Gesichter, Stimmen oder exakte Texte." },
+    fr: { title: "AI Ad Re-Creator et analyse de référence", answer: "Crelavo ne le positionne pas comme une copie directe de concurrents. Le flux sûr extrait uniquement hook, rythme, ordre des scènes, preuve et CTA d’une publicité de référence, puis crée un brief original pour votre produit sans réutiliser images, logos, musique, visages, voix ou texte exact." },
+    es: { title: "AI Ad Re-Creator y análisis de referencia", answer: "Crelavo no lo presenta como copia directa de competidores. El flujo seguro extrae solo hook, ritmo, orden de escenas, prueba y lógica CTA de un anuncio de referencia, y luego crea un brief original para tu producto sin reutilizar footage, logos, música, caras, voz o copy exacto." },
+    pt: { title: "AI Ad Re-Creator e análise de referência", answer: "A Crelavo não posiciona isso como cópia direta de concorrentes. O fluxo seguro extrai apenas hook, ritmo, ordem das cenas, prova e lógica de CTA de um anúncio de referência, depois cria um brief original para seu produto sem reutilizar vídeos, logos, música, rostos, voz ou texto exato." }
   },
   "community-promos": {
     en: { title: "VIP community and competitor switch offers", answer: "Preview buyers may see a VIP Agency Hub invite in the dashboard or payment email; if the link is not active yet, support can send it manually. SWITCH20 or similar promo codes are only for controlled competitor-switch campaigns, not guaranteed for every user, and are managed with expiry and abuse checks." },

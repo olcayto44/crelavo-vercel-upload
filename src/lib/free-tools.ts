@@ -133,6 +133,17 @@ export const freeTools: FreeTool[] = [
     assistantHref: "/dashboard/assistant-workspace?mode=commerce&category=video&idea=Review%20to%20Ad%20Script%20Generator"
   },
   {
+    slug: "ad-reference-analyzer",
+    title: "Free AI Ad Reference Analyzer",
+    turkishTitle: "Ücretsiz Reklam Referans Analiz Aracı",
+    keyword: "AI Ad Reference Analyzer",
+    category: "Ad structure analysis",
+    description: "Paste a winning ad reference, competitor ad notes or product video script and extract the hook, pacing, scene structure, CTA and safe rewrite direction without reusing copyrighted footage, music, logos or exact copy.",
+    placeholder: "Paste a reference ad link, transcript, competitor ad notes or describe the video structure you want to analyze",
+    sampleOutputs: ["Winning structure blueprint: hook, scene order, proof point and CTA", "Copyright-safe rewrite direction for your product", "Localization-ready ad variation plan"],
+    assistantHref: "/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Ad%20Reference%20Analyzer"
+  },
+  {
     slug: "ad-performance-score-checker",
     title: "Free AI Ad Performance Score Checker",
     turkishTitle: "Ücretsiz Reklam Performans Skoru Kontrolü",

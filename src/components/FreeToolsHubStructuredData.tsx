@@ -19,7 +19,7 @@ export function FreeToolsHubStructuredData() {
         "@id": `${siteUrl}/free-tools#collection`,
         url: `${siteUrl}/free-tools`,
         name: "Free AI Tools — Crelavo",
-        description: "Free AI tools for hooks, prompts, product descriptions, captions, hashtags, landing page copy, ad copy and brand slogans.",
+        description: "Free AI tools for ad reference analysis, hooks, prompts, product descriptions, captions, hashtags, landing page copy, ad copy and brand slogans.",
         breadcrumb: { "@id": `${siteUrl}/free-tools#breadcrumb` },
         inLanguage: "en-US",
         isPartOf: { "@id": `${siteUrl}/#website` },

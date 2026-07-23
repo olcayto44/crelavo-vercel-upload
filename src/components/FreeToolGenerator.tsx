@@ -87,6 +87,12 @@ function generateOutputs(tool: FreeTool, input: string) {
         `Script 2 — UGC Reaction\nHook: "I did not expect ${idea} to get this kind of reaction."\nBody: Read the approved customer feedback in a natural creator voice, show the product or result, then explain why the review matters to new buyers.\nCTA: "Use this review as your next short-form ad brief."`,
         `Script 3 — Social Proof Offer\nHook: "Before you buy ${idea}, listen to what customers notice first."\nBody: Pull one trust-building line from the review, pair it with product visuals, then close with the offer or next step.\nCTA: "Create a review-led AI video campaign in Crelavo."`
       ];
+    case "ad-reference-analyzer":
+      return [
+        `Reference Ad Blueprint for ${idea}\nHook type: Problem-first or curiosity-first opening in the first 3 seconds.\nPacing: Fast cuts, short proof moment, then direct CTA.\nSafe transfer: Keep only the marketing structure; rebuild visuals, copy, voice, music and product shots from your own brand assets.`,
+        `Copyright-Safe Re-Creator Plan\n1. Extract the ad's hook, scene rhythm and CTA logic.\n2. Rewrite every line for your product and buyer.\n3. Replace all footage, logos, music, faces and voice with original Crelavo assets.\n4. Generate 3 fresh ad variations for testing.`,
+        `Localization-Ready Variation Plan\nSource structure: ${idea}\nUS/UK: direct problem-solution hook.\nDE: practical proof and clear product utility.\nFR: premium routine and design-led phrasing.\nES/PT: energetic social proof and simple CTA.\nNext step: send this blueprint into Crelavo Assistant Workspace.`
+      ];
     case "ad-performance-score-checker":
       return [
         `Ad Score: 82/100\nStrong: The idea for ${idea} can work because it has a clear product angle and can be explained quickly.\nFix first: Put the main benefit in the first 3 seconds, make the CTA visible, and add one proof point such as a review, result or before/after.\nProduction next step: turn this score into a tighter Crelavo campaign brief with one improved hook, one proof shot and one clear CTA.`,
@@ -138,7 +144,7 @@ function assistantUrl(tool: FreeTool, input: string, selectedOutput: string) {
     `${tool.title} result`,
     input.trim() ? `Original input: ${input.trim()}` : "",
     selectedOutput ? `Selected result: ${selectedOutput}` : "",
-    tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger Crelavo campaign brief with improved hooks, proof points, CTA direction and preview video plan." : "Turn this into a full Crelavo production package with deliverables, preview, final files and revision path."
+    tool.slug === "ad-reference-analyzer" ? "Turn this reference blueprint into a copyright-safe Crelavo Ad Re-Creator brief with original visuals, rewritten copy, new voice/music and localization-ready variations." : tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger Crelavo campaign brief with improved hooks, proof points, CTA direction and preview video plan." : "Turn this into a full Crelavo production package with deliverables, preview, final files and revision path."
   ].filter(Boolean).join("\n\n");
   const base = new URL(tool.assistantHref, "http://localhost");
   base.searchParams.set("idea", idea);
@@ -159,8 +165,9 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
 
   return (
     <section className="card admin-wide-card free-tool-generator" style={{ marginTop: 18 }}>
-        <span className="badge">{tool.slug === "ad-performance-score-checker" ? "Free lead magnet" : "Free generator"}</span>
-        <h2>{tool.slug === "ad-performance-score-checker" ? "Score your ad before spending budget" : "Generate results instantly"}</h2>
+        <span className="badge">{["ad-performance-score-checker", "ad-reference-analyzer"].includes(tool.slug) ? "Free lead magnet" : "Free generator"}</span>
+        <h2>{tool.slug === "ad-reference-analyzer" ? "Analyze a winning ad reference safely" : tool.slug === "ad-performance-score-checker" ? "Score your ad before spending budget" : "Generate results instantly"}</h2>
+        {tool.slug === "ad-reference-analyzer" ? <p style={{ color: "var(--muted)" }}>Paste a reference ad link, transcript or notes. Crelavo extracts only the marketing structure — hook, pacing, scene order and CTA — then routes you toward a fresh original ad for your own product.</p> : null}
         {tool.slug === "ad-performance-score-checker" ? <p style={{ color: "var(--muted)" }}>Paste a hook, script, offer or product video idea. The free score shows what to fix first, then the selected result can become a stronger Crelavo campaign brief.</p> : null}
       <div className="field">
         <label>{tool.placeholder}</label>
@@ -191,10 +198,10 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
 
       <div className="card admin-wide-card" style={{ marginTop: 16 }}>
         <span className="badge">Next step</span>
-        <h2>{["ecommerce-ad-script-generator", "review-to-ad-script-generator"].includes(tool.slug) ? "Turn this script into an AI video with Crelavo" : tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger ad campaign" : "Turn the selected result into a production request"}</h2>
+        <h2>{["ecommerce-ad-script-generator", "review-to-ad-script-generator"].includes(tool.slug) ? "Turn this script into an AI video with Crelavo" : tool.slug === "ad-reference-analyzer" ? "Turn this blueprint into an original ad variation" : tool.slug === "ad-performance-score-checker" ? "Turn this score into a stronger ad campaign" : "Turn the selected result into a production request"}</h2>
         <p style={{ color: "var(--muted)", whiteSpace: "pre-line" }}>{activeOutput}</p>
         <div className="workspace-action-note" style={{ marginTop: 12 }}>
-          {tool.slug === "ad-performance-score-checker" ? "This free score is the entry point. Assistant Workspace turns the weak spots into a campaign brief, improved hooks, CTA direction, proof points, credit estimate and preview video plan." : "Free tools are the starting point. Assistant Workspace turns the selected result into a full production request with delivery plan, credits and final package options."}
+          {tool.slug === "ad-reference-analyzer" ? "This reference analyzer is the entry point for AI Ad Re-Creator. Assistant Workspace turns the blueprint into a copyright-safe brief with rewritten copy, original visuals, new voice/music, localization notes and production guardrails." : tool.slug === "ad-performance-score-checker" ? "This free score is the entry point. Assistant Workspace turns the weak spots into a campaign brief, improved hooks, CTA direction, proof points, credit estimate and preview video plan." : "Free tools are the starting point. Assistant Workspace turns the selected result into a full production request with delivery plan, credits and final package options."}
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={workspaceHref}>Start production with this result</Link>
