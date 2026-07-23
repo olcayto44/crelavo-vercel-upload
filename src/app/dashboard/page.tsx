@@ -239,6 +239,18 @@ export default function DashboardPage() {
         </div>
       </section>
       <section className="card" style={{ marginTop: 20 }}>
+        <span className="badge">Viral credits</span>
+        <h2>Need more credits? Invite a friend.</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Bring another ecommerce seller or agency owner to Crelavo. Planned launch reward: +100 credits for both verified users, then +2,000 bonus credits for you when the invited user becomes a paid Business or Team subscriber. Rewards stay manually reviewed until automated anti-abuse checks are connected.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+          <Link className="btn" href="/dashboard/share-to-earn">Open share-to-earn</Link>
+          <Link className="btn secondary" href="/dashboard/credits">View credit rewards</Link>
+          <Link className="btn secondary" href="/dashboard/partners">Partner area</Link>
+        </div>
+      </section>
+      <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Next best actions</span>
         <h2>Keep building from where users usually drop off</h2>
         <div className="admin-info-grid">

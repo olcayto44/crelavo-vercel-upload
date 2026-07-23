@@ -151,6 +151,15 @@ const publicPricingRows: PublicPricingRow[] = [
   }))
 ];
 
+function planStoreFit(planName: string) {
+  const clean = planName.toLowerCase();
+  if (clean.includes("pro")) return { label: "Best for Shopify beginners", range: "Built for stores under $5k/mo" };
+  if (clean.includes("business")) return { label: "Best for growing stores", range: "Built for stores doing $5k-$20k/mo" };
+  if (clean.includes("ultra")) return { label: "Best for scaling brands", range: "Built for brands doing $20k-$50k/mo" };
+  if (clean.includes("team")) return { label: "Best for agencies & power sellers", range: "Built for 6-7 figure operators" };
+  return { label: "Flexible credit path", range: "Use when you need extra production capacity" };
+}
+
 export default async function PricingPage() {
   const siteContent = await getConfiguredSiteContentConfig();
 
@@ -333,11 +342,17 @@ export default async function PricingPage() {
           <h2>Clear plans, credits and preview fees</h2>
           <p className="section-lead">Choose a subscription or one-time credit pack. Prices are shown in USD, yearly plans include 2 months free, and paid previews include one 10-second watermarked video with downloads closed before full access starts.</p>
           <div className="public-pricing-card-grid">
-            {publicPricingRows.map((row) => (
+            {publicPricingRows.map((row) => {
+              const fit = planStoreFit(row.name);
+              return (
               <article className="public-pricing-card" key={`${row.name}-${row.price}`}>
                 <div className="public-pricing-card-head">
                   <h3>{row.name}</h3>
                   <strong>{row.price}</strong>
+                </div>
+                <div className="workspace-action-note" style={{ margin: "10px 0 12px" }}>
+                  <span className="badge">{fit.label}</span>
+                  <p style={{ margin: "8px 0 0" }}>{fit.range}</p>
                 </div>
                 <dl>
                   <div>
@@ -358,7 +373,8 @@ export default async function PricingPage() {
                   </div>
                 </dl>
               </article>
-            ))}
+              );
+            })}
           </div>
         </section>
 

@@ -46,6 +46,7 @@ const siteDirectory = [
   { label: "Drone credits", href: "/drone-credits", keywords: ["drone", "satellite", "harita", "map", "location"] },
   { label: "Affiliate", href: "/affiliate", keywords: ["affiliate", "partner", "commission", "komisyon", "referans", "creator"] },
   { label: "VIP Agency Hub invite", href: "/dashboard/contact", keywords: ["vip agency hub", "agency hub", "discord", "telegram", "community", "topluluk", "invite", "davet", "promo code", "switch20", "discount", "indirim"] },
+  { label: "Viral credits and referral rewards", href: "/dashboard/credits", keywords: ["invite friend", "referral credits", "viral credit", "davet", "arkadaş davet", "bonus kredi", "watermark", "made with crelavo", "coupon hunt", "kupon", "abandoned checkout", "sepet"] },
   { label: "Showcase", href: "/showcase/explore-samples", keywords: ["showcase", "sample", "örnek", "ornek", "demo", "case"] },
   { label: "Alternatives", href: "/alternatives", keywords: ["alternative", "alternatif", "compare", "vs", "rakip"] },
   { label: "Shopify app page", href: "/shopify-ai-product-video-app", keywords: ["shopify app", "shopify", "app store"] },
@@ -334,6 +335,20 @@ const supportAnswers: SupportAnswer[] = [
     ]
   },
   {
+    id: "viral-rewards",
+    title: "Viral credits, coupons and watermarked previews",
+    keywords: ["invite friend", "referral", "referral credits", "viral credit", "bonus kredi", "arkadaş davet", "arkadas davet", "davet", "coupon hunt", "kupon", "promo hunt", "hidden code", "watermark", "made with crelavo", "abandoned checkout", "sepet", "checkout email", "hangi paket", "store volume", "mağaza hacmi", "magaza hacmi"],
+    answer: "Crelavo growth planında 4 güvenli viral mekanik var: arkadaş davetiyle manuel onaylı bonus kredi, kampanya günlerinde gerçek kupon avı, preview çıktılarında Made with Crelavo AI watermark + upgrade CTA, ve ödeme sayfasını terk eden kullanıcılar için izinli abandoned-checkout email. Paket seçimi de mağaza hacmine göre yönlendirilir: beginner için Pro, büyüyen mağaza için Business, scaling marka için Ultra, ajans/power seller için Team.",
+    primaryUrl: "/dashboard/credits",
+    primaryLabel: "Viral credits and rewards",
+    links: [
+      { label: "Credit rewards", href: "/dashboard/credits" },
+      { label: "Share-to-earn", href: "/dashboard/share-to-earn" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Free ad score", href: "/free-tools/ad-performance-score-checker" }
+    ]
+  },
+  {
     id: "ad-recreator",
     title: "AI Ad Re-Creator and reference ad analysis",
     keywords: ["ad reference", "reference ad", "competitor ad", "rakip reklam", "ad recreator", "ad re-creator", "clone ad", "reklam klon", "ad sniper", "reference video transformer", "tiktok ad structure", "winning ad"],
@@ -532,8 +547,15 @@ const localizedContent: Record<string, Partial<Record<Lang, { title: string; ans
     es: { title: "ROAS, ad score y performance", answer: "Crelavo busca apoyar performance de marketing, no solo entregar archivos. El AI Ad Performance Score Checker gratis analiza hook, CTA y debilidades creativas. En el futuro puede mostrar Video Conversion Score, Estimated ROAS Boost y Hook Rate." },
     pt: { title: "ROAS, ad score e performance", answer: "A Crelavo busca apoiar performance de marketing, não só entregar arquivos. O AI Ad Performance Score Checker grátis analisa hook, CTA e fraquezas criativas. No futuro pode mostrar Video Conversion Score, Estimated ROAS Boost e Hook Rate." }
   },
-  "ad-recreator": {
-    en: { title: "AI Ad Re-Creator and reference ad analysis", answer: "Crelavo does not position this as direct competitor copying. The safe flow extracts only hook, pacing, scene order, proof moment and CTA logic from a reference ad, then creates an original brief for your own product without reusing competitor footage, logos, music, faces, voice or exact copy." },
+"viral-rewards": {
+  en: { title: "Viral credits, coupons and watermarked previews", answer: "Crelavo can use safe viral mechanics: manually reviewed invite-friend credit rewards, real campaign-day coupon hunts, Made with Crelavo AI watermarked previews with upgrade CTA, and consent-based abandoned-checkout recovery emails. Package guidance can match store maturity: Pro for beginners, Business for growing stores, Ultra for scaling brands, Team for agencies." },
+  de: { title: "Virale Credits, Coupons und Watermark Previews", answer: "Crelavo kann sichere Viral-Mechaniken nutzen: manuell geprüfte Invite-Friend Credits, echte Coupon-Hunts an Kampagnentagen, Made with Crelavo AI Watermark Previews mit Upgrade CTA und consent-basierte Abandoned-Checkout E-Mails." },
+  fr: { title: "Crédits viraux, coupons et previews watermark", answer: "Crelavo peut utiliser des mécaniques virales sûres : crédits d’invitation avec revue manuelle, coupon hunts réels les jours de campagne, previews Made with Crelavo AI avec watermark et CTA upgrade, emails abandoned-checkout avec consentement." },
+  es: { title: "Créditos virales, cupones y previews con watermark", answer: "Crelavo puede usar mecánicas virales seguras: créditos por invitar amigos con revisión manual, coupon hunts reales en días de campaña, previews Made with Crelavo AI con watermark y CTA de upgrade, emails de checkout abandonado con consentimiento." },
+  pt: { title: "Créditos virais, cupons e previews com watermark", answer: "A Crelavo pode usar mecânicas virais seguras: créditos por convite com revisão manual, coupon hunts reais em dias de campanha, previews Made with Crelavo AI com watermark e CTA de upgrade, emails de checkout abandonado com consentimento." }
+},
+"ad-recreator": {
+  en: { title: "AI Ad Re-Creator and reference ad analysis", answer: "Crelavo does not position this as direct competitor copying. The safe flow extracts only hook, pacing, scene order, proof moment and CTA logic from a reference ad, then creates an original brief for your own product without reusing competitor footage, logos, music, faces, voice or exact copy." },
     de: { title: "AI Ad Re-Creator und Referenzanalyse", answer: "Crelavo positioniert dies nicht als direktes Kopieren von Wettbewerbern. Der sichere Flow extrahiert nur Hook, Pacing, Szenenfolge, Proof Moment und CTA-Logik aus einer Referenzanzeige und erstellt dann ein originales Briefing für Ihr eigenes Produkt ohne fremdes Footage, Logos, Musik, Gesichter, Stimmen oder exakte Texte." },
     fr: { title: "AI Ad Re-Creator et analyse de référence", answer: "Crelavo ne le positionne pas comme une copie directe de concurrents. Le flux sûr extrait uniquement hook, rythme, ordre des scènes, preuve et CTA d’une publicité de référence, puis crée un brief original pour votre produit sans réutiliser images, logos, musique, visages, voix ou texte exact." },
     es: { title: "AI Ad Re-Creator y análisis de referencia", answer: "Crelavo no lo presenta como copia directa de competidores. El flujo seguro extrae solo hook, ritmo, orden de escenas, prueba y lógica CTA de un anuncio de referencia, y luego crea un brief original para tu producto sin reutilizar footage, logos, música, caras, voz o copy exacto." },
@@ -601,9 +623,22 @@ function absoluteUrl(href: string) {
   return `${siteUrl}${href}`;
 }
 
-function wantsRedirect(text: string) {
+function isQuestionLike(text: string) {
   const clean = normalize(text.trim());
-  return ["yes", "evet", "olur", "tamam", "yonlendir", "yönlendir", "git", "gidelim", "ac", "aç", "send", "go", "open", "ja", "öffnen", "offnen", "weiter", "weiterleiten", "oui", "ouvrir", "rediriger", "sí", "si", "abrir", "redirigir", "sim", "redirecionar"].some((word) => clean === normalize(word) || clean.includes(normalize(word)));
+  return text.includes("?") || /\b(hangi|ne|nedir|neler|kac|kaç|var mi|var mı|where|what|which|how|wie|was|welche|comment|quel|quelle|cuanto|cuantos|qué|que|qual|quais)\b/.test(clean);
+}
+
+function wantsRedirect(text: string) {
+  const clean = normalize(text.trim()).replace(/[.!?]+$/g, "");
+  if (!clean || isQuestionLike(text)) return false;
+
+  const exactApprovals = new Set([
+    "yes", "evet", "olur", "tamam", "ok", "okay", "gidelim", "ja", "oui", "si", "sí", "sim"
+  ].map(normalize));
+  if (exactApprovals.has(clean)) return true;
+
+  return /\b(beni|bizi|sayfaya|oraya|there|page|me|us)\b.*\b(yonlendir|yönlendir|gotur|götür|git|ac|aç|open|go|send|weiterleiten|ouvrir|rediriger|abrir|redirecionar)\b/.test(clean)
+    || /\b(yonlendir|yönlendir|gotur|götür|sayfayi ac|sayfayı aç|open this page|go there|send me|take me there)\b/.test(clean);
 }
 
 function findDirectoryRoute(question: string) {

@@ -90,6 +90,14 @@ const fomoRetentionExperiments = [
   { title: "Dynamic countdown", status: "planned", note: "Use clear campaign terms and honest session/user-level deadlines. Do not create a permanent fake countdown that resets deceptively for every visitor." }
 ];
 
+const viralConversionExperiments = [
+  { title: "Hidden coupon hunt", status: "campaign_test", note: "Run only on real campaign days: place hidden preview promo codes inside the Free AI Ad Scorer or Ad Reference Analyzer. Use truthful copy such as 'up to 50% off' and avoid permanent fake scarcity." },
+  { title: "Viral credit referral loop", status: "ui_seeded", note: "Dashboard and credits pages now seed the invite-friend loop: +100 credits for both verified users, +2,000 bonus credits after invited user becomes a paid Business/Team subscriber, subject to manual abuse review." },
+  { title: "Abandoned checkout email", status: "manual_required", note: "Check Whop native abandoned checkout support. If unavailable, capture pre-checkout clicks/email via Crelavo/n8n and send a 1-hour recovery email only when consent/email exists." },
+  { title: "Featured by Crelavo watermark", status: "planned", note: "Allow preview users to share watermarked exports with a tasteful 'Made with Crelavo AI' mark. Upgrade CTA removes watermark for Business/Team clean exports." },
+  { title: "Store-volume package matching", status: "built_pricing", note: "Pricing cards now frame Pro, Business, Ultra and Team by store/agency maturity so buyers choose by self-identification instead of only credit math." }
+];
+
 const seoExpansionIdeas = [
   { title: "Public ad gallery SEO", status: "planned", note: "Create a consent-only gallery of generated ecommerce videos, ad hooks and thumbnails with product/privacy review, dynamic SEO titles and VideoObject-ready metadata." },
   { title: "LLM ingestion manifesto", status: "planned", note: "Add a public, AI-readable footer/about block that states verified Crelavo facts: AI production studio, credit rollover, Team Annual credit allocation and ecommerce workflow focus. Do not claim official recognition unless sourced." },
@@ -624,6 +632,21 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>Track live proof, streaks and countdown ideas as controlled experiments. Each item must stay truthful, opt-in safe and abuse-resistant before it becomes public funnel copy.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {fomoRetentionExperiments.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Viral conversion experiments</span>
+        <h2>Coupon hunt, referral credits, abandoned checkout and watermark loops</h2>
+        <p style={{ color: "var(--muted)" }}>Track the high-upside growth ideas as controlled experiments. They should create urgency and viral loops without fake scarcity, unreviewed credits or misleading payment promises.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {viralConversionExperiments.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>

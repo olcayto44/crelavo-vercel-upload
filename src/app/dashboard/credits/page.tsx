@@ -40,6 +40,24 @@ export default function CreditsPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 24 }}>
+        <span className="badge">Viral credits</span>
+        <h2>Need more credits? Invite a friend.</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Share Crelavo with another Shopify seller, agency owner or ecommerce friend. Planned reward path: both users get +100 starter credits after verified signup, and the inviter can receive +2,000 bonus credits after the invited user becomes a paid Business or Team subscriber. Rewards stay review-based until automated abuse checks are connected.
+        </p>
+        <div className="admin-info-grid" style={{ marginTop: 14 }}>
+          <div><span>Signup reward</span><strong>+100 credits each</strong><small>Email verified users only; no self-referral or duplicate-account abuse.</small></div>
+          <div><span>Paid upgrade reward</span><strong>+2,000 bonus credits</strong><small>After real payment confirmation for Business or Team plans.</small></div>
+          <div><span>Manual launch guardrail</span><strong>Review first</strong><small>IP/device, disposable email and suspicious referral loops must be checked.</small></div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+          <Link className="btn" href="/dashboard/share-to-earn">Open share-to-earn</Link>
+          <Link className="btn secondary" href="/dashboard/partners">Partner/referral area</Link>
+          <Link className="btn secondary" href="/affiliate">Affiliate program</Link>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 24 }}>
         <span className="badge">Rollover rules</span>
         <h2>Unused credits do not disappear immediately</h2>
         <div className="admin-category-grid" style={{ marginTop: 14 }}>
