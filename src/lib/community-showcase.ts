@@ -12,6 +12,47 @@ export type CommunityShowcaseApprovalStep = {
   check: string;
 };
 
+export type CommunityShowcaseProofLoop = {
+  title: string;
+  status: string;
+  text: string;
+};
+
+export type CommunityShowcaseSubmissionRule = {
+  title: string;
+  check: string;
+};
+
+export const communityShowcaseProofLoop: CommunityShowcaseProofLoop[] = [
+  {
+    title: "Made with Crelavo AI proof",
+    status: "Watermarked preview",
+    text: "Approved preview outputs can be shared with a visible Crelavo watermark so visitors understand the result came from Crelavo before clean export is unlocked."
+  },
+  {
+    title: "Share-to-earn review",
+    status: "Manual credits",
+    text: "Public posts, case studies and community examples can enter manual reward review; no automatic credits are created from unverified social activity."
+  },
+  {
+    title: "Use this style CTA",
+    status: "Credit path",
+    text: "Every public example should lead to a similar-style dashboard request, pricing guidance or Assistant Workspace brief instead of a vague gallery dead end."
+  },
+  {
+    title: "Private asset protection",
+    status: "Rights first",
+    text: "Client products, store data, private URLs, faces, invoices or unreleased campaign assets stay unpublished unless explicit permission is confirmed."
+  }
+];
+
+export const communityShowcaseSubmissionRules: CommunityShowcaseSubmissionRule[] = [
+  { title: "Permission", check: "Only submit assets you own or have written permission to show publicly." },
+  { title: "No private client data", check: "Remove order numbers, customer names, unreleased product details, private dashboards and confidential URLs." },
+  { title: "No inflated claims", check: "Use proof language like concept, preview, example or case study; do not promise ROAS, sales lift or guaranteed results." },
+  { title: "Reward review", check: "Submission can be considered for Crelavo credit rewards only after quality, rights, attribution and abuse review." }
+];
+
 export const communityShowcaseTemplates: CommunityShowcaseTemplate[] = [
   {
     title: "UGC product demo remix",
@@ -71,5 +112,7 @@ export const communityShowcaseAdminChecklist = [
   "Attach a reuse prompt and credit estimate to every approved example.",
   "Do not promise automatic creator rewards until payment, rights and attribution checks are live.",
   "Use Crelavo credits first for template reuse and creator rewards; cash payouts stay later.",
-  "Route every similar-style request into dashboard credits or Assistant Workspace with AI + human QA review."
+  "Route every similar-style request into dashboard credits or Assistant Workspace with AI + human QA review.",
+  "Use watermarked preview proof for public share loops; unlock clean export only after payment and plan eligibility are confirmed.",
+  "Keep private client assets, confidential store data and unapproved faces out of public showcase cards."
 ];

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
-import { communityShowcaseAdminChecklist, communityShowcaseApprovalFlow, communityShowcaseTemplates } from "@/lib/community-showcase";
+import { communityShowcaseAdminChecklist, communityShowcaseApprovalFlow, communityShowcaseProofLoop, communityShowcaseSubmissionRules, communityShowcaseTemplates } from "@/lib/community-showcase";
 import type { PhaseOneFeaturePage } from "@/lib/feature-phase-one";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -143,6 +143,35 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
               <div><span>Credit economy</span><strong>Estimate shown</strong><small>Reusable examples point to an expected Crelavo credit range before work starts.</small></div>
               <div><span>Rewards</span><strong>Credits before cash</strong><small>Creator or customer rewards can start as manually approved Crelavo credits.</small></div>
             </div>
+
+            <section className="card" style={{ marginTop: 16 }}>
+              <span className="badge">Made with Crelavo AI loop</span>
+              <h3>Use watermarked proof to turn shares into safer growth</h3>
+              <p style={{ color: "var(--muted)" }}>
+                Public proof should create trust without pretending results are guaranteed. Approved preview outputs can keep the Crelavo watermark, link back to a similar-style request and enter manual share-to-earn review. Clean exports stay tied to paid plan eligibility.
+              </p>
+              <div className="admin-info-grid" style={{ marginTop: 14 }}>
+                {communityShowcaseProofLoop.map((item) => (
+                  <div key={item.title}><span>{item.status}</span><strong>{item.title}</strong><small>{item.text}</small></div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
+                <Link className="btn" href="/dashboard/share-to-earn">Open share-to-earn</Link>
+                <Link className="btn secondary" href="/dashboard/growth">Open growth hub</Link>
+                <Link className="btn secondary" href="/dashboard/payment?package=business&billing=monthly&campaign=clean-export-business">Clean export path</Link>
+              </div>
+            </section>
+
+            <section className="card" style={{ marginTop: 16 }}>
+              <span className="badge">Submission guardrails</span>
+              <h3>Submit only public-safe assets for showcase review</h3>
+              <div className="admin-info-grid" style={{ marginTop: 14 }}>
+                {communityShowcaseSubmissionRules.map((item) => (
+                  <div key={item.title}><span>Required</span><strong>{item.title}</strong><small>{item.check}</small></div>
+                ))}
+              </div>
+            </section>
+
             <div className="admin-category-grid" style={{ marginTop: 16 }}>
               {communityShowcaseTemplates.map((template) => (
                 <div className="card admin-category-card production-pricing-card" key={template.title}>

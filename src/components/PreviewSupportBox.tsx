@@ -377,6 +377,19 @@ const supportAnswers: SupportAnswer[] = [
     ]
   },
   {
+    id: "showcase-submission",
+    title: "Community showcase submission and proof rules",
+    keywords: ["community showcase", "showcase submit", "case study", "public proof", "proof loop", "müşteri örneği", "musteri ornegi", "vaka", "örnek paylaş", "ornek paylas", "submit showcase", "gallery reward"],
+    answer: "Community Showcase yalnızca public-safe ve manuel onaylı örnekleri gösterir. Kullanıcı kendi sahip olduğu ya da yayın izni olan preview/case-study çıktısını gönderebilir; özel müşteri verisi, gizli URL, yüz, sipariş bilgisi veya abartılı sonuç iddiası yayınlanmaz. Uygun örnekler share-to-earn kredi incelemesine girebilir.",
+    primaryUrl: "/community-showcase",
+    primaryLabel: "Community showcase",
+    links: [
+      { label: "Community showcase", href: "/community-showcase" },
+      { label: "Share-to-earn", href: "/dashboard/share-to-earn" },
+      { label: "Contact support", href: "/dashboard/contact" }
+    ]
+  },
+  {
     id: "viral-rewards",
     title: "Viral credits, coupons and watermarked previews",
     keywords: ["invite friend", "referral", "referral credits", "viral credit", "bonus kredi", "arkadaş davet", "arkadas davet", "davet", "coupon hunt", "kupon", "promo hunt", "hidden code", "watermark", "made with crelavo", "abandoned checkout", "sepet", "checkout email", "hangi paket", "store volume", "mağaza hacmi", "magaza hacmi"],
@@ -600,6 +613,10 @@ const localizedContent: Record<string, Partial<Record<Lang, { title: string; ans
 "watermarked-preview-share": {
   tr: { title: "Watermarked preview paylaşımı ve temiz export", answer: "Onaylı preview çıktıları Made with Crelavo AI watermark ile paylaşılabilir; bu proof loop ve share-to-earn incelemesi için kullanılabilir. Temiz/final export seçilen plan başladıktan ve ödeme uygunluğu doğrulandıktan sonra açılır." },
   en: { title: "Watermarked preview sharing and clean exports", answer: "Approved preview outputs can be shared with the Made with Crelavo AI watermark for the proof loop and share-to-earn review. Clean/final exports unlock after the selected plan starts and payment eligibility is confirmed." }
+},
+"showcase-submission": {
+  tr: { title: "Community showcase gönderimi ve proof kuralları", answer: "Community Showcase yalnızca public-safe ve manuel onaylı örnekleri gösterir. Kendi sahip olduğunuz ya da yayın izni olan preview/case-study çıktıları gönderilebilir; özel müşteri verisi, gizli URL, yüz, sipariş bilgisi veya abartılı sonuç iddiası yayınlanmaz." },
+  en: { title: "Community showcase submission and proof rules", answer: "Community Showcase only displays public-safe and manually approved examples. You can submit preview or case-study outputs you own or have permission to publish; private client data, confidential URLs, faces, order details or inflated result claims are not published." }
 },
 "viral-rewards": {
   tr: { title: "Viral krediler, kuponlar ve watermarked preview", answer: "Crelavo’da güvenli viral mekanikler vardır: share-to-earn, manuel onaylı arkadaş daveti kredisi, gerçek kampanya günlerinde kupon avı, Made with Crelavo AI watermarked preview paylaşımı ve izinli checkout recovery. Ödüller otomatik verilmez; doğrulama ve abuse kontrolü gerekir." },
