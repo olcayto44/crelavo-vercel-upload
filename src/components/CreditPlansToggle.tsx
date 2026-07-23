@@ -104,7 +104,7 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plan
               <div className="workspace-action-note" style={{ marginTop: 12 }}>
                 <small>Secure checkout processed by the active payment provider.</small>
                 <small>Dashboard access and credit activation after payment confirmation.</small>
-                <small>Cancel anytime from your billing profile.</small>
+                <small>Cancel preview/subscription clearly from Whop or Billing profile.</small>
               </div>
               <span className="btn">{ctaLabel}</span>
             </Link>

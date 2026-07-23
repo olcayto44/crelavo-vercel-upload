@@ -16,18 +16,31 @@ export default async function BillingPage({ searchParams }: { searchParams?: Pro
           Start a monthly or yearly credit subscription, or buy one-time top-up credits whenever a production needs extra balance.
         </p>
         <div className="url-action-center">
-          <Link className="btn" href="/dashboard/credits">View credit balance</Link>
+          <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Cancel Preview / Subscription</a>
+          <Link className="btn secondary" href="/whop-billing">How cancellation works</Link>
+          <Link className="btn secondary" href="/dashboard/credits">View credit balance</Link>
           <Link className="btn secondary" href="/dashboard/payment">Open payment page</Link>
           <Link className="btn secondary" href="/dashboard/contact">Need billing help?</Link>
-          <Link className="btn secondary" href="/whop-billing">Cancel / billing instructions</Link>
         </div>
       </div>
 
       <section className="payment-trust-flow" aria-label="Billing trust flow" style={{ marginTop: 18 }}>
         <div><strong>1. Choose package</strong><span>Select subscription or one-time top-up before checkout.</span></div>
         <div><strong>2. Payment confirmation</strong><span>Credits or service access are activated after payment/admin confirmation.</span></div>
-        <div><strong>3. Production reserve</strong><span>Production credits are still reserved only when a job is confirmed.</span></div>
+        <div><strong>3. Clear cancellation</strong><span>Preview and subscription cancellation stays visible here and in Whop.</span></div>
         <div><strong>4. Support path</strong><span>Billing questions route through credits, payment and contact pages.</span></div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+        <span className="badge">Cancel preview / subscription</span>
+        <h2>Need to stop before renewal?</h2>
+        <p style={{ color: "var(--muted)" }}>
+          If you are inside the 24-hour preview window and do not want the main subscription to start, cancel from Whop before the preview ends. The preview/setup fee remains non-refundable, but the main monthly or yearly subscription will not continue after a successful Whop cancellation.
+        </p>
+        <div className="url-action-center">
+          <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Open Whop to cancel</a>
+          <Link className="btn secondary" href="/whop-billing">Read cancellation steps</Link>
+        </div>
       </section>
 
       {selectedPackage ? (

@@ -38,7 +38,8 @@ export default async function WhopBillingPage() {
             Crelavo payments and subscriptions are managed through Whop. Use this page to understand where to cancel, what happens during the 24-hour preview and when credits are added.
           </p>
           <div className="button-nav" style={{ marginTop: 18 }}>
-            <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Open Whop account</a>
+            <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Cancel Preview / Subscription in Whop</a>
+            <Link className="btn secondary" href="/dashboard/billing">Open Crelavo billing</Link>
             <Link className="btn secondary" href="/dashboard/credits">Open Crelavo credits</Link>
           </div>
         </section>

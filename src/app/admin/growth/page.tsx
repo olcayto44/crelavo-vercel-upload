@@ -58,6 +58,14 @@ const leadCaptureFunnelPlan = [
   { title: "Follow-up", status: "manual", note: "Use captured leads for weekly strategy emails, Whop Business/Team preview retargeting and honest opt-out-ready lifecycle messages." }
 ];
 
+const whopLaunchRiskControls = [
+  { title: "Visible cancel button", status: "built", note: "Dashboard billing and payment screens now show Cancel Preview / Subscription links to Whop plus a public /whop-billing instruction page to reduce panic and chargeback risk." },
+  { title: "23rd-hour reminder", status: "manual_required", note: "Configure Whop/Resend/n8n reminder around 3 hours before preview ends: do nothing to continue, cancel link if they want to stop. This is a trust and dispute-prevention email." },
+  { title: "Concurrent render capacity", status: "technical_check", note: "Before paid weekend traffic, verify 12 concurrent tasks per agency will not break provider rate limits; queue must degrade gracefully instead of throwing provider errors." },
+  { title: "Ad timezone scheduling", status: "manual_required", note: "For US/UK/AU traffic, schedule Meta launch around target market morning, especially EST/PST Saturday 08:00-09:00, not Turkey local morning by default." },
+  { title: "Mobile wallet checkout", status: "manual_required", note: "Confirm Whop checkout exposes Apple Pay and Google Pay for mobile traffic so preview purchase does not depend on manual card typing." }
+];
+
 function statusLabel(status: string) {
   if (status === "ready_for_build") return "Ready for build";
   if (status === "blocked_by_payment") return "Blocked by payment";
@@ -480,6 +488,21 @@ export default function AdminGrowthPage() {
         <p style={{ color: "var(--muted)" }}>Code-level crawl, schema and comparison-page work is now represented. These remaining actions are manual growth tasks that should stay under the SEO/Growth group.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {geoAssistantDiscoveryBacklog.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Whop launch risk controls</span>
+        <h2>Chargeback, preview cancellation and launch-capacity safeguards</h2>
+        <p style={{ color: "var(--muted)" }}>Track the high-risk details before sending paid traffic to the $20 Team Annual preview: visible cancellation, reminder email, provider capacity, timezone timing and mobile wallet checkout.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {whopLaunchRiskControls.map((item) => (
             <div className="card admin-category-card" key={item.title}>
               <span className="badge">{item.status}</span>
               <h3>{item.title}</h3>

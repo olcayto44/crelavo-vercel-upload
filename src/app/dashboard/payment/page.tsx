@@ -40,6 +40,7 @@ function creditUnitPrice(plan: { priceUsd?: number; credits: number; yearlyCredi
 
 const previewConfidenceSteps = [
   { title: "Preview first", text: "The preview fee starts a 24-hour test window so the buyer can check access before the full subscription continues." },
+  { title: "Cancel clearly", text: "If the buyer does not want the main subscription to start, they can cancel from Whop before the 24-hour preview ends." },
   { title: "Downloads stay controlled", text: "Preview access is intentionally limited; final downloads open after the selected plan starts and payment is confirmed." },
   { title: "Same email match", text: "The checkout email should match the Crelavo account email so admin review can connect the payment quickly during early launch." }
 ];
@@ -140,6 +141,13 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
           <PaymentCheckoutButton productId={selectedPackage.id} billing={billing}>
             {isServicePlan ? isGrowthService ? "Start intelligence preview checkout" : "Start live-agent preview checkout" : isProductionPackage ? "Continue to drone package checkout" : isSubscription ? "Start 24-hour preview checkout" : "Continue to payment checkout"}
           </PaymentCheckoutButton>
+          {isSubscription ? (
+            <div className="workspace-action-note" style={{ marginTop: 12 }}>
+              <p><strong>Need to cancel during preview?</strong> Use Whop before the 24-hour preview ends so the main subscription does not start.</p>
+              <a className="btn secondary" href="https://whop.com/hub" target="_blank" rel="noreferrer">Open Whop cancellation</a>
+              <Link className="btn secondary" href="/whop-billing">Cancellation steps</Link>
+            </div>
+          ) : null}
           <p style={{ color: "var(--muted)", margin: 0 }}>
             Card details are entered on the secure checkout page of the active payment provider. Crelavo does not store raw card numbers. Use the same email as your Crelavo account so admin review can match the payment quickly during early launch.
           </p>
