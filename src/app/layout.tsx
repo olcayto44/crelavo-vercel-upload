@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdminFooterVisibility } from "@/components/AdminFooterVisibility";
+import { ExitIntentLeadCapture } from "@/components/ExitIntentLeadCapture";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
 import { OAuthWelcomeCreditClient } from "@/components/OAuthWelcomeCreditClient";
 import { PartnerReferralTracker } from "@/components/PartnerReferralTracker";
@@ -100,6 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Suspense fallback={null}><AdminFooterVisibility /></Suspense>
         <Suspense fallback={null}><LiveVisitorTracker /></Suspense>
+        <Suspense fallback={null}><ExitIntentLeadCapture /></Suspense>
         <Suspense fallback={null}><PartnerReferralTracker /></Suspense>
         <Suspense fallback={null}><OAuthWelcomeCreditClient /></Suspense>
         <Suspense fallback={null}><YandexMetrica /></Suspense>

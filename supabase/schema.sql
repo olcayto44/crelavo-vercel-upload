@@ -58,6 +58,39 @@ create table welcome_credit_claims (
   unique (ip_address)
 );
 
+create table lead_captures (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  source text not null default 'exit_intent',
+  offer text not null default 'ecommerce_video_ad_strategy_guide_trial_credits',
+  status text not null default 'captured',
+  consent boolean not null default false,
+  bonus_credits integer not null default 500,
+  ip_address text,
+  user_agent text,
+  landing_url text,
+  page_url text,
+  referrer text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_term text,
+  utm_content text,
+  ref text,
+  fbclid text,
+  gclid text,
+  gbraid text,
+  wbraid text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (email, source)
+);
+
+create index lead_captures_created_at_idx on lead_captures (created_at desc);
+create index lead_captures_source_idx on lead_captures (source);
+create index lead_captures_email_idx on lead_captures (email);
+
 create table video_requests (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
@@ -189,6 +222,7 @@ alter table credit_balances enable row level security;
 alter table credit_events enable row level security;
 alter table assistant_credit_balances enable row level security;
 alter table welcome_credit_claims enable row level security;
+alter table lead_captures enable row level security;
 alter table video_requests enable row level security;
 alter table production_requests enable row level security;
 alter table packages enable row level security;
@@ -202,4 +236,5 @@ create policy "credits own read" on credit_balances for select using (auth.uid()
 create policy "credit events own read" on credit_events for select using (auth.uid() = user_id);
 create policy "assistant credits own read" on assistant_credit_balances for select using (auth.uid() = user_id);
 create policy "welcome claims own read" on welcome_credit_claims for select using (auth.uid() = user_id);
+create policy "lead captures admin service only" on lead_captures for all using (false) with check (false);
 create policy "packages public read" on packages for select using (active = true);

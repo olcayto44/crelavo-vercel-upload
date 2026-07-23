@@ -50,6 +50,14 @@ const geoAssistantDiscoveryBacklog = [
   { title: "VideoObject expansion", status: "planned", note: "When stable hosted video URLs and thumbnails are approved, add VideoObject schema to sample/showcase pages and consider a video sitemap." }
 ];
 
+const leadCaptureFunnelPlan = [
+  { title: "Exit-intent trigger", status: "built", note: "Public pages show the offer after 20 seconds plus desktop exit intent, with a 7-day localStorage frequency cap and protected-route exclusions." },
+  { title: "Lead magnet", status: "built", note: "Offer copy captures ecommerce video ad guide interest plus a trial credit offer before users leave paid traffic pages." },
+  { title: "Storage and attribution", status: "built", note: "POST /api/leads/exit-intent stores email, consent, UTM, referrer, landing page and click IDs in lead_captures." },
+  { title: "Abuse guardrails", status: "required", note: "Honeypot, IP/email rate limit and consent are active; trial credits must still be activated after signup/admin review, not anonymously granted." },
+  { title: "Follow-up", status: "manual", note: "Use captured leads for weekly strategy emails, Whop Business/Team preview retargeting and honest opt-out-ready lifecycle messages." }
+];
+
 function statusLabel(status: string) {
   if (status === "ready_for_build") return "Ready for build";
   if (status === "blocked_by_payment") return "Blocked by payment";
@@ -166,6 +174,21 @@ export default function AdminGrowthPage() {
         </div>
         <h3>Admin retention checklist</h3>
         <ul>{retentionAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Email capture funnel</span>
+        <h2>Exit-intent guide and trial credit lead capture</h2>
+        <p style={{ color: "var(--muted)" }}>Capture paid-traffic visitors who are not ready to buy yet, preserve attribution and route them into ecommerce video strategy follow-up before the API/provider phase.</p>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          {leadCaptureFunnelPlan.map((item) => (
+            <div className="card admin-category-card" key={item.title}>
+              <span className="badge">{item.status}</span>
+              <h3>{item.title}</h3>
+              <p>{item.note}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
