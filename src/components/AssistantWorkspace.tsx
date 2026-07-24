@@ -1218,7 +1218,8 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const configuredPackageOptionsForSelectedType = configuredProductionPackages.filter((item) => item.productionType === selectedProductionType).map((item) => item.name);
   const baseCategoryProfile = categoryOptionProfiles[selectedProductionType] ?? categoryOptionProfiles.video;
   const activeCategoryProfile = configuredPackageOptionsForSelectedType.length ? { ...baseCategoryProfile, quality: configuredPackageOptionsForSelectedType } : baseCategoryProfile;
-  const selectedOutputCount = selectedFeatures.includes("5 alternatives") ? 5 : selectedFeatures.includes("3 alternatives") ? 3 : 1;
+  const selectedCostFeatures = Array.from(new Set([...selectedFeatures, ...selectedModules]));
+  const selectedOutputCount = selectedCostFeatures.includes("5 alternatives") ? 5 : selectedCostFeatures.includes("3 alternatives") ? 3 : 1;
   const selectedDurationSeconds = Number(selectedDuration.replace(/\D/g, "")) || 30;
   const uploadedMaterialBytes = uploadedMaterials.reduce((total, material) => total + (Number(material.size_bytes) || 0), 0);
   const deliverySignal = `${selectedFeatures.join(" ")} ${selectedPlatforms.join(" ")} ${selectedModules.join(" ")}`.toLocaleLowerCase("tr-TR");
@@ -1241,7 +1242,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
     outputCount: selectedOutputCount,
     quality: selectedQuality,
     durationSeconds: selectedDurationSeconds,
-    features: selectedFeatures,
+    features: selectedCostFeatures,
     productionType: selectedTypeForEstimate,
     materialCount: selectedMaterials.length + uploadedMaterials.length,
     materialBytes: uploadedMaterialBytes,

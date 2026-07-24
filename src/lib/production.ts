@@ -1119,7 +1119,19 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
     notes.push(`Extra duration allowance for ${durationSeconds} sec: ${extraBlocks * 650} credits`);
   }
 
-  if (textIncludes(options.features, ["senaryo", "sahne planı", "sahne plani", "dizi/film bible", "karakter dökümü", "karakter dokumu"])) {
+  const selectedOptionCount = Array.isArray(options.features) ? new Set(options.features.map(String)).size : 0;
+  if (selectedOptionCount > 3) {
+    const optionAllowance = Math.min(2200, (selectedOptionCount - 3) * (isVideoLike ? 120 : 80));
+    single += optionAllowance;
+    notes.push(`Selected modules/features complexity allowance for ${selectedOptionCount} options: ${optionAllowance} credits`);
+  }
+
+  if (textIncludes(options.features, ["ai video", "prompt-to-video", "voice-to-video", "image-to-video", "product ad video", "campaign set", "music video", "mv", "documentary", "drama", "short series", "series / film studio", "visual/image pack", "brand kit", "admin panel", "website", "mobile app", "saas screen", "e-commerce", "marketplace listing"])) {
+    single += isVideoLike ? 650 : 450;
+    notes.push(`Production module allowance: ${isVideoLike ? 650 : 450} credits`);
+  }
+
+  if (textIncludes(options.features, ["senaryo", "sahne planı", "sahne plani", "script", "scene plan", "series/film bible", "dizi/film bible", "karakter dökümü", "karakter dokumu", "character breakdown", "storyboard", "narration outline", "topic research", "archival visual plan"])) {
     single += 700;
     notes.push("Series/film script, scene plan and character planning allowance: 700 credits");
   }
@@ -1174,9 +1186,19 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
     notes.push("Regional culture, clothing, environment and dialect direction allowance: 700 credits");
   }
 
-  if (textIncludes(options.features, ["altyazı", "subtitle"])) {
+  if (textIncludes(options.features, ["altyazı", "subtitle", "subtitles", "caption", "captions"])) {
     single += 150;
     notes.push("Subtitle processing allowance: 150 credits");
+  }
+
+  if (textIncludes(options.features, ["thumbnail", "cover visual", "cover", "kapak", "social media caption", "hashtag set"])) {
+    single += 180;
+    notes.push("Social delivery asset allowance: 180 credits");
+  }
+
+  if (textIncludes(options.features, ["final zip", "readme", "source file delivery", "production package", "working source package", "setup guide"])) {
+    single += 220;
+    notes.push("Package/export documentation allowance: 220 credits");
   }
 
   if (textIncludes(options.features, ["müzik", "music", "background music", "emotion-matched music", "user music reference", "soundtrack", "arka fon"])) {

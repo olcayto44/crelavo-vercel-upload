@@ -8711,6 +8711,37 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   overflow-wrap: anywhere;
 }
 
+.clean-tool-active-section .clean-tool-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(46px, auto);
+  align-items: stretch;
+}
+
+.clean-tool-active-section .clean-tool-grid button {
+  min-height: 46px !important;
+  height: auto !important;
+  align-content: center !important;
+  overflow: hidden;
+}
+
+.clean-tool-active-section .clean-tool-grid button strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.18 !important;
+}
+
+.clean-tool-active-section .clean-tool-grid.one button strong {
+  -webkit-line-clamp: 2;
+}
+
+.clean-tool-active-section .clean-tool-grid.compact button {
+  min-height: 50px !important;
+}
+
 .clean-tool-active-section .clean-tool-grid {
   max-height: none;
   min-height: 0;
