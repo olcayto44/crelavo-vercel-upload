@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const siteUrl = "https://www.crelavo.com";
-const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout"];
+const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout", "/dashboard/assistant-workspace"];
 
 type Lang = "tr" | "en" | "de" | "fr" | "es" | "pt";
 

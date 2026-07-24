@@ -2485,7 +2485,7 @@ body.admin-route > .site-footer {
 
 .assistant-workspace.ai-generator-dashboard .ai-dashboard-shell {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(330px, 390px) minmax(0, 1fr) minmax(300px, 360px);
+  grid-template-columns: minmax(360px, 420px) minmax(520px, 1fr) minmax(380px, 440px);
   gap: 14px;
   width: 100%;
   height: calc(100vh - 118px);
@@ -2522,6 +2522,7 @@ body.admin-route > .site-footer {
 }
 
 .ai-dashboard-sidebar {
+  display: none;
   padding: 14px;
   gap: 14px;
 }
@@ -2639,6 +2640,29 @@ body.admin-route > .site-footer {
 .ai-preview-hero h3 {
   font-size: clamp(26px, 3vw, 46px) !important;
   letter-spacing: -.05em;
+}
+
+.assistant-workspace.ai-generator-dashboard h1,
+.assistant-workspace.ai-generator-dashboard h2,
+.assistant-workspace.ai-generator-dashboard h3,
+.assistant-workspace.ai-generator-dashboard strong,
+.assistant-workspace.ai-generator-dashboard small,
+.assistant-workspace.ai-generator-dashboard span,
+.assistant-workspace.ai-generator-dashboard button {
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.assistant-workspace.ai-generator-dashboard .studio-preview-metrics,
+.assistant-workspace.ai-generator-dashboard .assistant-console-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+}
+
+.assistant-workspace.ai-generator-dashboard .studio-preview-metrics span,
+.assistant-workspace.ai-generator-dashboard .assistant-console-metrics > div,
+.assistant-workspace.ai-generator-dashboard .live-step {
+  min-width: 0;
+  white-space: normal;
 }
 
 .ai-progress-board {
