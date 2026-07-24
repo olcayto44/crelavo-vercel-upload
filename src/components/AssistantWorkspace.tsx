@@ -2506,13 +2506,55 @@ async function startRawMicrophoneFallback() {
 
   return (
     <div className="assistant-workspace crelavo-clean-studio">
-      <aside className="clean-studio-rail" aria-label="Production shortcuts">
-        <div className="clean-studio-logo"><span>▶</span></div>
-        {studioQuickPaths.map((path) => (
-          <button className={selectedProductionType === path.category ? "active" : ""} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setProductionBrief((current) => current || path.description); }}>
-            <strong>{path.label.split(" ").slice(0, 2).join(" ")}</strong>
-          </button>
-        ))}
+      <aside className="clean-studio-rail clean-tool-panel" aria-label="Production settings">
+        <div className="clean-tool-head">
+          <div className="clean-studio-logo"><span>▶</span></div>
+          <div><strong>Crelavo Studio</strong><small>Üretim ayarları</small></div>
+        </div>
+
+        <div className="clean-tool-section">
+          <span className="badge">Categories</span>
+          <div className="clean-tool-grid one">
+            {studioQuickPaths.map((path) => (
+              <button className={selectedProductionType === path.category ? "active" : ""} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setProductionBrief((current) => current || path.description); }}>
+                <strong>{path.label}</strong>
+                <small>{path.description}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="clean-tool-section">
+          <span className="badge">Quality</span>
+          <div className="clean-tool-grid two">
+            {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}><strong>{tier}</strong></button>)}
+          </div>
+        </div>
+
+        <div className="clean-tool-section">
+          <span className="badge">Features</span>
+          <div className="clean-tool-grid two">
+            {activeCategoryProfile.features.slice(0, 10).map((feature) => <button className={selectedFeatures.includes(feature) ? "active" : ""} type="button" key={feature} onClick={() => toggleFeature(feature)}><strong>{feature}</strong></button>)}
+          </div>
+        </div>
+
+        <div className="clean-tool-section">
+          <span className="badge">Materials</span>
+          <div className="clean-tool-grid one compact">
+            {materials.slice(0, 6).map((material) => <button className={selectedMaterials.includes(material.id) ? "active" : ""} type="button" key={material.id} onClick={() => toggleMaterial(material.id)}><strong>{material.title}</strong><small>{material.category}</small></button>)}
+          </div>
+          <label className="btn secondary clean-upload-btn">
+            Upload material
+            <input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => uploadUserMaterial(event.currentTarget.files)} style={{ display: "none" }} />
+          </label>
+        </div>
+
+        <div className="clean-tool-section">
+          <span className="badge">Delivery</span>
+          <div className="clean-tool-grid two">
+            {activeCategoryProfile.platforms.slice(0, 6).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+          </div>
+        </div>
       </aside>
 
       <main className="clean-studio-main" aria-label="Production workspace">
@@ -2575,9 +2617,6 @@ async function startRawMicrophoneFallback() {
 
         <section className="clean-control-panel">
           <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
-          <div className="clean-quality-grid">
-            {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
-          </div>
           <div className="clean-control-list">
             <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
             <span><small>Scope</small><strong>{selectedDuration}</strong></span>
