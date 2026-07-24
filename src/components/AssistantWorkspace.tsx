@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Mic, Send, Sparkles } from "lucide-react";
+import { Bot, Mic, Paperclip, Send, Sparkles } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { blockedProductionMessage, validateProductionSafety } from "@/lib/content-safety";
 import { getStoredLanguage } from "@/lib/i18n";
@@ -2676,7 +2676,14 @@ async function startRawMicrophoneFallback() {
           </div>
           <div className="clean-chat-input">
             <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Ne yapmak istiyorsun? Örn: Crelavo gibi SaaS sitesi kur..." />
-            <button className="btn" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
+            <div className="clean-chat-actions">
+              <label className="btn secondary clean-chat-attach" title="Dosya ekle">
+                <Paperclip size={15} />
+                <span>{uploadState === "loading" ? "Yükleniyor" : "Dosya"}</span>
+                <input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={uploadState === "loading"} onChange={(event) => uploadUserMaterial(event.currentTarget.files)} />
+              </label>
+              <button className="btn clean-chat-send" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
+            </div>
           </div>
         </section>
 

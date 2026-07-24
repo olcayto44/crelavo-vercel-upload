@@ -8694,6 +8694,40 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   max-height: 78px !important;
 }
 
+.clean-chat-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: stretch;
+}
+
+.clean-chat-attach,
+.clean-chat-send {
+  min-height: 36px !important;
+  padding: 8px 10px !important;
+  justify-content: center !important;
+}
+
+.clean-chat-attach {
+  position: relative;
+  min-width: 86px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.clean-chat-attach input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.clean-chat-attach span {
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .clean-tool-section .clean-tool-grid {
   max-height: 156px;
   overflow-y: auto;
