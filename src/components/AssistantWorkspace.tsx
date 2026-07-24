@@ -2518,7 +2518,6 @@ async function startRawMicrophoneFallback() {
             {studioQuickPaths.map((path) => (
               <button className={selectedProductionType === path.category ? "active" : ""} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setProductionBrief((current) => current || path.description); }}>
                 <strong>{path.label}</strong>
-                <small>{path.description}</small>
               </button>
             ))}
           </div>
@@ -2534,14 +2533,14 @@ async function startRawMicrophoneFallback() {
         <div className="clean-tool-section">
           <span className="badge">Features</span>
           <div className="clean-tool-grid two">
-            {activeCategoryProfile.features.slice(0, 10).map((feature) => <button className={selectedFeatures.includes(feature) ? "active" : ""} type="button" key={feature} onClick={() => toggleFeature(feature)}><strong>{feature}</strong></button>)}
+            {activeCategoryProfile.features.slice(0, 8).map((feature) => <button className={selectedFeatures.includes(feature) ? "active" : ""} type="button" key={feature} onClick={() => toggleFeature(feature)}><strong>{feature}</strong></button>)}
           </div>
         </div>
 
         <div className="clean-tool-section">
           <span className="badge">Materials</span>
           <div className="clean-tool-grid one compact">
-            {materials.slice(0, 6).map((material) => <button className={selectedMaterials.includes(material.id) ? "active" : ""} type="button" key={material.id} onClick={() => toggleMaterial(material.id)}><strong>{material.title}</strong><small>{material.category}</small></button>)}
+            {materials.slice(0, 4).map((material) => <button className={selectedMaterials.includes(material.id) ? "active" : ""} type="button" key={material.id} onClick={() => toggleMaterial(material.id)}><strong>{material.title}</strong><small>{material.category}</small></button>)}
           </div>
           <label className="btn secondary clean-upload-btn">
             Upload material
@@ -2552,7 +2551,7 @@ async function startRawMicrophoneFallback() {
         <div className="clean-tool-section">
           <span className="badge">Delivery</span>
           <div className="clean-tool-grid two">
-            {activeCategoryProfile.platforms.slice(0, 6).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+            {activeCategoryProfile.platforms.slice(0, 4).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
           </div>
         </div>
       </aside>

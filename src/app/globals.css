@@ -8228,7 +8228,7 @@ html body .assistant-production-page .assistant-workspace.ai-generator-dashboard
 /* Clean rebuild: no old wizard, no oversized options panel. */
 html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   display: grid !important;
-  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(390px, 440px) !important;
+  grid-template-columns: minmax(300px, 330px) minmax(0, 1fr) minmax(430px, 470px) !important;
   gap: 14px !important;
   width: 100% !important;
   height: calc(100vh - 24px) !important;
@@ -8341,7 +8341,18 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     radial-gradient(circle at 80% 0%, rgba(236,72,153,.12), transparent 34%),
     rgba(255,255,255,.055);
 }
-.clean-preview-large { grid-row: span 2; }
+.clean-preview-large { grid-row: span 2; position: relative; min-height: 100%; }
+.clean-preview-large::before {
+  content: "";
+  position: absolute;
+  inset: 18px 18px auto auto;
+  width: min(42%, 280px);
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(34,211,238,.14), rgba(124,92,255,.18));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
 .clean-preview-card strong { font-size: 22px; line-height: 1.1; }
 .clean-preview-large strong { font-size: clamp(34px, 5vw, 72px); letter-spacing: -.06em; }
 .clean-preview-card p { margin: 0; color: #cbd5e1; line-height: 1.4; }
@@ -8352,13 +8363,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-progress-row span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; background: rgba(255,255,255,.09); color: #fff; font-weight: 900; }
 .clean-progress-row strong { color: #dbeafe; font-size: 12px; line-height: 1.2; }
 
-.clean-studio-side { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; overflow: hidden; border: 0; background: transparent; box-shadow: none; }
+.clean-studio-side { display: grid; grid-template-rows: minmax(0, 1fr) 230px; gap: 14px; height: 100%; overflow: hidden; border: 0; background: transparent; box-shadow: none; }
 .clean-chat-panel,.clean-control-panel { border-radius: 26px; padding: 14px; overflow: hidden; }
 .clean-chat-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
 .clean-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .clean-chat-log { min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding: 10px; border-radius: 18px; background: rgba(2,6,23,.38); }
 .clean-chat-input { display: grid; gap: 8px; }
-.clean-chat-input textarea { min-height: 96px; max-height: 130px; resize: none; }
+.clean-chat-input textarea { min-height: 86px; max-height: 112px; resize: none; }
 .clean-chat-input .btn { width: 100%; justify-content: center; }
 
 .clean-control-panel { display: grid; gap: 12px; }
