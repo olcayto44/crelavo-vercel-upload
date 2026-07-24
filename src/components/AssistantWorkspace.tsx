@@ -2561,7 +2561,7 @@ async function startRawMicrophoneFallback() {
           <div>
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
-            <p>{productionBrief || "Ne üretmek istediğini sağdaki asistana yaz. Crelavo brief, action, kredi ve teslimat planını burada gösterecek."}</p>
+            <p>{productionBrief || "Ne üretmek istediğini soldaki prompt alanına yaz. Crelavo brief, action, kredi ve teslimat planını burada gösterecek."}</p>
           </div>
           <div className="clean-studio-state">
             <span><small>State</small><strong>{productionLifecycleState}</strong></span>
