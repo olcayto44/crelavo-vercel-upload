@@ -16,16 +16,24 @@ export function generateStaticParams() {
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 const fallbackSampleDetailVideoUrl = "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200420847185558-1783200420793.mp4";
+const fallbackSampleThumbnailUrl = `${siteUrl}/showcase/ai-production-studio.webp`;
+
+function absoluteUrl(value?: string) {
+  if (!value) return fallbackSampleThumbnailUrl;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${siteUrl}${value.startsWith("/") ? value : `/${value}`}`;
+}
 
 function SampleVideoStructuredData({ sample, videoUrl }: { sample: (typeof sampleVideos)[number]; videoUrl: string }) {
   const pageUrl = `${siteUrl}/samples/${sample.id}`;
+  const thumbnailUrl = absoluteUrl(sample.thumbnailUrl);
   const schema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "@id": `${pageUrl}#video`,
     name: `${sample.title} sample video`,
     description: `${sample.description} Crelavo AI product video sample for ${sample.category}.`,
-    thumbnailUrl: [sample.thumbnailUrl],
+    thumbnailUrl: [thumbnailUrl],
     uploadDate: "2026-07-05T00:00:00.000Z",
     contentUrl: videoUrl,
     embedUrl: pageUrl,

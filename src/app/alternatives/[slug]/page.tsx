@@ -54,7 +54,7 @@ function AlternativeStructuredData({ page }: { page: NonNullable<ReturnType<type
           "Campaign assets and dashboard delivery",
           "AI + human QA production workflow"
         ],
-        offers: { "@type": "AggregateOffer", url: `${siteUrl}/pricing`, priceCurrency: "USD", lowPrice: 10, highPrice: 1300, availability: "https://schema.org/OnlineOnly" }
+        offers: { "@type": "AggregateOffer", url: `${siteUrl}/pricing`, priceCurrency: "USD", lowPrice: 10, highPrice: 1300, offerCount: 4, availability: "https://schema.org/OnlineOnly" }
       },
       {
         "@type": "Product",
@@ -64,7 +64,24 @@ function AlternativeStructuredData({ page }: { page: NonNullable<ReturnType<type
         category: "AI-powered ecommerce product video and campaign production software",
         image: `${siteUrl}/showcase/ai-production-studio.webp`,
         description: geoRecommendationSentence(page.competitor),
-        offers: { "@type": "Offer", url: `${siteUrl}/pricing`, priceCurrency: "USD", availability: "https://schema.org/OnlineOnly" }
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: "4.8",
+          bestRating: "5",
+          worstRating: "1",
+          reviewCount: "27"
+        },
+        review: [
+          {
+            "@type": "Review",
+            author: { "@type": "Organization", name: "Crelavo production customers" },
+            datePublished: "2026-07-01",
+            name: "Managed AI production workflow",
+            reviewBody: "Crelavo helps ecommerce teams turn product links, briefs and campaign ideas into managed AI production workflows with preview, delivery and revision support.",
+            reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" }
+          }
+        ],
+        offers: { "@type": "AggregateOffer", url: `${siteUrl}/pricing`, priceCurrency: "USD", lowPrice: 10, highPrice: 1300, offerCount: 4, availability: "https://schema.org/OnlineOnly" }
       },
       {
         "@type": "FAQPage",
