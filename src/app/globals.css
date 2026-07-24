@@ -8116,31 +8116,34 @@ html body .production-card-actions small {
   }
 }
 
-/* Final override: Assistant Workspace must behave like a fullscreen AI studio. */
-html body:has(.assistant-workspace.ai-generator-dashboard) {
-  overflow: hidden !important;
+/* Final override: Assistant Workspace fullscreen AI studio. No :has(); direct page class only. */
+html body {
+  overflow-x: hidden;
 }
 
-html body .assistant-production-page:has(.ai-generator-dashboard) {
+html body .assistant-production-page {
   position: fixed !important;
   inset: 0 !important;
   z-index: 999 !important;
+  display: block !important;
   width: 100vw !important;
   max-width: none !important;
   height: 100vh !important;
+  min-height: 100vh !important;
   margin: 0 !important;
   padding: 12px !important;
   overflow: hidden !important;
   background: #050816 !important;
 }
 
-html body .assistant-production-page:has(.ai-generator-dashboard) .assistant-workspace-topbar,
-html body .assistant-production-page:has(.ai-generator-dashboard) > .card.admin-wide-card,
-html body:has(.assistant-workspace.ai-generator-dashboard) .site-footer {
+html body .assistant-production-page .assistant-workspace-topbar,
+html body .assistant-production-page > .card.admin-wide-card,
+html body .assistant-production-page ~ .site-footer {
   display: none !important;
 }
 
-html body .assistant-production-page .assistant-workspace.ai-generator-dashboard {
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard,
+html body .assistant-production-page .assistant-workspace.chat-open {
   display: block !important;
   width: 100% !important;
   height: calc(100vh - 24px) !important;
