@@ -2563,11 +2563,13 @@ async function startRawMicrophoneFallback() {
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Ne üretmek istediğini soldaki prompt alanına yaz. Crelavo brief, action, kredi ve teslimat planını burada gösterecek."}</p>
           </div>
-          <div className="clean-studio-state">
-            <span><small>State</small><strong>{productionLifecycleState}</strong></span>
-            <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
-            <span><small>Quality</small><strong>{selectedQuality}</strong></span>
-          </div>
+        <div className="clean-studio-state">
+          <span><small>Durum</small><strong>{productionLifecycleState}</strong></span>
+          <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+          <span><small>Kalite</small><strong>{selectedQuality}</strong></span>
+          <span><small>Ajan eylemi</small><strong>{latestAgentAction?.name ?? "Taslak"}</strong></span>
+          <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Kontrol paneli"}</strong></span>
+        </div>
         </section>
 
         <section className="clean-preview-grid">

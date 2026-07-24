@@ -8229,7 +8229,7 @@ html body .assistant-production-page .assistant-workspace.ai-generator-dashboard
 html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   display: grid !important;
   grid-template-columns: minmax(340px, 380px) minmax(0, 1fr) !important;
-  grid-template-rows: minmax(0, 1fr) minmax(280px, .82fr) !important;
+  grid-template-rows: minmax(420px, .62fr) minmax(240px, .38fr) !important;
   grid-template-areas:
     "side board"
     "tools board" !important;
@@ -8290,7 +8290,11 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-studio-main {
   grid-area: board;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "hero"
+    "steps"
+    "preview";
   gap: 14px;
   height: 100%;
   overflow: hidden;
@@ -8308,6 +8312,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 
 .clean-studio-hero {
+  grid-area: hero;
   display: flex;
   justify-content: space-between;
   gap: 18px;
@@ -8322,16 +8327,17 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   letter-spacing: -.06em;
 }
 .clean-studio-hero p { max-width: 760px; margin: 0; color: #cbd5e1; line-height: 1.45; }
-.clean-studio-state { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 8px; min-width: min(420px, 42%); }
+.clean-studio-state { display: grid; grid-template-columns: repeat(5, minmax(92px, 1fr)); gap: 7px; flex: 1 1 auto; min-width: min(620px, 58%); }
 .clean-studio-state span { display: grid; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.06); }
 .clean-studio-state small,.clean-preview-card small,.clean-control-list small { color: #93c5fd; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
 .clean-studio-state strong,.clean-preview-card strong,.clean-control-list strong { color: #fff; }
 
 .clean-preview-grid {
+  grid-area: preview;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
   gap: 14px;
   overflow: hidden;
 }
@@ -8346,7 +8352,8 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     radial-gradient(circle at 80% 0%, rgba(236,72,153,.12), transparent 34%),
     rgba(255,255,255,.055);
 }
-.clean-preview-large { grid-row: span 2; position: relative; min-height: 100%; }
+.clean-preview-card:not(.clean-preview-large) { display: none !important; }
+.clean-preview-large { grid-row: auto; position: relative; min-height: 100%; }
 .clean-preview-large::before {
   content: "";
   position: absolute;
@@ -8362,7 +8369,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-preview-large strong { font-size: clamp(34px, 5vw, 72px); letter-spacing: -.06em; }
 .clean-preview-card p { margin: 0; color: #cbd5e1; line-height: 1.4; }
 
-.clean-progress-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.clean-progress-row { grid-area: steps; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .clean-progress-row > div { display: grid; gap: 6px; padding: 12px; }
 .clean-progress-row > div.active { border-color: rgba(34,211,238,.55); background: rgba(34,211,238,.12); }
 .clean-progress-row span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; background: rgba(255,255,255,.09); color: #fff; font-weight: 900; }
@@ -8491,7 +8498,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 
 .clean-studio-state {
-  min-width: 300px !important;
+  min-width: min(620px, 58%) !important;
 }
 
 .clean-studio-state span,
