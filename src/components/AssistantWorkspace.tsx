@@ -1185,7 +1185,7 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [uploadPurpose, setUploadPurpose] = useState("user_material");
   const [uploadState, setUploadState] = useState<"idle" | "loading" | "error">("idle");
   const [uploadError, setUploadError] = useState("");
-  const [optionsOpen, setOptionsOpen] = useState(true);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [startModalOpen, setStartModalOpen] = useState(false);
   const [creditSplashOpen, setCreditSplashOpen] = useState(false);
   const [startState, setStartState] = useState<"idle" | "loading" | "error">("idle");
