@@ -8228,7 +8228,7 @@ html body .assistant-production-page .assistant-workspace.ai-generator-dashboard
 /* Clean rebuild: no old wizard, no oversized options panel. */
 html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   display: grid !important;
-  grid-template-columns: minmax(430px, 500px) minmax(0, 1fr) !important;
+  grid-template-columns: minmax(340px, 380px) minmax(0, 1fr) !important;
   grid-template-rows: minmax(0, 1fr) minmax(280px, .82fr) !important;
   grid-template-areas:
     "side board"
@@ -8455,9 +8455,151 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-tool-grid button small { color: #9fb0c9; font-size: 10px; line-height: 1.25; }
 .clean-upload-btn { width: 100%; justify-content: center; }
 
+/* Compact polish: closer to Topview-style tool workspace. */
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+  gap: 10px !important;
+  padding: 10px !important;
+}
+
+.clean-chat-panel,
+.clean-control-panel,
+.clean-studio-main,
+.clean-studio-rail.clean-tool-panel {
+  border-radius: 18px !important;
+  padding: 10px !important;
+}
+
+.clean-studio-main {
+  gap: 10px !important;
+}
+
+.clean-studio-hero {
+  padding: 12px !important;
+  border-radius: 16px !important;
+}
+
+.clean-studio-hero h1 {
+  font-size: clamp(24px, 2.7vw, 42px) !important;
+  letter-spacing: -.04em !important;
+}
+
+.clean-studio-hero p,
+.clean-preview-card p,
+.clean-chat-panel p {
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+}
+
+.clean-studio-state {
+  min-width: 300px !important;
+}
+
+.clean-studio-state span,
+.clean-control-list span {
+  padding: 8px !important;
+  border-radius: 12px !important;
+}
+
+.clean-preview-grid {
+  gap: 10px !important;
+}
+
+.clean-preview-card {
+  border-radius: 16px !important;
+  padding: 14px !important;
+}
+
+.clean-preview-card strong {
+  font-size: 16px !important;
+}
+
+.clean-preview-large strong {
+  font-size: clamp(28px, 4vw, 54px) !important;
+}
+
+.clean-progress-row {
+  gap: 7px !important;
+}
+
+.clean-progress-row > div {
+  padding: 8px !important;
+  border-radius: 14px !important;
+}
+
+.clean-progress-row strong {
+  font-size: 10px !important;
+}
+
+.clean-chat-panel {
+  gap: 8px !important;
+}
+
+.clean-chat-log {
+  padding: 8px !important;
+  gap: 8px !important;
+}
+
+.clean-chat-input textarea {
+  min-height: 76px !important;
+  max-height: 96px !important;
+  font-size: 13px !important;
+}
+
+.clean-control-panel {
+  gap: 8px !important;
+}
+
+.clean-control-list {
+  gap: 6px !important;
+}
+
+.clean-tool-section {
+  padding: 8px !important;
+  gap: 6px !important;
+  border-radius: 14px !important;
+}
+
+.clean-tool-grid {
+  gap: 5px !important;
+}
+
+.clean-tool-grid button {
+  min-height: 32px !important;
+  padding: 7px !important;
+  border-radius: 11px !important;
+}
+
+.clean-tool-grid button strong {
+  font-size: 10px !important;
+}
+
+.clean-tool-grid button small {
+  display: none !important;
+}
+
+.clean-studio-logo {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.clean-tool-head strong {
+  font-size: 13px !important;
+}
+
+.clean-tool-head small {
+  font-size: 10px !important;
+}
+
+.clean-upload-btn,
+.clean-start-btn,
+.clean-chat-input .btn {
+  min-height: 36px !important;
+  padding: 8px 10px !important;
+}
+
 @media (max-width: 1280px) {
   html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
-    grid-template-columns: minmax(390px, 440px) minmax(0, 1fr) !important;
+    grid-template-columns: minmax(320px, 360px) minmax(0, 1fr) !important;
   }
 }
 
