@@ -2476,6 +2476,24 @@ body.admin-route > .site-footer {
 }
 
 /* Dribbble-style AI generator dashboard for Assistant Workspace. */
+.assistant-production-page:has(.ai-generator-dashboard) {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh;
+  margin: 0 !important;
+  padding: 12px !important;
+  overflow: hidden;
+  background: #050816;
+}
+
+.assistant-production-page:has(.ai-generator-dashboard) .assistant-workspace-topbar,
+.assistant-production-page:has(.ai-generator-dashboard) > .card.admin-wide-card {
+  display: none !important;
+}
+
 .assistant-workspace.ai-generator-dashboard {
   display: block;
   width: 100%;
@@ -2485,15 +2503,15 @@ body.admin-route > .site-footer {
 
 .assistant-workspace.ai-generator-dashboard .ai-dashboard-shell {
   display: grid;
-  grid-template-columns: 86px minmax(620px, 1fr) minmax(390px, 440px);
-  grid-template-rows: minmax(300px, .52fr) minmax(330px, .48fr);
+  grid-template-columns: 86px minmax(640px, 1fr) minmax(400px, 450px);
+  grid-template-rows: minmax(280px, .46fr) minmax(360px, .54fr);
   grid-template-areas:
     "side canvas chat"
     "side canvas controls";
   gap: 14px;
   width: 100%;
-  height: calc(100vh - 118px);
-  min-height: 760px;
+  height: calc(100vh - 24px);
+  min-height: 0;
   padding: 14px;
   border-radius: 30px;
   overflow: hidden;
@@ -2686,6 +2704,56 @@ body.admin-route > .site-footer {
 .ai-preview-hero h3 {
   font-size: clamp(26px, 3vw, 46px) !important;
   letter-spacing: -.05em;
+}
+
+.ai-output-canvas-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(180px, .8fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ai-output-card {
+  position: relative;
+  min-height: 118px;
+  display: grid;
+  align-content: end;
+  gap: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 22px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(34,211,238,.18), transparent 36%),
+    radial-gradient(circle at 90% 0%, rgba(124,92,255,.18), transparent 38%),
+    rgba(2,6,23,.46);
+  box-shadow: 0 18px 46px rgba(0,0,0,.20);
+}
+
+.ai-output-card.large {
+  grid-row: span 2;
+  min-height: 250px;
+}
+
+.ai-output-card small {
+  color: #93c5fd;
+  font-weight: 900;
+}
+
+.ai-output-card strong {
+  color: #fff;
+  font-size: 18px;
+  line-height: 1.08;
+}
+
+.ai-output-card.large strong {
+  font-size: clamp(24px, 3vw, 38px);
+}
+
+.ai-output-card span {
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .assistant-workspace.ai-generator-dashboard h1,

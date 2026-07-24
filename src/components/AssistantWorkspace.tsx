@@ -2564,6 +2564,11 @@ async function startRawMicrophoneFallback() {
               <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
               <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
             </div>
+            <div className="ai-output-canvas-preview" aria-label="Production output canvas">
+              <div className="ai-output-card large"><small>Preview</small><strong>{selectedProduction?.label ?? "Production"}</strong><span>{productionBrief ? "Brief hazır" : "Komut bekleniyor"}</span></div>
+              <div className="ai-output-card"><small>Action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong><span>Onaydan önce üretim başlamaz</span></div>
+              <div className="ai-output-card"><small>Delivery</small><strong>{selectedPackage?.name ?? "Files + links"}</strong><span>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard teslim"}</span></div>
+            </div>
           </section>
 
           <div className="live-production-board compact-studio-steps ai-progress-board">
