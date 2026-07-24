@@ -2505,307 +2505,177 @@ async function startRawMicrophoneFallback() {
   }
 
   return (
-    <div className="assistant-workspace chat-open">
-      <section className="assistant-live-stage">
-        <div className="assistant-stage-head studio-stage-head">
-          <span className="badge"><Sparkles size={14} /> Crelavo AI Production Studio</span>
-          <h1>What do you want to create with Crelavo?</h1>
-          <p>Create videos, avatars, campaign assets, product ads and social content from one clean production workspace.</p>
-        </div>
+    <div className="assistant-workspace chat-open ai-generator-dashboard">
+      <section className="assistant-live-stage ai-dashboard-shell">
+        <aside className="ai-dashboard-sidebar" aria-label="Crelavo production navigation">
+          <div className="ai-dashboard-brand">
+            <span className="badge"><Sparkles size={14} /> Crelavo Studio</span>
+            <h1>AI Production</h1>
+            <p>Tek sayfada sohbet, brief, kalite, kredi ve gerçek üretim durumu.</p>
+          </div>
+          <div className="ai-dashboard-nav">
+            {studioQuickPaths.map((path) => (
+              <button className={selectedProductionType === path.category ? "active" : ""} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setInput((current) => current || path.description); setProductionBrief((current) => current || path.description); }}>
+                <strong>{path.label}</strong>
+                <span>{path.description}</span>
+              </button>
+            ))}
+          </div>
+          <div className="ai-dashboard-mini-card">
+            <small>Üretim durumu</small>
+            <strong>{productionLifecycleState}</strong>
+            <span>{productionLifecycleNote}</span>
+          </div>
+        </aside>
 
-        <section className="assistant-inline-chat" aria-label="Assistant chat flow">
+        <section className="assistant-inline-chat ai-dashboard-chat" aria-label="Assistant chat flow">
           <div className="assistant-inline-chat-head">
             <div>
-              <span className="badge"><Bot size={14} /> Assistant chat</span>
-              <h2>Chat</h2>
-              <p>Ask a question, request API help, share an idea, or send a voice command. Production briefs stay in the Production command panel.</p>
+              <span className="badge"><Bot size={14} /> Tek sohbet</span>
+              <h2>Crelavo Assistant</h2>
+              <p>Ne istediğini buraya yaz. Genel soruları cevaplar; üretim isteğini otomatik brief ve action'a çevirir.</p>
             </div>
-            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Ask anything or describe what you need." }])}>Clear chat</button>
+            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Sohbet temizlendi. Ne yapmak istediğini yazabilirsin." }])}>Temizle</button>
           </div>
           <div className="assistant-inline-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
-            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Preparing reply...</div> : null}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Cevap hazırlanıyor...</div> : null}
           </div>
           <div className="assistant-inline-chat-input">
-            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={handleChatInputKeyDown} placeholder="Ask here: general question, API steps, production idea..." />
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Örn: Crelavo gibi SaaS sitesi kur, ayakkabı tanıtım videosu yap, API kurulumu anlat..." />
             <div className="assistant-inline-chat-actions">
-              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? "Listening..." : "Voice"}</button>
-              <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
+              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? "Dinleniyor" : "Ses"}</button>
+              <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
             </div>
           </div>
           {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
         </section>
 
-        <section className="studio-command-center">
-          <div className="studio-command-main">
-            <span className="badge">Production command</span>
-          <h2>Write the brief, choose quality, start production.</h2>
-          <p>A cleaner Kling / Seedance-style workflow: the user describes the goal, while Crelavo prepares the production type, quality tier and provider route behind the scenes.</p>
-            <label className="studio-prompt-input">
-              <span>Describe what you want to create...</span>
-              <textarea
-                className="notranslate"
-                data-no-translate="true"
-                translate="no"
-                spellCheck={false}
-                autoCorrect="off"
-                autoCapitalize="off"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={handleProductionInputKeyDown}
-                placeholder="Turn my product link into a TikTok ad video with voice, music and a strong CTA..."
-              />
-            </label>
-            <div className="studio-command-actions">
-              <button className="btn" type="button" onClick={() => sendCommand(undefined, "quick", "production")} disabled={isLoading || !input.trim()}>{isLoading ? "Preparing..." : "Send to assistant"}</button>
-              <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Tune options</button>
+        <main className="ai-dashboard-canvas" aria-label="Production overview">
+          <section className="studio-preview-plan ai-preview-hero">
+            <div>
+              <span className="badge">Production preview</span>
+              <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
+              <p>{productionBrief || "Henüz üretim brief'i yok. Soldaki tek sohbet alanına isteğini yazınca burada üretim planı, teslimatlar, action ve kredi tahmini görünür."}</p>
             </div>
-            <div className="studio-quality-strip" aria-label="Quality tiers">
-              {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
+            <div className="studio-preview-metrics">
+              <span><small>Kalite</small><strong>{selectedQuality}</strong></span>
+              <span><small>Süre / kapsam</small><strong>{selectedDuration}</strong></span>
+              <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
+              <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
             </div>
-          </div>
-          <aside className="studio-credit-card studio-side-summary">
-            <div className="studio-side-block primary">
-              <small>Estimated credits</small>
-              <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
-              <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider mode</span>
-            </div>
-            <div className="studio-credit-trust-panel production-lifecycle-panel">
-              <span><small>Production state</small><strong>{productionLifecycleState}</strong></span>
-              <p className="workspace-action-note">{productionLifecycleNote}</p>
-            </div>
-            {latestAgentAction ? (
-              <div className="studio-credit-trust-panel agent-action-panel">
-                <span><small>Agent action</small><strong>{latestAgentAction.name ?? "ready"}</strong></span>
-                <span><small>Route</small><strong>{latestAgentAction.next_backend_endpoint ?? "/api/productions"}</strong></span>
-                <span><small>Provider</small><strong>{latestAgentAction.provider_route ?? "auto"}</strong></span>
-                <p className="workspace-action-note">Action is prepared as draft. User confirmation and credit check are required before real production starts.</p>
-              </div>
-            ) : null}
-            <div className="studio-credit-trust-panel">
-              <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Checking"}</strong></span>
-              <span><small>Reserved now</small><strong>{startedProduction ? "Managed by production record" : "0 credits"}</strong></span>
-              <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
-              {productionCreditInsufficient ? <p className="workspace-action-note error">Shortfall: {productionCreditShortfall.toLocaleString()} credits. Add credits or lower quality/duration before starting.</p> : <p className="workspace-action-note">{startedProduction ? "Credit handling moved to the created production record." : "No credits are reserved until you confirm the production start screen."}</p>}
-            </div>
-            <div className="studio-side-actions">
-              <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
-              <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Estimate Credits</button>
-              {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Add credits</a> : null}
-              <a className="btn secondary" href="/dashboard/productions">Open Production Studio</a>
-            </div>
-            <div className="studio-side-status">
-              <small>Provider status</small>
-              <span><b>Video</b> Ready / auto routing</span>
-              <span><b>Voice</b> Ready</span>
-              <span><b>Avatar</b> Provider pending</span>
-              <span><b>Publishing</b> App review required</span>
-            </div>
-            <div className="studio-side-recent">
-              <small>Recent productions</small>
-              <span>No recent production yet</span>
-              <a href="/dashboard/productions">View all productions</a>
-            </div>
-            {startedProduction ? (
-              <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-                <small>{startedProduction.status === "automation_warning" || startedProduction.status === "waiting_provider_config" ? "Needs attention" : "Production started"}</small>
-                <strong>{startedProduction.message}</strong>
-                <span><b>Production ID</b>{startedProduction.id}</span>
-                <span><b>Current state</b>{startedProduction.status === "waiting_provider_config" ? "Record created · waiting provider config" : startedProduction.status === "automation_warning" ? "Record created · automation needs attention" : startedProduction.status === "already_running" ? "Record created · provider already running" : "Record created · automation started"}</span>
-                {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
-                {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
-                {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
-                <a className="btn secondary" href={startedProduction.detailUrl}>View production detail</a>
-              </div>
-            ) : (
-              <div className="studio-started-card production-draft-card">
-                <small>Not live yet</small>
-                <strong>No production ID exists yet.</strong>
-                <span><b>Next action</b>Use Start Production to create the real record.</span>
-              </div>
-            )}
-          </aside>
-        </section>
+          </section>
 
-        <section className="studio-preview-plan" aria-label="Production preview plan">
-          <div>
-            <span className="badge">Preview / Production Plan</span>
-            <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-            <p>{productionBrief || "No production brief yet. Use the Assistant chat area above for normal questions; write your product, video, website or campaign goal in Production command when you want to start production."}</p>
-          </div>
-          <div className="studio-preview-metrics">
-            <span><small>Quality</small><strong>{selectedQuality}</strong></span>
-            <span><small>Duration / scope</small><strong>{selectedDuration}</strong></span>
-            <span><small>Format route</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
-            <span><small>Estimated credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
-          </div>
-        </section>
-
-        <section className="studio-quick-path-grid" aria-label="Production quick paths">
-          {studioQuickPaths.map((path) => (
-            <button className={selectedProductionType === path.category ? "studio-quick-card active" : "studio-quick-card"} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setInput((current) => current || path.description); setProductionBrief((current) => current || path.description); }}>
-              <strong>{path.label}</strong>
-              <span>{path.description}</span>
-            </button>
-          ))}
-        </section>
-
-        <section className="studio-provider-strip" aria-label="Provider status summary">
-          {studioProviderSignals.map((item) => (
-            <div key={item.label}>
-              <small>{item.label}</small>
-              <strong>{item.value}</strong>
-              <span>{item.status}</span>
-            </div>
-          ))}
-        </section>
-
-        <>
-        <div className="live-production-board compact-studio-steps">
-          {defaultSteps.map((step, index) => {
-            const isStarted = Boolean(startedProduction);
-            const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || dynamicWizard.open);
-            const isActive = isStarted ? index <= activeStep : isDraftActive;
-            const stepStatus = isStarted
-              ? (index < activeStep ? "Completed" : index === activeStep ? "Active" : "Waiting")
-              : (isDraftActive ? "Draft ready" : "Not submitted");
-            return (
-              <div className={`live-step ${isActive ? "active" : ""} ${!isStarted ? "draft-step" : ""}`} key={step}>
-                <span>{index + 1}</span>
-                <strong>{step}</strong>
-                <small>{stepStatus}</small>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Smoke guard terms kept for tests only: New Dynamic Production Wizard · Tell Crelavo what you want to produce · Write in the chat or pick a production type. The next questions will appear based on your choice. · Alt kategoriler */}
-
-        {dynamicWizard.open ? (
-          <section className="production-options-panel dynamic-production-wizard" data-no-translate="true">
-            <div className="drawer-head">
-              <div>
-                <span className="badge">Dynamic Production Wizard</span>
-                <h3>{dynamicWizardLabels[dynamicWizard.type]}</h3>
-                <p>{dynamicWizard.subject ? `Subject: ${dynamicWizard.subject}` : "The assistant will open the right questions from the chat request."}</p>
-              </div>
-              <button className="btn secondary" type="button" onClick={() => setDynamicWizard(emptyDynamicWizard)}>Close</button>
-            </div>
-            <div className="assistant-console-metrics">
-              <div><small>Production type</small><strong>{dynamicWizardLabels[dynamicWizard.type]}</strong></div>
-              <div><small>Estimated reserve</small><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
-              <div><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></div>
-            </div>
-            {dynamicWizardQuestions[dynamicWizard.type].filter((question) => !question.dependsOn || dynamicWizard.answers[question.dependsOn.questionId]?.includes(question.dependsOn.value)).map((question) => (
-              <div className="category-specific-option-panel" key={question.id}>
-                <span className="badge">{question.multi ? "Select one or more" : "Choose one"}</span>
-                <h3>{question.label}</h3>
-                <div className="option-grid compact-option-grid">
-                  {question.options.map((option) => {
-                    const selected = dynamicWizard.answers[question.id]?.includes(option) ?? false;
-                    return <button className={`option-pill ${selected ? "selected" : ""}`} type="button" key={option} onClick={() => selectDynamicWizardOption(question, option)}>{option}</button>;
-                  })}
+          <div className="live-production-board compact-studio-steps ai-progress-board">
+            {defaultSteps.map((step, index) => {
+              const isStarted = Boolean(startedProduction);
+              const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || dynamicWizard.open);
+              const isActive = isStarted ? index <= activeStep : isDraftActive;
+              const stepStatus = isStarted
+                ? (index < activeStep ? "Tamam" : index === activeStep ? "Aktif" : "Bekliyor")
+                : (isDraftActive ? "Taslak hazır" : "Gönderilmedi");
+              return (
+                <div className={`live-step ${isActive ? "active" : ""} ${!isStarted ? "draft-step" : ""}`} key={step}>
+                  <span>{index + 1}</span>
+                  <strong>{step}</strong>
+                  <small>{stepStatus}</small>
                 </div>
-              </div>
-            ))}
-            <div className="category-specific-option-panel dynamic-material-panel">
-              <span className="badge">Materials</span>
-              <h3>Materyaller / references</h3>
-              <p>Upload or select product photos, logo, audio, video, brand files or reference materials before production. Selected or uploaded materials are included in the credit estimate.</p>
-              <small className="material-credit-note">Material handling: +150 credits per selected/uploaded material. Uploaded file storage/transfer: +120 credits per 25 MB block.</small>
-              <div className="option-grid compact-option-grid">
-                {materials.slice(0, 20).map((material) => (
-                  <button className={`option-pill ${selectedMaterials.includes(material.id) ? "selected" : ""}`} type="button" key={material.id} onClick={() => toggleMaterial(material.id)}>{material.title}</button>
-                ))}
-              </div>
-              <label className="btn secondary" style={{ display: "inline-flex", marginTop: 10 }}>
-                Upload material
-                <input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => uploadUserMaterial(event.currentTarget.files)} style={{ display: "none" }} />
-              </label>
-              {uploadedMaterials.length ? <p className="workspace-action-note">Uploaded: {uploadedMaterials.map((material) => material.title).join(", ")}</p> : <p className="workspace-action-note warning">No user material uploaded yet. You can continue, but product/logo/reference files improve the final output.</p>}
-              {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
-            </div>
+              );
+            })}
+          </div>
 
-            <div className="drawer-summary">
-              <strong>Live production summary</strong>
-              <pre>{[
-                `Group: ${wizardCategoryGroups.find((group) => group.id === dynamicWizard.groupId)?.title ?? "Not selected"}`,
-                `Category: ${dynamicWizard.categoryId ? wizardCategoryLabels[dynamicWizard.categoryId] : dynamicWizardLabels[dynamicWizard.type]}`,
-                `Type: ${dynamicWizardLabels[dynamicWizard.type]}`,
-                `Subject: ${dynamicWizard.subject || "Not specified"}`,
-                ...Object.entries(dynamicWizard.answers).map(([key, value]) => `${key}: ${value.join(", ")}`),
-                `Delivery: ${selectedPlatforms.join(", ")}`,
-                `Estimated credits: ${costEstimate.totalCredits.toLocaleString()}`
-              ].join("\n")}</pre>
-            </div>
-            {firstVisibleWizardQuestion(dynamicWizard) ? <p className="workspace-action-note warning">Select the next option above. New options appear based on your choices.</p> : <p className="workspace-action-note">All core choices are ready. Type “devam et” or press the credit check button.</p>}
-            {dynamicWizard.creditPromptOpen ? <div className="workspace-action-note error"><strong>Production credits required</strong><br />Estimated reserve: {costEstimate.totalCredits.toLocaleString()} credits. Add credits first, then return here and start production with this prepared summary.</div> : null}
-            <div className="assistant-start-actions">
-              <button className="btn" type="button" onClick={requestDynamicWizardCredits}>Continue / check credits</button>
-              <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Fine tune options</button>
-            </div>
-          </section>
-        ) : null}
-
-        <div className="assistant-production-console">
-          <section className="assistant-console-main">
-            <span className="badge">Live production direction</span>
-            <h2>{selectedProduction?.label ?? selectedProductionType}</h2>
-            <p>{selectedProduction?.description ?? "Production type, delivery format and credit reserve are prepared from the assistant conversation."}</p>
-            <div className="assistant-console-metrics">
-              <div><small>Estimated reserve</small><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
-              <div><small>Output count</small><strong>{costEstimate.outputCount}</strong></div>
-              <div><small>Provider risk</small><strong>{costEstimate.providerRiskLevel}</strong></div>
-            </div>
+          <section className="assistant-production-console ai-delivery-console">
+            <section className="assistant-console-main">
+              <span className="badge">Canlı üretim yönü</span>
+              <h2>{selectedProduction?.label ?? selectedProductionType}</h2>
+              <p>{selectedProduction?.description ?? "Üretim tipi, teslimat formatı ve kredi rezervi sohbetten hazırlanır."}</p>
+              <div className="assistant-console-metrics">
+                <div><small>Tahmini rezerv</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
+                <div><small>Çıktı sayısı</small><strong>{costEstimate.outputCount}</strong></div>
+                <div><small>Provider risk</small><strong>{costEstimate.providerRiskLevel}</strong></div>
+              </div>
+            </section>
+            <aside className="assistant-delivery-stack assistant-delivery-preview">
+              <span className="badge">Teslimat içeriği</span>
+              <strong>{selectedPackage?.name ?? "Custom production package"}</strong>
+              <p>{selectedPackage?.description ?? "Teslimat paketi seçilen modüller, platformlar ve üretim kapsamına göre hazırlanır."}</p>
+              <div className="assistant-delivery-format-grid">
+                {defaultDeliveryPreviewItems.map((item) => <span key={item}>{item}</span>)}
+              </div>
+            </aside>
           </section>
 
-          <aside className="assistant-delivery-stack assistant-delivery-preview">
-            <span className="badge">Your delivery will include</span>
-            <strong>{selectedPackage?.name ?? "Custom production package"}</strong>
-            <p>{selectedPackage?.description ?? "The delivery package is prepared based on the selected modules, selected platforms and final production scope."}</p>
-            <div className="assistant-delivery-format-grid">
-              {defaultDeliveryPreviewItems.map((item) => <span key={item}>{item}</span>)}
-            </div>
-            <div className="assistant-delivery-handoff">
-              <small>Handoff paths</small>
-              <div>{deliveryHandoffItems.map((item) => <span key={item}>{item}</span>)}</div>
-            </div>
-            <div className="assistant-delivery-selected">
-              <small>Package-specific items</small>
-              <div>{(selectedPackage?.deliverables ?? selectedModules.slice(0, 6)).slice(0, 6).map((item) => <span key={item}>{item}</span>)}</div>
-            </div>
-          </aside>
-        </div>
-
-        <div className="material-choice-panel assistant-options-summary">
-          <div>
-            <span className="badge">Production options</span>
-            <h3>{productionTypes.find((item) => item.id === selectedProductionType)?.label ?? selectedProductionType} · {selectedQuality}</h3>
-            <p>{selectedFeatures.join(", ") || "No extra features selected"}</p>
-            <small className="assistant-cost-preview">{quickProviderTest ? "Optional 5-sec paid test before full production · " : ""}Estimated reserve: {costEstimate.totalCredits.toLocaleString()} credits · Risk: {costEstimate.providerRiskLevel}{hasKnownProductionCredits ? ` · Available: ${(availableProductionCredits ?? 0).toLocaleString()} credits` : ""}</small>
-            {productionCreditInsufficient ? <p className="workspace-action-note error">Insufficient credits for this production. Shortfall: {productionCreditShortfall.toLocaleString()} credits. Reduce duration, quality, materials or add credits.</p> : null}
-          </div>
-          <div className="assistant-options-actions">
-            <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start production</button>
-            <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Open options</button>
-            <button className="btn secondary" type="button" onClick={applySeriesFilmPreset}>Series / film studio</button>
-            <button className="btn secondary" type="button" onClick={applyLongFilmClippingPreset}>Long film clipping</button>
-            <button className="btn secondary" type="button" onClick={runQuickProviderTest}>Run Low-Cost Test</button>
-          </div>
-        </div>
-
-        {optionsOpen && <section className="production-options-panel">
+          {dynamicWizard.open ? (
+            <section className="production-options-panel dynamic-production-wizard ai-inline-wizard" data-no-translate="true">
               <div className="drawer-head">
                 <div>
-                  <span className="badge">Production options</span>
-                  <h3>Choose quality, type, duration and material</h3>
+                  <span className="badge">Dynamic Production Wizard</span>
+                  <h3>{dynamicWizardLabels[dynamicWizard.type]}</h3>
+                  <p>{dynamicWizard.subject ? `Subject: ${dynamicWizard.subject}` : "Asistan gerekli soruları üretim isteğine göre açar."}</p>
                 </div>
-                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(false)}>Close</button>
+                <button className="btn secondary" type="button" onClick={() => setDynamicWizard(emptyDynamicWizard)}>Kapat</button>
               </div>
+              {dynamicWizardQuestions[dynamicWizard.type].filter((question) => !question.dependsOn || dynamicWizard.answers[question.dependsOn.questionId]?.includes(question.dependsOn.value)).map((question) => (
+                <div className="category-specific-option-panel" key={question.id}>
+                  <span className="badge">{question.multi ? "Bir veya daha fazla seç" : "Birini seç"}</span>
+                  <h3>{question.label}</h3>
+                  <div className="option-grid compact-option-grid">
+                    {question.options.map((option) => {
+                      const selected = dynamicWizard.answers[question.id]?.includes(option) ?? false;
+                      return <button className={`option-pill ${selected ? "selected" : ""}`} type="button" key={option} onClick={() => selectDynamicWizardOption(question, option)}>{option}</button>;
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div className="drawer-summary"><strong>Live production summary</strong><pre>{selectedOptionSummary()}</pre></div>
+              <div className="assistant-start-actions">
+                <button className="btn" type="button" onClick={requestDynamicWizardCredits}>Kredi kontrolü</button>
+                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Ayarları aç</button>
+              </div>
+            </section>
+          ) : null}
+        </main>
 
+        <aside className="studio-credit-card studio-side-summary ai-dashboard-controls">
+          <div className="studio-side-block primary">
+            <small>Tahmini kredi</small>
+            <strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong>
+            <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider</span>
+          </div>
+          <div className="studio-quality-strip" aria-label="Quality tiers">
+            {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
+          </div>
+          <div className="studio-credit-trust-panel">
+            <span><small>Mevcut</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} kredi` : "Kontrol"}</strong></span>
+            <span><small>Şimdi ayrılan</small><strong>{startedProduction ? "Production record" : "0 kredi"}</strong></span>
+            <span><small>Onay sonrası</small><strong>{costEstimate.totalCredits.toLocaleString()} rezerv</strong></span>
+            {productionCreditInsufficient ? <p className="workspace-action-note error">Eksik: {productionCreditShortfall.toLocaleString()} kredi. Başlamadan önce kredi ekle veya kalite/kapsamı düşür.</p> : <p className="workspace-action-note">Gerçek kayıt oluşmadan kredi ayrılmaz.</p>}
+          </div>
+          {latestAgentAction ? (
+            <div className="studio-credit-trust-panel agent-action-panel">
+              <span><small>Agent action</small><strong>{latestAgentAction.name ?? "ready"}</strong></span>
+              <span><small>Route</small><strong>{latestAgentAction.next_backend_endpoint ?? "/api/productions"}</strong></span>
+              <span><small>Provider</small><strong>{latestAgentAction.provider_route ?? "auto"}</strong></span>
+            </div>
+          ) : null}
+          <div className="studio-side-actions">
+            <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
+            <button className="btn secondary" type="button" onClick={() => setOptionsOpen((current) => !current)}>{optionsOpen ? "Ayarları kapat" : "Kalite / özellikler"}</button>
+            {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
+            <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
+          </div>
+          {optionsOpen ? (
+            <section className="production-options-panel ai-control-drawer">
+              <div className="drawer-head">
+                <div>
+                  <span className="badge">Ayarlar</span>
+                  <h3>Kalite, kapsam ve materyal</h3>
+                </div>
+                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(false)}>Kapat</button>
+              </div>
               {renderOptionGrid("Production categories", productionTypes.map((type) => type.label), (value) => productionTypes.find((type) => type.label === value)?.id === selectedProductionType, (value) => { const type = productionTypes.find((item) => item.label === value); if (type) applyCategorySelection(type.id); })}
               <div className="category-specific-option-panel">
-                <span className="badge">Category-specific options</span>
+                <span className="badge">Kategori seçenekleri</span>
                 <h3>{activeCategoryProfile.title}</h3>
                 <p>{activeCategoryProfile.note}</p>
               </div>
@@ -2813,96 +2683,40 @@ async function startRawMicrophoneFallback() {
               {renderOptionGrid("Style / production type", activeCategoryProfile.style, (value) => selectedStyle === value, (value) => { setQuickProviderTest(false); setSelectedStyle(value); })}
               {renderOptionGrid("Duration / scope", activeCategoryProfile.duration, (value) => selectedDuration === value, (value) => { setQuickProviderTest(false); setSelectedDuration(value); })}
               {renderOptionGrid("Relevant modules", activeCategoryProfile.modules, (value) => selectedModules.includes(value), toggleModule)}
-              {selectedProductionType === "drama" ? <div className="category-specific-option-panel">
-                <span className="badge">Drama story details</span>
-                <h3>Format, hook and character setup</h3>
-                <p>Use these fields to make one-prompt drama, short series and viral short-film requests production-ready.</p>
-                {renderOptionGrid("Drama format", ["Short drama", "Mini series", "Viral short film", "Trailer / teaser", "Episode pack"], (value) => dramaFormat === value, setDramaFormat)}
-                {renderOptionGrid("Genre / tone", ["Betrayal / revenge", "Romance", "Comedy", "Thriller", "Transformation", "Family drama", "Mystery", "Rich/poor contrast"], (value) => dramaGenre === value, setDramaGenre)}
-                {renderOptionGrid("Scene / episode structure", ["1 scene", "3 scenes", "5 scenes", "5 episodes", "10 episodes", "Custom in prompt"], (value) => dramaStructure === value, setDramaStructure)}
-                {renderOptionGrid("Character setup", ["1 main character", "2 leads", "3 key characters", "Ensemble cast", "Custom in prompt"], (value) => dramaCharacters === value, setDramaCharacters)}
-                {renderOptionGrid("Hook type", ["Betrayal reveal", "Shocking opening", "Emotional confession", "Comedy twist", "Cliffhanger", "Secret identity", "Transformation reveal"], (value) => dramaHook === value, setDramaHook)}
-                {renderOptionGrid("Dialogue / voice direction", ["Dialogue scene + subtitles", "Voice-over narration", "Emotional monologue", "Multiple speakers", "Silent visual drama", "Custom in prompt"], (value) => dramaVoiceDirection === value, setDramaVoiceDirection)}
-              </div> : null}
-              {selectedProductionType === "drone_video" ? <div className="category-specific-option-panel">
-                <span className="badge">Drone location details</span>
-                <h3>Map, route and marked area</h3>
-                <p>Add plain text location details now. A live map picker can be connected without changing the production flow.</p>
-                <label className="workspace-upload-control">
-                  <span>Location / address / coordinates</span>
-                  <input value={droneLocation} onChange={(event) => setDroneLocation(event.target.value)} placeholder="Example: İstanbul Bosphorus, 41.0438, 29.0094" />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>Route / path</span>
-                  <input value={droneRoute} onChange={(event) => setDroneRoute(event.target.value)} placeholder="Example: Ortaköy to Rumeli Hisarı flyover" />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>Marked map / satellite area notes</span>
-                  <textarea value={droneMarkedArea} onChange={(event) => setDroneMarkedArea(event.target.value)} placeholder="Example: Start on satellite view, mark the bridge, coastline and skyline, then transition into drone-style flyover." />
-                </label>
-                {renderOptionGrid("Drone shot type", ["Satellite intro + drone flyover", "Map route reveal", "Property flyover", "City landmark route", "Event area overview", "Travel promo path"], (value) => droneShotType === value, setDroneShotType)}
-                {renderOptionGrid("Map / satellite style", ["Satellite map view", "Clean vector map", "Hybrid map + labels", "Dark cinematic map", "Real estate map pins", "Minimal route line"], (value) => droneMapStyle === value, setDroneMapStyle)}
-                {renderOptionGrid("Camera movement", ["Smooth flyover route", "Top-down orbit", "Slow push-in", "Coastline tracking", "Landmark reveal", "Fast promo cuts"], (value) => droneCameraMovement === value, setDroneCameraMovement)}
-                {renderOptionGrid("Drone visual style", ["Cinematic real estate", "Luxury travel", "Documentary aerial", "Modern city promo", "Clean corporate", "Social media dynamic"], (value) => droneVisualStyle === value, setDroneVisualStyle)}
-                {renderOptionGrid("Narration language", ["English voice-over", "Turkish voice-over", "No voice-over", "Multilingual voice-over", "Custom in prompt"], (value) => droneNarrationLanguage === value, setDroneNarrationLanguage)}
-                {renderOptionGrid("Subtitle option", ["Clean bottom subtitles", "No subtitles", "Location labels only", "Bilingual subtitles", "Custom in prompt"], (value) => droneSubtitleOption === value, setDroneSubtitleOption)}
-                {renderOptionGrid("Music style", ["Cinematic ambient music", "Luxury travel music", "Corporate uplifting music", "Urban energetic music", "No music", "Custom in prompt"], (value) => droneMusicStyle === value, setDroneMusicStyle)}
-              </div> : null}
-              {selectedProductionType === "live_sales_agent" ? <div className="category-specific-option-panel">
-                <span className="badge">AI live sales details</span>
-                <h3>Product, persona and live-commerce operating plan</h3>
-                <p>These fields prepare the monthly live-agent service plan. They do not add a credit balance or activate real low-latency provider streaming yet.</p>
-                <label className="workspace-upload-control">
-                  <span>Product link / product details</span>
-                  <input value={liveSalesProductLink} onChange={(event) => setLiveSalesProductLink(event.target.value)} placeholder="Example: Shopify product URL, TikTok Shop item, Amazon listing or product notes" />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>Brand name</span>
-                  <input value={liveSalesBrandName} onChange={(event) => setLiveSalesBrandName(event.target.value)} placeholder="Example: GlowSkin, FitFuel, Ottoman Coffee" />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>Product category</span>
-                  <input value={liveSalesProductCategory} onChange={(event) => setLiveSalesProductCategory(event.target.value)} placeholder="Example: skincare, supplements, home decor, electronics" />
-                </label>
-                {renderOptionGrid("Target market / language", ["US / English", "Turkey / Turkish", "EU / multilingual", "MENA / Arabic + English", "Global / 30-language support", "Custom in prompt"], (value) => liveSalesTargetMarket === value, setLiveSalesTargetMarket)}
-                {renderOptionGrid("Target live platform", ["TikTok Live", "YouTube Live", "Twitch", "Instagram Live", "Multi-platform", "Shopify Live", "Amazon Live"], (value) => liveSalesPlatform === value, setLiveSalesPlatform)}
-                {renderOptionGrid("Avatar / host persona", ["Friendly sales host", "Luxury brand advisor", "Gen Z TikTok seller", "Expert consultant", "Influencer-style host", "Multilingual support agent"], (value) => liveSalesPersona === value, setLiveSalesPersona)}
-                {renderOptionGrid("Avatar source", ["Create new AI avatar", "Use uploaded self avatar", "Use uploaded product spokesperson", "Use avatar reference image", "Choose existing brand avatar", "No avatar, voice/chat only"], (value) => liveSalesAvatarSource === value, setLiveSalesAvatarSource)}
-                {renderOptionGrid("Avatar visual style", ["Realistic brand host", "Luxury studio presenter", "TikTok creator style", "Professional consultant", "Animated mascot avatar", "Custom in prompt"], (value) => liveSalesAvatarStyle === value, setLiveSalesAvatarStyle)}
-                {renderOptionGrid("Voice source", ["Choose AI voice", "Use uploaded own voice", "Create cloned voice with consent", "Female AI voice", "Male AI voice", "No voice, chat agent only"], (value) => liveSalesVoiceSource === value, setLiveSalesVoiceSource)}
-                {renderOptionGrid("Voice / language", ["English multilingual support", "Turkish + English", "30-language support plan", "Female brand voice", "Male brand voice", "Custom in prompt"], (value) => liveSalesVoiceLanguage === value, setLiveSalesVoiceLanguage)}
-                {renderOptionGrid("Voice tone", ["Friendly persuasive sales voice", "Luxury calm advisor", "Energetic TikTok seller", "Expert consultant", "Soft customer support", "Custom in prompt"], (value) => liveSalesVoiceTone === value, setLiveSalesVoiceTone)}
-                {renderOptionGrid("Background / set", ["Modern virtual studio", "Product showroom", "Luxury retail background", "Clean e-commerce backdrop", "Uploaded background visual", "Custom in prompt"], (value) => liveSalesBackground === value, setLiveSalesBackground)}
-                {renderOptionGrid("Visual style", ["Clean premium commerce look", "TikTok live seller look", "Luxury brand stream", "Minimal product demo", "Colorful creator stream", "Custom in prompt"], (value) => liveSalesVisualStyle === value, setLiveSalesVisualStyle)}
-                {renderOptionGrid("Subtitle / caption option", ["Optional live captions", "Always show subtitles", "No subtitles", "Bilingual subtitles", "Product CTA captions", "Custom in prompt"], (value) => liveSalesSubtitleOption === value, setLiveSalesSubtitleOption)}
-                {renderOptionGrid("Interaction mode", ["Live chat FAQ + sales replies", "Product demo script + chat replies", "Objection handling + discount CTA", "Human fallback escalation", "Comment moderation + lead capture", "Custom in prompt"], (value) => liveSalesInteractionMode === value, setLiveSalesInteractionMode)}
-                {renderOptionGrid("Live stream goal", ["Product sales", "Lead capture", "Product education", "Campaign launch", "Community Q&A", "Custom in prompt"], (value) => liveSalesStreamGoal === value, setLiveSalesStreamGoal)}
-                {renderOptionGrid("Production handoff", ["Production handoff to prepare", "Avatar setup selected", "Voice setup selected", "OBS/RTMP setup needed", "Catalog/chat connection needed", "Fully custom stack"], (value) => liveSalesProviderReadiness === value, setLiveSalesProviderReadiness)}
-                <label className="workspace-upload-control">
-                  <span>Human fallback / escalation rules</span>
-                  <textarea value={liveSalesHumanFallback} onChange={(event) => setLiveSalesHumanFallback(event.target.value)} placeholder="Example: Escalate refunds, angry customers, medical/legal questions and payment issues to a human operator." />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>CTA / discount / offer</span>
-                  <input value={liveSalesCtaOffer} onChange={(event) => setLiveSalesCtaOffer(event.target.value)} placeholder="Example: Use code LIVE10, limited bundle, free shipping over $50" />
-                </label>
-                <label className="workspace-upload-control">
-                  <span>AI disclosure / compliance notes</span>
-                  <textarea value={liveSalesComplianceNotes} onChange={(event) => setLiveSalesComplianceNotes(event.target.value)} placeholder="Example: Disclose AI host, avoid medical claims, escalate refund issues to a human." />
-                </label>
-              </div> : null}
               {renderOptionGrid("Relevant features", activeCategoryProfile.features, (value) => selectedFeatures.includes(value), toggleFeature)}
               {renderOptionGrid("Delivery / platform", activeCategoryProfile.platforms, (value) => selectedPlatforms.includes(value), togglePlatform)}
               {renderMaterialGrid()}
               <div className="drawer-summary"><strong>Selection summary</strong><pre>{selectedOptionSummary()}</pre></div>
-              <button className="btn" type="button" onClick={() => setOptionsOpen(false)}>Apply selections</button>
-            </section>}
+              <button className="btn" type="button" onClick={() => setOptionsOpen(false)}>Seçimleri uygula</button>
+            </section>
+          ) : null}
+          <div className="studio-side-status">
+            <small>Provider status</small>
+            {studioProviderSignals.map((item) => <span key={item.label}><b>{item.label}</b>{item.value} · {item.status}</span>)}
+          </div>
+          {startedProduction ? (
+            <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
+              <small>{startedProduction.status === "automation_warning" || startedProduction.status === "waiting_provider_config" ? "Dikkat gerekiyor" : "Production started"}</small>
+              <strong>{startedProduction.message}</strong>
+              <span><b>Production ID</b>{startedProduction.id}</span>
+              {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
+              {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
+              {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
+              <a className="btn secondary" href={startedProduction.detailUrl}>Detayı aç</a>
+            </div>
+          ) : (
+            <div className="studio-started-card production-draft-card">
+              <small>Henüz canlı değil</small>
+              <strong>Production ID yok.</strong>
+              <span><b>Sonraki adım</b>Gerçek kayıt için Start Production kullanılır.</span>
+            </div>
+          )}
+          {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Son asistan ücreti: {formatCredits(assistantCreditState.chargedCredits)} kredi ({assistantCreditState.chargeSource === "assistant_trial" ? "ücretsiz asistan kredisi" : "üretim kredisi"}).</p> : null}
+          {assistantCreditState.redirect ? <p className="workspace-action-note error">Kredi gerekiyor. Kredi sayfasından bakiye yükleyip konuşmaya devam edebilirsin.</p> : null}
+          {assistantCreditState.assistantBalance !== null && assistantCreditState.assistantBalance > 0 && assistantCreditState.assistantBalance < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Ücretsiz asistan kredin azalıyor. Bitince mesajlar üretim kredisinden düşer.</p> : null}
+          {assistantCreditState.productionBalance !== null && assistantCreditState.productionBalance > 0 && assistantCreditState.productionBalance < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Üretim kredin azalıyor. Bakiye bitmeden kredi yüklemeni öneririm.</p> : null}
+        </aside>
 
-        {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Son asistan ücreti: {formatCredits(assistantCreditState.chargedCredits)} kredi ({assistantCreditState.chargeSource === "assistant_trial" ? "ücretsiz asistan kredisi" : "üretim kredisi"}).</p> : null}
-        {assistantCreditState.redirect ? <p className="workspace-action-note error">Kredi gerekiyor. Kredi sayfasından bakiye yükleyip konuşmaya devam edebilirsin.</p> : null}
-        {assistantCreditState.assistantBalance !== null && assistantCreditState.assistantBalance > 0 && assistantCreditState.assistantBalance < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Ücretsiz asistan kredin azalıyor. Bitince mesajlar üretim kredisinden düşer.</p> : null}
-{assistantCreditState.productionBalance !== null && assistantCreditState.productionBalance > 0 && assistantCreditState.productionBalance < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Üretim kredin azalıyor. Bakiye bitmeden kredi yüklemeni öneririm.</p> : null}
-        </>
 
         {startModalOpen ? (
           <div className="production-start-modal-backdrop">
