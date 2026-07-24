@@ -8116,3 +8116,109 @@ html body .production-card-actions small {
   }
 }
 
+/* Final override: Assistant Workspace must behave like a fullscreen AI studio. */
+html body:has(.assistant-workspace.ai-generator-dashboard) {
+  overflow: hidden !important;
+}
+
+html body .assistant-production-page:has(.ai-generator-dashboard) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 999 !important;
+  width: 100vw !important;
+  max-width: none !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 12px !important;
+  overflow: hidden !important;
+  background: #050816 !important;
+}
+
+html body .assistant-production-page:has(.ai-generator-dashboard) .assistant-workspace-topbar,
+html body .assistant-production-page:has(.ai-generator-dashboard) > .card.admin-wide-card,
+html body:has(.assistant-workspace.ai-generator-dashboard) .site-footer {
+  display: none !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard {
+  display: block !important;
+  width: 100% !important;
+  height: calc(100vh - 24px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .assistant-live-stage.ai-dashboard-shell {
+  display: grid !important;
+  grid-template-columns: 86px minmax(640px, 1fr) minmax(400px, 450px) !important;
+  grid-template-rows: minmax(280px, .46fr) minmax(360px, .54fr) !important;
+  grid-template-areas:
+    "side canvas chat"
+    "side canvas controls" !important;
+  gap: 14px !important;
+  width: 100% !important;
+  height: calc(100vh - 24px) !important;
+  max-height: calc(100vh - 24px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  overflow: hidden !important;
+  border-radius: 30px !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .ai-dashboard-sidebar {
+  grid-area: side !important;
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  align-items: center !important;
+  padding: 10px !important;
+  gap: 12px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .assistant-inline-chat.ai-dashboard-chat {
+  grid-area: chat !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .ai-dashboard-canvas {
+  grid-area: canvas !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .ai-dashboard-controls {
+  grid-area: controls !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard .assistant-inline-chat-log {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+}
+
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard h1,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard h2,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard h3,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard strong,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard small,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard span,
+html body .assistant-production-page .assistant-workspace.ai-generator-dashboard button {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
