@@ -21,6 +21,10 @@ type QaResult = {
   score: number;
   grade: "pass" | "watch" | "fail";
   deliveryStandard: string;
+  agentAction: string;
+  providerCategory: string;
+  providerReadiness: string;
+  providerBlockingKeys: string[];
   createdAt: string | null;
   issues: QaIssue[];
   qualityProfile: {
@@ -139,12 +143,13 @@ export function AdminProductionQaPanel() {
             <h2>Production QA kayıtları</h2>
             <div className="admin-table-wrap">
               <table className="table">
-                <thead><tr><th>Production</th><th>Type</th><th>Score</th><th>Status</th><th>Quality standard</th><th>Issues</th><th>Created</th></tr></thead>
+                <thead><tr><th>Production</th><th>Type</th><th>Agent / provider</th><th>Score</th><th>Status</th><th>Quality standard</th><th>Issues</th><th>Created</th></tr></thead>
                 <tbody>
                   {report.results.map((item) => (
                     <tr key={item.id}>
                       <td><strong>{item.title}</strong><br /><small>{item.id}</small></td>
                       <td>{item.productionType}<br /><small>{item.packageId || "-"}</small></td>
+                      <td>{item.agentAction}<br /><small>{item.providerCategory} · {item.providerReadiness}</small>{item.providerBlockingKeys.length ? <><br /><small>Missing: {item.providerBlockingKeys.join(", ")}</small></> : null}</td>
                       <td><span className={`provider-job-chip ${gradeClass(item.grade)}`}>{item.score}/100</span></td>
                       <td>{item.status}<br /><small>{item.deliveryStandard}</small></td>
                       <td>{item.qualityProfile.label}<br /><small>{item.qualityProfile.minimumStandard}</small></td>
@@ -156,7 +161,7 @@ export function AdminProductionQaPanel() {
                       <td>{formatDate(item.createdAt)}</td>
                     </tr>
                   ))}
-                  {!report.results.length ? <tr><td colSpan={7}>No productions found.</td></tr> : null}
+                  {!report.results.length ? <tr><td colSpan={8}>No productions found.</td></tr> : null}
                 </tbody>
               </table>
             </div>

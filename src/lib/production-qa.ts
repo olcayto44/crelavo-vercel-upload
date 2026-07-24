@@ -43,6 +43,10 @@ export type ProductionQaResult = {
   issues: ProductionQaIssue[];
   qualityProfile: ProductionQualityProfile;
   deliveryStandard: string;
+  agentAction: string;
+  providerCategory: string;
+  providerReadiness: string;
+  providerBlockingKeys: string[];
   createdAt: string | null;
 };
 
@@ -79,6 +83,8 @@ export function qaProduction(record: ProductionQaInput): ProductionQaResult {
   const deliveryPackage = objectValue(metadata.deliveryPackage) ?? objectValue(input.deliveryPackage) ?? deliveryPackageForProduction({ productionType, packageId });
   const deliveryRequirements = objectValue(metadata.deliveryRequirements) ?? objectValue(input.deliveryRequirements) ?? null;
   const outputPlan = objectValue(metadata.outputPlan) ?? objectValue(input.outputPlan) ?? null;
+  const agentAction = objectValue(metadata.agentAction) ?? objectValue(output.agentAction) ?? null;
+  const agentProviderRoutePlan = objectValue(metadata.agentProviderRoutePlan) ?? objectValue(output.agentProviderRoutePlan) ?? null;
   const projectWorkflow = objectValue(metadata.projectWorkflow) ?? objectValue(input.projectWorkflow) ?? null;
   const deliveryTargets = objectValue(metadata.deliveryTargets) ?? objectValue(input.deliveryTargets) ?? null;
   const legalAccepted = Boolean(record.legal_acceptance_snapshot?.accepted);
@@ -114,6 +120,18 @@ export function qaProduction(record: ProductionQaInput): ProductionQaResult {
     message: "Output/cost plan is missing.",
     fix: "Attach outputPlan with output count, reserved credits and cost notes."
   });
+  addIssue(issues, !agentAction || !hasText(agentAction.name), {
+    code: "agent_action_missing",
+    severity: "warning",
+    message: "Production is missing assistant agent action metadata.",
+    fix: "Attach agentAction from Assistant Workspace/orchestrator to request_metadata and output_json."
+  });
+  addIssue(issues, !agentProviderRoutePlan || !hasText(agentProviderRoutePlan.readinessStatus), {
+    code: "agent_provider_route_missing",
+    severity: "warning",
+    message: "Production is missing agent provider route/readiness metadata.",
+    fix: "Attach agentProviderRoutePlan when /api/productions creates the record."
+  });
   addIssue(issues, !legalAccepted, {
     code: "legal_acceptance_missing",
     severity: "critical",
@@ -145,6 +163,7 @@ export function qaProduction(record: ProductionQaInput): ProductionQaResult {
     fix: "Add creditResolution before refund/retry decision."
   });
 
+  const providerBlockingKeys = arrayValue(agentProviderRoutePlan?.blockingKeys).map((key) => String(key));
   const penalty = issues.reduce((sum, issue) => sum + (issue.severity === "critical" ? 28 : issue.severity === "warning" ? 12 : 4), 0);
   const score = Math.max(0, Math.min(100, 100 - penalty));
   const criticalCount = issues.filter((issue) => issue.severity === "critical").length;
@@ -160,6 +179,10 @@ export function qaProduction(record: ProductionQaInput): ProductionQaResult {
     issues,
     qualityProfile,
     deliveryStandard: String(deliveryPackage.standard ?? "media_final"),
+    agentAction: String(agentAction?.name ?? "missing"),
+    providerCategory: String(agentProviderRoutePlan?.providerCategory ?? "unknown"),
+    providerReadiness: String(agentProviderRoutePlan?.readinessStatus ?? "missing"),
+    providerBlockingKeys,
     createdAt: record.created_at ?? null
   };
 }

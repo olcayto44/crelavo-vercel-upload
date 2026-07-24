@@ -8,6 +8,18 @@ import { estimateProductionCost } from "@/lib/production";
 import { packageIdFromSelection } from "@/lib/production-payload";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
+type AgentAction = {
+  name: string;
+  intent: string;
+  production_type: string;
+  confirmation_required: boolean;
+  credit_check_required: boolean;
+  provider_route: string;
+  state_before_confirmation: "draft_ready";
+  next_backend_endpoint: string;
+  args: Record<string, unknown>;
+};
+
 type OrchestratorJob = {
   id: string;
   type: string;
@@ -23,10 +35,11 @@ type OrchestratorJob = {
   estimated_credits: number;
   deliverables: string[];
   required_materials: string[];
+  agent_action: AgentAction;
   production_payload: Record<string, unknown>;
 };
 
-type DraftJob = Partial<Omit<OrchestratorJob, "id" | "package_id" | "estimated_credits" | "production_payload">> & { type?: string };
+type DraftJob = Partial<Omit<OrchestratorJob, "id" | "package_id" | "estimated_credits" | "agent_action" | "production_payload">> & { type?: string };
 
 type AiOrchestratorDraft = {
   intent?: string;
@@ -93,6 +106,18 @@ function inferJobTypes(message: string) {
   if (/logo|brand kit|marka kiti|etiket|ambalaj|packaging|poster|afiş|afis|görsel|gorsel/.test(text)) types.add("image");
   if (!types.size) types.add(inferProductionType(message));
   return Array.from(types).slice(0, 4);
+}
+
+function actionNameForType(type: string) {
+  if (["campaign", "video", "music_video", "animation", "drone_video"].includes(type)) return "create_ai_video";
+  if (["image", "brand_kit"].includes(type)) return "generate_image";
+  if (["talking_video", "live_sales_agent"].includes(type)) return "run_lip_sync";
+  if (type === "website") return "create_website_project";
+  if (type === "saas") return "create_saas_project";
+  if (type === "mobile_app") return "create_mobile_app_project";
+  if (type === "admin_project") return "create_admin_panel_project";
+  if (type === "document_pack") return "create_document_pack";
+  return "create_production";
 }
 
 function defaultsForType(type: string, message: string) {
@@ -172,7 +197,7 @@ async function aiDraft(message: string, history: { role: "user" | "assistant"; c
   }
 }
 
-function optionSummaryForJob(job: Omit<OrchestratorJob, "id" | "package_id" | "estimated_credits" | "production_payload">) {
+function optionSummaryForJob(job: Omit<OrchestratorJob, "id" | "package_id" | "estimated_credits" | "agent_action" | "production_payload">) {
   return [
     `Style: ${job.selected_style}`,
     `Quality: ${job.selected_quality}`,
@@ -258,6 +283,30 @@ export async function POST(request: Request) {
       packageCatalog: packageConfig.productionPackages
     });
     const optionSummary = optionSummaryForJob(baseJob);
+    const agentAction: AgentAction = {
+      name: actionNameForType(type),
+      intent: growthService ? "route_service_brief" : "create_confirmed_production",
+      production_type: type,
+      confirmation_required: true,
+      credit_check_required: !growthService,
+      provider_route: "auto",
+      state_before_confirmation: "draft_ready",
+      next_backend_endpoint: growthService ? "/dashboard/growth-intelligence" : "/api/productions",
+      args: {
+        title: baseJob.title,
+        brief: baseJob.brief,
+        package_id: packageId,
+        selected_style: baseJob.selected_style,
+        selected_quality: baseJob.selected_quality,
+        selected_duration: baseJob.selected_duration,
+        selected_modules: baseJob.selected_modules,
+        selected_features: baseJob.selected_features,
+        selected_platforms: baseJob.selected_platforms,
+        deliverables: baseJob.deliverables,
+        required_materials: baseJob.required_materials,
+        estimated_credits: growthService ? 0 : estimate.minimumSafeCredits
+      }
+    };
     const productionPayload = {
       user_id: userId,
       user_email: userEmail,
@@ -273,6 +322,7 @@ export async function POST(request: Request) {
       target_platform: baseJob.selected_platforms.join(", "),
       delivery_requirements: { requested: true, status: "pending", formats: baseJob.deliverables },
       workflow_mode: "assistant_orchestrated",
+      agent_action: agentAction,
       legal_acceptance: false,
       orchestrator_note: "Prepared by Crelavo Orchestrator v1. Legal acceptance and final user confirmation are required before creating a production."
     };
@@ -282,6 +332,7 @@ export async function POST(request: Request) {
       ...baseJob,
       package_id: packageId,
       estimated_credits: growthService ? 0 : estimate.minimumSafeCredits,
+      agent_action: agentAction,
       production_payload: growthService ? { ...productionPayload, service_route: "/dashboard/growth-intelligence", billing_policy: "service_or_credit_entitled_report_delivery", delivery_policy: "deliver_pdf_file_to_dashboard_when_user_has_active_entitlement_or_enough_credits", orchestrator_note: "Prepared as a Growth Intelligence service brief. Route the user to /dashboard/growth-intelligence for competitor URLs, monitoring cadence and report settings. The finished report is delivered as a dashboard file/PDF only for users with active service entitlement or enough credits." } : productionPayload
     };
   });

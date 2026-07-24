@@ -22,6 +22,18 @@ type PlanMode = keyof typeof PLAN_CREDITS;
 
 type AssistantHistoryMessage = { role: "user" | "assistant"; content: string };
 
+type AgentAction = {
+  name: string;
+  intent: string;
+  production_type: string;
+  confirmation_required: boolean;
+  credit_check_required: boolean;
+  provider_route: string;
+  state_before_confirmation: "draft_ready";
+  next_backend_endpoint: string;
+  args: Record<string, unknown>;
+};
+
 type AiProductionDraft = {
   production_type?: string;
   selected_quality?: string;
@@ -36,6 +48,7 @@ type AiProductionDraft = {
   delivery_path?: string[];
   summary?: string;
   next_step?: string;
+  agent_action?: AgentAction;
 };
 
 function modeFromBody(value: unknown): PlanMode {
@@ -45,6 +58,18 @@ function modeFromBody(value: unknown): PlanMode {
 
 function hasUrl(text: string) {
   return /https?:\/\/\S+/i.test(text);
+}
+
+function actionNameForProductionType(productionType: string) {
+  if (["campaign", "video", "music_video", "animation"].includes(productionType)) return "create_ai_video";
+  if (["image", "brand_kit"].includes(productionType)) return "generate_image";
+  if (productionType === "talking_video") return "run_lip_sync";
+  if (productionType === "website") return "create_website_project";
+  if (productionType === "saas") return "create_saas_project";
+  if (productionType === "mobile_app") return "create_mobile_app_project";
+  if (productionType === "admin_project") return "create_admin_panel_project";
+  if (productionType === "document_pack") return "create_document_pack";
+  return "create_production";
 }
 
 function detectProductionType(message: string) {
@@ -306,6 +331,29 @@ export async function POST(request: Request) {
     });
 
     const missing = cleanStringArray(aiDraft?.missing_fields, missingFields(message, productionType));
+    const agentAction: AgentAction = aiDraft?.agent_action ?? {
+      name: actionNameForProductionType(productionType),
+      intent: "create_confirmed_production",
+      production_type: productionType,
+      confirmation_required: true,
+      credit_check_required: true,
+      provider_route: "auto",
+      state_before_confirmation: "draft_ready",
+      next_backend_endpoint: "/api/productions",
+      args: {
+        prompt: message,
+        package_id: packageId,
+        selected_quality: selectedQuality,
+        selected_duration: selectedDuration,
+        selected_style: selectedStyle,
+        selected_modules: selectedModules,
+        selected_features: selectedFeatures,
+        selected_platforms: selectedPlatforms,
+        delivery_requirements: requirements,
+        estimated_credits: estimate.totalCredits,
+        minimum_safe_credits: estimate.minimumSafeCredits
+      }
+    };
     const baseSummary = assistantSummary(message, productionType, packageId, missing, estimate.totalCredits);
     const summary = aiDraft?.summary?.trim()
       ? `${aiDraft.summary.trim()} Tahmini rezerv: ${estimate.totalCredits.toLocaleString()} kredi.`
@@ -327,6 +375,7 @@ export async function POST(request: Request) {
       workflow_stage: aiDraft?.workflow_stage?.trim() || (missing.length ? "collect_critical_info" : "ready_to_start_production"),
       next_user_action: aiDraft?.next_user_action?.trim() || (missing.length ? `Provide: ${missing.join(", ")}` : "Review the plan and start production."),
       delivery_path: cleanStringArray(aiDraft?.delivery_path, ["Brief", "Materials", "Production setup", "Preview", "Revision", "Final delivery"]),
+      agent_action: agentAction,
       summary,
       assistant_brain: aiDraft ? "openai" : "local_rules"
     };
@@ -339,7 +388,8 @@ export async function POST(request: Request) {
       suggestedPrompt: message,
       note: summary,
       assistantReply: summary,
-      action: missing.length ? "collect_missing_fields" : "start_automatic_production",
+      action: missing.length ? "collect_missing_fields" : agentAction.name,
+      agent_action: agentAction,
       route: "/dashboard/assistant-workspace",
       automationLevel: aiDraft ? "assistant_brain_openai_v2" : "assistant_brain_local_v1",
       nextStep: aiDraft?.next_step?.trim() || (missing.length ? `Collect: ${missing.join(", ")}` : "Review credits and start production")

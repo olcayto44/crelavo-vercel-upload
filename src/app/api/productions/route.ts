@@ -10,6 +10,7 @@ import { findConfiguredProductionPackage, normalizePackageConfig, PACKAGE_CONFIG
 import { estimateProductionCost, getProductionPackage } from "@/lib/production";
 import { estimateProductionProfit } from "@/lib/production-profit";
 import { qualityProfileForProduction } from "@/lib/production-quality";
+import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -24,6 +25,31 @@ function errorMessage(error: unknown, fallback: string) {
     if (parts.length > 0) return parts.join(" | ");
   }
   return fallback;
+}
+
+function providerCategoryForAction(actionName: string, productionType: string) {
+  if (/generate_image/i.test(actionName)) return "image";
+  if (/lip_sync|voice|talking/i.test(actionName)) return "voice_video";
+  if (/website|saas|mobile_app|admin_panel/i.test(actionName) || ["website", "saas", "mobile_app", "admin_project"].includes(productionType)) return "software_project";
+  if (/document/i.test(actionName) || productionType === "document_pack") return "document";
+  if (/video|campaign|animation/i.test(actionName) || ["video", "campaign", "music_video", "animation"].includes(productionType)) return "video";
+  return "general";
+}
+
+function buildAgentProviderRoutePlan(agentAction: Record<string, unknown> | null, productionType: string, packageId: string) {
+  const actionName = String(agentAction?.name ?? "create_production");
+  const readiness = providerReadinessSummary(productionType, packageId);
+  return {
+    action: actionName,
+    providerCategory: providerCategoryForAction(actionName, productionType),
+    providerRoute: String(agentAction?.provider_route ?? "auto"),
+    readinessStatus: readiness.status,
+    canStartRealProvider: readiness.canStartRealProvider,
+    blockingKeys: readiness.blocking.map((item) => item.key),
+    optionalMissingKeys: readiness.optionalMissing.map((item) => item.key),
+    nextStatusIfMissing: readiness.canStartRealProvider ? "provider_ready" : "waiting_provider_config",
+    userMessage: readiness.userMessage
+  };
 }
 
 export async function GET(request: Request) {
@@ -362,8 +388,12 @@ export async function POST(request: Request) {
     adminInProductionLoop: false,
     userCanPublishAfterReady: true
   };
+const agentAction = body.agent_action && typeof body.agent_action === "object"
+  ? body.agent_action as Record<string, unknown>
+  : null;
+const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, productionType, packageId);
 
-  const costGuardConfig = apiCostGuardConfig();
+const costGuardConfig = apiCostGuardConfig();
   const outputPlan = {
     outputCount,
     singleOutputCredits,
@@ -438,8 +468,10 @@ export async function POST(request: Request) {
     },
     materialCount: materials.length,
     materialBytes,
-    outputPlan,
-    deliveryTargets,
+outputPlan,
+agentAction,
+agentProviderRoutePlan,
+deliveryTargets,
     deliveryPackage,
     deliveryRequirements,
     previewAccess,
@@ -560,6 +592,15 @@ export async function POST(request: Request) {
         legal_acceptance_snapshot: legalSnapshot,
         output_json: {
           automationMode: "fully_automatic",
+          agentAction,
+          agentProviderRoutePlan,
+          providerReadiness: {
+            status: agentProviderRoutePlan.readinessStatus,
+            canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
+            blockingKeys: agentProviderRoutePlan.blockingKeys,
+            optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
+            userMessage: agentProviderRoutePlan.userMessage
+          },
           jobId: automationJobId,
           currentStep: isProductAdVideo ? "Product ad video queued" : "Request queued",
           steps: automationSteps,

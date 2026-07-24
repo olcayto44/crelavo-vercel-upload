@@ -29,6 +29,8 @@ type ProductionWorkspaceProps = {
     approval_question?: string | null;
     approval_options?: Array<{ label: string; description?: string; extraCredits?: number }> | null;
     approval_status?: string | null;
+    error_message?: string | null;
+    reserved_credits?: number | null;
   };
 };
 
@@ -160,6 +162,8 @@ const [notice, setNotice] = useState("");
   const sourceUrl = production.source_files_url || String(outputJson.sourceFilesUrl ?? "");
   const readmeUrl = production.readme_url || String(outputJson.readmeUrl ?? "");
   const outputPlan = metadata.outputPlan ?? outputJson.outputPlan ?? {};
+  const agentAction = (metadata.agentAction && typeof metadata.agentAction === "object" ? metadata.agentAction : outputJson.agentAction && typeof outputJson.agentAction === "object" ? outputJson.agentAction : null) as Record<string, unknown> | null;
+  const agentProviderRoutePlan = (metadata.agentProviderRoutePlan && typeof metadata.agentProviderRoutePlan === "object" ? metadata.agentProviderRoutePlan : outputJson.agentProviderRoutePlan && typeof outputJson.agentProviderRoutePlan === "object" ? outputJson.agentProviderRoutePlan : null) as Record<string, unknown> | null;
   const projectWorkflow = metadata.projectWorkflow && typeof metadata.projectWorkflow === "object" ? metadata.projectWorkflow as Record<string, unknown> : null;
   const commerceWorkflow = metadata.commerceWorkflow && typeof metadata.commerceWorkflow === "object" ? metadata.commerceWorkflow as Record<string, unknown> : null;
   const deliveryTargets = metadata.deliveryTargets && typeof metadata.deliveryTargets === "object" ? metadata.deliveryTargets as Record<string, unknown> : null;
@@ -206,8 +210,14 @@ const [notice, setNotice] = useState("");
       }));
   const hasAlternativeJobs = alternatives.some((alternative: Record<string, any>) => alternative?.visualJob && !["ready", "provider_failed"].includes(String(alternative.status ?? "")));
   const liveStatus = String(production.automation_status || production.generation_status || production.status || "queued");
+  const productionIdShort = production.id.length > 10 ? `${production.id.slice(0, 8)}...${production.id.slice(-4)}` : production.id;
   const hasPreview = Boolean(previewUrl || voiceAudioUrl || savedAlternatives.some((alternative: Record<string, any>) => alternative.preview_url || alternative.previewUrl || alternative.url));
   const hasDelivery = Boolean(deliveryUrl || sourceUrl || readmeUrl);
+  const isFailed = production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed");
+  const isReady = production.status === "ready" || production.automation_status === "completed" || hasDelivery;
+  const liveStatusLabel = isFailed ? "Needs review" : isReady ? "Ready" : hasPreview ? "Preview ready" : visualJob || hasAlternativeJobs || providerStatus ? "Processing" : "Record created";
+  const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
+  const reservedCreditsText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const previewUrlLower = previewUrl.toLowerCase();
   const previewKind = previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : previewUrl ? "web" : "pending";
   const nextLiveStep = isWaitingProviderConfig
@@ -401,10 +411,53 @@ const [notice, setNotice] = useState("");
           <p>{production.prompt || "Production parts, previews, revision decisions, downloads, and sharing steps appear here."}</p>
         </div>
 
+        <div className={`production-truth-strip ${statusTone}`}>
+          <div>
+            <small>Production ID</small>
+            <strong title={production.id}>{productionIdShort}</strong>
+          </div>
+          <div>
+            <small>Real state</small>
+            <strong>{liveStatusLabel}</strong>
+          </div>
+          <div>
+            <small>Credits</small>
+            <strong>{reservedCreditsText}</strong>
+          </div>
+          <div>
+            <small>Preview</small>
+            <strong>{hasPreview ? "Available" : "Pending"}</strong>
+          </div>
+          <div>
+            <small>Delivery</small>
+            <strong>{hasDelivery ? "Ready" : "Waiting"}</strong>
+          </div>
+        </div>
+
+        {isFailed ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{production.error_message || String(outputJson.providerError ?? "Provider or automation failed. Admin review is required before final delivery or credit resolution.")}</span></div> : null}
+
+        {agentAction ? (
+          <div className="production-agent-action-card">
+            <div>
+              <span className="badge">Agent action</span>
+              <h3>{String(agentAction.name ?? "create_production")}</h3>
+              <p>This record was created from a confirmed assistant action. The assistant prepared the action first; real production started only after confirmation and credit checks.</p>
+            </div>
+            <div className="production-agent-action-grid">
+              <span><small>Intent</small><strong>{String(agentAction.intent ?? "confirmed_production")}</strong></span>
+              <span><small>Type</small><strong>{String(agentAction.production_type ?? production.production_type ?? "production")}</strong></span>
+              <span><small>Provider route</small><strong>{String(agentAction.provider_route ?? agentProviderRoutePlan?.providerRoute ?? "auto")}</strong></span>
+              <span><small>Provider category</small><strong>{String(agentProviderRoutePlan?.providerCategory ?? "general")}</strong></span>
+              <span><small>Readiness</small><strong>{String(agentProviderRoutePlan?.readinessStatus ?? "pending")}</strong></span>
+              <span><small>Endpoint</small><strong>{String(agentAction.next_backend_endpoint ?? "/api/productions")}</strong></span>
+            </div>
+          </div>
+        ) : null}
+
         <div className="production-live-summary">
           <div>
             <span className="badge">Live status</span>
-            <h2>{liveStatus}</h2>
+            <h2>{liveStatusLabel}</h2>
             <p>{nextLiveStep}</p>
           </div>
           <div className="production-live-steps">
@@ -555,10 +608,18 @@ const [notice, setNotice] = useState("");
         ) : null}
 
         {providerReadiness ? (
-          <section className="cost-safety-card">
+          <section className={`cost-safety-card ${String(providerReadiness.status) === "waiting_provider_config" ? "provider-missing-card" : ""}`}>
             <span className="badge">Provider readiness</span>
             <h3>{String(providerReadiness.status ?? "provider status")}</h3>
             <p>{String(providerReadiness.userMessage ?? "Provider/API readiness is being checked before real production starts.")}</p>
+            {String(providerReadiness.status) === "waiting_provider_config" ? (
+              <div className="manual-delivery-path">
+                <strong>Production record is saved. Real provider execution is paused.</strong>
+                <span>Nothing is lost: the brief, credits, package settings and delivery requirements are stored in this workspace.</span>
+                <span>Until provider keys are connected, admin can prepare demo/manual delivery files and attach preview, ZIP, source files or README links here.</span>
+                <span>When provider keys are ready, use “Start real provider job” to continue from this same production record.</span>
+              </div>
+            ) : null}
             <div className="cost-note-list">
               {providerRequirements.map((item) => <span key={`provider-${String(item.key)}`}>{String(item.label)}: {String(item.status)}</span>)}
             </div>

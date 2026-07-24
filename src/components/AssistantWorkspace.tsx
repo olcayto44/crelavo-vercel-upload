@@ -56,6 +56,18 @@ const deliveryHandoffItems = [
 
 type Message = { role: "assistant" | "user"; content: string };
 
+type AssistantAgentAction = {
+  name?: string;
+  intent?: string;
+  production_type?: string;
+  confirmation_required?: boolean;
+  credit_check_required?: boolean;
+  provider_route?: string;
+  state_before_confirmation?: string;
+  next_backend_endpoint?: string;
+  args?: Record<string, unknown>;
+};
+
 type AssistantSuggestion = {
   category?: string;
   style?: string;
@@ -67,6 +79,7 @@ type AssistantSuggestion = {
   note?: string;
   route?: string;
   nextStep?: string;
+  agent_action?: AssistantAgentAction;
 };
 
 type AssistantPlan = {
@@ -84,6 +97,7 @@ type AssistantPlan = {
   workflow_stage?: string;
   next_user_action?: string;
   delivery_path?: string[];
+  agent_action?: AssistantAgentAction;
   summary?: string;
 };
 
@@ -102,6 +116,7 @@ type AssistantOrchestratorJob = {
   estimated_credits?: number;
   deliverables?: string[];
   required_materials?: string[];
+  agent_action?: AssistantAgentAction;
   production_payload?: Record<string, unknown>;
 };
 
@@ -130,8 +145,11 @@ type AssistantCreditState = {
 type StartedProductionState = {
   id: string;
   detailUrl: string;
-  status: "created" | "automation_started" | "automation_warning";
+  status: "created" | "automation_started" | "automation_warning" | "waiting_provider_config" | "already_running";
   message: string;
+  providerStatus?: string;
+  missingProviderKeys?: string[];
+  nextAction?: string;
 } | null;
 
 const emptyAssistantCreditState: AssistantCreditState = {
@@ -1180,6 +1198,13 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [productionCreditAvailable, setProductionCreditAvailable] = useState<number | null>(null);
 const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
 const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
+const latestAgentAction = lastOrchestratorPlan?.jobs?.[0]?.agent_action ?? null;
+const productionLifecycleState = startedProduction ? "Production started" : productionBrief.trim() || input.trim() || dynamicWizard.open ? "Draft ready" : "Not submitted yet";
+const productionLifecycleNote = startedProduction
+  ? "Production record exists. Credits were checked during the start step."
+  : productionBrief.trim() || input.trim() || dynamicWizard.open
+    ? "Brief is prepared, but production has not started and credits are not reserved yet."
+    : "No production request has been submitted yet.";
 const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRatesConfig>(defaultDeliveryCreditRatesConfig);
   const [configuredProductionPackages, setConfiguredProductionPackages] = useState<ProductionPackage[]>(productionPackages);
   const materials = activePlatformMaterials();
@@ -1980,18 +2005,34 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
           id: productionId,
           detailUrl: `/dashboard/productions/${productionId}`,
           status: "automation_warning",
-          message: "Production record was created, but automation needs attention."
+          message: "Production record was created, but automation needs attention.",
+          providerStatus: "automation_error",
+          nextAction: "Open the production detail page and review the automation error."
         });
         setStartModalOpen(false);
         return;
       }
+      const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
+      const providerReadiness = automationData.provider_readiness && typeof automationData.provider_readiness === "object" ? automationData.provider_readiness as Record<string, any> : null;
+      const missingProviderKeys = Array.isArray(providerReadiness?.blocking) ? providerReadiness.blocking.map((item: Record<string, unknown>) => String(item.key ?? item.label ?? "provider_config")) : [];
+      const waitingProviderConfig = Boolean(automationData.waiting_provider_config);
+      const alreadyRunning = Boolean(automationData.already_running);
       setStartState("idle");
       setStartModalOpen(false);
       setStartedProduction({
         id: productionId,
         detailUrl: `/dashboard/productions/${productionId}`,
-        status: "automation_started",
-        message: "Production started. You can stay here or open the detailed production workspace."
+        status: waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "automation_started",
+        message: waitingProviderConfig
+          ? "Production record was created, but real provider execution is waiting for API/provider configuration."
+          : alreadyRunning
+            ? "Production record exists and an active provider job is already running."
+            : "Production record created and automation started. You can stay here or open the detailed production workspace.",
+        providerStatus: waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "provider_started",
+        missingProviderKeys,
+        nextAction: waitingProviderConfig
+          ? "Connect the missing provider/API keys or continue with manual/demo delivery from the production detail page."
+          : "Open production detail to follow live status, preview and delivery."
       });
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
@@ -2021,13 +2062,16 @@ const optionSummary = selectedOptionSummary();
 const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Production follow-up detail" : "Production request"}: ${clean}\n\nRecent context:\n${messages.slice(-6).map((item) => `${item.role}: ${item.content}`).join("\n")}\n\nProduction options:\n${optionSummary}`;
 
     const wantsNoMaterial = /istemiyorum|gerek yok|olmasın|hayır|devam et/i.test(clean);
-    if (isStartConfirmation && dynamicWizard.open) {
+    const hasProductionContext = dynamicWizard.open || Boolean(productionBrief.trim()) || /\b(video|reklam|ayakkabi|ayakkabı|urun|ürün|tiktok|shorts|saas|site|website|app|uygulama|admin panel|eticaret|e-ticaret|production request|production follow-up detail)\b/.test(recentContext);
+    if (isStartConfirmation && hasProductionContext) {
+      const existingBrief = productionBrief.trim() || messages.slice(-8).map((item) => item.content).join("\n");
+      if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
       const startReply = activeLanguage === "tr"
-        ? "Tamam, tekrar soru sormuyorum. Mevcut brief ile üretim/kredi kontrol adımını açıyorum."
-        : "Understood. I will not ask again; I am opening the production/credit check step for the current brief.";
+        ? "Tamam. Chat cevabı üretmiyorum; gerçek üretim/kredi kontrol ekranını açıyorum. Kredi bu onay adımında kontrol edilir, üretim kaydı da buradan oluşur."
+        : "Understood. I am not pretending the production has started in chat; I am opening the real production/credit confirmation step now.";
       setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: startReply }]);
       if (source === "chat") setChatInput("");
-      setStatus(activeLanguage === "tr" ? "Üretim kontrol adımı açılıyor." : "Opening production check step.");
+      setStatus(activeLanguage === "tr" ? "Gerçek üretim/kredi kontrol adımı açılıyor." : "Opening the real production/credit check step.");
       requestDynamicWizardCredits();
       return;
     }
@@ -2526,11 +2570,23 @@ async function startRawMicrophoneFallback() {
               <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
               <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider mode</span>
             </div>
+            <div className="studio-credit-trust-panel production-lifecycle-panel">
+              <span><small>Production state</small><strong>{productionLifecycleState}</strong></span>
+              <p className="workspace-action-note">{productionLifecycleNote}</p>
+            </div>
+            {latestAgentAction ? (
+              <div className="studio-credit-trust-panel agent-action-panel">
+                <span><small>Agent action</small><strong>{latestAgentAction.name ?? "ready"}</strong></span>
+                <span><small>Route</small><strong>{latestAgentAction.next_backend_endpoint ?? "/api/productions"}</strong></span>
+                <span><small>Provider</small><strong>{latestAgentAction.provider_route ?? "auto"}</strong></span>
+                <p className="workspace-action-note">Action is prepared as draft. User confirmation and credit check are required before real production starts.</p>
+              </div>
+            ) : null}
             <div className="studio-credit-trust-panel">
               <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Checking"}</strong></span>
-              <span><small>Reserved now</small><strong>0 credits</strong></span>
+              <span><small>Reserved now</small><strong>{startedProduction ? "Managed by production record" : "0 credits"}</strong></span>
               <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
-              {productionCreditInsufficient ? <p className="workspace-action-note error">Shortfall: {productionCreditShortfall.toLocaleString()} credits. Add credits or lower quality/duration before starting.</p> : <p className="workspace-action-note">No credits are reserved until you confirm the production start screen.</p>}
+              {productionCreditInsufficient ? <p className="workspace-action-note error">Shortfall: {productionCreditShortfall.toLocaleString()} credits. Add credits or lower quality/duration before starting.</p> : <p className="workspace-action-note">{startedProduction ? "Credit handling moved to the created production record." : "No credits are reserved until you confirm the production start screen."}</p>}
             </div>
             <div className="studio-side-actions">
               <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
@@ -2551,12 +2607,23 @@ async function startRawMicrophoneFallback() {
               <a href="/dashboard/productions">View all productions</a>
             </div>
             {startedProduction ? (
-              <div className="studio-started-card">
-                <small>{startedProduction.status === "automation_warning" ? "Needs attention" : "Production started"}</small>
+              <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
+                <small>{startedProduction.status === "automation_warning" || startedProduction.status === "waiting_provider_config" ? "Needs attention" : "Production started"}</small>
                 <strong>{startedProduction.message}</strong>
+                <span><b>Production ID</b>{startedProduction.id}</span>
+                <span><b>Current state</b>{startedProduction.status === "waiting_provider_config" ? "Record created · waiting provider config" : startedProduction.status === "automation_warning" ? "Record created · automation needs attention" : startedProduction.status === "already_running" ? "Record created · provider already running" : "Record created · automation started"}</span>
+                {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
+                {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
+                {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
                 <a className="btn secondary" href={startedProduction.detailUrl}>View production detail</a>
               </div>
-            ) : null}
+            ) : (
+              <div className="studio-started-card production-draft-card">
+                <small>Not live yet</small>
+                <strong>No production ID exists yet.</strong>
+                <span><b>Next action</b>Use Start Production to create the real record.</span>
+              </div>
+            )}
           </aside>
         </section>
 
@@ -2595,13 +2662,21 @@ async function startRawMicrophoneFallback() {
 
         <>
         <div className="live-production-board compact-studio-steps">
-          {defaultSteps.map((step, index) => (
-            <div className={`live-step ${index <= activeStep ? "active" : ""}`} key={step}>
-              <span>{index + 1}</span>
-              <strong>{step}</strong>
-              <small>{index < activeStep ? "Completed" : index === activeStep ? "Active" : "Waiting"}</small>
-            </div>
-          ))}
+          {defaultSteps.map((step, index) => {
+            const isStarted = Boolean(startedProduction);
+            const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || dynamicWizard.open);
+            const isActive = isStarted ? index <= activeStep : isDraftActive;
+            const stepStatus = isStarted
+              ? (index < activeStep ? "Completed" : index === activeStep ? "Active" : "Waiting")
+              : (isDraftActive ? "Draft ready" : "Not submitted");
+            return (
+              <div className={`live-step ${isActive ? "active" : ""} ${!isStarted ? "draft-step" : ""}`} key={step}>
+                <span>{index + 1}</span>
+                <strong>{step}</strong>
+                <small>{stepStatus}</small>
+              </div>
+            );
+          })}
         </div>
 
         {/* Smoke guard terms kept for tests only: New Dynamic Production Wizard · Tell Crelavo what you want to produce · Write in the chat or pick a production type. The next questions will appear based on your choice. · Alt kategoriler */}

@@ -6579,16 +6579,17 @@ html body .automation-brief-card pre {
 .studio-quality-strip button {
   border: 1px solid rgba(125,211,252,.18);
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 10px 8px;
   color: #dbeafe;
   background: rgba(255,255,255,.055);
   cursor: pointer;
+  font-size: 12px;
   font-weight: 900;
   min-width: 0;
-  white-space: normal;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  line-height: 1.15;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  line-height: 1;
   text-align: center;
 }
 .studio-quality-strip button.active,
@@ -6818,6 +6819,29 @@ html body .automation-brief-card pre {
   border-color: rgba(34,197,94,.28);
   background: rgba(20,83,45,.22);
 }
+.studio-started-card span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.studio-started-card b {
+  color: #93c5fd;
+}
+.production-draft-card {
+  border-color: rgba(245,158,11,.26);
+  background: rgba(120,53,15,.18);
+}
+.production-live-card {
+  border-color: rgba(34,197,94,.34);
+  background: linear-gradient(135deg, rgba(20,83,45,.26), rgba(15,23,42,.42));
+}
+.production-attention-card {
+  border-color: rgba(245,158,11,.34);
+  background: linear-gradient(135deg, rgba(120,53,15,.24), rgba(15,23,42,.46));
+}
 .assistant-inline-chat {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
@@ -6826,9 +6850,9 @@ html body .automation-brief-card pre {
   border-radius: 24px;
   padding: 16px;
   margin: 18px 0;
-  height: 560px;
-  min-height: 560px;
-  max-height: 560px;
+  height: 860px;
+  min-height: 860px;
+  max-height: 860px;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(15, 23, 42, .92), rgba(30, 41, 59, .74));
   box-shadow: 0 18px 50px rgba(0, 0, 0, .24);
@@ -6983,9 +7007,9 @@ html body .automation-brief-card pre {
 }
 .studio-command-main,
 .studio-credit-card {
-  height: 560px;
-  min-height: 560px;
-  max-height: 560px;
+  height: 860px;
+  min-height: 860px;
+  max-height: 860px;
   overflow-y: auto;
 }
 .studio-side-summary {
@@ -7269,6 +7293,23 @@ html body .automation-brief-card pre {
 .studio-credit-trust-panel .workspace-action-note {
   margin: 0;
 }
+.production-lifecycle-panel {
+  border-color: rgba(168,85,247,.26);
+  background: linear-gradient(135deg, rgba(168,85,247,.13), rgba(34,211,238,.08));
+}
+.production-lifecycle-panel strong {
+  color: #fff;
+  white-space: nowrap;
+}
+.agent-action-panel {
+  border-color: rgba(34,211,238,.26);
+  background: linear-gradient(135deg, rgba(34,211,238,.10), rgba(168,85,247,.08));
+}
+.agent-action-panel strong {
+  color: #fff;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
 .production-start-trust-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -7310,6 +7351,9 @@ html body .production-workspace-shell {
   gap: 20px;
 }
 html body .production-workspace-head,
+html body .production-truth-strip,
+html body .production-error-banner,
+html body .production-agent-action-card,
 html body .production-live-summary,
 html body .customer-preview-theater,
 html body .production-job-overview-card,
@@ -7326,6 +7370,137 @@ html body .social-share-card {
 }
 html body .production-workspace-head h1 {
   font-size: clamp(38px, 5vw, 72px);
+}
+html body .production-truth-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 24px;
+}
+html body .production-truth-strip div {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  align-content: center;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(15,23,42,.58);
+}
+html body .production-truth-strip small {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+html body .production-truth-strip strong {
+  color: #fff;
+  font-size: 15px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+html body .production-truth-strip.ready div,
+html body .production-truth-strip.preview div {
+  border-color: rgba(34,197,94,.22);
+}
+html body .production-truth-strip.failed div {
+  border-color: rgba(248,113,113,.36);
+  background: rgba(127,29,29,.22);
+}
+html body .production-error-banner {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(248,113,113,.34);
+  border-radius: 22px;
+  padding: 14px;
+  background: rgba(127,29,29,.24);
+}
+html body .production-error-banner strong {
+  color: #fff;
+}
+html body .production-error-banner span {
+  color: #fecaca;
+  line-height: 1.45;
+}
+html body .production-agent-action-card {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr);
+  gap: 14px;
+  border: 1px solid rgba(34,211,238,.22);
+  border-radius: 24px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(34,211,238,.14), transparent 34%),
+    rgba(2,6,23,.62);
+}
+html body .production-agent-action-card h3 {
+  margin: 8px 0;
+  color: #fff;
+  font-size: clamp(22px, 2vw, 34px);
+}
+html body .production-agent-action-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+html body .production-agent-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+html body .production-agent-action-grid span {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 16px;
+  padding: 11px;
+  background: rgba(15,23,42,.58);
+}
+html body .production-agent-action-grid small {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+html body .production-agent-action-grid strong {
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+html body .provider-missing-card {
+  border-color: rgba(245,158,11,.30);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(245,158,11,.14), transparent 34%),
+    rgba(2,6,23,.62);
+}
+html body .manual-delivery-path {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  border: 1px solid rgba(245,158,11,.24);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(120,53,15,.18);
+}
+html body .manual-delivery-path strong {
+  color: #fff;
+}
+html body .manual-delivery-path span {
+  color: #fed7aa;
+  line-height: 1.4;
+}
+@media (max-width: 1180px) {
+  html body .production-agent-action-card {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  html body .production-agent-action-grid {
+    grid-template-columns: 1fr;
+  }
 }
 html body .production-live-summary {
   grid-template-columns: minmax(0, .9fr) minmax(340px, 1.1fr);
@@ -7411,6 +7586,11 @@ html body .production-job-status-list strong {
   text-align: right;
   overflow-wrap: anywhere;
 }
+@media (max-width: 640px) {
+  html body .production-truth-strip {
+    grid-template-columns: 1fr;
+  }
+}
 html body .final-delivery-card {
   border-color: rgba(34,197,94,.24);
 }
@@ -7419,6 +7599,9 @@ html body .final-delivery-card {
   html body .production-live-summary,
   html body .customer-preview-theater {
     grid-template-columns: 1fr;
+  }
+  html body .production-truth-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   html body .production-workspace-side {
     position: static;

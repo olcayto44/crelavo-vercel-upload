@@ -429,7 +429,10 @@ async function refundReservedCredits(item: ProductionRow) {
         const providerTestMode = Boolean(item.output_json?.providerTestMode ?? item.request_metadata?.providerTestMode);
         const providerPreflight = item.output_json?.providerPreflight && typeof item.output_json.providerPreflight === "object" ? item.output_json.providerPreflight as Record<string, unknown> : null;
         const providerReadiness = item.output_json?.providerReadiness && typeof item.output_json.providerReadiness === "object" ? item.output_json.providerReadiness as Record<string, any> : null;
+        const agentAction = (item.request_metadata?.agentAction && typeof item.request_metadata.agentAction === "object" ? item.request_metadata.agentAction : item.output_json?.agentAction && typeof item.output_json.agentAction === "object" ? item.output_json.agentAction : null) as Record<string, unknown> | null;
+        const agentProviderRoutePlan = (item.request_metadata?.agentProviderRoutePlan && typeof item.request_metadata.agentProviderRoutePlan === "object" ? item.request_metadata.agentProviderRoutePlan : item.output_json?.agentProviderRoutePlan && typeof item.output_json.agentProviderRoutePlan === "object" ? item.output_json.agentProviderRoutePlan : null) as Record<string, unknown> | null;
         const providerRequirements = Array.isArray(providerReadiness?.requirements) ? providerReadiness.requirements as Record<string, any>[] : [];
+        const agentBlockingKeys = Array.isArray(agentProviderRoutePlan?.blockingKeys) ? agentProviderRoutePlan.blockingKeys.map((key) => String(key)) : [];
         const outputRegistry = Array.isArray(item.output_json?.outputRegistry) ? item.output_json.outputRegistry as Record<string, any>[] : [];
         const renderQueuePolicy = (item.request_metadata?.renderQueuePolicy && typeof item.request_metadata.renderQueuePolicy === "object" ? item.request_metadata.renderQueuePolicy : item.output_json?.renderQueuePolicy && typeof item.output_json.renderQueuePolicy === "object" ? item.output_json.renderQueuePolicy : null) as Record<string, unknown> | null;
         const capacityPolicy = (item.request_metadata?.capacityPolicy && typeof item.request_metadata.capacityPolicy === "object" ? item.request_metadata.capacityPolicy : item.output_json?.capacityPolicy && typeof item.output_json.capacityPolicy === "object" ? item.output_json.capacityPolicy : null) as Record<string, unknown> | null;
@@ -449,6 +452,8 @@ async function refundReservedCredits(item: ProductionRow) {
           <div className="admin-production-head">
             <div>
               <span className="badge">{item.production_type.replace("_", " ")}</span>
+              {agentAction ? <span className="badge">{String(agentAction.name ?? "agent action")}</span> : null}
+              {agentProviderRoutePlan ? <span className="badge">{String(agentProviderRoutePlan.providerCategory ?? "provider")}</span> : null}
               {providerTestMode ? <span className="badge">Quick provider test</span> : null}
               {providerReadiness ? <span className="badge">{String(providerReadiness.status ?? "provider check")}</span> : null}
               <h3>{item.title}</h3>
@@ -478,6 +483,12 @@ async function refundReservedCredits(item: ProductionRow) {
             <div>
               <span>Customer delivery</span>
               <strong>{(item.delivery_link || item.delivery_zip_url) ? "One-click link ready" : "Waiting for automation"}</strong>
+            </div>
+            <div>
+              <span>Agent route</span>
+              <strong>{String(agentAction?.name ?? "No agent action")}</strong>
+              {agentProviderRoutePlan ? <small>{String(agentProviderRoutePlan.providerCategory ?? "general")} · {String(agentProviderRoutePlan.readinessStatus ?? "pending")}</small> : null}
+              {agentBlockingKeys.length ? <small>Missing: {agentBlockingKeys.join(", ")}</small> : null}
             </div>
             <div>
               <span>Email delivery</span>
