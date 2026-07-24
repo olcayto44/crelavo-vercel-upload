@@ -8886,3 +8886,49 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   .clean-preview-grid,.clean-progress-row,.clean-studio-state { grid-template-columns: 1fr; }
 }
 
+@media (min-width: 1101px) {
+  html body main.container.section.assistant-full-page.assistant-production-page .assistant-workspace.crelavo-clean-studio,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+    display: grid !important;
+    grid-template-columns: clamp(300px, 18vw, 350px) clamp(230px, 15vw, 290px) minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    grid-template-areas: "side tools board" !important;
+    align-items: stretch !important;
+  }
+
+  .clean-studio-side,
+  .clean-studio-rail.clean-tool-panel,
+  .clean-studio-main {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+
+  .clean-studio-main {
+    grid-column: 3 / 4 !important;
+    width: 100% !important;
+    justify-self: stretch !important;
+  }
+
+  .clean-preview-grid,
+  .clean-preview-card.clean-preview-large {
+    justify-self: stretch !important;
+    align-self: stretch !important;
+  }
+
+  .clean-tool-switcher {
+    max-height: 178px !important;
+    overflow-y: auto !important;
+  }
+
+  .clean-tool-switcher button {
+    min-height: 38px !important;
+    padding: 6px 7px !important;
+  }
+
+  .clean-tool-active-section {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
