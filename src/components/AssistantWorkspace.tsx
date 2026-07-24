@@ -2505,6 +2505,94 @@ async function startRawMicrophoneFallback() {
   }
 
   return (
+    <div className="assistant-workspace crelavo-clean-studio">
+      <aside className="clean-studio-rail" aria-label="Production shortcuts">
+        <div className="clean-studio-logo"><span>▶</span></div>
+        {studioQuickPaths.map((path) => (
+          <button className={selectedProductionType === path.category ? "active" : ""} type="button" key={path.label} onClick={() => { applyCategorySelection(path.category); setProductionBrief((current) => current || path.description); }}>
+            <strong>{path.label.split(" ").slice(0, 2).join(" ")}</strong>
+          </button>
+        ))}
+      </aside>
+
+      <main className="clean-studio-main" aria-label="Production workspace">
+        <section className="clean-studio-hero">
+          <div>
+            <span className="badge">Crelavo AI Studio</span>
+            <h1>{selectedProduction?.label ?? "AI Production"}</h1>
+            <p>{productionBrief || "Ne üretmek istediğini sağdaki asistana yaz. Crelavo brief, action, kredi ve teslimat planını burada gösterecek."}</p>
+          </div>
+          <div className="clean-studio-state">
+            <span><small>State</small><strong>{productionLifecycleState}</strong></span>
+            <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+            <span><small>Quality</small><strong>{selectedQuality}</strong></span>
+          </div>
+        </section>
+
+        <section className="clean-preview-grid">
+          <div className="clean-preview-card clean-preview-large">
+            <small>Production Preview</small>
+            <strong>{selectedProduction?.label ?? selectedProductionType}</strong>
+            <p>{productionBrief ? "Brief hazır. Üretim onay bekliyor." : "Henüz üretim çıktısı yok. Komut bekleniyor."}</p>
+          </div>
+          <div className="clean-preview-card">
+            <small>Agent Action</small>
+            <strong>{latestAgentAction?.name ?? "Draft"}</strong>
+            <p>Gerçek kayıt olmadan üretim başladı denmez.</p>
+          </div>
+          <div className="clean-preview-card">
+            <small>Delivery</small>
+            <strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong>
+            <p>Dosya, link, preview ve teslim paketi.</p>
+          </div>
+        </section>
+
+        <section className="clean-progress-row">
+          {defaultSteps.map((step, index) => {
+            const isStarted = Boolean(startedProduction);
+            const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || chatInput.trim());
+            const isActive = isStarted ? index <= activeStep : isDraftActive;
+            return <div className={isActive ? "active" : ""} key={step}><span>{index + 1}</span><strong>{step}</strong></div>;
+          })}
+        </section>
+      </main>
+
+      <aside className="clean-studio-side" aria-label="Assistant and controls">
+        <section className="clean-chat-panel">
+          <div className="clean-panel-head">
+            <span className="badge"><Bot size={14} /> Crelavo Assistant</span>
+            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: "Sohbet temizlendi. Ne yapmak istediğini yazabilirsin." }])}>Temizle</button>
+          </div>
+          <div className="clean-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
+            {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Cevap hazırlanıyor...</div> : null}
+          </div>
+          <div className="clean-chat-input">
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Ne yapmak istiyorsun? Örn: Crelavo gibi SaaS sitesi kur..." />
+            <button className="btn" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
+          </div>
+        </section>
+
+        <section className="clean-control-panel">
+          <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
+          <div className="clean-quality-grid">
+            {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
+          </div>
+          <div className="clean-control-list">
+            <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
+            <span><small>Scope</small><strong>{selectedDuration}</strong></span>
+            <span><small>Provider</small><strong>Auto route</strong></span>
+            <span><small>Production ID</small><strong>{startedProduction?.id ?? "Yok"}</strong></span>
+          </div>
+          <button className="btn clean-start-btn" type="button" onClick={requestDynamicWizardCredits} disabled={productionCreditInsufficient}>Start Production</button>
+          {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
+          <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
+        </section>
+      </aside>
+    </div>
+  );
+
+  return (
     <div className="assistant-workspace chat-open ai-generator-dashboard">
       <section className="assistant-live-stage ai-dashboard-shell">
         <aside className="ai-dashboard-sidebar" aria-label="Crelavo production navigation">
@@ -2658,9 +2746,9 @@ async function startRawMicrophoneFallback() {
           </div>
           {latestAgentAction ? (
             <div className="studio-credit-trust-panel agent-action-panel">
-              <span><small>Agent action</small><strong>{latestAgentAction.name ?? "ready"}</strong></span>
-              <span><small>Route</small><strong>{latestAgentAction.next_backend_endpoint ?? "/api/productions"}</strong></span>
-              <span><small>Provider</small><strong>{latestAgentAction.provider_route ?? "auto"}</strong></span>
+              <span><small>Agent action</small><strong>{latestAgentAction?.name ?? "ready"}</strong></span>
+              <span><small>Route</small><strong>{latestAgentAction?.next_backend_endpoint ?? "/api/productions"}</strong></span>
+              <span><small>Provider</small><strong>{latestAgentAction?.provider_route ?? "auto"}</strong></span>
             </div>
           ) : null}
           <div className="studio-side-actions">
@@ -2700,14 +2788,14 @@ async function startRawMicrophoneFallback() {
             {studioProviderSignals.map((item) => <span key={item.label}><b>{item.label}</b>{item.value} · {item.status}</span>)}
           </div>
           {startedProduction ? (
-            <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-              <small>{startedProduction.status === "automation_warning" || startedProduction.status === "waiting_provider_config" ? "Dikkat gerekiyor" : "Production started"}</small>
-              <strong>{startedProduction.message}</strong>
-              <span><b>Production ID</b>{startedProduction.id}</span>
-              {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
-              {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
-              {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
-              <a className="btn secondary" href={startedProduction.detailUrl}>Detayı aç</a>
+            <div className={`studio-started-card ${startedProduction?.status === "waiting_provider_config" || startedProduction?.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
+              <small>{startedProduction?.status === "automation_warning" || startedProduction?.status === "waiting_provider_config" ? "Dikkat gerekiyor" : "Production started"}</small>
+              <strong>{startedProduction?.message}</strong>
+              <span><b>Production ID</b>{startedProduction?.id}</span>
+              {startedProduction?.providerStatus ? <span><b>Provider status</b>{startedProduction?.providerStatus}</span> : null}
+              {startedProduction?.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction?.missingProviderKeys?.join(", ")}</span> : null}
+              {startedProduction?.nextAction ? <p className="workspace-action-note">{startedProduction?.nextAction}</p> : null}
+              <a className="btn secondary" href={startedProduction?.detailUrl ?? "/dashboard/productions"}>Detayı aç</a>
             </div>
           ) : (
             <div className="studio-started-card production-draft-card">
@@ -2718,8 +2806,8 @@ async function startRawMicrophoneFallback() {
           )}
           {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Son asistan ücreti: {formatCredits(assistantCreditState.chargedCredits)} kredi ({assistantCreditState.chargeSource === "assistant_trial" ? "ücretsiz asistan kredisi" : "üretim kredisi"}).</p> : null}
           {assistantCreditState.redirect ? <p className="workspace-action-note error">Kredi gerekiyor. Kredi sayfasından bakiye yükleyip konuşmaya devam edebilirsin.</p> : null}
-          {assistantCreditState.assistantBalance !== null && assistantCreditState.assistantBalance > 0 && assistantCreditState.assistantBalance < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Ücretsiz asistan kredin azalıyor. Bitince mesajlar üretim kredisinden düşer.</p> : null}
-          {assistantCreditState.productionBalance !== null && assistantCreditState.productionBalance > 0 && assistantCreditState.productionBalance < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Üretim kredin azalıyor. Bakiye bitmeden kredi yüklemeni öneririm.</p> : null}
+          {assistantCreditState.assistantBalance !== null && (assistantCreditState.assistantBalance ?? 0) > 0 && (assistantCreditState.assistantBalance ?? 0) < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Ücretsiz asistan kredin azalıyor. Bitince mesajlar üretim kredisinden düşer.</p> : null}
+          {assistantCreditState.productionBalance !== null && (assistantCreditState.productionBalance ?? 0) > 0 && (assistantCreditState.productionBalance ?? 0) < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Üretim kredin azalıyor. Bakiye bitmeden kredi yüklemeni öneririm.</p> : null}
         </aside>
 
 

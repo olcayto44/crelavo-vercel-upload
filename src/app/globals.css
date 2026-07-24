@@ -8225,3 +8225,154 @@ html body .assistant-production-page .assistant-workspace.ai-generator-dashboard
   overflow-wrap: normal !important;
 }
 
+/* Clean rebuild: no old wizard, no oversized options panel. */
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+  display: grid !important;
+  grid-template-columns: 86px minmax(0, 1fr) minmax(390px, 440px) !important;
+  gap: 14px !important;
+  width: 100% !important;
+  height: calc(100vh - 24px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: 30px !important;
+  padding: 14px !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(34,211,238,.18), transparent 30%),
+    radial-gradient(circle at 82% 6%, rgba(124,92,255,.16), transparent 34%),
+    linear-gradient(145deg, rgba(3,7,18,.96), rgba(8,13,30,.92)) !important;
+}
+
+.clean-studio-rail,
+.clean-studio-main,
+.clean-studio-side,
+.clean-chat-panel,
+.clean-control-panel {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(15,23,42,.66);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.22);
+}
+
+.clean-studio-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 10px;
+}
+
+.clean-studio-logo,
+.clean-studio-rail button {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(125,211,252,.18);
+  background: rgba(255,255,255,.07);
+  color: #fff;
+}
+
+.clean-studio-logo { background: linear-gradient(135deg, rgba(124,92,255,.9), rgba(34,211,238,.72)); }
+.clean-studio-rail button { cursor: pointer; padding: 5px; }
+.clean-studio-rail button.active,
+.clean-studio-rail button:hover { border-color: rgba(34,211,238,.62); background: rgba(34,211,238,.16); }
+.clean-studio-rail button strong { font-size: 9px; line-height: 1.05; text-align: center; }
+
+.clean-studio-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 26px;
+  padding: 14px;
+}
+
+.clean-studio-hero,
+.clean-preview-card,
+.clean-progress-row > div,
+.clean-control-list span {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  background: rgba(2,6,23,.42);
+}
+
+.clean-studio-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+}
+
+.clean-studio-hero h1 {
+  margin: 8px 0;
+  color: #fff;
+  font-size: clamp(32px, 4vw, 58px);
+  line-height: .94;
+  letter-spacing: -.06em;
+}
+.clean-studio-hero p { max-width: 760px; margin: 0; color: #cbd5e1; line-height: 1.45; }
+.clean-studio-state { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 8px; min-width: min(420px, 42%); }
+.clean-studio-state span { display: grid; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.06); }
+.clean-studio-state small,.clean-preview-card small,.clean-control-list small { color: #93c5fd; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
+.clean-studio-state strong,.clean-preview-card strong,.clean-control-list strong { color: #fff; }
+
+.clean-preview-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  overflow: hidden;
+}
+.clean-preview-card {
+  display: grid;
+  align-content: end;
+  gap: 8px;
+  padding: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(34,211,238,.18), transparent 36%),
+    radial-gradient(circle at 80% 0%, rgba(236,72,153,.12), transparent 34%),
+    rgba(255,255,255,.055);
+}
+.clean-preview-large { grid-row: span 2; }
+.clean-preview-card strong { font-size: 22px; line-height: 1.1; }
+.clean-preview-large strong { font-size: clamp(34px, 5vw, 72px); letter-spacing: -.06em; }
+.clean-preview-card p { margin: 0; color: #cbd5e1; line-height: 1.4; }
+
+.clean-progress-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.clean-progress-row > div { display: grid; gap: 6px; padding: 12px; }
+.clean-progress-row > div.active { border-color: rgba(34,211,238,.55); background: rgba(34,211,238,.12); }
+.clean-progress-row span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; background: rgba(255,255,255,.09); color: #fff; font-weight: 900; }
+.clean-progress-row strong { color: #dbeafe; font-size: 12px; line-height: 1.2; }
+
+.clean-studio-side { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; height: 100%; overflow: hidden; border: 0; background: transparent; box-shadow: none; }
+.clean-chat-panel,.clean-control-panel { border-radius: 26px; padding: 14px; overflow: hidden; }
+.clean-chat-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
+.clean-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.clean-chat-log { min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding: 10px; border-radius: 18px; background: rgba(2,6,23,.38); }
+.clean-chat-input { display: grid; gap: 8px; }
+.clean-chat-input textarea { min-height: 96px; max-height: 130px; resize: none; }
+.clean-chat-input .btn { width: 100%; justify-content: center; }
+
+.clean-control-panel { display: grid; gap: 12px; }
+.clean-quality-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.clean-quality-grid button { border: 1px solid rgba(125,211,252,.18); border-radius: 14px; padding: 10px; color: #dbeafe; background: rgba(255,255,255,.06); cursor: pointer; font-weight: 900; }
+.clean-quality-grid button.active,.clean-quality-grid button:hover { color: #fff; border-color: rgba(34,211,238,.62); background: rgba(34,211,238,.16); }
+.clean-control-list { display: grid; gap: 8px; }
+.clean-control-list span { display: flex; justify-content: space-between; gap: 10px; padding: 10px; }
+.clean-start-btn { width: 100%; justify-content: center; }
+
+@media (max-width: 1100px) {
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio { grid-template-columns: 1fr !important; overflow-y: auto !important; height: auto !important; min-height: 100vh !important; }
+  .clean-studio-rail { display: none; }
+  .clean-studio-main,.clean-studio-side { height: auto; }
+  .clean-preview-grid,.clean-progress-row,.clean-studio-state { grid-template-columns: 1fr; }
+}
+
