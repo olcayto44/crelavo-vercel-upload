@@ -2485,7 +2485,11 @@ body.admin-route > .site-footer {
 
 .assistant-workspace.ai-generator-dashboard .ai-dashboard-shell {
   display: grid;
-  grid-template-columns: minmax(360px, 420px) minmax(520px, 1fr) minmax(380px, 440px);
+  grid-template-columns: 86px minmax(620px, 1fr) minmax(390px, 440px);
+  grid-template-rows: minmax(300px, .52fr) minmax(330px, .48fr);
+  grid-template-areas:
+    "side canvas chat"
+    "side canvas controls";
   gap: 14px;
   width: 100%;
   height: calc(100vh - 118px);
@@ -2522,9 +2526,15 @@ body.admin-route > .site-footer {
 }
 
 .ai-dashboard-sidebar {
-  display: none;
-  padding: 14px;
-  gap: 14px;
+  grid-area: side;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 12px;
+  border-radius: 999px;
+  background: rgba(7,11,24,.72);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
 }
 
 .ai-dashboard-brand h1 {
@@ -2552,15 +2562,18 @@ body.admin-route > .site-footer {
 }
 
 .ai-dashboard-nav button {
+  position: relative;
   display: grid;
-  gap: 4px;
-  width: 100%;
+  place-items: center;
+  gap: 0;
+  width: 52px;
+  height: 52px;
   border: 1px solid rgba(125,211,252,.14);
-  border-radius: 16px;
-  padding: 10px;
-  text-align: left;
+  border-radius: 999px;
+  padding: 6px;
+  text-align: center;
   color: #dbeafe;
-  background: rgba(255,255,255,.045);
+  background: rgba(255,255,255,.07);
   cursor: pointer;
 }
 
@@ -2571,8 +2584,32 @@ body.admin-route > .site-footer {
 }
 
 .ai-dashboard-nav strong {
+  max-width: 44px;
   color: #fff;
-  font-size: 13px;
+  font-size: 9px;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+}
+
+.ai-dashboard-nav span,
+.ai-dashboard-brand p,
+.ai-dashboard-brand h1,
+.ai-dashboard-mini-card span {
+  display: none;
+}
+
+.ai-dashboard-brand {
+  display: grid;
+  place-items: center;
+}
+
+.ai-dashboard-brand .badge {
+  width: 52px;
+  height: 52px;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 999px;
 }
 
 .ai-dashboard-mini-card {
@@ -2590,7 +2627,16 @@ body.admin-route > .site-footer {
 }
 
 .assistant-workspace.ai-generator-dashboard .assistant-inline-chat {
+  grid-area: chat;
   padding: 14px;
+}
+
+.assistant-workspace.ai-generator-dashboard .ai-dashboard-canvas {
+  grid-area: canvas;
+}
+
+.assistant-workspace.ai-generator-dashboard .ai-dashboard-controls {
+  grid-area: controls;
 }
 
 .assistant-workspace.ai-generator-dashboard .assistant-inline-chat-head {
