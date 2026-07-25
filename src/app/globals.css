@@ -8598,40 +8598,117 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.22);
 }
 
-.clean-studio-rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 999px;
-  padding: 10px;
-}
-
-.clean-studio-logo,
-.clean-studio-rail button {
-  width: 54px;
-  height: 54px;
+.clean-tool-top-panel {
+  grid-area: tools;
   display: grid;
-  place-items: center;
-  border-radius: 999px;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 24px;
   border: 1px solid rgba(125,211,252,.18);
-  background: rgba(255,255,255,.07);
-  color: #fff;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(34,211,238,.16), transparent 34%),
+    radial-gradient(circle at 84% 0%, rgba(124,92,255,.12), transparent 34%),
+    rgba(2,6,23,.62);
+  box-shadow: 0 18px 58px rgba(0,0,0,.20);
 }
 
-.clean-studio-logo { background: linear-gradient(135deg, rgba(124,92,255,.9), rgba(34,211,238,.72)); }
-.clean-studio-rail button { cursor: pointer; padding: 5px; }
-.clean-studio-rail button.active,
-.clean-studio-rail button:hover { border-color: rgba(34,211,238,.62); background: rgba(34,211,238,.16); }
-.clean-studio-rail button strong { font-size: 9px; line-height: 1.05; text-align: center; }
+.clean-tool-top-head {
+  align-items: center;
+}
+
+.clean-tool-switcher-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+  overflow: visible;
+  padding: 0;
+  border-bottom: none;
+}
+
+.clean-tool-switcher-inline button {
+  width: auto;
+  min-width: min(220px, 100%);
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 18px;
+  background: rgba(15,23,42,.58);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.clean-tool-switcher-inline button strong {
+  font-size: 12px;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.clean-tool-switcher-inline button small {
+  display: block;
+  color: #9fbad2;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.clean-tool-switcher-inline button em {
+  flex: 0 0 auto;
+  font-style: normal;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  opacity: .9;
+}
+
+.clean-tool-active-inline {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(125,211,252,.14);
+  border-radius: 18px;
+  background: rgba(15,23,42,.44);
+}
+
+.clean-tool-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.clean-tool-group {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(148,163,184,.12);
+  background: rgba(2,6,23,.28);
+}
+
+.clean-tool-group small {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.clean-tool-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clean-tool-actions-row .btn {
+  min-height: 38px;
+}
 
 .clean-studio-main {
   grid-area: board;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   grid-template-areas:
+    "tools"
     "hero"
     "steps"
     "preview";
@@ -9440,8 +9517,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 
 @media (max-width: 1100px) {
-  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio { grid-template-columns: 1fr !important; grid-template-areas: "side" "tools" "board" !important; overflow-y: auto !important; height: auto !important; min-height: 100vh !important; }
-  .clean-studio-rail.clean-tool-panel { display: flex !important; max-height: none; }
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio { grid-template-columns: 1fr !important; grid-template-areas: "side" "board" !important; overflow-y: auto !important; height: auto !important; min-height: 100vh !important; }
   .clean-studio-main,.clean-studio-side { height: auto; }
   .clean-preview-grid,.clean-progress-row,.clean-studio-state { grid-template-columns: 1fr; }
 }
@@ -9450,14 +9526,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   html body main.container.section.assistant-full-page.assistant-production-page .assistant-workspace.crelavo-clean-studio,
   html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     display: grid !important;
-    grid-template-columns: clamp(300px, 18vw, 350px) clamp(230px, 15vw, 290px) minmax(0, 1fr) !important;
+    grid-template-columns: clamp(300px, 18vw, 340px) minmax(0, 1fr) !important;
     grid-template-rows: minmax(0, 1fr) !important;
-    grid-template-areas: "side tools board" !important;
+    grid-template-areas: "side board" !important;
     align-items: stretch !important;
   }
 
   .clean-studio-side,
-  .clean-studio-rail.clean-tool-panel,
   .clean-studio-main {
     height: 100% !important;
     min-height: 0 !important;
@@ -9465,7 +9540,6 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   }
 
   .clean-studio-main {
-    grid-column: 3 / 4 !important;
     width: 100% !important;
     justify-self: stretch !important;
   }
@@ -9476,17 +9550,21 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     align-self: stretch !important;
   }
 
-  .clean-tool-switcher {
-    max-height: 178px !important;
-    overflow-y: auto !important;
+  .clean-tool-top-panel {
+    align-self: start;
   }
 
-  .clean-tool-switcher button {
-    min-height: 38px !important;
-    padding: 6px 7px !important;
+  .clean-tool-switcher-inline {
+    max-width: 100%;
   }
 
-  .clean-tool-active-section {
+  .clean-tool-switcher-inline button {
+    flex: 1 1 220px;
+    min-height: 40px !important;
+    padding: 7px 9px !important;
+  }
+
+  .clean-tool-active-inline {
     min-height: 0 !important;
     overflow: hidden !important;
   }
