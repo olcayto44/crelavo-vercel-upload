@@ -6445,9 +6445,8 @@ html body .dashboard-postlaunch-shell.production-detail-shell .production-worksp
   display: grid !important;
   place-items: center;
   text-align: center;
-  gap: 8px;
-  padding: 20px 20px 16px !important;
-  margin-top: -6px;
+  gap: 10px;
+  padding: 28px 20px !important;
   border: 1px solid rgba(125,211,252,.18);
   border-radius: 28px;
   background:
@@ -6461,7 +6460,7 @@ html body .dashboard-postlaunch-shell.production-detail-shell .production-worksp
 html body .dashboard-postlaunch-shell.production-detail-shell .production-workspace-head h1 {
   margin: 0;
   max-width: 14ch;
-  font-size: clamp(32px, 3.9vw, 60px) !important;
+  font-size: clamp(34px, 4.3vw, 68px) !important;
   line-height: .96;
   letter-spacing: -.06em;
 }
@@ -6469,8 +6468,8 @@ html body .dashboard-postlaunch-shell.production-detail-shell .production-worksp
   max-width: 52ch;
   margin: 0;
   color: #dbeafe;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .production-truth-strip,
 html body .dashboard-postlaunch-shell.production-detail-shell .production-live-summary,
@@ -6480,22 +6479,21 @@ html body .dashboard-postlaunch-shell.production-detail-shell .production-agent-
 html body .dashboard-postlaunch-shell.production-detail-shell .local-context-card,
 html body .dashboard-postlaunch-shell.production-detail-shell .workspace-material-card,
 html body .dashboard-postlaunch-shell.production-detail-shell .voice-job-card,
-html body .dashboard-postlaunch-shell.production-detail-shell .automation-brief-card,
-html body .dashboard-postlaunch-shell.production-detail-shell .workspace-assistant-card {
+html body .dashboard-postlaunch-shell.production-detail-shell .automation-brief-card {
   display: none !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-theater {
-  padding: 10px !important;
-  margin-top: -2px !important;
+  padding: 12px !important;
+  margin-top: 4px !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen,
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen video,
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen img,
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen iframe {
-  min-height: min(86vh, 940px) !important;
+  min-height: min(84vh, 920px) !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .compact-alternatives-card {
-  margin-top: -4px !important;
+  margin-top: -2px !important;
   padding: 12px !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .compact-alternatives-card .workspace-alternative-grid {
