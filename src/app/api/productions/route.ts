@@ -683,6 +683,10 @@ outputPlan,
 
     const productionWithLegal = {
       ...data,
+      input_json: inputJson,
+      materials_json: materials,
+      legal_acceptance_id: legalAcceptance?.id ?? null,
+      legal_acceptance_snapshot: legalSnapshot,
       output_json: {
         ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}),
         legalAcceptanceId: legalAcceptance?.id ?? null,

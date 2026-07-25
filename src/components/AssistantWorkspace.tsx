@@ -2933,13 +2933,13 @@ async function startRawMicrophoneFallback() {
                 <div>
                   <span className="badge">Dynamic Production Wizard</span>
                   <h3>{dynamicWizardLabels[dynamicWizard.type]}</h3>
-                  <p>{dynamicWizard.subject ? `Subject: ${dynamicWizard.subject}` : "Asistan gerekli soruları üretim isteğine göre açar."}</p>
+                  <p>{dynamicWizard.subject ? `Subject: ${dynamicWizard.subject}` : "The assistant opens the required questions based on the production request."}</p>
                 </div>
-                <button className="btn secondary" type="button" onClick={() => setDynamicWizard(emptyDynamicWizard)}>Kapat</button>
+                <button className="btn secondary" type="button" onClick={() => setDynamicWizard(emptyDynamicWizard)}>Close</button>
               </div>
               {dynamicWizardQuestions[dynamicWizard.type].filter((question) => !question.dependsOn || dynamicWizard.answers[question.dependsOn.questionId]?.includes(question.dependsOn.value)).map((question) => (
                 <div className="category-specific-option-panel" key={question.id}>
-                  <span className="badge">{question.multi ? "Bir veya daha fazla seç" : "Birini seç"}</span>
+                  <span className="badge">{question.multi ? "Select one or more" : "Select one"}</span>
                   <h3>{question.label}</h3>
                   <div className="option-grid compact-option-grid">
                     {question.options.map((option) => {
@@ -2951,8 +2951,8 @@ async function startRawMicrophoneFallback() {
               ))}
               <div className="drawer-summary"><strong>Live production summary</strong><pre>{selectedOptionSummary()}</pre></div>
               <div className="assistant-start-actions">
-                <button className="btn" type="button" onClick={requestDynamicWizardCredits}>Kredi kontrolü</button>
-                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Ayarları aç</button>
+                <button className="btn" type="button" onClick={requestDynamicWizardCredits}>Check credits</button>
+                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(true)}>Open settings</button>
               </div>
             </section>
           ) : null}
@@ -2982,7 +2982,7 @@ async function startRawMicrophoneFallback() {
           ) : null}
           <div className="studio-side-actions">
             <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
-            <button className="btn secondary" type="button" onClick={() => setOptionsOpen((current) => !current)}>{optionsOpen ? "Ayarları kapat" : "Kalite / özellikler"}</button>
+            <button className="btn secondary" type="button" onClick={() => setOptionsOpen((current) => !current)}>{optionsOpen ? "Close settings" : "Quality / features"}</button>
             {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
             <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
           </div>
@@ -2990,14 +2990,14 @@ async function startRawMicrophoneFallback() {
             <section className="production-options-panel ai-control-drawer">
               <div className="drawer-head">
                 <div>
-                  <span className="badge">Ayarlar</span>
-                  <h3>Kalite, kapsam ve materyal</h3>
+                  <span className="badge">Settings</span>
+                  <h3>Quality, scope and materials</h3>
                 </div>
-                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(false)}>Kapat</button>
+                <button className="btn secondary" type="button" onClick={() => setOptionsOpen(false)}>Close</button>
               </div>
               {renderOptionGrid("Production categories", productionTypes.map((type) => type.label), (value) => productionTypes.find((type) => type.label === value)?.id === selectedProductionType, (value) => { const type = productionTypes.find((item) => item.label === value); if (type) applyCategorySelection(type.id); })}
               <div className="category-specific-option-panel">
-                <span className="badge">Kategori seçenekleri</span>
+                <span className="badge">Category options</span>
                 <h3>{activeCategoryProfile.title}</h3>
                 <p>{activeCategoryProfile.note}</p>
               </div>
@@ -3009,7 +3009,7 @@ async function startRawMicrophoneFallback() {
               {renderOptionGrid("Delivery / platform", activeCategoryProfile.platforms, (value) => selectedPlatforms.includes(value), togglePlatform)}
               {renderMaterialGrid()}
               <div className="drawer-summary"><strong>Selection summary</strong><pre>{selectedOptionSummary()}</pre></div>
-              <button className="btn" type="button" onClick={() => setOptionsOpen(false)}>Seçimleri uygula</button>
+              <button className="btn" type="button" onClick={() => setOptionsOpen(false)}>Apply selections</button>
             </section>
           ) : null}
           <div className="studio-side-status">
@@ -3018,25 +3018,25 @@ async function startRawMicrophoneFallback() {
           </div>
           {startedProduction ? (
             <div className={`studio-started-card ${startedProduction?.status === "waiting_provider_config" || startedProduction?.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-              <small>{startedProduction?.status === "automation_warning" || startedProduction?.status === "waiting_provider_config" ? "Dikkat gerekiyor" : "Production started"}</small>
+              <small>{startedProduction?.status === "automation_warning" || startedProduction?.status === "waiting_provider_config" ? "Attention needed" : "Production started"}</small>
               <strong>{startedProduction?.message}</strong>
               <span><b>Production ID</b>{startedProduction?.id}</span>
               {startedProduction?.providerStatus ? <span><b>Provider status</b>{startedProduction?.providerStatus}</span> : null}
               {startedProduction?.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction?.missingProviderKeys?.join(", ")}</span> : null}
               {startedProduction?.nextAction ? <p className="workspace-action-note">{startedProduction?.nextAction}</p> : null}
-              <a className="btn secondary" href={startedProduction?.detailUrl ?? "/dashboard/productions"}>Detayı aç</a>
+              <a className="btn secondary" href={startedProduction?.detailUrl ?? "/dashboard/productions"}>Open details</a>
             </div>
           ) : (
             <div className="studio-started-card production-draft-card">
-              <small>Henüz canlı değil</small>
-              <strong>Production ID yok.</strong>
-              <span><b>Sonraki adım</b>Gerçek kayıt için Start Production kullanılır.</span>
+              <small>Not live yet</small>
+              <strong>No production ID yet.</strong>
+              <span><b>Next step</b>Use Start Production to create a real record.</span>
             </div>
           )}
-          {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Son asistan ücreti: {formatCredits(assistantCreditState.chargedCredits)} kredi ({assistantCreditState.chargeSource === "assistant_trial" ? "ücretsiz asistan kredisi" : "üretim kredisi"}).</p> : null}
-          {assistantCreditState.redirect ? <p className="workspace-action-note error">Kredi gerekiyor. Kredi sayfasından bakiye yükleyip konuşmaya devam edebilirsin.</p> : null}
-          {assistantCreditState.assistantBalance !== null && (assistantCreditState.assistantBalance ?? 0) > 0 && (assistantCreditState.assistantBalance ?? 0) < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Ücretsiz asistan kredin azalıyor. Bitince mesajlar üretim kredisinden düşer.</p> : null}
-          {assistantCreditState.productionBalance !== null && (assistantCreditState.productionBalance ?? 0) > 0 && (assistantCreditState.productionBalance ?? 0) < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Üretim kredin azalıyor. Bakiye bitmeden kredi yüklemeni öneririm.</p> : null}
+          {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Last assistant charge: {formatCredits(assistantCreditState.chargedCredits)} credits ({assistantCreditState.chargeSource === "assistant_trial" ? "free assistant credits" : "production credits"}).</p> : null}
+          {assistantCreditState.redirect ? <p className="workspace-action-note error">Credits required. Top up on the credits page to continue chatting.</p> : null}
+          {assistantCreditState.assistantBalance !== null && (assistantCreditState.assistantBalance ?? 0) > 0 && (assistantCreditState.assistantBalance ?? 0) < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Your free assistant credits are running low. When they run out, messages will use production credits.</p> : null}
+          {assistantCreditState.productionBalance !== null && (assistantCreditState.productionBalance ?? 0) > 0 && (assistantCreditState.productionBalance ?? 0) < 500 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Your production credits are running low. Consider topping up before the balance runs out.</p> : null}
         </aside>
 
 

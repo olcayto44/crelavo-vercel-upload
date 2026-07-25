@@ -338,29 +338,38 @@ export async function POST(request: Request) {
         return Response.json({ job_id: jobId, production: completedProduction, provider_result: result });
       } catch (providerError) {
         const message = errorMessage(providerError, "Provider pipeline failed");
-        const status = providerError instanceof ProviderConfigError ? "provider_config_missing" : "provider_pipeline_failed";
-        const creditResolution = {
-          status: "admin_review_required",
-          reason: status,
-          reservedCredits: data.reserved_credits ?? data.estimated_credits ?? null,
-          instruction: "Provider could not be started. Admin must choose whether to refund credits, fix provider settings and restart, or deliver manually. No automatic refund was applied."
-        };
-
-        const { data: failedProduction } = await supabase
+        const providerNote = `Provider pipeline unavailable, demo output is active: ${message}`;
+        const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
+        const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
           .update({
-            status: "failed",
-            generation_status: status,
-            error_message: message,
-            output_json: { ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}), automationStatus: "failed", creditResolution },
-            admin_notes: `Provider pipeline failed: ${message}. Credit resolution requires admin review; no automatic refund was applied.`,
+            status: "in_production",
+            generation_status: "preview_ready",
+            output_json: {
+              ...demoOutput,
+              automationStatus: "demo_ready",
+              providerStatus: "waiting_provider_config",
+              providerPreflight,
+              renderQueuePolicy,
+              capacityPolicy,
+              activeJobLimit,
+              automaticDeliveryLinks: deliveryLinks,
+              outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput })
+            },
+            preview_url: deliveryLinks.previewUrl,
+            delivery_link: deliveryLinks.deliveryLink,
+            delivery_zip_url: deliveryLinks.deliveryZipUrl,
+            source_files_url: deliveryLinks.sourceFilesUrl,
+            readme_url: deliveryLinks.readmeUrl,
+            admin_notes: providerNote,
             updated_at: new Date().toISOString()
           })
           .eq("id", productionId)
           .select("*")
           .single();
 
-        return Response.json({ error: message, production: failedProduction ?? data }, { status: providerError instanceof ProviderConfigError ? 500 : 502 });
+        if (demoError) throw demoError;
+        return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_warning: message });
       }
     }
 
