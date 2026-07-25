@@ -22,7 +22,7 @@ export default async function ProductionWorkspacePage({ params }: { params: Prom
   }
 
   return (
-    <DashboardShell className="dashboard-postlaunch-shell">
+    <DashboardShell className="dashboard-postlaunch-shell production-detail-shell">
       {!production ? (
         <div className="card">
           <span className="badge">Production workspace</span>

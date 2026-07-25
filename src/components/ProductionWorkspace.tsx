@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, Film, Globe2, ImageIcon, LibraryBig, Mic2, Music2, Pencil, PlayCircle, RefreshCcw, Share2, Subtitles, UploadCloud } from "lucide-react";
-import { ProviderReadinessCard } from "@/components/ProviderReadinessCard";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 
 type ProductionWorkspaceProps = {
@@ -883,8 +882,6 @@ const [notice, setNotice] = useState("");
           <button className="btn" disabled={status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : "Send revision request"}</button>
           {notice ? <p className={`workspace-action-note ${status === "error" ? "error" : ""}`}>{notice}</p> : null}
         </form>
-
-        <ProviderReadinessCard />
 
         <div className="revision-history-card">
           <h2>Revision history</h2>

@@ -6427,6 +6427,19 @@ html body .dashboard-postlaunch-shell .dashboard-topbar {
   overflow-x: auto !important;
   padding-bottom: 4px !important;
 }
+html body .dashboard-postlaunch-shell.production-detail-shell.container.section {
+  width: min(1860px, calc(100vw - 24px)) !important;
+  max-width: 1860px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-sidebar-card {
+  display: none !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-workspace {
+  grid-column: 1 / -1 !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar {
+  justify-content: flex-start !important;
+}
 html body .assistant-production-page.container.section,
 html body .assistant-full-page.container.section {
   width: min(100% - 24px, 1760px) !important;
@@ -7938,6 +7951,22 @@ html body .production-workspace-shell {
   grid-template-columns: minmax(0, 1fr) minmax(min(320px, 100%), 380px);
   gap: 20px;
   overflow-x: hidden;
+}
+html body .production-detail-shell .production-workspace-shell {
+  grid-template-columns: 1fr !important;
+}
+html body .production-detail-shell .production-live-summary,
+html body .production-detail-shell .customer-preview-theater {
+  grid-template-columns: 1fr !important;
+}
+html body .production-detail-shell .customer-preview-screen,
+html body .production-detail-shell .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-screen img,
+html body .production-detail-shell .customer-preview-screen iframe {
+  min-height: 620px;
+}
+html body .production-detail-shell .production-workspace-side {
+  position: static !important;
 }
 html body .production-workspace-head,
 html body .production-truth-strip,
