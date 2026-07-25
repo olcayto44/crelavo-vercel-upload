@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { apiServiceGroups } from "@/lib/api-services";
+import { apiServiceGroups as defaultApiServiceGroups, type ApiServiceGroup } from "@/lib/api-services";
 
 function shouldHideRail(pathname: string | null) {
   if (!pathname) return true;
@@ -17,10 +18,8 @@ function shouldHideRail(pathname: string | null) {
   );
 }
 
-const railServices = apiServiceGroups.flatMap((group) => group.services).map((service) => ({
-  name: service.name,
-  href: `/api-documentation#api-${service.slug}`,
-  shortLabel: service.name
+function shortLabelFromName(name: string) {
+  return name
     .replace(/[^A-Za-z0-9]+/g, " ")
     .trim()
     .split(" ")
@@ -28,12 +27,32 @@ const railServices = apiServiceGroups.flatMap((group) => group.services).map((se
     .slice(0, 2)
     .map((part) => part[0])
     .join("")
-    .toUpperCase()
-}));
+    .toUpperCase();
+}
 
 export function PublicSideRail() {
   const pathname = usePathname();
+  const [groups, setGroups] = useState<ApiServiceGroup[]>(defaultApiServiceGroups);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/api-services")
+      .then((response) => response.json())
+      .then((data) => {
+        if (!alive || !Array.isArray(data.apiServiceGroups)) return;
+        setGroups(data.apiServiceGroups);
+      })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
   if (shouldHideRail(pathname)) return null;
+
+  const railServices = groups.flatMap((group) => group.services).map((service) => ({
+    name: service.name,
+    href: `/api-documentation#api-${service.slug}`,
+    shortLabel: shortLabelFromName(service.name)
+  }));
 
   return (
     <nav className="public-side-rail" aria-label="Crelavo API services menu">

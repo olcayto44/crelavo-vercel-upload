@@ -130,6 +130,8 @@ export const apiServiceGroups: ApiServiceGroup[] = [
   }
 ];
 
+export const defaultApiServiceGroups = apiServiceGroups;
+
 export const apiServiceLinks = apiServiceGroups.flatMap((group) =>
   group.services.map((service) => ({
     group: group.title,

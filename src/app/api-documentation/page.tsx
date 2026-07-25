@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/Header";
-import { apiServiceGroups } from "@/lib/api-services";
+import { getConfiguredApiServiceGroups } from "@/lib/api-services-loader";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
@@ -184,10 +183,12 @@ const faqJsonLd = {
   }))
 };
 
-const activeServices = apiServiceGroups.flatMap((group) => group.services);
-
 export default async function ApiDocumentationPage() {
-  const siteContent = await getConfiguredSiteContentConfig();
+  const [siteContent, apiServiceGroups] = await Promise.all([
+    getConfiguredSiteContentConfig(),
+    getConfiguredApiServiceGroups()
+  ]);
+  const activeServices = apiServiceGroups.flatMap((group) => group.services);
   const totalIntegrations = integrationGroups.flatMap((group) => group.items).length;
 
   return (
@@ -234,10 +235,11 @@ export default async function ApiDocumentationPage() {
           <p>These are the main services already tied into the Crelavo stack. Each card has an anchor so the side menu can jump straight to the matching service.</p>
           <div className="admin-category-grid api-service-grid" style={{ marginTop: 16 }}>
             {activeServices.map((service) => (
-              <div className="card admin-category-card api-service-card" id={`api-${service.slug}`} key={service.slug}>
-                <div className="api-service-image-wrap">
-                  <Image alt={service.alt} className="api-service-image" height={540} src={service.image} unoptimized width={960} />
-                </div>
+                <div className="card admin-category-card api-service-card" id={`api-${service.slug}`} key={service.slug}>
+                  <div className="api-service-image-wrap">
+                    <img alt={service.alt} className="api-service-image" src={service.image} />
+                  </div>
+
                 <span className="badge">{service.name}</span>
                 <h3>{service.summary}</h3>
                 <p>{service.useCase}</p>

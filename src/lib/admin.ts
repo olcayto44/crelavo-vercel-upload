@@ -11,6 +11,7 @@ export const adminMenu = [
   { label: "FAQ Management", href: "/admin/faqs", group: "Panel" },
   { label: "Free Tools Funnel", href: "/admin/free-tools", group: "Panel" },
   { label: "SEO Service Pages", href: "/admin/service-pages", group: "Panel" },
+  { label: "API Service Cards", href: "/admin/api-services", group: "Panel" },
   { label: "SEO / Google", href: "/admin/seo", group: "Panel" },
   { label: "Launch Readiness", href: "/admin/launch-readiness", group: "Panel" },
   { label: "Final API Checklist", href: "/admin/final-api-checklist", group: "Panel" },
