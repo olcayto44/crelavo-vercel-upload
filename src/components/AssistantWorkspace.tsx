@@ -2635,32 +2635,11 @@ async function startRawMicrophoneFallback() {
     },
     {
       id: "delivery",
-      label: "Delivery / Share / Stores",
-      detail: selectedPlatforms.slice(0, 3).join(" + ") || "Formats + social",
+      label: "Delivery",
+      detail: selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard",
       count: Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).length,
-      content: <div className="clean-tool-groups">
-        <div className="clean-tool-group">
-          <small>Download formats</small>
-          <div className="clean-tool-grid two">
-            {["Dashboard delivery", "MP4 download", "ZIP source", "README / setup", "Subtitles", "Thumbnail"].map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
-          </div>
-        </div>
-        <div className="clean-tool-group">
-          <small>Social media sharing</small>
-          <div className="clean-tool-grid two">
-            {["Instagram", "TikTok", "YouTube Shorts", "LinkedIn", "Facebook/Meta Ads", "X/Twitter"].map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
-          </div>
-        </div>
-        <div className="clean-tool-group">
-          <small>Connect store/accounts</small>
-          <div className="clean-tool-grid two">
-            {["Shopify", "Amazon", "Trendyol", "WooCommerce", "Custom store"].map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
-          </div>
-          <div className="clean-tool-actions-row">
-            <a className="btn secondary" href="/dashboard/connections">Connect store/accounts</a>
-            <a className="btn secondary" href="/dashboard/social-export">Open social export pack</a>
-          </div>
-        </div>
+      content: <div className="clean-tool-grid two">
+        {Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
       </div>
     }
   ];
@@ -2668,33 +2647,33 @@ async function startRawMicrophoneFallback() {
 
   return (
     <div className="assistant-workspace crelavo-clean-studio">
+      <aside className="clean-studio-rail clean-tool-panel" aria-label="Production settings">
+        <div className="clean-tool-head">
+          <div className="clean-studio-logo"><span>▶</span></div>
+          <div><strong>Crelavo Studio</strong><small>Production settings</small></div>
+        </div>
+
+        <div className="clean-tool-switcher" aria-label="Production setting groups">
+          {cleanToolSections.map((section) => (
+            <button
+              className={activeCleanToolContent.id === section.id ? "active" : ""}
+              type="button"
+              key={section.id}
+              onClick={() => setActiveCleanToolSection(section.id)}
+            >
+              <span><strong>{section.label}</strong><small>{section.detail}</small></span>
+              <em>{section.count}</em>
+            </button>
+          ))}
+        </div>
+
+        <div className="clean-tool-section clean-tool-active-section">
+          <span className="badge">{activeCleanToolContent.label}</span>
+          {activeCleanToolContent.content}
+        </div>
+      </aside>
+
       <main className="clean-studio-main" aria-label="Production workspace">
-        <section className="clean-tool-panel clean-tool-top-panel" aria-label="Production settings">
-          <div className="clean-tool-head clean-tool-top-head">
-            <div className="clean-studio-logo"><span>▶</span></div>
-            <div><strong>Crelavo Studio</strong><small>Production settings</small></div>
-          </div>
-
-          <div className="clean-tool-switcher clean-tool-switcher-inline" aria-label="Production setting groups">
-            {cleanToolSections.map((section) => (
-              <button
-                className={activeCleanToolContent.id === section.id ? "active" : ""}
-                type="button"
-                key={section.id}
-                onClick={() => setActiveCleanToolSection(section.id)}
-              >
-                <span><strong>{section.label}</strong><small>{section.detail}</small></span>
-                <em>{section.count}</em>
-              </button>
-            ))}
-          </div>
-
-          <div className="clean-tool-section clean-tool-active-section clean-tool-active-inline">
-            <span className="badge">{activeCleanToolContent.label}</span>
-            {activeCleanToolContent.content}
-          </div>
-        </section>
-
         <section className="clean-studio-hero">
           <div>
             <span className="badge">Crelavo AI Studio</span>
