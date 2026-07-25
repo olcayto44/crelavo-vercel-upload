@@ -6436,9 +6436,55 @@ html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-sidebar
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-workspace {
   grid-column: 1 / -1 !important;
+  gap: 12px !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar {
-  justify-content: flex-start !important;
+  display: none !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-workspace-head {
+  padding: 12px 14px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-workspace-head h1 {
+  font-size: clamp(26px, 2.6vw, 44px) !important;
+  margin: 6px 0 !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-truth-strip {
+  gap: 8px !important;
+  padding: 10px !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-truth-strip div {
+  min-height: 58px !important;
+  padding: 10px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-live-summary {
+  padding: 12px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-live-summary h2 {
+  font-size: clamp(22px, 2.2vw, 36px) !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-theater {
+  padding: 12px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen,
+html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen video,
+html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen img,
+html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-screen iframe {
+  min-height: min(84vh, 920px) !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .compact-alternatives-card {
+  margin-top: -2px !important;
+  padding: 12px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .compact-alternatives-card .workspace-alternative-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)) !important;
+  gap: 10px !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .local-context-card,
+html body .dashboard-postlaunch-shell.production-detail-shell .workspace-material-card,
+html body .dashboard-postlaunch-shell.production-detail-shell .voice-job-card,
+html body .dashboard-postlaunch-shell.production-detail-shell .automation-brief-card {
+  display: none !important;
 }
 html body .assistant-production-page.container.section,
 html body .assistant-full-page.container.section {
