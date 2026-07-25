@@ -1,25 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, CircleDollarSign, Contact, Cpu, Drone, Gift, Home, LayoutGrid, Newspaper, RadioTower, Rocket, Sparkles, WandSparkles, Wrench } from "lucide-react";
 import { usePathname } from "next/navigation";
-
-const publicRailItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Categories", href: "/categories", icon: LayoutGrid },
-  { label: "Tools", href: "/tools", icon: Wrench },
-  { label: "Feature Paths", href: "/tools#feature-paths", icon: WandSparkles },
-  { label: "Free Tools", href: "/free-tools", icon: Gift },
-  { label: "Pricing / Credits", href: "/pricing", icon: CircleDollarSign },
-  { label: "Start production", href: "/dashboard/create", icon: Sparkles },
-  { label: "Growth Intelligence", href: "/growth-intelligence", icon: Rocket },
-  { label: "Live Sales Plans", href: "/live-sales-credits", icon: RadioTower },
-  { label: "Drone Plans", href: "/drone-credits", icon: Drone },
-  { label: "Affiliate", href: "/affiliate", icon: Bot },
-  { label: "Blog / Content", href: "/blog", icon: Newspaper },
-  { label: "Contact", href: "/contact", icon: Contact },
-  { label: "AI Ecosystem", href: "/ai-video-generator", icon: Cpu }
-];
+import { apiServiceGroups } from "@/lib/api-services";
 
 function shouldHideRail(pathname: string | null) {
   if (!pathname) return true;
@@ -38,18 +21,37 @@ export function PublicSideRail() {
   const pathname = usePathname();
   if (shouldHideRail(pathname)) return null;
 
+  const onDocsPage = pathname?.startsWith("/api-documentation");
+
   return (
-    <nav className="public-side-rail" aria-label="Crelavo quick navigation">
-      {publicRailItems.map((item) => {
-        const Icon = item.icon;
-        const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
-        return (
-          <Link className={`public-side-rail-link ${active ? "active" : ""}`} href={item.href} key={item.href} aria-label={item.label}>
-            <Icon size={18} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <aside className="public-side-rail" aria-label="Crelavo API services menu">
+      <div className="tool-side-menu-head">
+        <span className="badge">API services</span>
+        <strong>Crelavo integrations</strong>
+        <p>Open the active provider map, quality levels and usage notes for each service.</p>
+      </div>
+
+      <nav className="tool-side-menu-groups">
+        {apiServiceGroups.map((group) => (
+          <details key={group.title} open>
+            <summary>{group.title}</summary>
+            <div>
+              {group.services.map((service) => {
+                const href = `/api-documentation#api-${service.slug}`;
+                const active = onDocsPage || pathname === href;
+                return (
+                  <Link className={active ? "active" : ""} href={href} key={`${group.title}-${service.slug}`}>
+                    {service.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+        ))}
+      </nav>
+
+      <Link className="btn" href="/api-documentation">Open API docs</Link>
+      <Link className="btn secondary" href="/dashboard/assistant-workspace">Start production</Link>
+    </aside>
   );
 }
