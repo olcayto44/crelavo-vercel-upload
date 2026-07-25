@@ -26,10 +26,10 @@ async function testOpenAi() {
 async function testElevenLabs() {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
-  const response = await fetch("https://api.elevenlabs.io/v1/voices", { headers: { "xi-api-key": apiKey, Accept: "application/json" } });
-  if (!response.ok) throw new Error(`ElevenLabs voices check failed: ${response.status} ${await response.text()}`);
+  const response = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": apiKey, Accept: "application/json" } });
+  if (!response.ok) throw new Error(`ElevenLabs auth check failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
-  return { voiceCount: Array.isArray(data.voices) ? data.voices.length : 0 };
+  return { tier: data.tier ?? "connected", characterLimit: data.character_limit ?? null, characterCount: data.character_count ?? null };
 }
 
 async function testApify() {
