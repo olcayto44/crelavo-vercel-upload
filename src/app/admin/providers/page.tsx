@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/AdminShell";
+import { AdminProviderTestPanel } from "@/components/AdminProviderTestPanel";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function statusLabel(status: string) {
@@ -86,6 +87,8 @@ export default function AdminProvidersPage() {
           ))}
         </div>
       </section>
+
+      <AdminProviderTestPanel />
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Safe mode policy</span>
