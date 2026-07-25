@@ -8650,6 +8650,75 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   max-width: 520px;
   margin-top: 8px;
 }
+.production-example-directions {
+  display: grid;
+  gap: 12px;
+  max-width: 880px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(125,211,252,.16);
+  border-radius: 22px;
+  background: rgba(2,6,23,.42);
+}
+.production-example-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.production-example-head small {
+  color: #bae6fd;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.production-example-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.production-example-grid button {
+  display: grid;
+  gap: 6px;
+  min-height: 108px;
+  border: 1px solid rgba(125,211,252,.16);
+  border-radius: 18px;
+  padding: 12px;
+  text-align: left;
+  color: #dbeafe;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(34,211,238,.12), transparent 34%),
+    rgba(15,23,42,.72);
+  cursor: pointer;
+}
+.production-example-grid button:hover,
+.production-example-grid button.selected {
+  border-color: rgba(34,211,238,.58);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(34,211,238,.18), transparent 34%),
+    rgba(15,23,42,.86);
+}
+.production-example-grid button strong {
+  color: #fff;
+  font-size: 15px;
+}
+.production-example-grid button small {
+  color: #bae6fd;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.production-example-grid button em {
+  color: #67e8f9;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+.production-example-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .clean-preview-card strong { font-size: 22px; line-height: 1.1; }
 .clean-preview-large strong { font-size: clamp(34px, 5vw, 72px); letter-spacing: -.06em; }
 .clean-preview-card p { margin: 0; color: #cbd5e1; line-height: 1.4; }
@@ -8731,8 +8800,33 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   text-decoration: none;
 }
 .production-action-pill.primary {
-  background: linear-gradient(135deg, rgba(34,211,238,.28), rgba(124,92,255,.28));
-  border-color: rgba(34,211,238,.45);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(34,211,238,.38), rgba(124,92,255,.42), rgba(236,72,153,.30));
+  border-color: rgba(34,211,238,.62);
+  box-shadow: 0 0 0 1px rgba(34,211,238,.12), 0 0 24px rgba(34,211,238,.18);
+  animation: productionStartPulse 1.9s ease-in-out infinite;
+}
+.production-action-pill.primary::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 46%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.38), transparent);
+  animation: productionStartSweep 2.4s ease-in-out infinite;
+}
+.production-action-pill.primary strong {
+  z-index: 1;
+  color: #fff;
+}
+@keyframes productionStartPulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 0 0 1px rgba(34,211,238,.12), 0 0 20px rgba(34,211,238,.14); }
+  50% { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(34,211,238,.25), 0 0 34px rgba(34,211,238,.26); }
+}
+@keyframes productionStartSweep {
+  0% { left: -70%; }
+  48%, 100% { left: 130%; }
 }
 .production-action-pill:disabled {
   opacity: .48;
@@ -8839,6 +8933,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   }
   .service-network-dropdown {
     width: min(240px, 92vw);
+  }
+  .production-example-grid {
+    grid-template-columns: 1fr;
+  }
+  .production-example-head {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

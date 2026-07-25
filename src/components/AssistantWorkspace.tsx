@@ -881,7 +881,7 @@ function productionFollowUpReply(message: string, language: string) {
 function detectWorkspaceIntent(message: string): WorkspaceIntent {
   const text = message.toLocaleLowerCase("tr-TR").trim();
   const normalized = text.replace(/[.!?]+$/g, "").trim();
-  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|evet başla|evet basla|hemen başla|hemen basla|start|confirm|create production)$/i.test(normalized);
+  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|onay verdim|evet|evet veriyorum|veriyorum|tamam veriyorum|kabul|kabul ediyorum|olur|tamam olur|tamam buyurun|buyurun sunun|sunun|üretime geç|uretime gec|evet başla|evet basla|hemen başla|hemen basla|start|confirm|create production)$/i.test(normalized);
   const hasNewSubjectAfterHadi = /^hadi\s+\S+/.test(normalized) && !/^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et)$/i.test(normalized);
   if (/^(selam|merhaba|hello|hi|hey|sa|slm|günaydın|gunaydin|iyi akşamlar|iyi aksamlar)\b/.test(text)) return "greeting";
   if (/^(nasılsın|nasilsin|naber|ne haber|how are you)\b/.test(text)) return "greeting";
@@ -1274,7 +1274,23 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
 const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
 const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
 const [productionStartingIntent, setProductionStartingIntent] = useState(false);
+const [selectedExampleDirection, setSelectedExampleDirection] = useState("");
 const latestAgentAction = lastOrchestratorPlan?.jobs?.[0]?.agent_action ?? null;
+const hasUserVisibleProductionSelection = Boolean(
+  productionBrief.trim() ||
+  dynamicWizard.open ||
+  productionStartingIntent ||
+  startedProduction ||
+  selectedProductionType !== "video" ||
+  selectedQuality !== "1080p" ||
+  selectedStyle !== "Cinematic" ||
+  selectedDuration !== "30 sec" ||
+  selectedModules.join("|") !== "AI video" ||
+  selectedFeatures.join("|") !== "Voice-over|Subtitles|3 alternatives" ||
+  selectedPlatforms.join("|") !== "Dashboard delivery|MP4 download" ||
+  selectedMaterials.length ||
+  uploadedMaterials.length
+);
 const productionLifecycleState = startedProduction ? "Production started" : productionBrief.trim() || input.trim() || dynamicWizard.open ? "Draft ready" : "Not submitted yet";
 const productionLifecycleNote = startedProduction
   ? "Production record exists. Credits were checked during the start step."
@@ -1330,6 +1346,29 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const hasKnownProductionCredits = typeof availableProductionCredits === "number";
   const productionCreditShortfall = hasKnownProductionCredits ? Math.max(0, costEstimate.totalCredits - (availableProductionCredits ?? 0)) : 0;
   const productionCreditInsufficient = hasKnownProductionCredits && productionCreditShortfall > 0;
+  const productionExampleDirections = (() => {
+    const subjectText = `${productionBrief} ${input} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
+    if (/voice|ses|seslendirme|dubbing|konuşma|konusma/.test(subjectText)) return [
+      { id: "warm-voice", title: "Warm narration", meta: "Voice + subtitle", style: "Corporate", modules: ["Voice-over", "Subtitles"], platforms: ["Dashboard delivery", "MP4 download"] },
+      { id: "energetic-voice", title: "Energetic shorts voice", meta: "Fast social voice", style: "Viral TikTok", modules: ["Voice-over", "Music", "Subtitles"], platforms: ["TikTok", "YouTube Shorts"] },
+      { id: "premium-voice", title: "Premium brand voice", meta: "Clean product narration", style: "Premium ad", modules: ["Voice-over", "Music"], platforms: ["Dashboard delivery", "MP4 download"] }
+    ];
+    if (/image|görsel|gorsel|photo|visual|brand|logo/.test(subjectText)) return [
+      { id: "premium-visual", title: "Premium visual set", meta: "Hero + thumbnails", style: "Premium ad", modules: ["Visual/image pack", "Brand kit"], platforms: ["Dashboard delivery", "PNG images", "JPG images"] },
+      { id: "social-visual", title: "Social image pack", meta: "Post + story sizes", style: "Viral TikTok", modules: ["Visual/image pack"], platforms: ["Instagram", "TikTok"] },
+      { id: "clean-product", title: "Clean product demo", meta: "Product-first visuals", style: "Product demo", modules: ["Visual/image pack"], platforms: ["Dashboard delivery", "ZIP source"] }
+    ];
+    if (/site|website|web|saas|app|uygulama|admin/.test(subjectText)) return [
+      { id: "landing-page", title: "Landing page preview", meta: "Hero + sections", style: "SaaS modern", modules: ["Website", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
+      { id: "app-flow", title: "App screen flow", meta: "Screens + source", style: "App demo", modules: ["Mobile app", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source"] },
+      { id: "commerce-site", title: "Commerce storefront", meta: "Store + product flow", style: "Product demo", modules: ["Website", "Working source package"], platforms: ["Shopify", "Dashboard delivery"] }
+    ];
+    return [
+      { id: "shorts-energy", title: "Energetic Shorts", meta: "Hook + music + subtitles", style: "Viral TikTok", modules: ["AI video", "Prompt-to-video"], platforms: ["TikTok", "YouTube Shorts", "MP4 download"] },
+      { id: "cinematic-story", title: "Cinematic story", meta: "Scene plan + motion", style: "Cinematic", modules: ["AI video", "Scene plan"], platforms: ["Dashboard delivery", "MP4 download"] },
+      { id: "premium-ad", title: "Premium ad cut", meta: "Product-ready video", style: "Premium ad", modules: ["Product ad video", "Campaign set"], platforms: ["Instagram", "MP4 download"] }
+    ];
+  })();
 
   useEffect(() => {
     fetch("/api/delivery-credit-rates")
@@ -1435,6 +1474,15 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   function toggleMaterial(materialId: string) {
     setQuickProviderTest(false);
     setSelectedMaterials((current) => current.includes(materialId) ? current.filter((item) => item !== materialId) : [...current, materialId]);
+  }
+
+  function selectProductionExampleDirection(direction: { id: string; title: string; meta: string; style: string; modules: string[]; platforms: string[] }) {
+    setSelectedExampleDirection(direction.id);
+    setSelectedStyle(direction.style);
+    setSelectedModules((current) => Array.from(new Set([...current, ...direction.modules])));
+    setSelectedPlatforms((current) => Array.from(new Set([...current, ...direction.platforms])));
+    setProductionStartingIntent(false);
+    setStatus(activeLanguage === "tr" ? `${direction.title} örneği seçildi. Onay verdiğinde üretim başlatma adımına geçilecek.` : `${direction.title} direction selected. Confirm when you are ready to start production.`);
   }
 
   function applyDynamicWizardPreset(type: DynamicWizardType, subject: string) {
@@ -2669,7 +2717,7 @@ async function startRawMicrophoneFallback() {
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
-            {!startedProduction && (productionBrief.trim() || input.trim() || dynamicWizard.open || productionStartingIntent) ? (
+            {!startedProduction && hasUserVisibleProductionSelection ? (
               <div className="clean-hero-selection-chips" aria-label="Selected production options">
                 <span><Film size={13} /><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
                 <span><Gauge size={13} /><strong>{selectedQuality}</strong></span>
@@ -2692,7 +2740,28 @@ async function startRawMicrophoneFallback() {
           <div className="clean-preview-card clean-preview-large clean-output-viewer">
             <small>Work output viewer</small>
             <strong>{startedProduction ? "Production is ready to review" : productionStartingIntent ? "Production approval is ready" : (selectedProduction?.label ?? selectedProductionType)}</strong>
-            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionStartingIntent ? "The assistant prepared the production setup. Confirm the start step to create the production record and begin automation." : productionBrief ? "Brief ready. Your generated images, video, voice, music, files, and delivery parts will appear here as the work progresses." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
+            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionStartingIntent ? "The assistant prepared the production setup. Confirm the start step to create the production record and begin automation." : productionBrief ? "Brief ready. Choose a direction below, or ask the assistant to change style, voice, visuals, duration, or delivery." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
+            {!startedProduction && hasUserVisibleProductionSelection && !productionStartingIntent ? (
+              <div className="production-example-directions" aria-label="Production example directions">
+                <div className="production-example-head">
+                  <span className="badge">Choose direction</span>
+                  <small>Select one example, then confirm to start production.</small>
+                </div>
+                <div className="production-example-grid">
+                  {productionExampleDirections.map((direction) => (
+                    <button className={selectedExampleDirection === direction.id ? "selected" : ""} type="button" key={direction.id} onClick={() => selectProductionExampleDirection(direction)}>
+                      <strong>{direction.title}</strong>
+                      <small>{direction.meta}</small>
+                      <em>{direction.style}</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="production-example-actions">
+                  <button className="btn secondary" type="button" onClick={() => { setSelectedExampleDirection(""); setStatus(activeLanguage === "tr" ? "Yeni alternatif isteyebilirsin veya asistan mesajına ek detay yazabilirsin." : "You can ask for another alternative or add details in the assistant."); }}>Show another idea</button>
+                  <button className="btn" type="button" onClick={openStartProductionModal}>Use this direction</button>
+                </div>
+              </div>
+            ) : null}
             {startedProduction ? (
               <div className={`studio-started-card clean-completion-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
                 <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Needs attention" : "Production workspace ready"}</small>
@@ -2744,7 +2813,7 @@ async function startRawMicrophoneFallback() {
               </div>
             </div>
           ))}
-          <button className="service-network-pill production-action-pill primary" type="button" onClick={openStartProductionModal} disabled={productionCreditInsufficient}>
+          <button className="service-network-pill production-action-pill primary" type="button" onClick={openStartProductionModal}>
             <strong>Start Production</strong>
           </button>
           <a className="service-network-pill production-action-pill" href="/dashboard/productions">
