@@ -6442,11 +6442,7 @@ html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar 
   display: none !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .production-workspace-head {
-  padding: 12px 14px !important;
-}
-html body .dashboard-postlaunch-shell.production-detail-shell .production-workspace-head h1 {
-  font-size: clamp(26px, 2.6vw, 44px) !important;
-  margin: 6px 0 !important;
+  display: none !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .production-truth-strip {
   gap: 8px !important;
