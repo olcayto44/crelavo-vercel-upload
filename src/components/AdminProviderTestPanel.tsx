@@ -44,14 +44,26 @@ export function AdminProviderTestPanel() {
 
   async function runTest(provider: string) {
     setRunning(provider);
-    const response = await fetch(`/api/admin/provider-tests?provider=${encodeURIComponent(provider)}`, { headers: adminApiHeaders(adminEmail, adminToken) });
-    const data = await response.json().catch(() => ({ ok: false, error: "Invalid provider test response" }));
-    setResults((current) => ({ ...current, [provider]: data }));
-    setRunning("");
+    try {
+      const response = await fetch(`/api/admin/provider-tests?provider=${encodeURIComponent(provider)}`, { headers: adminApiHeaders(adminEmail, adminToken) });
+      const data = await response.json().catch(() => ({ ok: false, error: "Invalid provider test response" }));
+      setResults((current) => ({ ...current, [provider]: data }));
+    } catch (error) {
+      setResults((current) => ({
+        ...current,
+        [provider]: {
+          ok: false,
+          provider,
+          error: error instanceof Error ? error.message : "Provider test could not be started."
+        }
+      }));
+    } finally {
+      setRunning("");
+    }
   }
 
   async function runSafeBatch() {
-    for (const item of providerTests.filter((test) => !["video", "kling", "fal", "runway", "shotstack", "shopify"].includes(test.id))) {
+    for (const item of providerTests.filter((test) => !["shotstack"].includes(test.id))) {
       await runTest(item.id);
     }
   }
