@@ -2636,10 +2636,21 @@ async function startRawMicrophoneFallback() {
     {
       id: "delivery",
       label: "Delivery",
-      detail: selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard",
-      count: Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).length,
-      content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+      detail: selectedPlatforms.slice(0, 2).join(" + ") || "Download formats",
+      count: Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions, "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "Subtitle file", "Thumbnail / cover", "Preview link"])).length,
+      content: <div className="clean-tool-groups compact-delivery-groups">
+        <div className="clean-tool-group">
+          <small>Download formats</small>
+          <div className="clean-tool-grid two">
+            {["MP4 download", "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "ZIP source", "README / setup", "Subtitle file", "Thumbnail / cover", "Preview link", "Dashboard delivery"].map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+          </div>
+        </div>
+        <div className="clean-tool-group">
+          <small>Publish / handoff</small>
+          <div className="clean-tool-grid two">
+            {Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).filter((platform) => !["Dashboard delivery", "MP4 download", "ZIP source"].includes(platform)).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+          </div>
+        </div>
       </div>
     }
   ];
