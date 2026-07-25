@@ -5,6 +5,7 @@ import { geocodeAddress } from "@/lib/providers/google-maps";
 import { getHeyGenAvatars } from "@/lib/providers/heygen";
 import { getMetaAdAccount } from "@/lib/providers/meta";
 import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
+import { createShotstackTestRender } from "@/lib/providers/shotstack";
 import { getStabilityBalance } from "@/lib/providers/stability";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
     if (provider === "heygen") return ok(provider, await getHeyGenAvatars());
     if (provider === "stability") return ok(provider, await getStabilityBalance());
     if (provider === "music" || provider === "stable-audio") return ok("music", await testMusicProvider());
+    if (provider === "shotstack") return ok(provider, await createShotstackTestRender());
     if (["video", "kling", "fal", "runway"].includes(provider)) return ok(provider, selectedVideoReadiness());
     if (provider === "shopify") return ok(provider, { status: "pending", note: "Shopify is paused until store URL and integration type are confirmed." });
     return fail(provider, new Error("Unsupported provider test."), 400);

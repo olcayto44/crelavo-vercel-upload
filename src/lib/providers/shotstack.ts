@@ -1,6 +1,14 @@
 import { requireEnv } from "./env";
 import type { ProviderJob } from "./types";
 
+function shotstackEndpoint() {
+  return process.env.SHOTSTACK_API_URL || process.env.SHOTSTACK_RENDER_URL || "https://api.shotstack.io/stage/render";
+}
+
+function shotstackKey() {
+  return requireEnv("SHOTSTACK_API_KEY");
+}
+
 export async function createShotstackRender(input: {
   title: string;
   videoUrl?: string;
@@ -8,8 +16,8 @@ export async function createShotstackRender(input: {
   subtitleUrl: string;
   durationSeconds: number;
 }): Promise<ProviderJob> {
-  const apiKey = requireEnv("SHOTSTACK_API_KEY");
-  const endpoint = process.env.SHOTSTACK_API_URL || "https://api.shotstack.io/stage/render";
+  const apiKey = shotstackKey();
+  const endpoint = shotstackEndpoint();
   const videoAsset = input.videoUrl
     ? { type: "video", src: input.videoUrl }
     : { type: "html", html: `<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#050816;color:white;font-family:Arial;font-size:48px;text-align:center;padding:60px;\">${input.title}</div>`, width: 1080, height: 1920 };
@@ -43,6 +51,45 @@ export async function createShotstackRender(input: {
   });
 
   if (!response.ok) throw new Error(`Shotstack render failed: ${response.status} ${await response.text()}`);
+  const data = await response.json();
+  return { provider: "shotstack", id: data.response?.id ?? data.id, status: data.response?.status ?? "queued", raw: data };
+}
+
+export async function createShotstackTestRender(): Promise<ProviderJob> {
+  const response = await fetch(shotstackEndpoint(), {
+    method: "POST",
+    headers: {
+      "x-api-key": shotstackKey(),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      timeline: {
+        tracks: [
+          {
+            clips: [
+              {
+                asset: {
+                  type: "html",
+                  html: "<div style='width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#050816;color:white;font-family:Arial;font-size:42px;'>Crelavo Shotstack Test</div>",
+                  width: 1280,
+                  height: 720
+                },
+                start: 0,
+                length: 1
+              }
+            ]
+          }
+        ]
+      },
+      output: {
+        format: "mp4",
+        resolution: "sd",
+        aspectRatio: "16:9"
+      }
+    })
+  });
+
+  if (!response.ok) throw new Error(`Shotstack test render failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
   return { provider: "shotstack", id: data.response?.id ?? data.id, status: data.response?.status ?? "queued", raw: data };
 }

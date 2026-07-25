@@ -19,6 +19,7 @@ const providerTests = [
   { id: "kling", label: "Kling readiness" },
   { id: "fal", label: "Fal readiness" },
   { id: "runway", label: "Runway readiness" },
+  { id: "shotstack", label: "Shotstack render" },
   { id: "video", label: "Selected video provider" },
   { id: "shopify", label: "Shopify paused" }
 ];
@@ -46,7 +47,7 @@ export function AdminProviderTestPanel() {
   }
 
   async function runSafeBatch() {
-    for (const item of providerTests.filter((test) => !["video", "kling", "fal", "runway", "shopify"].includes(test.id))) {
+    for (const item of providerTests.filter((test) => !["video", "kling", "fal", "runway", "shotstack", "shopify"].includes(test.id))) {
       await runTest(item.id);
     }
   }
