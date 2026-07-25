@@ -117,7 +117,6 @@ export async function PATCH(request: Request) {
     const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
       generation_status: generationStatus || (providerStatus ? providerStatus : "operations_update"),
-      automation_status: automationStatus || (status === "ready" ? "completed" : status === "in_production" ? "running" : undefined),
       preview_url: previewUrl || null,
       delivery_link: deliveryLink || deliveryZipUrl || previewUrl || null,
       delivery_zip_url: deliveryZipUrl || deliveryLink || null,
@@ -128,6 +127,7 @@ export async function PATCH(request: Request) {
         ...existingOutput,
         updatedBy: adminEmail,
         updatedAt: new Date().toISOString(),
+        automationStatus: automationStatus || (status === "ready" ? "completed" : status === "in_production" ? "running" : existingOutput.automationStatus),
         deliveryReady: status === "ready" || Boolean(deliveryLink || deliveryZipUrl),
         previewUrl,
         preview_url: previewUrl,
@@ -575,6 +575,8 @@ deliveryTargets,
 
     const initialOutputJson = {
       automationMode: "fully_automatic",
+      automationStatus: "queued",
+      automationSteps,
       agentAction,
       agentProviderRoutePlan,
       providerReadiness: {
@@ -620,8 +622,6 @@ deliveryTargets,
         prompt,
         status: "queued",
         generation_status: "automation_queued",
-        automation_status: "queued",
-        automation_steps: automationSteps,
         request_metadata: requestMetadata,
         materials_json: materials,
         estimated_credits: estimatedCredits,

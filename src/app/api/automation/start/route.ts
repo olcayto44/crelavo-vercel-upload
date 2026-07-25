@@ -147,7 +147,6 @@ export async function POST(request: Request) {
         .update({
           status: "queued",
           generation_status: "waiting_provider_config",
-          automation_status: "waiting_provider_config",
           output_json: waitingOutput,
           preview_url: deliveryLinks.previewUrl,
           delivery_link: deliveryLinks.deliveryLink,
@@ -166,12 +165,12 @@ export async function POST(request: Request) {
 
     const activeJobLimit = safeActiveVideoJobLimit();
     if (isVideoLikeProductionType(productionType)) {
-      const { count: activeVideoJobs, error: activeVideoJobsError } = await supabase
-        .from("production_requests")
-        .select("id", { count: "exact", head: true })
-        .in("automation_status", ["running", "provider_visual_job_created"])
-        .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization"]);
-      if (activeVideoJobsError) throw activeVideoJobsError;
+        const { count: activeVideoJobs, error: activeVideoJobsError } = await supabase
+          .from("production_requests")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["queued", "in_production"])
+          .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization"]);
+        if (activeVideoJobsError) throw activeVideoJobsError;
       if ((activeVideoJobs ?? 0) >= activeJobLimit) {
         const queuedOutput = {
           ...existingOutput,
@@ -191,7 +190,6 @@ export async function POST(request: Request) {
           .update({
             status: "queued",
             generation_status: "queued_for_render_slot",
-            automation_status: "queued",
             output_json: queuedOutput,
             admin_notes: `Queued by ${renderQueuePolicy.label}. Active video provider jobs: ${activeVideoJobs}/${activeJobLimit}.`,
             updated_at: now
@@ -217,8 +215,6 @@ export async function POST(request: Request) {
     const updatePayload: Record<string, unknown> = {
       status: "in_production",
       generation_status: isProductAdVideo ? "scrape_analyze_running" : "strategy_running",
-      automation_status: "running",
-      automation_steps: steps,
       output_json: {
         automationMode: "fully_automatic",
         jobId,
@@ -229,6 +225,8 @@ export async function POST(request: Request) {
         renderQueuePolicy,
         capacityPolicy,
         activeJobLimit,
+        automationStatus: "running",
+        automationSteps: steps,
         chain: pipeline?.chain ?? null,
           note: isProductAdVideo
             ? "Backend orchestration will scrape the product link, create a GPT-4o ad script, generate visuals, create ElevenLabs voice-over, time subtitles with Whisper and render the final MP4 with Shotstack/Remotion."
@@ -274,8 +272,7 @@ export async function POST(request: Request) {
           .update({
             status: "in_production",
             generation_status: "preview_ready",
-            automation_status: "demo_ready",
-            output_json: { ...demoOutput, automaticDeliveryLinks: deliveryLinks, outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput }) },
+            output_json: { ...demoOutput, automationStatus: "demo_ready", automaticDeliveryLinks: deliveryLinks, outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput }) },
             preview_url: deliveryLinks.previewUrl,
             delivery_link: deliveryLinks.deliveryLink,
             delivery_zip_url: deliveryLinks.deliveryZipUrl,
@@ -309,6 +306,7 @@ export async function POST(request: Request) {
 
         const providerOutput = {
           automationMode: "fully_automatic",
+          automationStatus: "running",
           jobId,
           currentStep: "Shotstack render job created",
           pipelineType: "ecommerce_product_ad_video",
@@ -329,7 +327,6 @@ export async function POST(request: Request) {
           .from("production_requests")
           .update({
             generation_status: "render_job_created",
-            automation_status: "running",
             output_json: {
               ...providerOutput,
               providerLifecycle: { visual: providerLifecycle.visual, render: providerLifecycle.render },
@@ -360,9 +357,8 @@ export async function POST(request: Request) {
           .update({
             status: "failed",
             generation_status: status,
-            automation_status: "failed",
             error_message: message,
-            output_json: { ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}), creditResolution },
+            output_json: { ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}), automationStatus: "failed", creditResolution },
             admin_notes: `Provider pipeline failed: ${message}. Credit resolution requires admin review; no automatic refund was applied.`,
             updated_at: new Date().toISOString()
           })
@@ -406,8 +402,7 @@ export async function POST(request: Request) {
       .update({
         status: "in_production",
         generation_status: visualJob ? "provider_visual_job_created" : "preview_ready",
-        automation_status: visualJob ? "running" : "demo_ready",
-        output_json: outputJson,
+        output_json: { ...outputJson, automationStatus: visualJob ? "running" : "demo_ready" },
         preview_url: deliveryLinks.previewUrl,
         delivery_link: deliveryLinks.deliveryLink,
         delivery_zip_url: deliveryLinks.deliveryZipUrl,
