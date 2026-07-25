@@ -8572,17 +8572,18 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   grid-area: steps;
   position: relative;
   z-index: 18;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  display: flex;
+  align-items: stretch;
   gap: 5px;
   overflow: visible;
 }
 .service-network-pill {
   position: relative;
   display: grid;
-  gap: 2px;
-  min-width: 0;
-  padding: 7px 8px;
+  gap: 1px;
+  min-width: 72px;
+  flex: 1 1 0;
+  padding: 5px 6px;
   cursor: pointer;
   transition: transform .16s ease, border-color .16s ease, background .16s ease;
 }
@@ -8614,18 +8615,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .service-network-pill strong {
   overflow: hidden;
   color: #f8fafc;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.05;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .service-network-pill small {
-  overflow: hidden;
-  color: #94a3b8;
-  font-size: 9px;
-  line-height: 1.12;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  display: none;
 }
 .service-network-dropdown {
   position: absolute;
@@ -8669,15 +8665,18 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 @media (max-width: 1280px) {
   .clean-service-network-row {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    flex-wrap: wrap;
+  }
+  .service-network-pill {
+    flex: 1 1 86px;
   }
 }
 @media (max-width: 700px) {
-  .clean-service-network-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .service-network-pill {
+    flex: 1 1 76px;
   }
   .service-network-dropdown {
-    width: min(260px, 92vw);
+    width: min(240px, 92vw);
   }
 }
 

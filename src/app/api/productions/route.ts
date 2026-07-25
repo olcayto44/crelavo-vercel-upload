@@ -623,12 +623,10 @@ outputPlan,
         prompt,
         status: "queued",
         generation_status: "automation_queued",
-        request_metadata: requestMetadata,
-        materials_json: materials,
+        request_metadata: { ...requestMetadata, materials, inputJson },
         estimated_credits: estimatedCredits,
         reserved_credits: estimatedCredits,
-        input_json: inputJson,
-        output_json: { ...initialOutputJson, legalAcceptanceSnapshot: legalSnapshot },
+        output_json: { ...initialOutputJson, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
         admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
       })
       .select("*")
