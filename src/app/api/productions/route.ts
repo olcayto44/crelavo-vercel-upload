@@ -678,13 +678,14 @@ outputPlan,
       .select("id")
       .single();
 
-    if (legalError) throw legalError;
+    const legalTableMissing = legalError && String((legalError as unknown as Record<string, unknown>).code ?? "") === "PGRST205";
+    if (legalError && !legalTableMissing) throw legalError;
 
     const productionWithLegal = {
       ...data,
       output_json: {
         ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}),
-        legalAcceptanceId: legalAcceptance.id,
+        legalAcceptanceId: legalAcceptance?.id ?? null,
         legalAcceptanceSnapshot: legalSnapshot,
         schemaAdaptedColumns: removedColumns
       }

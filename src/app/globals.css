@@ -8950,6 +8950,43 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   border-radius: 14px !important;
 }
 
+@media (max-width: 900px) {
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+  }
+
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-main,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-side,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-chat-panel,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-control-panel,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-rail {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-main {
+    grid-area: auto !important;
+  }
+
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-service-network-row {
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-state,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .assistant-console-metrics,
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .studio-credit-trust-panel {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}
+
 .clean-tool-grid {
   gap: 5px !important;
 }
