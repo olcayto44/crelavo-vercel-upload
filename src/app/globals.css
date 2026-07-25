@@ -8514,11 +8514,10 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-studio-main {
   grid-area: board;
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   grid-template-areas:
     "hero"
     "steps"
-    "setup"
     "preview";
   gap: 12px;
   height: 100%;
@@ -8558,42 +8557,65 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-studio-state small,.clean-preview-card small,.clean-control-list small { color: #93c5fd; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
 .clean-studio-state strong,.clean-preview-card strong,.clean-control-list strong { color: #fff; }
 
-.clean-selected-setup {
-  grid-area: setup;
+.clean-hero-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.clean-hero-selection-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
+  max-width: 100%;
+}
+.clean-hero-selection-chips span {
+  display: inline-flex;
   align-items: center;
-  padding: 8px;
-  border: 1px solid rgba(125,211,252,.14);
-  border-radius: 18px;
-  background: rgba(2,6,23,.34);
-}
-.clean-selected-setup span {
+  gap: 5px;
   min-width: 0;
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  align-items: baseline;
-  gap: 6px;
-  border: 1px solid rgba(148,163,184,.12);
+  max-width: 190px;
+  border: 1px solid rgba(125,211,252,.16);
   border-radius: 999px;
-  padding: 6px 9px;
-  background: rgba(15,23,42,.56);
+  padding: 6px 8px;
+  color: #dbeafe;
+  background: rgba(15,23,42,.58);
 }
-.clean-selected-setup small {
+.clean-hero-selection-chips svg {
+  flex: 0 0 auto;
+  color: #67e8f9;
+}
+.clean-hero-selection-chips strong {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+}
+.clean-hero-credit-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  align-self: start;
+  border: 1px solid rgba(34,211,238,.28);
+  border-radius: 999px;
+  padding: 10px 12px;
+  color: #e0f2fe;
+  background: rgba(15,23,42,.68);
+}
+.clean-hero-credit-pill small {
+  display: block;
   color: #93c5fd;
   font-size: 9px;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .06em;
 }
-.clean-selected-setup strong {
+.clean-hero-credit-pill strong {
   color: #fff;
-  font-size: 11px;
-  max-width: 170px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  font-size: 13px;
 }
 
 .clean-preview-grid {
@@ -8830,7 +8852,8 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-chat-input textarea { min-height: 86px; max-height: 112px; resize: none; }
 .clean-chat-input .btn { width: 100%; justify-content: center; }
 
-.clean-control-panel { display: grid; gap: 12px; }
+.clean-control-panel { display: none !important; gap: 12px; }
+.clean-studio-side .clean-chat-panel { height: 100% !important; min-height: 0 !important; }
 .clean-quality-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .clean-quality-grid button { border: 1px solid rgba(125,211,252,.18); border-radius: 14px; padding: 10px; color: #dbeafe; background: rgba(255,255,255,.06); cursor: pointer; font-weight: 900; }
 .clean-quality-grid button.active,.clean-quality-grid button:hover { color: #fff; border-color: rgba(34,211,238,.62); background: rgba(34,211,238,.16); }

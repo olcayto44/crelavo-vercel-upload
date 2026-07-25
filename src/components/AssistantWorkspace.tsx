@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Bot, Mic, Paperclip, Send, Sparkles } from "lucide-react";
+import { Bot, Box, Clock3, CreditCard, Download, Film, Gauge, Layers3, Mic, PackageCheck, Paperclip, Send, Sparkles } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { blockedProductionMessage, validateProductionSafety } from "@/lib/content-safety";
 import { getStoredLanguage } from "@/lib/i18n";
@@ -1273,6 +1273,7 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [productionCreditAvailable, setProductionCreditAvailable] = useState<number | null>(null);
 const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
 const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
+const [productionStartingIntent, setProductionStartingIntent] = useState(false);
 const latestAgentAction = lastOrchestratorPlan?.jobs?.[0]?.agent_action ?? null;
 const productionLifecycleState = startedProduction ? "Production started" : productionBrief.trim() || input.trim() || dynamicWizard.open ? "Draft ready" : "Not submitted yet";
 const productionLifecycleNote = startedProduction
@@ -1950,6 +1951,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   }
 
   function openStartProductionModal() {
+    setProductionStartingIntent(true);
     setStartError("");
     setStartState("idle");
     setStartModalOpen(true);
@@ -2054,6 +2056,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
         const recoveredProduction = automationError.production && typeof automationError.production === "object" ? automationError.production as Record<string, unknown> : null;
         setStartState("idle");
         setStartModalOpen(false);
+        setProductionStartingIntent(false);
         setStartedProduction({
           id: String(recoveredProduction?.id ?? productionId),
           detailUrl: `/dashboard/productions/${String(recoveredProduction?.id ?? productionId)}`,
@@ -2074,6 +2077,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
       const alreadyRunning = Boolean(automationData.already_running);
       setStartState("idle");
       setStartModalOpen(false);
+      setProductionStartingIntent(false);
       setStartedProduction({
         id: productionId,
         detailUrl: `/dashboard/productions/${productionId}`,
@@ -2126,8 +2130,8 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
         : "Understood. I am not pretending the production has started in chat; I am opening the real production/credit confirmation step now.";
       setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: startReply }]);
       if (source === "chat") setChatInput("");
-      setStatus(activeLanguage === "tr" ? "Gerçek üretim/kredi kontrol adımı açılıyor." : "Opening the real production/credit check step.");
-      requestDynamicWizardCredits();
+      setStatus(activeLanguage === "tr" ? "Üretim onayı hazır. Seçilen ayarlar üretim alanına işlendi." : "Production approval is ready. Selected options are reflected in the work area.");
+      openStartProductionModal();
       return;
     }
     if (!conversationalOnly && !followUpProduction) {
@@ -2660,25 +2664,34 @@ async function startRawMicrophoneFallback() {
     <div className="assistant-workspace crelavo-clean-studio">
       <main className="clean-studio-main" aria-label="Production workspace">
         <section className="clean-studio-hero">
-          <div>
+          <div className="clean-hero-copy">
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
+            {!startedProduction ? (
+              <div className="clean-hero-selection-chips" aria-label="Selected production options">
+                <span><Film size={13} /><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
+                <span><Gauge size={13} /><strong>{selectedQuality}</strong></span>
+                <span><Sparkles size={13} /><strong>{selectedStyle}</strong></span>
+                <span><Clock3 size={13} /><strong>{selectedDuration}</strong></span>
+                {selectedModules.slice(0, 2).map((module) => <span key={`module-${module}`}><Layers3 size={13} /><strong>{module}</strong></span>)}
+                {selectedFeatures.slice(0, 2).map((feature) => <span key={`feature-${feature}`}><Box size={13} /><strong>{feature}</strong></span>)}
+                {selectedPlatforms.slice(0, 3).map((platform) => <span key={`platform-${platform}`}><Download size={13} /><strong>{platform}</strong></span>)}
+                {selectedMaterials.length || uploadedMaterials.length ? <span><PackageCheck size={13} /><strong>{selectedMaterials.length + uploadedMaterials.length} material</strong></span> : null}
+              </div>
+            ) : null}
           </div>
-        <div className="clean-studio-state">
-          <span><small>Status</small><strong>{productionLifecycleState}</strong></span>
-          <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
-          <span><small>Quality</small><strong>{selectedQuality}</strong></span>
-          <span><small>Agent action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong></span>
-          <span><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
-        </div>
+          <div className="clean-hero-credit-pill">
+            <CreditCard size={15} />
+            <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+          </div>
         </section>
 
         <section className="clean-preview-grid">
           <div className="clean-preview-card clean-preview-large clean-output-viewer">
             <small>Work output viewer</small>
-            <strong>{startedProduction ? "Production is ready to review" : (selectedProduction?.label ?? selectedProductionType)}</strong>
-            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionBrief ? "Brief ready. Your generated images, video, voice, music, files, and delivery parts will appear here as the work progresses." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
+            <strong>{startedProduction ? "Production is ready to review" : productionStartingIntent ? "Production approval is ready" : (selectedProduction?.label ?? selectedProductionType)}</strong>
+            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionStartingIntent ? "The assistant prepared the production setup. Confirm the start step to create the production record and begin automation." : productionBrief ? "Brief ready. Your generated images, video, voice, music, files, and delivery parts will appear here as the work progresses." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
             {startedProduction ? (
               <div className={`studio-started-card clean-completion-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
                 <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Needs attention" : "Production workspace ready"}</small>
@@ -2738,14 +2751,6 @@ async function startRawMicrophoneFallback() {
           </a>
         </section>
 
-        <section className="clean-selected-setup" aria-label="Selected production setup">
-          <span><small>Category</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
-          <span><small>Quality</small><strong>{selectedQuality}</strong></span>
-          <span><small>Style</small><strong>{selectedStyle}</strong></span>
-          <span><small>Scope</small><strong>{selectedDuration}</strong></span>
-          <span><small>Modules</small><strong>{selectedModules.slice(0, 2).join(" + ") || "None"}{selectedModules.length > 2 ? ` +${selectedModules.length - 2}` : ""}</strong></span>
-          <span><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}{selectedPlatforms.length > 2 ? ` +${selectedPlatforms.length - 2}` : ""}</strong></span>
-        </section>
       </main>
 
       <aside className="clean-studio-side" aria-label="Assistant and controls">
@@ -2793,7 +2798,7 @@ async function startRawMicrophoneFallback() {
             {productionCreditInsufficient ? <p className="workspace-action-note error">Insufficient credits for this production. Available: {(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: {costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.</p> : null}
             {startError ? <p className="workspace-action-note error">{startError}</p> : null}
             <div className="production-start-actions">
-              <button className="btn secondary" type="button" onClick={() => setStartModalOpen(false)} disabled={startState === "loading"}>Cancel</button>
+              <button className="btn secondary" type="button" onClick={() => { setStartModalOpen(false); setProductionStartingIntent(false); }} disabled={startState === "loading"}>Cancel</button>
               <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading" || productionCreditInsufficient}>{startState === "loading" ? "Starting..." : "I understand, start production"}</button>
             </div>
           </div>
@@ -3059,7 +3064,7 @@ async function startRawMicrophoneFallback() {
               {productionCreditInsufficient ? <p className="workspace-action-note error">Insufficient credits for this production. Available: {(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: {costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.</p> : null}
               {startError ? <p className="workspace-action-note error">{startError}</p> : null}
               <div className="production-start-actions">
-                <button className="btn secondary" type="button" onClick={() => setStartModalOpen(false)} disabled={startState === "loading"}>Cancel</button>
+                <button className="btn secondary" type="button" onClick={() => { setStartModalOpen(false); setProductionStartingIntent(false); }} disabled={startState === "loading"}>Cancel</button>
                 <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading" || productionCreditInsufficient}>{startState === "loading" ? "Starting..." : "I understand, start production"}</button>
               </div>
             </div>
