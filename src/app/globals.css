@@ -6484,6 +6484,60 @@ html body .dashboard-postlaunch-shell.production-detail-shell .automation-brief-
 html body .dashboard-postlaunch-shell.production-detail-shell .workspace-assistant-card {
   display: none !important;
 }
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-stack {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout {
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 24px;
+  background: rgba(2,6,23,.62);
+  overflow: hidden;
+  box-shadow: 0 18px 58px rgba(0,0,0,.20);
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout summary::-webkit-details-marker {
+  display: none;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout summary > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout summary strong {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.2;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-foldout summary small {
+  color: #bae6fd;
+  font-size: 12px;
+  line-height: 1.4;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-foldout-hint {
+  flex: 0 0 auto;
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: #dbeafe;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(15,23,42,.55);
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .production-quick-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
 html body .dashboard-postlaunch-shell.production-detail-shell .customer-preview-theater {
   padding: 10px !important;
   margin-top: -2px !important;
