@@ -47,6 +47,78 @@ const studioProviderSignals = [
   { label: "Avatar", value: "Pending", status: "D-ID / provider review" }
 ];
 
+const serviceNetworkGroups = [
+  {
+    key: "ai-core",
+    label: "AI Core",
+    shortLabel: "Core",
+    note: "Prompt, plan, routing",
+    services: ["OpenAI", "Crelavo Orchestrator", "Provider Router"],
+    triggers: ["website", "saas", "admin", "document", "image", "video", "campaign", "voice", "music", "drama"]
+  },
+  {
+    key: "visual",
+    label: "Görsel",
+    shortLabel: "Image",
+    note: "Görsel ve brand üretimi",
+    services: ["OpenAI Image", "Stability AI", "Brand Kit", "Asset Library"],
+    triggers: ["image", "brand", "campaign", "website", "saas", "admin"]
+  },
+  {
+    key: "video",
+    label: "Video",
+    shortLabel: "Video",
+    note: "Video, render, avatar",
+    services: ["Kling", "Runway", "Fal", "HeyGen", "Shotstack", "Seedance route"],
+    triggers: ["video", "campaign", "drama", "drone", "talking", "avatar", "animation", "music_video"]
+  },
+  {
+    key: "voice",
+    label: "Ses",
+    shortLabel: "Voice",
+    note: "Voice-over ve dubbing",
+    services: ["ElevenLabs", "Voice Clone", "Dubbing", "Subtitle route"],
+    triggers: ["voice", "dubbing", "talking", "avatar", "video", "drama"]
+  },
+  {
+    key: "music",
+    label: "Müzik",
+    shortLabel: "Music",
+    note: "Müzik ve BGM",
+    services: ["Stable Audio", "Mubert", "Music fallback", "License check"],
+    triggers: ["music", "music_video", "video", "campaign"]
+  },
+  {
+    key: "data-seo",
+    label: "Veri / SEO",
+    shortLabel: "Data",
+    note: "Araştırma ve indeksleme",
+    services: ["DataForSEO", "Apify", "Google Maps", "Bing IndexNow"],
+    triggers: ["document", "website", "saas", "campaign", "growth", "seo"]
+  },
+  {
+    key: "commerce",
+    label: "E‑Ticaret",
+    shortLabel: "Shop",
+    note: "Mağaza ve ödeme ağı",
+    services: ["Shopify", "WooCommerce", "Whop", "Stripe", "Product feed"],
+    triggers: ["campaign", "ecommerce", "shop", "product", "website"]
+  },
+  {
+    key: "social",
+    label: "Sosyal",
+    shortLabel: "Social",
+    note: "Yayınlama ve export",
+    services: ["TikTok", "YouTube", "Meta", "Instagram/Facebook", "Export planner"],
+    triggers: ["campaign", "video", "social", "shorts", "music_video"]
+  }
+];
+
+function serviceGroupIsRelevant(group: typeof serviceNetworkGroups[number], productionType: string, modules: string[], features: string[], platforms: string[]) {
+  const haystack = [productionType, ...modules, ...features, ...platforms].join(" ").toLowerCase();
+  return group.triggers.some((trigger) => haystack.includes(trigger.toLowerCase()));
+}
+
 const deliveryHandoffItems = [
   "Dashboard delivery tracking",
   "Admin-managed status",
@@ -1192,6 +1264,8 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [startState, setStartState] = useState<"idle" | "loading" | "error">("idle");
   const [startError, setStartError] = useState("");
   const [quickProviderTest, setQuickProviderTest] = useState(false);
+  const [selectedServiceNetwork, setSelectedServiceNetwork] = useState("");
+  const [selectedProviderService, setSelectedProviderService] = useState("");
   const [voiceListening, setVoiceListening] = useState(false);
   const [assistantCreditState, setAssistantCreditState] = useState<AssistantCreditState>(emptyAssistantCreditState);
   const [lastOrchestratorPlan, setLastOrchestratorPlan] = useState<AssistantOrchestratorResponse | null>(null);
@@ -1981,6 +2055,19 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
       orchestrator_job_id: orchestratorJob?.id ?? null
     } : fallbackPayload;
 
+    if (selectedServiceNetwork || selectedProviderService) {
+      const payloadRecord = productionPayload as Record<string, unknown>;
+      const existingAgentAction = payloadRecord.agent_action && typeof payloadRecord.agent_action === "object" ? payloadRecord.agent_action as Record<string, unknown> : {};
+      payloadRecord.service_network = selectedServiceNetwork;
+      payloadRecord.provider_service = selectedProviderService;
+      payloadRecord.agent_action = {
+        ...existingAgentAction,
+        provider_route: selectedProviderService || selectedServiceNetwork || existingAgentAction.provider_route,
+        selected_service_network: selectedServiceNetwork,
+        selected_provider_service: selectedProviderService
+      };
+    }
+
     const response = await fetch("/api/productions", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
@@ -2660,12 +2747,24 @@ async function startRawMicrophoneFallback() {
           </div>
         </section>
 
-        <section className="clean-progress-row">
-          {defaultSteps.map((step, index) => {
-            const isStarted = Boolean(startedProduction);
-            const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || chatInput.trim());
-            const isActive = isStarted ? index <= activeStep : isDraftActive;
-            return <div className={isActive ? "active" : ""} key={step}><span>{index + 1}</span><strong>{step}</strong></div>;
+        <section className="clean-service-network-row" aria-label="Production service networks">
+          {serviceNetworkGroups.map((group) => {
+            const isRelevant = serviceGroupIsRelevant(group, selectedProductionType, selectedModules, selectedFeatures, selectedPlatforms);
+            return (
+              <div className={`service-network-pill ${isRelevant ? "active" : ""} ${selectedServiceNetwork === group.key ? "selected" : ""}`} key={group.key} tabIndex={0} onClick={() => { setSelectedServiceNetwork(group.key); setSelectedProviderService(group.services[0] ?? ""); }}>
+                <span>{group.shortLabel}</span>
+                <strong>{group.label}</strong>
+                <small>{selectedServiceNetwork === group.key ? (selectedProviderService || "Seçildi") : isRelevant ? "Bu üretimde alakalı" : "Hazır ağ"}</small>
+                <div className="service-network-dropdown" onClick={(event) => event.stopPropagation()}>
+                  <b>{group.note}</b>
+                  {group.services.map((service) => (
+                    <button className={selectedProviderService === service ? "selected" : ""} type="button" key={service} onClick={() => { setSelectedServiceNetwork(group.key); setSelectedProviderService(service); }}>
+                      {service}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
           })}
         </section>
       </main>
