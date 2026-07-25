@@ -28,6 +28,33 @@ function errorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function missingSchemaColumn(error: unknown) {
+  if (!error || typeof error !== "object") return "";
+  const record = error as Record<string, unknown>;
+  const code = String(record.code ?? "");
+  const message = [record.message, record.details, record.hint].filter(Boolean).join(" ");
+  if (code !== "PGRST204" && !/schema cache|Could not find/i.test(message)) return "";
+  const singleQuoteMatch = message.match(/'([^']+)'\s+column/i);
+  if (singleQuoteMatch?.[1]) return singleQuoteMatch[1];
+  const doubleQuoteMatch = message.match(/column\s+"([^"]+)"/i);
+  if (doubleQuoteMatch?.[1]) return doubleQuoteMatch[1];
+  return "";
+}
+
+async function insertProductionRequestSchemaSafe(supabase: ReturnType<typeof supabaseAdmin>, payload: Record<string, unknown>) {
+  const mutablePayload = { ...payload };
+  const removedColumns: string[] = [];
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const result = await supabase.from("production_requests").insert(mutablePayload).select("*").single();
+    if (!result.error) return { data: result.data, removedColumns };
+    const missingColumn = missingSchemaColumn(result.error);
+    if (!missingColumn || !(missingColumn in mutablePayload)) throw result.error;
+    delete mutablePayload[missingColumn];
+    removedColumns.push(missingColumn);
+  }
+  throw new Error(`Could not create production request after removing unsupported columns: ${removedColumns.join(", ")}`);
+}
+
 function providerCategoryForAction(actionName: string, productionType: string) {
   if (/generate_image/i.test(actionName)) return "image";
   if (/lip_sync|voice|talking/i.test(actionName)) return "voice_video";
@@ -613,26 +640,23 @@ outputPlan,
       })
     };
 
-    const { data, error } = await supabase
-      .from("production_requests")
-      .insert({
-        user_id: userId,
-        production_type: productionType,
-        package_id: packageId,
-        title,
-        prompt,
-        status: "queued",
-        generation_status: "automation_queued",
-        request_metadata: { ...requestMetadata, materials, inputJson },
-        estimated_credits: estimatedCredits,
-        reserved_credits: estimatedCredits,
-        output_json: { ...initialOutputJson, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
-        admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
-      })
-      .select("*")
-      .single();
+    const productionInsertPayload = {
+      user_id: userId,
+      production_type: productionType,
+      package_id: packageId,
+      title,
+      prompt,
+      status: "queued",
+      generation_status: "automation_queued",
+      request_metadata: { ...requestMetadata, materials, inputJson },
+      estimated_credits: estimatedCredits,
+      reserved_credits: estimatedCredits,
+      output_json: { ...initialOutputJson, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
+      admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
+    };
 
-    if (error) throw error;
+    const { data, removedColumns } = await insertProductionRequestSchemaSafe(supabase, productionInsertPayload);
+    if (!data) throw new Error("Production request could not be created.");
 
     const { data: legalAcceptance, error: legalError } = await supabase
       .from("legal_acceptances")
@@ -661,7 +685,8 @@ outputPlan,
       output_json: {
         ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}),
         legalAcceptanceId: legalAcceptance.id,
-        legalAcceptanceSnapshot: legalSnapshot
+        legalAcceptanceSnapshot: legalSnapshot,
+        schemaAdaptedColumns: removedColumns
       }
     };
 
