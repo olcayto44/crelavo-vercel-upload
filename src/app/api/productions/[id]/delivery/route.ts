@@ -23,9 +23,10 @@ function firstNonEmptyObject(...values: unknown[]) {
   return {};
 }
 
-function previewAccessForDelivery(data: { request_metadata?: Record<string, unknown> | null; input_json?: Record<string, unknown> | null }) {
+function previewAccessForDelivery(data: { request_metadata?: Record<string, unknown> | null; output_json?: Record<string, unknown> | null }) {
   const metadata = objectValue(data.request_metadata);
-  const input = objectValue(data.input_json);
+  const output = objectValue(data.output_json);
+  const input = firstNonEmptyObject(metadata.inputJson, output.inputJson);
   const access = firstNonEmptyObject(metadata.previewAccess, input.previewAccess);
   const whopPreview = firstNonEmptyObject(metadata.whopPreview, input.whopPreview);
   const source = Object.keys(access).length ? access : whopPreview;
@@ -38,27 +39,11 @@ function previewAccessForDelivery(data: { request_metadata?: Record<string, unkn
 
 async function selectProductionForDelivery(id: string) {
   const supabase = supabaseAdmin();
-  const fullSelect = "id, user_id, title, prompt, production_type, package_id, request_metadata, input_json, materials_json";
-  const fallbackSelect = "id, user_id, title, prompt, production_type, package_id, input_json";
-
-  const result = await supabase
+  return supabase
     .from("production_requests")
-    .select(fullSelect)
+    .select("id, user_id, title, prompt, production_type, package_id, request_metadata, output_json")
     .eq("id", id)
     .maybeSingle();
-
-  if (!result.error || !/request_metadata/i.test(result.error.message)) return result;
-
-  const fallback = await supabase
-    .from("production_requests")
-    .select(fallbackSelect)
-    .eq("id", id)
-    .maybeSingle();
-
-  return {
-    data: fallback.data ? { ...fallback.data, request_metadata: {}, materials_json: [] } : null,
-    error: fallback.error
-  };
 }
 
 async function requireDeliveryAccess(request: Request, production: { user_id?: string | null }) {

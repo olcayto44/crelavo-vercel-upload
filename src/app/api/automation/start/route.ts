@@ -44,26 +44,16 @@ async function requireAutomationAccess(request: Request, body: Record<string, un
 }
 
 async function selectProductionForAutomation(supabase: ReturnType<typeof supabaseAdmin>, productionId: string) {
-  const fullSelect = "id, user_id, title, prompt, production_type, package_id, request_metadata, input_json, materials_json, output_json";
-  const fallbackSelect = "id, user_id, title, prompt, production_type, package_id, input_json, output_json";
-
+  const fullSelect = "id, user_id, title, prompt, production_type, package_id, request_metadata, output_json";
   const result = await supabase
     .from("production_requests")
     .select(fullSelect)
     .eq("id", productionId)
     .single();
 
-  if (!result.error || !/request_metadata/i.test(result.error.message)) return result;
-
-  const fallback = await supabase
-    .from("production_requests")
-    .select(fallbackSelect)
-    .eq("id", productionId)
-    .single();
-
   return {
-    data: fallback.data ? { ...fallback.data, request_metadata: {}, materials_json: [] } : null,
-    error: fallback.error
+    data: result.data ? { ...result.data, request_metadata: result.data.request_metadata ?? {}, output_json: result.data.output_json ?? {} } : null,
+    error: result.error
   };
 }
 
@@ -96,7 +86,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "Reserved credits were already refunded for this failed production. Create a new production before starting another provider job." }, { status: 409 });
     }
     const requestMetadata = currentProduction?.request_metadata && typeof currentProduction.request_metadata === "object" ? currentProduction.request_metadata as Record<string, unknown> : {};
-    const inputJson = currentProduction?.input_json && typeof currentProduction.input_json === "object" ? currentProduction.input_json as Record<string, unknown> : {};
+    const inputJson = requestMetadata.inputJson && typeof requestMetadata.inputJson === "object"
+      ? requestMetadata.inputJson as Record<string, unknown>
+      : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
+        ? existingOutput.inputJson as Record<string, unknown>
+        : {};
     const productionType = String(currentProduction?.production_type ?? "");
     const packageId = String(currentProduction?.package_id ?? "");
     const renderQueuePolicy = renderQueuePolicyForPackage(packageId);
@@ -262,7 +256,7 @@ export async function POST(request: Request) {
     if (error) throw error;
 
     if (isProductAdVideo) {
-      const ecommerceContext = ecommerceContextFrom(currentProduction?.request_metadata) ?? ecommerceContextFrom(currentProduction?.input_json);
+      const ecommerceContext = ecommerceContextFrom(requestMetadata) ?? ecommerceContextFrom(inputJson) ?? ecommerceContextFrom(existingOutput);
       const productUrl = String(ecommerceContext?.productUrl ?? "").trim();
 
       if (!productUrl) {
