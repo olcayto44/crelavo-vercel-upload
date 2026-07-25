@@ -2751,32 +2751,6 @@ async function startRawMicrophoneFallback() {
       </main>
 
       <aside className="clean-studio-side" aria-label="Assistant and controls">
-        <section className="clean-tool-panel clean-tool-top-panel" aria-label="Production settings">
-          <div className="clean-tool-head clean-tool-top-head">
-            <div className="clean-studio-logo"><span>▶</span></div>
-            <div><strong>Crelavo Studio</strong><small>Production settings</small></div>
-          </div>
-
-          <div className="clean-tool-switcher clean-tool-switcher-inline" aria-label="Production setting groups">
-            {cleanToolSections.map((section) => (
-              <button
-                className={activeCleanToolContent.id === section.id ? "active" : ""}
-                type="button"
-                key={section.id}
-                onClick={() => setActiveCleanToolSection(section.id)}
-              >
-                <span><strong>{section.label}</strong><small>{section.detail}</small></span>
-                <em>{section.count}</em>
-              </button>
-            ))}
-          </div>
-
-          <div className="clean-tool-section clean-tool-active-section clean-tool-active-inline">
-            <span className="badge">{activeCleanToolContent.label}</span>
-            {activeCleanToolContent.content}
-          </div>
-        </section>
-
         <section className="clean-chat-panel">
           <div className="clean-panel-head">
             <span className="badge"><Bot size={14} /> Crelavo Assistant</span>

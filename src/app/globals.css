@@ -9526,7 +9526,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   html body main.container.section.assistant-full-page.assistant-production-page .assistant-workspace.crelavo-clean-studio,
   html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     display: grid !important;
-    grid-template-columns: clamp(270px, 16vw, 320px) minmax(0, 1fr) !important;
+    grid-template-columns: clamp(300px, 18vw, 340px) minmax(0, 1fr) !important;
     grid-template-rows: minmax(0, 1fr) !important;
     grid-template-areas: "side board" !important;
     align-items: stretch !important;
