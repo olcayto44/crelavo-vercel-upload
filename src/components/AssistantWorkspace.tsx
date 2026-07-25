@@ -2046,6 +2046,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
 
     const productionId = data.production?.id;
     if (productionId) {
+      setStartError("");
       const automationResponse = await fetch("/api/automation/start", {
         method: "POST",
         headers: authHeaders(auth.accessToken),
@@ -2668,7 +2669,7 @@ async function startRawMicrophoneFallback() {
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
-            {!startedProduction ? (
+            {!startedProduction && (productionBrief.trim() || input.trim() || dynamicWizard.open || productionStartingIntent) ? (
               <div className="clean-hero-selection-chips" aria-label="Selected production options">
                 <span><Film size={13} /><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
                 <span><Gauge size={13} /><strong>{selectedQuality}</strong></span>

@@ -9499,3 +9499,21 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   }
 }
 
+/* Final work page layout guard: keep assistant full-height and remove old controls. */
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-control-panel {
+  display: none !important;
+}
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-side {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  min-height: 0 !important;
+  height: 100% !important;
+}
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-chat-panel {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-chat-log {
+  min-height: 0 !important;
+}
+
