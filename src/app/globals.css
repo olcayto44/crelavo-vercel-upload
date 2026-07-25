@@ -8312,12 +8312,23 @@ html body .production-detail-shell .customer-preview-toolbar strong {
   color: #fff;
   margin-top: 2px;
 }
-html body .production-detail-shell .customer-preview-mode-actions {
+html body .production-detail-shell .customer-preview-mode-actions,
+html body .production-detail-shell .customer-preview-top-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
+  overflow-x: auto;
+  min-width: 0;
+  scrollbar-width: none;
 }
-html body .production-detail-shell .customer-preview-mode-actions button {
+html body .production-detail-shell .customer-preview-mode-actions::-webkit-scrollbar,
+html body .production-detail-shell .customer-preview-top-actions::-webkit-scrollbar {
+  display: none;
+}
+html body .production-detail-shell .customer-preview-mode-actions button,
+html body .production-detail-shell .customer-preview-top-actions .btn,
+html body .production-detail-shell .customer-preview-top-actions button {
+  flex: 0 0 auto;
   border: 1px solid rgba(125,211,252,.18);
   border-radius: 999px;
   padding: 8px 11px;
@@ -8325,6 +8336,9 @@ html body .production-detail-shell .customer-preview-mode-actions button {
   color: #bfdbfe;
   font-weight: 900;
   cursor: pointer;
+  min-height: 34px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 html body .production-detail-shell .customer-preview-mode-actions button.active,
 html body .production-detail-shell .customer-preview-mode-actions button:hover {
@@ -8450,8 +8464,9 @@ html body .production-detail-shell .social-share-card {
 html body .production-detail-shell .production-workspace-head {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: center !important;
   gap: 14px !important;
+  text-align: center !important;
 }
 html body .production-detail-shell .production-workspace-head h1 {
   max-width: 760px !important;
@@ -8506,25 +8521,11 @@ html body .production-detail-shell .customer-preview-screen img,
 html body .production-detail-shell .customer-preview-screen iframe,
 html body .production-detail-shell .customer-preview-placeholder {
   width: 100% !important;
-  min-height: calc(100vh - 255px) !important;
-  height: calc(100vh - 255px) !important;
+  min-height: calc(100vh - 210px) !important;
+  height: calc(100vh - 210px) !important;
 }
 html body .production-detail-shell .customer-preview-control {
-  position: relative !important;
-  z-index: 1 !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  width: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-  pointer-events: auto !important;
-  transition: none !important;
-  backdrop-filter: blur(18px) !important;
-  background: rgba(2,6,23,.62) !important;
-  box-shadow: none !important;
+  display: none !important;
 }
 html body .production-detail-shell .customer-preview-toolbar {
   cursor: default !important;

@@ -454,9 +454,7 @@ const [notice, setNotice] = useState("");
     <div className="production-workspace-shell">
       <section className="production-workspace-main">
         <div className="production-workspace-head">
-          <span className="badge">Live production workspace</span>
           <h1>{production.title || "Production workspace"}</h1>
-          <p>{production.prompt || "Production parts, previews, revision decisions, downloads, and sharing steps appear here."}</p>
         </div>
 
         <div className={`production-truth-strip ${statusTone}`}>
@@ -615,6 +613,15 @@ const [notice, setNotice] = useState("");
                   {mode === "normal" ? "Normal" : mode === "compact" ? "Small" : "Shorts"}
                 </button>
               ))}
+            </div>
+            <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
+              {previewUrl ? <a className="btn" href={previewUrl} target="_blank"><PlayCircle size={15} /> Open preview</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
+              {deliveryUrl ? <a className="btn secondary" href={deliveryUrl} target="_blank"><Download size={15} /> Download final ZIP</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download final ZIP</button>}
+              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
+              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README / setup</button>}
+              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
+              {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
+              <button className="btn secondary" type="button" onClick={restartProviderJob}>{isProjectProduction ? "Prepare project package" : "Start real provider job"}</button>
             </div>
           </div>
           <div className="customer-preview-screen">
