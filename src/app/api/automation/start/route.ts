@@ -44,15 +44,14 @@ async function requireAutomationAccess(request: Request, body: Record<string, un
 }
 
 async function selectProductionForAutomation(supabase: ReturnType<typeof supabaseAdmin>, productionId: string) {
-  const fullSelect = "id, user_id, title, prompt, production_type, package_id, request_metadata, output_json";
   const result = await supabase
     .from("production_requests")
-    .select(fullSelect)
+    .select("id, user_id, title, prompt, production_type, package_id, output_json")
     .eq("id", productionId)
     .single();
 
   return {
-    data: result.data ? { ...result.data, request_metadata: result.data.request_metadata ?? {}, output_json: result.data.output_json ?? {} } : null,
+    data: result.data ? { ...result.data, output_json: result.data.output_json ?? {} } : null,
     error: result.error
   };
 }
@@ -85,7 +84,7 @@ export async function POST(request: Request) {
     if (existingCreditResolution?.status === "refunded_reserved") {
       return Response.json({ error: "Reserved credits were already refunded for this failed production. Create a new production before starting another provider job." }, { status: 409 });
     }
-    const requestMetadata = currentProduction?.request_metadata && typeof currentProduction.request_metadata === "object" ? currentProduction.request_metadata as Record<string, unknown> : {};
+    const requestMetadata = existingOutput.requestMetadata && typeof existingOutput.requestMetadata === "object" ? existingOutput.requestMetadata as Record<string, unknown> : {};
     const inputJson = requestMetadata.inputJson && typeof requestMetadata.inputJson === "object"
       ? requestMetadata.inputJson as Record<string, unknown>
       : existingOutput.inputJson && typeof existingOutput.inputJson === "object"

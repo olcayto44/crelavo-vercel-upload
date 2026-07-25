@@ -651,7 +651,7 @@ outputPlan,
       request_metadata: { ...requestMetadata, materials, inputJson },
       estimated_credits: estimatedCredits,
       reserved_credits: estimatedCredits,
-      output_json: { ...initialOutputJson, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
+      output_json: { ...initialOutputJson, requestMetadata: { ...requestMetadata, materials, inputJson }, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
       admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
     };
 
