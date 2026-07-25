@@ -135,20 +135,15 @@ export async function POST(request: Request) {
         userMessage: providerReadiness.userMessage,
         workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_provider_config", output_json: { ...demoOutput, providerReadiness } })
       };
-      const { data: waitingProduction, error: waitingError } = await supabase
-        .from("production_requests")
-        .update({
-          status: "queued",
-          generation_status: "waiting_provider_config",
-          output_json: waitingOutput,
-          preview_url: deliveryLinks.previewUrl,
-          delivery_link: deliveryLinks.deliveryLink,
-          delivery_zip_url: deliveryLinks.deliveryZipUrl,
-          source_files_url: deliveryLinks.sourceFilesUrl,
-          readme_url: deliveryLinks.readmeUrl,
-          admin_notes: providerReadiness.userMessage,
-          updated_at: now
-        })
+        const { data: waitingProduction, error: waitingError } = await supabase
+          .from("production_requests")
+          .update({
+            status: "queued",
+            generation_status: "waiting_provider_config",
+            output_json: waitingOutput,
+            admin_notes: providerReadiness.userMessage,
+            updated_at: now
+          })
         .eq("id", productionId)
         .select("*")
         .single();
@@ -264,12 +259,17 @@ export async function POST(request: Request) {
           .update({
             status: "in_production",
             generation_status: "preview_ready",
-            output_json: { ...demoOutput, automationStatus: "demo_ready", automaticDeliveryLinks: deliveryLinks, outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput }) },
-            preview_url: deliveryLinks.previewUrl,
-            delivery_link: deliveryLinks.deliveryLink,
-            delivery_zip_url: deliveryLinks.deliveryZipUrl,
-            source_files_url: deliveryLinks.sourceFilesUrl,
-            readme_url: deliveryLinks.readmeUrl,
+            output_json: {
+              ...demoOutput,
+              automationStatus: "demo_ready",
+              automaticDeliveryLinks: deliveryLinks,
+              outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput }),
+              previewUrl: deliveryLinks.previewUrl,
+              deliveryLink: deliveryLinks.deliveryLink,
+              deliveryZipUrl: deliveryLinks.deliveryZipUrl,
+              sourceFilesUrl: deliveryLinks.sourceFilesUrl,
+              readmeUrl: deliveryLinks.readmeUrl
+            },
             admin_notes: "Demo automation filled workspace because no external product URL/provider input was supplied.",
             updated_at: new Date().toISOString()
           })
@@ -322,9 +322,10 @@ export async function POST(request: Request) {
             output_json: {
               ...providerOutput,
               providerLifecycle: { visual: providerLifecycle.visual, render: providerLifecycle.render },
-              outputRegistry: providerLifecycle.outputRegistry
+              outputRegistry: providerLifecycle.outputRegistry,
+              automaticDeliveryLinks: deliveryLinks,
+              previewUrl: result.renderJob.url ?? null
             },
-            preview_url: result.renderJob.url ?? null,
             admin_notes: "Provider chain executed. Render job is created; poll provider status before marking ready.",
             updated_at: new Date().toISOString()
           })
@@ -354,11 +355,6 @@ export async function POST(request: Request) {
               automaticDeliveryLinks: deliveryLinks,
               outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput })
             },
-            preview_url: deliveryLinks.previewUrl,
-            delivery_link: deliveryLinks.deliveryLink,
-            delivery_zip_url: deliveryLinks.deliveryZipUrl,
-            source_files_url: deliveryLinks.sourceFilesUrl,
-            readme_url: deliveryLinks.readmeUrl,
             admin_notes: providerNote,
             updated_at: new Date().toISOString()
           })
@@ -398,20 +394,15 @@ export async function POST(request: Request) {
     const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob });
     outputJson.providerLifecycle = { visual: providerLifecycle.visual, render: providerLifecycle.render };
     outputJson.outputRegistry = providerLifecycle.outputRegistry;
-    const { data: demoProduction, error: demoError } = await supabase
-      .from("production_requests")
-      .update({
-        status: "in_production",
-        generation_status: visualJob ? "provider_visual_job_created" : "preview_ready",
-        output_json: { ...outputJson, automationStatus: visualJob ? "running" : "demo_ready" },
-        preview_url: deliveryLinks.previewUrl,
-        delivery_link: deliveryLinks.deliveryLink,
-        delivery_zip_url: deliveryLinks.deliveryZipUrl,
-        source_files_url: deliveryLinks.sourceFilesUrl,
-        readme_url: deliveryLinks.readmeUrl,
-        admin_notes: providerNote,
-        updated_at: new Date().toISOString()
-      })
+        const { data: demoProduction, error: demoError } = await supabase
+          .from("production_requests")
+          .update({
+            status: "in_production",
+            generation_status: visualJob ? "provider_visual_job_created" : "preview_ready",
+            output_json: { ...outputJson, automationStatus: visualJob ? "running" : "demo_ready" },
+            admin_notes: providerNote,
+            updated_at: new Date().toISOString()
+          })
       .eq("id", productionId)
       .select("*")
       .single();
