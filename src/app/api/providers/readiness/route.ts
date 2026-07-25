@@ -84,6 +84,10 @@ export async function GET() {
   const stabilityReady = hasEnv("STABILITY_API_KEY");
   const musicReady = hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]);
   const mapsReady = hasEnv("GOOGLE_MAPS_API_KEY");
+  const tiktokReady = hasEnv("TIKTOK_CLIENT_KEY") && hasEnv("TIKTOK_CLIENT_SECRET");
+  const youtubeReady = hasAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]) && hasAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
+  const indexNowReady = hasAnyEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]);
+  const whopReady = hasEnv("WHOP_API_KEY") && hasEnv("WHOP_WEBHOOK_SECRET");
   const metaReady = hasEnv("META_APP_ID") && hasEnv("META_SYSTEM_ACCESS_TOKEN") && hasEnv("META_AD_ACCOUNT_ID");
   const dataForSeoReady = hasEnv("DATAFORSEO_LOGIN") && hasEnv("DATAFORSEO_PASSWORD");
   const apifyReady = hasEnv("APIFY_API_TOKEN");
@@ -145,6 +149,30 @@ export async function GET() {
       ready: mapsReady,
       required: ["GOOGLE_MAPS_API_KEY"],
       optional: ["GOOGLE_MAPS_LANGUAGE", "GOOGLE_MAPS_REGION", "GOOGLE_MAPS_SEARCH_RADIUS"]
+    },
+    tiktok: {
+      provider: "tiktok-business-api",
+      ready: tiktokReady,
+      required: ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"],
+      optional: ["TIKTOK_ACCESS_TOKEN", "TIKTOK_ADVERTISER_ID", "NEXT_PUBLIC_TIKTOK_PIXEL_ID"]
+    },
+    youtube: {
+      provider: "youtube-google-oauth",
+      ready: youtubeReady,
+      required: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
+      optional: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_ACCESS_TOKEN"]
+    },
+    indexnow: {
+      provider: "bing-indexnow",
+      ready: indexNowReady,
+      required: ["BING_INDEXNOW_KEY or INDEXNOW_KEY"],
+      optional: ["INDEXNOW_KEY_LOCATION", "INDEXNOW_ENDPOINT", "INDEXNOW_HOST"]
+    },
+    whop: {
+      provider: "whop",
+      ready: whopReady,
+      required: ["WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"],
+      optional: ["PAYMENT_PROVIDER", "PAYMENT_NOTIFICATION_EMAIL"]
     },
     meta: {
       provider: "meta",

@@ -7,6 +7,7 @@ import { getMetaAdAccount } from "@/lib/providers/meta";
 import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
 import { createShotstackTestRender } from "@/lib/providers/shotstack";
 import { getStabilityBalance } from "@/lib/providers/stability";
+import { adOAuthUrl } from "@/lib/phase2/ads";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function ok(provider: string, detail: unknown) {
@@ -70,6 +71,36 @@ function selectedVideoReadiness() {
   return { note: "No video generation was started. This only checks selected video provider readiness to avoid spend.", readiness: plan };
 }
 
+function requireAnyEnv(names: string[]) {
+  const found = names.find((name) => Boolean(process.env[name]));
+  if (!found) throw new Error(`${names.join(" or ")} missing`);
+  return found;
+}
+
+function testWhop() {
+  if (!process.env.WHOP_API_KEY) throw new Error("WHOP_API_KEY missing");
+  if (!process.env.WHOP_WEBHOOK_SECRET) throw new Error("WHOP_WEBHOOK_SECRET missing");
+  return { connected: true, required: ["WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"], note: "Secrets exist. Live webhook validation still needs a real Whop event." };
+}
+
+function testIndexNow() {
+  const keyName = requireAnyEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]);
+  const key = process.env[keyName] || "";
+  return { connected: true, keyName, keyLength: key.length, keyLocation: process.env.INDEXNOW_KEY_LOCATION || `https://www.crelavo.com/${key}.txt`, note: "Dry config check only; submit test is handled from the IndexNow admin page." };
+}
+
+function testTikTokOAuth() {
+  if (!process.env.TIKTOK_CLIENT_KEY) throw new Error("TIKTOK_CLIENT_KEY missing");
+  if (!process.env.TIKTOK_CLIENT_SECRET) throw new Error("TIKTOK_CLIENT_SECRET missing");
+  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("tiktok", "provider-test")), required: ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"] };
+}
+
+function testYouTubeOAuth() {
+  const clientIdName = requireAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]);
+  const clientSecretName = requireAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
+  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("youtube", "provider-test")), clientIdName, clientSecretName };
+}
+
 export async function GET(request: Request) {
   if (!isAdminRequest(request)) return adminRequiredResponse();
   const url = new URL(request.url);
@@ -82,6 +113,10 @@ export async function GET(request: Request) {
     if (provider === "apify") return ok(provider, await testApify());
     if (provider === "dataforseo") return ok(provider, await testDataForSeo());
     if (provider === "meta") return ok(provider, await getMetaAdAccount());
+    if (provider === "whop") return ok(provider, testWhop());
+    if (provider === "indexnow") return ok(provider, testIndexNow());
+    if (provider === "tiktok") return ok(provider, testTikTokOAuth());
+    if (provider === "youtube") return ok(provider, testYouTubeOAuth());
     if (provider === "elevenlabs") return ok(provider, await testElevenLabs());
     if (provider === "heygen") return ok(provider, await getHeyGenAvatars());
     if (provider === "stability") return ok(provider, await getStabilityBalance());

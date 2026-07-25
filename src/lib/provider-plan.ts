@@ -42,6 +42,10 @@ function stableAudioReady() {
   return hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY"]);
 }
 
+function youtubeReady() {
+  return hasAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]) && hasAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
+}
+
 function requiredStatus(requiredEnv: string[], optional = false): ProviderPlanStatus {
   if (requiredEnv.length === 0 && optional) return "optional";
   if (requiredEnv.every((name) => hasEnv(name))) return "ready";
@@ -268,6 +272,48 @@ export function buildProviderPlan() {
       status: stableAudioReady() || hasAnyEnv(["MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]) ? "ready" : "missing",
       safeMode: "If music APIs are missing, use manual licensed music fallback and do not promise generated music.",
       finalSetup: "Use Stable Audio first, Mubert second; test account access before enabling music jobs."
+    },
+    {
+      id: "social-tiktok",
+      label: "TikTok ads and OAuth",
+      category: "data",
+      provider: "TikTok Business API",
+      primaryModel: "tiktok_oauth_ads_api",
+      fallbackModels: ["Manual TikTok upload", "Meta/YouTube social fallback"],
+      intendedUse: "TikTok OAuth, ad account connection, ad upload planning and social launch workflows.",
+      requiredEnv: ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"],
+      optionalEnv: ["TIKTOK_ACCESS_TOKEN", "TIKTOK_ADVERTISER_ID", "NEXT_PUBLIC_TIKTOK_PIXEL_ID"],
+      status: requiredStatus(["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"]),
+      safeMode: "If TikTok OAuth keys are missing, TikTok ad launch stays manual/export-only.",
+      finalSetup: "Add TikTok client key/secret, verify OAuth URL generation, then connect access token and advertiser ID for live ad launch."
+    },
+    {
+      id: "social-youtube",
+      label: "YouTube OAuth and publishing",
+      category: "data",
+      provider: "YouTube / Google OAuth",
+      primaryModel: "youtube_oauth_upload_api",
+      fallbackModels: ["Manual YouTube upload", "Dashboard delivery link"],
+      intendedUse: "YouTube OAuth, upload handoff, channel read access and video publishing workflows.",
+      requiredEnv: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
+      optionalEnv: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_ACCESS_TOKEN"],
+      status: youtubeReady() ? "ready" : "missing",
+      safeMode: "If YouTube OAuth keys are missing, YouTube delivery remains manual upload instructions.",
+      finalSetup: "Add YouTube client ID/secret, verify OAuth URL generation, then complete OAuth callback/token storage."
+    },
+    {
+      id: "indexing-indexnow",
+      label: "Bing IndexNow",
+      category: "data",
+      provider: "Bing IndexNow",
+      primaryModel: "indexnow_submit_api",
+      fallbackModels: ["Sitemap discovery", "Manual Bing Webmaster submission"],
+      intendedUse: "Fast indexing submission for public landing pages, API docs, blog and SEO pages.",
+      requiredEnv: ["BING_INDEXNOW_KEY or INDEXNOW_KEY"],
+      optionalEnv: ["INDEXNOW_KEY_LOCATION", "INDEXNOW_ENDPOINT", "INDEXNOW_HOST"],
+      status: hasAnyEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]) ? "ready" : "missing",
+      safeMode: "If IndexNow key is missing, rely on sitemap and Search Console/Bing Webmaster discovery.",
+      finalSetup: "Add BING_INDEXNOW_KEY, ensure the key file is reachable, then run a dry-run and a small submit."
     },
     {
       id: "social-meta",

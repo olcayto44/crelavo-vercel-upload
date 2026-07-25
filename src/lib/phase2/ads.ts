@@ -25,7 +25,7 @@ export function adOAuthUrl(platform: AdPlatform, state: string) {
   }
 
   if (platform === "youtube") {
-    const clientId = requireEnv("GOOGLE_CLIENT_ID");
+    const clientId = optionalEnv("YOUTUBE_CLIENT_ID") || requireEnv("GOOGLE_CLIENT_ID");
     const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=youtube`);
     const scope = encodeURIComponent("https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly");
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${scope}&state=${encodeURIComponent(state)}`;

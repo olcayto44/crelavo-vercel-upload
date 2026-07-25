@@ -1,10 +1,10 @@
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { googleIndexingAllSitemapUrls } from "@/lib/google-indexing";
 
-const INDEXNOW_KEY = "crelavo-indexnow-B09A1EA26FA6A860";
-const INDEXNOW_KEY_LOCATION = `https://www.crelavo.com/${INDEXNOW_KEY}.txt`;
-const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow";
-const INDEXNOW_HOST = "www.crelavo.com";
+const INDEXNOW_KEY = process.env.BING_INDEXNOW_KEY || process.env.INDEXNOW_KEY || "crelavo-indexnow-B09A1EA26FA6A860";
+const INDEXNOW_KEY_LOCATION = process.env.INDEXNOW_KEY_LOCATION || `https://www.crelavo.com/${INDEXNOW_KEY}.txt`;
+const INDEXNOW_ENDPOINT = process.env.INDEXNOW_ENDPOINT || "https://api.indexnow.org/indexnow";
+const INDEXNOW_HOST = process.env.INDEXNOW_HOST || "www.crelavo.com";
 const MAX_URLS_PER_REQUEST = 10_000;
 
 type IndexNowBody = {
