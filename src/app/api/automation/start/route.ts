@@ -148,7 +148,6 @@ export async function POST(request: Request) {
           status: "queued",
           generation_status: "waiting_provider_config",
           automation_status: "waiting_provider_config",
-          automation_job_id: jobId,
           output_json: waitingOutput,
           preview_url: deliveryLinks.previewUrl,
           delivery_link: deliveryLinks.deliveryLink,
@@ -219,7 +218,6 @@ export async function POST(request: Request) {
       status: "in_production",
       generation_status: isProductAdVideo ? "scrape_analyze_running" : "strategy_running",
       automation_status: "running",
-      automation_job_id: jobId,
       automation_steps: steps,
       output_json: {
         automationMode: "fully_automatic",
