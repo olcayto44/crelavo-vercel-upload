@@ -2579,6 +2579,84 @@ body.admin-route > .site-footer {
   white-space: pre-wrap;
   word-break: break-word;
 }
+.production-start-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 6, 23, .78);
+  backdrop-filter: blur(12px);
+  overflow-y: auto;
+}
+.production-start-modal {
+  display: grid;
+  gap: 12px;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  border: 1px solid rgba(125, 211, 252, .22);
+  border-radius: 24px;
+  padding: 18px;
+  color: #fff;
+  background: linear-gradient(145deg, rgba(15,23,42,.98), rgba(2,6,23,.96));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .5);
+}
+.production-start-modal h3,
+.production-start-modal p {
+  margin: 0;
+}
+.start-cost-preview {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(34, 211, 238, .24);
+  border-radius: 16px;
+  padding: 10px 12px;
+  background: rgba(34, 211, 238, .08);
+}
+.start-cost-preview span {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.start-option-preview {
+  max-height: 170px;
+  margin: 0;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 16px;
+  padding: 10px;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, .72);
+  overflow: auto;
+}
+.production-start-actions {
+  position: sticky;
+  bottom: -18px;
+  z-index: 2;
+  margin: 0 -18px -18px;
+  padding: 12px 18px 18px;
+  border-top: 1px solid rgba(148, 163, 184, .16);
+  background: linear-gradient(180deg, rgba(15,23,42,.92), rgba(2,6,23,.98));
+}
+.production-start-actions .btn {
+  min-height: 42px;
+}
+@media (max-width: 700px) {
+  .production-start-modal-backdrop {
+    align-items: start;
+    padding: 10px;
+  }
+  .production-start-modal {
+    max-height: calc(100vh - 20px);
+    padding: 14px;
+  }
+  .production-start-actions {
+    bottom: -14px;
+    margin: 0 -14px -14px;
+    padding: 10px 14px 14px;
+  }
+}
 @media (max-width: 1100px) {
   .assistant-workspace,
   .assistant-production-console,
