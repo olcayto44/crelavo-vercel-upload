@@ -23,12 +23,11 @@ function firstNonEmptyObject(...values: unknown[]) {
   return {};
 }
 
-function previewAccessForDelivery(data: { request_metadata?: Record<string, unknown> | null; output_json?: Record<string, unknown> | null }) {
-  const metadata = objectValue(data.request_metadata);
+function previewAccessForDelivery(data: { output_json?: Record<string, unknown> | null }) {
   const output = objectValue(data.output_json);
-  const input = firstNonEmptyObject(metadata.inputJson, output.inputJson);
-  const access = firstNonEmptyObject(metadata.previewAccess, input.previewAccess);
-  const whopPreview = firstNonEmptyObject(metadata.whopPreview, input.whopPreview);
+  const input = firstNonEmptyObject(output.requestMetadata, output.inputJson);
+  const access = firstNonEmptyObject(output.previewAccess, input.previewAccess);
+  const whopPreview = firstNonEmptyObject(output.whopPreview, input.whopPreview);
   const source = Object.keys(access).length ? access : whopPreview;
   const previewOnly = source.previewOnly === true || source.downloadAccess === "closed" || source.downloadsOpen === false;
   return {
@@ -41,7 +40,7 @@ async function selectProductionForDelivery(id: string) {
   const supabase = supabaseAdmin();
   return supabase
     .from("production_requests")
-    .select("id, user_id, title, prompt, production_type, package_id, request_metadata, output_json")
+    .select("id, user_id, title, prompt, production_type, package_id, output_json")
     .eq("id", id)
     .maybeSingle();
 }

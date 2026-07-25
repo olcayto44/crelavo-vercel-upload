@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     const supabase = supabaseAdmin();
     const { data, error } = await supabase
       .from("production_requests")
-      .select("id, title, production_type, package_id, status, generation_status, automation_status, estimated_credits, reserved_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, readme_url, admin_notes, request_metadata, input_json, output_json, materials_json, legal_acceptance_snapshot, created_at")
+      .select("id, title, production_type, package_id, status, generation_status, automation_status, estimated_credits, reserved_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, readme_url, admin_notes, output_json, created_at")
       .order("created_at", { ascending: false })
       .limit(limit);
 

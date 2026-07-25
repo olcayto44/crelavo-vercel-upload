@@ -227,7 +227,6 @@ export async function POST(request: Request) {
           workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: isProductAdVideo ? "scrape_analyze_running" : "strategy_running", output_json: existingOutput })
         },
 
-      started_at: now,
       updated_at: now,
       admin_notes: isProductAdVideo
         ? "Product ad automation started. Admin monitors provider failures, payments, support emails and unusual requests only."

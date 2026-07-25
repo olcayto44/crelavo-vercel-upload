@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const { data, error } = await supabaseAdmin()
       .from("production_requests")
-      .select("id, user_id, status, automation_status, generation_status, approval_status, reserved_credits, estimated_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, output_json, request_metadata")
+      .select("id, user_id, status, automation_status, generation_status, approval_status, reserved_credits, estimated_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, output_json")
       .eq("id", id)
       .maybeSingle();
 

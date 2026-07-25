@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
     const { data: productions, error: productionError } = await supabase
       .from("production_requests")
-      .select("production_type, package_id, status, reserved_credits, estimated_credits, request_metadata, output_json, created_at");
+      .select("production_type, package_id, status, reserved_credits, estimated_credits, output_json, created_at");
 
     if (productionError) throw productionError;
 
@@ -137,7 +137,8 @@ export async function GET(request: Request) {
 
     const productionRows = productions ?? [];
     const productionProfitRows = productionRows.map((production) => {
-      const requestMetadata = production.request_metadata && typeof production.request_metadata === "object" ? production.request_metadata as Record<string, unknown> : {};
+      const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
+      const requestMetadata = outputJson.requestMetadata && typeof outputJson.requestMetadata === "object" ? outputJson.requestMetadata as Record<string, unknown> : {};
       const outputPlan = requestMetadata.outputPlan && typeof requestMetadata.outputPlan === "object" ? requestMetadata.outputPlan as Record<string, unknown> : {};
       const profitEstimate = outputPlan.profitEstimate && typeof outputPlan.profitEstimate === "object" ? outputPlan.profitEstimate as Record<string, unknown> : null;
       const reserved = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;

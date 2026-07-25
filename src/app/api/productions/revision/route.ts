@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     const supabase = supabaseAdmin();
     const { data: production, error: productionError } = await supabase
       .from("production_requests")
-      .select("id, user_id, title, prompt, production_type, status, automation_status, output_json, request_metadata, estimated_credits, reserved_credits")
+      .select("id, user_id, title, prompt, production_type, status, automation_status, output_json, estimated_credits, reserved_credits")
       .eq("id", productionId)
       .eq("user_id", userId)
       .single();
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
     };
 
     const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
-    const requestMetadata = production.request_metadata && typeof production.request_metadata === "object" ? production.request_metadata as Record<string, unknown> : {};
+    const requestMetadata = outputJson.requestMetadata && typeof outputJson.requestMetadata === "object" ? outputJson.requestMetadata as Record<string, unknown> : {};
     const existingRevisions = Array.isArray(outputJson.revisionRequests) ? outputJson.revisionRequests : [];
     const existingMetadataRevisions = Array.isArray(requestMetadata.revisionRequests) ? requestMetadata.revisionRequests : [];
     const existingAlternatives = Array.isArray(outputJson.alternatives) ? outputJson.alternatives : [];
