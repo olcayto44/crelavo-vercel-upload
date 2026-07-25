@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
 import { ProductionWorkspace } from "@/components/ProductionWorkspace";
-import { extractProductionId, productionWorkspacePath } from "@/lib/production-url";
+import { extractProductionId } from "@/lib/production-url";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const metadata: Metadata = {
@@ -39,16 +39,7 @@ export default async function ProductionWorkspacePage({ params }: { params: Prom
           <Link className="btn" href="/dashboard/productions">Back to my productions</Link>
         </div>
       ) : (
-        <>
-          {id === productionId ? (
-            <div className="production-canonical-url-card">
-              <span className="badge">Cleaner workspace URL</span>
-              <p>This production also has a readable workspace link for sharing inside the dashboard.</p>
-              <Link className="btn secondary" href={productionWorkspacePath(production)}>Open clean URL</Link>
-            </div>
-          ) : null}
-          <ProductionWorkspace production={production} />
-        </>
+        <ProductionWorkspace production={production} />
       )}
     </DashboardShell>
   );

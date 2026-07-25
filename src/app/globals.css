@@ -6439,6 +6439,30 @@ html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-workspa
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar {
   justify-content: flex-start !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar nav {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  scrollbar-width: none !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar nav::-webkit-scrollbar {
+  display: none !important;
+}
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar a,
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-nav-link,
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-home-link,
+html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-primary-action {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding: 7px 9px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
 }
 html body .assistant-production-page.container.section,
 html body .assistant-full-page.container.section {
@@ -8224,23 +8248,6 @@ html body .production-detail-shell.container.section {
 html body .production-detail-shell .dashboard-workspace {
   min-width: 0 !important;
 }
-html body .production-detail-shell .production-canonical-url-card,
-html body .production-canonical-url-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border: 1px solid rgba(34,211,238,.18);
-  border-radius: 18px;
-  background: rgba(15,23,42,.56);
-}
-html body .production-detail-shell .production-canonical-url-card p,
-html body .production-canonical-url-card p {
-  margin: 0;
-  color: #cbd5e1;
-}
 html body .production-detail-shell .production-workspace-shell {
   display: block !important;
   width: 100% !important;
@@ -8485,11 +8492,11 @@ html body .production-detail-shell .customer-preview-theater {
 }
 html body .production-detail-shell .customer-preview-toolbar {
   position: absolute !important;
-  z-index: 6 !important;
+  z-index: 8 !important;
   top: 26px !important;
   left: 26px !important;
-  right: auto !important;
-  max-width: min(520px, calc(100% - 52px)) !important;
+  right: 26px !important;
+  max-width: none !important;
   backdrop-filter: blur(16px) !important;
   background: rgba(2,6,23,.62) !important;
 }
@@ -8505,45 +8512,42 @@ html body .production-detail-shell .customer-preview-placeholder {
 html body .production-detail-shell .customer-preview-control {
   position: absolute !important;
   z-index: 7 !important;
-  top: 26px !important;
+  top: 82px !important;
+  left: 26px !important;
   right: 26px !important;
-  width: min(360px, calc(100% - 52px)) !important;
-  max-height: calc(100vh - 210px) !important;
+  width: auto !important;
+  max-width: 620px !important;
+  max-height: min(54vh, 430px) !important;
   opacity: 0 !important;
-  transform: translateX(18px) scale(.98) !important;
+  transform: translateY(-8px) scale(.985) !important;
   pointer-events: none !important;
   transition: opacity .18s ease, transform .18s ease !important;
   backdrop-filter: blur(18px) !important;
-  background: rgba(2,6,23,.82) !important;
+  background: rgba(2,6,23,.88) !important;
   box-shadow: 0 24px 80px rgba(0,0,0,.34) !important;
 }
-html body .production-detail-shell .customer-preview-theater::after {
+html body .production-detail-shell .customer-preview-toolbar {
+  cursor: default !important;
+}
+html body .production-detail-shell .customer-preview-toolbar::after {
   content: "Status & delivery";
-  position: absolute;
-  z-index: 6;
-  top: 26px;
-  right: 26px;
-  padding: 10px 13px;
+  margin-left: auto;
+  padding: 8px 11px;
   border: 1px solid rgba(34,211,238,.28);
   border-radius: 999px;
   color: #fff;
   background: rgba(2,6,23,.72);
   font-size: 12px;
   font-weight: 900;
-  letter-spacing: .01em;
-  backdrop-filter: blur(14px);
+  white-space: nowrap;
 }
-html body .production-detail-shell .customer-preview-theater:hover .customer-preview-control,
+html body .production-detail-shell .customer-preview-toolbar:hover ~ .customer-preview-control,
+html body .production-detail-shell .customer-preview-toolbar:focus-within ~ .customer-preview-control,
 html body .production-detail-shell .customer-preview-control:hover,
-html body .production-detail-shell .customer-preview-theater:focus-within .customer-preview-control {
+html body .production-detail-shell .customer-preview-control:focus-within {
   opacity: 1 !important;
-  transform: translateX(0) scale(1) !important;
+  transform: translateY(0) scale(1) !important;
   pointer-events: auto !important;
-}
-html body .production-detail-shell .customer-preview-theater:hover::after,
-html body .production-detail-shell .customer-preview-theater:focus-within::after {
-  opacity: 0;
-  pointer-events: none;
 }
 html body .production-detail-shell .customer-preview-control > p,
 html body .production-detail-shell .provider-poll-note,
@@ -8609,8 +8613,7 @@ html body .production-detail-shell .customer-preview-theater.preview-mode-shorts
   html body .production-detail-shell .production-workspace-head {
     display: grid !important;
   }
-  html body .production-detail-shell .customer-preview-control,
-  html body .production-detail-shell .customer-preview-theater::after {
+  html body .production-detail-shell .customer-preview-control {
     position: static !important;
     opacity: 1 !important;
     transform: none !important;
@@ -8620,9 +8623,6 @@ html body .production-detail-shell .customer-preview-theater.preview-mode-shorts
   }
   html body .production-detail-shell .customer-preview-theater {
     grid-template-columns: 1fr !important;
-  }
-  html body .production-detail-shell .customer-preview-theater::after {
-    content: none !important;
   }
   html body .production-detail-shell .production-workspace-side {
     grid-template-columns: 1fr !important;
