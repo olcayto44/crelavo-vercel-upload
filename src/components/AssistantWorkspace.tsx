@@ -2051,17 +2051,20 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
       }).catch(() => null);
       if (automationResponse && !automationResponse.ok) {
         const automationError = await automationResponse.json().catch(() => ({}));
-        setStartState("error");
-        setStartError(automationError.error ?? "The production record was created, but automation could not be started. You can check it again from the live workspace.");
-        setStartedProduction({
-          id: productionId,
-          detailUrl: `/dashboard/productions/${productionId}`,
-          status: "automation_warning",
-          message: "Production record was created, but automation needs attention.",
-          providerStatus: "automation_error",
-          nextAction: "Open the production detail page and review the automation error."
-        });
+        const recoveredProduction = automationError.production && typeof automationError.production === "object" ? automationError.production as Record<string, unknown> : null;
+        setStartState("idle");
         setStartModalOpen(false);
+        setStartedProduction({
+          id: String(recoveredProduction?.id ?? productionId),
+          detailUrl: `/dashboard/productions/${String(recoveredProduction?.id ?? productionId)}`,
+          status: "automation_warning",
+          message: automationError.error ?? "Production record was created, but automation returned an error response. Open the detail page to continue.",
+          providerStatus: String(recoveredProduction?.status ?? "automation_warning"),
+          nextAction: "Open the production detail page and continue from there."
+        });
+        if (!recoveredProduction) {
+          setStartError(automationError.error ?? "The production record was created, but automation could not be started. You can check it again from the live workspace.");
+        }
         return;
       }
       const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
