@@ -660,48 +660,6 @@ const [notice, setNotice] = useState("");
           </aside>
         </section>
 
-        <section className="workspace-alternatives-card compact-alternatives-card">
-          <div>
-            <span className="badge">Options and alternatives</span>
-            <h3>User alternatives</h3>
-            <p>Preview variations appear here. Choose one or ask for another revision.</p>
-            {selectedAlternative ? <p className="selected-alternative-note">Selected alternative: {selectedAlternative}</p> : null}
-          </div>
-          {pendingOutputActions.length > 0 ? (
-            <div className="pending-output-actions">
-              {pendingOutputActions.slice(-3).map((item: Record<string, any>, index: number) => (
-                <span key={String(item.id ?? index)}>{String(item.targetPart ?? "Production")} · {String(item.action ?? "Revision")}</span>
-              ))}
-            </div>
-          ) : null}
-          <div className="workspace-alternative-grid">
-            {alternatives.map((alternative: Record<string, any>, index: number) => {
-              const altTitle = String(alternative.title ?? alternative.name ?? `Alternative ${index + 1}`);
-              const altStatus = String(alternative.status ?? "Preparing");
-              const altDescription = String(alternative.description ?? alternative.notes ?? "Preview variation is ready when the provider produces it.");
-              const altPreview = String(alternative.preview_url ?? alternative.previewUrl ?? alternative.url ?? "");
-              return (
-                <article className={alternative.selected ? "workspace-alternative-card selected" : "workspace-alternative-card"} key={String(alternative.id ?? altTitle)}>
-                  <div className="alternative-preview-box">
-                    <PlayCircle size={24} />
-                    <span>{altPreview ? "Preview ready" : "Preview pending"}</span>
-                  </div>
-                  <div>
-                    <small>{altStatus}</small>
-                    <h4>{altTitle}</h4>
-                    <p>{altDescription}</p>
-                    <div className="production-part-actions">
-                      {altPreview ? <a className="btn secondary" href={altPreview} target="_blank">Preview</a> : <button className="btn secondary" type="button" disabled>Pending</button>}
-                      <button className="btn secondary" type="button" onClick={() => { setTargetPart(altTitle); setAction("Select this alternative"); setMessage(`${altTitle} should be selected and used as the final production direction.`); }}>Select this</button>
-                      <button className="btn secondary" type="button" onClick={() => { setTargetPart(altTitle); setAction("Revise alternative"); setMessage(`What I want to change in ${altTitle}: `); }}>Revise</button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
         {outputRegistry.length > 0 ? (
           <section className="cost-safety-card">
             <span className="badge">Output registry</span>
@@ -803,6 +761,51 @@ const [notice, setNotice] = useState("");
             </div>
           </section>
         ) : null}
+
+        <section className="workspace-alternatives-card">
+          <div>
+            <span className="badge">Options and alternatives</span>
+            <h3>User alternatives appear here</h3>
+            <p>As the engine generates different hooks, voices, scenes, colors, formats, or delivery variations, these cards fill with real preview links. The user can choose one or request revisions one by one.</p>
+            {selectedAlternative ? <p className="selected-alternative-note">Selected alternative: {selectedAlternative}</p> : null}
+          </div>
+          {pendingOutputActions.length > 0 ? (
+            <div className="pending-output-actions">
+              {pendingOutputActions.slice(-4).map((item: Record<string, any>, index: number) => (
+                <span key={String(item.id ?? index)}>{String(item.targetPart ?? "Production")} · {String(item.action ?? "Revision")} · {String(item.status ?? "queued")}</span>
+              ))}
+            </div>
+          ) : null}
+          <div className="workspace-alternative-grid">
+            {alternatives.map((alternative: Record<string, any>, index: number) => {
+              const altTitle = String(alternative.title ?? alternative.name ?? `Alternative ${index + 1}`);
+              const altStatus = String(alternative.status ?? "Preparing");
+              const altDescription = String(alternative.description ?? alternative.notes ?? "Preview and selection actions become active when this variation is ready.");
+              const altPreview = String(alternative.preview_url ?? alternative.previewUrl ?? alternative.url ?? "");
+              return (
+                <article className={alternative.selected ? "workspace-alternative-card selected" : "workspace-alternative-card"} key={String(alternative.id ?? altTitle)}>
+                  <div className="alternative-preview-box">
+                    <PlayCircle size={24} />
+                    <span>{altPreview ? "Preview ready" : "Preview pending"}</span>
+                  </div>
+                  <div>
+                    <small>{altStatus}</small>
+                    <h4>{altTitle}</h4>
+                    <p>{altDescription}</p>
+                    {alternative.visualJob ? <p className="provider-job-note">Revision provider job: {String(alternative.visualJob.provider)} · {String(alternative.visualJob.status)} · {String(alternative.visualJob.id ?? "waiting for id")}</p> : null}
+                    {alternative.providerNote ? <p className="provider-poll-note">{String(alternative.providerNote)}</p> : null}
+                    {alternative.providerError ? <p className="workspace-action-note error">{String(alternative.providerError)}</p> : null}
+                    <div className="production-part-actions">
+                      {altPreview ? <a className="btn secondary" href={altPreview} target="_blank">Preview</a> : <button className="btn secondary" type="button" disabled>Pending</button>}
+                      <button className="btn secondary" type="button" onClick={() => { setTargetPart(altTitle); setAction("Select this alternative"); setMessage(`${altTitle} should be selected and used as the final production direction.`); }}>Select this</button>
+                      <button className="btn secondary" type="button" onClick={() => { setTargetPart(altTitle); setAction("Revise alternative"); setMessage(`What I want to change in ${altTitle}: `); }}>Revise</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="local-context-card">
           <Globe2 size={20} />
