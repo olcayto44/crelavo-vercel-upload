@@ -2,6 +2,7 @@ import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
+import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jobs";
 import { getProviderStatus } from "@/lib/providers/status";
 import type { NormalizedProviderStatus } from "@/lib/providers/types";
@@ -65,6 +66,14 @@ function updatedSteps(steps: unknown, finalStatus: NormalizedProviderStatus) {
   });
 }
 
+function outputWithWorkflow(production: Record<string, unknown>, output: Record<string, unknown>, patch: Record<string, unknown>) {
+  const nextOutput = { ...output, ...patch };
+  return {
+    ...nextOutput,
+    workflowState: buildProductionWorkflowState({ ...production, output_json: nextOutput })
+  };
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
@@ -103,7 +112,7 @@ export async function POST(request: Request) {
           .from("production_requests")
           .update({
             generation_status: "alternative_provider_polling",
-            output_json: { ...output, alternatives: polledAlternatives, alternativeStatuses, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry },
+            output_json: outputWithWorkflow(production, output, { alternatives: polledAlternatives, alternativeStatuses, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
             updated_at: new Date().toISOString()
           })
           .eq("id", productionId)
@@ -129,7 +138,7 @@ export async function POST(request: Request) {
           automation_status: "failed",
           generation_status: `${terminalStatus.provider}_failed`,
           error_message: failureMessage,
-            output_json: { ...output, visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution },
+            output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
           automation_steps: updatedSteps(production.automation_steps, terminalStatus),
           admin_notes: `Provider failed: ${failureMessage}. Credit resolution requires admin review; no automatic refund was applied.`,
           updated_at: new Date().toISOString()
@@ -199,7 +208,7 @@ export async function POST(request: Request) {
           delivery_link: finalUrl,
           delivery_zip_url: finalUrl,
           reserved_credits: finalizedReservedCredits,
-          output_json: { ...output, visualStatus, renderStatus, finalVideoUrl: finalUrl, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution },
+          output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, finalVideoUrl: finalUrl, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
           automation_steps: updatedSteps(production.automation_steps, successfulStatus),
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -241,7 +250,7 @@ export async function POST(request: Request) {
       .from("production_requests")
       .update({
         generation_status: renderStatus ? `shotstack_${renderStatus.status}` : visualStatus ? `${visualStatus.provider}_${visualStatus.status}` : "provider_polling",
-        output_json: { ...output, visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry },
+        output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
         automation_steps: updatedSteps(production.automation_steps, terminalStatus),
         updated_at: new Date().toISOString()
       })

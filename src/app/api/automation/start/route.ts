@@ -10,6 +10,7 @@ import { ProviderConfigError, type ProviderJob } from "@/lib/providers/types";
 import { buildOutputRegistry } from "@/lib/output-registry";
 import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-jobs";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
+import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
@@ -138,7 +139,8 @@ export async function POST(request: Request) {
         automaticDeliveryLinks: deliveryLinks,
         outputRegistry: waitingLifecycle.outputRegistry,
         currentStep: "Waiting for provider/API configuration",
-        userMessage: providerReadiness.userMessage
+        userMessage: providerReadiness.userMessage,
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_provider_config", output_json: { ...demoOutput, providerReadiness } })
       };
       const { data: waitingProduction, error: waitingError } = await supabase
         .from("production_requests")
@@ -182,7 +184,8 @@ export async function POST(request: Request) {
           capacityPolicy,
           activeVideoJobs,
           activeJobLimit,
-          userMessage: renderQueuePolicy.userMessage
+          userMessage: renderQueuePolicy.userMessage,
+          workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "queued", generation_status: "queued_for_render_slot", output_json: existingOutput })
         };
         const { data: queuedProduction, error: queueError } = await supabase
           .from("production_requests")
@@ -229,10 +232,12 @@ export async function POST(request: Request) {
         capacityPolicy,
         activeJobLimit,
         chain: pipeline?.chain ?? null,
-        note: isProductAdVideo
-          ? "Backend orchestration will scrape the product link, create a GPT-4o ad script, generate visuals, create ElevenLabs voice-over, time subtitles with Whisper and render the final MP4 with Shotstack/Remotion."
-          : "Provider pipeline will generate strategy, assets, package and delivery link automatically."
-      },
+          note: isProductAdVideo
+            ? "Backend orchestration will scrape the product link, create a GPT-4o ad script, generate visuals, create ElevenLabs voice-over, time subtitles with Whisper and render the final MP4 with Shotstack/Remotion."
+            : "Provider pipeline will generate strategy, assets, package and delivery link automatically.",
+          workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: isProductAdVideo ? "scrape_analyze_running" : "strategy_running", output_json: existingOutput })
+        },
+
       started_at: now,
       updated_at: now,
       admin_notes: isProductAdVideo

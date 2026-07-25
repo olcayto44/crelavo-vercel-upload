@@ -1,4 +1,5 @@
 import { computeCancellationCreditResolution } from "@/lib/credit-resolution";
+import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function errorMessage(error: unknown, fallback: string) {
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
         generation_status: "cancelled_by_member",
         cancellation_fee_credits: creditDecision.cancellationFee,
         reserved_credits: 0,
-        output_json: { ...outputJson, creditResolution: creditDecision.creditResolution },
+        output_json: { ...outputJson, creditResolution: creditDecision.creditResolution, workflowState: buildProductionWorkflowState({ ...production, status: "cancelled", automation_status: "cancelled", generation_status: "cancelled_by_member", reserved_credits: 0, output_json: outputJson }) },
         error_message: "Cancelled by member. 50% reserved credits charged according to automatic production policy.",
         updated_at: new Date().toISOString()
       })

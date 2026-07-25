@@ -9,6 +9,7 @@ import { deliveryPackageForProduction } from "@/lib/delivery-package";
 import { findConfiguredProductionPackage, normalizePackageConfig, PACKAGE_CONFIG_KEY } from "@/lib/package-config";
 import { estimateProductionCost, getProductionPackage } from "@/lib/production";
 import { estimateProductionProfit } from "@/lib/production-profit";
+import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
@@ -140,7 +141,8 @@ export async function PATCH(request: Request) {
         readme_url: readmeUrl,
         providerStatus: providerStatus || existingOutput.providerStatus,
         providerProgress: providerProgress ?? existingOutput.providerProgress,
-        currentStep: providerStatus || existingOutput.currentStep || generationStatus || status || "operations_update"
+        currentStep: providerStatus || existingOutput.currentStep || generationStatus || status || "operations_update",
+        workflowState: buildProductionWorkflowState({ status: status || undefined, automation_status: automationStatus || undefined, generation_status: generationStatus || undefined, preview_url: previewUrl, delivery_link: deliveryLink, delivery_zip_url: deliveryZipUrl, source_files_url: sourceFilesUrl, output_json: existingOutput })
       }
     };
     Object.keys(updatePayload).forEach((key) => updatePayload[key] === undefined ? delete updatePayload[key] : undefined);
@@ -571,6 +573,43 @@ deliveryTargets,
 
     if (reserveEventError) throw reserveEventError;
 
+    const initialOutputJson = {
+      automationMode: "fully_automatic",
+      agentAction,
+      agentProviderRoutePlan,
+      providerReadiness: {
+        status: agentProviderRoutePlan.readinessStatus,
+        canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
+        blockingKeys: agentProviderRoutePlan.blockingKeys,
+        optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
+        userMessage: agentProviderRoutePlan.userMessage
+      },
+      jobId: automationJobId,
+      currentStep: isProductAdVideo ? "Product ad video queued" : "Request queued",
+      steps: automationSteps,
+      pipelineType: isProductAdVideo ? "ecommerce_product_ad_video" : "general_production",
+      providerPipeline: pipeline,
+      expectedDeliverySeconds: isProductAdVideo ? "45-60" : null,
+      deliveryPackage,
+      workflowState: buildProductionWorkflowState({
+        status: "queued",
+        automation_status: "queued",
+        generation_status: "automation_queued",
+        reserved_credits: estimatedCredits,
+        estimated_credits: estimatedCredits,
+        output_json: {
+          providerReadiness: {
+            status: agentProviderRoutePlan.readinessStatus,
+            canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
+            blockingKeys: agentProviderRoutePlan.blockingKeys,
+            optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
+            userMessage: agentProviderRoutePlan.userMessage
+          }
+        },
+        request_metadata: requestMetadata
+      })
+    };
+
     const { data, error } = await supabase
       .from("production_requests")
       .insert({
@@ -590,25 +629,7 @@ deliveryTargets,
         reserved_credits: estimatedCredits,
         input_json: inputJson,
         legal_acceptance_snapshot: legalSnapshot,
-        output_json: {
-          automationMode: "fully_automatic",
-          agentAction,
-          agentProviderRoutePlan,
-          providerReadiness: {
-            status: agentProviderRoutePlan.readinessStatus,
-            canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
-            blockingKeys: agentProviderRoutePlan.blockingKeys,
-            optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
-            userMessage: agentProviderRoutePlan.userMessage
-          },
-          jobId: automationJobId,
-          currentStep: isProductAdVideo ? "Product ad video queued" : "Request queued",
-          steps: automationSteps,
-          pipelineType: isProductAdVideo ? "ecommerce_product_ad_video" : "general_production",
-          providerPipeline: pipeline,
-          expectedDeliverySeconds: isProductAdVideo ? "45-60" : null,
-          deliveryPackage
-        },
+        output_json: initialOutputJson,
         admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
       })
       .select("*")
