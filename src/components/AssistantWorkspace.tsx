@@ -2700,6 +2700,15 @@ async function startRawMicrophoneFallback() {
               </div>
             );
           })}
+          {cleanToolSections.map((section) => (
+            <div className="service-network-pill production-option-pill" key={section.id} tabIndex={0}>
+              <strong>{section.label}</strong>
+              <div className="service-network-dropdown production-option-dropdown" onClick={(event) => event.stopPropagation()}>
+                <b>{section.detail}</b>
+                {section.content}
+              </div>
+            </div>
+          ))}
         </section>
       </main>
 

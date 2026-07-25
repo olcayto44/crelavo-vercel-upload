@@ -8702,6 +8702,52 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   color: #fff;
   background: rgba(34,211,238,.18);
 }
+.production-option-pill strong {
+  color: #f8fafc;
+}
+.production-option-dropdown {
+  width: min(360px, 88vw);
+  max-width: 360px;
+}
+.production-option-dropdown .clean-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.production-option-dropdown .clean-tool-grid.one,
+.production-option-dropdown .clean-tool-grid.compact {
+  grid-template-columns: 1fr;
+}
+.production-option-dropdown .clean-tool-grid button,
+.production-option-dropdown .clean-upload-btn {
+  min-height: 30px;
+  border: 0;
+  border-radius: 10px;
+  padding: 6px 7px;
+  color: #dbeafe;
+  background: rgba(15,23,42,.75);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+}
+.production-option-dropdown .clean-tool-grid button.active {
+  color: #fff;
+  background: rgba(34,211,238,.22);
+}
+.production-option-dropdown .clean-tool-grid button small {
+  display: block;
+  color: #93c5fd;
+  font-size: 9px;
+  line-height: 1.2;
+}
+.production-option-dropdown .clean-upload-btn {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 @media (max-width: 1280px) {
   .clean-service-network-row {
     flex-wrap: wrap;
