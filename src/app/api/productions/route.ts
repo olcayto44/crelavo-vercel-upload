@@ -597,7 +597,6 @@ outputPlan,
       deliveryPackage,
       workflowState: buildProductionWorkflowState({
         status: "queued",
-        automation_status: "queued",
         generation_status: "automation_queued",
         reserved_credits: estimatedCredits,
         estimated_credits: estimatedCredits,
@@ -629,8 +628,7 @@ outputPlan,
         estimated_credits: estimatedCredits,
         reserved_credits: estimatedCredits,
         input_json: inputJson,
-        legal_acceptance_snapshot: legalSnapshot,
-        output_json: initialOutputJson,
+        output_json: { ...initialOutputJson, legalAcceptanceSnapshot: legalSnapshot },
         admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
       })
       .select("*")
@@ -660,14 +658,14 @@ outputPlan,
 
     if (legalError) throw legalError;
 
-    const { data: productionWithLegal, error: legalUpdateError } = await supabase
-      .from("production_requests")
-      .update({ legal_acceptance_id: legalAcceptance.id })
-      .eq("id", data.id)
-      .select("*")
-      .single();
-
-    if (legalUpdateError) throw legalUpdateError;
+    const productionWithLegal = {
+      ...data,
+      output_json: {
+        ...(data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {}),
+        legalAcceptanceId: legalAcceptance.id,
+        legalAcceptanceSnapshot: legalSnapshot
+      }
+    };
 
     return Response.json({ production: productionWithLegal, automation_job_id: automationJobId, automation_status: "queued" });
   } catch (error) {

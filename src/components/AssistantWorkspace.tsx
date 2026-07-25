@@ -58,9 +58,9 @@ const serviceNetworkGroups = [
   },
   {
     key: "visual",
-    label: "Görsel",
+    label: "Visual",
     shortLabel: "Image",
-    note: "Görsel ve brand üretimi",
+    note: "Image and brand generation",
     services: ["OpenAI Image", "Stability AI", "Brand Kit", "Asset Library"],
     triggers: ["image", "brand", "campaign", "website", "saas", "admin"]
   },
@@ -74,41 +74,41 @@ const serviceNetworkGroups = [
   },
   {
     key: "voice",
-    label: "Ses",
+    label: "Voice",
     shortLabel: "Voice",
-    note: "Voice-over ve dubbing",
+    note: "Voice-over and dubbing",
     services: ["ElevenLabs", "Voice Clone", "Dubbing", "Subtitle route"],
     triggers: ["voice", "dubbing", "talking", "avatar", "video", "drama"]
   },
   {
     key: "music",
-    label: "Müzik",
+    label: "Music",
     shortLabel: "Music",
-    note: "Müzik ve BGM",
+    note: "Music and BGM",
     services: ["Stable Audio", "Mubert", "Music fallback", "License check"],
     triggers: ["music", "music_video", "video", "campaign"]
   },
   {
     key: "data-seo",
-    label: "Veri / SEO",
+    label: "Data / SEO",
     shortLabel: "Data",
-    note: "Araştırma ve indeksleme",
+    note: "Research and indexing",
     services: ["DataForSEO", "Apify", "Google Maps", "Bing IndexNow"],
     triggers: ["document", "website", "saas", "campaign", "growth", "seo"]
   },
   {
     key: "commerce",
-    label: "E‑Ticaret",
+    label: "Commerce",
     shortLabel: "Shop",
-    note: "Mağaza ve ödeme ağı",
+    note: "Store and payment network",
     services: ["Shopify", "WooCommerce", "Whop", "Stripe", "Product feed"],
     triggers: ["campaign", "ecommerce", "shop", "product", "website"]
   },
   {
     key: "social",
-    label: "Sosyal",
+    label: "Social",
     shortLabel: "Social",
-    note: "Yayınlama ve export",
+    note: "Publishing and export",
     services: ["TikTok", "YouTube", "Meta", "Instagram/Facebook", "Export planner"],
     triggers: ["campaign", "video", "social", "shorts", "music_video"]
   }
@@ -1912,59 +1912,16 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
       ]
       : [];
     return [
-      `Production category: ${productionLabel}`,
-      ...wizardLines,
-      `Quality/format: ${selectedQuality}`,
-      `Style/type: ${selectedStyle}`,
-      `Duration: ${selectedDuration}`,
-      `Production modules: ${selectedModules.length ? selectedModules.join(", ") : "None"}`,
-      `Extra features: ${selectedFeatures.length ? selectedFeatures.join(", ") : "None"}`,
-      `Delivery/platform: ${selectedPlatforms.length ? selectedPlatforms.join(", ") : "Dashboard delivery"}`,
-      ...(selectedProductionType === "drone_video" ? [
-        `Drone location/address: ${droneLocation.trim() || "Not specified"}`,
-        `Drone route/path: ${droneRoute.trim() || "Not specified"}`,
-        `Marked map/satellite area: ${droneMarkedArea.trim() || "Not specified"}`,
-        `Drone shot type: ${droneShotType}`,
-        `Drone map style: ${droneMapStyle}`,
-        `Drone camera movement: ${droneCameraMovement}`,
-        `Drone visual style: ${droneVisualStyle}`,
-        `Drone narration language: ${droneNarrationLanguage}`,
-        `Drone subtitle option: ${droneSubtitleOption}`,
-        `Drone music style: ${droneMusicStyle}`
-      ] : []),
-      ...(selectedProductionType === "live_sales_agent" ? [
-        `Live sales product link/details: ${liveSalesProductLink.trim() || "Not specified"}`,
-        `Live sales brand name: ${liveSalesBrandName.trim() || "Not specified"}`,
-        `Live sales product category: ${liveSalesProductCategory.trim() || "Not specified"}`,
-        `Live sales target market/language: ${liveSalesTargetMarket}`,
-        `Live sales target platform: ${liveSalesPlatform}`,
-        `Live sales persona: ${liveSalesPersona}`,
-        `Live sales avatar source: ${liveSalesAvatarSource}`,
-        `Live sales avatar style: ${liveSalesAvatarStyle}`,
-        `Live sales voice source: ${liveSalesVoiceSource}`,
-        `Live sales voice/language: ${liveSalesVoiceLanguage}`,
-        `Live sales voice tone: ${liveSalesVoiceTone}`,
-        `Live sales background: ${liveSalesBackground}`,
-        `Live sales visual style: ${liveSalesVisualStyle}`,
-        `Live sales subtitle option: ${liveSalesSubtitleOption}`,
-        `Live sales interaction mode: ${liveSalesInteractionMode}`,
-        `Live sales stream goal: ${liveSalesStreamGoal}`,
-        `Live sales human fallback: ${liveSalesHumanFallback}`,
-        `Live sales provider readiness: ${liveSalesProviderReadiness}`,
-        `Live sales CTA/discount: ${liveSalesCtaOffer.trim() || "Not specified"}`,
-        `Live sales compliance notes: ${liveSalesComplianceNotes.trim() || "AI disclosure + human fallback policy"}`,
-        "Live sales credit policy: No included credits; subscription includes fair-use live hours and extra live-operation hours are pay-as-you-go after cost analysis."
-      ] : []),
-      ...(selectedProductionType === "drama" ? [
-        `Drama format: ${dramaFormat}`,
-        `Drama genre/tone: ${dramaGenre}`,
-        `Drama structure: ${dramaStructure}`,
-        `Drama characters: ${dramaCharacters}`,
-        `Drama hook type: ${dramaHook}`,
-        `Drama dialogue/voice: ${dramaVoiceDirection}`
-      ] : []),
-      `Crelavo material library: ${materialNames.length ? materialNames.join(", ") : "Not selected"}`,
-      `Uploaded user materials: ${uploadNames.length ? uploadNames.join(", ") : "Not uploaded"}`
+`Production category: ${productionLabel}`,
+...wizardLines,
+`Quality/format: ${selectedQuality}`,
+  `Style/type: ${selectedStyle}`,
+  `Duration: ${selectedDuration}`,
+  `Production modules: ${selectedModules.join(", ") || "Auto"}`,
+  `Extra features: ${selectedFeatures.join(", ") || "None"}`,
+  `Delivery/platform: ${selectedPlatforms.join(", ") || "Dashboard"}`,
+  `Crelavo material library: ${materialNames.length ? materialNames.join(", ") : "Not selected"}`,
+  `Uploaded user materials: ${uploadNames.length ? uploadNames.join(", ") : "Not uploaded"}`
     ].join("\n");
   }
 
@@ -2690,7 +2647,7 @@ async function startRawMicrophoneFallback() {
       <aside className="clean-studio-rail clean-tool-panel" aria-label="Production settings">
         <div className="clean-tool-head">
           <div className="clean-studio-logo"><span>▶</span></div>
-          <div><strong>Crelavo Studio</strong><small>Üretim ayarları</small></div>
+          <div><strong>Crelavo Studio</strong><small>Production settings</small></div>
         </div>
 
         <div className="clean-tool-switcher" aria-label="Production setting groups">
@@ -2718,14 +2675,14 @@ async function startRawMicrophoneFallback() {
           <div>
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
-            <p>{productionBrief || "Ne üretmek istediğini soldaki prompt alanına yaz. Crelavo brief, action, kredi ve teslimat planını burada gösterecek."}</p>
+            <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
           </div>
         <div className="clean-studio-state">
-          <span><small>Durum</small><strong>{productionLifecycleState}</strong></span>
-          <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
-          <span><small>Kalite</small><strong>{selectedQuality}</strong></span>
-          <span><small>Ajan eylemi</small><strong>{latestAgentAction?.name ?? "Taslak"}</strong></span>
-          <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Kontrol paneli"}</strong></span>
+          <span><small>Status</small><strong>{productionLifecycleState}</strong></span>
+          <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+          <span><small>Quality</small><strong>{selectedQuality}</strong></span>
+          <span><small>Agent action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong></span>
+          <span><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
         </div>
         </section>
 
@@ -2733,17 +2690,17 @@ async function startRawMicrophoneFallback() {
           <div className="clean-preview-card clean-preview-large">
             <small>Production Preview</small>
             <strong>{selectedProduction?.label ?? selectedProductionType}</strong>
-            <p>{productionBrief ? "Brief hazır. Üretim onay bekliyor." : "Henüz üretim çıktısı yok. Komut bekleniyor."}</p>
+            <p>{productionBrief ? "Brief ready. Waiting for production confirmation." : "No production output yet. Waiting for a command."}</p>
           </div>
           <div className="clean-preview-card">
             <small>Agent Action</small>
             <strong>{latestAgentAction?.name ?? "Draft"}</strong>
-            <p>Gerçek kayıt olmadan üretim başladı denmez.</p>
+            <p>Production is not marked as started before a real record exists.</p>
           </div>
           <div className="clean-preview-card">
             <small>Delivery</small>
             <strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong>
-            <p>Dosya, link, preview ve teslim paketi.</p>
+            <p>Files, links, previews and delivery package.</p>
           </div>
         </section>
 
@@ -2754,7 +2711,7 @@ async function startRawMicrophoneFallback() {
               <div className={`service-network-pill ${isRelevant ? "active" : ""} ${selectedServiceNetwork === group.key ? "selected" : ""}`} key={group.key} tabIndex={0} onClick={() => { setSelectedServiceNetwork(group.key); setSelectedProviderService(group.services[0] ?? ""); }}>
                 <span>{group.shortLabel}</span>
                 <strong>{group.label}</strong>
-                <small>{selectedServiceNetwork === group.key ? (selectedProviderService || "Seçildi") : isRelevant ? "Bu üretimde alakalı" : "Hazır ağ"}</small>
+                <small>{selectedServiceNetwork === group.key ? (selectedProviderService || "Selected") : isRelevant ? "Relevant" : "Ready"}</small>
                 <div className="service-network-dropdown" onClick={(event) => event.stopPropagation()}>
                   <b>{group.note}</b>
                   {group.services.map((service) => (
@@ -2773,27 +2730,27 @@ async function startRawMicrophoneFallback() {
         <section className="clean-chat-panel">
           <div className="clean-panel-head">
             <span className="badge"><Bot size={14} /> Crelavo Assistant</span>
-            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: "Sohbet temizlendi. Ne yapmak istediğini yazabilirsin." }])}>Temizle</button>
+            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Describe what you want to create." }])}>Clear</button>
           </div>
           <div className="clean-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
-            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Cevap hazırlanıyor...</div> : null}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Preparing response...</div> : null}
           </div>
           <div className="clean-chat-input">
-            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Ne yapmak istiyorsun? Örn: Crelavo gibi SaaS sitesi kur..." />
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="What do you want to create? Example: build a SaaS site like Crelavo..." />
             <div className="clean-chat-actions">
-              <label className="btn secondary clean-chat-attach" title="Dosya ekle">
+              <label className="btn secondary clean-chat-attach" title="Attach file">
                 <Paperclip size={15} />
-                <span>{uploadState === "loading" ? "Yükleniyor" : "Dosya"}</span>
+                <span>{uploadState === "loading" ? "Uploading" : "File"}</span>
                 <input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={uploadState === "loading"} onChange={(event) => uploadUserMaterial(event.currentTarget.files)} />
               </label>
-              <button className="btn clean-chat-send" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
+              <button className="btn clean-chat-send" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
             </div>
           </div>
         </section>
 
         <section className="clean-control-panel">
-          <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
+          <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
         <div className="clean-control-list">
           <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
           <span><small>Scope</small><strong>{selectedDuration}</strong></span>
@@ -2871,7 +2828,7 @@ async function startRawMicrophoneFallback() {
           <div className="ai-dashboard-brand">
             <span className="badge"><Sparkles size={14} /> Crelavo Studio</span>
             <h1>AI Production</h1>
-            <p>Tek sayfada sohbet, brief, kalite, kredi ve gerçek üretim durumu.</p>
+            <p>Chat, brief, quality, credits and real production status in one workspace.</p>
           </div>
           <div className="ai-dashboard-nav">
             {studioQuickPaths.map((path) => (
@@ -2882,7 +2839,7 @@ async function startRawMicrophoneFallback() {
             ))}
           </div>
           <div className="ai-dashboard-mini-card">
-            <small>Üretim durumu</small>
+            <small>Production status</small>
             <strong>{productionLifecycleState}</strong>
             <span>{productionLifecycleNote}</span>
           </div>
@@ -2891,21 +2848,21 @@ async function startRawMicrophoneFallback() {
         <section className="assistant-inline-chat ai-dashboard-chat" aria-label="Assistant chat flow">
           <div className="assistant-inline-chat-head">
             <div>
-              <span className="badge"><Bot size={14} /> Tek sohbet</span>
+              <span className="badge"><Bot size={14} /> Single chat</span>
               <h2>Crelavo Assistant</h2>
-              <p>Ne istediğini buraya yaz. Genel soruları cevaplar; üretim isteğini otomatik brief ve action'a çevirir.</p>
+              <p>Write what you want here. General questions are answered; production requests become a brief and action automatically.</p>
             </div>
-            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Sohbet temizlendi. Ne yapmak istediğini yazabilirsin." }])}>Temizle</button>
+            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Describe what you want to create." }])}>Clear</button>
           </div>
           <div className="assistant-inline-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
-            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Cevap hazırlanıyor...</div> : null}
+            {isLoading ? <div className="chat-bubble assistant notranslate" data-no-translate="true" translate="no">Preparing response...</div> : null}
           </div>
           <div className="assistant-inline-chat-input">
-            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Örn: Crelavo gibi SaaS sitesi kur, ayakkabı tanıtım videosu yap, API kurulumu anlat..." />
+            <textarea className="notranslate" data-no-translate="true" translate="no" spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={inputRef} value={chatInput} onChange={(event) => { setChatInput(event.target.value); setInput(event.target.value); }} onKeyDown={handleChatInputKeyDown} placeholder="Example: build a SaaS site like Crelavo, create a shoe promo video, explain API setup..." />
             <div className="assistant-inline-chat-actions">
-              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? "Dinleniyor" : "Ses"}</button>
-              <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Gönder</button>
+              <button className="btn secondary compact-chat-action" type="button" onClick={startVoiceInput} disabled={voiceListening} data-no-translate="true"><Mic size={15} /> {voiceListening ? "Listening" : "Voice"}</button>
+              <button className="btn compact-chat-action" type="button" onClick={() => sendCommand(undefined, "quick", "chat")} disabled={isLoading || !chatInput.trim()}><Send size={15} /> Send</button>
             </div>
           </div>
           {uploadError ? <p className="workspace-action-note error">{uploadError}</p> : null}
@@ -2937,8 +2894,8 @@ async function startRawMicrophoneFallback() {
               const isDraftActive = !isStarted && index === 0 && Boolean(productionBrief.trim() || input.trim() || dynamicWizard.open);
               const isActive = isStarted ? index <= activeStep : isDraftActive;
               const stepStatus = isStarted
-                ? (index < activeStep ? "Tamam" : index === activeStep ? "Aktif" : "Bekliyor")
-                : (isDraftActive ? "Taslak hazır" : "Gönderilmedi");
+                ? (index < activeStep ? "Done" : index === activeStep ? "Active" : "Waiting")
+                : (isDraftActive ? "Draft ready" : "Not sent");
               return (
                 <div className={`live-step ${isActive ? "active" : ""} ${!isStarted ? "draft-step" : ""}`} key={step}>
                   <span>{index + 1}</span>
@@ -2951,12 +2908,12 @@ async function startRawMicrophoneFallback() {
 
           <section className="assistant-production-console ai-delivery-console">
             <section className="assistant-console-main">
-              <span className="badge">Canlı üretim yönü</span>
+              <span className="badge">Live production route</span>
               <h2>{selectedProduction?.label ?? selectedProductionType}</h2>
-              <p>{selectedProduction?.description ?? "Üretim tipi, teslimat formatı ve kredi rezervi sohbetten hazırlanır."}</p>
+              <p>{selectedProduction?.description ?? "Production type, delivery format and credit reserve are prepared from the chat."}</p>
               <div className="assistant-console-metrics">
-                <div><small>Tahmini rezerv</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
-                <div><small>Çıktı sayısı</small><strong>{costEstimate.outputCount}</strong></div>
+                <div><small>Estimated reserve</small><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
+                <div><small>Output count</small><strong>{costEstimate.outputCount}</strong></div>
                 <div><small>Provider risk</small><strong>{costEstimate.providerRiskLevel}</strong></div>
               </div>
             </section>
@@ -3003,18 +2960,18 @@ async function startRawMicrophoneFallback() {
 
         <aside className="studio-credit-card studio-side-summary ai-dashboard-controls">
           <div className="studio-side-block primary">
-            <small>Tahmini kredi</small>
-            <strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong>
+            <small>Estimated credits</small>
+            <strong>{costEstimate.totalCredits.toLocaleString()} credits</strong>
             <span>{selectedProduction?.label ?? selectedProductionType} · {selectedQuality} · Auto provider</span>
           </div>
           <div className="studio-quality-strip" aria-label="Quality tiers">
             {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
           </div>
           <div className="studio-credit-trust-panel">
-            <span><small>Mevcut</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} kredi` : "Kontrol"}</strong></span>
-            <span><small>Şimdi ayrılan</small><strong>{startedProduction ? "Production record" : "0 kredi"}</strong></span>
-            <span><small>Onay sonrası</small><strong>{costEstimate.totalCredits.toLocaleString()} rezerv</strong></span>
-            {productionCreditInsufficient ? <p className="workspace-action-note error">Eksik: {productionCreditShortfall.toLocaleString()} kredi. Başlamadan önce kredi ekle veya kalite/kapsamı düşür.</p> : <p className="workspace-action-note">Gerçek kayıt oluşmadan kredi ayrılmaz.</p>}
+            <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Check"}</strong></span>
+            <span><small>Reserved now</small><strong>{startedProduction ? "Production record" : "0 credits"}</strong></span>
+            <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
+            {productionCreditInsufficient ? <p className="workspace-action-note error">Missing: {productionCreditShortfall.toLocaleString()} credits. Add credits before starting or reduce quality/scope.</p> : <p className="workspace-action-note">No credits are reserved before a real record exists.</p>}
           </div>
           {latestAgentAction ? (
             <div className="studio-credit-trust-panel agent-action-panel">

@@ -9,7 +9,6 @@ import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
-import { ToolSideMenu } from "@/components/ToolSideMenu";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
@@ -151,7 +150,6 @@ export default async function HomePage() {
       <Header navLinks={siteContent.navLinks} />
       <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
-          <aside className="ad-rail ad-rail-left api-side-rail"><ToolSideMenu /></aside>
           <aside className="ad-rail ad-rail-right"><AdSlot slotId="right-rail" /></aside>
           <CrelavoPremiumHero />
 
