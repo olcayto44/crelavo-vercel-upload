@@ -1918,6 +1918,12 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     return "video";
   }
 
+  function openStartProductionModal() {
+    setStartError("");
+    setStartState("idle");
+    setStartModalOpen(true);
+  }
+
   async function startProduction() {
     const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
     const productionType = productionTypeFromSelection();
@@ -2689,17 +2695,73 @@ async function startRawMicrophoneFallback() {
 
         <section className="clean-control-panel">
           <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></div>
-          <div className="clean-control-list">
-            <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
-            <span><small>Scope</small><strong>{selectedDuration}</strong></span>
-            <span><small>Provider</small><strong>Auto route</strong></span>
-            <span><small>Production ID</small><strong>{startedProduction?.id ?? "Yok"}</strong></span>
+        <div className="clean-control-list">
+          <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
+          <span><small>Scope</small><strong>{selectedDuration}</strong></span>
+          <span><small>Provider</small><strong>Auto route</strong></span>
+          <span><small>Production ID</small><strong>{startedProduction?.id ?? "Yok"}</strong></span>
+        </div>
+        {startedProduction ? (
+          <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
+            <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Dikkat gerekiyor" : "Production started"}</small>
+            <strong>{startedProduction.message}</strong>
+            <span><b>Production ID</b>{startedProduction.id}</span>
+            {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
+            {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
+            {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
+            <a className="btn secondary" href={startedProduction.detailUrl ?? "/dashboard/productions"}>Detayı aç</a>
           </div>
-          <button className="btn clean-start-btn" type="button" onClick={requestDynamicWizardCredits} disabled={productionCreditInsufficient}>Start Production</button>
+        ) : null}
+        <button className="btn clean-start-btn" type="button" onClick={openStartProductionModal} disabled={productionCreditInsufficient}>Start Production</button>
           {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
           <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
         </section>
       </aside>
+
+      {startModalOpen ? (
+        <div className="production-start-modal-backdrop">
+          <div className="production-start-modal">
+            <span className="badge">Start production</span>
+            <h3>Create a production record with these options?</h3>
+            <p>This writes the selected quality, style, duration, material and delivery options to the record, reserves credits and moves you to the live production workspace.</p>
+            <div className="start-cost-preview">
+              <strong>{quickProviderTest ? "Low-cost paid test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
+              <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 5 sec / 720p / single output" : ""}</span>
+            </div>
+            <div className="production-start-trust-grid">
+              <span><b>1</b><strong>Confirm first</strong><small>No credit reserve is created before this screen.</small></span>
+              <span><b>2</b><strong>Reserve estimate</strong><small>Credits are reserved for provider/render cost control.</small></span>
+              <span><b>3</b><strong>Provider check</strong><small>Unavailable providers stay pending instead of pretending to work.</small></span>
+              <span><b>4</b><strong>Final delivery</strong><small>Unused reserved credits can be released by the production resolution flow.</small></span>
+            </div>
+            <pre className="start-option-preview">{selectedOptionSummary()}</pre>
+            {productionCreditInsufficient ? <p className="workspace-action-note error">Insufficient credits for this production. Available: {(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: {costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.</p> : null}
+            {startError ? <p className="workspace-action-note error">{startError}</p> : null}
+            <div className="production-start-actions">
+              <button className="btn secondary" type="button" onClick={() => setStartModalOpen(false)} disabled={startState === "loading"}>Cancel</button>
+              <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading" || productionCreditInsufficient}>{startState === "loading" ? "Starting..." : "I understand, start production"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {creditSplashOpen ? (
+        <div className="production-start-modal-backdrop">
+          <div className="production-start-modal credit-splash-modal">
+            <span className="badge">Credits required</span>
+            <h3>Your first preview is ready. Add credits to continue production.</h3>
+            <p>The welcome bonus helps create the first assistant brief/preview plan. Full production, provider rendering and final delivery require production credits.</p>
+            <div className="start-cost-preview">
+              <strong>{(assistantCreditState.requiredCredits ?? costEstimate.totalCredits).toLocaleString()} credits estimated</strong>
+              <span>Choose a credit package, then return here to continue with this prepared production request.</span>
+            </div>
+            <div className="production-start-actions">
+              <button className="btn secondary" type="button" onClick={() => setCreditSplashOpen(false)}>Not now</button>
+              <a className="btn" href="/dashboard/credits">View credit packages</a>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 
