@@ -80,6 +80,9 @@ export async function GET() {
   const speechReady = hasEnv("ELEVENLABS_API_KEY");
   const brainReady = hasEnv("OPENAI_API_KEY");
   const imageReady = hasEnv("OPENAI_API_KEY");
+  const heygenReady = hasEnv("HEYGEN_API_KEY");
+  const stabilityReady = hasEnv("STABILITY_API_KEY");
+  const musicReady = hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]);
   const mapsReady = hasEnv("GOOGLE_MAPS_API_KEY");
   const metaReady = hasEnv("META_APP_ID") && hasEnv("META_SYSTEM_ACCESS_TOKEN") && hasEnv("META_AD_ACCOUNT_ID");
   const dataForSeoReady = hasEnv("DATAFORSEO_LOGIN") && hasEnv("DATAFORSEO_PASSWORD");
@@ -118,6 +121,24 @@ export async function GET() {
       ready: imageReady,
       required: ["OPENAI_API_KEY"],
       optional: ["OPENAI_IMAGE_MODEL"]
+    },
+    heygen: {
+      provider: "heygen",
+      ready: heygenReady,
+      required: ["HEYGEN_API_KEY"],
+      optional: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"]
+    },
+    stability: {
+      provider: "stability-ai",
+      ready: stabilityReady,
+      required: ["STABILITY_API_KEY"],
+      optional: ["STABILITY_BASE_URL", "STABILITY_IMAGE_MODEL"]
+    },
+    music: {
+      provider: "stable-audio-primary-mubert-secondary",
+      ready: musicReady,
+      required: ["STABLE_AUDIO_API_KEY or STABILITY_API_KEY"],
+      optional: ["STABLE_AUDIO_MODEL", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]
     },
     maps: {
       provider: "google-maps",

@@ -2,7 +2,10 @@ import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { getApifyRun } from "@/lib/providers/apify";
 import { getKeywordVolume } from "@/lib/providers/dataforseo";
 import { geocodeAddress } from "@/lib/providers/google-maps";
+import { getHeyGenAvatars } from "@/lib/providers/heygen";
 import { getMetaAdAccount } from "@/lib/providers/meta";
+import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
+import { getStabilityBalance } from "@/lib/providers/stability";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function ok(provider: string, detail: unknown) {
@@ -51,6 +54,21 @@ async function testDataForSeo() {
   return { checked: "keyword_volume", hasTasks: Array.isArray((result as { tasks?: unknown[] }).tasks) };
 }
 
+async function testMusicProvider() {
+  if (process.env.STABLE_AUDIO_API_KEY || process.env.STABILITY_API_KEY) {
+    return { primary: "stable-audio", result: await getStableAudioAccount() };
+  }
+  if (process.env.MUBERT_API_KEY || process.env.MUBERT_ACCESS_TOKEN) {
+    return { primary: "mubert", result: await getMubertAccount() };
+  }
+  throw new Error("STABLE_AUDIO_API_KEY or MUBERT_API_KEY missing");
+}
+
+function selectedVideoReadiness() {
+  const plan = buildProviderPlan().plans.find((item) => item.category === "video");
+  return { note: "No video generation was started. This only checks selected video provider readiness to avoid spend.", readiness: plan };
+}
+
 export async function GET(request: Request) {
   if (!isAdminRequest(request)) return adminRequiredResponse();
   const url = new URL(request.url);
@@ -64,7 +82,10 @@ export async function GET(request: Request) {
     if (provider === "dataforseo") return ok(provider, await testDataForSeo());
     if (provider === "meta") return ok(provider, await getMetaAdAccount());
     if (provider === "elevenlabs") return ok(provider, await testElevenLabs());
-    if (provider === "video") return ok(provider, { note: "Video provider low-cost generation test is intentionally manual to avoid unexpected spend.", readiness: buildProviderPlan().plans.find((plan) => plan.category === "video") });
+    if (provider === "heygen") return ok(provider, await getHeyGenAvatars());
+    if (provider === "stability") return ok(provider, await getStabilityBalance());
+    if (provider === "music" || provider === "stable-audio") return ok("music", await testMusicProvider());
+    if (["video", "kling", "fal", "runway"].includes(provider)) return ok(provider, selectedVideoReadiness());
     if (provider === "shopify") return ok(provider, { status: "pending", note: "Shopify is paused until store URL and integration type are confirmed." });
     return fail(provider, new Error("Unsupported provider test."), 400);
   } catch (error) {

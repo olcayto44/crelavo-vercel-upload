@@ -13,7 +13,13 @@ const providerTests = [
   { id: "dataforseo", label: "DataForSEO" },
   { id: "meta", label: "Meta" },
   { id: "elevenlabs", label: "ElevenLabs" },
-  { id: "video", label: "Video provider" },
+  { id: "heygen", label: "HeyGen" },
+  { id: "stability", label: "Stability AI" },
+  { id: "music", label: "Music API" },
+  { id: "kling", label: "Kling readiness" },
+  { id: "fal", label: "Fal readiness" },
+  { id: "runway", label: "Runway readiness" },
+  { id: "video", label: "Selected video provider" },
   { id: "shopify", label: "Shopify paused" }
 ];
 
@@ -40,7 +46,7 @@ export function AdminProviderTestPanel() {
   }
 
   async function runSafeBatch() {
-    for (const item of providerTests.filter((test) => test.id !== "video" && test.id !== "shopify")) {
+    for (const item of providerTests.filter((test) => !["video", "kling", "fal", "runway", "shopify"].includes(test.id))) {
       await runTest(item.id);
     }
   }

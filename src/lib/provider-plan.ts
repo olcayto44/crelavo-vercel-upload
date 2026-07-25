@@ -5,7 +5,7 @@ export type ProviderPlanStatus = "ready" | "missing" | "pending" | "optional";
 export type ProviderPlanItem = {
   id: string;
   label: string;
-  category: "brain" | "video" | "image" | "voice" | "render" | "email" | "payment" | "storage" | "data";
+  category: "brain" | "video" | "image" | "voice" | "avatar" | "music" | "render" | "email" | "payment" | "storage" | "data";
   provider: string;
   primaryModel: string;
   fallbackModels: string[];
@@ -36,6 +36,10 @@ function selectedBrainProvider() {
 
 function selectedImageProvider() {
   return (process.env.IMAGE_PROVIDER || "openai").toLowerCase();
+}
+
+function stableAudioReady() {
+  return hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY"]);
 }
 
 function requiredStatus(requiredEnv: string[], optional = false): ProviderPlanStatus {
@@ -223,6 +227,48 @@ export function buildProviderPlan() {
     imagePlan(),
     mapsPlan(),
     videoPlan(),
+    {
+      id: "avatar-heygen",
+      label: "Avatar and talking video",
+      category: "avatar",
+      provider: "HeyGen",
+      primaryModel: "heygen_avatar_video_api",
+      fallbackModels: ["ElevenLabs voice + manual avatar delivery", "Kling talking-video fallback"],
+      intendedUse: "Avatar presenters, talking video, video translation/lip-sync handoff and sales presenter workflows.",
+      requiredEnv: ["HEYGEN_API_KEY"],
+      optionalEnv: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"],
+      status: requiredStatus(["HEYGEN_API_KEY"]),
+      safeMode: "If HeyGen is missing, keep avatar jobs as scripts/assets or route to manual delivery.",
+      finalSetup: "Add HeyGen key, test avatar/voice listing, then run one low-cost talking-video flow."
+    },
+    {
+      id: "image-stability",
+      label: "Stability AI image provider",
+      category: "image",
+      provider: "Stability AI",
+      primaryModel: process.env.STABILITY_IMAGE_MODEL || "stability_selected_image_model",
+      fallbackModels: ["OpenAI Images", "FAL image provider"],
+      intendedUse: "Image generation fallback, creative visuals and Stability/Stable Audio account checks.",
+      requiredEnv: ["STABILITY_API_KEY"],
+      optionalEnv: ["STABILITY_BASE_URL", "STABILITY_IMAGE_MODEL"],
+      status: requiredStatus(["STABILITY_API_KEY"]),
+      safeMode: "If Stability is missing, keep OpenAI/FAL as image routes and skip Stability-specific jobs.",
+      finalSetup: "Add Stability key, test account/balance, then enable image route where needed."
+    },
+    {
+      id: "music-stable-audio",
+      label: "Music generation",
+      category: "music",
+      provider: "Stable Audio / Mubert",
+      primaryModel: process.env.STABLE_AUDIO_MODEL || "stable_audio_primary",
+      fallbackModels: ["Mubert API", "Manual licensed music fallback"],
+      intendedUse: "Background music, campaign music beds and generated music workflows.",
+      requiredEnv: ["STABLE_AUDIO_API_KEY or STABILITY_API_KEY"],
+      optionalEnv: ["STABLE_AUDIO_MODEL", "STABLE_AUDIO_ACCOUNT_URL", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN", "MUBERT_ACCOUNT_URL"],
+      status: stableAudioReady() || hasAnyEnv(["MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]) ? "ready" : "missing",
+      safeMode: "If music APIs are missing, use manual licensed music fallback and do not promise generated music.",
+      finalSetup: "Use Stable Audio first, Mubert second; test account access before enabling music jobs."
+    },
     {
       id: "social-meta",
       label: "Meta ads and social graph",
