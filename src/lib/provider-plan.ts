@@ -5,7 +5,7 @@ export type ProviderPlanStatus = "ready" | "missing" | "pending" | "optional";
 export type ProviderPlanItem = {
   id: string;
   label: string;
-  category: "brain" | "video" | "image" | "voice" | "render" | "email" | "payment" | "storage";
+  category: "brain" | "video" | "image" | "voice" | "render" | "email" | "payment" | "storage" | "data";
   provider: string;
   primaryModel: string;
   fallbackModels: string[];
@@ -147,6 +147,23 @@ function imagePlan(): ProviderPlanItem {
   };
 }
 
+function mapsPlan(): ProviderPlanItem {
+  return {
+    id: "maps-google",
+    label: "Location and maps intelligence",
+    category: "data",
+    provider: "Google Maps",
+    primaryModel: "geocode_places_details_api",
+    fallbackModels: ["Manual location notes", "Public map lookup"],
+    intendedUse: "Local SEO, map search, place details, regional page building and location-based campaign context.",
+    requiredEnv: ["GOOGLE_MAPS_API_KEY"],
+    optionalEnv: ["GOOGLE_MAPS_LANGUAGE", "GOOGLE_MAPS_REGION", "GOOGLE_MAPS_SEARCH_RADIUS"],
+    status: requiredStatus(["GOOGLE_MAPS_API_KEY"]),
+    safeMode: "If Google Maps is missing, keep location-based requests as structured notes and local SEO briefs only.",
+    finalSetup: "Add the Google Maps API key, test geocoding and place search once, then wire region-aware pages."
+  };
+}
+
 function paymentPlan(): ProviderPlanItem {
   const provider = paymentProviderName();
 
@@ -204,7 +221,50 @@ export function buildProviderPlan() {
   const plans: ProviderPlanItem[] = [
     brainPlan(),
     imagePlan(),
+    mapsPlan(),
     videoPlan(),
+    {
+      id: "social-meta",
+      label: "Meta ads and social graph",
+      category: "data",
+      provider: "Meta",
+      primaryModel: "graph_ads_insights_api",
+      fallbackModels: ["Manual ad export", "Organic social planning"],
+      intendedUse: "Meta ad account checks, campaign export planning, insights review, pages context and social growth signals.",
+      requiredEnv: ["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
+      optionalEnv: ["META_APP_SECRET", "META_GRAPH_API_VERSION", "META_GRAPH_BASE_URL"],
+      status: requiredStatus(["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"]),
+      safeMode: "If Meta is missing, keep ad launch and reporting as manual export plans only.",
+      finalSetup: "Add Meta app/system token/ad account envs, test ad-account lookup and insights, then enable campaign handoff."
+    },
+    {
+      id: "data-dataforseo",
+      label: "SEO and keyword intelligence",
+      category: "data",
+      provider: "DataForSEO",
+      primaryModel: "serp_keyword_volume_api",
+      fallbackModels: ["Manual keyword research", "Search Console/GA notes"],
+      intendedUse: "Keyword research, SERP checks, competitor SEO context and growth intelligence reports.",
+      requiredEnv: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
+      optionalEnv: ["DATAFORSEO_BASE_URL", "DATAFORSEO_LOCATION_NAME", "DATAFORSEO_LANGUAGE_CODE"],
+      status: requiredStatus(["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"]),
+      safeMode: "If DataForSEO is missing, SEO tasks stay as manual research briefs and static content suggestions.",
+      finalSetup: "Add DataForSEO login/password, test one SERP query and one search-volume query, then connect SEO reports."
+    },
+    {
+      id: "data-apify",
+      label: "Research and scraping automation",
+      category: "data",
+      provider: "Apify",
+      primaryModel: "apify_actors_and_runs",
+      fallbackModels: ["Manual research notes", "Public web lookup"],
+      intendedUse: "Public data extraction, structured research, lead collection and competitor monitoring where allowed.",
+      requiredEnv: ["APIFY_API_TOKEN"],
+      optionalEnv: ["APIFY_BASE_URL"],
+      status: requiredStatus(["APIFY_API_TOKEN"]),
+      safeMode: "If Apify is missing, keep research requests as manual lookup or planning briefs only.",
+      finalSetup: "Add Apify token, test one actor run and dataset fetch, then wire the research workflows."
+    },
     {
       id: "voice-elevenlabs",
       label: "Voice/TTS production",

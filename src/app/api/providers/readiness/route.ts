@@ -80,6 +80,10 @@ export async function GET() {
   const speechReady = hasEnv("ELEVENLABS_API_KEY");
   const brainReady = hasEnv("OPENAI_API_KEY");
   const imageReady = hasEnv("OPENAI_API_KEY");
+  const mapsReady = hasEnv("GOOGLE_MAPS_API_KEY");
+  const metaReady = hasEnv("META_APP_ID") && hasEnv("META_SYSTEM_ACCESS_TOKEN") && hasEnv("META_AD_ACCOUNT_ID");
+  const dataForSeoReady = hasEnv("DATAFORSEO_LOGIN") && hasEnv("DATAFORSEO_PASSWORD");
+  const apifyReady = hasEnv("APIFY_API_TOKEN");
   const renderReady = hasEnv("SHOTSTACK_API_KEY");
 
   return Response.json({
@@ -114,6 +118,30 @@ export async function GET() {
       ready: imageReady,
       required: ["OPENAI_API_KEY"],
       optional: ["OPENAI_IMAGE_MODEL"]
+    },
+    maps: {
+      provider: "google-maps",
+      ready: mapsReady,
+      required: ["GOOGLE_MAPS_API_KEY"],
+      optional: ["GOOGLE_MAPS_LANGUAGE", "GOOGLE_MAPS_REGION", "GOOGLE_MAPS_SEARCH_RADIUS"]
+    },
+    meta: {
+      provider: "meta",
+      ready: metaReady,
+      required: ["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
+      optional: ["META_APP_SECRET", "META_GRAPH_API_VERSION", "META_GRAPH_BASE_URL"]
+    },
+    dataforseo: {
+      provider: "dataforseo",
+      ready: dataForSeoReady,
+      required: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
+      optional: ["DATAFORSEO_BASE_URL", "DATAFORSEO_LOCATION_NAME", "DATAFORSEO_LANGUAGE_CODE"]
+    },
+    apify: {
+      provider: "apify",
+      ready: apifyReady,
+      required: ["APIFY_API_TOKEN"],
+      optional: ["APIFY_BASE_URL"]
     },
     render: {
       provider: "shotstack",

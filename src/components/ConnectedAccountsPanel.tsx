@@ -28,6 +28,8 @@ export function ConnectedAccountsPanel() {
   const [storeUrl, setStoreUrl] = useState("https://your-shopify-store.com");
   const [storeName, setStoreName] = useState("My store");
   const [platform, setPlatform] = useState("shopify");
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
   const [selectedSocialPlatform, setSelectedSocialPlatform] = useState<SocialPlatform>("instagram");
   const [socialAccountName, setSocialAccountName] = useState("My Instagram business account");
   const [socialGoal, setSocialGoal] = useState("Organic + paid export planning");
@@ -83,7 +85,7 @@ export function ConnectedAccountsPanel() {
     const response = await fetch("/api/commerce/stores", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, platform, store_name: storeName, store_url: storeUrl })
+      body: JSON.stringify({ user_id: userId, platform, store_name: storeName, store_url: storeUrl, access_token: accessToken, refresh_token: refreshToken })
     });
     const data = await response.json().catch(() => ({}));
     setLoading(false);
@@ -116,10 +118,17 @@ export function ConnectedAccountsPanel() {
       <div className="card connection-card">
         <span className="badge">E-commerce export target</span>
         <h3>Prepare Shopify / Amazon / Trendyol targets</h3>
-        <p>After production from a product link, visuals, videos, descriptions and ad assets can be prepared for store upload and campaign delivery.</p>
+        <p>Shopify is the first binding step: save the store URL now, then add app credentials later when the live OAuth or private app setup is ready.</p>
         <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value)}><option value="shopify">Shopify</option><option value="amazon">Amazon</option><option value="trendyol">Trendyol</option><option value="woocommerce">WooCommerce</option><option value="custom">Custom store</option></select></div>
         <div className="field"><label>Store name</label><input value={storeName} onChange={(event) => setStoreName(event.target.value)} /></div>
-        <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} /></div>
+        <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} placeholder="https://your-shopify-store.com" /></div>
+        {platform === "shopify" ? (
+          <>
+            <div className="field"><label>Shopify access token</label><input value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="Optional for now" /></div>
+            <div className="field"><label>Shopify refresh token</label><input value={refreshToken} onChange={(event) => setRefreshToken(event.target.value)} placeholder="Optional for now" /></div>
+          </>
+        ) : null}
+        <p style={{ color: "var(--muted)", marginTop: 0 }}>If you only want planning mode, leave the token fields empty. If you already have a Shopify app token, paste it here and save the store target.</p>
         <button className="btn" type="button" onClick={connectStore} disabled={loading}>{loading ? "Saving..." : "Save store target"}</button>
       </div>
 
