@@ -1757,6 +1757,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
 
   function applyGeneralProductionPreset(type: string, idea: string) {
     setQuickProviderTest(false);
+    setDynamicWizard(emptyDynamicWizard);
     const commerceProject = type === "website" && isCommerceProjectIdea(idea);
     const growthIntelligenceProject = type === "document_pack" && /growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/i.test(idea);
     setSelectedProductionType(type);
@@ -1951,15 +1952,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     const materialNames = materials.filter((material) => selectedMaterials.includes(material.id)).map((material) => material.title);
     const uploadNames = uploadedMaterials.map((material) => `${material.title} (${material.kind})`);
     const productionLabel = productionTypes.find((item) => item.id === selectedProductionType)?.label ?? selectedProductionType;
-    const wizardLines = dynamicWizard.open
-      ? [
-        `Wizard group: ${wizardCategoryGroups.find((group) => group.id === dynamicWizard.groupId)?.title ?? "Not selected"}`,
-        `Wizard category: ${dynamicWizard.categoryId ? wizardCategoryLabels[dynamicWizard.categoryId] : dynamicWizardLabels[dynamicWizard.type]}`,
-        `Wizard type: ${dynamicWizardLabels[dynamicWizard.type]}`,
-        `Wizard subject: ${dynamicWizard.subject || "Not specified"}`,
-        ...Object.entries(dynamicWizard.answers).map(([key, value]) => `Wizard ${key}: ${value.join(", ")}`)
-      ]
-      : [];
+    const wizardLines: string[] = [];
     return [
 `Production category: ${productionLabel}`,
 ...wizardLines,
