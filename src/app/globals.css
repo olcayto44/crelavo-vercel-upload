@@ -6441,6 +6441,8 @@ html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar 
   justify-content: flex-start !important;
   gap: 8px !important;
   overflow: hidden !important;
+  padding-left: clamp(18px, 2.2vw, 34px) !important;
+  padding-right: clamp(12px, 1.6vw, 24px) !important;
 }
 html body .dashboard-postlaunch-shell.production-detail-shell .dashboard-topbar nav {
   display: flex !important;
@@ -8316,7 +8318,7 @@ html body .production-detail-shell .customer-preview-mode-actions,
 html body .production-detail-shell .customer-preview-top-actions {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 5px;
   overflow-x: auto;
   min-width: 0;
   scrollbar-width: none;
@@ -8331,13 +8333,14 @@ html body .production-detail-shell .customer-preview-top-actions button {
   flex: 0 0 auto;
   border: 1px solid rgba(125,211,252,.18);
   border-radius: 999px;
-  padding: 8px 11px;
+  padding: 6px 8px;
   background: rgba(2,6,23,.58);
   color: #bfdbfe;
   font-weight: 900;
   cursor: pointer;
-  min-height: 34px;
-  font-size: 12px;
+  min-height: 30px;
+  font-size: 11px;
+  line-height: 1;
   white-space: nowrap;
 }
 html body .production-detail-shell .customer-preview-mode-actions button.active,
@@ -8462,19 +8465,43 @@ html body .production-detail-shell .social-share-card {
 
 /* Customer-facing production detail: keep it clean, focused, and work-page-like. */
 html body .production-detail-shell .production-workspace-head {
-  display: flex !important;
+  display: grid !important;
+  grid-template-columns: minmax(140px, .35fr) minmax(0, 1fr) minmax(140px, .35fr) !important;
   align-items: center !important;
-  justify-content: center !important;
   gap: 14px !important;
   text-align: center !important;
 }
 html body .production-detail-shell .production-workspace-head h1 {
+  grid-column: 2;
+  justify-self: center;
   max-width: 760px !important;
 }
 html body .production-detail-shell .production-workspace-head p {
   max-width: 620px !important;
   color: #cbd5e1 !important;
   font-size: 13px !important;
+}
+html body .production-detail-shell .production-top-credit-pill {
+  grid-column: 3;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 8px 11px;
+  border: 1px solid rgba(34,211,238,.28);
+  border-radius: 999px;
+  background: rgba(2,6,23,.62);
+  color: #fff;
+  white-space: nowrap;
+}
+html body .production-detail-shell .production-top-credit-pill span {
+  color: #93c5fd;
+  font-size: 11px;
+  font-weight: 900;
+}
+html body .production-detail-shell .production-top-credit-pill strong {
+  font-size: 12px;
 }
 html body .production-detail-shell .production-truth-strip {
   order: 1 !important;
@@ -8521,8 +8548,15 @@ html body .production-detail-shell .customer-preview-screen img,
 html body .production-detail-shell .customer-preview-screen iframe,
 html body .production-detail-shell .customer-preview-placeholder {
   width: 100% !important;
-  min-height: calc(100vh - 210px) !important;
-  height: calc(100vh - 210px) !important;
+  min-height: calc(100vh - 200px) !important;
+  height: calc(100vh - 200px) !important;
+}
+html body .production-detail-shell .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-screen iframe {
+  pointer-events: auto !important;
+}
+html body .production-detail-shell .customer-preview-screen video {
+  cursor: pointer;
 }
 html body .production-detail-shell .customer-preview-control {
   display: none !important;
@@ -8628,6 +8662,12 @@ html body .production-detail-shell .customer-preview-theater.preview-mode-shorts
 @media (max-width: 1180px) {
   html body .production-detail-shell .production-workspace-head {
     display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+  html body .production-detail-shell .production-workspace-head h1,
+  html body .production-detail-shell .production-top-credit-pill {
+    grid-column: 1 !important;
+    justify-self: center !important;
   }
   html body .production-detail-shell .customer-preview-control {
     position: static !important;
