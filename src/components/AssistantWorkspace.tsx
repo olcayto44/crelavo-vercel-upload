@@ -2675,10 +2675,20 @@ async function startRawMicrophoneFallback() {
         </section>
 
         <section className="clean-preview-grid">
-          <div className="clean-preview-card clean-preview-large">
-            <small>Production Preview</small>
-            <strong>{selectedProduction?.label ?? selectedProductionType}</strong>
-            <p>{productionBrief ? "Brief ready. Waiting for production confirmation." : "No production output yet. Waiting for a command."}</p>
+          <div className="clean-preview-card clean-preview-large clean-output-viewer">
+            <small>Work output viewer</small>
+            <strong>{startedProduction ? "Production is ready to review" : (selectedProduction?.label ?? selectedProductionType)}</strong>
+            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionBrief ? "Brief ready. Your generated images, video, voice, music, files, and delivery parts will appear here as the work progresses." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
+            {startedProduction ? (
+              <div className={`studio-started-card clean-completion-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
+                <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Needs attention" : "Production workspace ready"}</small>
+                <strong>{startedProduction.message}</strong>
+                <span><b>Production ID</b>{startedProduction.id}</span>
+                {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
+                {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
+                <a className="btn" href={startedProduction.detailUrl ?? "/dashboard/productions"}>Open production workspace</a>
+              </div>
+            ) : null}
           </div>
           <div className="clean-preview-card">
             <small>Agent Action</small>
@@ -2720,6 +2730,21 @@ async function startRawMicrophoneFallback() {
               </div>
             </div>
           ))}
+          <button className="service-network-pill production-action-pill primary" type="button" onClick={openStartProductionModal} disabled={productionCreditInsufficient}>
+            <strong>Start Production</strong>
+          </button>
+          <a className="service-network-pill production-action-pill" href="/dashboard/productions">
+            <strong>Production Studio</strong>
+          </a>
+        </section>
+
+        <section className="clean-selected-setup" aria-label="Selected production setup">
+          <span><small>Category</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
+          <span><small>Quality</small><strong>{selectedQuality}</strong></span>
+          <span><small>Style</small><strong>{selectedStyle}</strong></span>
+          <span><small>Scope</small><strong>{selectedDuration}</strong></span>
+          <span><small>Modules</small><strong>{selectedModules.slice(0, 2).join(" + ") || "None"}{selectedModules.length > 2 ? ` +${selectedModules.length - 2}` : ""}</strong></span>
+          <span><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}{selectedPlatforms.length > 2 ? ` +${selectedPlatforms.length - 2}` : ""}</strong></span>
         </section>
       </main>
 
@@ -2746,29 +2771,6 @@ async function startRawMicrophoneFallback() {
           </div>
         </section>
 
-        <section className="clean-control-panel">
-          <div className="clean-panel-head"><span className="badge">Controls</span><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
-        <div className="clean-control-list">
-          <span><small>Type</small><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
-          <span><small>Scope</small><strong>{selectedDuration}</strong></span>
-          <span><small>Provider</small><strong>Auto route</strong></span>
-          <span><small>Production ID</small><strong>{startedProduction?.id ?? "Yok"}</strong></span>
-        </div>
-        {startedProduction ? (
-          <div className={`studio-started-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-            <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Dikkat gerekiyor" : "Production started"}</small>
-            <strong>{startedProduction.message}</strong>
-            <span><b>Production ID</b>{startedProduction.id}</span>
-            {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
-            {startedProduction.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction.missingProviderKeys.join(", ")}</span> : null}
-            {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
-            <a className="btn secondary" href={startedProduction.detailUrl ?? "/dashboard/productions"}>Detayı aç</a>
-          </div>
-        ) : null}
-        <button className="btn clean-start-btn" type="button" onClick={openStartProductionModal} disabled={productionCreditInsufficient}>Start Production</button>
-          {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
-          <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
-        </section>
       </aside>
 
       {startModalOpen ? (

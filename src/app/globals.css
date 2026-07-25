@@ -8514,12 +8514,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-studio-main {
   grid-area: board;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   grid-template-areas:
     "hero"
     "steps"
+    "setup"
     "preview";
-  gap: 14px;
+  gap: 12px;
   height: 100%;
   overflow: hidden;
   border-radius: 26px;
@@ -8557,6 +8558,44 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-studio-state small,.clean-preview-card small,.clean-control-list small { color: #93c5fd; font-weight: 900; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }
 .clean-studio-state strong,.clean-preview-card strong,.clean-control-list strong { color: #fff; }
 
+.clean-selected-setup {
+  grid-area: setup;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid rgba(125,211,252,.14);
+  border-radius: 18px;
+  background: rgba(2,6,23,.34);
+}
+.clean-selected-setup span {
+  min-width: 0;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: rgba(15,23,42,.56);
+}
+.clean-selected-setup small {
+  color: #93c5fd;
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.clean-selected-setup strong {
+  color: #fff;
+  font-size: 11px;
+  max-width: 170px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .clean-preview-grid {
   grid-area: preview;
   min-height: 0;
@@ -8580,15 +8619,14 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-preview-card:not(.clean-preview-large) { display: none !important; }
 .clean-preview-large { grid-row: auto; position: relative; min-height: 100%; }
 .clean-preview-large::before {
-  content: "";
-  position: absolute;
-  inset: 18px 18px auto auto;
-  width: min(42%, 280px);
-  aspect-ratio: 16 / 10;
-  border: 1px solid rgba(255,255,255,.14);
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(34,211,238,.14), rgba(124,92,255,.18));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+  display: none;
+}
+.clean-output-viewer {
+  align-content: center;
+}
+.clean-completion-card {
+  max-width: 520px;
+  margin-top: 8px;
 }
 .clean-preview-card strong { font-size: 22px; line-height: 1.1; }
 .clean-preview-large strong { font-size: clamp(34px, 5vw, 72px); letter-spacing: -.06em; }
@@ -8662,6 +8700,21 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 .service-network-pill small {
   display: none;
+}
+.production-action-pill {
+  border: 1px solid rgba(125,211,252,.22);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: rgba(15,23,42,.62);
+  text-decoration: none;
+}
+.production-action-pill.primary {
+  background: linear-gradient(135deg, rgba(34,211,238,.28), rgba(124,92,255,.28));
+  border-color: rgba(34,211,238,.45);
+}
+.production-action-pill:disabled {
+  opacity: .48;
+  cursor: not-allowed;
 }
 .service-network-dropdown {
   position: absolute;
@@ -8767,9 +8820,9 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   }
 }
 
-.clean-studio-side { grid-area: side; display: grid; grid-template-rows: minmax(0, 1fr) 190px; gap: 14px; height: 100%; overflow: hidden; border: 0; background: transparent; box-shadow: none; }
+.clean-studio-side { grid-area: side; display: grid; grid-template-rows: minmax(0, 1fr); gap: 14px; height: 100%; overflow: hidden; border: 0; background: transparent; box-shadow: none; }
 .clean-chat-panel,.clean-control-panel { border-radius: 26px; padding: 14px; overflow: hidden; }
-.clean-control-panel { overflow-y: auto; }
+.clean-control-panel { display: none; overflow-y: auto; }
 .clean-chat-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
 .clean-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .clean-chat-log { min-height: 0; overflow-y: auto; display: grid; align-content: start; gap: 10px; padding: 10px; border-radius: 18px; background: rgba(2,6,23,.38); }
