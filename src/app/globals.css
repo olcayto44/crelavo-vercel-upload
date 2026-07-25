@@ -8438,6 +8438,196 @@ html body .production-detail-shell .social-share-card {
   padding: 14px !important;
   border-radius: 22px !important;
 }
+
+/* Customer-facing production detail: keep it clean, focused, and work-page-like. */
+html body .production-detail-shell .production-workspace-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+}
+html body .production-detail-shell .production-workspace-head h1 {
+  max-width: 760px !important;
+}
+html body .production-detail-shell .production-workspace-head p {
+  max-width: 620px !important;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+}
+html body .production-detail-shell .production-truth-strip {
+  order: 1 !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  padding: 8px !important;
+  border-radius: 18px !important;
+}
+html body .production-detail-shell .production-truth-strip div {
+  min-height: auto !important;
+  min-width: max-content !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 11px !important;
+  border-radius: 999px !important;
+}
+html body .production-detail-shell .production-truth-strip small {
+  font-size: 10px !important;
+}
+html body .production-detail-shell .production-truth-strip strong {
+  font-size: 12px !important;
+}
+html body .production-detail-shell .customer-preview-theater {
+  position: relative !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  min-height: calc(100vh - 145px) !important;
+}
+html body .production-detail-shell .customer-preview-toolbar {
+  position: absolute !important;
+  z-index: 6 !important;
+  top: 26px !important;
+  left: 26px !important;
+  right: auto !important;
+  max-width: min(520px, calc(100% - 52px)) !important;
+  backdrop-filter: blur(16px) !important;
+  background: rgba(2,6,23,.62) !important;
+}
+html body .production-detail-shell .customer-preview-screen,
+html body .production-detail-shell .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-screen img,
+html body .production-detail-shell .customer-preview-screen iframe,
+html body .production-detail-shell .customer-preview-placeholder {
+  width: 100% !important;
+  min-height: calc(100vh - 178px) !important;
+  height: calc(100vh - 178px) !important;
+}
+html body .production-detail-shell .customer-preview-control {
+  position: absolute !important;
+  z-index: 7 !important;
+  top: 26px !important;
+  right: 26px !important;
+  width: min(360px, calc(100% - 52px)) !important;
+  max-height: calc(100vh - 210px) !important;
+  opacity: 0 !important;
+  transform: translateX(18px) scale(.98) !important;
+  pointer-events: none !important;
+  transition: opacity .18s ease, transform .18s ease !important;
+  backdrop-filter: blur(18px) !important;
+  background: rgba(2,6,23,.82) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.34) !important;
+}
+html body .production-detail-shell .customer-preview-theater::after {
+  content: "Status & delivery";
+  position: absolute;
+  z-index: 6;
+  top: 26px;
+  right: 26px;
+  padding: 10px 13px;
+  border: 1px solid rgba(34,211,238,.28);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(2,6,23,.72);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  backdrop-filter: blur(14px);
+}
+html body .production-detail-shell .customer-preview-theater:hover .customer-preview-control,
+html body .production-detail-shell .customer-preview-control:hover,
+html body .production-detail-shell .customer-preview-theater:focus-within .customer-preview-control {
+  opacity: 1 !important;
+  transform: translateX(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+html body .production-detail-shell .customer-preview-theater:hover::after,
+html body .production-detail-shell .customer-preview-theater:focus-within::after {
+  opacity: 0;
+  pointer-events: none;
+}
+html body .production-detail-shell .customer-preview-control > p,
+html body .production-detail-shell .provider-poll-note,
+html body .production-detail-shell .provider-job-note {
+  display: none !important;
+}
+html body .production-detail-shell .delivery-command-center {
+  margin-top: 10px !important;
+}
+html body .production-detail-shell .delivery-readiness-grid {
+  max-height: 165px !important;
+  overflow: auto !important;
+}
+html body .production-detail-shell .delivery-readiness-grid span:nth-child(n+4) {
+  display: none !important;
+}
+html body .production-detail-shell .customer-preview-actions .btn,
+html body .production-detail-shell .customer-preview-actions button {
+  min-height: 38px !important;
+  padding: 9px 10px !important;
+  font-size: 12px !important;
+}
+html body .production-detail-shell .dynamic-brief-panel,
+html body .production-detail-shell .production-live-summary,
+html body .production-detail-shell .production-context-grid,
+html body .production-detail-shell .cost-safety-card,
+html body .production-detail-shell .production-agent-action-card,
+html body .production-detail-shell .workspace-alternatives-card,
+html body .production-detail-shell .automation-brief-card,
+html body .production-detail-shell .voice-job-card,
+html body .production-detail-shell .local-context-card,
+html body .production-detail-shell .workspace-material-card,
+html body .production-detail-shell .production-part-grid,
+html body .production-detail-shell .production-job-overview-card,
+html body .production-detail-shell .social-share-card {
+  display: none !important;
+}
+html body .production-detail-shell .production-workspace-side {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+}
+html body .production-detail-shell .workspace-assistant-card,
+html body .production-detail-shell .revision-history-card,
+html body .production-detail-shell .final-delivery-card {
+  display: grid !important;
+  background: rgba(2,6,23,.58) !important;
+}
+html body .production-detail-shell .workspace-assistant-card p,
+html body .production-detail-shell .final-delivery-card p,
+html body .production-detail-shell .revision-history-card p {
+  font-size: 13px !important;
+  color: #cbd5e1 !important;
+}
+html body .production-detail-shell .workspace-assistant-card h2,
+html body .production-detail-shell .revision-history-card h2,
+html body .production-detail-shell .final-delivery-card h2 {
+  font-size: 20px !important;
+  margin: 0 !important;
+}
+html body .production-detail-shell .customer-preview-theater.preview-mode-shorts .customer-preview-screen {
+  width: min(430px, 100%) !important;
+}
+@media (max-width: 1180px) {
+  html body .production-detail-shell .production-workspace-head {
+    display: grid !important;
+  }
+  html body .production-detail-shell .customer-preview-control,
+  html body .production-detail-shell .customer-preview-theater::after {
+    position: static !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    width: 100% !important;
+    max-height: none !important;
+  }
+  html body .production-detail-shell .customer-preview-theater {
+    grid-template-columns: 1fr !important;
+  }
+  html body .production-detail-shell .customer-preview-theater::after {
+    content: none !important;
+  }
+  html body .production-detail-shell .production-workspace-side {
+    grid-template-columns: 1fr !important;
+  }
+}
 @media (max-width: 1180px) {
   html body .production-workspace-shell,
   html body .production-live-summary,
