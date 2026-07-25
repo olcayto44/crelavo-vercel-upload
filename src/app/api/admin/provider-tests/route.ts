@@ -27,8 +27,14 @@ async function testElevenLabs() {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
   const response = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": apiKey, Accept: "application/json" } });
-  if (!response.ok) throw new Error(`ElevenLabs auth check failed: ${response.status} ${await response.text()}`);
-  const data = await response.json();
+  const text = await response.text();
+  if (!response.ok) {
+    if (response.status === 401 && text.includes("missing_permissions")) {
+      return { connected: true, permissionLimited: true, note: "API key exists but lacks user_read/voices_read permissions. TTS may still work if text-to-speech permission is enabled.", rawStatus: response.status };
+    }
+    throw new Error(`ElevenLabs auth check failed: ${response.status} ${text}`);
+  }
+  const data = JSON.parse(text || "{}");
   return { tier: data.tier ?? "connected", characterLimit: data.character_limit ?? null, characterCount: data.character_count ?? null };
 }
 
