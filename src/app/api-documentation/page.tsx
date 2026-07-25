@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { apiServiceGroups } from "@/lib/api-services";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
@@ -182,6 +184,8 @@ const faqJsonLd = {
   }))
 };
 
+const activeServices = apiServiceGroups.flatMap((group) => group.services);
+
 export default async function ApiDocumentationPage() {
   const siteContent = await getConfiguredSiteContentConfig();
   const totalIntegrations = integrationGroups.flatMap((group) => group.items).length;
@@ -222,6 +226,25 @@ export default async function ApiDocumentationPage() {
           <p>
             This page is intentionally conservative: it explains the integration map and technical roadmap without claiming that every listed API is already live. It also gives search engines a clear technical page for enterprise, ecommerce and developer-intent queries.
           </p>
+        </section>
+
+        <section className="card admin-wide-card api-services-overview" style={{ marginTop: 18 }}>
+          <span className="badge">Active API services</span>
+          <h2>Currently acquired providers and where they are used</h2>
+          <p>These are the main services already tied into the Crelavo stack. Each card has an anchor so the side menu can jump straight to the matching service.</p>
+          <div className="admin-category-grid api-service-grid" style={{ marginTop: 16 }}>
+            {activeServices.map((service) => (
+              <div className="card admin-category-card api-service-card" id={`api-${service.slug}`} key={service.slug}>
+                <div className="api-service-image-wrap">
+                  <Image alt={service.alt} className="api-service-image" height={540} src={service.image} unoptimized width={960} />
+                </div>
+                <span className="badge">{service.name}</span>
+                <h3>{service.summary}</h3>
+                <p>{service.useCase}</p>
+                <Link className="text-link" href={`/api-documentation#api-${service.slug}`}>Read service notes</Link>
+              </div>
+            ))}
+          </div>
         </section>
 
         {integrationGroups.map((group) => (

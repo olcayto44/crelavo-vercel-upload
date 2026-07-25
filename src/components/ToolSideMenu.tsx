@@ -1,26 +1,30 @@
 import Link from "next/link";
-import { footerGroups } from "@/lib/site-content";
+import { apiServiceGroups } from "@/lib/api-services";
 
 export function ToolSideMenu() {
   return (
-    <aside className="tool-side-menu" aria-label="Crelavo product and tool menu">
+    <aside className="tool-side-menu" aria-label="Crelavo API services menu">
       <div className="tool-side-menu-head">
-        <span className="badge">Tool menu</span>
-        <strong>Crelavo AI Tools</strong>
-        <p>Production for video, music, voice, visuals, brand, documents and digital products.</p>
+        <span className="badge">API services</span>
+        <strong>Crelavo integrations</strong>
+        <p>Open the active provider map, quality levels and usage notes for each service.</p>
       </div>
       <nav className="tool-side-menu-groups">
-        {footerGroups.slice(0, 4).map((group) => (
-          <details key={group.title} open={group.title === "Products" || group.title === "Video Tools"}>
+        {apiServiceGroups.map((group) => (
+          <details key={group.title} open>
             <summary>{group.title}</summary>
             <div>
-              {group.links.map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
+              {group.services.map((service) => (
+                <Link href={`/api-documentation#api-${service.slug}`} key={`${group.title}-${service.slug}`}>
+                  {service.name}
+                </Link>
+              ))}
             </div>
           </details>
         ))}
       </nav>
-      <Link className="btn" href="/dashboard/assistant-workspace">Start production</Link>
-      <Link className="btn secondary" href="/blog">Blog / Content</Link>
+      <Link className="btn" href="/api-documentation">Open API docs</Link>
+      <Link className="btn secondary" href="/dashboard/assistant-workspace">Start production</Link>
     </aside>
   );
 }

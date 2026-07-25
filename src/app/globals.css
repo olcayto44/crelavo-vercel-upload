@@ -1420,6 +1420,113 @@ body.admin-route > .site-footer {
   pointer-events: auto;
 }
 
+.api-side-rail {
+  top: 104px;
+  left: 6px;
+  width: 214px;
+  max-width: 16vw;
+}
+
+.tool-side-menu {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px;
+  background: rgba(7,11,24,.82);
+  box-shadow: 0 22px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.tool-side-menu-head {
+  display: grid;
+  gap: 5px;
+}
+
+.tool-side-menu-head strong {
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.05;
+}
+
+.tool-side-menu-head p {
+  margin: 0;
+  color: #9fb0c9;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.tool-side-menu-groups {
+  display: grid;
+  gap: 8px;
+  max-height: min(64vh, 700px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.tool-side-menu-groups details {
+  border: 1px solid rgba(125,211,252,.14);
+  border-radius: 18px;
+  background: rgba(255,255,255,.04);
+  padding: 8px 10px;
+}
+
+.tool-side-menu-groups summary {
+  list-style: none;
+  cursor: pointer;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.tool-side-menu-groups summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-side-menu-groups div {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tool-side-menu-groups a {
+  color: #dbeafe;
+  font-size: 12px;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.tool-side-menu-groups a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.api-service-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)) !important;
+}
+
+.api-service-card {
+  display: grid;
+  gap: 10px;
+  scroll-margin-top: 120px;
+}
+
+.api-service-image-wrap {
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  background: rgba(255,255,255,.04);
+}
+
+.api-service-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .clean-feed-section {
   background: #ffffff09;
   border: 1px solid #ffffff14;
