@@ -8224,6 +8224,23 @@ html body .production-detail-shell.container.section {
 html body .production-detail-shell .dashboard-workspace {
   min-width: 0 !important;
 }
+html body .production-detail-shell .production-canonical-url-card,
+html body .production-canonical-url-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(34,211,238,.18);
+  border-radius: 18px;
+  background: rgba(15,23,42,.56);
+}
+html body .production-detail-shell .production-canonical-url-card p,
+html body .production-canonical-url-card p {
+  margin: 0;
+  color: #cbd5e1;
+}
 html body .production-detail-shell .production-workspace-shell {
   display: block !important;
   width: 100% !important;

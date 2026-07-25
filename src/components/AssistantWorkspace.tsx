@@ -11,6 +11,7 @@ import { defaultDeliveryCreditRatesConfig, type DeliveryCreditRatesConfig } from
 import { footerGroups } from "@/lib/site-content";
 import { buildAssistantProductionPayload, packageIdFromSelection, type UserUploadedMaterial } from "@/lib/production-payload";
 import { estimateProductionCost, productionPackages, productionTypes, type ProductionPackage } from "@/lib/production";
+import { productionWorkspacePath } from "@/lib/production-url";
 
 const defaultSteps = [
   "Brief received",
@@ -2102,7 +2103,13 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
         setProductionStartingIntent(false);
         setStartedProduction({
           id: String(recoveredProduction?.id ?? productionId),
-          detailUrl: `/dashboard/productions/${String(recoveredProduction?.id ?? productionId)}`,
+          detailUrl: productionWorkspacePath({
+            id: String(recoveredProduction?.id ?? productionId),
+            title: String(recoveredProduction?.title ?? clean),
+            prompt: clean,
+            production_type: selectedProductionType,
+            package_id: selectedPackageForEstimate
+          }),
           status: "automation_warning",
           message: automationError.error ?? "Production record was created, but automation returned an error response. Open the detail page to continue.",
           providerStatus: String(recoveredProduction?.status ?? "automation_warning"),
@@ -2123,7 +2130,13 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
       setProductionStartingIntent(false);
       setStartedProduction({
         id: productionId,
-        detailUrl: `/dashboard/productions/${productionId}`,
+        detailUrl: productionWorkspacePath({
+          id: productionId,
+          title: clean,
+          prompt: clean,
+          production_type: selectedProductionType,
+          package_id: selectedPackageForEstimate
+        }),
         status: waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "automation_started",
         message: waitingProviderConfig
           ? "Production record was created, but real provider execution is waiting for API/provider configuration."

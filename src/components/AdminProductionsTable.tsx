@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminApiBody, adminApiHeaders, getStoredAdminApiToken } from "@/lib/admin-client-auth";
 import { supabaseBrowser } from "@/lib/supabase";
+import { productionWorkspacePath } from "@/lib/production-url";
 
 type AutomationStep = {
   key: string;
@@ -789,7 +790,7 @@ async function refundReservedCredits(item: ProductionRow) {
             <label className="manual-delivery-notes"><span>Admin notes</span><textarea value={manualDraft.admin_notes} onChange={(event) => updateDraft(item.id, { admin_notes: event.target.value })} placeholder="Customer-facing/admin delivery note" /></label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
               <button className="btn" type="button" onClick={() => saveManualDelivery(item)} disabled={savingDeliveryId === item.id}>{savingDeliveryId === item.id ? "Saving..." : "Save preview / delivery"}</button>
-              <a className="btn secondary" href={`/dashboard/productions/${item.id}`} target="_blank" rel="noreferrer">Open customer preview</a>
+              <a className="btn secondary" href={productionWorkspacePath(item)} target="_blank" rel="noreferrer">Open customer preview</a>
             </div>
           </div>
 

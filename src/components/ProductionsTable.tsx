@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
+import { productionWorkspacePath } from "@/lib/production-url";
 
 type ApprovalOption = {
   label: string;
@@ -399,7 +400,7 @@ export function ProductionsTable() {
               ) : null}
 
               <div className="production-card-actions">
-                <a className="btn" href={`/dashboard/productions/${item.id}`}>Open workspace</a>
+                <a className="btn" href={productionWorkspacePath(item)}>Open workspace</a>
                 {item.preview_url ? <a className="btn secondary" href={item.preview_url} target="_blank" rel="noreferrer">Preview</a> : null}
                 {(item.delivery_link || item.delivery_zip_url) ? <a className="btn" href={(item.delivery_link || item.delivery_zip_url)!} target="_blank" rel="noreferrer">Open delivery</a> : <small>Delivery pending</small>}
                 {item.package_id === "campaign_product_ad_video" && !["ready", "failed", "cancelled"].includes(item.status) ? <button className="btn secondary" type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "Refreshing…" : "Refresh"}</button> : null}
