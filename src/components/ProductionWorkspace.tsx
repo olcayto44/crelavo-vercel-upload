@@ -518,62 +518,6 @@ const [notice, setNotice] = useState("");
           </div>
         ) : null}
 
-        <section className="production-quick-stack">
-          <details className="production-quick-foldout" open>
-            <summary>
-              <div>
-                <span className="badge">Preview & delivery</span>
-                <strong>{previewUrl ? "Preview ready to review" : "Preview waiting"}</strong>
-                <small>{deliveryUrl ? "Final ZIP ready · Source files · README / setup" : "Final ZIP waiting · Source files optional · README / setup"}</small>
-              </div>
-              <span className="production-foldout-hint">{previewUrl ? "Open" : "Preparing"}</span>
-            </summary>
-            <div className="production-quick-body">
-              <div className="delivery-readiness-grid">
-                <span className={previewUrl ? "ready" : "pending"}>Preview link <b>{previewUrl ? "Ready" : "Pending"}</b></span>
-                <span className={deliveryUrl ? "ready" : "pending"}>Final ZIP / delivery <b>{deliveryUrl ? "Ready" : "Waiting"}</b></span>
-                <span className={sourceUrl ? "ready" : deliveryRequirementFormats.includes("source_code") ? "requested" : "pending"}>Source files <b>{sourceUrl ? "Ready" : deliveryRequirementFormats.includes("source_code") ? "Requested" : "Optional"}</b></span>
-                <span className={readmeUrl ? "ready" : deliveryRequirementFormats.includes("readme") ? "requested" : "pending"}>README / setup <b>{readmeUrl ? "Ready" : deliveryRequirementFormats.includes("readme") ? "Requested" : "Optional"}</b></span>
-                <span className={deliveryRequirementFormats.length ? "requested" : "pending"}>Export formats <b>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Standard"}</b></span>
-                <span className={revisions.length ? "requested" : "pending"}>Revision path <b>{revisions.length ? `${revisions.length} request${revisions.length > 1 ? "s" : ""}` : "Available"}</b></span>
-              </div>
-              <div className="delivery-action-grid">
-                {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Open preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
-                {deliveryUrl ? <a className="btn secondary" href={deliveryUrl} target="_blank"><Download size={15} /> Download final ZIP</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Final ZIP waiting</button>}
-                {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
-                {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
-                {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
-                <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
-                {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
-                {visualJob || hasAlternativeJobs ? <button className="btn secondary" type="button" onClick={() => refreshProviderStatus(false)}>Refresh provider status</button> : null}
-                <button className="btn" type="button" onClick={restartProviderJob}>{isProjectProduction ? "Prepare project package" : "Start real provider job"}</button>
-              </div>
-            </div>
-          </details>
-          <details className="production-quick-foldout" open>
-            <summary>
-              <div>
-                <span className="badge">Social media sharing</span>
-                <strong>Share on social media</strong>
-                <small>Caption, hashtags, platform format, and posting time</small>
-              </div>
-              <span className="production-foldout-hint">Open</span>
-            </summary>
-            <div className="production-quick-body">
-              <p>When the final output is ready, caption, hashtags, platform format, and posting time are prepared here.</p>
-              <div className="social-chip-row">
-                {["Instagram", "TikTok", "YouTube Shorts", "LinkedIn", "Facebook", "X"].map((platform) => <span key={platform}>{platform}</span>)}
-              </div>
-              <div className="social-share-action-grid">
-                <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
-                <a className="btn secondary" href="/dashboard/social-export">Open social export pack</a>
-                <a className="btn secondary" href="/dashboard/ads">Send to ads center</a>
-                <a className="btn secondary" href="/dashboard/connections">Connect store/accounts</a>
-              </div>
-            </div>
-          </details>
-        </section>
-
         <div className="production-live-summary">
           <div>
             <span className="badge">Live status</span>
@@ -680,6 +624,34 @@ const [notice, setNotice] = useState("");
               </div>
             ) : null}
             {providerStatus ? <p className="provider-poll-note">Provider status: {providerStatus}</p> : null}
+            <div className="customer-delivery-files delivery-command-center">
+              <div className="delivery-command-head">
+                <div>
+                  <span className="badge">Delivery command center</span>
+                  <strong>Final package readiness</strong>
+                </div>
+                <small>{hasDelivery ? "Ready for customer handoff" : hasPreview ? "Preview ready, final package pending" : "Preparing preview and delivery"}</small>
+              </div>
+              <div className="delivery-readiness-grid">
+                <span className={previewUrl ? "ready" : "pending"}>Preview link <b>{previewUrl ? "Ready" : "Pending"}</b></span>
+                <span className={deliveryUrl ? "ready" : "pending"}>Final ZIP / delivery <b>{deliveryUrl ? "Ready" : "Waiting"}</b></span>
+                <span className={sourceUrl ? "ready" : deliveryRequirementFormats.includes("source_code") ? "requested" : "pending"}>Source files <b>{sourceUrl ? "Ready" : deliveryRequirementFormats.includes("source_code") ? "Requested" : "Optional"}</b></span>
+                <span className={readmeUrl ? "ready" : deliveryRequirementFormats.includes("readme") ? "requested" : "pending"}>README / setup <b>{readmeUrl ? "Ready" : deliveryRequirementFormats.includes("readme") ? "Requested" : "Optional"}</b></span>
+                <span className={deliveryRequirementFormats.length ? "requested" : "pending"}>Export formats <b>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Standard"}</b></span>
+                <span className={revisions.length ? "requested" : "pending"}>Revision path <b>{revisions.length ? `${revisions.length} request${revisions.length > 1 ? "s" : ""}` : "Available"}</b></span>
+              </div>
+            </div>
+            <div className="customer-preview-actions delivery-action-grid">
+              {previewUrl ? <a className="btn" href={previewUrl} target="_blank"><PlayCircle size={15} /> Open preview</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
+              {deliveryUrl ? <a className="btn secondary" href={deliveryUrl} target="_blank"><Download size={15} /> Download final ZIP</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Final ZIP waiting</button>}
+              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
+              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
+              {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
+              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
+              {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
+              {visualJob || hasAlternativeJobs ? <button className="btn secondary" type="button" onClick={() => refreshProviderStatus(false)}>Refresh provider status</button> : null}
+              <button className="btn secondary" type="button" onClick={restartProviderJob}>{isProjectProduction ? "Prepare project package" : "Start real provider job"}</button>
+            </div>
             {providerTestMode ? <p className="provider-poll-note">Quick provider test: 5 sec / 720p / single output.</p> : null}
             {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
             {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
@@ -923,6 +895,32 @@ const [notice, setNotice] = useState("");
           ) : <p>No revision requests yet. Choose an action from the cards or type a direct command in the assistant area.</p>}
         </div>
 
+        <div className="final-delivery-card">
+          <h2>Final delivery</h2>
+          <p>When production is complete, download, revision, and social sharing steps are managed here.</p>
+          <div className="delivery-action-grid">
+            {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
+            {deliveryUrl ? <a className="btn secondary" href={deliveryUrl} target="_blank"><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
+            <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("The part I want changed in the final output: "); }}><RefreshCcw size={15} /> Revise</button>
+            {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
+            <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button>
+          </div>
+        </div>
+
+        <div className="social-share-card" id="social-share-panel">
+          <h2>Social media sharing</h2>
+          <p>When the final output is ready, caption, hashtags, platform format, and posting time are prepared here.</p>
+          <div className="social-chip-row">
+            {["Instagram", "TikTok", "YouTube Shorts", "LinkedIn", "Facebook", "X"].map((platform) => <span key={platform}>{platform}</span>)}
+          </div>
+          <div className="social-share-action-grid">
+            <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
+            <a className="btn secondary" href="/dashboard/social-export">Open social export pack</a>
+            <a className="btn secondary" href="/dashboard/ads">Send to ads center</a>
+            <a className="btn secondary" href="/dashboard/connections">Connect store/accounts</a>
+          </div>
+          {!deliveryUrl ? <p className="workspace-action-note warning">Final delivery is not ready yet. You can prepare the social plan now, then attach the final file when delivery opens.</p> : null}
+        </div>
       </aside>
     </div>
   );
