@@ -1347,7 +1347,13 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const productionCreditShortfall = hasKnownProductionCredits ? Math.max(0, costEstimate.totalCredits - (availableProductionCredits ?? 0)) : 0;
   const productionCreditInsufficient = hasKnownProductionCredits && productionCreditShortfall > 0;
   const productionExampleDirections = (() => {
-    const subjectText = `${productionBrief} ${input} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
+    const recentProductionContext = messages.slice(-12).map((item) => item.content).join(" ");
+    const subjectText = `${productionBrief} ${input} ${recentProductionContext} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
+    if (/site|website|web|saas|app|uygulama|admin|eticaret|e-ticaret|storefront|mağaza|magaza/.test(subjectText)) return [
+      { id: "commerce-site", title: "Commerce storefront", meta: "Store + product flow", style: "E-commerce Product", modules: ["Website", "Admin panel", "Working source package"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
+      { id: "landing-page", title: "Landing page preview", meta: "Hero + sections", style: "SaaS modern", modules: ["Website", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
+      { id: "app-flow", title: "App screen flow", meta: "Screens + source", style: "App demo", modules: ["Mobile app", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source"] }
+    ];
     if (/voice|ses|seslendirme|dubbing|konuşma|konusma/.test(subjectText)) return [
       { id: "warm-voice", title: "Warm narration", meta: "Voice + subtitle", style: "Corporate", modules: ["Voice-over", "Subtitles"], platforms: ["Dashboard delivery", "MP4 download"] },
       { id: "energetic-voice", title: "Energetic shorts voice", meta: "Fast social voice", style: "Viral TikTok", modules: ["Voice-over", "Music", "Subtitles"], platforms: ["TikTok", "YouTube Shorts"] },
@@ -1357,11 +1363,6 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
       { id: "premium-visual", title: "Premium visual set", meta: "Hero + thumbnails", style: "Premium ad", modules: ["Visual/image pack", "Brand kit"], platforms: ["Dashboard delivery", "PNG images", "JPG images"] },
       { id: "social-visual", title: "Social image pack", meta: "Post + story sizes", style: "Viral TikTok", modules: ["Visual/image pack"], platforms: ["Instagram", "TikTok"] },
       { id: "clean-product", title: "Clean product demo", meta: "Product-first visuals", style: "Product demo", modules: ["Visual/image pack"], platforms: ["Dashboard delivery", "ZIP source"] }
-    ];
-    if (/site|website|web|saas|app|uygulama|admin/.test(subjectText)) return [
-      { id: "landing-page", title: "Landing page preview", meta: "Hero + sections", style: "SaaS modern", modules: ["Website", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
-      { id: "app-flow", title: "App screen flow", meta: "Screens + source", style: "App demo", modules: ["Mobile app", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source"] },
-      { id: "commerce-site", title: "Commerce storefront", meta: "Store + product flow", style: "Product demo", modules: ["Website", "Working source package"], platforms: ["Shopify", "Dashboard delivery"] }
     ];
     return [
       { id: "shorts-energy", title: "Energetic Shorts", meta: "Hook + music + subtitles", style: "Viral TikTok", modules: ["AI video", "Prompt-to-video"], platforms: ["TikTok", "YouTube Shorts", "MP4 download"] },
@@ -2164,6 +2165,17 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
 
     const wantsNoMaterial = /istemiyorum|gerek yok|olmasın|hayır|devam et/i.test(clean);
     const hasProductionContext = dynamicWizard.open || Boolean(productionBrief.trim()) || /\b(video|reklam|ayakkabi|ayakkabı|urun|ürün|tiktok|shorts|saas|site|website|app|uygulama|admin panel|eticaret|e-ticaret|production request|production follow-up detail)\b/.test(recentContext);
+    const userWantsPreviewStatus = /(tasar[iı]m|sayfa|sayfalar|preview|[oö]nden|[oö]n izleme|g[oö]reyim|bekliyorum|ne yapt[iı]n[iı]z|hadi ne|show me|draft|wireframe)/i.test(clean);
+    if (!startedProduction && hasProductionContext && !isStartConfirmation && userWantsPreviewStatus) {
+      const statusReply = activeLanguage === "tr"
+        ? "Şu anda gerçek bir tasarım çıktısı oluşmuş gibi göstermiyorum. Bu ekranda henüz yalnızca brief ve yön seçimi var; gerçek website/admin tasarım çıktısı için önce doğru website yönünü seçip Start Production onay ekranından üretim kaydını oluşturmak gerekiyor. Video kartları yerine website/admin yönleri gösterilecek şekilde çalışma alanını düzeltiyorum."
+        : "I will not pretend a real design output exists yet. This workspace currently has only a brief and direction choices; to create real website/admin design output, choose the website direction and confirm Start Production first.";
+      setProductionBrief((current) => current || messages.slice(-8).map((item) => item.content).join("\n") || clean);
+      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: statusReply }]);
+      if (source === "chat") setChatInput("");
+      setStatus(activeLanguage === "tr" ? "Gerçek çıktı yokken tasarım hazır mesajı gösterilmedi; website yönleri hazırlanıyor." : "No fake design-ready message was shown; website directions are prepared.");
+      return;
+    }
     if (isStartConfirmation && hasProductionContext) {
       const existingBrief = productionBrief.trim() || messages.slice(-8).map((item) => item.content).join("\n");
       if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
@@ -2609,7 +2621,7 @@ async function startRawMicrophoneFallback() {
     {
       id: "categories",
       label: "Categories",
-      detail: selectedProduction?.label ?? "AI Video",
+      detail: selectedProduction?.label ?? "Production",
       count: productionTypes.length,
       content: <div className="clean-tool-grid one">
         {productionTypes.map((type) => (

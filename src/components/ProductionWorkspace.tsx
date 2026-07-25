@@ -181,6 +181,7 @@ const [notice, setNotice] = useState("");
   const [providerStartNote, setProviderStartNote] = useState("");
   const [approvalLoading, setApprovalLoading] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [previewMode, setPreviewMode] = useState<"normal" | "compact" | "shorts">("normal");
 
   const type = String(production.production_type ?? "general");
   const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(type);
@@ -596,7 +597,20 @@ const [notice, setNotice] = useState("");
           </section>
         ) : null}
 
-        <section className="customer-preview-theater">
+        <section className={`customer-preview-theater preview-mode-${previewMode}`}>
+          <div className="customer-preview-toolbar">
+            <div>
+              <span className="badge">Preview size</span>
+              <strong>{previewMode === "shorts" ? "Shorts vertical" : previewMode === "compact" ? "Compact view" : "Full theater"}</strong>
+            </div>
+            <div className="customer-preview-mode-actions" aria-label="Preview size controls">
+              {(["normal", "compact", "shorts"] as const).map((mode) => (
+                <button className={previewMode === mode ? "active" : ""} type="button" key={mode} onClick={() => setPreviewMode(mode)}>
+                  {mode === "normal" ? "Normal" : mode === "compact" ? "Small" : "Shorts"}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="customer-preview-screen">
             {previewKind === "video" ? (
               <video src={previewUrl} controls playsInline poster="" />
@@ -606,6 +620,7 @@ const [notice, setNotice] = useState("");
               <iframe src={previewUrl} title="Production preview" loading="lazy" />
             ) : (
               <div className="customer-preview-placeholder">
+                <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
                 <PlayCircle size={44} />
                 <span className="badge">Preview preparing</span>
                 <h3>{isProjectProduction ? "Project preview will appear here" : "Generated preview will appear here"}</h3>
