@@ -39,6 +39,24 @@ type ProductionProfitEstimate = {
   providerCostLines?: ProviderCostLine[];
 };
 
+type WorkflowAction = {
+  key?: string;
+  label?: string;
+  status?: string;
+  reason?: string;
+};
+
+type WorkflowState = Record<string, unknown> & {
+  stage?: string;
+  reservedCredits?: number;
+  estimatedCredits?: number;
+  hasReservedCredits?: boolean;
+  activeProviderJob?: boolean;
+  deliveryReady?: boolean;
+  providerReadiness?: Record<string, unknown>;
+  actions?: WorkflowAction[];
+};
+
 type ManualDeliveryDraft = {
   status: string;
   generation_status: string;
@@ -140,6 +158,32 @@ function completionEmailLabel(row: ProductionRow) {
 
 function objectValue(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function workflowStateFor(row: ProductionRow): WorkflowState | null {
+  const state = row.output_json?.workflowState;
+  return state && typeof state === "object" && !Array.isArray(state) ? state as WorkflowState : null;
+}
+
+function workflowStageLabel(stage?: string) {
+  const map: Record<string, string> = {
+    queued: "Queued",
+    waiting_provider_config: "Waiting provider config",
+    provider_ready: "Provider ready",
+    in_production: "Production running",
+    qa_review: "QA / approval",
+    ready: "Delivery ready",
+    failed: "Failed",
+    cancelled: "Cancelled"
+  };
+  return stage ? map[stage] ?? stage.replaceAll("_", " ") : "Workflow pending";
+}
+
+function workflowActionTone(status?: string) {
+  if (status === "done") return "ready";
+  if (status === "available") return "active";
+  if (status === "blocked") return "failed";
+  return "unknown";
 }
 
 function deliveryRequirementsFor(row: ProductionRow) {
@@ -446,6 +490,9 @@ async function refundReservedCredits(item: ProductionRow) {
         const canRetryProvider = item.status === "failed" && creditResolution?.status === "admin_review_required" && reservedCredits > 0;
         const retryBlockedAfterRefund = item.status === "failed" && creditResolution?.status === "refunded_reserved";
         const manualDraft = draftFor(item);
+        const workflowState = workflowStateFor(item);
+        const workflowActions = Array.isArray(workflowState?.actions) ? workflowState.actions : [];
+        const workflowProviderReadiness = workflowState?.providerReadiness && typeof workflowState.providerReadiness === "object" ? workflowState.providerReadiness : null;
 
         return (
         <div className="card admin-production-card" key={item.id}>
@@ -469,6 +516,28 @@ async function refundReservedCredits(item: ProductionRow) {
               <small>{(item.reserved_credits ?? item.estimated_credits).toLocaleString()} credits</small>
             </div>
           </div>
+
+          <section className="dynamic-brief-panel" style={{ marginTop: 12 }}>
+            <span className="badge">Workflow state</span>
+            <div className="admin-info-grid" style={{ marginTop: 10 }}>
+              <div><span>Stage</span><strong>{workflowStageLabel(workflowState?.stage ?? item.status)}</strong><small>{String(workflowState?.updatedAt ?? item.automation_status ?? item.generation_status ?? "not synced")}</small></div>
+              <div><span>Reserved credits</span><strong>{Number(workflowState?.reservedCredits ?? reservedCredits).toLocaleString()}</strong><small>{workflowState?.hasReservedCredits ? "Credit reserve OK" : "Reserve missing or partial"}</small></div>
+              <div><span>Provider readiness</span><strong>{String(workflowProviderReadiness?.status ?? workflowProviderReadiness?.readinessStatus ?? providerReadiness?.status ?? "pending")}</strong><small>{String(workflowProviderReadiness?.userMessage ?? agentProviderRoutePlan?.readinessStatus ?? "Provider route check")}</small></div>
+              <div><span>Active provider job</span><strong>{workflowState?.activeProviderJob ? "Yes" : providerJobs.length ? "Tracked separately" : "No"}</strong><small>{item.automation_job_id ?? providerJobs[0]?.id ?? "No active id"}</small></div>
+              <div><span>Delivery readiness</span><strong>{workflowState?.deliveryReady ? "Ready" : (item.delivery_link || item.delivery_zip_url) ? "Ready" : "Waiting"}</strong><small>{deliveryRequirements ? String(deliveryRequirements.status ?? "requirements tracked") : "Dashboard delivery"}</small></div>
+            </div>
+            {workflowActions.length > 0 ? (
+              <div className="provider-job-list" style={{ marginTop: 10 }}>
+                {workflowActions.map((action) => (
+                  <div className={`provider-job-chip ${workflowActionTone(action.status)}`} key={`${item.id}-workflow-${String(action.key ?? action.label)}`}>
+                    <strong>{String(action.label ?? action.key ?? "Workflow action")}</strong>
+                    <span>{String(action.status ?? "pending")}</span>
+                    {action.reason ? <small>{action.reason}</small> : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
           <div className="admin-info-grid">
             <div>

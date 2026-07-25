@@ -51,6 +51,24 @@ type RevisionRequest = {
   requestedAt?: string;
 };
 
+type WorkflowAction = {
+  key?: string;
+  label?: string;
+  status?: string;
+  reason?: string;
+};
+
+type WorkflowState = Record<string, unknown> & {
+  stage?: string;
+  reservedCredits?: number;
+  estimatedCredits?: number;
+  hasReservedCredits?: boolean;
+  activeProviderJob?: boolean;
+  deliveryReady?: boolean;
+  providerReadiness?: Record<string, unknown>;
+  actions?: WorkflowAction[];
+};
+
 const iconMap = {
   video: Film,
   image: ImageIcon,
@@ -107,6 +125,27 @@ function actionPrompt(part: AssetPart, action: string) {
   return `${part.title}: ${action}`;
 }
 
+function workflowStageLabel(stage?: string) {
+  const map: Record<string, string> = {
+    queued: "Queued",
+    waiting_provider_config: "Waiting provider config",
+    provider_ready: "Provider ready",
+    in_production: "Production running",
+    qa_review: "QA / approval",
+    ready: "Delivery ready",
+    failed: "Failed",
+    cancelled: "Cancelled"
+  };
+  return stage ? map[stage] ?? stage.replaceAll("_", " ") : "Workflow pending";
+}
+
+function workflowActionTone(status?: string) {
+  if (status === "done") return "ready";
+  if (status === "available") return "active";
+  if (status === "blocked") return "failed";
+  return "unknown";
+}
+
 export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
   useEffect(() => {
     let shouldForceTop = true;
@@ -148,6 +187,9 @@ const [notice, setNotice] = useState("");
   const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(type);
   const metadata = production.request_metadata ?? {};
   const outputJson = production.output_json ?? {};
+  const workflowState = outputJson.workflowState && typeof outputJson.workflowState === "object" && !Array.isArray(outputJson.workflowState) ? outputJson.workflowState as WorkflowState : null;
+  const workflowActions = Array.isArray(workflowState?.actions) ? workflowState.actions : [];
+  const workflowProviderReadiness = workflowState?.providerReadiness && typeof workflowState.providerReadiness === "object" ? workflowState.providerReadiness : null;
   const audience = metadata.audienceContext ?? {};
   const materials = Array.isArray(production.materials_json) ? production.materials_json : [];
   const parts = partsForProduction(type);
@@ -433,6 +475,29 @@ const [notice, setNotice] = useState("");
             <strong>{hasDelivery ? "Ready" : "Waiting"}</strong>
           </div>
         </div>
+
+        <section className="dynamic-brief-panel" style={{ marginTop: 14 }}>
+          <span className="badge">Workflow state</span>
+          <h3>{workflowStageLabel(workflowState?.stage ?? liveStatus)}</h3>
+          <p>{workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
+          <div className="production-context-grid">
+            <div><span>Credit reserve</span><strong>{Number(workflowState?.reservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0).toLocaleString()}</strong><small>{workflowState?.hasReservedCredits ? "Reserved" : "Not fully reserved"}</small></div>
+            <div><span>Provider</span><strong>{workflowState?.activeProviderJob ? "Active job" : String((workflowProviderReadiness?.status ?? workflowProviderReadiness?.readinessStatus ?? providerStatus) || "Pending")}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
+            <div><span>Delivery</span><strong>{workflowState?.deliveryReady || hasDelivery ? "Ready" : "Waiting"}</strong><small>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Dashboard delivery"}</small></div>
+            <div><span>Revision flow</span><strong>{workflowActions.find((action) => action.key === "revision_flow")?.status ?? (isReady ? "available" : "pending")}</strong><small>{revisions.length ? `${revisions.length} request(s)` : "No revision request"}</small></div>
+          </div>
+          {workflowActions.length > 0 ? (
+            <div className="provider-job-list" style={{ marginTop: 10 }}>
+              {workflowActions.map((action) => (
+                <div className={`provider-job-chip ${workflowActionTone(action.status)}`} key={`${production.id}-workflow-${String(action.key ?? action.label)}`}>
+                  <strong>{String(action.label ?? action.key ?? "Workflow action")}</strong>
+                  <span>{String(action.status ?? "pending")}</span>
+                  {action.reason ? <small>{action.reason}</small> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
 
         {isFailed ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{production.error_message || String(outputJson.providerError ?? "Provider or automation failed. Admin review is required before final delivery or credit resolution.")}</span></div> : null}
 

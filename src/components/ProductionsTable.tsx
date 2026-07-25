@@ -15,6 +15,23 @@ type AutomationStep = {
   status: "pending" | "running" | "done" | "failed";
 };
 
+type WorkflowAction = {
+  key?: string;
+  label?: string;
+  status?: string;
+  reason?: string;
+};
+
+type WorkflowState = Record<string, unknown> & {
+  stage?: string;
+  reservedCredits?: number;
+  estimatedCredits?: number;
+  hasReservedCredits?: boolean;
+  activeProviderJob?: boolean;
+  deliveryReady?: boolean;
+  actions?: WorkflowAction[];
+};
+
 type LegalSnapshot = Record<string, unknown> & {
   version?: string;
   accepted?: boolean;
@@ -62,7 +79,32 @@ function statusLabel(status: string) {
   return map[status] ?? status;
 }
 
+function workflowStageLabel(stage?: string) {
+  const map: Record<string, string> = {
+    queued: "Queued",
+    waiting_provider_config: "Waiting provider config",
+    provider_ready: "Provider ready",
+    in_production: "Production running",
+    qa_review: "QA / approval",
+    ready: "Delivery ready",
+    failed: "Failed",
+    cancelled: "Cancelled"
+  };
+  return stage ? map[stage] ?? stage.replaceAll("_", " ") : "Workflow pending";
+}
+
+function workflowStateFor(item: ProductionRow): WorkflowState | null {
+  const state = item.output_json?.workflowState;
+  return state && typeof state === "object" && !Array.isArray(state) ? state as WorkflowState : null;
+}
+
+function workflowActionsFor(state: WorkflowState | null) {
+  return Array.isArray(state?.actions) ? state.actions : [];
+}
+
 function liveStageFor(item: ProductionRow) {
+  const workflowState = workflowStateFor(item);
+  if (workflowState?.stage) return workflowStageLabel(workflowState.stage);
   if (item.status === "ready" || item.delivery_link || item.delivery_zip_url || item.source_files_url) return "Final delivery ready";
   if (item.preview_url) return "Preview ready";
   if (item.automation_status || item.generation_status || item.automation_job_id) return "Provider / automation running";
@@ -71,6 +113,8 @@ function liveStageFor(item: ProductionRow) {
 }
 
 function nextActionFor(item: ProductionRow) {
+  const nextWorkflowAction = workflowActionsFor(workflowStateFor(item)).find((action) => ["available", "blocked"].includes(String(action.status ?? "")));
+  if (nextWorkflowAction?.label) return `${nextWorkflowAction.label}${nextWorkflowAction.reason ? `: ${nextWorkflowAction.reason}` : ""}`;
   if (item.status === "ready" || item.delivery_link || item.delivery_zip_url || item.source_files_url) return "Open, download, or request a revision.";
   if (item.preview_url) return "Review the preview and request changes if needed.";
   if (item.approval_status === "waiting") return "Choose an option so automation can continue.";
@@ -292,6 +336,8 @@ export function ProductionsTable() {
           const legalSnapshot = item.legal_acceptance_snapshot;
           const outputPlan = item.request_metadata?.outputPlan as { outputCount?: number } | undefined;
           const deliveryTargets = item.request_metadata?.deliveryTargets as { publishTargets?: string[]; connectedAccountTargets?: string; connectedStoreTargets?: string } | undefined;
+          const workflowState = workflowStateFor(item);
+          const workflowActions = workflowActionsFor(workflowState);
 
           return (
             <div className="card production-list-card" key={item.id}>
@@ -302,11 +348,23 @@ export function ProductionsTable() {
               <h3>{item.title}</h3>
               <p>{item.prompt}</p>
               <div className="production-live-card-summary">
-                <div><span>Live stage</span><strong>{liveStageFor(item)}</strong></div>
-                <div><span>Next action</span><strong>{nextActionFor(item)}</strong></div>
-                <div><span>Reserved credits</span><strong>{(item.reserved_credits ?? item.estimated_credits).toLocaleString()}</strong></div>
+                <div><span>Workflow stage</span><strong>{liveStageFor(item)}</strong></div>
+                <div><span>Next workflow action</span><strong>{nextActionFor(item)}</strong></div>
+                <div><span>Reserved credits</span><strong>{Number(workflowState?.reservedCredits ?? item.reserved_credits ?? item.estimated_credits).toLocaleString()}</strong></div>
+                <div><span>Provider / delivery</span><strong>{workflowState?.activeProviderJob ? "Provider job active" : workflowState?.deliveryReady ? "Delivery ready" : "Waiting"}</strong></div>
                 <div><span>Output / target</span><strong>{outputPlan?.outputCount ?? 1} output · {deliveryTargets?.publishTargets?.join(", ") ?? "Dashboard"}</strong></div>
               </div>
+              {workflowActions.length > 0 ? (
+                <div className="provider-job-list" style={{ marginTop: 8 }}>
+                  {workflowActions.map((action) => (
+                    <div className={`provider-job-chip ${String(action.status) === "done" ? "ready" : String(action.status) === "available" ? "active" : String(action.status) === "blocked" ? "failed" : "unknown"}`} key={`${item.id}-workflow-${String(action.key ?? action.label)}`}>
+                      <strong>{String(action.label ?? action.key ?? "Workflow action")}</strong>
+                      <span>{String(action.status ?? "pending")}</span>
+                      {action.reason ? <small>{action.reason}</small> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {item.automation_job_id ? <small style={{ color: "var(--muted)" }}>Job: {item.automation_job_id}</small> : null}
               {legalSnapshot?.accepted ? <small style={{ color: "#86efac" }}>Legal acceptance recorded: {legalSnapshot.version ?? "recorded"} {item.legal_acceptance_id ? `- ${item.legal_acceptance_id}` : ""}</small> : <small style={{ color: "#fca5a5" }}>Legal acceptance missing</small>}
               {expectedDeliverySeconds ? <small style={{ color: "#93c5fd" }}>Estimated render window after provider response: {expectedDeliverySeconds} seconds.</small> : null}
