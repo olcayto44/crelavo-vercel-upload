@@ -7932,10 +7932,12 @@ html body .automation-brief-card pre {
 
 /* Production Job Workspace / Output Page */
 html body .production-workspace-shell {
-  width: min(1760px, calc(100vw - 44px));
-  margin: 0 auto;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 420px);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(min(320px, 100%), 380px);
   gap: 20px;
+  overflow-x: hidden;
 }
 html body .production-workspace-head,
 html body .production-truth-strip,
