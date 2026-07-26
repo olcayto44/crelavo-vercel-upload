@@ -1,7 +1,7 @@
-import { requireProviderEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 
 function baseUrl() {
-  return process.env.APIFY_BASE_URL || "https://api.apify.com/v2";
+  return optionalEnv("APIFY_BASE_URL") || "https://api.apify.com/v2";
 }
 
 async function apifyJson<T>(path: string, init?: RequestInit) {

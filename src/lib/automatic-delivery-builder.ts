@@ -172,6 +172,11 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
     files.push({ path: "growth/monetization-plan.json", purpose: "Whop, credits, referral and retention loop map" });
     files.push({ path: "growth/lifecycle-nudges.md", purpose: "Signup, delivery and reactivation nudges" });
   }
+  if (isSeoResearchDelivery(production)) {
+    files.push({ path: "seo/keyword-opportunity-plan.md", purpose: "Keyword, SERP and content opportunity plan" });
+    files.push({ path: "seo/competitor-analysis-brief.md", purpose: "Competitor positioning and public-source analysis brief" });
+    files.push({ path: "seo/provider-research-map.json", purpose: "DataForSEO, Apify and Google Maps research input map" });
+  }
   if (requirements.wantsAdminPanel) files.push({ path: "admin-panel/admin-requirements.md", purpose: "Admin panel modules, roles and data notes" });
   if (requirements.wantsDeploymentGuide) files.push({ path: "docs/deployment-guide.md", purpose: "Deployment and setup instructions" });
   if (requirements.wantsFinalVideo) files.push({ path: "media/final-video-placeholder.md", purpose: "Final video slot and provider replacement notes" });
@@ -365,6 +370,44 @@ function buildLifecycleNudgePlan(production: ProductionLike) {
   return `# Lifecycle Nudge Plan\n\nProduction: ${manifest.title}\n\n- New signup, no production: invite to Assistant Workspace.\n- Production started, not delivered: remind missing assets/status.\n- Delivered, no second action: suggest ad creative, landing page, social kit or Growth Intelligence.\n- Low credits / checkout intent: show Whop-safe top-up path.\n- Inactive user: send low-volume manual reminder with free tool/sample CTA.\n`;
 }
 
+function isSeoResearchDelivery(production: ProductionLike) {
+  const textBlock = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.features ?? ""} ${production.target_platform ?? ""} ${production.prompt ?? ""}`.toLowerCase();
+  return /seo|serp|keyword|dataforseo|apify|google maps|google business|local search|competitor analysis|competitor research|rakip|rakip analiz|search ranking|organic traffic|growth intelligence/.test(textBlock);
+}
+
+function buildKeywordOpportunityPlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Keyword Opportunity Plan\n\nProduction: ${manifest.title}\n\n## Research Inputs\n- Primary market: ${manifest.commerce.connected_store_targets}\n- Product / offer context: ${value(production.prompt, "Use the customer brief and target market.")}\n- Data source: DataForSEO keyword volume and live SERP checks when credentials are configured.\n\n## Output Structure\n- Core buying-intent keywords.\n- Comparison and alternative keywords.\n- Problem/search-intent keywords.\n- Content page ideas, title angles and CTA route.\n\n## Guardrail\nUse public keyword/SERP signals only. Do not claim rankings, traffic or competitor data that has not been verified by a live provider check.\n`;
+}
+
+function buildCompetitorAnalysisBrief(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Competitor Analysis Brief\n\nProduction: ${manifest.title}\n\n## Public Sources To Review\n- Competitor home, pricing, feature and comparison pages.\n- Public ads, social posts, reviews and marketplace listings.\n- Search result structure and visible SERP features.\n\n## Analysis Sections\n- Positioning: what each competitor promises.\n- Offer gaps: pricing, proof, delivery speed, vertical focus.\n- SEO gaps: missing page types, weak title angles, unanswered buyer questions.\n- Response plan: original Crelavo page/ad/content ideas that do not copy protected assets.\n\n## Guardrail\nExtract structure and market signals only. Never reuse competitor copy, brand assets, private data, scraped restricted pages or unverifiable claims.\n`;
+}
+
+function buildProviderResearchMap(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return JSON.stringify({
+    production_id: manifest.production_id,
+    title: manifest.title,
+    providers: {
+      dataforseo: {
+        use: ["keyword_volume", "live_serp", "competitor_serp_context"],
+        env_gate: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"]
+      },
+      apify: {
+        use: ["public_page_extraction", "allowed_public_source_monitoring", "dataset_items"],
+        env_gate: ["APIFY_API_TOKEN"]
+      },
+      google_maps: {
+        use: ["local_seo", "place_search", "regional_competitor_context"],
+        env_gate: ["GOOGLE_MAPS_API_KEY"]
+      }
+    },
+    approval_rules: ["public sources only", "no restricted-page bypass", "no protected copy reuse", "admin review before final report claims"]
+  }, null, 2);
+}
+
 export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
   const manifest = buildDeliveryManifest(production);
   const requirements = manifest.delivery_requirements;
@@ -396,6 +439,11 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     entries.push({ name: "growth/conversion-funnel-plan.md", content: buildConversionFunnelPlan(production) });
     entries.push({ name: "growth/monetization-plan.json", content: buildGrowthMonetizationPlan(production) });
     entries.push({ name: "growth/lifecycle-nudges.md", content: buildLifecycleNudgePlan(production) });
+  }
+  if (isSeoResearchDelivery(production)) {
+    entries.push({ name: "seo/keyword-opportunity-plan.md", content: buildKeywordOpportunityPlan(production) });
+    entries.push({ name: "seo/competitor-analysis-brief.md", content: buildCompetitorAnalysisBrief(production) });
+    entries.push({ name: "seo/provider-research-map.json", content: buildProviderResearchMap(production) });
   }
   if (requirements.wantsAdminPanel) entries.push({ name: "admin-panel/admin-requirements.md", content: buildAdminRequirements(production) });
   if (requirements.wantsDeploymentGuide) entries.push({ name: "docs/deployment-guide.md", content: buildDeploymentGuide(production) });

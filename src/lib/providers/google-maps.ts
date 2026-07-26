@@ -1,4 +1,4 @@
-import { requireProviderEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 
 type GoogleMapsApiResponse<T> = {
   status: string;
@@ -8,7 +8,7 @@ type GoogleMapsApiResponse<T> = {
 };
 
 function baseUrl() {
-  return process.env.GOOGLE_MAPS_BASE_URL || "https://maps.googleapis.com/maps/api";
+  return optionalEnv("GOOGLE_MAPS_BASE_URL") || "https://maps.googleapis.com/maps/api";
 }
 
 async function googleMapsJson<T>(endpoint: string, params: Record<string, string>) {

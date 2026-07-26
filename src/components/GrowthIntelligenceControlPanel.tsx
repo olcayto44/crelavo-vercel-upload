@@ -197,7 +197,7 @@ export function GrowthIntelligenceControlPanel() {
           <div>
             <span className="badge">Growth Intelligence Control</span>
             <h2>Competitor monitoring setup</h2>
-            <p style={{ color: "var(--muted)" }}>Use this pre-API dashboard to prepare the competitor intelligence brief. Final n8n/API automation can later read the same structure: competitors, public sources, report language, frequency and alert channel. The finished report should be delivered as a dashboard PDF/file only when the user has active service entitlement or enough credits.</p>
+            <p style={{ color: "var(--muted)" }}>Use this provider-ready dashboard to prepare the competitor intelligence brief. DataForSEO, Apify, Google Maps and LLM report prep can read the same structure: competitors, public sources, report language, frequency and alert channel. The finished report should be delivered as a dashboard PDF/file only when the user has active service entitlement or enough credits.</p>
           </div>
         </div>
         <div className="admin-info-grid">
@@ -205,7 +205,7 @@ export function GrowthIntelligenceControlPanel() {
           <div><span>Competitors entered</span><strong>{competitorCount}</strong><p>URLs or brand names from the textarea</p></div>
           <div><span>Report delivery</span><strong>{state.reportFrequency}</strong><p>{state.reportLanguage} · {state.alertChannel}</p></div>
           <div><span>File access</span><strong>Entitlement / credits gated</strong><p>PDF/report file appears in dashboard after eligibility check</p></div>
-          <div><span>Latest status</span><strong>{state.jobs[0] ? statusText(state.jobs[0]) : "Not started"}</strong><p>{state.jobs[0]?.entitlementStatus ? `Access: ${state.jobs[0].entitlementStatus.replaceAll("_", " ")}` : "Pre-API monitoring job state"}</p></div>
+            <div><span>Latest status</span><strong>{state.jobs[0] ? statusText(state.jobs[0]) : "Not started"}</strong><p>{state.jobs[0]?.entitlementStatus ? `Access: ${state.jobs[0].entitlementStatus.replaceAll("_", " ")}` : "Provider-ready monitoring job state"}</p></div>
         </div>
         <div className="workspace-action-note warning" style={{ marginTop: 14 }}>
           <strong>Responsible use notice:</strong> Monitor only public sources that can be lawfully reviewed for market research. Do not enter private dashboards, restricted data, bypassed pages or sources that violate platform terms. The customer is responsible for using competitor insights in compliance with competition, privacy, advertising and data protection rules.

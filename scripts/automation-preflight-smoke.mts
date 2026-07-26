@@ -90,6 +90,11 @@ const retentionGrowth = readFileSync("src/lib/retention-growth.ts", "utf8");
 const dashboardGrowth = readFileSync("src/app/dashboard/growth/page.tsx", "utf8");
 const dashboardShareToEarn = readFileSync("src/app/dashboard/share-to-earn/page.tsx", "utf8");
 const adminGrowth = readFileSync("src/app/admin/growth/page.tsx", "utf8");
+const dataForSeoProvider = readFileSync("src/lib/providers/dataforseo.ts", "utf8");
+const apifyProvider = readFileSync("src/lib/providers/apify.ts", "utf8");
+const googleMapsProvider = readFileSync("src/lib/providers/google-maps.ts", "utf8");
+const growthIntelligencePage = readFileSync("src/app/dashboard/growth-intelligence/page.tsx", "utf8");
+const growthIntelligencePanel = readFileSync("src/components/GrowthIntelligenceControlPanel.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -146,6 +151,24 @@ for (const term of ["final live E2E validation", "Social, growth and provider-aw
 }
 for (const staleTerm of ["API later", "API-dışı 2. Grup", "API-free launch version", "until API tracking and fraud checks are connected"]) {
   if (retentionGrowth.includes(staleTerm) || dashboardGrowth.includes(staleTerm) || dashboardShareToEarn.includes(staleTerm) || adminGrowth.includes(staleTerm)) throw new Error(`stale growth copy still present: ${staleTerm}`);
+}
+for (const term of ["seo/keyword-opportunity-plan.md", "seo/competitor-analysis-brief.md", "seo/provider-research-map.json", "buildKeywordOpportunityPlan", "isSeoResearchDelivery"]) {
+  if (!automaticDeliveryBuilder.includes(term)) throw new Error(`SEO research delivery pack missing term: ${term}`);
+}
+for (const term of ["optionalEnv(\"DATAFORSEO_BASE_URL\")", "optionalEnv(\"DATAFORSEO_LOCATION_NAME\")", "optionalEnv(\"DATAFORSEO_LANGUAGE_CODE\")"]) {
+  if (!dataForSeoProvider.includes(term)) throw new Error(`DataForSEO provider env alias missing term: ${term}`);
+}
+for (const term of ["optionalEnv(\"APIFY_BASE_URL\")", "requireProviderEnv(\"apify\")"]) {
+  if (!apifyProvider.includes(term)) throw new Error(`Apify provider env alias missing term: ${term}`);
+}
+for (const term of ["optionalEnv(\"GOOGLE_MAPS_BASE_URL\")", "requireProviderEnv(\"googleMaps\")"]) {
+  if (!googleMapsProvider.includes(term)) throw new Error(`Google Maps provider env alias missing term: ${term}`);
+}
+for (const term of ["Provider-ready service workflow", "DataForSEO, Apify, Google Maps", "provider-ready dashboard"]) {
+  if (!growthIntelligencePage.includes(term) && !growthIntelligencePanel.includes(term)) throw new Error(`Growth Intelligence provider-ready copy missing term: ${term}`);
+}
+for (const staleTerm of ["Pre-API service workflow", "pre-API dashboard", "Final n8n/API automation can later"]) {
+  if (growthIntelligencePage.includes(staleTerm) || growthIntelligencePanel.includes(staleTerm)) throw new Error(`stale Growth Intelligence copy still present: ${staleTerm}`);
 }
 
 console.log("automation-preflight-smoke ok");
