@@ -69,7 +69,7 @@ const previewSupportBoxPlan = [
 
 const whopLaunchRiskControls = [
   { title: "Visible cancel button", status: "built", note: "Dashboard billing and payment screens now show Cancel Preview / Subscription links to Whop plus a public /whop-billing instruction page to reduce panic and chargeback risk." },
-  { title: "23rd-hour reminder", status: "manual_required", note: "Configure Whop/Resend/n8n reminder around 3 hours before preview ends: do nothing to continue, cancel link if they want to stop. This is a trust and dispute-prevention email." },
+  { title: "23rd-hour reminder", status: "connected_pending_live_e2e", note: "Admin/n8n can call POST /api/payments/lifecycle-email with type=preview_reminder around hour 23 or about 3 hours before preview ends: do nothing to continue, Whop cancel link if they want to stop. This is a trust and dispute-prevention email." },
   { title: "Whop net payout model", status: "finance_check", note: "Model high-ticket payout after card fees: a $1,300 Team Annual sale may net roughly $1,260 after about 2.7% + $0.30 and transfer/payment fees; API budget should use net cash, not gross revenue." },
   { title: "Whop fraud controls", status: "manual_required", note: "Before global ads, confirm Whop Risk/Fraud Management blocks suspicious cards, VPN/proxy patterns and stolen-card attempts so $20 previews do not trigger payment-provider risk flags." },
   { title: "Mobile exit-intent capture", status: "built", note: "Exit-intent lead capture now includes mobile quick scroll-up and pull-down intent triggers, plus a fallback timer, so Instagram/Facebook mobile visitors can still see the guide/trial-credit offer." },
@@ -93,7 +93,7 @@ const fomoRetentionExperiments = [
 const viralConversionExperiments = [
   { title: "Hidden coupon hunt", status: "campaign_test", note: "Run only on real campaign days: place hidden preview promo codes inside the Free AI Ad Scorer or Ad Reference Analyzer. Use truthful copy such as 'up to 50% off' and avoid permanent fake scarcity." },
   { title: "Viral credit referral loop", status: "ui_seeded", note: "Dashboard and credits pages now seed the invite-friend loop: +100 credits for both verified users, +2,000 bonus credits after invited user becomes a paid Business/Team subscriber, subject to manual abuse review." },
-  { title: "Abandoned checkout email", status: "manual_required", note: "Check Whop native abandoned checkout support. If unavailable, capture pre-checkout clicks/email via Crelavo/n8n and send a 1-hour recovery email only when consent/email exists." },
+  { title: "Abandoned checkout email", status: "connected_pending_live_e2e", note: "Checkout page now captures opt-in email/consent before redirect and logs source=checkout_intent in lead_captures. Admin/n8n can call POST /api/payments/lifecycle-email with type=abandoned_checkout after about 1 hour only when no Whop payment completion exists." },
   { title: "Featured by Crelavo watermark", status: "planned", note: "Allow preview users to share watermarked exports with a tasteful 'Made with Crelavo AI' mark. Upgrade CTA removes watermark for Business/Team clean exports." },
   { title: "Store-volume package matching", status: "built_pricing", note: "Pricing cards now frame Pro, Business, Ultra and Team by store/agency maturity so buyers choose by self-identification instead of only credit math." }
 ];
@@ -163,7 +163,7 @@ const growthCommandCenterPillars = [
     priority: "P0",
     status: "live_copy_plus_manual_checks",
     livePieces: "Whop billing page, cancel visibility, preview policy copy, payment emails and support routing.",
-    nextAction: "Verify Whop abandoned-checkout options and add n8n/Resend fallback only with consent/email capture.",
+    nextAction: "Run live Whop completion checks, then schedule n8n/Resend calls to /api/payments/lifecycle-email only for opt-in checkout_intent leads that did not complete payment.",
     guardrail: "No misleading refund, saved-bonus or guaranteed-discount claims."
   },
   {
@@ -184,7 +184,7 @@ const apiPhaseRoadmap = [
   { title: "Coupon hunt claim engine", status: "api_required", note: "Create real campaign toggles, limited coupon codes, claim logging, expiry checks and abuse controls before showing hidden promo campaigns publicly." },
   { title: "Watermarked preview export", status: "api_required", note: "Render tasteful Made with Crelavo AI watermark on preview exports and unlock clean export only for eligible paid Business/Team access." },
   { title: "AI Ad Re-Creator pipeline", status: "api_required", note: "Upload/link intake, audio transcription, visual/scene timing analysis, safe structure extraction, rewritten script, original media generation and localization require provider APIs." },
-  { title: "Abandoned checkout recovery", status: "api_or_n8n_required", note: "First verify whether Whop exposes abandoned checkout events or native recovery emails. If not, log Crelavo pre-checkout intent with package, email/consent, UTM and timestamp, then send one Resend/n8n recovery email after about 1 hour only when compliant. Copy must avoid fake saved bonuses, fake scarcity or guaranteed discounts." }
+  { title: "Abandoned checkout recovery", status: "connected_pending_live_e2e", note: "Opt-in Crelavo pre-checkout intent logging is connected with package, email/consent, UTM, checkout URL and timestamp. Use Whop completion data or admin review before sending one Resend/n8n recovery email after about 1 hour. Copy avoids fake saved bonuses, fake scarcity or guaranteed discounts." }
 ];
 
 function statusLabel(status: string) {

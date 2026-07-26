@@ -33,6 +33,7 @@ const apiAutomationReadinessGates: ReadinessGate[] = [
   { title: "Whop is payment source of record", owner: "Finance", check: "Preview activation, subscription status, cancellation visibility, idempotency and credit grants must be driven by verified Whop events before automation is enabled." },
   { title: "Credits never trust client payloads", owner: "Backend", check: "Package price, credit amount, reward credit, coupon claim and clean-export access must be recalculated server-side from package/payment records." },
   { title: "Provider spend has a stop switch", owner: "Operations", check: "Run a low-cost success job and a failure job for each selected provider; confirm API Guard, admin review and fallback messaging before paid traffic." },
+  { title: "Cloudflare edge guard is live", owner: "Owner", check: "Before paid traffic, verify Cloudflare DNS/SSL, WAF, bot/rate-limit rules and optional Turnstile protection for admin, auth, payment, lead, webhook and provider callback routes." },
   { title: "Viral loops remain manual until proven", owner: "Growth", check: "Referral credits, coupon hunt, share-to-earn, partner commission and abandoned checkout recovery stay manual or consent-safe until fraud and attribution checks pass." },
   { title: "Preview watermark gates clean export", owner: "Product", check: "Watermarked preview export can be generated for proof; watermark-free final export opens only after paid plan eligibility and delivery rules are confirmed." }
 ];
@@ -214,6 +215,16 @@ export function buildFinalApiChecklist() {
       ]
     },
     {
+      title: "Cloudflare edge security",
+      description: "DNS, SSL, WAF/rate limits, bot checks and public-form protection before paid traffic.",
+      items: [
+        item("Cloudflare API access", ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID"], "Used for live readiness checks and zone-level validation without exposing secrets.", "Open /api/providers/readiness and /api/admin/provider-tests?provider=cloudflare, then confirm no secrets are returned."),
+        item("Cloudflare dashboard WAF rules", ["CLOUDFLARE_WAF_RULESET_ID"], "Manual dashboard rule set should protect /admin, /auth, /api/payments, /api/leads, /api/webhooks and provider callback routes.", "Run one blocked invalid webhook/request test and one allowed checkout/provider callback test in Cloudflare logs.", true),
+        item("Cloudflare rate-limit rules", ["CLOUDFLARE_RATE_LIMIT_RULESET_ID"], "Edge rate limits should complement in-app route/IP guards before Meta/affiliate traffic.", "Confirm burst traffic to public lead/payment routes is throttled at the edge while normal checkout still works.", true),
+        item("Turnstile anti-bot keys", ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"], "Recommended for public lead/support forms if paid traffic or bot pressure increases.", "Submit a public form with a valid token and confirm invalid/missing tokens can be blocked once enforcement is enabled.", true)
+      ]
+    },
+    {
       title: "First-phase AI and provider keys",
       description: "Initial launch provider plan: planning, video, image, voice/TTS, editing/render and storage/CDN with explicit cost and failure gates.",
       items: [
@@ -268,7 +279,8 @@ export function buildFinalApiChecklist() {
       "Run Assistant Workspace planning.",
       "Start one production with enough credits or a test package.",
       "Run one Whop checkout/webhook test and verify preview activation, subscription mapping, idempotency and manual entitlement reconciliation.",
-      "Verify customer receipt, owner/admin payment notification and support fallback emails.",
+      "Verify customer receipt, owner/admin payment notification, preview reminder, abandoned checkout recovery and support fallback emails.",
+      "Open /api/providers/readiness and confirm Cloudflare/Turnstile readiness is visible without exposing secrets.",
       "Complete one provider-success production and verify production-ready email plus delivery links.",
       "Force one provider failure/admin review path and confirm credits, delivery, retries and support messaging stay safe.",
       "Test cancellation visibility, clean-export eligibility, referral reward review and manual delivery update paths."
@@ -277,7 +289,7 @@ export function buildFinalApiChecklist() {
       "Real Whop checkout, webhook signature and subscription lifecycle E2E.",
       "Paid credit purchase, preview activation and manual entitlement reconciliation E2E.",
       "Resend production email delivery.",
-      "Live domain redirects, auth callbacks and Search Console verification.",
+      "Live domain redirects, auth callbacks, Search Console verification and Cloudflare DNS/SSL/WAF validation.",
       "Real AI/video provider success and forced-failure paths.",
       "Automatic referral/coupon/share-to-earn rewards and clean-export unlocks."
     ],

@@ -38,11 +38,11 @@ for (const term of ["/admin/growth", "Growth Backlog", "Phase-2 Operations"]) {
   if (!admin.includes(term)) throw new Error(`Admin menu missing growth term: ${term}`);
 }
 
-for (const term of ["Growth backlog", "rewardCreditRules", "watermarkPolicy", "Whop stays active", "API-dışı 2. Grup", "Retention lifecycle", "Activation funnel", "Admin retention checklist", "AdminGrowthIntelligenceRequests", "Report requests and dashboard PDF/file delivery"]) {
+for (const term of ["Growth backlog", "rewardCreditRules", "watermarkPolicy", "Whop stays active", "Retention lifecycle", "Activation funnel", "Admin retention checklist", "AdminGrowthIntelligenceRequests", "Report requests and dashboard PDF/file delivery", "checkout_intent", "/api/payments/lifecycle-email"]) {
   if (!adminPage.includes(term)) throw new Error(`Admin growth page missing term: ${term}`);
 }
 
-for (const term of ["retentionGrowthSummary", "lifecycleNudges", "activationFunnelSteps", "growthRewardReadiness", "dashboardNextBestActions", "retentionAdminChecklist", "No Lemon", "API/provider automation is explicitly later"]) {
+for (const term of ["retentionGrowthSummary", "lifecycleNudges", "activationFunnelSteps", "growthRewardReadiness", "dashboardNextBestActions", "retentionAdminChecklist", "Whop checkout remains the active payment path", "Checkout intent logging is connected"]) {
   if (!retentionGrowthLib.includes(term)) throw new Error(`Retention growth lib missing term: ${term}`);
 }
 
@@ -62,7 +62,7 @@ for (const term of ["/dashboard/growth", "Growth Rewards"]) {
   if (!dashboardShell.includes(term)) throw new Error(`Dashboard shell missing growth term: ${term}`);
 }
 
-for (const term of ["Earn, return and continue building with Crelavo", "Next best actions", "Lifecycle nudges", "Share-to-earn readiness", "Referral MVP", "watermarkPolicy", "API automation comes later"]) {
+for (const term of ["Earn, return and continue building with Crelavo", "Next best actions", "Lifecycle nudges", "Share-to-earn readiness", "watermarkPolicy"]) {
   if (!dashboardPage.includes(term)) throw new Error(`Dashboard growth page missing term: ${term}`);
 }
 

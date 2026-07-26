@@ -89,6 +89,17 @@ function testIndexNow() {
   return { connected: true, keyName, keyLength: key.length, keyLocation: process.env.INDEXNOW_KEY_LOCATION || `https://www.crelavo.com/${key}.txt`, note: "Dry config check only; submit test is handled from the IndexNow admin page." };
 }
 
+function testCloudflare() {
+  if (!hasProviderEnv("cloudflareApiToken")) throw new Error(`${providerEnvNames("cloudflareApiToken").join(" or ")} missing`);
+  if (!hasProviderEnv("cloudflareZoneId")) throw new Error(`${providerEnvNames("cloudflareZoneId").join(" or ")} missing`);
+  return {
+    connected: true,
+    required: [...providerEnvNames("cloudflareApiToken"), ...providerEnvNames("cloudflareZoneId")],
+    optional: [...providerEnvNames("cloudflareAccountId"), "CLOUDFLARE_WAF_RULESET_ID", "CLOUDFLARE_RATE_LIMIT_RULESET_ID"],
+    note: "Dry config check only. Live validation still requires Cloudflare dashboard/DNS/WAF verification and one allowed + one blocked request test."
+  };
+}
+
 function testTikTokOAuth() {
   if (!hasProviderEnv("tiktokClientKey")) throw new Error(`${providerEnvNames("tiktokClientKey").join(" or ")} missing`);
   if (!hasProviderEnv("tiktokClientSecret")) throw new Error(`${providerEnvNames("tiktokClientSecret").join(" or ")} missing`);
@@ -114,6 +125,7 @@ export async function GET(request: Request) {
     if (provider === "dataforseo") return ok(provider, await testDataForSeo());
     if (provider === "meta") return ok(provider, await getMetaAdAccount());
     if (provider === "whop") return ok(provider, testWhop());
+    if (provider === "cloudflare") return ok(provider, testCloudflare());
     if (provider === "indexnow") return ok(provider, testIndexNow());
     if (provider === "tiktok") return ok(provider, testTikTokOAuth());
     if (provider === "youtube") return ok(provider, testYouTubeOAuth());

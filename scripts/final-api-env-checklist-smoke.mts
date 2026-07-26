@@ -12,9 +12,12 @@ const manualChecklist = readFileSync(join(process.cwd(), "docs", "manual-e2e-che
 for (const term of [
   "API/env key setup is deferred until final testing",
   "Do not paste real secrets into chat or documentation",
-  "LEMON_SQUEEZY_API_KEY",
-  "LEMON_SQUEEZY_STORE_ID",
-  "LEMON_SQUEEZY_WEBHOOK_SECRET",
+  "PAYMENT_PROVIDER=whop",
+  "WHOP_API_KEY",
+  "WHOP_WEBHOOK_SECRET",
+  "CLOUDFLARE_API_TOKEN",
+  "CLOUDFLARE_ZONE_ID",
+  "TURNSTILE_SECRET_KEY",
   "LEMON_VARIANT_PRO_MONTHLY",
   "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME",
   "RESEND_API_KEY",
@@ -27,7 +30,9 @@ for (const term of [
   "npm run build",
   "/admin/packages",
   "Check payment env",
-  "order_created",
+  "Cloudflare edge security",
+  "Whop checkout",
+  "payment.succeeded",
   "production-ready email"
 ]) {
   assert(finalChecklist.includes(term), `final API/env checklist missing term: ${term}`);
@@ -53,7 +58,9 @@ for (const term of [
   "### Final API/env pass",
   "API/env key setup is deferred until final testing",
   "docs/final-api-env-checklist.md",
-  "Check payment env"
+  "Check payment env",
+  "Cloudflare",
+  "Whop"
 ]) {
   assert(manualChecklist.includes(term), `manual E2E checklist missing term: ${term}`);
 }

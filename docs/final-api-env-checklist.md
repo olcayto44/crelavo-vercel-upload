@@ -26,14 +26,15 @@ SUPABASE_PROVIDER_ASSETS_BUCKET=provider-assets
 SUPABASE_USER_MATERIALS_BUCKET=user-materials
 ```
 
-### Lemon Squeezy core
+### Whop core - active payment source
 
 ```text
-PAYMENT_PROVIDER=lemon_squeezy
-LEMON_SQUEEZY_API_KEY=
-LEMON_SQUEEZY_STORE_ID=
-LEMON_SQUEEZY_WEBHOOK_SECRET=
+PAYMENT_PROVIDER=whop
+WHOP_API_KEY=
+WHOP_WEBHOOK_SECRET=
 ```
+
+Whop remains the active checkout, preview, subscription and payment source for launch. Lemon Squeezy stays parked as a future fallback unless intentionally re-enabled later.
 
 ### Lemon Squeezy package variant IDs
 
@@ -77,6 +78,20 @@ SUPPORT_FROM_EMAIL=Crelavo <support@crelavo.com>
 
 Before email E2E, also verify Supabase Auth email confirmation, Supabase SMTP settings, Resend DNS verification, SPF / DKIM / DMARC and sender domain status.
 
+### Cloudflare edge security
+
+```text
+CLOUDFLARE_API_TOKEN=
+CLOUDFLARE_ZONE_ID=
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_WAF_RULESET_ID=
+CLOUDFLARE_RATE_LIMIT_RULESET_ID=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+```
+
+Cloudflare is a live dashboard/DNS validation item, not something code can prove alone. Before paid traffic, confirm DNS/SSL, WAF and rate-limit rules for `/admin`, `/auth`, `/api/payments`, `/api/leads`, `/api/webhooks` and provider callback endpoints. Run one blocked invalid request/webhook and one allowed checkout/provider callback test.
+
 ### OpenAI / provider
 
 ```text
@@ -98,7 +113,7 @@ KLING_API_KEY=
 
 ## Validation commands after external setup
 
-Run after Lemon Squeezy, Resend, Supabase, OpenAI and selected provider env values are present:
+Run after Whop, Resend, Supabase, OpenAI, Cloudflare and selected provider env values are present:
 
 ```bash
 npm run smoke:env-readiness
@@ -115,29 +130,31 @@ docs/manual-e2e-results.md
 
 ## Final live E2E order
 
-1. Confirm `/admin/launch-readiness` shows no missing env blocker except manual domain/DNS checks.
-2. Open `/admin/packages`, enter `ADMIN_EMAIL`, click `Check payment env`, confirm missing Lemon env names are expected or `None`.
+1. Confirm `/admin/launch-readiness` shows no missing env blocker except manual domain/DNS/Cloudflare checks.
+2. Open `/admin/packages`, enter `ADMIN_EMAIL`, click `Check payment env`, confirm Whop is the active source and Lemon is parked unless intentionally enabled.
 3. Register/login with a real test user.
 4. Confirm welcome assistant credits.
 5. Run Assistant Brain planning from `/dashboard/assistant-workspace`.
 6. Start one production with enough credits or test package.
-7. Run one Lemon Squeezy checkout.
-8. Verify `order_created` or `subscription_created` webhook sends payment emails and admin notifications.
+7. Run one Whop checkout.
+8. Verify Whop `payment.succeeded`, `membership.activated`, `payment.failed`, `membership.deactivated`, `refund.created` and `dispute.created` webhook events with signature/idempotency protection.
 9. Verify manual entitlement/credit activation from the admin flow after external receipt review.
 10. Verify customer payment receipt email.
 11. Verify owner/admin payment notification email.
-12. Test subscription payment success, payment failed and cancellation webhook events.
-13. Complete one provider-success production path.
-14. Confirm production-ready email.
-15. Confirm production detail preview/delivery links.
-16. Confirm admin can update preview/delivery manually without blocking customer view.
+12. Test 23rd-hour preview reminder and abandoned checkout lifecycle emails through `/api/payments/lifecycle-email`.
+13. Open `/api/providers/readiness` and `/api/admin/provider-tests?provider=cloudflare`, then confirm Cloudflare readiness does not expose secrets.
+14. Complete one provider-success production path.
+15. Confirm production-ready email.
+16. Confirm production detail preview/delivery links.
+17. Confirm admin can update preview/delivery manually without blocking customer view.
+18. Confirm Cloudflare logs show one blocked invalid request/webhook and one allowed checkout/provider callback.
 
 ## Still blocked until keys are added
 
-- Real Lemon Squeezy checkout.
-- Real Lemon Squeezy webhook.
-- Paid credit purchase and manual entitlement reconciliation.
+- Real Whop checkout.
+- Real Whop webhook signature and subscription lifecycle E2E.
+- Paid credit purchase, preview activation and manual entitlement reconciliation.
 - Subscription renewal/payment failure E2E.
 - Resend production delivery tests.
-- Live domain redirect tests.
+- Live domain redirect, auth callback and Cloudflare DNS/SSL/WAF tests.
 - Search Console/domain indexing verification.

@@ -39,6 +39,15 @@ type AdminPaymentNotificationInput = {
   nextPaymentAttempt?: number | null;
 };
 
+type LifecycleEmailInput = {
+  to: string;
+  customerName?: string | null;
+  productName?: string | null;
+  checkoutUrl?: string | null;
+  cancelUrl?: string | null;
+  previewEndsAt?: string | null;
+};
+
 function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
@@ -170,6 +179,92 @@ export async function sendCreditActivationEmail(input: CreditActivationEmailInpu
     return { skipped: true, reason: "Email provider rejected the credit activation email." };
   }
 
+  return { sent: true };
+}
+
+export async function sendPreviewReminderEmail(input: LifecycleEmailInput) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = input.to.trim().toLowerCase();
+  if (!isEmail(to)) return { skipped: true, reason: "Valid customer email is missing." };
+  if (!apiKey) return { skipped: true, reason: "RESEND_API_KEY is not configured." };
+
+  const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
+  const supportEmail = process.env.SUPPORT_EMAIL || "support@crelavo.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const customerName = input.customerName?.trim() || "Crelavo customer";
+  const productName = input.productName?.trim() || "your Crelavo preview";
+  const cancelUrl = input.cancelUrl?.trim() || "https://whop.com/hub";
+  const previewEndsAt = input.previewEndsAt?.trim() || "around the end of your 24-hour preview window";
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: "Your Crelavo preview is almost over",
+      text: [
+        `Hello ${customerName},`,
+        "",
+        `Your ${productName} 24-hour preview is close to ending (${previewEndsAt}).`,
+        "If you want the selected plan to continue, no action is needed.",
+        "If it is not the right fit, cancel from Whop before the preview ends so the main subscription does not start.",
+        "",
+        `Cancel or manage billing in Whop: ${cancelUrl}`,
+        `Crelavo billing help: ${appUrl}/whop-billing`,
+        "",
+        `Questions? Contact ${supportEmail}.`
+      ].join("\n")
+    })
+  });
+
+  if (!response.ok) return { skipped: true, reason: "Email provider rejected the preview reminder." };
+  return { sent: true };
+}
+
+export async function sendAbandonedCheckoutEmail(input: LifecycleEmailInput) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = input.to.trim().toLowerCase();
+  if (!isEmail(to)) return { skipped: true, reason: "Valid customer email is missing." };
+  if (!apiKey) return { skipped: true, reason: "RESEND_API_KEY is not configured." };
+
+  const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
+  const supportEmail = process.env.SUPPORT_EMAIL || "support@crelavo.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const customerName = input.customerName?.trim() || "Crelavo customer";
+  const productName = input.productName?.trim() || "your selected Crelavo package";
+  const checkoutUrl = input.checkoutUrl?.trim() || `${appUrl}/dashboard/payment`;
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: "Continue your Crelavo preview checkout",
+      text: [
+        `Hello ${customerName},`,
+        "",
+        `You started checkout for ${productName}, but it may not be finished yet.`,
+        "If you still want to test Crelavo, you can return to the secure checkout page below.",
+        "No credits or production spend are started unless payment and the production request are confirmed.",
+        "",
+        `Continue secure checkout: ${checkoutUrl}`,
+        `Billing and cancellation rules: ${appUrl}/whop-billing`,
+        "",
+        "If you already completed checkout, you can ignore this email.",
+        `Questions? Contact ${supportEmail}.`
+      ].join("\n")
+    })
+  });
+
+  if (!response.ok) return { skipped: true, reason: "Email provider rejected the abandoned checkout email." };
   return { sent: true };
 }
 

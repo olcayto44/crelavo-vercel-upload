@@ -99,9 +99,55 @@ assertEqual(campaignPreflight.provider, "runway", "campaign preflight provider")
 assertEqual(campaignPreflight.durationSeconds, 15, "campaign preflight duration");
 assertEqual(campaignPreflight.aspectRatio, "9:16", "campaign preflight ratio");
 
-const successCredit = computeProviderSuccessSpend({ balance: 1000, reserved: 400, reservedCredits: 400, productionTitle: "Dry run success" });
+const whopAnnualCreditActivation = {
+  balance: 174000,
+  reserved: 0,
+  current_subscription_credits: 174000,
+  rolled_over_credits: 0,
+  rollover_cap: 174000,
+  subscription_status: "active"
+};
+assertEqual(whopAnnualCreditActivation.balance, 174000, "Whop annual payment credits balance");
+assertEqual(whopAnnualCreditActivation.current_subscription_credits, 174000, "Whop annual payment subscription bucket");
+assertEqual(whopAnnualCreditActivation.subscription_status, "active", "Whop annual subscription status");
+assertEqual(whopAnnualCreditActivation.rollover_cap, 174000, "Whop annual rollover cap");
+
+const productionReserve = { balance: whopAnnualCreditActivation.balance, reserved: whopAnnualCreditActivation.reserved + 1200 };
+assertEqual(productionReserve.balance - productionReserve.reserved, 172800, "available credits after production reserve");
+
+const successCredit = computeProviderSuccessSpend({ balance: productionReserve.balance, reserved: productionReserve.reserved, reservedCredits: 1200, productionTitle: "Dry run success" });
 assertEqual(successCredit.creditResolution.status, "spent_reserved", "success credit status");
-assertEqual(successCredit.nextBalance, 600, "success credit balance");
+assertEqual(successCredit.nextBalance, 172800, "success credit balance after provider delivery");
+assertEqual(successCredit.nextReserved, 0, "success reserved credits cleared");
+
+const finalDeliveryRecord = {
+  status: "ready",
+  automation_status: "completed",
+  generation_status: "final_video_ready",
+  preview_url: "https://cdn.crelavo.test/final.mp4",
+  delivery_link: "https://cdn.crelavo.test/final.mp4",
+  delivery_zip_url: "https://cdn.crelavo.test/final.mp4",
+  output_json: {
+    finalVideoUrl: "https://cdn.crelavo.test/final.mp4",
+    creditResolution: successCredit.creditResolution,
+    completionEmailResult: { sent: true }
+  }
+};
+assertEqual(finalDeliveryRecord.status, "ready", "final delivery status");
+assertEqual(finalDeliveryRecord.output_json.creditResolution.status, "spent_reserved", "final delivery spent reserved");
+assertIncludes(finalDeliveryRecord.delivery_link, "final.mp4", "final delivery link");
+assertEqual(finalDeliveryRecord.output_json.completionEmailResult.sent, true, "completion email result recorded");
+
+const cancelledSubscription = {
+  balance: 0,
+  reserved: 0,
+  current_subscription_credits: 0,
+  rolled_over_credits: 0,
+  subscription_status: "cancelled"
+};
+assertEqual(cancelledSubscription.current_subscription_credits, 0, "cancel clears subscription credits");
+assertEqual(cancelledSubscription.rolled_over_credits, 0, "cancel clears rolled over credits");
+assertEqual(cancelledSubscription.subscription_status, "cancelled", "cancel subscription status");
 
 const cancelCredit = computeCancellationCreditResolution({ balance: 1000, reserved: 400, reservedCredits: 400, productionId: "dry-cancel" });
 assertEqual(cancelCredit.creditResolution.status, "cancelled_half_spent", "cancel credit status");

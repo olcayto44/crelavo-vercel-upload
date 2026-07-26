@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase";
 
 const REF_CODE_KEY = "clipora_partner_ref";
 const ATTRIBUTION_KEY = "clipora_attribution";
@@ -23,6 +24,15 @@ type PaymentCheckoutButtonProps = {
 export function PaymentCheckoutButton({ productId, billing, children }: PaymentCheckoutButtonProps) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [checkoutEmail, setCheckoutEmail] = useState("");
+  const [consentRecovery, setConsentRecovery] = useState(false);
+
+  useEffect(() => {
+    supabaseBrowser().auth.getUser().then(({ data }) => {
+      const email = data.user?.email?.trim().toLowerCase();
+      if (email) setCheckoutEmail(email);
+    }).catch(() => undefined);
+  }, []);
 
   async function startCheckout() {
     setState("loading");
@@ -36,7 +46,17 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
     const response = await fetch("/api/payments/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, billing, partnerCode, campaign, attribution })
+      body: JSON.stringify({
+        productId,
+        billing,
+        partnerCode,
+        campaign,
+        attribution,
+        checkoutEmail,
+        consentRecovery,
+        pageUrl: window.location.href,
+        referrer: document.referrer
+      })
     });
     const data = await response.json().catch(() => ({}));
 
@@ -51,6 +71,14 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
 
   return (
     <div className="checkout-button-stack">
+      <label className="workspace-action-note" style={{ display: "grid", gap: 8 }}>
+        <span>Checkout email for receipt/recovery</span>
+        <input value={checkoutEmail} onChange={(event) => setCheckoutEmail(event.target.value)} placeholder="you@example.com" type="email" />
+      </label>
+      <label className="workspace-action-note" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+        <input checked={consentRecovery} onChange={(event) => setConsentRecovery(event.target.checked)} type="checkbox" style={{ marginTop: 3 }} />
+        <span>Send me a safe reminder if I leave checkout unfinished or my 24-hour preview is close to ending.</span>
+      </label>
       <button className="btn" type="button" onClick={startCheckout} disabled={state === "loading"}>
         {state === "loading" ? "Starting secure checkout..." : children}
       </button>

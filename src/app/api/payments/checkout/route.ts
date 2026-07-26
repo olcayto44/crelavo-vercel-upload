@@ -16,6 +16,14 @@ function safeTrackingValue(value: unknown, maxLength = 180) {
   return String(value ?? "").trim().replace(/[^a-zA-Z0-9_./:?#=&%-]/g, "").slice(0, maxLength);
 }
 
+function cleanCheckoutEmail(value: unknown) {
+  return String(value ?? "").trim().toLowerCase().slice(0, 180);
+}
+
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function serviceCategoryForProduct(product: unknown) {
   if (!product || typeof product !== "object") return "";
   const record = product as Record<string, unknown>;
@@ -26,6 +34,58 @@ function serviceCategoryForProduct(product: unknown) {
   if (signature.includes("growth_intelligence") || signature.includes("growth intelligence") || signature.includes("intelligence agent")) return "growth_intelligence";
   if (signature.includes("live_sales") || signature.includes("live sales") || signature.includes("live commerce") || signature.includes("brand agent")) return "live_sales_agent";
   return "";
+}
+
+async function recordCheckoutIntent(input: {
+  email: string;
+  consent: boolean;
+  productId: string;
+  productName: string;
+  billing: BillingMode;
+  provider: string;
+  checkoutUrl: string;
+  campaign: string;
+  pageUrl: unknown;
+  referrer: unknown;
+  attribution: Record<string, unknown>;
+}) {
+  if (!input.consent || !isEmail(input.email)) return { skipped: true, reason: "Consent/email missing." };
+
+  const lead = {
+    email: input.email,
+    source: "checkout_intent",
+    offer: `${input.productId}_${input.billing}_checkout_recovery`.slice(0, 160),
+    status: "checkout_started",
+    consent: true,
+    bonus_credits: 0,
+    landing_url: safeTrackingValue(input.attribution.landingUrl, 800),
+    page_url: safeTrackingValue(input.pageUrl, 800),
+    referrer: safeTrackingValue(input.referrer, 800),
+    utm_source: safeTrackingValue(input.attribution.utmSource, 200),
+    utm_medium: safeTrackingValue(input.attribution.utmMedium, 200),
+    utm_campaign: safeTrackingValue(input.attribution.utmCampaign || input.campaign, 240),
+    utm_term: safeTrackingValue(input.attribution.utmTerm, 240),
+    utm_content: safeTrackingValue(input.attribution.utmContent, 240),
+    ref: safeTrackingValue(input.attribution.ref, 240),
+    fbclid: safeTrackingValue(input.attribution.fbclid, 500),
+    gclid: safeTrackingValue(input.attribution.gclid, 500),
+    gbraid: safeTrackingValue(input.attribution.gbraid, 500),
+    wbraid: safeTrackingValue(input.attribution.wbraid, 500),
+    metadata: {
+      productId: input.productId,
+      productName: input.productName,
+      billing: input.billing,
+      provider: input.provider,
+      checkoutUrl: input.checkoutUrl,
+      checkoutStartedAt: new Date().toISOString(),
+      recoveryPolicy: "Send one abandoned checkout email after about 1 hour only if no Whop payment/subscription completion exists; no fake saved bonus or guaranteed discount.",
+      previewReminderPolicy: "For 24-hour previews, send a trust reminder near hour 23 or around 3 hours before the main subscription starts when provider timing allows."
+    }
+  };
+
+  const { error } = await supabaseAdmin().from("lead_captures").upsert(lead, { onConflict: "email,source" });
+  if (error) return { skipped: true, reason: error.message };
+  return { recorded: true };
 }
 
 export async function POST(request: Request) {
@@ -74,11 +134,14 @@ export async function POST(request: Request) {
     const successPath = isGrowthService ? "/growth-intelligence?subscription=success" : isLiveSalesService ? "/live-sales-credits?subscription=success" : isServicePlan ? "/dashboard?subscription=success" : isProductionPackage || isDronePackage ? "/drone-credits?success=true" : checkoutMode === "subscription" ? "/dashboard/credits?subscription=success" : "/dashboard/credits?success=true";
     const cancelPath = isGrowthService ? "/growth-intelligence?subscription=cancelled" : isLiveSalesService ? "/live-sales-credits?subscription=cancelled" : isServicePlan ? "/dashboard?subscription=cancelled" : isProductionPackage || isDronePackage ? "/drone-credits?cancelled=true" : checkoutMode === "subscription" ? "/dashboard/credits?subscription=cancelled" : "/dashboard/credits?cancelled=true";
     const productType = isGrowthService ? "growth_intelligence_service_plan" : isLiveSalesService ? "live_sales_service_plan" : isServicePlan ? "service_subscription" : isProductionPackage || isDronePackage ? "drone_production_package" : product.planType === "topup" ? "credit_topup" : "credit_subscription";
+    const checkoutEmail = cleanCheckoutEmail(body.checkoutEmail ?? body.email);
+    const consentRecovery = body.consentRecovery === true;
     const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
     const previewPolicy = whopPreviewSummary(product, effectiveBilling);
     const previewNote = whopPreviewNotice(product, effectiveBilling);
 
     if (configuredDirectUrl) {
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "configured_direct_checkout", checkoutUrl: configuredDirectUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
         url: configuredDirectUrl,
         mode: checkoutMode,
@@ -87,6 +150,7 @@ export async function POST(request: Request) {
         directCheckoutUrl: true,
         manualActivation: true,
         previewPolicy,
+        checkoutIntentResult,
         note: previewNote || "Configured direct checkout URL is active. Admin should reconcile the payment provider order/subscription before activating credits or service access."
       });
     }
@@ -100,14 +164,17 @@ export async function POST(request: Request) {
       }
       const origin = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin || "https://www.crelavo.com";
       const returnUrl = new URL(whopReturnPath, origin).toString();
+      const checkoutUrl = whopCheckoutPath(whopPlanId, returnUrl, { partnerCode, campaign, adAttribution });
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "whop", checkoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
-        url: whopCheckoutPath(whopPlanId, returnUrl, { partnerCode, campaign, adAttribution }),
+        url: checkoutUrl,
         mode: checkoutMode,
         product: product.name,
         provider: "whop",
         whopPlanId,
         manualActivation: true,
         previewPolicy,
+        checkoutIntentResult,
         note: previewNote || "Whop checkout is active. Crelavo should reconcile the Whop payment/subscription before activating credits or service access."
       });
     }
@@ -132,12 +199,15 @@ export async function POST(request: Request) {
       return Response.json({ error: checkout.error }, { status: checkout.status });
     }
 
+    const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "lemon_squeezy", checkoutUrl: checkout.url, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+
     return Response.json({
       url: checkout.url,
       mode: checkoutMode,
       product: product.name,
       provider: "lemon_squeezy",
       manualActivation: checkout.manualActivation,
+      checkoutIntentResult,
       note: checkout.note
     });
   } catch (error) {

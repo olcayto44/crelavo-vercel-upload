@@ -93,6 +93,8 @@ export async function GET() {
   const dataForSeoReady = hasProviderEnv("dataForSeoLogin") && hasProviderEnv("dataForSeoPassword");
   const apifyReady = hasProviderEnv("apify");
   const renderReady = hasProviderEnv("shotstack");
+  const cloudflareReady = hasProviderEnv("cloudflareApiToken") && hasProviderEnv("cloudflareZoneId");
+  const turnstileReady = hasProviderEnv("turnstileSecret");
 
   return Response.json({
     ...providerPlan,
@@ -197,6 +199,24 @@ export async function GET() {
       provider: "shotstack",
       ready: renderReady,
       required: providerEnvNames("shotstack")
+    },
+    cloudflare: {
+      provider: "cloudflare",
+      ready: cloudflareReady,
+      required: [...providerEnvNames("cloudflareApiToken"), ...providerEnvNames("cloudflareZoneId")],
+      optional: [...providerEnvNames("cloudflareAccountId"), "CLOUDFLARE_WAF_RULESET_ID", "CLOUDFLARE_RATE_LIMIT_RULESET_ID"],
+      manualValidation: [
+        "Confirm crelavo.com DNS and SSL are active in Cloudflare.",
+        "Enable WAF/rate-limit rules for /admin, /auth, /api/payments, /api/leads, /api/webhooks and provider callback endpoints.",
+        "Run one blocked invalid webhook/request test and one allowed checkout/provider callback test."
+      ]
+    },
+    turnstile: {
+      provider: "cloudflare-turnstile",
+      ready: turnstileReady,
+      required: providerEnvNames("turnstileSecret"),
+      optional: ["NEXT_PUBLIC_TURNSTILE_SITE_KEY"],
+      mode: "recommended_for_public_forms_before_paid_traffic"
     },
     note: "Secrets are never returned; only readiness booleans, model choices and env variable names are exposed."
   });

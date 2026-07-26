@@ -5,8 +5,8 @@ import { createAutomationJobId, ecommerceAdPipeline, runningAutomationSteps, run
 import { buildProviderPreflight } from "@/lib/automation-preflight";
 import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
-import { createVisualVideo } from "@/lib/providers/visuals";
-import { ProviderConfigError, type ProviderJob } from "@/lib/providers/types";
+import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
+import { ProviderConfigError } from "@/lib/providers/types";
 import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { buildOutputRegistry } from "@/lib/output-registry";
 import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-jobs";
@@ -396,46 +396,54 @@ export async function POST(request: Request) {
     const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
     const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
     const providerTestMode = Boolean(providerPreflight.testMode);
-    let providerNote = "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
-    let visualJob: ProviderJob | null = null;
-    try {
-      if (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization"].includes(String(currentProduction.production_type))) {
-        visualJob = await createVisualVideo({
-          scenes: Array.isArray(demoOutput.scenePlan) ? demoOutput.scenePlan.map((part: Record<string, unknown>) => String(part.description ?? part.title ?? "Scene")) : [String(currentProduction.prompt ?? currentProduction.title ?? "Crelavo video")],
-          productImageUrls: [],
-          durationSeconds: requestedDuration,
-          style: String(requestMetadata.style ?? inputJson.style ?? currentProduction.title ?? "Crelavo premium"),
-          provider: String(providerPreflight.provider ?? ""),
-          aspectRatio: String(providerPreflight.aspectRatio ?? "9:16")
-        });
-        providerNote = providerTestMode
-          ? "Low-cost provider test job created: 5s single-output video. Poll /api/automation/status to update final output."
-          : "Provider visual/video job created. Poll /api/automation/status to update final output when provider succeeds.";
-      }
-    } catch (providerError) {
-      providerNote = `Provider not started, demo output is active: ${errorMessage(providerError, "provider unavailable")}`;
-    }
-
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
-    const aiVideoProviderChain = [
-      { step: "visual_generation", provider: providerPreflight.provider, status: visualJob ? "job_created" : "demo_placeholder", required: true },
-      { step: "voice_over", provider: "elevenlabs", status: selectedOptions.voiceOver ? "route_required_after_visual" : "not_selected", required: Boolean(selectedOptions.voiceOver) },
-      { step: "background_music", provider: "stable_audio_or_mubert", status: selectedOptions.music ? "route_required_after_visual" : "not_selected", required: Boolean(selectedOptions.music) },
-      { step: "subtitles", provider: "subtitle_renderer", status: selectedOptions.subtitles ? "route_required_after_voice" : "not_selected", required: Boolean(selectedOptions.subtitles) },
-      { step: "final_render", provider: "shotstack", status: selectedOptions.finalRender ? "route_required_for_customer_ready_output" : "optional", required: Boolean(selectedOptions.finalRender) }
-    ];
-    const outputJson: Record<string, unknown> = visualJob
-      ? { ...demoOutput, visualJob, providerStatus: "visual_job_created", providerTestMode, providerPreflight, aiVideoProviderChain, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks }
-      : { ...demoOutput, providerTestMode, providerPreflight, aiVideoProviderChain, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks };
-    const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob });
+    const isGenericVideoType = ["video", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", "avatar", "lip_sync", "talking_video"].includes(String(currentProduction.production_type));
+    const genericRun = isGenericVideoType
+      ? await runGenericVideoPipeline({
+        productionId,
+        title: currentProduction.title,
+        prompt: currentProduction.prompt,
+        requestMetadata,
+        inputJson,
+        providerPreflight: providerPreflight as Record<string, unknown>,
+        selectedOptions
+      })
+      : null;
+    const visualJob = genericRun?.visualJob ?? null;
+    const renderJob = genericRun?.renderJob ?? null;
+    const aiVideoProviderChain = genericRun
+      ? genericVideoProviderChain({ selectedOptions, provider: genericRun.plan.provider, visualJob, voiceAudioUrl: genericRun.voiceAudioUrl, subtitleUrl: genericRun.subtitleUrl, renderJob })
+      : genericVideoProviderChain({ selectedOptions, provider: String(providerPreflight.provider ?? "") });
+    const providerNote = genericRun
+      ? genericRun.chainStatus === "waiting_provider_config"
+        ? `Generic video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
+        : genericRun.chainStatus === "provider_chain_started"
+          ? "Generic video provider chain started: script plan, visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
+          : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
+      : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
+    const outputJson: Record<string, unknown> = {
+      ...demoOutput,
+      providerTestMode,
+      providerPreflight,
+      aiVideoProviderChain,
+      genericVideoPlan: genericRun?.plan ?? null,
+      voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,
+      subtitleUrl: genericRun?.subtitleUrl ?? null,
+      renderJob,
+      visualJob,
+      providerStatus: genericRun?.chainStatus ?? "demo_ready",
+      requestedDurationSeconds: requestedDuration,
+      automaticDeliveryLinks: deliveryLinks
+    };
+    const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob, renderJob });
     outputJson.providerLifecycle = { visual: providerLifecycle.visual, render: providerLifecycle.render };
     outputJson.outputRegistry = providerLifecycle.outputRegistry;
         const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
           .update({
             status: "in_production",
-            generation_status: visualJob ? "provider_visual_job_created" : "preview_ready",
-            output_json: { ...outputJson, automationStatus: visualJob ? "running" : "demo_ready" },
+            generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : genericRun ? "waiting_provider_config" : "preview_ready",
+            output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : genericRun ? "waiting_provider_config" : "demo_ready" },
             admin_notes: providerNote,
             updated_at: new Date().toISOString()
           })

@@ -36,7 +36,7 @@ const adminShell = read("src/components/AdminShell.tsx");
 const sampleCommentsApi = read("src/app/api/samples/[id]/comments/route.ts");
 const requestsApi = read("src/app/api/requests/route.ts");
 const productionsApi = read("src/app/api/productions/route.ts");
-const adminApiFiles = listFiles("src/app/api/admin").filter((file) => file.endsWith("route.ts"));
+const adminApiFiles = listFiles("src/app/api/admin").filter((file) => file.endsWith("route.ts") && !file.replace(/\\/g, "/").includes("src/app/api/admin/login/route.ts"));
 
 for (const term of ["/admin", "/api", "/dashboard", "/auth"]) {
   assert(robots.includes(term), `robots.ts must disallow private route: ${term}`);
@@ -55,6 +55,10 @@ for (const [name, source] of [["admin", adminLayout], ["dashboard", dashboardLay
 for (const source of [stripeReadiness, packagesApi]) {
   assert(source.includes("adminRequiredResponse"), "admin APIs must return the shared admin rejection response");
   assert(source.includes("isAdminRequest"), "admin APIs must use the token-aware shared admin guard");
+}
+
+for (const term of ["CLOUDFLARE_API_TOKEN=", "CLOUDFLARE_ZONE_ID=", "CLOUDFLARE_WAF_RULESET_ID=", "TURNSTILE_SECRET_KEY="]) {
+  assert(envExample.includes(term), `.env.example missing Cloudflare placeholder: ${term}`);
 }
 
 assert(adConfig.includes("rejectSuspiciousText"), "ad-config must run suspicious text checks before public ad rendering");

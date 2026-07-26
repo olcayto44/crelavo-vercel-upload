@@ -37,12 +37,12 @@ export const lifecycleNudges = [
   },
   {
     stage: "Low credits or checkout intent",
-    status: "blocked_by_real_payment" as RetentionStatus,
+    status: "connected_pending_live_e2e" as RetentionStatus,
     trigger: "User visits credits/payment or starts checkout but does not complete Whop payment.",
     message: "Top up safely with Whop when ready; no production spend starts until credits/payment are confirmed.",
     primaryCta: "View credits",
     href: "/dashboard/credits",
-    adminCheck: "Whop payment, credit reserve and idempotency records can be prepared; final live E2E must pass before fully automatic revenue/reward release."
+    adminCheck: "Checkout intent logging is connected through lead_captures when the user opts in. Send one consent-safe abandoned checkout reminder after about 1 hour, and send a 23rd-hour preview reminder before the paid plan continues; final live Whop E2E remains required before full automation."
   },
   {
     stage: "Inactive user",
@@ -61,7 +61,7 @@ export const activationFunnelSteps = [
   { step: "First production intent", signal: "assistant_workspace_started", goal: "Start a brief, category flow or free tool handoff." },
   { step: "First production request", signal: "production_request_created", goal: "Create request without triggering unnecessary provider spend." },
   { step: "Delivery viewed", signal: "delivery_viewed", goal: "Prompt second action, share, referral or upgrade." },
-  { step: "Whop checkout", signal: "checkout_started", goal: "Prepare payment/credit/idempotency records, then keep release behind final review." }
+  { step: "Whop checkout", signal: "checkout_started",     goal: "Prepare payment/credit/idempotency records, log opt-in checkout intent, and trigger consent-safe recovery/preview reminder emails while release stays behind final review." }
 ];
 
 export const growthRewardReadiness = [

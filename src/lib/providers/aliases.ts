@@ -29,5 +29,9 @@ export const providerEnvAliases = {
   shopify: ["SHOPIFY_API_KEY", "SHOPIFY_APP_API_KEY", "SHOPIFY_CLIENT_ID"],
   shopifySecret: ["SHOPIFY_API_SECRET", "SHOPIFY_APP_SECRET", "SHOPIFY_CLIENT_SECRET"],
   stableAudio: ["STABLE_AUDIO_API_KEY"],
-  mubert: ["MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]
+  mubert: ["MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"],
+  cloudflareApiToken: ["CLOUDFLARE_API_TOKEN"],
+  cloudflareZoneId: ["CLOUDFLARE_ZONE_ID"],
+  cloudflareAccountId: ["CLOUDFLARE_ACCOUNT_ID"],
+  turnstileSecret: ["TURNSTILE_SECRET_KEY", "CLOUDFLARE_TURNSTILE_SECRET_KEY"]
 } as const;

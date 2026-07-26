@@ -76,6 +76,7 @@ const automationStart = readFileSync("src/app/api/automation/start/route.ts", "u
 const automationStatus = readFileSync("src/app/api/automation/status/route.ts", "utf8");
 const ecommercePipeline = readFileSync("src/lib/providers/ecommerce-ad.ts", "utf8");
 const providerStorage = readFileSync("src/lib/providers/storage.ts", "utf8");
+const genericVideoProvider = readFileSync("src/lib/providers/generic-video.ts", "utf8");
 const providerAliases = readFileSync("src/lib/providers/aliases.ts", "utf8");
 const providerEnv = readFileSync("src/lib/providers/env.ts", "utf8");
 const adminProviderTests = readFileSync("src/app/api/admin/provider-tests/route.ts", "utf8");
@@ -95,6 +96,13 @@ const apifyProvider = readFileSync("src/lib/providers/apify.ts", "utf8");
 const googleMapsProvider = readFileSync("src/lib/providers/google-maps.ts", "utf8");
 const growthIntelligencePage = readFileSync("src/app/dashboard/growth-intelligence/page.tsx", "utf8");
 const growthIntelligencePanel = readFileSync("src/components/GrowthIntelligenceControlPanel.tsx", "utf8");
+const packageData = readFileSync("src/lib/data.ts", "utf8");
+const adConfig = readFileSync("src/lib/ad-config.ts", "utf8");
+const splashAdClient = readFileSync("src/components/SplashAdClient.tsx", "utf8");
+const paymentEmail = readFileSync("src/lib/payment-email.ts", "utf8");
+const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
+const lifecycleEmailRoute = readFileSync("src/app/api/payments/lifecycle-email/route.ts", "utf8");
+const checkoutButton = readFileSync("src/components/PaymentCheckoutButton.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -107,19 +115,22 @@ for (const term of ["renderJob: null", "Visual/video provider job created", "wai
 for (const term of ["maybeCreateRenderAfterVisualReady", "createShotstackRender", "render_start_failed", "mirrorProviderAsset", "finalAssetMirror", "providerFinalUrl"]) {
   if (!automationStatus.includes(term)) throw new Error(`automation status bridge/storage missing term: ${term}`);
 }
+for (const term of ["buildGenericVideoPlan", "runGenericVideoPipeline", "genericVideoProviderChain", "createVoiceover", "createSubtitleFile", "createShotstackRender", "genericVideoPlan"]) {
+  if (!genericVideoProvider.includes(term) && !automationStart.includes(term) && !automationStatus.includes(term)) throw new Error(`generic video provider chain missing term: ${term}`);
+}
 for (const term of ["mirrorProviderAsset", "fetch(input.sourceUrl", "uploadProviderAsset(`${input.productionId}/${input.filenameBase}.${extension}`"]) {
   if (!providerStorage.includes(term)) throw new Error(`provider storage mirror missing term: ${term}`);
 }
-for (const term of ["DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "APIFY_API", "DATAFORSEO_API_KEY", "META_ACCESS_TOKEN", "WHOP_WEBHOOK_KEY", "SHOPIFY_CLIENT_ID", "KLING_AI_API_KEY"]) {
+for (const term of ["DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "APIFY_API", "DATAFORSEO_API_KEY", "META_ACCESS_TOKEN", "WHOP_WEBHOOK_KEY", "SHOPIFY_CLIENT_ID", "KLING_AI_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID", "TURNSTILE_SECRET_KEY"]) {
   if (!providerAliases.includes(term)) throw new Error(`provider env alias missing term: ${term}`);
 }
 for (const term of ["requireProviderEnv", "optionalProviderEnv", "hasProviderEnv", "providerEnvNames"]) {
   if (!providerEnv.includes(term)) throw new Error(`provider env helper missing term: ${term}`);
 }
-for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")"]) {
+for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);
 }
-for (const term of ["hasProviderEnv(\"runway\")", "hasProviderEnv(\"kling\")", "hasProviderEnv(\"fal\")", "hasProviderEnv(\"metaAccessToken\")", "providerEnvNames(\"shotstack\")"]) {
+for (const term of ["hasProviderEnv(\"runway\")", "hasProviderEnv(\"kling\")", "hasProviderEnv(\"fal\")", "hasProviderEnv(\"metaAccessToken\")", "providerEnvNames(\"shotstack\")", "cloudflareReady", "turnstileReady", "providerEnvNames(\"cloudflareApiToken\")"]) {
   if (!providerReadinessRoute.includes(term)) throw new Error(`provider readiness alias wiring missing term: ${term}`);
 }
 for (const term of ["automatic_project_source_package", "isAutomaticProjectDelivery", "buildProjectDeliveryOutput", "project_delivery_ready", "Source package delivery generated"]) {
@@ -166,6 +177,22 @@ for (const term of ["optionalEnv(\"GOOGLE_MAPS_BASE_URL\")", "requireProviderEnv
 }
 for (const term of ["Provider-ready service workflow", "DataForSEO, Apify, Google Maps", "provider-ready dashboard"]) {
   if (!growthIntelligencePage.includes(term) && !growthIntelligencePanel.includes(term)) throw new Error(`Growth Intelligence provider-ready copy missing term: ${term}`);
+}
+for (const term of ["174,000 total annual credits", "300+ AI ad drafts", "Normally $1,560/yr, now $1,300/yr", "START 24-HOUR TEAM PREVIEW FOR $20", "$20 secure Whop preview"]) {
+  if (!packageData.includes(term) && !adConfig.includes(term) && !splashAdClient.includes(term)) throw new Error(`Team Annual conversion copy missing term: ${term}`);
+}
+if (!splashAdClient.includes("window.setTimeout(showSplash, 15000)")) throw new Error("Team Annual splash delay should be 15 seconds");
+for (const term of ["sendPreviewReminderEmail", "sendAbandonedCheckoutEmail", "Your Crelavo preview is almost over", "Continue your Crelavo preview checkout"]) {
+  if (!paymentEmail.includes(term)) throw new Error(`Payment lifecycle email missing term: ${term}`);
+}
+for (const term of ["recordCheckoutIntent", "source: \"checkout_intent\"", "consentRecovery", "checkoutIntentResult", "recoveryPolicy", "previewReminderPolicy"]) {
+  if (!checkoutRoute.includes(term) && !checkoutButton.includes(term)) throw new Error(`Checkout intent logging missing term: ${term}`);
+}
+for (const term of ["preview_reminder", "abandoned_checkout", "sendPreviewReminderEmail", "sendAbandonedCheckoutEmail", "isAdminRequest"]) {
+  if (!lifecycleEmailRoute.includes(term)) throw new Error(`Lifecycle email admin route missing term: ${term}`);
+}
+for (const term of ["connected_pending_live_e2e", "checkout_intent", "23rd-hour preview reminder", "after about 1 hour"]) {
+  if (!retentionGrowth.includes(term) && !adminGrowth.includes(term)) throw new Error(`Lifecycle recovery admin/readiness copy missing term: ${term}`);
 }
 for (const staleTerm of ["Pre-API service workflow", "pre-API dashboard", "Final n8n/API automation can later"]) {
   if (growthIntelligencePage.includes(staleTerm) || growthIntelligencePanel.includes(staleTerm)) throw new Error(`stale Growth Intelligence copy still present: ${staleTerm}`);

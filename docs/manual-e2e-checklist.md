@@ -16,9 +16,9 @@ For every `[FAIL]`, record the route, user account, production id, browser, envi
 
 ## Current testing rule
 
-API/env key setup is deferred until final testing. Complete the pre-API launch cleanup first; add Lemon Squeezy, Resend and first-phase provider keys only at the final E2E stage.
+API/env key setup is deferred until final testing. Complete the pre-API launch cleanup first; add Whop, Resend, Cloudflare and first-phase provider keys only at the final E2E stage. Lemon Squeezy remains parked as a future fallback unless intentionally re-enabled.
 
-First-phase API priority list for automated production: OpenAI, Runway/video provider, image generation, Voice/TTS, video editing/render, Lemon Squeezy, Supabase, Resend and Storage/CDN.
+First-phase API priority list for automated production: OpenAI, selected video provider, image generation, Voice/TTS, video editing/render, Whop, Supabase, Resend, Cloudflare and Storage/CDN.
 
 ## Preflight
 
@@ -35,15 +35,16 @@ First-phase API priority list for automated production: OpenAI, Runway/video pro
 ### Final API/env pass
 
 - Run `npm run smoke:env-readiness` before payment/provider E2E.
-- Confirm `.env.local` has Supabase, OpenAI, Resend support email, Lemon Squeezy, admin, and intended provider keys.
+- Confirm `.env.local` has Supabase, OpenAI, Resend support email, Whop, Cloudflare, admin, and intended provider keys.
 - Confirm `npm run smoke:env-readiness` reports no duplicate keys or malformed assignment values before adding real launch secrets.
-- Confirm first-phase provider keys/readiness for OpenAI, Runway/video, image generation, Voice/TTS and video editing/render before real provider spend.
-- Final secret setup before launch must include email and payment keys together.
+- Confirm first-phase provider keys/readiness for OpenAI, selected video provider, image generation, Voice/TTS and video editing/render before real provider spend.
+- Final secret setup before launch must include email, payment and Cloudflare security keys together.
 - Do not start auth/email E2E until `RESEND_API_KEY`, `SUPPORT_EMAIL`, and `SUPPORT_FROM_EMAIL` are present.
 - Confirm Supabase Auth email confirmation is enabled and Supabase SMTP settings are configured for production delivery.
-- Do not start real payment E2E until `LEMON_SQUEEZY_API_KEY`, `LEMON_SQUEEZY_STORE_ID`, and `LEMON_SQUEEZY_WEBHOOK_SECRET` are present.
-- Confirm package variant IDs or direct checkout URLs through `/admin/packages` -> `Check payment env`.
-- Confirm `NEXT_PUBLIC_APP_URL=https://crelavo.com` before real Lemon Squeezy checkout, webhook, provider callbacks, or ad OAuth testing.
+- Do not start real payment E2E until `PAYMENT_PROVIDER=whop`, `WHOP_API_KEY`, and `WHOP_WEBHOOK_SECRET` are present.
+- Confirm Whop plan IDs or direct checkout URLs through `/admin/packages` -> `Check payment env`.
+- Confirm `NEXT_PUBLIC_APP_URL=https://crelavo.com` before real Whop checkout, webhook, provider callbacks, Cloudflare validation or ad OAuth testing.
+- Confirm Cloudflare DNS/SSL/WAF and rate-limit rules are active for admin/auth/payment/lead/webhook routes before paid traffic.
 - Confirm Runway or the selected video provider key is present before provider E2E; FAL may use `FAL_KEY` or `FAL_API_KEY` if the selected provider is changed later.
 
 ## Non-payment Manual E2E
@@ -164,13 +165,15 @@ Current pending external inputs before live/payment E2E:
 
 ## Payment and Email Delivery
 
-- Complete one Lemon Squeezy test checkout only after Lemon Squeezy and Resend launch/test keys are present.
+- Complete one Whop test checkout only after Whop, Resend and Cloudflare launch/test keys are present.
 - Confirm `PAYMENT_NOTIFICATION_EMAIL` is set for owner/admin payment alerts, or confirm `ADMIN_EMAIL` is the intended fallback recipient.
-- Confirm the customer receives the Crelavo payment receipt email after `order_created` or `subscription_payment_success`.
-- Confirm the owner/admin receives the Crelavo payment received notification after `order_created` or `subscription_payment_success`.
-- Confirm the owner/admin receives subscription payment success, payment failed and cancellation notifications from Lemon Squeezy webhook test events.
-- Confirm the receipt email includes the amount, checkout session reference, and Lemon Squeezy receipt link when Lemon provides one.
-- Open `/admin/providers` and confirm OpenAI, selected Runway/video provider, image generation, Voice/TTS and video editing/render readiness states are visible before live jobs run.
+- Confirm the customer receives the Crelavo payment receipt email after Whop `payment.succeeded`.
+- Confirm the owner/admin receives the Crelavo payment received notification after Whop `payment.succeeded`.
+- Confirm the owner/admin receives subscription activation, payment failed, cancellation/deactivation, refund and dispute notifications from Whop webhook test events.
+- Confirm the receipt email includes the amount, checkout session/payment reference and support fallback.
+- Test `/api/payments/lifecycle-email` for `preview_reminder` and `abandoned_checkout` using admin auth and an internal inbox.
+- Open `/api/providers/readiness` and confirm Cloudflare/Turnstile readiness states are visible before paid traffic.
+- Open `/admin/providers` and confirm OpenAI, selected video provider, image generation, Voice/TTS and video editing/render readiness states are visible before live jobs run.
 - Complete one provider-success production path and confirm the customer receives the production-ready email.
 - Mark one production `ready` from admin and confirm the completion email is sent without blocking the admin update.
 
@@ -201,6 +204,6 @@ Current pending external inputs before live/payment E2E:
 ### Final API/env acceptance
 
 - `npm run smoke:env-readiness` passes.
-- First-phase API readiness is visible for OpenAI, Runway/video, image generation, Voice/TTS and video editing/render.
+- First-phase API readiness is visible for OpenAI, selected video provider, image generation, Voice/TTS, video editing/render and Cloudflare.
 - User can create, track, cancel, and admin-review at least one project production and one video/campaign production.
-- Lemon Squeezy checkout, webhook, manual credit reconciliation, subscription event, payment email, production-ready email and provider-success path are verified.
+- Whop checkout, webhook signature/idempotency, manual credit reconciliation, subscription event, payment email, preview reminder, abandoned checkout email, Cloudflare DNS/WAF validation, production-ready email and provider-success path are verified.

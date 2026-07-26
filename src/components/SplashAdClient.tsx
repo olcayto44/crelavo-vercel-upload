@@ -31,7 +31,7 @@ function parseSplashPromo(code: string) {
     return {
       eyebrow: String(value.eyebrow || "LIMITED TIME ONLY: VIP AGENCY BUNDLE"),
       title: String(value.title || "Scale your e-commerce video production to the moon"),
-      body: String(value.body || "Stop wasting thousands on video editors or slow rendering tools. Generate around 300 AI product video drafts and variations for Shopify & Amazon, run 12 simultaneous tasks, and manage your whole team in one workspace."),
+      body: String(value.body || "Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added: 174,000 total annual credits for 300+ AI ad drafts, premium Shopify/Amazon video variations, bulk social campaigns or client-ready deliveries. Start with a secure $20 Whop 24-hour preview and cancel in Whop before the main plan starts if it is not the right fit."),
       cta: String(value.cta || "START 24-HOUR TEAM PREVIEW FOR $20"),
       href: String(value.href || "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,
@@ -39,9 +39,9 @@ function parseSplashPromo(code: string) {
       storageKey: String(value.storageKey || "crelavo-team-annual-174000-countdown"),
       countdownLabel: String(value.countdownLabel || "VIP deal ends in"),
       priceBadge: String(value.priceBadge || "$1,300/yr"),
-      kicker: String(value.kicker || "Pay less, get 30,000 BONUS credits"),
-      bonusPrimary: String(value.bonusPrimary || "174,000 credits today"),
-      bonusSecondary: String(value.bonusSecondary || "Regular: 144,000")
+      kicker: String(value.kicker || "Normally $1,560/yr → now $1,300/yr + 30,000 BONUS credits"),
+      bonusPrimary: String(value.bonusPrimary || "174,000 annual credits"),
+      bonusSecondary: String(value.bonusSecondary || "$20 secure Whop preview")
     };
   } catch {
     return null;
@@ -79,7 +79,7 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
       if (window.scrollY >= 180) showSplash();
     };
 
-    const timer = window.setTimeout(showSplash, 12000);
+    const timer = window.setTimeout(showSplash, 15000);
     window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {

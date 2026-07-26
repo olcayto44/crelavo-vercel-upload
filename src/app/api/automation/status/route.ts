@@ -84,7 +84,9 @@ async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>
   const currentRenderJob = existingRenderJob(output);
   if (currentRenderJob) return { renderJob: currentRenderJob, renderStarted: false };
   if (!visualStatus || visualStatus.status !== "succeeded" || !visualStatus.outputUrl) return { renderJob: null, renderStarted: false };
-  if (String(output.pipelineType ?? "") !== "ecommerce_product_ad_video") return { renderJob: null, renderStarted: false };
+  const pipelineType = String(output.pipelineType ?? "");
+  const hasGenericVideoPlan = Boolean(output.genericVideoPlan && typeof output.genericVideoPlan === "object");
+  if (pipelineType !== "ecommerce_product_ad_video" && !hasGenericVideoPlan) return { renderJob: null, renderStarted: false };
 
   const voiceAudioUrl = String(output.voiceAudioUrl ?? "").trim();
   const subtitleUrl = String(output.subtitleUrl ?? "").trim();
