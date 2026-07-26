@@ -1,8 +1,8 @@
 export const socialExportPack = [
-  { platform: "TikTok", format: "9:16 short video", assets: "Opening hook text, subtitles, hashtags, cover text, call-to-action, manual export note", guardrail: "Manual publish only until account APIs are connected." },
-  { platform: "YouTube Shorts", format: "9:16 short video", assets: "Title, description, hashtags, pinned comment, chapters note, manual upload note", guardrail: "No auto-upload before YouTube OAuth and approval rules." },
-  { platform: "Instagram Reels", format: "9:16 / 4:5", assets: "Caption, hashtags, story teaser, bio CTA, cover text, manual Reels export note", guardrail: "No direct publishing until Meta connection is verified." },
-  { platform: "Facebook / Meta Ads", format: "9:16 / 4:5 / 1:1 ad creative", assets: "Primary text, headline, description, CTA button idea, campaign objective note, manual ad upload checklist", guardrail: "Paid ad launch waits for Meta connection, payment rules and final API/env validation." },
+  { platform: "TikTok", format: "9:16 short video", assets: "Opening hook text, subtitles, hashtags, cover text, call-to-action, launch job note", guardrail: "Connected APIs may prepare the launch job; manual approval is required before publishing or spend." },
+  { platform: "YouTube Shorts", format: "9:16 short video", assets: "Title, description, hashtags, pinned comment, chapters note, upload readiness note", guardrail: "YouTube OAuth can prepare upload workflow; manual approval remains required." },
+  { platform: "Instagram Reels", format: "9:16 / 4:5", assets: "Caption, hashtags, story teaser, bio CTA, cover text, Reels export note", guardrail: "Meta connection can prepare export/launch payload; direct publishing waits for approval." },
+  { platform: "Facebook / Meta Ads", format: "9:16 / 4:5 / 1:1 ad creative", assets: "Primary text, headline, description, CTA button idea, campaign objective note, ad upload checklist", guardrail: "Paid ad launch waits for Whop payment, credit checks and manual approval." },
   { platform: "LinkedIn", format: "Text + image/video teaser", assets: "Founder/company post, B2B hook, link CTA, UTM label, comment prompt", guardrail: "Manual post review is required before any scheduled publishing." },
   { platform: "X / Twitter", format: "Short post + media teaser", assets: "Short post, thread outline, hashtags, link CTA, UTM label, reply prompt", guardrail: "Manual post review is required before any scheduled publishing." }
 ];
@@ -22,10 +22,10 @@ export const shareToEarnLoop = [
 ];
 
 export const customAgentSystem = [
-  { agent: "Brand content agent", purpose: "Reusable brand voice, social ideas, ad hooks and campaign briefs.", inputs: "Brand notes, product/service, audience, tone, forbidden claims.", status: "Ready as planning workflow; autonomous posting later." },
-  { agent: "Ecommerce product agent", purpose: "Product-link campaign angles, listing copy, short-form scripts and delivery notes.", inputs: "Product URL, offer, marketplace, buyer persona, proof points.", status: "Ready for dashboard planning; scraping/provider automation later." },
-  { agent: "Live sales agent", purpose: "Avatar/live commerce scripts, FAQ, objection handling and CTA playbook.", inputs: "Catalog, platform, language, avatar, offer rules, fallback instructions.", status: "Service plan ready; provider/live stack waits for API keys." },
-  { agent: "Growth intelligence agent", purpose: "Public competitor and market signal summary with response campaign ideas.", inputs: "Own site, competitor URLs, public ad references, target market.", status: "Request/report flow ready; deeper recurring automation later." }
+  { agent: "Brand content agent", purpose: "Reusable brand voice, social ideas, ad hooks and campaign briefs.", inputs: "Brand notes, product/service, audience, tone, forbidden claims.", status: "Ready as planning workflow; connected launch prep requires approval before posting." },
+  { agent: "Ecommerce product agent", purpose: "Product-link campaign angles, listing copy, short-form scripts and delivery notes.", inputs: "Product URL, offer, marketplace, buyer persona, proof points.", status: "Ready for dashboard planning; product/provider records can be prepared when keys are available." },
+  { agent: "Live sales agent", purpose: "Avatar/live commerce scripts, FAQ, objection handling and CTA playbook.", inputs: "Catalog, platform, language, avatar, offer rules, fallback instructions.", status: "Service plan ready; provider/live stack remains key-gated and approval-gated." },
+  { agent: "Growth intelligence agent", purpose: "Public competitor and market signal summary with response campaign ideas.", inputs: "Own site, competitor URLs, public ad references, target market.", status: "Request/report flow ready; recurring automation remains review-gated." }
 ];
 
 export const premiumExpansionSystem = [
@@ -36,8 +36,8 @@ export const premiumExpansionSystem = [
 ];
 
 export const launchBlockedNotes = [
-  "Live social posting waits for social OAuth/API keys and manual approval rules.",
+  "Connected social APIs may prepare jobs, but live posting still waits for account approval rules.",
   "Paid ad spend waits for final Whop payment, credit and idempotency validation.",
-  "Provider-heavy custom agents wait for OpenAI/Runway/ElevenLabs/Shotstack readiness.",
-  "Rewards stay manual-review only until abuse/fraud/idempotency rules are proven."
+  "Provider-heavy custom agents remain key-gated and final-live-test-gated before full automation.",
+  "Rewards create reviewable records first and stay release-blocked until abuse/fraud/idempotency rules are proven."
 ];

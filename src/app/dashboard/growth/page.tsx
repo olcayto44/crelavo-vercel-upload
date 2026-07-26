@@ -5,7 +5,7 @@ import { shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-sys
 import { dashboardNextBestActions, growthRewardReadiness, lifecycleNudges, retentionGrowthSummary } from "@/lib/retention-growth";
 
 const viralGrowthCommandCards = [
-  { title: "Invite-friend credits", status: "Manual review", text: "+100 starter credits for both verified users and +2,000 bonus credits after a referred Business/Team upgrade, once automation is ready." },
+  { title: "Invite-friend credits", status: "Review records", text: "+100 starter credits for both verified users and +2,000 bonus credits after a referred Business/Team upgrade; records can be prepared, release stays review-gated." },
   { title: "Watermarked preview sharing", status: "Preview loop", text: "Approved preview outputs can carry Made with Crelavo AI branding so small sellers share Crelavo while larger teams upgrade for clean exports." },
   { title: "Partner and affiliate path", status: "Tracked links", text: "Approved partners use referral links and campaign assets; commissions remain finance-reviewed with hold, refund and chargeback checks." },
   { title: "Community showcase", status: "Proof loop", text: "Approved examples can become public proof, reusable templates and case-study fuel without exposing private client assets." }
@@ -24,7 +24,7 @@ export default function DashboardGrowthPage() {
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Viral Growth Command Center</span>
         <h2>Use every happy user as a safe growth channel</h2>
-        <p style={{ color: "var(--muted)" }}>This is the dashboard-level map for referral, watermark, affiliate and showcase loops. It keeps the funnel visible now, while real credit awards remain manual until API tracking and fraud checks are connected.</p>
+        <p style={{ color: "var(--muted)" }}>This is the dashboard-level map for referral, watermark, affiliate and showcase loops. Tracking and review records can be prepared now, while real credit awards stay blocked until fraud, payment and final live E2E checks pass.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {viralGrowthCommandCards.map((item) => (
             <div className="card admin-category-card" key={item.title}>
@@ -57,11 +57,11 @@ export default function DashboardGrowthPage() {
 
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Social + shorts growth system</span>
-        <h2>Export pack and short-form channels are ready for manual launch</h2>
+        <h2>Export pack and short-form channels are ready for connected launch prep</h2>
         <div className="admin-info-grid">
           <div><span>Export targets</span><strong>{socialExportPack.length} platforms</strong><small>TikTok, Shorts, Reels, X/LinkedIn assets.</small></div>
           <div><span>Short-form plays</span><strong>{shortFormGrowthSystem.length} loops</strong><small>Proof clips, free tools, founder posts and demos.</small></div>
-          <div><span>Publishing mode</span><strong>Manual first</strong><small>No auto-publish before OAuth/API approval.</small></div>
+          <div><span>Publishing mode</span><strong>API prep + approval</strong><small>Connected APIs can prepare launch jobs; direct publish/spend waits for approval.</small></div>
         </div>
         <div style={{ marginTop: 18 }}><Link className="btn" href="/dashboard/social-export">Open export pack</Link><Link className="btn secondary" href="/dashboard/shorts-growth" style={{ marginLeft: 10 }}>Open shorts plan</Link></div>
       </section>

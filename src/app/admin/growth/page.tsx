@@ -193,7 +193,7 @@ function statusLabel(status: string) {
   if (status === "blocked_by_domain") return "Blocked by domain";
   if (status === "manual_ready") return "Manual review ready";
   if (status === "blocked_by_real_payment") return "Blocked by real payment";
-  if (status === "api_later") return "API later";
+  if (status === "connected_pending_live_e2e") return "Connected, live E2E pending";
   return "Planned";
 }
 
@@ -203,7 +203,7 @@ export default function AdminGrowthPage() {
       <section className="card admin-wide-card">
         <span className="badge">Phase 2 / post-launch</span>
         <h2>Growth priorities after core launch</h2>
-        <p style={{ color: "var(--muted)" }}>{retentionGrowthSummary.promise} Whop stays active, Lemon stays postponed, and API/provider automation waits until the API-dışı 2. Grup work is finished.</p>
+        <p style={{ color: "var(--muted)" }}>{retentionGrowthSummary.promise} Whop stays active, Lemon stays postponed, and social/growth/provider-aware flows are code-connected with final live E2E validation still required before automatic rewards, payouts or spend.</p>
         <div className="admin-info-grid">
           <div><span>P1</span><strong>Watermark</strong><small>Free preview watermark and paid watermark-free rules.</small></div>
           <div><span>P1</span><strong>Share-to-earn</strong><small>Capped reward credits for verified sharing actions.</small></div>

@@ -85,6 +85,11 @@ const automaticDeliveryBuilder = readFileSync("src/lib/automatic-delivery-builde
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
 const productionPayload = readFileSync("src/lib/production-payload.ts", "utf8");
 const adsPhase2 = readFileSync("src/lib/phase2/ads.ts", "utf8");
+const leadExitIntentRoute = readFileSync("src/app/api/leads/exit-intent/route.ts", "utf8");
+const retentionGrowth = readFileSync("src/lib/retention-growth.ts", "utf8");
+const dashboardGrowth = readFileSync("src/app/dashboard/growth/page.tsx", "utf8");
+const dashboardShareToEarn = readFileSync("src/app/dashboard/share-to-earn/page.tsx", "utf8");
+const adminGrowth = readFileSync("src/app/admin/growth/page.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -126,6 +131,21 @@ for (const term of ["campaign/copy-pack.md", "campaign/social-export-plan.md", "
 }
 for (const term of ["tiktokAccessToken", "tiktokAdvertiserId", "youtubeAccessToken", "optionalProviderEnv(\"youtubeAccessToken\")"]) {
   if (!providerAliases.includes(term) && !adsPhase2.includes(term)) throw new Error(`social ad launch alias missing term: ${term}`);
+}
+for (const term of ["social/caption-pack.md", "social/posting-calendar.md", "social/platform-format-plan.json", "buildSocialCaptionPack", "isSocialContentDelivery"]) {
+  if (!automaticDeliveryBuilder.includes(term)) throw new Error(`social delivery pack missing term: ${term}`);
+}
+for (const term of ["growth/conversion-funnel-plan.md", "growth/monetization-plan.json", "growth/lifecycle-nudges.md", "buildConversionFunnelPlan", "isGrowthDelivery"]) {
+  if (!automaticDeliveryBuilder.includes(term)) throw new Error(`growth delivery pack missing term: ${term}`);
+}
+for (const term of ["optionalProviderEnv(\"resend\")", "optionalEnv(\"LEAD_NOTIFICATION_EMAIL\")", "optionalEnv(\"SUPPORT_FROM_EMAIL\")"]) {
+  if (!leadExitIntentRoute.includes(term)) throw new Error(`lead capture provider env alias missing term: ${term}`);
+}
+for (const term of ["final live E2E validation", "Social, growth and provider-aware delivery flows are code-connected", "connected launch prep", "connected-but-review-gated"]) {
+  if (!retentionGrowth.includes(term) && !dashboardGrowth.includes(term) && !dashboardShareToEarn.includes(term) && !adminGrowth.includes(term)) throw new Error(`growth connected-copy guard missing term: ${term}`);
+}
+for (const staleTerm of ["API later", "API-dışı 2. Grup", "API-free launch version", "until API tracking and fraud checks are connected"]) {
+  if (retentionGrowth.includes(staleTerm) || dashboardGrowth.includes(staleTerm) || dashboardShareToEarn.includes(staleTerm) || adminGrowth.includes(staleTerm)) throw new Error(`stale growth copy still present: ${staleTerm}`);
 }
 
 console.log("automation-preflight-smoke ok");

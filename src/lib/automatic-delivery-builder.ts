@@ -12,6 +12,10 @@ type ProductionLike = {
   input_json?: Record<string, any> | null;
   materials_json?: Array<Record<string, any>> | null;
   output_json?: Record<string, any> | null;
+  features?: string | null;
+  target_platform?: string | null;
+  social_platforms?: string | null;
+  publish_targets?: string[] | null;
 };
 
 export type AutomaticDeliveryLinks = {
@@ -158,6 +162,16 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
     files.push({ path: "campaign/social-export-plan.md", purpose: "TikTok, Meta, Instagram, YouTube and marketplace export checklist" });
     files.push({ path: "campaign/marketplace-export.json", purpose: "Machine-readable campaign asset export map" });
   }
+  if (isSocialContentDelivery(production)) {
+    files.push({ path: "social/caption-pack.md", purpose: "Platform captions, hashtags, hooks and post angles" });
+    files.push({ path: "social/posting-calendar.md", purpose: "7-day social posting calendar" });
+    files.push({ path: "social/platform-format-plan.json", purpose: "Per-platform format and asset map" });
+  }
+  if (isGrowthDelivery(production)) {
+    files.push({ path: "growth/conversion-funnel-plan.md", purpose: "Lead capture, activation, monetization and retention funnel" });
+    files.push({ path: "growth/monetization-plan.json", purpose: "Whop, credits, referral and retention loop map" });
+    files.push({ path: "growth/lifecycle-nudges.md", purpose: "Signup, delivery and reactivation nudges" });
+  }
   if (requirements.wantsAdminPanel) files.push({ path: "admin-panel/admin-requirements.md", purpose: "Admin panel modules, roles and data notes" });
   if (requirements.wantsDeploymentGuide) files.push({ path: "docs/deployment-guide.md", purpose: "Deployment and setup instructions" });
   if (requirements.wantsFinalVideo) files.push({ path: "media/final-video-placeholder.md", purpose: "Final video slot and provider replacement notes" });
@@ -290,6 +304,67 @@ function buildMarketplaceExportJson(production: ProductionLike) {
   }, null, 2);
 }
 
+function isSocialContentDelivery(production: ProductionLike) {
+  const textBlock = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.features ?? ""} ${production.target_platform ?? ""} ${production.social_platforms ?? ""} ${production.publish_targets ?? ""}`.toLowerCase();
+  return /social|tiktok|reels|shorts|instagram|youtube|facebook|linkedin|twitter|x\/twitter|caption|hashtag|ugc/.test(textBlock);
+}
+
+function buildSocialCaptionPack(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Social Caption Pack\n\nProduction: ${manifest.title}\n\n## TikTok\n- Hook: Stop scrolling if you want this result faster.\n- Caption: ${manifest.title} — built for quick proof, clear benefit and direct action.\n- Hashtags: #aitools #productivity #smallbusiness #crelavo\n\n## Instagram Reels\n- Caption: A cleaner way to turn ideas into production-ready assets.\n- Hashtags: #reelsmarketing #aicontent #digitalproduct #brandgrowth\n\n## YouTube Shorts\n- Title: ${manifest.title} in under 60 seconds\n- Description: Fast preview, clear CTA and dashboard delivery.\n\n## LinkedIn / X\n- Post angle: Show the business problem, the output, and the action customers can take next.\n`;
+}
+
+function buildSocialPostingCalendar(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Social Posting Calendar\n\nProduction: ${manifest.title}\n\n## 7-Day Starter Plan\n- Day 1: Launch teaser / hook video.\n- Day 2: Problem-solution post.\n- Day 3: Behind-the-scenes or dashboard screenshot.\n- Day 4: Benefit-led short clip.\n- Day 5: FAQ / objection response.\n- Day 6: Proof or sample output.\n- Day 7: CTA recap and offer reminder.\n\n## Review Rule\nManual approval is required before publishing. Connected APIs may prepare launch jobs, but paid spend and direct posting should wait for approval.\n`;
+}
+
+function buildPlatformFormatPlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return JSON.stringify({
+    production_id: manifest.production_id,
+    title: manifest.title,
+    formats: {
+      tiktok: { ratio: "9:16", length: "15-60s", assets: ["caption", "hashtags", "cover text", "CTA"] },
+      instagram_reels: { ratio: "9:16", length: "15-90s", assets: ["caption", "hashtags", "story teaser"] },
+      youtube_shorts: { ratio: "9:16", length: "15-60s", assets: ["title", "description", "hashtags", "pinned comment"] },
+      meta_ads: { ratio: "9:16 / 4:5 / 1:1", assets: ["primary text", "headline", "description", "CTA"] },
+      linkedin_x: { ratio: "feed", assets: ["short post", "thread outline", "link CTA", "UTM note"] }
+    }
+  }, null, 2);
+}
+
+function isGrowthDelivery(production: ProductionLike) {
+  const textBlock = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.features ?? ""} ${production.target_platform ?? ""} ${production.prompt ?? ""}`.toLowerCase();
+  return /growth|conversion|monetization|affiliate|referral|share-to-earn|lead|funnel|retention|whop|checkout|upsell/.test(textBlock);
+}
+
+function buildConversionFunnelPlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Conversion Funnel Plan\n\nProduction: ${manifest.title}\n\n## Funnel Steps\n- Visit: preserve landing path, referrer and UTM attribution.\n- Lead capture: offer a safe guide/preview/support reason to leave email.\n- Signup: route to dashboard and first production intent.\n- First production: start only after credits/payment/scope are confirmed.\n- Delivery viewed: suggest second action, social export, referral or upgrade.\n- Whop checkout: keep setup fee, preview and subscription terms clear.\n\n## Guardrail\nNo fake production claims and no automatic credit awards without verification.\n`;
+}
+
+function buildGrowthMonetizationPlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return JSON.stringify({
+    production_id: manifest.production_id,
+    title: manifest.title,
+    loops: {
+      lead_capture: ["exit_intent", "preview_support", "free_tool_handoff"],
+      activation: ["assistant_workspace", "first_production_request", "dashboard_delivery"],
+      monetization: ["whop_preview_fee", "subscription_upgrade", "credit_topup", "business_team_plan"],
+      retention: ["next_best_action", "social_export", "growth_rewards", "growth_intelligence"],
+      referral: ["share_to_earn", "partner_link", "case_study_review"]
+    },
+    approval_rules: ["manual reward review", "Whop payment validation", "fraud/idempotency check", "no paid spend without approval"]
+  }, null, 2);
+}
+
+function buildLifecycleNudgePlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Lifecycle Nudge Plan\n\nProduction: ${manifest.title}\n\n- New signup, no production: invite to Assistant Workspace.\n- Production started, not delivered: remind missing assets/status.\n- Delivered, no second action: suggest ad creative, landing page, social kit or Growth Intelligence.\n- Low credits / checkout intent: show Whop-safe top-up path.\n- Inactive user: send low-volume manual reminder with free tool/sample CTA.\n`;
+}
+
 export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
   const manifest = buildDeliveryManifest(production);
   const requirements = manifest.delivery_requirements;
@@ -311,6 +386,16 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     entries.push({ name: "campaign/copy-pack.md", content: buildCampaignCopyPack(production) });
     entries.push({ name: "campaign/social-export-plan.md", content: buildSocialExportPlan(production) });
     entries.push({ name: "campaign/marketplace-export.json", content: buildMarketplaceExportJson(production) });
+  }
+  if (isSocialContentDelivery(production)) {
+    entries.push({ name: "social/caption-pack.md", content: buildSocialCaptionPack(production) });
+    entries.push({ name: "social/posting-calendar.md", content: buildSocialPostingCalendar(production) });
+    entries.push({ name: "social/platform-format-plan.json", content: buildPlatformFormatPlan(production) });
+  }
+  if (isGrowthDelivery(production)) {
+    entries.push({ name: "growth/conversion-funnel-plan.md", content: buildConversionFunnelPlan(production) });
+    entries.push({ name: "growth/monetization-plan.json", content: buildGrowthMonetizationPlan(production) });
+    entries.push({ name: "growth/lifecycle-nudges.md", content: buildLifecycleNudgePlan(production) });
   }
   if (requirements.wantsAdminPanel) entries.push({ name: "admin-panel/admin-requirements.md", content: buildAdminRequirements(production) });
   if (requirements.wantsDeploymentGuide) entries.push({ name: "docs/deployment-guide.md", content: buildDeploymentGuide(production) });

@@ -8,7 +8,7 @@ export default function DashboardSocialExportPage() {
       <section className="production-hero-card compact-production-hero">
         <span className="badge">Social media export pack</span>
         <h2>Platform-ready export notes for every approved production</h2>
-        <p>Prepare captions, hashtags, cover text, CTA notes and export formats for TikTok, Shorts, Reels, X and LinkedIn without enabling direct publishing before APIs are ready.</p>
+        <p>Prepare captions, hashtags, cover text, CTA notes and export formats for TikTok, Shorts, Reels, X and LinkedIn. Connected APIs can prepare launch jobs; direct publishing and paid spend still require manual approval.</p>
         <div className="url-action-center">
           <Link className="btn" href="/dashboard/productions">Open productions</Link>
           <Link className="btn secondary" href="/dashboard/ads">Open ads planning</Link>

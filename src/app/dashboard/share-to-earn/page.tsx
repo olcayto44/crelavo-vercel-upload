@@ -5,7 +5,7 @@ import { shareToEarnLoop } from "@/lib/growth-launch-systems";
 const viralLoopSteps = [
   { title: "Invite a friend", reward: "+100 credits each", text: "Share Crelavo with a verified ecommerce seller or agency contact. Both sides can receive starter credits after signup review." },
   { title: "Bring a paid upgrade", reward: "+2,000 bonus credits", text: "When the invited user becomes a paid Business or Team subscriber, the inviter can receive bonus credits after payment and fraud review." },
-  { title: "Share a watermarked preview", reward: "Manual credit review", text: "Users can share approved Made with Crelavo AI preview outputs. Rewards stay manual until watermark/export tracking is automated." },
+  { title: "Share a watermarked preview", reward: "Credit review", text: "Users can share approved Made with Crelavo AI preview outputs. Share records can be prepared now; credit release stays behind review." },
   { title: "Submit a public case study", reward: "Higher review priority", text: "Approved before/after stories, community showcase assets or client-safe examples can unlock additional manual reward review." }
 ];
 
@@ -29,7 +29,7 @@ export default function DashboardShareToEarnPage() {
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Invite-friend credit loop</span>
         <h2>Need more credits? Start with a reviewed invite</h2>
-        <p style={{ color: "var(--muted)" }}>This is the API-free launch version of the referral loop. It explains the reward logic now while keeping real credit awards under manual review until referral tracking and fraud checks are connected.</p>
+        <p style={{ color: "var(--muted)" }}>This is the connected-but-review-gated version of the referral loop. It explains the reward logic, prepares reviewable records and keeps real credit release blocked until referral tracking, payment and fraud checks pass final live validation.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {viralLoopSteps.map((step) => (
             <div className="card admin-category-card" key={step.title}>

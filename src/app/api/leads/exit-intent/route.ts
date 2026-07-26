@@ -1,3 +1,4 @@
+import { optionalEnv, optionalProviderEnv } from "@/lib/providers/env";
 import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -33,12 +34,12 @@ async function sendAdminLeadNotification(input: {
   utmSource: string;
   utmCampaign: string;
 }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const to = (process.env.LEAD_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || process.env.SUPPORT_EMAIL || "").trim().toLowerCase();
+  const apiKey = optionalProviderEnv("resend");
+  const to = (optionalEnv("LEAD_NOTIFICATION_EMAIL") || optionalEnv("ADMIN_EMAIL") || optionalEnv("SUPPORT_EMAIL") || "").trim().toLowerCase();
   if (!apiKey || !isEmail(to)) return { skipped: true };
 
-  const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const from = optionalEnv("SUPPORT_FROM_EMAIL") || "Crelavo <support@crelavo.com>";
+  const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",

@@ -1,10 +1,10 @@
-export type RetentionStatus = "ready" | "manual_ready" | "blocked_by_real_payment" | "api_later";
+export type RetentionStatus = "ready" | "manual_ready" | "blocked_by_real_payment" | "connected_pending_live_e2e";
 
 export const retentionGrowthSummary = {
   title: "Retention and growth operating system",
-  mode: "Whop active, API later",
-  promise: "Bring users back, push them toward first production, and guide them to Whop packages without triggering real provider/API spend.",
-  guardrail: "Rewards, partner payouts and provider automation remain manual-review only until payment tracking, fraud checks and payout rules are fully verified."
+  mode: "Whop + provider-aware growth flows connected",
+  promise: "Bring users back, push them toward first production, and guide them to Whop packages while tracking conversion, delivery and reward readiness.",
+  guardrail: "Lead capture, Whop-aware checkout and referral records can be prepared now; rewards, partner payouts and paid spend still require manual review until final live E2E validation."
 };
 
 export const lifecycleNudges = [
@@ -42,7 +42,7 @@ export const lifecycleNudges = [
     message: "Top up safely with Whop when ready; no production spend starts until credits/payment are confirmed.",
     primaryCta: "View credits",
     href: "/dashboard/credits",
-    adminCheck: "Real Whop payment and credit/idempotency test must pass before full revenue automation."
+    adminCheck: "Whop payment, credit reserve and idempotency records can be prepared; final live E2E must pass before fully automatic revenue/reward release."
   },
   {
     stage: "Inactive user",
@@ -61,7 +61,7 @@ export const activationFunnelSteps = [
   { step: "First production intent", signal: "assistant_workspace_started", goal: "Start a brief, category flow or free tool handoff." },
   { step: "First production request", signal: "production_request_created", goal: "Create request without triggering unnecessary provider spend." },
   { step: "Delivery viewed", signal: "delivery_viewed", goal: "Prompt second action, share, referral or upgrade." },
-  { step: "Whop checkout", signal: "checkout_started", goal: "Manual payment validation before revenue automation." }
+  { step: "Whop checkout", signal: "checkout_started", goal: "Prepare payment/credit/idempotency records, then keep release behind final review." }
 ];
 
 export const growthRewardReadiness = [
@@ -70,7 +70,7 @@ export const growthRewardReadiness = [
     credits: 100,
     status: "manual_ready" as RetentionStatus,
     cap: "One launch reward per user",
-    guardrail: "Admin/manual review only; do not mint credits from unverified actions."
+    guardrail: "Create a reviewable reward record; do not release credits from unverified actions."
   },
   {
     reward: "Share approved preview",
@@ -91,7 +91,7 @@ export const growthRewardReadiness = [
     credits: 1000,
     status: "blocked_by_real_payment" as RetentionStatus,
     cap: "After Whop payment + credit/idempotency validation",
-    guardrail: "Do not award until real Whop payment and duplicate protection pass."
+    guardrail: "Prepare the reward record after Whop signal; release only after payment, refund window and duplicate protection pass."
   }
 ];
 
@@ -105,8 +105,8 @@ export const dashboardNextBestActions = [
 
 export const retentionAdminChecklist = [
   "Dashboard shows next best actions for signup → first production → delivery → second action.",
-  "Lifecycle nudges are documented before any automated email/API sender is enabled.",
-  "Reward credits are manual-review only until abuse/idempotency checks are proven.",
+  "Lifecycle nudges are mapped to dashboard, lead capture and email-ready triggers before bulk automation is enabled.",
+  "Reward credits create reviewable records first and remain release-blocked until abuse/idempotency checks are proven.",
   "Whop checkout remains the active payment path; Lemon remains postponed.",
-  "API/provider automation is explicitly later, after API-dışı 2. Grup items."
+  "Social, growth and provider-aware delivery flows are code-connected; final live E2E validation is the remaining gate."
 ];
