@@ -966,6 +966,17 @@ function responseLanguage(message: string, activeLanguage = "") {
   return isLikelyTurkish(message, activeLanguage) ? "tr" : activeLanguage || "en";
 }
 
+function turnLanguage(message: string, activeLanguage = "") {
+  const normalized = normalizeTurkishQuery(message);
+  if (/[\u0600-\u06ff]/.test(message)) return "ar";
+  if (/[çğıöşüÇĞİÖŞÜ]/.test(message) || hasTurkishQuestionWords(normalized)) return "tr";
+  if (/\b(hallo|guten|danke|bitte|warum|wie|was|wer|welche)\b/i.test(message)) return "de";
+  if (/\b(hola|gracias|por que|porque|como|qué|que|recomiendas)\b/i.test(message)) return "es";
+  if (/\b(bonjour|merci|pourquoi|comment|quoi|recommandes)\b/i.test(message)) return "fr";
+  if (/\b(update|change|keep|remove|show|confirm|start|production|duration|seconds|english|voice|subtitle|dashboard|download|visuals|reference|style|credits)\b/i.test(message)) return "en";
+  return activeLanguage || "en";
+}
+
 function matchScore(text: string, patterns: RegExp[]) {
   return patterns.reduce((score, pattern) => score + (pattern.test(text) ? 1 : 0), 0);
 }
@@ -1762,6 +1773,18 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     return match?.id ?? "video";
   }
 
+  function clearProductionChat() {
+    setMessages([{ role: "assistant", content: activeLanguage === "tr" ? "Chat temizlendi. Ne üretmek istediğini yaz." : "Chat cleared. Describe what you want to create." }]);
+    setProductionBrief("");
+    setInput("");
+    setChatInput("");
+    setDynamicWizard(emptyDynamicWizard);
+    setOptionsOpen(false);
+    setProductionStartingIntent(false);
+    setStartModalOpen(false);
+    setStartError("");
+  }
+
   function applyCategorySelection(type: string) {
     const label = productionTypes.find((item) => item.id === type)?.label ?? type;
     applyGeneralProductionPreset(type, input.trim() || label);
@@ -2254,7 +2277,9 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     }
 
 const recentContext = normalizeTurkishQuery(messages.slice(-8).map((item) => item.content).join(" "));
+const currentTurnLanguage = turnLanguage(clean, activeLanguage);
 const followUpProduction = isShortProductionFollowUp(clean, recentContext) || (dynamicWizard.open && isShortProductionFollowUp(clean, `${recentContext} video proje uretim`));
+const followUpDuration = followUpProduction ? durationFromFollowUp(clean) : "";
 const intent = followUpProduction ? "production_request" : detectWorkspaceIntent(clean);
 const isStartConfirmation = intent === "start_confirmation";
 const conversationalOnly = intent === "greeting" || intent === "help" || intent === "consultation" || isStartConfirmation;
@@ -2296,7 +2321,6 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       openDynamicWizardFromMessage(clean);
     }
     if (followUpProduction) {
-      const followUpDuration = durationFromFollowUp(clean);
       const followUpNormalized = normalizeTurkishQuery(clean);
       if (followUpDuration) setSelectedDuration(followUpDuration);
       if (/(sinematik|cinematic|film gibi|premium)/.test(followUpNormalized)) {
@@ -2316,10 +2340,10 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       }
     }
     const assistantVisibleReply = conversationalOnly
-      ? publicConversationalReply(clean, activeLanguage, messages.length)
+      ? publicConversationalReply(clean, currentTurnLanguage, messages.length)
       : followUpProduction
-        ? productionFollowUpReply(clean, activeLanguage)
-        : googleStyleProductionReply(clean, activeLanguage);
+        ? productionFollowUpReply(clean, currentTurnLanguage)
+        : googleStyleProductionReply(clean, currentTurnLanguage);
 
     const nextMessages: Message[] = [...messages, { role: "user", content: clean }];
     const nextVisibleMessages: Message[] = conversationalOnly ? nextMessages : [...nextMessages, { role: "assistant", content: assistantVisibleReply }];
@@ -2460,6 +2484,15 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
             orchestratorPlan = orchestratorData as AssistantOrchestratorResponse;
             setLastOrchestratorPlan(orchestratorPlan);
             applyOrchestratorPlan(orchestratorPlan, clean);
+          }
+          if (followUpProduction) {
+            if (followUpDuration) setSelectedDuration(followUpDuration);
+            if (isAiVideoOnlyIntent(`${productionBrief}\n${clean}`) || selectedProductionType === "video") {
+              setSelectedProductionType("video");
+              setSelectedModules(["AI video"]);
+              setSelectedPlatforms(["Dashboard delivery", "MP4 download"]);
+              setSelectedFeatures((current) => Array.from(new Set(current.filter((item) => !/source|zip|admin|website|alternative/i.test(item)).concat(["Voice-over", "Subtitles", "Music"]))));
+            }
           }
         } catch {
           orchestratorPlan = null;
@@ -2936,7 +2969,7 @@ async function startRawMicrophoneFallback() {
         <section className="clean-chat-panel">
           <div className="clean-panel-head">
             <span className="badge"><Bot size={14} /> Crelavo Assistant</span>
-            <button className="btn secondary" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Describe what you want to create." }])}>Clear</button>
+            <button className="btn secondary" type="button" onClick={clearProductionChat}>Clear</button>
           </div>
           <div className="clean-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
@@ -3035,7 +3068,7 @@ async function startRawMicrophoneFallback() {
               <h2>Crelavo Assistant</h2>
               <p>Write what you want here. General questions are answered; production requests become a brief and action automatically.</p>
             </div>
-            <button className="btn secondary compact-chat-clear" type="button" onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Describe what you want to create." }])}>Clear</button>
+            <button className="btn secondary compact-chat-clear" type="button" onClick={clearProductionChat}>Clear</button>
           </div>
           <div className="assistant-inline-chat-log notranslate" data-no-translate="true" translate="no" ref={chatLogRef}>
             {cleanAssistantMessages(messages).map((message, index) => <div className={`chat-bubble ${message.role} notranslate`} data-no-translate="true" translate="no" key={`${message.role}-${index}`}>{message.content}</div>)}
