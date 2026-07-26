@@ -100,13 +100,20 @@ function optionLineValue(optionSummary: string, label: string) {
   return line?.split(":").slice(1).join(":").trim() ?? "";
 }
 
+function isAiVideoOnlySelection(selection: AssistantProductionSelection & { productionType: string; optionSummary: string }) {
+  const signal = `${selection.productionType} ${selection.input} ${selection.selectedModules.join(" ")} ${selection.selectedFeatures.join(" ")} ${selection.selectedPlatforms.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+  const videoOnlyGuard = /(ai video only|only ai video|not a website|not website|website degil|website değil|site degil|site değil|source code degil|source code değil|zip source degil|zip source değil|admin panel degil|admin panel değil)/.test(signal);
+  return selection.productionType === "video" && /ai video|video|mp4|voice-over|voiceover|subtitles|subtitle/.test(signal) && (videoOnlyGuard || !/source code|working source|admin panel|zip source/.test(signal));
+}
+
 function deliveryRequirementsFromSelection(selection: AssistantProductionSelection & { productionType: string; optionSummary: string }) {
   const signal = `${selection.productionType} ${selection.selectedModules.join(" ")} ${selection.selectedFeatures.join(" ")} ${selection.selectedPlatforms.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
-  const wantsZip = /zip|final zip|source zip|paket/.test(signal);
-  const wantsSourceCode = /source code|source file|source delivery|kaynak|working source/.test(signal);
-  const wantsReadme = /readme/.test(signal);
-  const wantsDeploymentGuide = /deployment guide|setup guide|kurulum/.test(signal);
-  const wantsAdminPanel = /admin panel|admin screens|admin pair|crud|roles/.test(signal);
+  const videoOnly = isAiVideoOnlySelection(selection);
+  const wantsZip = !videoOnly && /zip|final zip|source zip|paket/.test(signal);
+  const wantsSourceCode = !videoOnly && /source code|source file|source delivery|kaynak|working source/.test(signal);
+  const wantsReadme = !videoOnly && /readme/.test(signal);
+  const wantsDeploymentGuide = !videoOnly && /deployment guide|setup guide|kurulum/.test(signal);
+  const wantsAdminPanel = !videoOnly && /admin panel|admin screens|admin pair|crud|roles/.test(signal);
   const wantsFinalVideo = /final mp4|mp4 download|video|lip-sync|music video|talking video/.test(signal);
   const wantsSubtitles = /subtitle|subtitles|altyazı|altyazi/.test(signal);
   const wantsThumbnail = /thumbnail|cover visual/.test(signal);
@@ -149,9 +156,10 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
   const promptLinks = linksFromText(`${selection.prompt}\n${selection.optionSummary}`);
   const uploadedMaterials = selection.uploadedMaterials ?? [];
   const uploadedUrls = uploadedMaterials.map((material) => material.file_url).filter(Boolean);
-  const deliveryLevel: DeliveryLevel = selection.deliveryLevel ?? (selection.selectedFeatures.includes("Working source package") ? "working_source_package" : "production_package");
+  const videoOnly = isAiVideoOnlySelection(selection);
+  const deliveryLevel: DeliveryLevel = videoOnly ? "production_package" : selection.deliveryLevel ?? (selection.selectedFeatures.includes("Working source package") ? "working_source_package" : "production_package");
   const deliveryFeature = deliveryLevel === "working_source_package" ? "Working source package" : "Production package";
-  const effectiveFeatures = selection.selectedFeatures.includes(deliveryFeature) ? selection.selectedFeatures : [...selection.selectedFeatures, deliveryFeature];
+  const effectiveFeatures = videoOnly ? selection.selectedFeatures.filter((feature) => !/source|zip|admin|website|working source/i.test(feature)) : selection.selectedFeatures.includes(deliveryFeature) ? selection.selectedFeatures : [...selection.selectedFeatures, deliveryFeature];
   const musicVideoMaterialGroups = {
     songAudio: uploadedMaterials.filter((material) => ["song_audio", "music"].includes(material.reference_type)),
     ownVoice: uploadedMaterials.filter((material) => ["own_voice", "voiceover"].includes(material.reference_type)),
@@ -247,8 +255,8 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     quality: selection.selectedQuality,
     target_platform: selection.selectedPlatforms.join(", "),
     features: effectiveFeatures.join(", "),
-    workflow_mode: ["website", "saas", "mobile_app", "admin_project"].includes(selection.productionType) || selection.selectedModules.includes("Website") || selection.selectedModules.includes("SaaS screen") || selection.selectedModules.includes("Mobile app") || selection.selectedModules.includes("Admin panel") ? "project" : "media",
-    output_count: selection.selectedFeatures.includes("5 alternatives") ? 5 : selection.selectedFeatures.includes("3 alternatives") ? 3 : 1,
+    workflow_mode: videoOnly ? "media" : ["website", "saas", "mobile_app", "admin_project"].includes(selection.productionType) || selection.selectedModules.includes("Website") || selection.selectedModules.includes("SaaS screen") || selection.selectedModules.includes("Mobile app") || selection.selectedModules.includes("Admin panel") ? "project" : "media",
+    output_count: videoOnly ? 1 : selection.selectedFeatures.includes("5 alternatives") ? 5 : selection.selectedFeatures.includes("3 alternatives") ? 3 : 1,
     output_duration_seconds: Number(selection.selectedDuration.replace(/\D/g, "")) || 30,
     selected_material_ids: selection.selectedMaterials,
     material_links: [...promptLinks, ...uploadedUrls].join("\n"),
@@ -273,7 +281,7 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     project_modules: selection.selectedModules.join(", "),
     technical_stack: technicalStack,
     delivery_level: deliveryLevel,
-    source_delivery: deliveryLevel === "working_source_package" ? "working_source_zip" : effectiveFeatures.includes("Source file delivery") || effectiveFeatures.includes("Final ZIP") ? "source_zip" : "dashboard_delivery",
+    source_delivery: videoOnly ? "dashboard_delivery" : deliveryLevel === "working_source_package" ? "working_source_zip" : effectiveFeatures.includes("Source file delivery") || effectiveFeatures.includes("Final ZIP") ? "source_zip" : "dashboard_delivery",
     delivery_requirements: deliveryRequirements,
     production_quality: productionQuality,
     production_quality_checklist: productionQuality.checklist,

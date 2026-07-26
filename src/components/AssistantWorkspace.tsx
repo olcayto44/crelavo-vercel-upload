@@ -828,15 +828,32 @@ function materialUploadFallbackReply(message: string, language: string) {
   return responseLanguage(message, language) === "tr" || hasTurkishQuestionWords(normalized) ? reply : "Yes, you can upload it.\nUse the workspace ‘Upload material’ area.\nJPG/PNG works for photos; 20-60 seconds of clean audio is enough for voice.\nFor real footage, upload a short MP4/MOV clip.";
 }
 
+function isAiVideoOnlyIntent(message: string) {
+  const normalized = normalizeTurkishQuery(message);
+  const hasVideo = /\b(ai video|video|tanitim videosu|tanıtım videosu|promo video|promotional video|reklam videosu|mp4|voice-over|voiceover|seslendirme|altyazi|altyazı|subtitle|subtitles)\b/.test(normalized);
+  const hasVideoOnlyGuard = /(not a website|not website|only ai video|ai video only|sadece ai video|yalnizca ai video|yalnızca ai video|website degil|website değil|site degil|site değil|source code degil|source code değil|zip source degil|zip source değil|admin panel degil|admin panel değil|remove website|remove zip|remove source)/.test(normalized);
+  const hasProjectBuild = /(source code|kaynak kod|admin panel|zip source|website project|web sitesi projesi|site projesi)/.test(normalized) && !hasVideoOnlyGuard;
+  return hasVideo && (hasVideoOnlyGuard || /\b(ai video|promo video|promotional video|tanitim videosu|tanıtım videosu|mp4)\b/.test(normalized)) && !hasProjectBuild;
+}
+
+function cleanNegativeDurationMentions(message: string) {
+  return normalizeTurkishQuery(message)
+    .replace(/\b(not|degil|değil|olmasin|olmasın|istemiyorum|remove|kaldir|kaldır)\s+(\d{1,3})\s*(sn|sny|saniye|sec|second|seconds|dk|dakika|min)\b/g, " ")
+    .replace(/\b(\d{1,3})\s*(sn|sny|saniye|sec|second|seconds|dk|dakika|min)\s+(degil|değil|olmasin|olmasın|istemiyorum)\b/g, " ")
+    .replace(/1o/g, "10")
+    .replace(/lo/g, "10");
+}
+
 function durationFromFollowUp(message: string) {
-  const normalized = normalizeTurkishQuery(message).replace(/1o/g, "10").replace(/lo/g, "10");
+  const normalized = cleanNegativeDurationMentions(message);
   if (isCreditCostQuestion(message)) return "";
+  if (/\b(fifteen\s*seconds|fifteen\s*second|on\s*bes\s*saniye|on\s*beş\s*saniye)\b/.test(normalized)) return "15 sec";
   if (/\b(10\s*dk|10\s*dakika|10\s*min)\b/.test(normalized)) return "10 min";
   if (/\b(2\s*dk|2\s*dakika|120\s*sn|120\s*sny|120\s*saniye|120\s*sec)\b/.test(normalized)) return "2 min";
   if (/\b(1\s*dk|1\s*dakika|60\s*sn|60\s*sny|60\s*saniye|60\s*sec)\b/.test(normalized)) return "60 sec";
   const minuteMatch = normalized.match(/\b(\d{1,2})\s*(dk|dakika|min)\b/);
   if (minuteMatch) return `${minuteMatch[1]} min`;
-  const secondMatch = normalized.match(/\b(\d{1,3})\s*(sn|sny|saniye|sec)\b/);
+  const secondMatch = normalized.match(/\b(\d{1,3})\s*(sn|sny|saniye|sec|second|seconds)\b/);
   if (secondMatch) return `${secondMatch[1]} sec`;
   return "";
 }
@@ -951,6 +968,7 @@ function responseLanguage(message: string, activeLanguage = "") {
 
 function inferDynamicWizardType(message: string): DynamicWizardType {
   const text = message.toLocaleLowerCase("tr-TR");
+  if (isAiVideoOnlyIntent(message)) return "video";
   if (/konuşmalı|konusmali|lip-sync|aksan|şive|sive|kendi ses|sesim|talking/.test(text)) return "talking_video";
   if (/web sitesi|website|web site|landing|site|saas/.test(text)) return "website";
   if (/uygulama|mobil|mobile app|app|randevu uygulaması|randevu uygulamasi/.test(text)) return "mobile_app";
@@ -1121,6 +1139,7 @@ function googleStyleProductionReply(message: string, language: string) {
   const signals = extractAssistantSignals(message);
   const details = signals.length ? ` Şunu yakaladım: ${signals.join(", ")}.` : "";
   if (replyLanguage === "tr") {
+    if (isAiVideoOnlyIntent(message)) return "Tamam. Bunu sadece AI Video üretimi olarak hazırlıyorum: 15 saniye, 16:9 1080p, voice-over, altyazı, sinematik müzik, MP4 ve dashboard teslimi. Website, admin panel, kaynak kod ve ZIP source seçeneklerini eklemeyeceğim.";
     if (/growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/.test(text)) return "Bunu Growth Intelligence servis akışı olarak ele alıyorum. Rakip URL’leri, public fiyat/reklam/landing page sinyalleri, haftalık rapor, alert kanalları ve dashboard’da PDF/dosya raporu teslimini planlayacağım. Rapor teslimi aktif hak/kredi uygunluğu olan kullanıcıya açılır.";
 if (/youtube|tiktok|kanal|takip|izlenme|para kazan|kazandıran|kazandiran|niş|nis/.test(text)) return "Bunu kanal stratejisi olarak ele alıyorum. Önce izlenme, takipçi ve gelir potansiyeli yüksek nişleri karşılaştırıp sana önerilen yolu çıkaracağım.";
     if (/affiliate|iş ortağı|is ortagi|partner|komisyon|referral|iş arkadaşı|is arkadasi/.test(text)) return "Bunu partner/affiliate destek akışı olarak ele alıyorum. Başvuru, onay, referral link, komisyon ve payout adımlarını net şekilde anlatacağım.";
@@ -1213,8 +1232,8 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [selectedProductionType, setSelectedProductionType] = useState("video");
   const [selectedQuality, setSelectedQuality] = useState("1080p");
   const [selectedStyle, setSelectedStyle] = useState("Cinematic");
-  const [selectedDuration, setSelectedDuration] = useState("30 sec");
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["Voice-over", "Subtitles", "3 alternatives"]);
+  const [selectedDuration, setSelectedDuration] = useState("15 sec");
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["Voice-over", "Subtitles", "Music"]);
   const [selectedModules, setSelectedModules] = useState<string[]>(["AI video"]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["Dashboard delivery", "MP4 download"]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
@@ -1285,9 +1304,9 @@ const hasUserVisibleProductionSelection = Boolean(
   selectedProductionType !== "video" ||
   selectedQuality !== "1080p" ||
   selectedStyle !== "Cinematic" ||
-  selectedDuration !== "30 sec" ||
-  selectedModules.join("|") !== "AI video" ||
-  selectedFeatures.join("|") !== "Voice-over|Subtitles|3 alternatives" ||
+    selectedDuration !== "15 sec" ||
+    selectedModules.join("|") !== "AI video" ||
+    selectedFeatures.join("|") !== "Voice-over|Subtitles|Music" ||
   selectedPlatforms.join("|") !== "Dashboard delivery|MP4 download" ||
   selectedMaterials.length ||
   uploadedMaterials.length
@@ -1310,9 +1329,10 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const configuredPackageOptionsForSelectedType = configuredProductionPackages.filter((item) => item.productionType === selectedProductionType).map((item) => item.name);
   const baseCategoryProfile = categoryOptionProfiles[selectedProductionType] ?? categoryOptionProfiles.video;
   const activeCategoryProfile = configuredPackageOptionsForSelectedType.length ? { ...baseCategoryProfile, quality: configuredPackageOptionsForSelectedType } : baseCategoryProfile;
+  const currentAiVideoOnly = selectedProductionType === "video" && (isAiVideoOnlyIntent(`${productionBrief} ${input} ${selectedModules.join(" ")} ${selectedPlatforms.join(" ")}`) || selectedModules.join("|") === "AI video");
   const selectedCostFeatures = Array.from(new Set([...selectedFeatures, ...selectedModules]));
-  const selectedOutputCount = selectedCostFeatures.includes("5 alternatives") ? 5 : selectedCostFeatures.includes("3 alternatives") ? 3 : 1;
-  const selectedDurationSeconds = Number(selectedDuration.replace(/\D/g, "")) || 30;
+  const selectedOutputCount = currentAiVideoOnly ? 1 : selectedCostFeatures.includes("5 alternatives") ? 5 : selectedCostFeatures.includes("3 alternatives") ? 3 : 1;
+  const selectedDurationSeconds = Number(selectedDuration.replace(/\D/g, "")) || (currentAiVideoOnly ? 15 : 30);
   const uploadedMaterialBytes = uploadedMaterials.reduce((total, material) => total + (Number(material.size_bytes) || 0), 0);
   const deliverySignal = `${selectedFeatures.join(" ")} ${selectedPlatforms.join(" ")} ${selectedModules.join(" ")}`.toLocaleLowerCase("tr-TR");
   const selectedDeliveryRequirements = {
@@ -1350,6 +1370,11 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const productionExampleDirections = (() => {
     const recentProductionContext = messages.slice(-12).map((item) => item.content).join(" ");
     const subjectText = `${productionBrief} ${input} ${recentProductionContext} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
+    if (isAiVideoOnlyIntent(subjectText) || selectedProductionType === "video") return [
+      { id: "saas-video", title: "SaaS modern", meta: "Hook + UI motion", style: "SaaS modern", modules: ["AI video"], platforms: ["Dashboard delivery", "MP4 download"] },
+      { id: "cinematic-video", title: "Cinematic promo", meta: "Voice + subtitles", style: "Cinematic", modules: ["AI video"], platforms: ["Dashboard delivery", "MP4 download"] },
+      { id: "premium-video", title: "Premium ad cut", meta: "Fast CTA video", style: "Premium ad", modules: ["AI video"], platforms: ["Dashboard delivery", "MP4 download"] }
+    ];
     if (/site|website|web|saas|app|uygulama|admin|eticaret|e-ticaret|storefront|mağaza|magaza/.test(subjectText)) return [
       { id: "commerce-site", title: "Commerce storefront", meta: "Store + product flow", style: "E-commerce Product", modules: ["Website", "Admin panel", "Working source package"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
       { id: "landing-page", title: "Landing page preview", meta: "Hero + sections", style: "SaaS modern", modules: ["Website", "Admin panel"], platforms: ["Dashboard delivery", "ZIP source", "README / setup"] },
@@ -1481,8 +1506,15 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   function selectProductionExampleDirection(direction: { id: string; title: string; meta: string; style: string; modules: string[]; platforms: string[] }) {
     setSelectedExampleDirection(direction.id);
     setSelectedStyle(direction.style);
-    setSelectedModules((current) => Array.from(new Set([...current, ...direction.modules])));
-    setSelectedPlatforms((current) => Array.from(new Set([...current, ...direction.platforms])));
+    if (selectedProductionType === "video" || isAiVideoOnlyIntent(`${productionBrief} ${input}`)) {
+      setSelectedModules(["AI video"]);
+      setSelectedPlatforms(["Dashboard delivery", "MP4 download"]);
+      setSelectedFeatures((current) => Array.from(new Set(current.filter((item) => !/source|zip|admin|website/i.test(item)).concat(["Voice-over", "Subtitles", "Music"]))));
+      setSelectedDuration((current) => current === "30 sec" || current === "Project based" ? "15 sec" : current);
+    } else {
+      setSelectedModules((current) => Array.from(new Set([...current, ...direction.modules])));
+      setSelectedPlatforms((current) => Array.from(new Set([...current, ...direction.platforms])));
+    }
     setProductionStartingIntent(false);
     setStatus(activeLanguage === "tr" ? `${direction.title} örneği seçildi. Onay verdiğinde üretim başlatma adımına geçilecek.` : `${direction.title} direction selected. Confirm when you are ready to start production.`);
   }
@@ -1713,29 +1745,59 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     setOptionsOpen(true);
   }
 
+  function applyAiVideoOnlyPreset(idea: string) {
+    setQuickProviderTest(false);
+    setDynamicWizard(emptyDynamicWizard);
+    setSelectedProductionType("video");
+    setSelectedQuality(/4k|ultra/i.test(idea) ? "4K" : "1080p");
+    setSelectedStyle(/saas|startup|premium/i.test(idea) ? "SaaS modern" : /cinematic|sinematik/i.test(idea) ? "Cinematic" : "SaaS modern");
+    setSelectedDuration(durationFromFollowUp(idea) || "15 sec");
+    setSelectedModules(["AI video"]);
+    setSelectedFeatures(Array.from(new Set([
+      /voice|voice-over|voiceover|seslendirme|sesli/i.test(idea) ? "Voice-over" : "Voice-over",
+      /subtitle|subtitles|altyazı|altyazi/i.test(idea) ? "Subtitles" : "Subtitles",
+      /music|müzik|muzik|background music|fon müzik|fon muzik/i.test(idea) ? "Music" : "Music"
+    ])));
+    setSelectedPlatforms(["Dashboard delivery", "MP4 download"]);
+    setOptionsOpen(false);
+    setProductionStartingIntent(true);
+  }
+
   function applyAssistantSuggestion(suggestion: AssistantSuggestion, idea: string, plan?: AssistantPlan) {
-    const type = productionTypeFromAssistantCategory(plan?.production_type ?? suggestion.category);
-    applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea);
+    const forcedVideoOnly = isAiVideoOnlyIntent(`${idea} ${suggestion.suggestedPrompt ?? ""}`);
+    const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(plan?.production_type ?? suggestion.category);
+    forcedVideoOnly ? applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea) : applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea);
+  if (forcedVideoOnly) {
+    if (plan?.selected_style || suggestion.style) setSelectedStyle(plan?.selected_style ?? suggestion.style ?? "SaaS modern");
+    if (plan?.selected_quality || suggestion.quality) setSelectedQuality(plan?.selected_quality ?? suggestion.quality ?? "1080p");
+  } else {
     if (plan?.selected_style || suggestion.style) setSelectedStyle(plan?.selected_style ?? suggestion.style ?? "Corporate");
     if (plan?.selected_quality || suggestion.quality) setSelectedQuality(plan?.selected_quality ?? suggestion.quality ?? "1080p");
     if (plan?.selected_duration || suggestion.duration) setSelectedDuration(plan?.selected_duration ?? suggestion.duration ?? "30 sec");
     if (Array.isArray(plan?.selected_modules) && plan.selected_modules.length) setSelectedModules(plan.selected_modules);
     if (Array.isArray(plan?.selected_features) && plan.selected_features.length) setSelectedFeatures(plan.selected_features);
     if (Array.isArray(plan?.selected_platforms) && plan.selected_platforms.length) setSelectedPlatforms(plan.selected_platforms);
+  }
     setOptionsOpen(false);
   }
 
   function applyOrchestratorPlan(orchestrator: AssistantOrchestratorResponse, idea: string) {
     const firstJob = Array.isArray(orchestrator.jobs) ? orchestrator.jobs[0] : null;
     if (!firstJob) return;
-    const type = productionTypeFromAssistantCategory(firstJob.type ?? "video");
-    applyGeneralProductionPreset(type, firstJob.brief || idea);
+  const forcedVideoOnly = isAiVideoOnlyIntent(`${idea} ${firstJob.brief ?? ""}`);
+  const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(firstJob.type ?? "video");
+  forcedVideoOnly ? applyAiVideoOnlyPreset(firstJob.brief || idea) : applyGeneralProductionPreset(type, firstJob.brief || idea);
+  if (forcedVideoOnly) {
+    if (firstJob.selected_style) setSelectedStyle(firstJob.selected_style);
+    if (firstJob.selected_quality) setSelectedQuality(firstJob.selected_quality);
+  } else {
     if (firstJob.selected_style) setSelectedStyle(firstJob.selected_style);
     if (firstJob.selected_quality) setSelectedQuality(firstJob.selected_quality);
     if (firstJob.selected_duration) setSelectedDuration(firstJob.selected_duration);
     if (Array.isArray(firstJob.selected_modules) && firstJob.selected_modules.length) setSelectedModules(firstJob.selected_modules);
     if (Array.isArray(firstJob.selected_features) && firstJob.selected_features.length) setSelectedFeatures(firstJob.selected_features);
     if (Array.isArray(firstJob.selected_platforms) && firstJob.selected_platforms.length) setSelectedPlatforms(firstJob.selected_platforms);
+  }
     setOptionsOpen(false);
   }
 
@@ -1763,11 +1825,11 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     const commerceProject = type === "website" && isCommerceProjectIdea(idea);
     const growthIntelligenceProject = type === "document_pack" && /growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/i.test(idea);
     setSelectedProductionType(type);
-    setSelectedQuality(growthIntelligenceProject ? "Monthly service plan" : type === "image" ? "1080p" : "1080p premium");
-    setSelectedStyle(growthIntelligenceProject ? "Growth Intelligence service" : commerceProject ? "E-commerce Product" : type === "saas" ? "SaaS modern" : type === "mobile_app" ? "App demo" : type === "campaign" ? "Premium ad" : type === "documentary" ? "Documentary" : type === "drone_video" ? "Cinematic" : type === "live_sales_agent" ? "Friendly sales host" : type === "drama" ? "Short drama" : type === "stickman_animation" ? "Stickman animation" : type === "anime_short_film" ? "Anime cinematic" : "Corporate");
-    setSelectedDuration(growthIntelligenceProject ? "Monthly monitoring" : ["website", "saas", "mobile_app", "admin_project", "image", "brand_kit", "document_pack"].includes(type) ? "Project based" : type === "documentary" ? "2 min" : type === "drone_video" ? "60 sec" : type === "live_sales_agent" ? "10h/month fair use" : type === "drama" ? "Scene 1-3 min" : "30 sec");
+    setSelectedQuality(growthIntelligenceProject ? "Monthly service plan" : type === "image" || type === "video" ? "1080p" : "1080p premium");
+    setSelectedStyle(growthIntelligenceProject ? "Growth Intelligence service" : commerceProject ? "E-commerce Product" : type === "saas" ? "SaaS modern" : type === "mobile_app" ? "App demo" : type === "campaign" ? "Premium ad" : type === "video" ? (/saas|startup|premium/i.test(idea) ? "SaaS modern" : "Cinematic") : type === "documentary" ? "Documentary" : type === "drone_video" ? "Cinematic" : type === "live_sales_agent" ? "Friendly sales host" : type === "drama" ? "Short drama" : type === "stickman_animation" ? "Stickman animation" : type === "anime_short_film" ? "Anime cinematic" : "Corporate");
+    setSelectedDuration(growthIntelligenceProject ? "Monthly monitoring" : ["website", "saas", "mobile_app", "admin_project", "image", "brand_kit", "document_pack"].includes(type) ? "Project based" : type === "documentary" ? "2 min" : type === "drone_video" ? "60 sec" : type === "live_sales_agent" ? "10h/month fair use" : type === "drama" ? "Scene 1-3 min" : type === "video" ? (durationFromFollowUp(idea) || "15 sec") : "30 sec");
     setSelectedModules(growthIntelligenceProject ? ["Growth Intelligence brief", "Competitor monitoring", "Weekly executive report", "Campaign response actions"] : commerceProject ? ["Website", "E-commerce product pack", "Marketplace listing", "Admin panel"] : type === "website" ? ["Website", "Visual/image pack"] : type === "saas" ? ["SaaS screen", "Admin panel"] : type === "mobile_app" ? ["Mobile app", "Admin panel"] : type === "admin_project" ? ["Admin panel"] : type === "brand_kit" ? ["Brand kit"] : type === "document_pack" ? ["PDF/document"] : type === "image" ? ["Visual/image pack"] : type === "ai_agent" ? ["AI video", "Brand kit"] : type === "campaign" ? ["Shopify product link", "Amazon product link", "Trendyol product link", "Product ad video"] : type === "documentary" ? ["Documentary", "Topic research", "Narration outline", "Archival visual plan", "Voice-over"] : type === "drone_video" ? ["Drone-style aerial video", "AI map/location drone-style video", "Voice-over", "Background music direction"] : type === "live_sales_agent" ? ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "Voice selection", "User audio upload", "Visual/image pack"] : type === "drama" ? ["Drama / short series", "Script + scene plan", "Character breakdown", "AI video", "Voice-over"] : ["AI video"]);
-    setSelectedFeatures(growthIntelligenceProject ? ["Public-signal monitoring", "Weekly executive PDF", "Alert channel plan", "Campaign response actions"] : commerceProject ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "campaign" ? ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut"] : type === "localization" ? ["Voice-over", "Subtitles", "Scene plan"] : type === "documentary" ? ["Script", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "drone_video" ? ["Scene plan", "Marked area notes", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "live_sales_agent" ? ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Choose AI voice", "Photo/avatar input", "Subtitles", "Compliance review", "Revision right"] : type === "drama" ? ["Script", "Scene plan", "Character breakdown", "Dialogue", "Voice-over", "Subtitles", "Music", "Revision right"] : ["Revision right"]);
+    setSelectedFeatures(growthIntelligenceProject ? ["Public-signal monitoring", "Weekly executive PDF", "Alert channel plan", "Campaign response actions"] : commerceProject ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "campaign" ? ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut"] : type === "video" ? ["Voice-over", "Subtitles", "Music"] : type === "localization" ? ["Voice-over", "Subtitles", "Scene plan"] : type === "documentary" ? ["Script", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "drone_video" ? ["Scene plan", "Marked area notes", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "live_sales_agent" ? ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Choose AI voice", "Photo/avatar input", "Subtitles", "Compliance review", "Revision right"] : type === "drama" ? ["Script", "Scene plan", "Character breakdown", "Dialogue", "Voice-over", "Subtitles", "Music", "Revision right"] : ["Revision right"]);
     setSelectedPlatforms(growthIntelligenceProject ? ["Growth Intelligence dashboard", "Email report", "Slack/email alerts"] : commerceProject ? ["Dashboard delivery", "ZIP source", "Shopify", "WooCommerce"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Dashboard delivery", "ZIP source"] : type === "campaign" ? ["Dashboard delivery", "TikTok", "Shopify", "Amazon", "Trendyol"] : type === "documentary" ? ["Dashboard delivery", "MP4 download", "YouTube Shorts", "ZIP source"] : type === "live_sales_agent" ? ["TikTok Live", "YouTube Live"] : type === "drama" ? ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"] : ["Dashboard delivery", "MP4 download"]);
     const profile = categoryOptionProfiles[type];
     const configuredQualityOptions = configuredProductionPackages.filter((item) => item.productionType === type).map((item) => item.name);
@@ -2191,7 +2253,9 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
     }
     if (isStartConfirmation && hasProductionContext) {
       const existingBrief = productionBrief.trim() || messages.slice(-8).map((item) => item.content).join("\n");
-      if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
+      if (isAiVideoOnlyIntent(existingBrief)) {
+        applyAiVideoOnlyPreset(existingBrief);
+      } else if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
       const startReply = activeLanguage === "tr"
         ? "Tamam. Chat cevabı üretmiyorum; gerçek üretim/kredi kontrol ekranını açıyorum. Kredi bu onay adımında kontrol edilir, üretim kaydı da buradan oluşur."
         : "Understood. I am not pretending the production has started in chat; I am opening the real production/credit confirmation step now.";
