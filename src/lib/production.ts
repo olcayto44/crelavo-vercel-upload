@@ -1103,12 +1103,22 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
     notes.push(`Working source package build/test allowance: ${workingSourceAllowance} credits`);
   }
 
+  if (textIncludes(quality, ["480p preview", "fast draft"])) {
+    single = Math.max(base, single - (isVideoLike ? 250 : 100));
+    notes.push("Preview/draft quality keeps provider allowance lower");
+  }
+
   if (textIncludes(quality, ["1080p", "premium"])) {
     single += isVideoLike ? 900 : 250;
     notes.push("Provider allowance added for 1080p/premium quality");
   }
 
-  if (textIncludes(quality, ["2k", "4k", "sinematik"])) {
+  if (textIncludes(quality, ["4k"])) {
+    single += isVideoLike ? 2400 : 900;
+    notes.push("4K/high-end export allowance added");
+  }
+
+  if (textIncludes(quality, ["2k", "sinematik", "cinematic"])) {
     single += isVideoLike ? 1800 : 700;
     notes.push("Extra provider allowance added for high-resolution or cinematic production");
   }
@@ -1181,7 +1191,17 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
     notes.push("Separate voice per speaker allowance: 450 credits");
   }
 
-  if (textIncludes(options.features, ["regional clothing", "traditional outfit", "regional environment", "local accent voice-over", "dialect voice-over", "cultural scene direction", "yöresel", "yoresel", "bölgesel", "bolgesel", "şive", "sive", "aksan", "yerel kıyafet", "yöresel kıyafet"])) {
+  if (textIncludes(options.features, ["male voice", "female voice", "child voice", "senior voice", "adult neutral voice", "energetic sales voice", "calm documentary voice", "erkek ses", "kadın ses", "kadin ses", "çocuk ses", "cocuk ses", "yaşlı ses", "yasli ses"])) {
+    single += 180;
+    notes.push("Voice profile matching allowance: 180 credits");
+  }
+
+  if (textIncludes(options.features, ["create ai characters", "choose from character library", "use uploaded character photos", "keep same characters across scenes", "separate role for each character", "character breakdown", "karakter", "karakter oluştur", "karakter sec", "karakter seç"])) {
+    single += 550;
+    notes.push("Character creation/consistency allowance: 550 credits");
+  }
+
+  if (textIncludes(options.features, ["regional clothing", "traditional outfit", "traditional costume", "regional environment", "local culture", "local accent voice-over", "dialect voice-over", "cultural scene direction", "yöresel", "yoresel", "bölgesel", "bolgesel", "şive", "sive", "aksan", "yerel kıyafet", "yöresel kıyafet"])) {
     single += 700;
     notes.push("Regional culture, clothing, environment and dialect direction allowance: 700 credits");
   }
@@ -1204,6 +1224,36 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
   if (textIncludes(options.features, ["müzik", "music", "background music", "emotion-matched music", "user music reference", "soundtrack", "arka fon"])) {
     single += 250;
     notes.push("Music/sound design allowance: 250 credits");
+  }
+
+  if (textIncludes(options.features, ["animals", "hayvan", "nature", "doğa", "doga", "product / object", "object", "obje", "food / drink", "fashion / outfit", "vehicle / drone", "fantasy / ai world"])) {
+    single += 260;
+    notes.push("Special social video subject-world allowance: 260 credits");
+  }
+
+  if (textIncludes(options.features, ["home interior", "outdoor street", "hotel", "sea / beach", "beach", "deniz", "cafe", "restaurant", "cinema / dark room", "night", "evening", "action environment", "emotional atmosphere", "high-energy viral mood", "luxury mood"])) {
+    single += 320;
+    notes.push("Detailed environment/time/mood direction allowance: 320 credits");
+  }
+
+  if (textIncludes(options.features, ["marketplace product kit", "amazon listing campaign", "trendyol product campaign", "shopify launch kit", "woocommerce product kit", "marketplace listing copy", "seo product description", "store banner", "email promo", "ugc ad script", "a/b hook pack", "bulk product list"])) {
+    single += 650;
+    notes.push("Marketplace/e-commerce kit complexity allowance: 650 credits");
+  }
+
+  if (textIncludes(options.features, ["growth intelligence report", "competitor monitoring", "weekly monitoring", "weekly executive report", "slack/email alerts", "ad / social competitor analysis", "local market analysis", "action plan + priorities"])) {
+    single += 850;
+    notes.push("Enterprise growth/competitor intelligence allowance: 850 credits");
+  }
+
+  if (textIncludes(options.features, ["24/7 plan", "24/7 brand representative", "120h/month", "40h/month", "10h/month", "approval-flow assistant", "approval flow", "social calendar", "service plan", "live chat replies", "obs/provider readiness"])) {
+    single += 1200;
+    notes.push("Enterprise AI agent/live service planning allowance: 1200 credits");
+  }
+
+  if (textIncludes(options.features, ["satellite-view intro", "marked area notes", "route/path plan", "smooth flyover route", "satellite to location zoom", "marked-area reveal", "real estate orbit", "travel cinematic flyover"])) {
+    single += 900;
+    notes.push("Drone/satellite route and marked-area planning allowance: 900 credits");
   }
 
   if (options.revisionBuffer || textIncludes(options.features, ["revizyon", "revision"])) {

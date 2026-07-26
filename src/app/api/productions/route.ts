@@ -431,6 +431,9 @@ const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, producti
 const costGuardConfig = apiCostGuardConfig();
   const outputPlan = {
     outputCount,
+    durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
+    quality: String(body.quality ?? body.selected_quality ?? ""),
     singleOutputCredits,
     totalReservedCredits: estimatedCredits,
     packageCredits: costEstimate.packageCredits,
@@ -466,6 +469,26 @@ const costGuardConfig = apiCostGuardConfig();
     deliveryLevel
   };
 
+  const characterVoiceConsistencyPlan = body.character_voice_consistency_plan && typeof body.character_voice_consistency_plan === "object"
+    ? body.character_voice_consistency_plan as Record<string, unknown>
+    : body.characterVoiceConsistencyPlan && typeof body.characterVoiceConsistencyPlan === "object"
+      ? body.characterVoiceConsistencyPlan as Record<string, unknown>
+      : null;
+
+  const manualOptionSummary = {
+    provider: String(body.provider_service ?? body.service_network ?? "Auto provider").trim() || "Auto provider",
+    quality: String(body.quality ?? body.selected_quality ?? "").trim(),
+    durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? "").trim(),
+    voiceProfile: String(body.voice_profile ?? "").trim(),
+    voiceLanguage: String(body.voice_language ?? "").trim(),
+    musicProfile: String(body.music_profile ?? "").trim(),
+    environmentProfile: String(body.environment_profile ?? "").trim(),
+    deliveryHandoff: String(body.delivery_handoff ?? "").trim(),
+    selectedFeatures: String(body.features ?? "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 40),
+    selectedPlatforms: String(body.target_platform ?? body.social_platforms ?? "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 20)
+  };
+
   const isPreviewOnlyProduction = body.preview_only === true || body.previewOnly === true || String(body.access_mode ?? "").toLowerCase() === "preview";
   const previewAccess = {
     previewOnly: isPreviewOnlyProduction,
@@ -482,13 +505,25 @@ const costGuardConfig = apiCostGuardConfig();
     workflowMode,
     deliveryLevel,
     style: body.style ?? "",
+    quality: body.quality ?? body.selected_quality ?? "",
     targetPlatform: body.target_platform ?? "",
     features: body.features ?? "",
+    serviceNetwork: body.service_network ?? "",
+    selectedProviderService: body.provider_service ?? "",
+    voiceProfile: body.voice_profile ?? "",
+    voiceLanguage: body.voice_language ?? "",
+    musicProfile: body.music_profile ?? "",
+    environmentProfile: body.environment_profile ?? "",
+    deliveryHandoff: body.delivery_handoff ?? "",
+    outputDurationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
     projectDetails: body.project_details ?? "",
     ecommerceContext,
     socialWorkflow,
     commerceWorkflow,
     projectWorkflow,
+    manualOptionSummary,
+    characterVoiceConsistencyPlan,
     musicVideoMaterialGroups,
     dramaDetails,
     droneDetails,
@@ -506,8 +541,6 @@ const costGuardConfig = apiCostGuardConfig();
 outputPlan,
     agentAction,
     agentProviderRoutePlan,
-    selectedServiceNetwork: String(body.service_network ?? "").trim(),
-    selectedProviderService: String(body.provider_service ?? "").trim(),
     deliveryTargets,
     deliveryPackage,
     deliveryRequirements,
@@ -529,13 +562,25 @@ outputPlan,
     projectDetails: body.project_details ?? "",
     targetPlatform: body.target_platform ?? "",
     style: body.style ?? "",
+    quality: body.quality ?? body.selected_quality ?? "",
     features: body.features ?? "",
+    serviceNetwork: body.service_network ?? "",
+    selectedProviderService: body.provider_service ?? "",
+    voiceProfile: body.voice_profile ?? "",
+    voiceLanguage: body.voice_language ?? "",
+    musicProfile: body.music_profile ?? "",
+    environmentProfile: body.environment_profile ?? "",
+    deliveryHandoff: body.delivery_handoff ?? "",
+    outputDurationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
     adminPanel: body.admin_panel ?? false,
     workflowMode,
     ecommerceContext,
     socialWorkflow,
     commerceWorkflow,
     projectWorkflow,
+    manualOptionSummary,
+    characterVoiceConsistencyPlan,
     musicVideoMaterialGroups,
     dramaDetails,
     droneDetails,

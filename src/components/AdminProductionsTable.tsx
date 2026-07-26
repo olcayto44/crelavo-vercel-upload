@@ -451,7 +451,7 @@ async function refundReservedCredits(item: ProductionRow) {
         const pipelineType = typeof item.output_json?.pipelineType === "string" ? item.output_json.pipelineType : "general_production";
         const automationSteps = item.automation_steps ?? [];
         const legalSnapshot = item.legal_acceptance_snapshot;
-        const outputPlan = item.request_metadata?.outputPlan as { outputCount?: number; variationStrategy?: string; profitEstimate?: ProductionProfitEstimate } | undefined;
+        const outputPlan = item.request_metadata?.outputPlan as { outputCount?: number; variationStrategy?: string; profitEstimate?: ProductionProfitEstimate; costNotes?: unknown[] } | undefined;
         const profitEstimate = outputPlan?.profitEstimate;
         const deliveryTargets = item.request_metadata?.deliveryTargets as { publishTargets?: string[]; connectedAccountTargets?: string; connectedStoreTargets?: string } | undefined;
         const deliveryPackage = item.request_metadata?.deliveryPackage as { standard?: string; requiredItems?: string[]; fileFormats?: string[]; adminChecklist?: string[]; costCredits?: number } | undefined;
@@ -469,6 +469,9 @@ async function refundReservedCredits(item: ProductionRow) {
         const liveSalesAgentDetails = item.request_metadata?.liveSalesAgentDetails as { productLinkDetails?: string; brandName?: string; productCategory?: string; targetMarketLanguage?: string; targetPlatform?: string; persona?: string; avatarSource?: string; avatarStyle?: string; voiceSource?: string; voiceLanguage?: string; voiceTone?: string; background?: string; visualStyle?: string; subtitleOption?: string; interactionMode?: string; streamGoal?: string; humanFallback?: string; providerReadiness?: string; ctaOffer?: string; complianceNotes?: string; creditPolicy?: string; materialGroups?: Record<string, string[]> } | undefined;
         const liveSalesAgentSummary = liveSalesAgentDetails ? [liveSalesAgentDetails.brandName, liveSalesAgentDetails.productCategory, liveSalesAgentDetails.targetPlatform, liveSalesAgentDetails.streamGoal, liveSalesAgentDetails.creditPolicy].filter(Boolean).join(" · ") : "";
         const commerceWorkflow = item.request_metadata?.commerceWorkflow as { storePlatform?: string; storeAssetGoal?: string; connectedStoreTargets?: string } | undefined;
+        const manualOptionSummary = item.request_metadata?.manualOptionSummary as { provider?: string; quality?: string; durationSeconds?: number; aspectRatio?: string; voiceProfile?: string; voiceLanguage?: string; musicProfile?: string; environmentProfile?: string; deliveryHandoff?: string; selectedFeatures?: string[]; selectedPlatforms?: string[] } | undefined;
+        const characterVoiceConsistencyPlan = item.request_metadata?.characterVoiceConsistencyPlan as { required?: boolean; scope?: string; characterContinuity?: string; voiceContinuity?: string; selectedVoiceProfile?: string; selectedVoiceLanguage?: string; characterInputs?: { selectedMaterials?: unknown[]; uploadedCharacterRefs?: unknown[] } } | undefined;
+        const costNotes = Array.isArray(outputPlan?.costNotes) ? outputPlan.costNotes.map(String) : [];
         const providerJobs = providerJobsFor(item);
         const hasRefreshableJobs = providerJobs.some((job) => job.kind === "active" || job.kind === "unknown");
         const providerTestMode = Boolean(item.output_json?.providerTestMode ?? item.request_metadata?.providerTestMode);
@@ -603,6 +606,21 @@ async function refundReservedCredits(item: ProductionRow) {
               <span>Commerce target</span>
               <strong>{commerceWorkflow?.storePlatform || "No store selected"}</strong>
               <small>{commerceWorkflow?.storeAssetGoal || commerceWorkflow?.connectedStoreTargets || "No e-commerce target"}</small>
+            </div>
+            <div>
+              <span>Manual options</span>
+              <strong>{manualOptionSummary ? `${manualOptionSummary.provider || "Auto"} · ${manualOptionSummary.quality || "quality pending"}` : "No manual summary"}</strong>
+              <small>{manualOptionSummary ? [manualOptionSummary.voiceProfile, manualOptionSummary.voiceLanguage, manualOptionSummary.musicProfile, manualOptionSummary.environmentProfile, manualOptionSummary.deliveryHandoff].filter(Boolean).join(" · ") || "No voice/music/environment detail" : "Selections not captured"}</small>
+            </div>
+            <div>
+              <span>Character / voice consistency</span>
+              <strong>{characterVoiceConsistencyPlan ? (characterVoiceConsistencyPlan.required ? "Required" : "Tracked") : "Not tracked"}</strong>
+              <small>{characterVoiceConsistencyPlan ? [characterVoiceConsistencyPlan.characterContinuity, characterVoiceConsistencyPlan.voiceContinuity, characterVoiceConsistencyPlan.selectedVoiceProfile, characterVoiceConsistencyPlan.selectedVoiceLanguage, characterVoiceConsistencyPlan.characterInputs?.uploadedCharacterRefs?.length ? `${characterVoiceConsistencyPlan.characterInputs.uploadedCharacterRefs.length} refs` : ""].filter(Boolean).join(" · ") : "No identity or voice plan captured"}</small>
+            </div>
+            <div>
+              <span>Credit factors</span>
+              <strong>{costNotes.length ? `${costNotes.length} cost notes` : "Base package only"}</strong>
+              <small>{costNotes.slice(0, 3).join(" · ") || "No extra feature allowance"}</small>
             </div>
             <div>
               <span>Delivery package</span>

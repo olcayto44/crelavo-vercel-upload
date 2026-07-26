@@ -158,7 +158,7 @@ export async function POST(request: Request) {
           .from("production_requests")
           .select("id", { count: "exact", head: true })
           .in("status", ["queued", "in_production"])
-          .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization"]);
+          .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "cultural_localization"]);
         if (activeVideoJobsError) throw activeVideoJobsError;
       if ((activeVideoJobs ?? 0) >= activeJobLimit) {
         const queuedOutput = {
@@ -399,12 +399,14 @@ export async function POST(request: Request) {
     let providerNote = "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
     let visualJob: ProviderJob | null = null;
     try {
-      if (["video", "campaign", "music_video", "stickman_animation", "localization"].includes(String(currentProduction.production_type))) {
+      if (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization"].includes(String(currentProduction.production_type))) {
         visualJob = await createVisualVideo({
           scenes: Array.isArray(demoOutput.scenePlan) ? demoOutput.scenePlan.map((part: Record<string, unknown>) => String(part.description ?? part.title ?? "Scene")) : [String(currentProduction.prompt ?? currentProduction.title ?? "Crelavo video")],
           productImageUrls: [],
           durationSeconds: requestedDuration,
-          style: String(requestMetadata.style ?? inputJson.style ?? currentProduction.title ?? "Crelavo premium")
+          style: String(requestMetadata.style ?? inputJson.style ?? currentProduction.title ?? "Crelavo premium"),
+          provider: String(providerPreflight.provider ?? ""),
+          aspectRatio: String(providerPreflight.aspectRatio ?? "9:16")
         });
         providerNote = providerTestMode
           ? "Low-cost provider test job created: 5s single-output video. Poll /api/automation/status to update final output."
@@ -414,9 +416,17 @@ export async function POST(request: Request) {
       providerNote = `Provider not started, demo output is active: ${errorMessage(providerError, "provider unavailable")}`;
     }
 
+    const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
+    const aiVideoProviderChain = [
+      { step: "visual_generation", provider: providerPreflight.provider, status: visualJob ? "job_created" : "demo_placeholder", required: true },
+      { step: "voice_over", provider: "elevenlabs", status: selectedOptions.voiceOver ? "route_required_after_visual" : "not_selected", required: Boolean(selectedOptions.voiceOver) },
+      { step: "background_music", provider: "stable_audio_or_mubert", status: selectedOptions.music ? "route_required_after_visual" : "not_selected", required: Boolean(selectedOptions.music) },
+      { step: "subtitles", provider: "subtitle_renderer", status: selectedOptions.subtitles ? "route_required_after_voice" : "not_selected", required: Boolean(selectedOptions.subtitles) },
+      { step: "final_render", provider: "shotstack", status: selectedOptions.finalRender ? "route_required_for_customer_ready_output" : "optional", required: Boolean(selectedOptions.finalRender) }
+    ];
     const outputJson: Record<string, unknown> = visualJob
-      ? { ...demoOutput, visualJob, providerStatus: "visual_job_created", providerTestMode, providerPreflight, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks }
-      : { ...demoOutput, providerTestMode, providerPreflight, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks };
+      ? { ...demoOutput, visualJob, providerStatus: "visual_job_created", providerTestMode, providerPreflight, aiVideoProviderChain, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks }
+      : { ...demoOutput, providerTestMode, providerPreflight, aiVideoProviderChain, requestedDurationSeconds: requestedDuration, automaticDeliveryLinks: deliveryLinks };
     const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob });
     outputJson.providerLifecycle = { visual: providerLifecycle.visual, render: providerLifecycle.render };
     outputJson.outputRegistry = providerLifecycle.outputRegistry;

@@ -29,6 +29,13 @@ export type AssistantProductionSelection = {
   uploadedMaterials?: UserUploadedMaterial[];
   deliveryLevel?: DeliveryLevel;
   quickProviderTest?: boolean;
+  selectedServiceNetwork?: string;
+  selectedProviderService?: string;
+  selectedVoiceProfile?: string;
+  selectedVoiceLanguage?: string;
+  selectedMusicProfile?: string;
+  selectedEnvironmentProfile?: string;
+  selectedDeliveryHandoff?: string;
 };
 
 export function packageIdFromSelection(productionType: string, selection: Pick<AssistantProductionSelection, "input" | "selectedStyle" | "selectedQuality" | "selectedDuration" | "selectedModules" | "selectedFeatures" | "selectedPlatforms" | "quickProviderTest">, packageCatalog?: ProductionPackage[]) {
@@ -186,6 +193,29 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
   const wantsOwnVoiceover = effectiveFeatures.includes("Own voice-over") || musicVideoMaterialGroups.ownVoice.length > 0;
   const deliveryRequirements = deliveryRequirementsFromSelection({ ...selection, selectedFeatures: effectiveFeatures });
   const productionQuality = qualityProfileForProduction(selection.productionType, packageId);
+  const featureSignal = `${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+  const isCharacterVoiceSensitive = ["video", "talking_video", "campaign", "animation", "anime_short_film", "animal_video", "studio", "drama", "cinematic_video", "avatar", "lip_sync", "stickman_animation", "music_video", "live_sales_agent"].includes(selection.productionType);
+  const wantsCharacterContinuity = /character|karakter|avatar|person|kişi|kisi|same character|consistent|continuity|devamlı|tutarlı|tutarli|choose character|create character|self-in-video|add yourself|own image/.test(featureSignal);
+  const wantsVoiceContinuity = /voice|ses|dublaj|dialogue|separate voice|multi-speaker|own voice|voice clone|lip-sync|erkek|kadın|kadin|çocuk|cocuk|yaşlı|yasli/.test(featureSignal);
+  const characterVoiceConsistencyPlan = isCharacterVoiceSensitive ? {
+    required: wantsCharacterContinuity || wantsVoiceContinuity,
+    scope: "same_scene_and_same_video",
+    appliesTo: selection.productionType,
+    characterContinuity: wantsCharacterContinuity ? "lock character identity, outfit/profile cues and role labels across every shot in this production" : "not requested",
+    voiceContinuity: wantsVoiceContinuity ? "lock voice profile, language, speaker role and lip-sync/narration mapping across every shot in this production" : "not requested",
+    selectedVoiceProfile: selection.selectedVoiceProfile ?? "",
+    selectedVoiceLanguage: selection.selectedVoiceLanguage ?? "",
+    characterInputs: {
+      selectedMaterials: selection.selectedMaterials,
+      uploadedCharacterRefs: uploadedMaterials.filter((material) => /character|avatar|person|image|photo|self/i.test(material.reference_type)).map((material) => material.file_url)
+    },
+    guardrails: [
+      "Do not change a character face/body/style between shots unless user explicitly asks.",
+      "Do not swap speaker voice, age, gender or language once assigned inside the same scene/video.",
+      "For multi-character productions, keep a stable character-to-voice map before generation/render.",
+      "For avatars, animation, stickman, normal video and ad video, preserve the same identity/voice plan across the production record."
+    ]
+  } : null;
   const dramaDetails = selection.productionType === "drama" ? {
     format: optionLineValue(selection.optionSummary, "Drama format"),
     genreTone: optionLineValue(selection.optionSummary, "Drama genre/tone"),
@@ -253,8 +283,16 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     project_details: `${selection.prompt}\n\nProduction options:\n${selection.optionSummary}`,
     style: selection.selectedStyle,
     quality: selection.selectedQuality,
+    aspect_ratio: selection.selectedQuality,
     target_platform: selection.selectedPlatforms.join(", "),
     features: effectiveFeatures.join(", "),
+    service_network: selection.selectedServiceNetwork ?? "",
+    provider_service: selection.selectedProviderService ?? "",
+    voice_profile: selection.selectedVoiceProfile ?? "",
+    voice_language: selection.selectedVoiceLanguage ?? "",
+    music_profile: selection.selectedMusicProfile ?? "",
+    environment_profile: selection.selectedEnvironmentProfile ?? "",
+    delivery_handoff: selection.selectedDeliveryHandoff ?? "",
     workflow_mode: videoOnly ? "media" : ["website", "saas", "mobile_app", "admin_project"].includes(selection.productionType) || selection.selectedModules.includes("Website") || selection.selectedModules.includes("SaaS screen") || selection.selectedModules.includes("Mobile app") || selection.selectedModules.includes("Admin panel") ? "project" : "media",
     output_count: videoOnly ? 1 : selection.selectedFeatures.includes("5 alternatives") ? 5 : selection.selectedFeatures.includes("3 alternatives") ? 3 : 1,
     output_duration_seconds: Number(selection.selectedDuration.replace(/\D/g, "")) || 30,
@@ -276,6 +314,16 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     drama_details: dramaDetails,
     drone_details: droneDetails,
     live_sales_agent_details: liveSalesAgentDetails,
+    character_voice_consistency_plan: characterVoiceConsistencyPlan,
+    manual_option_details: {
+      serviceNetwork: selection.selectedServiceNetwork ?? "",
+      providerService: selection.selectedProviderService ?? "",
+      voiceProfile: selection.selectedVoiceProfile ?? "",
+      voiceLanguage: selection.selectedVoiceLanguage ?? "",
+      musicProfile: selection.selectedMusicProfile ?? "",
+      environmentProfile: selection.selectedEnvironmentProfile ?? "",
+      deliveryHandoff: selection.selectedDeliveryHandoff ?? ""
+    },
     publish_targets: selection.selectedPlatforms,
     social_platforms: selection.selectedPlatforms.join(", "),
     project_modules: selection.selectedModules.join(", "),

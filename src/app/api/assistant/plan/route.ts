@@ -43,6 +43,12 @@ type AiProductionDraft = {
   selected_features?: string[];
   selected_platforms?: string[];
   missing_fields?: string[];
+  provider_route?: string;
+  voice_profile?: string;
+  voice_language?: string;
+  music_profile?: string;
+  environment_profile?: string;
+  delivery_handoff?: string;
   workflow_stage?: string;
   next_user_action?: string;
   delivery_path?: string[];
@@ -61,9 +67,14 @@ function hasUrl(text: string) {
 }
 
 function actionNameForProductionType(productionType: string) {
-  if (["campaign", "video", "music_video", "animation"].includes(productionType)) return "create_ai_video";
-  if (["image", "brand_kit"].includes(productionType)) return "generate_image";
-  if (productionType === "talking_video") return "run_lip_sync";
+  if (["campaign", "video", "music_video", "animation", "stickman_animation", "documentary", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "cultural_localization"].includes(productionType)) return "create_ai_video";
+  if (["image", "brand_kit", "virtual_model_studio", "visual_clone"].includes(productionType)) return "generate_image";
+  if (["talking_video", "avatar", "lip_sync", "live_sales_agent", "voice_clone"].includes(productionType)) return "run_lip_sync";
+  if (productionType === "ad_score_checker") return "score_ad_performance";
+  if (productionType === "campaign_calendar") return "create_campaign_calendar";
+  if (productionType === "crelavo_academy") return "create_academy_pack";
+  if (productionType === "community_showcase") return "reuse_showcase_template";
+  if (productionType === "ai_agent") return "create_ai_agent_plan";
   if (productionType === "website") return "create_website_project";
   if (productionType === "saas") return "create_saas_project";
   if (productionType === "mobile_app") return "create_mobile_app_project";
@@ -74,8 +85,18 @@ function actionNameForProductionType(productionType: string) {
 
 function detectProductionType(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
+  if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "ad_score_checker";
+  if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model_studio";
+  if (/kültürel yerelleştirme|kulturel yerellestirme|cultural localization|global localization|yerelleştirme|yerellestirme/.test(text)) return "cultural_localization";
+  if (/kampanya takvimi|campaign calendar|black friday|kara cuma|sezonluk kampanya/.test(text)) return "campaign_calendar";
+  if (/akademi|academy|kurs|course|ders|şablon|sablon/.test(text)) return "crelavo_academy";
+  if (/topluluk|community showcase|showcase|vitrin|örnek stil|ornek stil|template reuse/.test(text)) return "community_showcase";
+  if (/ai ajan|yapay zeka ajan|ai influencer|sosyal medya yöneticisi|trend monitor|24\/7|24 saat|satış asistanı|satis asistani/.test(text)) return "ai_agent";
+  if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(text)) return "drone_video";
+  if (/çöp adam|cop adam|stickman/.test(text)) return "stickman_animation";
+  if (/rakip|competitor|seo|keyword|anahtar kelime|growth intelligence|site analizi|site analiz/.test(text)) return "document_pack";
   if (/shopify|amazon|trendyol|woocommerce|ürün link|urun link|product link|kampanya|reklam|ad video|tiktok reklam|instagram reklam|marketplace/.test(text)) return "campaign";
-  if (/konuşmalı|konusmali|talking video|lip sync|lip-sync|dudak|avatar video/.test(text)) return "talking_video";
+  if (/konuşmalı|konusmali|talking video|lip sync|lip-sync|dudak|avatar|avatar video/.test(text)) return "talking_video";
   if (/web sitesi|website|landing|site|e-?commerce|e-ticaret|storefront|checkout|sepet/.test(text)) return "website";
   if (/saas|dashboard|portal|subscription|billing/.test(text)) return "saas";
   if (/mobil|mobile app|uygulama|ios|android|expo/.test(text)) return "mobile_app";
@@ -137,6 +158,15 @@ function detectModules(message: string, productionType: string) {
   if (productionType === "mobile_app") return ["Mobile app", "App screens"];
   if (productionType === "admin_project") return ["Admin panel", "CRUD modules"];
   if (productionType === "image") return ["Image generation"];
+  if (productionType === "ad_score_checker") return ["AI ad score checker", "Creative weakness report"];
+  if (productionType === "virtual_model_studio") return ["AI virtual model studio", "Product visual set"];
+  if (productionType === "cultural_localization") return ["Cultural localization", "Localized creative brief"];
+  if (productionType === "campaign_calendar") return ["Campaign calendar", "Campaign asset plan"];
+  if (productionType === "crelavo_academy") return ["Crelavo Academy", "Template pack"];
+  if (productionType === "community_showcase") return ["Community showcase", "Template reuse"];
+  if (productionType === "ai_agent") return ["AI influencer", "Daily social manager", "Approval flow"];
+  if (productionType === "drone_video") return ["Drone-style aerial video", "AI map/location drone-style video"];
+  if (productionType === "stickman_animation") return ["Stickman animation", "Storyboard"];
   if (productionType === "document_pack") return ["Document / File Pack"];
   return ["AI video"];
 }
@@ -154,6 +184,49 @@ function detectFeatures(message: string, productionType: string) {
   if (["website", "saas", "mobile_app", "admin_project"].includes(productionType) && !features.includes("Working source package")) features.push("Working source package");
   if (productionType === "campaign" && !features.includes("Subtitles")) features.push("Subtitles");
   return Array.from(new Set(features));
+}
+
+function detectProviderRoute(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  if (/kling/.test(text)) return "Kling";
+  if (/runway/.test(text)) return "Runway";
+  if (/\bfal\b/.test(text)) return "Fal";
+  if (/replicate/.test(text)) return "Replicate";
+  if (/seedance/.test(text)) return "Seedance route";
+  return "auto";
+}
+
+function detectVoiceProfile(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  if (/çocuk|cocuk|child/.test(text)) return "Child voice";
+  if (/yaşlı|yasli|senior|old/.test(text)) return "Senior voice";
+  if (/erkek|male/.test(text)) return "Male voice";
+  if (/kadın|kadin|female|woman/.test(text)) return "Female voice";
+  if (/enerjik|sales|satış|satis/.test(text)) return "Energetic sales voice";
+  if (/belgesel|documentary|calm|sakin/.test(text)) return "Calm documentary voice";
+  return /voice|seslendirme|konuşma|konusma/.test(text) ? "Adult neutral voice" : "No voice-over";
+}
+
+function detectVoiceLanguage(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  if (/ingilizce|english/.test(text)) return "English";
+  if (/türkçe|turkce|turkish/.test(text)) return "Turkish";
+  if (/almanca|german/.test(text)) return "German";
+  if (/fransızca|fransizca|french/.test(text)) return "French";
+  if (/ispanyolca|spanish/.test(text)) return "Spanish";
+  if (/arapça|arapca|arabic/.test(text)) return "Arabic";
+  return "English";
+}
+
+function detectMusicProfile(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  if (/mubert/.test(text)) return "Mubert";
+  if (/stable audio/.test(text)) return "Stable Audio";
+  if (/müzik yok|muzik yok|no music/.test(text)) return "No music";
+  if (/enerjik|viral|tiktok/.test(text)) return "Energetic ad music";
+  if (/luxury|lüks|luks|premium/.test(text)) return "Luxury brand music";
+  if (/ambient|sakin|calm/.test(text)) return "Calm ambient music";
+  return /music|müzik|muzik|bgm/.test(text) ? "Cinematic background music" : "No music";
 }
 
 function deliveryRequirements(message: string, productionType: string, features: string[], platforms: string[], quality: string) {
@@ -219,7 +292,7 @@ async function openAiProductionDraft(message: string, mode: PlanMode, history: A
       messages: [
         {
           role: "system",
-          content: `You are Crelavo's advanced production brain and turnkey project guide. Convert the latest user request into a concrete production plan for an AI creative/product/software studio. Return only JSON with production_type, selected_quality, selected_duration, selected_style, selected_modules, selected_features, selected_platforms, missing_fields, workflow_stage, next_user_action, delivery_path, summary, next_step. Use the same language as the user's latest message for summary, next_user_action and next_step. Be decisive: ask for missing fields only when production would be blocked. Do not treat example subjects as fixed categories; infer the workflow dynamically. Valid production_type values: campaign, talking_video, website, saas, mobile_app, admin_project, brand_kit, document_pack, image, music_video, animation, video. Prefer practical module names that already exist in Crelavo, such as AI video, Product ad video, Website, SaaS screen, Admin panel, Voice-over, Subtitles, Music, Final ZIP, README, Dashboard delivery, TikTok, Instagram Reels, YouTube Shorts. delivery_path should describe the real turnkey path such as brief, materials, preview, revision, final delivery, or structure, local preview, testing, admin handoff for software.\n\n${buildAssistantRoutingRules()}\n\n${userContextPrompt}`
+          content: `You are Crelavo's advanced production brain and turnkey project guide. Convert the latest user request into a concrete production plan for an AI creative/product/software studio. Return only JSON with production_type, selected_quality, selected_duration, selected_style, selected_modules, selected_features, selected_platforms, missing_fields, workflow_stage, next_user_action, delivery_path, summary, next_step. Use the same language as the user's latest message for summary, next_user_action and next_step. Be decisive: ask for missing fields only when production would be blocked. Do not treat example subjects as fixed categories; infer the workflow dynamically. Valid production_type values: campaign, ai_agent, localization, ad_score_checker, virtual_model_studio, cultural_localization, campaign_calendar, crelavo_academy, community_showcase, video, talking_video, documentary, animation, anime_short_film, animal_video, nature_video, planet_space_video, drone_video, live_sales_agent, studio, drama, cinematic_video, video_clipping, avatar, lip_sync, voice_clone, visual_clone, video_tools, stickman_animation, music_video, website, saas, mobile_app, admin_project, brand_kit, document_pack, image. Prefer practical module names that already exist in Crelavo, such as AI video, Product ad video, Website, SaaS screen, Admin panel, Voice-over, Subtitles, Music, Final ZIP, README, Dashboard delivery, TikTok, Instagram Reels, YouTube Shorts. delivery_path should describe the real turnkey path such as brief, materials, preview, revision, final delivery, or structure, local preview, testing, admin handoff for software.\n\n${buildAssistantRoutingRules()}\n\n${userContextPrompt}`
         },
         ...history.slice(-8),
         { role: "user", content: `Mode: ${mode}\nLatest request: ${message}` }
@@ -310,7 +383,13 @@ export async function POST(request: Request) {
     const selectedModules = cleanStringArray(aiDraft?.selected_modules, detectModules(message, productionType));
     const selectedFeatures = cleanStringArray(aiDraft?.selected_features, detectFeatures(message, productionType));
     const selectedPlatforms = cleanStringArray(aiDraft?.selected_platforms, detectPlatforms(message, productionType));
-    const selection = { input: message, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, quickProviderTest: false };
+    const providerRoute = aiDraft?.provider_route?.trim() || detectProviderRoute(message);
+    const voiceProfile = aiDraft?.voice_profile?.trim() || detectVoiceProfile(message);
+    const voiceLanguage = aiDraft?.voice_language?.trim() || detectVoiceLanguage(message);
+    const musicProfile = aiDraft?.music_profile?.trim() || detectMusicProfile(message);
+    const environmentProfile = aiDraft?.environment_profile?.trim() || "Auto scene environment";
+    const deliveryHandoff = aiDraft?.delivery_handoff?.trim() || selectedPlatforms[0] || "Dashboard delivery";
+    const selection = { input: message, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, quickProviderTest: false, selectedProviderService: providerRoute === "auto" ? "" : providerRoute, selectedServiceNetwork: providerRoute === "auto" ? "" : "video", selectedVoiceProfile: voiceProfile, selectedVoiceLanguage: voiceLanguage, selectedMusicProfile: musicProfile, selectedEnvironmentProfile: environmentProfile, selectedDeliveryHandoff: deliveryHandoff };
     const requirements = deliveryRequirements(message, productionType, selectedFeatures, selectedPlatforms, selectedQuality);
 
     const { data: deliveryRateRow } = await supabase.from("platform_configs").select("value").eq("key", "delivery_credit_rates").maybeSingle();
@@ -337,7 +416,7 @@ export async function POST(request: Request) {
       production_type: productionType,
       confirmation_required: true,
       credit_check_required: true,
-      provider_route: "auto",
+      provider_route: providerRoute,
       state_before_confirmation: "draft_ready",
       next_backend_endpoint: "/api/productions",
       args: {
@@ -350,6 +429,12 @@ export async function POST(request: Request) {
         selected_features: selectedFeatures,
         selected_platforms: selectedPlatforms,
         delivery_requirements: requirements,
+        provider_route: providerRoute,
+        voice_profile: voiceProfile,
+        voice_language: voiceLanguage,
+        music_profile: musicProfile,
+        environment_profile: environmentProfile,
+        delivery_handoff: deliveryHandoff,
         estimated_credits: estimate.totalCredits,
         minimum_safe_credits: estimate.minimumSafeCredits
       }
@@ -372,6 +457,12 @@ export async function POST(request: Request) {
       selected_modules: selectedModules,
       selected_features: selectedFeatures,
       selected_platforms: selectedPlatforms,
+      provider_route: providerRoute,
+      voice_profile: voiceProfile,
+      voice_language: voiceLanguage,
+      music_profile: musicProfile,
+      environment_profile: environmentProfile,
+      delivery_handoff: deliveryHandoff,
       workflow_stage: aiDraft?.workflow_stage?.trim() || (missing.length ? "collect_critical_info" : "ready_to_start_production"),
       next_user_action: aiDraft?.next_user_action?.trim() || (missing.length ? `Provide: ${missing.join(", ")}` : "Review the plan and start production."),
       delivery_path: cleanStringArray(aiDraft?.delivery_path, ["Brief", "Materials", "Production setup", "Preview", "Revision", "Final delivery"]),

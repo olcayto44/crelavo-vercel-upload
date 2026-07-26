@@ -5,9 +5,11 @@ function falApiKey() {
   return requireProviderEnv("fal");
 }
 
-export async function createVisualVideo(input: { scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string }): Promise<ProviderJob> {
-  const provider = optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate";
+export async function createVisualVideo(input: { scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string }): Promise<ProviderJob> {
+  const provider = input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate";
   const safeDuration = Math.min(10, Math.max(5, input.durationSeconds));
+  const requestedRatio = input.aspectRatio || "9:16";
+  const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
   const prompt = [
     safeDuration === 5 ? "Create a short low-cost provider test video. Keep it simple, clean and suitable for technical verification." : "Create a polished e-commerce product ad video.",
     input.style ? `Style: ${input.style}.` : "",
@@ -23,7 +25,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
     const inputPayload = {
       prompt,
       duration: safeDuration,
-      aspect_ratio: "9:16"
+      aspect_ratio: requestedRatio
     };
     const endpoint = version ? "https://api.replicate.com/v1/predictions" : `https://api.replicate.com/v1/models/${model}/predictions`;
     const body = version ? { version, input: inputPayload } : { input: inputPayload };
@@ -50,7 +52,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
         "Content-Type": "application/json",
         "X-Runway-Version": process.env.RUNWAY_API_VERSION || "2024-11-06"
       },
-      body: JSON.stringify({ promptText: prompt, duration: safeDuration, ratio: "720:1280" })
+      body: JSON.stringify({ promptText: prompt, duration: safeDuration, ratio: runwayRatio })
     });
 
     if (!response.ok) throw new Error(`Runway video generation failed: ${response.status} ${await response.text()}`);
@@ -66,7 +68,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: "9:16" })
+      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: requestedRatio })
     });
 
     if (!response.ok) throw new Error(`Kling video generation failed: ${response.status} ${await response.text()}`);
@@ -83,7 +85,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
         Authorization: `Key ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: "9:16" })
+      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: requestedRatio })
     });
 
     if (!response.ok) throw new Error(`FAL video generation failed: ${response.status} ${await response.text()}`);

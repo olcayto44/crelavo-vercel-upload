@@ -41,14 +41,14 @@ assertEqual(videoPreflight.aspectRatio, "9:16", "video aspectRatio");
 
 const runwayPreflight = buildProviderPreflight({
   productionType: "campaign",
-  requestMetadata: { providerTestMode: true },
+  requestMetadata: { providerTestMode: true, quality: "YouTube 16:9" },
   inputJson: {},
   videoProvider: "runway"
 });
 
 assertEqual(runwayPreflight.provider, "runway", "runway provider");
 assertEqual(runwayPreflight.durationSeconds, 5, "runway test duration");
-assertEqual(runwayPreflight.aspectRatio, "720:1280", "runway aspectRatio");
+assertEqual(runwayPreflight.aspectRatio, "16:9", "runway aspectRatio");
 assertEqual(runwayPreflight.testMode, true, "runway testMode");
 assertEqual(renderQueuePolicyForPackage("pro").label, "Priority render queue", "pro queue");
 assertEqual(renderQueuePolicyForPackage("business").label, "Fastest render queue", "business queue");

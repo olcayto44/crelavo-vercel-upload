@@ -167,6 +167,12 @@ type AssistantPlan = {
   selected_modules?: string[];
   selected_features?: string[];
   selected_platforms?: string[];
+  provider_route?: string;
+  voice_profile?: string;
+  voice_language?: string;
+  music_profile?: string;
+  environment_profile?: string;
+  delivery_handoff?: string;
   workflow_stage?: string;
   next_user_action?: string;
   delivery_path?: string[];
@@ -236,7 +242,7 @@ const emptyAssistantCreditState: AssistantCreditState = {
   redirect: null
 };
 
-type DynamicWizardType = "website" | "video" | "mobile_app" | "campaign" | "talking_video" | "image" | "document";
+type DynamicWizardType = "website" | "video" | "mobile_app" | "campaign" | "talking_video" | "music_video" | "growth_analysis" | "feature_tool" | "virtual_model" | "localization_tool" | "campaign_calendar_tool" | "academy_tool" | "showcase_tool" | "ai_agent_wizard" | "drone_wizard" | "stickman_wizard" | "image" | "document";
 
 type DynamicWizardState = {
   open: boolean;
@@ -270,13 +276,24 @@ const dynamicWizardLabels: Record<DynamicWizardType, string> = {
   mobile_app: "Mobile App Builder",
   campaign: "E-commerce Product Ad",
   talking_video: "Advanced Talking Video",
+  music_video: "Music Video / Clip Wizard",
+  growth_analysis: "Rakip / SEO Analiz Wizard",
+  feature_tool: "Reklam Puanlayıcı Wizard",
+  virtual_model: "Sanal Model Wizard",
+  localization_tool: "Kültürel Yerelleştirme Wizard",
+  campaign_calendar_tool: "Kampanya Takvimi Wizard",
+  academy_tool: "Crelavo Akademi Wizard",
+  showcase_tool: "Topluluk Vitrini Wizard",
+  ai_agent_wizard: "AI Ajan Wizard",
+  drone_wizard: "Drone / Uydu Wizard",
+  stickman_wizard: "Çöp Adam Animasyon Wizard",
   image: "Image & Visual Pack",
   document: "Document / PDF Pack"
 };
 
 const wizardCategoryTypeMap: Record<string, DynamicWizardType> = {
-  campaign: "campaign", ai_agent: "campaign", localization: "campaign", ad_score_checker: "campaign", cultural_localization: "campaign", campaign_calendar: "campaign", community_showcase: "campaign", virtual_model_studio: "image", crelavo_academy: "document",
-  video: "video", documentary: "video", animation: "video", anime_short_film: "video", animal_video: "video", nature_video: "video", planet_space_video: "video", drone_video: "video", live_sales_agent: "video", stickman_animation: "video", music_video: "video", studio: "video", drama: "video", cinematic_video: "video", video_clipping: "video", video_tools: "video",
+  campaign: "campaign", ai_agent: "ai_agent_wizard", localization: "localization_tool", ad_score_checker: "feature_tool", cultural_localization: "localization_tool", campaign_calendar: "campaign_calendar_tool", community_showcase: "showcase_tool", virtual_model_studio: "virtual_model", crelavo_academy: "academy_tool",
+  video: "video", documentary: "video", animation: "video", anime_short_film: "video", animal_video: "video", nature_video: "video", planet_space_video: "video", drone_video: "drone_wizard", live_sales_agent: "talking_video", stickman_animation: "stickman_wizard", music_video: "music_video", studio: "video", drama: "video", cinematic_video: "video", video_clipping: "video", video_tools: "video",
   talking_video: "talking_video", avatar: "talking_video", lip_sync: "talking_video", voice_clone: "talking_video", visual_clone: "image",
   website: "website", saas: "website", mobile_app: "mobile_app", admin_project: "website",
   image: "image", brand_kit: "image", document_pack: "document"
@@ -349,8 +366,15 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "delivery", label: "Teslim paketi", multi: true, options: ["Admin panel", "Source code", "Final ZIP", "README", "Deployment guide", "Responsive design"] }
   ],
   video: [
-    { id: "videoType", label: "Ne tür video?", options: ["Social media short", "Restaurant / food video", "Product ad", "UGC style", "Explainer", "Cinematic promo", "Animation video"] },
-    { id: "quality", label: "Kalite / format", options: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9", "YouTube 16:9"] },
+    { id: "videoType", label: "Ne tür video?", options: ["Short film", "Series / episode", "Trailer", "Social media short", "Restaurant / food video", "Product ad", "UGC style", "Explainer", "Cinematic promo", "Animation video"] },
+    { id: "people", label: "Kaç kişi / karakter olacak?", options: ["No people", "1 person", "2 people", "3 people", "4 people", "5+ people"] },
+    { id: "selfIncluded", label: "Kullanıcı videoda olacak mı?", options: ["No self footage", "I will be one character", "Use my uploaded photo", "Use my uploaded video", "Create AI version of me"] },
+    { id: "characterCreation", label: "Diğer karakterler nasıl oluşsun?", multi: true, options: ["Create AI characters", "Choose from character library", "Use uploaded character photos", "Keep same characters across scenes", "Separate role for each character"] },
+    { id: "voiceProfile", label: "Seslendirme / karakter sesi", multi: true, options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Separate voice per person", "Dialogue scene"] },
+    { id: "environment", label: "Çekilecek ortam", options: ["Auto scene environment", "Home interior", "Outdoor street", "Hotel / luxury lobby", "Sea / beach", "Cafe / restaurant", "Cinema / dark room", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"] },
+    { id: "subjectWorld", label: "Sosyal kısa video dünyası", multi: true, options: ["Human characters", "Animals", "Nature", "Product / object", "Food / drink", "Fashion / outfit", "Regional clothing", "Traditional costume", "Local culture", "Vehicle / drone", "Fantasy / AI world"] },
+    { id: "timeMood", label: "Zaman ve duygu", multi: true, options: ["Morning", "Daytime", "Evening", "Night", "Action environment", "Emotional atmosphere", "Funny / meme mood", "Luxury mood", "Calm documentary mood", "High-energy viral mood"] },
+    { id: "quality", label: "Kalite / format", options: ["480p preview", "720p", "1080p", "1080p premium", "4K", "Vertical 9:16", "Horizontal 16:9", "YouTube 16:9"] },
     { id: "visualStyle", label: "Görsel tarz", options: ["Realistic video", "Cinematic", "Product demo", "2D animation", "3D animation", "Stickman animation", "Motion graphics", "Whiteboard animation"] },
     { id: "platform", label: "Nerede kullanılacak?", multi: true, options: ["TikTok", "Instagram Reels", "YouTube Shorts", "Website", "Meta Ads", "YouTube 16:9"] },
     { id: "duration", label: "Süre", options: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"] },
@@ -366,14 +390,85 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "delivery", label: "Teslim paketi", multi: true, options: ["Source code", "Final ZIP", "README", "Deployment guide", "API notes", "Responsive design"] }
   ],
   campaign: [
-    { id: "campaignType", label: "Kampanya türü", options: ["Product ad", "Restaurant campaign", "E-commerce launch", "Social media pack", "Brand promo"] },
-    { id: "channels", label: "Kanallar", multi: true, options: ["TikTok", "Instagram", "Meta Ads", "Shopify", "Amazon", "Trendyol"] },
-    { id: "assets", label: "Çıktılar", multi: true, options: ["Ad video", "Product visuals", "Caption", "Hashtags", "Landing page", "3 alternatives"] }
+    { id: "campaignType", label: "Kampanya türü", options: ["Product ad", "Marketplace product kit", "Restaurant campaign", "E-commerce launch", "Social media pack", "Brand promo", "Amazon listing campaign", "Trendyol product campaign", "Shopify launch kit", "WooCommerce product kit"] },
+    { id: "commerceInput", label: "Ürün kaynağı", multi: true, options: ["Product URL", "Shopify product link", "Amazon product link", "Trendyol product link", "WooCommerce product", "Uploaded product image", "Product title only", "Bulk product list"] },
+    { id: "commerceAsset", label: "E-ticaret çıktıları", multi: true, options: ["Product ad video", "Product image set", "Marketplace listing copy", "SEO product description", "Store banner", "Email promo", "UGC ad script", "A/B hook pack"] },
+    { id: "channels", label: "Kanallar", multi: true, options: ["TikTok", "Instagram", "Meta Ads", "YouTube Shorts", "Shopify", "Amazon", "Trendyol", "WooCommerce", "Pinterest"] },
+    { id: "assets", label: "Çıktılar", multi: true, options: ["Ad video", "Product visuals", "Caption", "Hashtags", "Landing page", "3 alternatives", "Dashboard delivery", "MP4 download"] }
   ],
   talking_video: [
+    { id: "avatarType", label: "Avatar / konuşan video tipi", options: ["E-commerce avatar", "AI live sales avatar", "Talking head video", "Lip-sync from audio", "Multi-person conversation", "Brand spokesperson"] },
     { id: "people", label: "Kaç kişi konuşacak?", options: ["1 person", "2 people", "3 people", "4 people", "5+ people", "7-8 panel"] },
-    { id: "voice", label: "Ses tarafı", multi: true, options: ["Own voice", "Separate voice per person", "Local accent", "Subtitles", "Lip-sync"] },
+    { id: "productContext", label: "Ürün / e-ticaret bağlantısı", options: ["No product", "Use product link", "Use uploaded product image", "Marketplace product", "Shopify product"] },
+    { id: "voiceProfile", label: "Ses karakteri", multi: true, options: ["Own voice", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Separate voice per person", "Local accent", "Subtitles", "Lip-sync"] },
+    { id: "environment", label: "Konuşma ortamı", options: ["Studio background", "E-commerce product scene", "Office / SaaS dashboard", "Shop background", "Regional environment", "Green screen / clean background"] },
     { id: "style", label: "Görsel tarz", options: ["Realistic talking video", "Animated talking video", "UGC style", "Corporate", "Regional culture"] }
+  ],
+  music_video: [
+    { id: "clipType", label: "Klip türü", options: ["Performance clip", "Story music video", "Lyric video", "Visualizer", "3-person clip", "Dance / social clip"] },
+    { id: "people", label: "Kaç kişi olacak?", options: ["No people", "1 person", "2 people", "3 people", "4 people", "5+ people"] },
+    { id: "musicSource", label: "Müzik kaynağı", options: ["Use uploaded song", "Generate AI music", "User music reference", "Beat only", "No new music"] },
+    { id: "voiceProfile", label: "Vokal / konuşma", multi: true, options: ["No voice-over", "Own voice", "Separate voice per person", "Subtitles", "Lyrics on screen"] },
+    { id: "environment", label: "Klip ortamı", options: ["Stage performance", "Street cinematic", "Studio background", "Luxury scene", "Nature / outdoor", "Club / neon", "AI fantasy world"] },
+    { id: "quality", label: "Kalite / oran", options: ["1080p", "1080p cinematic", "4K", "Vertical 9:16", "YouTube 16:9"] }
+  ],
+  growth_analysis: [
+    { id: "analysisType", label: "Analiz türü", options: ["Rakip site analizi", "SEO keyword research", "Growth intelligence report", "Ad / social competitor analysis", "Local market analysis"] },
+    { id: "sources", label: "Girdi kaynakları", multi: true, options: ["Competitor URLs", "Target keywords", "Target country/city", "Google Maps competitors", "Social accounts", "Marketplace links"] },
+    { id: "reportScope", label: "Rapor kapsamı", options: ["Quick summary", "Detailed PDF report", "Dashboard report", "Weekly monitoring", "Action plan + priorities"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PDF document", "Email report", "Slack/email alerts", "Final ZIP"] }
+  ],
+  feature_tool: [
+    { id: "adScoreInput", label: "Ne puanlanacak?", options: ["Product ad idea", "TikTok video ad", "E-commerce ad", "Existing script", "Hook + CTA", "Video-ready creative brief"] },
+    { id: "reportScope", label: "Puan kapsamı", options: ["Basic ad score", "Detailed ad score report", "3 improved ad angles", "Hook rewrite", "Script + hook improvement"] },
+    { id: "platform", label: "Platform", multi: true, options: ["TikTok", "Instagram Reels", "Meta Ads", "YouTube Shorts", "Shopify", "Amazon", "Trendyol"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PDF document", "Video-ready brief", "Campaign production draft"] }
+  ],
+  virtual_model: [
+    { id: "modelOutput", label: "Sanal model çıktısı", options: ["1 virtual model visual", "4 image pack", "10 image catalog idea", "Full catalog set"] },
+    { id: "productType", label: "Ürün türü", options: ["Fashion / clothing", "Jewelry", "Beauty product", "Accessory", "Marketplace product", "Custom product"] },
+    { id: "modelStyle", label: "Model stili", options: ["Realistic fashion model", "Luxury editorial", "E-commerce clean background", "Lifestyle model", "Regional model look"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PNG images", "JPG images", "Final ZIP", "Source file delivery"] }
+  ],
+  localization_tool: [
+    { id: "localizationType", label: "Yerelleştirme türü", options: ["Country localization brief", "Localized hooks", "Localized script", "Localized product video brief", "Multi-country campaign"] },
+    { id: "market", label: "Hedef pazar", multi: true, options: ["US", "Germany", "France", "Gulf / Arabic", "Turkey", "UK", "Multi-country"] },
+    { id: "adaptation", label: "Neler uyarlansın?", multi: true, options: ["Language", "CTA", "Tone", "Pacing", "Visual style", "Voice direction", "Cultural background"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PDF document", "Localized script", "Video brief", "Final ZIP"] }
+  ],
+  campaign_calendar_tool: [
+    { id: "calendarType", label: "Takvim türü", options: ["Black Friday", "Valentine", "Ramadan / Eid", "New Year", "Back to school", "Product launch", "Seasonal campaign"] },
+    { id: "calendarScope", label: "Kapsam", options: ["Campaign brief", "Seasonal hook list", "Product launch checklist", "Script pack", "Campaign asset plan"] },
+    { id: "channels", label: "Kanallar", multi: true, options: ["TikTok", "Instagram", "Meta Ads", "Email", "Shopify", "Amazon", "Trendyol"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PDF document", "Calendar file", "Asset plan", "Final ZIP"] }
+  ],
+  academy_tool: [
+    { id: "academyOutput", label: "Akademi çıktısı", options: ["Free lesson path", "Premium template", "Done-with-you brief", "UGC lesson pack", "Product video workflow"] },
+    { id: "topic", label: "Konu", options: ["AI marketing", "Product video course", "E-commerce ad course", "UGC ads", "Shopify video marketing"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "PDF document", "Template pack", "README / setup", "Final ZIP"] }
+  ],
+  showcase_tool: [
+    { id: "showcaseUse", label: "Vitrin nasıl kullanılsın?", options: ["Use similar style", "Template reuse", "AI ad example", "UGC example", "Product video example"] },
+    { id: "reuseScope", label: "Yeniden kullanım kapsamı", options: ["Similar style request", "Template reuse pack", "Creative brief", "Production-ready request"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "Creative brief", "Preview link", "Final ZIP"] }
+  ],
+  ai_agent_wizard: [
+    { id: "agentType", label: "AI ajan türü", options: ["AI influencer", "Daily social manager", "Trend monitor", "24/7 brand representative", "Approval-flow assistant"] },
+    { id: "operationHours", label: "Çalışma kapsamı", options: ["Daily posts", "10h/month", "40h/month", "120h/month", "24/7 plan"] },
+    { id: "personality", label: "Ses / kişilik", options: ["Friendly brand voice", "Expert advisor", "Energetic seller", "Luxury concierge", "Local language host"] },
+    { id: "delivery", label: "Teslim", multi: true, options: ["Dashboard delivery", "Approval flow", "Social calendar", "Setup guide", "Service plan"] }
+  ],
+  drone_wizard: [
+    { id: "droneInput", label: "Drone girdisi", options: ["Map/location prompt", "Satellite-view intro", "Marked area notes", "Route/path plan", "Property image"] },
+    { id: "droneMotion", label: "Uçuş / kamera", options: ["Smooth flyover route", "Satellite to location zoom", "Marked-area reveal", "Real estate orbit", "Travel cinematic flyover"] },
+    { id: "voiceProfile", label: "Anlatım", multi: true, options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Calm documentary voice", "Subtitles"] },
+    { id: "environment", label: "Harita / ortam", options: ["Satellite map view", "Cinematic real estate", "Tourism route", "Construction / land view", "Urban aerial"] }
+  ],
+  stickman_wizard: [
+    { id: "stickmanType", label: "Çöp adam türü", options: ["Explainer", "Comedy skit", "Education", "Story video", "Social media short"] },
+    { id: "characterCreation", label: "Karakter", multi: true, options: ["Choose character", "Create character", "Keep same character", "Multiple stick characters"] },
+    { id: "voiceProfile", label: "Ses", multi: true, options: ["No voice-over", "Own voice", "Adult neutral voice", "Child voice", "Energetic voice", "Subtitles"] },
+    { id: "quality", label: "Kalite / teslim", options: ["Fast draft", "1080p", "Vertical 9:16", "YouTube 16:9"] }
   ],
   image: [
     { id: "imageType", label: "Görsel türü", options: ["Product visual", "Poster", "Social media post", "Logo/brand kit", "Thumbnail", "Banner"] },
@@ -983,8 +1078,19 @@ function matchScore(text: string, patterns: RegExp[]) {
 
 function inferDynamicWizardType(message: string): DynamicWizardType {
   const text = normalizeTurkishQuery(message);
+  if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "feature_tool";
+  if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model";
+  if (/kültürel yerelleştirme|kulturel yerellestirme|cultural localization|global localization|yerelleştirme|yerellestirme/.test(text)) return "localization_tool";
+  if (/kampanya takvimi|campaign calendar|black friday|kara cuma|sezonluk kampanya/.test(text)) return "campaign_calendar_tool";
+  if (/akademi|academy|kurs|course|ders|şablon|sablon/.test(text)) return "academy_tool";
+  if (/topluluk|community showcase|showcase|vitrin|örnek stil|ornek stil|template reuse/.test(text)) return "showcase_tool";
+  if (/ai ajan|yapay zeka ajan|ai influencer|sosyal medya yöneticisi|trend monitor|24\/7|24 saat|satış asistanı|satis asistani/.test(text)) return "ai_agent_wizard";
+  if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(text)) return "drone_wizard";
+  if (/çöp adam|cop adam|stickman/.test(text)) return "stickman_wizard";
+  if (/rakip|competitor|seo|keyword|anahtar kelime|growth intelligence|site analizi|site analiz/.test(text)) return "growth_analysis";
+  if (/klip|music video|mv|şarkı|sarki|song|lyrics|lyric|3 kişilik klip|3 kisilik klip/.test(text)) return "music_video";
   if (isAiVideoOnlyIntent(message)) return "video";
-  if (/konuşmalı|konusmali|lip-sync|aksan|şive|sive|kendi ses|sesim|talking/.test(text)) return "talking_video";
+  if (/avatar|konuşmalı|konusmali|lip-sync|aksan|şive|sive|kendi ses|sesim|talking|canlı satış|canli satis|live sales/.test(text)) return "talking_video";
 
   const durationSignal = durationFromFollowUp(message) ? 3 : 0;
   const videoScore = durationSignal + matchScore(text, [
@@ -1320,6 +1426,13 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [quickProviderTest, setQuickProviderTest] = useState(false);
   const [selectedServiceNetwork, setSelectedServiceNetwork] = useState("");
   const [selectedProviderService, setSelectedProviderService] = useState("");
+  const [selectedVoiceProfile, setSelectedVoiceProfile] = useState("Adult neutral voice");
+  const [selectedVoiceLanguage, setSelectedVoiceLanguage] = useState("English");
+  const [selectedMusicProfile, setSelectedMusicProfile] = useState("Cinematic background music");
+  const [selectedEnvironmentProfile, setSelectedEnvironmentProfile] = useState("Auto scene environment");
+  const [selectedDeliveryHandoff, setSelectedDeliveryHandoff] = useState("Dashboard delivery");
+  const [manualWizardOpen, setManualWizardOpen] = useState(false);
+  const [manualWizardStep, setManualWizardStep] = useState(0);
   const [voiceListening, setVoiceListening] = useState(false);
   const [assistantCreditState, setAssistantCreditState] = useState<AssistantCreditState>(emptyAssistantCreditState);
   const [lastOrchestratorPlan, setLastOrchestratorPlan] = useState<AssistantOrchestratorResponse | null>(null);
@@ -1341,7 +1454,14 @@ const hasUserVisibleProductionSelection = Boolean(
     selectedDuration !== "15 sec" ||
     selectedModules.join("|") !== "AI video" ||
     selectedFeatures.join("|") !== "Voice-over|Subtitles|Music" ||
-  selectedPlatforms.join("|") !== "Dashboard delivery|MP4 download" ||
+    selectedPlatforms.join("|") !== "Dashboard delivery|MP4 download" ||
+  selectedProviderService ||
+  selectedServiceNetwork ||
+  selectedVoiceProfile !== "Adult neutral voice" ||
+  selectedVoiceLanguage !== "English" ||
+  selectedMusicProfile !== "Cinematic background music" ||
+  selectedEnvironmentProfile !== "Auto scene environment" ||
+  selectedDeliveryHandoff !== "Dashboard delivery" ||
   selectedMaterials.length ||
   uploadedMaterials.length
 );
@@ -1632,11 +1752,30 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     });
   if (question.id === "duration") setSelectedDuration(option);
   if (question.id === "quality") setSelectedQuality(option);
-  if (question.id === "visualStyle") setSelectedStyle(option);
+  if (question.id === "visualStyle" || question.id === "style") setSelectedStyle(option);
+  if (question.id === "people") setSelectedFeatures((current) => current.includes(option) ? current : [...current, option]);
+  if (question.id === "selfIncluded") { setSelectedFeatures((current) => current.includes(option) ? current : [...current, option]); if (option !== "No self footage") setUploadPurpose("self_avatar"); }
+  if (question.id === "characterCreation") setSelectedModules((current) => current.includes(option) ? current : [...current, option]);
+  if (question.id === "voiceProfile" || question.id === "voice") { setSelectedVoiceProfile(option); setSelectedFeatures((current) => option === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, option, "Voice-over"]))); }
+  if (question.id === "environment") setSelectedEnvironmentProfile(option);
+  if (question.id === "musicSource") { setSelectedMusicProfile(option); setSelectedFeatures((current) => option === "No new music" ? current : Array.from(new Set([...current, "Music", option]))); }
   if (question.id === "platform" || question.id === "channels") setSelectedPlatforms((current) => current.includes(option) ? current : [...current, option]);
-  if (question.id === "extras" || question.id === "delivery" || question.id === "appFeatures" || question.id === "assets" || question.id === "videoStructure") setSelectedFeatures((current) => current.includes(option) ? current : [...current, option]);
+  if (question.id === "extras" || question.id === "delivery" || question.id === "appFeatures" || question.id === "assets" || question.id === "videoStructure" || question.id === "sources" || question.id === "reportScope" || question.id === "subjectWorld" || question.id === "timeMood" || question.id === "commerceInput" || question.id === "commerceAsset" || question.id === "adScoreInput" || question.id === "modelOutput" || question.id === "productType" || question.id === "modelStyle" || question.id === "localizationType" || question.id === "market" || question.id === "adaptation" || question.id === "calendarType" || question.id === "calendarScope" || question.id === "academyOutput" || question.id === "topic" || question.id === "showcaseUse" || question.id === "reuseScope" || question.id === "agentType" || question.id === "operationHours" || question.id === "personality" || question.id === "droneInput" || question.id === "droneMotion" || question.id === "stickmanType") setSelectedFeatures((current) => current.includes(option) ? current : [...current, option]);
     if (question.id === "siteType" && option === "Restaurant / cafe") setSelectedModules((current) => current.includes("Website") ? current : [...current, "Website"]);
     if (question.id === "videoType" && option === "Restaurant / food video") setSelectedStyle("Product demo");
+  if (question.id === "videoType" && ["Short film", "Series / episode", "Trailer"].includes(option)) { setSelectedProductionType(option === "Series / episode" ? "drama" : "studio"); setSelectedModules((current) => Array.from(new Set([...current, "Script + scene plan", "Character breakdown"]))); }
+  if (question.id === "avatarType" && /e-commerce|live sales/i.test(option)) setSelectedProductionType(option.includes("live") ? "live_sales_agent" : "avatar");
+  if (question.id === "clipType") setSelectedProductionType("music_video");
+  if (question.id === "analysisType") { setSelectedProductionType("document_pack"); setSelectedModules((current) => Array.from(new Set([...current, "Growth Intelligence report", option]))); setSelectedPlatforms((current) => current.includes("Dashboard delivery") ? current : [...current, "Dashboard delivery"]); }
+if (dynamicWizard.type === "feature_tool") { setSelectedProductionType("ad_score_checker"); setSelectedModules((current) => Array.from(new Set([...current, "AI ad score checker"]))); }
+if (dynamicWizard.type === "virtual_model") { setSelectedProductionType("virtual_model_studio"); setSelectedModules((current) => Array.from(new Set([...current, "AI virtual model studio"]))); }
+if (dynamicWizard.type === "localization_tool") { setSelectedProductionType("cultural_localization"); setSelectedModules((current) => Array.from(new Set([...current, "Cultural localization", "Localized creative brief"]))); }
+if (dynamicWizard.type === "campaign_calendar_tool") { setSelectedProductionType("campaign_calendar"); setSelectedModules((current) => Array.from(new Set([...current, "Campaign calendar", "Campaign asset plan"]))); }
+if (dynamicWizard.type === "academy_tool") { setSelectedProductionType("crelavo_academy"); setSelectedModules((current) => Array.from(new Set([...current, "Crelavo Academy", "Template pack"]))); }
+if (dynamicWizard.type === "showcase_tool") { setSelectedProductionType("community_showcase"); setSelectedModules((current) => Array.from(new Set([...current, "Community showcase", "Template reuse"]))); }
+if (dynamicWizard.type === "ai_agent_wizard") { setSelectedProductionType("ai_agent"); setSelectedModules((current) => Array.from(new Set([...current, "AI influencer", "Daily social manager", "Approval flow"]))); }
+if (dynamicWizard.type === "drone_wizard") { setSelectedProductionType("drone_video"); setSelectedModules((current) => Array.from(new Set([...current, "Drone-style aerial video", "AI map/location drone-style video"]))); }
+if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stickman_animation"); setSelectedModules((current) => Array.from(new Set([...current, "Stickman animation", "Storyboard"]))); }
   }
 
   function requestDynamicWizardCredits() {
@@ -1783,6 +1922,15 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     setProductionStartingIntent(false);
     setStartModalOpen(false);
     setStartError("");
+    setSelectedServiceNetwork("");
+    setSelectedProviderService("");
+    setSelectedVoiceProfile("Adult neutral voice");
+    setSelectedVoiceLanguage("English");
+    setSelectedMusicProfile("Cinematic background music");
+    setSelectedEnvironmentProfile("Auto scene environment");
+    setSelectedDeliveryHandoff("Dashboard delivery");
+    setManualWizardOpen(false);
+    setManualWizardStep(0);
   }
 
   function applyCategorySelection(type: string) {
@@ -1826,6 +1974,12 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     if (Array.isArray(plan?.selected_features) && plan.selected_features.length) setSelectedFeatures(plan.selected_features);
     if (Array.isArray(plan?.selected_platforms) && plan.selected_platforms.length) setSelectedPlatforms(plan.selected_platforms);
   }
+    if (plan?.provider_route && plan.provider_route !== "auto") { setSelectedServiceNetwork("video"); setSelectedProviderService(plan.provider_route); }
+    if (plan?.voice_profile) setSelectedVoiceProfile(plan.voice_profile);
+    if (plan?.voice_language) setSelectedVoiceLanguage(plan.voice_language);
+    if (plan?.music_profile) setSelectedMusicProfile(plan.music_profile);
+    if (plan?.environment_profile) setSelectedEnvironmentProfile(plan.environment_profile);
+    if (plan?.delivery_handoff) setSelectedDeliveryHandoff(plan.delivery_handoff);
     setOptionsOpen(false);
   }
 
@@ -2062,6 +2216,17 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
     }
   }, [providerTestPreset, initialIdea, initialCategory, initialMode]);
 
+  const manualWizardSteps = [
+    { id: "provider", title: "1. Üretim motoru", subtitle: "Video/görsel motorunu seç.", options: ["Auto provider", "Kling", "Runway", "Fal", "Replicate", "Seedance route"], value: selectedProviderService || "Auto provider", apply: (value: string) => { setSelectedServiceNetwork(value === "Auto provider" ? "" : "video"); setSelectedProviderService(value === "Auto provider" ? "" : value); } },
+    { id: "quality", title: "2. Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "3. Süre", subtitle: "İstersen özel süreyi chat’e veya brief’e yazabilirsin; seçilen değer payload’a gider.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "voice", title: "4. Seslendirme", subtitle: "Konuşma dili, yaş/cinsiyet/tını yönü.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Energetic sales voice", "Calm documentary voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
+    { id: "language", title: "5. Konuşma dili", subtitle: "Voice-over ve altyazı dili.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
+    { id: "music", title: "6. Arka fon müziği", subtitle: "Müzik sağlayıcı/ruh hali route’a yazılır.", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Stable Audio", "Mubert", "User music reference"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); if (["Stable Audio", "Mubert"].includes(value)) { setSelectedServiceNetwork("music"); setSelectedProviderService(value); } } },
+    { id: "environment", title: "7. Ortam / sahne", subtitle: "Video, konuşma, drone veya canlı satış için sahne yönü.", options: ["Auto scene environment", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
+    { id: "delivery", title: "8. Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+  ];
+
   function selectedOptionSummary() {
     const materialNames = materials.filter((material) => selectedMaterials.includes(material.id)).map((material) => material.title);
     const uploadNames = uploadedMaterials.map((material) => `${material.title} (${material.kind})`);
@@ -2076,6 +2241,12 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   `Production modules: ${selectedModules.join(", ") || "Auto"}`,
   `Extra features: ${selectedFeatures.join(", ") || "None"}`,
   `Delivery/platform: ${selectedPlatforms.join(", ") || "Dashboard"}`,
+  `Manual provider: ${selectedProviderService || selectedServiceNetwork || "Auto provider"}`,
+  `Voice profile: ${selectedVoiceProfile}`,
+  `Voice language: ${selectedVoiceLanguage}`,
+  `Music profile: ${selectedMusicProfile}`,
+  `Environment/profile: ${selectedEnvironmentProfile}`,
+  `Delivery handoff: ${selectedDeliveryHandoff}`,
   `Crelavo material library: ${materialNames.length ? materialNames.join(", ") : "Not selected"}`,
   `Uploaded user materials: ${uploadNames.length ? uploadNames.join(", ") : "Not uploaded"}`
     ].join("\n");
@@ -2115,7 +2286,7 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   async function startProduction() {
     const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
     const productionType = productionTypeFromSelection();
-    const selection = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
+    const selection = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
     const packageId = packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
@@ -2467,6 +2638,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       let orchestratorPlan: AssistantOrchestratorResponse | null = null;
       if (!conversationalOnly) {
         applyAssistantSuggestion(suggestion, clean, plan);
+        openDynamicWizardFromMessage(clean);
         try {
           const orchestratorResponse = await fetch("/api/assistant/orchestrate", {
             method: "POST",
@@ -2772,45 +2944,45 @@ async function startRawMicrophoneFallback() {
       id: "quality",
       label: "Quality",
       detail: selectedQuality,
-      count: Array.from(new Set([...activeCategoryProfile.quality, ...qualityOptions])).length,
+      count: activeCategoryProfile.quality.length,
       content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.quality, ...qualityOptions])).map((quality) => <button className={selectedQuality === quality ? "active" : ""} type="button" key={quality} onClick={() => { setQuickProviderTest(false); setSelectedQuality(quality); }}><strong>{quality}</strong></button>)}
+        {activeCategoryProfile.quality.map((quality) => <button className={selectedQuality === quality ? "active" : ""} type="button" key={quality} onClick={() => { setQuickProviderTest(false); setSelectedQuality(quality); }}><strong>{quality}</strong></button>)}
       </div>
     },
     {
       id: "style",
       label: "Style / Motion",
       detail: selectedStyle,
-      count: Array.from(new Set([...activeCategoryProfile.style, ...styleOptions])).length,
+      count: activeCategoryProfile.style.length,
       content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.style, ...styleOptions])).map((style) => <button className={selectedStyle === style ? "active" : ""} type="button" key={style} onClick={() => { setQuickProviderTest(false); setSelectedStyle(style); }}><strong>{style}</strong></button>)}
+        {activeCategoryProfile.style.map((style) => <button className={selectedStyle === style ? "active" : ""} type="button" key={style} onClick={() => { setQuickProviderTest(false); setSelectedStyle(style); }}><strong>{style}</strong></button>)}
       </div>
     },
     {
       id: "duration",
       label: "Duration / Scope",
       detail: selectedDuration,
-      count: Array.from(new Set([...activeCategoryProfile.duration, ...durationOptions])).length,
+      count: activeCategoryProfile.duration.length,
       content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.duration, ...durationOptions])).map((duration) => <button className={selectedDuration === duration ? "active" : ""} type="button" key={duration} onClick={() => { setQuickProviderTest(false); setSelectedDuration(duration); }}><strong>{duration}</strong></button>)}
+        {activeCategoryProfile.duration.map((duration) => <button className={selectedDuration === duration ? "active" : ""} type="button" key={duration} onClick={() => { setQuickProviderTest(false); setSelectedDuration(duration); }}><strong>{duration}</strong></button>)}
       </div>
     },
     {
       id: "modules",
       label: "Modules",
       detail: selectedModules.slice(0, 2).join(" + ") || "Select modules",
-      count: Array.from(new Set([...activeCategoryProfile.modules, ...moduleOptions])).length,
+      count: activeCategoryProfile.modules.length,
       content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.modules, ...moduleOptions])).map((module) => <button className={selectedModules.includes(module) ? "active" : ""} type="button" key={module} onClick={() => toggleModule(module)}><strong>{module}</strong></button>)}
+        {activeCategoryProfile.modules.map((module) => <button className={selectedModules.includes(module) ? "active" : ""} type="button" key={module} onClick={() => toggleModule(module)}><strong>{module}</strong></button>)}
       </div>
     },
     {
       id: "features",
       label: "Features",
       detail: `${selectedFeatures.length} selected`,
-      count: Array.from(new Set([...activeCategoryProfile.features, ...featureOptions])).length,
+      count: activeCategoryProfile.features.length,
       content: <div className="clean-tool-grid two">
-        {Array.from(new Set([...activeCategoryProfile.features, ...featureOptions])).map((feature) => <button className={selectedFeatures.includes(feature) ? "active" : ""} type="button" key={feature} onClick={() => toggleFeature(feature)}><strong>{feature}</strong></button>)}
+        {activeCategoryProfile.features.map((feature) => <button className={selectedFeatures.includes(feature) ? "active" : ""} type="button" key={feature} onClick={() => toggleFeature(feature)}><strong>{feature}</strong></button>)}
       </div>
     },
     {
@@ -2832,18 +3004,18 @@ async function startRawMicrophoneFallback() {
       id: "delivery",
       label: "Delivery",
       detail: selectedPlatforms.slice(0, 2).join(" + ") || "Download formats",
-      count: Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions, "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "Subtitle file", "Thumbnail / cover", "Preview link"])).length,
+      count: activeCategoryProfile.platforms.length,
       content: <div className="clean-tool-groups compact-delivery-groups">
         <div className="clean-tool-group">
           <small>Download formats</small>
           <div className="clean-tool-grid two">
-            {["MP4 download", "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "ZIP source", "README / setup", "Subtitle file", "Thumbnail / cover", "Preview link", "Dashboard delivery"].map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+            {activeCategoryProfile.platforms.filter((platform) => ["Dashboard delivery", "MP4 download", "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "ZIP source", "README / setup", "Subtitle file", "Thumbnail / cover", "Preview link"].includes(platform)).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
           </div>
         </div>
         <div className="clean-tool-group">
           <small>Publish / handoff</small>
           <div className="clean-tool-grid two">
-            {Array.from(new Set([...activeCategoryProfile.platforms, ...platformOptions])).filter((platform) => !["Dashboard delivery", "MP4 download", "ZIP source"].includes(platform)).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
+            {activeCategoryProfile.platforms.filter((platform) => !["Dashboard delivery", "MP4 download", "MOV video", "WebM video", "PNG images", "JPG images", "PDF document", "ZIP source", "README / setup", "Subtitle file", "Thumbnail / cover", "Preview link"].includes(platform)).map((platform) => <button className={selectedPlatforms.includes(platform) ? "active" : ""} type="button" key={platform} onClick={() => togglePlatform(platform)}><strong>{platform}</strong></button>)}
           </div>
         </div>
       </div>
@@ -2875,6 +3047,34 @@ async function startRawMicrophoneFallback() {
           <div className="clean-hero-credit-pill">
             <CreditCard size={15} />
             <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+          </div>
+        </section>
+
+        <section className="clean-preview-card production-example-directions" aria-label="Manual production setup wizard">
+          <div className="production-example-head">
+            <span className="badge">Manual setup</span>
+            <small>İstersen chat yerine buradan adım adım seç: motor, kalite, süre, ses, müzik, ortam ve teslim.</small>
+          </div>
+          {manualWizardOpen ? (
+            <div className="production-example-grid">
+              {manualWizardSteps.map((step, index) => index === manualWizardStep ? (
+                <div className="clean-tool-group" key={step.id}>
+                  <strong>{step.title}</strong>
+                  <small>{step.subtitle}</small>
+                  <div className="clean-tool-grid two">
+                    {step.options.map((option) => <button className={step.value === option ? "active" : ""} type="button" key={option} onClick={() => step.apply(option)}><strong>{option}</strong></button>)}
+                  </div>
+                </div>
+              ) : null)}
+            </div>
+          ) : (
+            <p>Kullanıcı hiçbir kategori bilmeden başlayabilir; seçimler production payload’a ve provider route’a yazılır.</p>
+          )}
+          <div className="production-example-actions">
+            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.max(0, manualWizardStep - 1)); }}>Önceki</button>
+            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.min(manualWizardSteps.length - 1, manualWizardStep + 1)); }}>Sonraki seçenek</button>
+            <button className="btn" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(0); }}>Adım adım seç</button>
+            <button className="btn" type="button" onClick={openStartProductionModal}>Örnekleri göster / üretime hazırla</button>
           </div>
         </section>
 

@@ -97,7 +97,7 @@ const campaignPreflight = buildProviderPreflight({
 });
 assertEqual(campaignPreflight.provider, "runway", "campaign preflight provider");
 assertEqual(campaignPreflight.durationSeconds, 15, "campaign preflight duration");
-assertEqual(campaignPreflight.aspectRatio, "720:1280", "campaign preflight ratio");
+assertEqual(campaignPreflight.aspectRatio, "9:16", "campaign preflight ratio");
 
 const successCredit = computeProviderSuccessSpend({ balance: 1000, reserved: 400, reservedCredits: 400, productionTitle: "Dry run success" });
 assertEqual(successCredit.creditResolution.status, "spent_reserved", "success credit status");
