@@ -966,15 +966,38 @@ function responseLanguage(message: string, activeLanguage = "") {
   return isLikelyTurkish(message, activeLanguage) ? "tr" : activeLanguage || "en";
 }
 
+function matchScore(text: string, patterns: RegExp[]) {
+  return patterns.reduce((score, pattern) => score + (pattern.test(text) ? 1 : 0), 0);
+}
+
 function inferDynamicWizardType(message: string): DynamicWizardType {
-  const text = message.toLocaleLowerCase("tr-TR");
+  const text = normalizeTurkishQuery(message);
   if (isAiVideoOnlyIntent(message)) return "video";
   if (/konuşmalı|konusmali|lip-sync|aksan|şive|sive|kendi ses|sesim|talking/.test(text)) return "talking_video";
-  if (/web sitesi|website|web site|landing|site|saas/.test(text)) return "website";
-  if (/uygulama|mobil|mobile app|app|randevu uygulaması|randevu uygulamasi/.test(text)) return "mobile_app";
-  if (/reklam|kampanya|ürün|urun|shopify|amazon|trendyol|e-?ticaret/.test(text)) return "campaign";
-  if (/görsel|gorsel|resim|poster|afiş|afis|logo|thumbnail|banner/.test(text)) return "image";
-  if (/pdf|doküman|dokuman|belge|teklif|proposal|readme/.test(text)) return "document";
+
+  const durationSignal = durationFromFollowUp(message) ? 3 : 0;
+  const videoScore = durationSignal + matchScore(text, [
+    /\b(video|tanitim|tanıtım|promo|promotional|reklam filmi|klip|mp4|reels|shorts|tiktok|youtube shorts)\b/,
+    /\b(seslendirme|voiceover|voice-over|narration|sesli)\b/,
+    /\b(altyazi|altyazı|subtitle|subtitles)\b/,
+    /\b(muzik|müzik|background music|fon muzik|fon müzik|cinematic|sinematik)\b/,
+    /\b(hook|kanca|cta|call to action)\b/
+  ]);
+  const websiteScore = matchScore(text, [
+    /\b(web sitesi|website project|web site|landing page|site yap|site kur|sayfa yap|domain|hosting)\b/,
+    /\b(admin panel|kaynak kod|source code|zip source|checkout|contact form|üyelik|uyelik)\b/
+  ]);
+  const appScore = matchScore(text, [/\b(uygulama|mobil uygulama|mobile app|app yap|ios|android|expo)\b/, /\b(randevu uygulamasi|randevu uygulaması|push notification)\b/]);
+  const imageScore = matchScore(text, [/\b(görsel|gorsel|resim|poster|afiş|afis|logo|thumbnail|banner|kapak)\b/]);
+  const documentScore = matchScore(text, [/\b(pdf|doküman|dokuman|belge|teklif|proposal|readme)\b/]);
+  const campaignScore = matchScore(text, [/\b(kampanya|ürün reklami|urun reklami|product ad|shopify|amazon|trendyol|e-?ticaret|eticaret)\b/]);
+
+  if (videoScore >= 3 && videoScore >= websiteScore + 1 && videoScore >= appScore + 1) return "video";
+  if (appScore >= 1 && appScore >= videoScore) return "mobile_app";
+  if (websiteScore >= 1 && websiteScore >= videoScore) return "website";
+  if (campaignScore >= 1 && campaignScore >= videoScore) return "campaign";
+  if (imageScore >= 1) return "image";
+  if (documentScore >= 1) return "document";
   return "video";
 }
 
@@ -1562,7 +1585,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
       setSelectedStyle(/tavuk|içecek|icecek|yemek|restoran|menü|menu/i.test(subject) ? "Product demo" : "Cinematic");
       setSelectedDuration("15 sec");
       setSelectedModules(["AI video", "Prompt-to-video"]);
-      setSelectedFeatures(["Script", "Scene plan", "Subtitles", "Music", "3 alternatives"]);
+      setSelectedFeatures(["Script", "Scene plan", "Voice-over", "Subtitles", "Music"]);
       setSelectedPlatforms(["Dashboard delivery", "MP4 download", "Instagram Reels"]);
     }
   }
@@ -1764,7 +1787,9 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   }
 
   function applyAssistantSuggestion(suggestion: AssistantSuggestion, idea: string, plan?: AssistantPlan) {
-    const forcedVideoOnly = isAiVideoOnlyIntent(`${idea} ${suggestion.suggestedPrompt ?? ""}`);
+    const suggestedText = `${idea} ${suggestion.suggestedPrompt ?? ""}`;
+    const inferredType = inferDynamicWizardType(suggestedText);
+    const forcedVideoOnly = isAiVideoOnlyIntent(suggestedText) || inferredType === "video" && durationFromFollowUp(suggestedText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(suggestedText);
     const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(plan?.production_type ?? suggestion.category);
     forcedVideoOnly ? applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea) : applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea);
   if (forcedVideoOnly) {
@@ -1784,7 +1809,9 @@ function selectDynamicWizardOption(question: DynamicWizardQuestion, option: stri
   function applyOrchestratorPlan(orchestrator: AssistantOrchestratorResponse, idea: string) {
     const firstJob = Array.isArray(orchestrator.jobs) ? orchestrator.jobs[0] : null;
     if (!firstJob) return;
-  const forcedVideoOnly = isAiVideoOnlyIntent(`${idea} ${firstJob.brief ?? ""}`);
+  const jobText = `${idea} ${firstJob.brief ?? ""}`;
+  const inferredType = inferDynamicWizardType(jobText);
+  const forcedVideoOnly = isAiVideoOnlyIntent(jobText) || inferredType === "video" && durationFromFollowUp(jobText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(jobText);
   const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(firstJob.type ?? "video");
   forcedVideoOnly ? applyAiVideoOnlyPreset(firstJob.brief || idea) : applyGeneralProductionPreset(type, firstJob.brief || idea);
   if (forcedVideoOnly) {
