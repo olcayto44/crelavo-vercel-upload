@@ -1,3 +1,5 @@
+import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv } from "./providers/env.ts";
+
 export type ProviderReadinessStatus = "ready" | "missing" | "optional";
 
 export type ProviderRequirement = {
@@ -9,15 +11,6 @@ export type ProviderRequirement = {
   note: string;
 };
 
-function hasEnv(name: string) {
-  const value = process.env[name];
-  return Boolean(value && !value.includes("TODO") && !value.includes("your_") && !value.includes("change_me"));
-}
-
-function hasAnyEnv(names: string[]) {
-  return names.some((name) => hasEnv(name));
-}
-
 function requirement(key: string, label: string, requiredEnv: string[], affects: string[], note: string, optional = false): ProviderRequirement {
   return {
     key,
@@ -25,7 +18,7 @@ function requirement(key: string, label: string, requiredEnv: string[], affects:
     requiredEnv,
     affects,
     note,
-    status: requiredEnv.every((name) => hasEnv(name)) || (key === "video_provider" && hasAnyEnv(["REPLICATE_API_TOKEN", "FAL_KEY", "FAL_API_KEY", "RUNWAY_API_KEY", "KLING_API_KEY"])) ? "ready" : optional ? "optional" : "missing"
+    status: requiredEnv.every((name) => hasConfiguredEnv(name)) || (key === "video_provider" && hasAnyConfiguredEnv(["REPLICATE_API_TOKEN", "REPLICATE_API_KEY", "FAL_KEY", "FAL_API_KEY", "RUNWAY_API_KEY", "DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY"])) || (key === "voice_provider" && hasProviderEnv("elevenlabs")) || (key === "render_provider" && hasProviderEnv("shotstack")) ? "ready" : optional ? "optional" : "missing"
   };
 }
 
@@ -35,11 +28,17 @@ export function providerRequirementsForProduction(productionType: string, packag
     requirement("openai", "OpenAI planning/brain", ["OPENAI_API_KEY"], ["assistant brief", "script", "production plan"], "Needed for live assistant planning, scripts, briefs and code/content generation.")
   ];
 
-  if (["video", "campaign", "music_video", "stickman_animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "talking_video"].includes(type) || packageId.includes("video")) {
+  const needsVideoProvider = ["video", "campaign", "music_video", "stickman_animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "talking_video"].includes(type) || packageId.includes("video");
+  const needsEcommerceAdPipeline = type === "campaign" || packageId === "campaign_product_ad_video";
+
+  if (needsVideoProvider) {
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output."));
   }
 
-  if (["talking_video", "avatar", "lip_sync", "voice_clone", "dubbing"].includes(type) || packageId.includes("voice")) {
+  if (needsEcommerceAdPipeline) {
+    requirements.push(requirement("voice_provider", "ElevenLabs voice-over provider", ["ELEVENLABS_API_KEY"], ["ad voice-over", "voice audio asset"], "Required for the real e-commerce ad pipeline voice-over."));
+    requirements.push(requirement("render_provider", "Shotstack render provider", ["SHOTSTACK_API_KEY"], ["final rendered MP4", "video + voice + subtitle assembly"], "Required to render the final customer-ready ad video after visual output is ready."));
+  } else if (["talking_video", "avatar", "lip_sync", "voice_clone", "dubbing"].includes(type) || packageId.includes("voice")) {
     requirements.push(requirement("voice_provider", "Voice/speech provider", ["ELEVENLABS_API_KEY"], ["voice-over", "voice clone", "dubbing", "lip-sync audio"], "Required when the selected production includes voice cloning or generated speech.", true));
   }
 

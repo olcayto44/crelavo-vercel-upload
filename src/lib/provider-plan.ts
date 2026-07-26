@@ -1,4 +1,5 @@
 import { paymentProviderName } from "./payment-provider";
+import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv, optionalEnv } from "./providers/env";
 
 export type ProviderPlanStatus = "ready" | "missing" | "pending" | "optional";
 
@@ -17,17 +18,8 @@ export type ProviderPlanItem = {
   finalSetup: string;
 };
 
-function hasEnv(name: string) {
-  const value = process.env[name];
-  return Boolean(value && !value.includes("TODO") && !value.includes("your_") && !value.includes("change_me"));
-}
-
-function hasAnyEnv(names: string[]) {
-  return names.some((name) => hasEnv(name));
-}
-
 function selectedVideoProvider() {
-  return (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "runway").toLowerCase();
+  return (optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "runway").toLowerCase();
 }
 
 function selectedBrainProvider() {
@@ -35,20 +27,20 @@ function selectedBrainProvider() {
 }
 
 function selectedImageProvider() {
-  return (process.env.IMAGE_PROVIDER || "openai").toLowerCase();
+  return (optionalEnv("IMAGE_PROVIDER") || "openai").toLowerCase();
 }
 
 function stableAudioReady() {
-  return hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY"]);
+  return hasProviderEnv("stableAudio") || hasProviderEnv("stability");
 }
 
 function youtubeReady() {
-  return hasAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]) && hasAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
+  return hasProviderEnv("youtubeClientId") && hasProviderEnv("youtubeClientSecret");
 }
 
 function requiredStatus(requiredEnv: string[], optional = false): ProviderPlanStatus {
   if (requiredEnv.length === 0 && optional) return "optional";
-  if (requiredEnv.every((name) => hasEnv(name))) return "ready";
+  if (requiredEnv.every((name) => hasConfiguredEnv(name))) return "ready";
   return optional ? "optional" : "missing";
 }
 
@@ -82,7 +74,7 @@ function videoPlan(): ProviderPlanItem {
       intendedUse: "Low-cost test clips, social video drafts, image-to-video/text-to-video generation and provider preflight.",
       requiredEnv: ["FAL_KEY or FAL_API_KEY"],
       optionalEnv: ["VIDEO_PROVIDER", "FAL_VIDEO_MODEL", "BULK_GENERATION_CONCURRENCY"],
-      status: hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "ready" : "missing",
+      status: hasProviderEnv("fal") ? "ready" : "missing",
       safeMode: "If FAL is missing, production can create dashboard records and delivery plans, but real video jobs stay waiting_provider_config.",
       finalSetup: "Add FAL key, choose video model, run 5-second provider test, then raise concurrency slowly."
     };
@@ -186,7 +178,7 @@ function paymentPlan(): ProviderPlanItem {
       intendedUse: "Whop checkout, payment/subscription reconciliation, controlled credit activation, duplicate-payment protection and admin fallback.",
       requiredEnv: ["PAYMENT_PROVIDER=whop", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"],
       optionalEnv: ["PAYMENT_NOTIFICATION_EMAIL", "Whop plan IDs in /admin/packages"],
-      status: process.env.PAYMENT_PROVIDER === "whop" && hasEnv("WHOP_API_KEY") && hasEnv("WHOP_WEBHOOK_SECRET") ? "ready" : "missing",
+      status: paymentProviderName() === "whop" && hasProviderEnv("whopApiKey") && hasProviderEnv("whopWebhookSecret") ? "ready" : "missing",
       safeMode: "If Whop keys are missing, keep checkout/payment automation blocked and use admin-reviewed manual credit activation only.",
       finalSetup: "Confirm PAYMENT_PROVIDER=whop, WHOP_API_KEY and WHOP_WEBHOOK_SECRET in production; run live Whop payment, webhook and idempotency checks."
     };
@@ -269,7 +261,7 @@ export function buildProviderPlan() {
       intendedUse: "Background music, campaign music beds and generated music workflows.",
       requiredEnv: ["STABLE_AUDIO_API_KEY or STABILITY_API_KEY"],
       optionalEnv: ["STABLE_AUDIO_MODEL", "STABLE_AUDIO_ACCOUNT_URL", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN", "MUBERT_ACCOUNT_URL"],
-      status: stableAudioReady() || hasAnyEnv(["MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]) ? "ready" : "missing",
+      status: stableAudioReady() || hasProviderEnv("mubert") ? "ready" : "missing",
       safeMode: "If music APIs are missing, use manual licensed music fallback and do not promise generated music.",
       finalSetup: "Use Stable Audio first, Mubert second; test account access before enabling music jobs."
     },
@@ -311,7 +303,7 @@ export function buildProviderPlan() {
       intendedUse: "Fast indexing submission for public landing pages, API docs, blog and SEO pages.",
       requiredEnv: ["BING_INDEXNOW_KEY or INDEXNOW_KEY"],
       optionalEnv: ["INDEXNOW_KEY_LOCATION", "INDEXNOW_ENDPOINT", "INDEXNOW_HOST"],
-      status: hasAnyEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]) ? "ready" : "missing",
+      status: hasAnyConfiguredEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]) ? "ready" : "missing",
       safeMode: "If IndexNow key is missing, rely on sitemap and Search Console/Bing Webmaster discovery.",
       finalSetup: "Add BING_INDEXNOW_KEY, ensure the key file is reachable, then run a dry-run and a small submit."
     },

@@ -1,7 +1,6 @@
 import { createVoiceover } from "./elevenlabs";
 import { createAdBrain } from "./openai";
 import { scrapeProduct } from "./scraper";
-import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { EcommerceAdRunInput, EcommerceAdRunResult } from "./types";
 import { createVisualVideo } from "./visuals";
@@ -40,13 +39,5 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
     durationSeconds: input.targetDurationSeconds
   });
 
-  const renderJob = await createShotstackRender({
-    title: brain.productName,
-    videoUrl: visualJob.url,
-    audioUrl: voiceAudioUrl,
-    subtitleUrl,
-    durationSeconds: input.targetDurationSeconds
-  });
-
-  return { product, brain, visualJob, voiceAudioUrl, subtitleUrl, renderJob };
+  return { product, brain, visualJob, voiceAudioUrl, subtitleUrl, renderJob: null };
 }

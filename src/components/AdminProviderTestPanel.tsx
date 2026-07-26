@@ -25,7 +25,7 @@ const providerTests = [
   { id: "runway", label: "Runway readiness" },
   { id: "shotstack", label: "Shotstack render" },
   { id: "video", label: "Selected video provider" },
-  { id: "shopify", label: "Shopify paused" }
+  { id: "shopify", label: "Shopify app" }
 ];
 
 type TestResult = { ok?: boolean; error?: string; detail?: unknown; provider?: string };
@@ -72,7 +72,7 @@ export function AdminProviderTestPanel() {
     <section className="card admin-wide-card" style={{ marginTop: 20 }}>
       <span className="badge">Live provider tests</span>
       <h2>Run low-cost API checks from admin</h2>
-      <p style={{ color: "var(--muted)", marginTop: 0 }}>These checks confirm keys and basic API access without showing secrets. Video is manual only to avoid unexpected spend. Shopify stays paused.</p>
+      <p style={{ color: "var(--muted)", marginTop: 0 }}>These checks confirm keys and basic API access without showing secrets. Video is manual only to avoid unexpected spend. Shopify checks app credentials and OAuth readiness.</p>
       <AdminCredentialFields adminEmail={adminEmail} adminToken={adminToken} onAdminEmailChange={setAdminEmail} onAdminTokenChange={setAdminToken} />
       <div className="admin-faq-actions" style={{ marginTop: 12 }}>
         <button className="btn" type="button" onClick={runSafeBatch} disabled={Boolean(running)}>{running ? `Testing ${running}...` : "Run safe batch"}</button>

@@ -7,6 +7,7 @@ import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createVisualVideo } from "@/lib/providers/visuals";
 import { ProviderConfigError, type ProviderJob } from "@/lib/providers/types";
+import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { buildOutputRegistry } from "@/lib/output-registry";
 import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-jobs";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
@@ -197,7 +198,31 @@ export async function POST(request: Request) {
       }
     }
 
+    const isProjectDelivery = isAutomaticProjectDelivery(productionType, packageId);
     const isProductAdVideo = currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign";
+    if (isProjectDelivery && !isProductAdVideo) {
+      const projectOutput = buildProjectDeliveryOutput(currentProduction, jobId);
+      const { data: projectProduction, error: projectError } = await supabase
+        .from("production_requests")
+        .update({
+          status: "ready",
+          automation_status: "ready",
+          generation_status: "project_delivery_ready",
+          preview_url: projectOutput.previewUrl,
+          delivery_link: projectOutput.deliveryLink,
+          delivery_zip_url: projectOutput.deliveryZipUrl,
+          source_files_url: projectOutput.sourceFilesUrl,
+          output_json: projectOutput,
+          admin_notes: "Automatic project/source delivery package generated. This item is no longer a semi-manual backlog task.",
+          updated_at: now
+        })
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      if (projectError) throw projectError;
+      return Response.json({ job_id: jobId, production: projectProduction, project_delivery_ready: true });
+    }
+
     const pipeline = isProductAdVideo ? ecommerceAdPipeline() : null;
     const steps = isProductAdVideo ? runningEcommerceAdAutomationSteps() : runningAutomationSteps();
     const updatePayload: Record<string, unknown> = {
@@ -300,7 +325,7 @@ export async function POST(request: Request) {
           automationMode: "fully_automatic",
           automationStatus: "running",
           jobId,
-          currentStep: "Shotstack render job created",
+          currentStep: "Visual/video provider job created",
           pipelineType: "ecommerce_product_ad_video",
           providerPipeline: pipeline,
           product: result.product,
@@ -308,25 +333,26 @@ export async function POST(request: Request) {
           visualJob: result.visualJob,
           voiceAudioUrl: result.voiceAudioUrl,
           subtitleUrl: result.subtitleUrl,
-          renderJob: result.renderJob,
+          renderJob: result.renderJob ?? null,
+          renderStatus: result.renderJob ? "render_job_created" : "waiting_for_visual_output",
           revisionActions: ["Change subtitle color", "Switch voice", "Change CTA", "Regenerate hook"],
           exportTargets: ["TikTok", "Meta Ads", "Instagram Reels"],
-          finalVideoUrl: result.renderJob.url ?? null
+          finalVideoUrl: null
         };
         const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: providerOutput }, { visualJob: result.visualJob, renderJob: result.renderJob });
 
         const { data: completedProduction, error: completeError } = await supabase
           .from("production_requests")
           .update({
-            generation_status: "render_job_created",
+            generation_status: result.renderJob ? "render_job_created" : "provider_visual_job_created",
             output_json: {
               ...providerOutput,
               providerLifecycle: { visual: providerLifecycle.visual, render: providerLifecycle.render },
               outputRegistry: providerLifecycle.outputRegistry,
               automaticDeliveryLinks: deliveryLinks,
-              previewUrl: result.renderJob.url ?? null
+              previewUrl: null
             },
-            admin_notes: "Provider chain executed. Render job is created; poll provider status before marking ready.",
+            admin_notes: result.renderJob ? "Provider chain executed. Render job is created; poll provider status before marking ready." : "Provider chain executed. Visual/video job is created; render will start automatically after visual output is ready.",
             updated_at: new Date().toISOString()
           })
           .eq("id", productionId)

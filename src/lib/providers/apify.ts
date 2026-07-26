@@ -1,11 +1,11 @@
-import { requireEnv } from "./env";
+import { requireProviderEnv } from "./env";
 
 function baseUrl() {
   return process.env.APIFY_BASE_URL || "https://api.apify.com/v2";
 }
 
 async function apifyJson<T>(path: string, init?: RequestInit) {
-  const token = requireEnv("APIFY_API_TOKEN");
+  const token = requireProviderEnv("apify");
   const url = new URL(`${baseUrl()}${path}`);
   url.searchParams.set("token", token);
 

@@ -1,11 +1,11 @@
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 
 function baseUrl() {
   return optionalEnv("HEYGEN_BASE_URL") || "https://api.heygen.com";
 }
 
 function apiKey() {
-  return requireEnv("HEYGEN_API_KEY");
+  return requireProviderEnv("heygen");
 }
 
 async function heygenJson<T>(path: string, init?: RequestInit) {

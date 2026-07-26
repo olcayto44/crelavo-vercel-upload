@@ -1,4 +1,4 @@
-import { optionalEnv, requireEnv } from "@/lib/providers/env";
+import { optionalEnv, optionalProviderEnv, requireEnv, requireProviderEnv } from "@/lib/providers/env";
 import type { AdLaunchInput, AdPlatform, RoasMetrics } from "./types";
 
 function metaGraphVersion() {
@@ -9,7 +9,7 @@ export function adOAuthUrl(platform: AdPlatform, state: string) {
   const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
 
   if (platform === "meta" || platform === "instagram") {
-    const clientId = requireEnv("META_APP_ID");
+    const clientId = requireProviderEnv("metaAppId");
     const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=${platform}`);
     const scope = encodeURIComponent(platform === "instagram"
       ? "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management"
@@ -18,14 +18,14 @@ export function adOAuthUrl(platform: AdPlatform, state: string) {
   }
 
   if (platform === "tiktok") {
-    const clientKey = requireEnv("TIKTOK_CLIENT_KEY");
+    const clientKey = requireProviderEnv("tiktokClientKey");
     const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=tiktok`);
     const scope = encodeURIComponent("advertiser.management,ad.upload,ad.manage,report.integrated");
     return `https://business-api.tiktok.com/portal/auth?app_id=${clientKey}&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}&scope=${scope}`;
   }
 
   if (platform === "youtube") {
-    const clientId = optionalEnv("YOUTUBE_CLIENT_ID") || requireEnv("GOOGLE_CLIENT_ID");
+    const clientId = requireProviderEnv("youtubeClientId");
     const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=youtube`);
     const scope = encodeURIComponent("https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly");
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${scope}&state=${encodeURIComponent(state)}`;
@@ -51,8 +51,8 @@ export async function launchAd(input: AdLaunchInput) {
 }
 
 async function launchMetaAd(input: AdLaunchInput) {
-  const token = requireEnv("META_SYSTEM_ACCESS_TOKEN");
-  const adAccountId = requireEnv("META_AD_ACCOUNT_ID");
+  const token = requireProviderEnv("metaAccessToken");
+  const adAccountId = requireProviderEnv("metaAdAccount");
   return {
     platform: "meta",
     status: "queued",
@@ -75,8 +75,8 @@ async function launchMetaAd(input: AdLaunchInput) {
 }
 
 async function launchTikTokAd(input: AdLaunchInput) {
-  const token = requireEnv("TIKTOK_ACCESS_TOKEN");
-  const advertiserId = requireEnv("TIKTOK_ADVERTISER_ID");
+  const token = requireProviderEnv("tiktokAccessToken");
+  const advertiserId = requireProviderEnv("tiktokAdvertiserId");
   return {
     platform: "tiktok",
     status: "queued",
@@ -100,12 +100,12 @@ async function launchTikTokAd(input: AdLaunchInput) {
 
 async function launchSocialPublishJob(input: AdLaunchInput) {
   const tokenEnvByPlatform: Record<string, string> = {
-    youtube: "GOOGLE_ACCESS_TOKEN",
+    youtube: "YOUTUBE_ACCESS_TOKEN or GOOGLE_ACCESS_TOKEN",
     linkedin: "LINKEDIN_ACCESS_TOKEN",
     x: "X_ACCESS_TOKEN"
   };
   const tokenName = tokenEnvByPlatform[input.platform] ?? "SOCIAL_ACCESS_TOKEN";
-  const token = optionalEnv(tokenName);
+  const token = input.platform === "youtube" ? optionalProviderEnv("youtubeAccessToken") : optionalEnv(tokenName);
 
   return {
     platform: input.platform,

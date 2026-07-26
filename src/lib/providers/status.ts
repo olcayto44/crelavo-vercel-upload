@@ -1,4 +1,4 @@
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 import type { NormalizedProviderStatus, ProviderJob } from "./types";
 
 function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
@@ -21,7 +21,7 @@ function firstUrl(value: unknown): string | undefined {
 }
 
 function falApiKey() {
-  return optionalEnv("FAL_KEY") || optionalEnv("FAL_API_KEY") || requireEnv("FAL_KEY");
+  return requireProviderEnv("fal");
 }
 
 function falModel(job: ProviderJob) {
@@ -30,7 +30,7 @@ function falModel(job: ProviderJob) {
 }
 
 export async function getReplicateStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
-  const apiKey = requireEnv("REPLICATE_API_TOKEN");
+  const apiKey = requireProviderEnv("replicate");
   if (!job.id) return { provider: "replicate", status: "unknown", error: "Missing Replicate job id" };
   const response = await fetch(`https://api.replicate.com/v1/predictions/${job.id}`, {
     headers: { Authorization: `Token ${apiKey}` }
@@ -48,7 +48,7 @@ export async function getReplicateStatus(job: ProviderJob): Promise<NormalizedPr
 }
 
 export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
-  const apiKey = requireEnv("RUNWAY_API_KEY");
+  const apiKey = requireProviderEnv("runway");
   if (!job.id) return { provider: "runway", status: "unknown", error: "Missing Runway job id" };
   const response = await fetch(`https://api.dev.runwayml.com/v1/tasks/${job.id}`, {
     headers: {
@@ -69,7 +69,7 @@ export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProvi
 }
 
 export async function getKlingStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
-  const apiKey = requireEnv("KLING_API_KEY");
+  const apiKey = requireProviderEnv("kling");
   if (!job.id) return { provider: "kling", status: "unknown", error: "Missing Kling job id" };
   const baseUrl = optionalEnv("KLING_STATUS_API_URL") || optionalEnv("KLING_API_URL") || "https://api.klingai.com/v1/videos/text2video";
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${job.id}`, {
@@ -121,7 +121,7 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
 }
 
 export async function getShotstackStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
-  const apiKey = requireEnv("SHOTSTACK_API_KEY");
+  const apiKey = requireProviderEnv("shotstack");
   if (!job.id) return { provider: "shotstack", status: "unknown", error: "Missing Shotstack render id" };
   const endpoint = (process.env.SHOTSTACK_API_URL || "https://api.shotstack.io/stage/render").replace(/\/render$/, "");
   const response = await fetch(`${endpoint}/render/${job.id}`, {

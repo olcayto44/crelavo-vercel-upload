@@ -1,11 +1,11 @@
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 
 function baseUrl() {
   return optionalEnv("STABILITY_BASE_URL") || "https://api.stability.ai";
 }
 
 export async function getStabilityBalance() {
-  const apiKey = requireEnv("STABILITY_API_KEY");
+  const apiKey = requireProviderEnv("stability");
   const response = await fetch(`${baseUrl()}/v1/user/balance`, {
     headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" }
   });
@@ -14,7 +14,7 @@ export async function getStabilityBalance() {
 }
 
 export async function getStabilityEngines() {
-  const apiKey = requireEnv("STABILITY_API_KEY");
+  const apiKey = requireProviderEnv("stability");
   const response = await fetch(`${baseUrl()}/v1/engines/list`, {
     headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" }
   });

@@ -11,6 +11,7 @@ type ProductionLike = {
   request_metadata?: Record<string, any> | null;
   input_json?: Record<string, any> | null;
   materials_json?: Array<Record<string, any>> | null;
+  output_json?: Record<string, any> | null;
 };
 
 export type AutomaticDeliveryLinks = {
@@ -152,6 +153,11 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
     files.push({ path: "source/SOURCE-GUIDE.md", purpose: "Source package guide" });
     files.push({ path: "source/project-structure.md", purpose: "Suggested source structure and file map" });
   }
+  if (type === "campaign" || deliveryPackageFromProduction(production).standard === "commerce_export") {
+    files.push({ path: "campaign/copy-pack.md", purpose: "Ad script, captions, subtitle lines and CTA variations" });
+    files.push({ path: "campaign/social-export-plan.md", purpose: "TikTok, Meta, Instagram, YouTube and marketplace export checklist" });
+    files.push({ path: "campaign/marketplace-export.json", purpose: "Machine-readable campaign asset export map" });
+  }
   if (requirements.wantsAdminPanel) files.push({ path: "admin-panel/admin-requirements.md", purpose: "Admin panel modules, roles and data notes" });
   if (requirements.wantsDeploymentGuide) files.push({ path: "docs/deployment-guide.md", purpose: "Deployment and setup instructions" });
   if (requirements.wantsFinalVideo) files.push({ path: "media/final-video-placeholder.md", purpose: "Final video slot and provider replacement notes" });
@@ -165,7 +171,48 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
 
 function buildProjectStructure(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# Project Structure\n\nProduction: ${manifest.title}\n\n## Recommended Package Layout\n\n\`\`\`text\ndelivery/\n├─ README.md\n├─ manifest.json\n├─ preview.html\n├─ source/\n├─ admin-panel/\n├─ docs/\n├─ media/\n├─ brand-kit/\n└─ documents/\n\`\`\`\n\n## Technical Stack\n${manifest.project.technical_stack}\n\n## Modules\n${manifest.project.modules}\n`;
+  return `# Project Structure\n\nProduction: ${manifest.title}\n\n## Recommended Package Layout\n\n\`\`\`text\ndelivery/\n├─ README.md\n├─ manifest.json\n├─ preview.html\n├─ source/\n│  ├─ app/page.tsx\n│  ├─ app/layout.tsx\n│  ├─ app/globals.css\n│  ├─ components/\n│  ├─ lib/config.ts\n│  └─ package.json\n├─ admin-panel/\n├─ docs/\n├─ media/\n├─ brand-kit/\n└─ documents/\n\`\`\`\n\n## Technical Stack\n${manifest.project.technical_stack}\n\n## Modules\n${manifest.project.modules}\n`;
+}
+
+function buildSourcePackageJson(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const safeName = manifest.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-project";
+  return JSON.stringify({
+    name: safeName,
+    version: "0.1.0",
+    private: true,
+    scripts: { dev: "next dev", build: "next build", start: "next start", lint: "next lint" },
+    dependencies: { "@supabase/supabase-js": "latest", next: "latest", react: "latest", "react-dom": "latest" },
+    devDependencies: { typescript: "latest", "@types/node": "latest", "@types/react": "latest", "@types/react-dom": "latest" }
+  }, null, 2);
+}
+
+function buildSourceConfig(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `export const projectConfig = ${JSON.stringify({
+    title: manifest.title,
+    type: manifest.production_type,
+    packageId: manifest.package_id,
+    modules: manifest.project.modules,
+    stack: manifest.project.technical_stack,
+    commerce: manifest.commerce,
+    deliveryStandard: manifest.delivery_standard
+  }, null, 2)} as const;\n`;
+}
+
+function buildSourceLayout(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `import "./globals.css";\n\nexport const metadata = { title: ${JSON.stringify(manifest.title)}, description: ${JSON.stringify(manifest.user_promise)} };\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return <html lang="en"><body>{children}</body></html>;\n}\n`;
+}
+
+function buildSourcePage(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const items = manifest.required_items.map((item) => `          <li>${item}</li>`).join("\n");
+  return `import { projectConfig } from "../lib/config";\n\nexport default function Page() {\n  return (\n    <main className="page-shell">\n      <section className="hero">\n        <span>${manifest.delivery_standard}</span>\n        <h1>{projectConfig.title}</h1>\n        <p>${manifest.user_promise}</p>\n      </section>\n      <section className="card">\n        <h2>Included delivery</h2>\n        <ul>\n${items}\n        </ul>\n      </section>\n      <section className="card">\n        <h2>Modules</h2>\n        <p>{projectConfig.modules}</p>\n      </section>\n    </main>\n  );\n}\n`;
+}
+
+function buildSourceCss() {
+  return `:root { color-scheme: dark; font-family: Inter, Arial, sans-serif; background: #020617; color: #e5e7eb; }\nbody { margin: 0; }\n.page-shell { max-width: 980px; margin: 0 auto; padding: 48px 24px; }\n.hero, .card { border: 1px solid #243044; background: #0f172a; border-radius: 24px; padding: 28px; margin-bottom: 18px; }\n.hero span { color: #93c5fd; text-transform: uppercase; letter-spacing: .12em; font-size: 12px; }\nh1 { font-size: clamp(34px, 6vw, 68px); line-height: 1; margin: 18px 0; }\np, li { color: #cbd5e1; line-height: 1.7; }\n`;
 }
 
 function buildAdminRequirements(production: ProductionLike) {
@@ -207,6 +254,42 @@ function buildZipNotes(production: ProductionLike) {
   return `# Delivery Package Notes\n\nThis ZIP was generated from Crelavo delivery requirements.\n\n## Requested Formats\n${list(manifest.delivery_requirements.formats)}\n\n## Files Planned\n${list(manifest.generated_files.map((file: { path: string; purpose: string }) => `${file.path} — ${file.purpose}`))}\n`;
 }
 
+function buildCampaignCopyPack(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const metadata = production.request_metadata ?? {};
+  const input = production.input_json ?? {};
+  const output = objectValue(production.output_json) ?? objectValue(input.output_json) ?? objectValue(metadata.output_json) ?? {};
+  const brain = objectValue(output.brain) ?? {};
+  const script = value(brain.voiceoverScript ?? production.prompt, "Replace with final approved ad script.");
+  const subtitles = Array.isArray(brain.subtitleLines) ? brain.subtitleLines.map(String) : ["Hook subtitle", "Product benefit", "Proof", "CTA"];
+  return `# Campaign Copy Pack\n\nProduction: ${manifest.title}\n\n## Voice-over / Script\n${script}\n\n## Subtitle Lines\n${list(subtitles)}\n\n## Platform Captions\n- TikTok: Hook-first caption + product benefit + CTA.\n- Instagram Reels: Short benefit-led caption + trust cue + CTA.\n- Meta Ads: Primary text, headline and description should use the offer angle.\n- YouTube Shorts: Search-friendly title + concise CTA.\n\n## CTA Variations\n- Shop now\n- See the product\n- Get yours today\n- Try it before competitors catch up\n`;
+}
+
+function buildSocialExportPlan(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Social / Ads Export Plan\n\nProduction: ${manifest.title}\n\n## Export Targets\n${list(["TikTok", "Instagram Reels", "Facebook/Meta Ads", "YouTube Shorts", "Shopify", "Amazon", "Trendyol", "WooCommerce"])}\n\n## Launch Checklist\n- Confirm final video opens in dashboard.\n- Confirm subtitles are readable on mobile.\n- Confirm product/offer claim is accurate.\n- Upload to connected platforms or use manual export if OAuth/account token is not connected.\n- Track spend, clicks, conversions and ROAS after launch.\n`;
+}
+
+function buildMarketplaceExportJson(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return JSON.stringify({
+    production_id: manifest.production_id,
+    title: manifest.title,
+    platforms: ["shopify", "amazon", "trendyol", "woocommerce", "meta", "tiktok", "youtube_shorts"],
+    assets: {
+      final_video: manifest.links.previewUrl,
+      delivery_zip: manifest.links.deliveryZipUrl,
+      readme: manifest.links.readmeUrl
+    },
+    copy_slots: {
+      primary_text: "Replace with final approved primary text.",
+      headline: "Replace with final approved headline.",
+      description: "Replace with final approved description.",
+      call_to_action: "Shop now"
+    }
+  }, null, 2);
+}
+
 export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
   const manifest = buildDeliveryManifest(production);
   const requirements = manifest.delivery_requirements;
@@ -216,7 +299,19 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     { name: "manifest.json", content: JSON.stringify(manifest, null, 2) },
     { name: "preview.html", content: buildPreviewHtml(production) }
   ];
-  if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
+  if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
+    entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
+    entries.push({ name: "source/package.json", content: buildSourcePackageJson(production) });
+    entries.push({ name: "source/app/layout.tsx", content: buildSourceLayout(production) });
+    entries.push({ name: "source/app/page.tsx", content: buildSourcePage(production) });
+    entries.push({ name: "source/app/globals.css", content: buildSourceCss() });
+    entries.push({ name: "source/lib/config.ts", content: buildSourceConfig(production) });
+  }
+  if (manifest.delivery_standard === "commerce_export" || manifest.production_type === "campaign") {
+    entries.push({ name: "campaign/copy-pack.md", content: buildCampaignCopyPack(production) });
+    entries.push({ name: "campaign/social-export-plan.md", content: buildSocialExportPlan(production) });
+    entries.push({ name: "campaign/marketplace-export.json", content: buildMarketplaceExportJson(production) });
+  }
   if (requirements.wantsAdminPanel) entries.push({ name: "admin-panel/admin-requirements.md", content: buildAdminRequirements(production) });
   if (requirements.wantsDeploymentGuide) entries.push({ name: "docs/deployment-guide.md", content: buildDeploymentGuide(production) });
   if (requirements.wantsFinalVideo) entries.push({ name: "media/final-video-placeholder.md", content: buildMediaPlaceholder(production) });

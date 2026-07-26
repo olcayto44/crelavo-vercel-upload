@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { allCreditProducts, packages, topUpPackages } from "../src/lib/data.ts";
 import { billingTermsText, LEGAL_ACCEPTANCE_VERSION, legalAcceptanceSnapshot } from "../src/lib/legal.ts";
 import { lemonVariantEnvForProduct } from "../src/lib/payment-provider.ts";
+import { whopPlanIds } from "../src/lib/whop.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -37,25 +38,53 @@ const snapshot = legalAcceptanceSnapshot({ productionType: "video", packageId: "
 assert("billingTermsText" in snapshot, "legal snapshot should store billing terms");
 
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
+for (const term of ["provider: \"whop\"", "whopCheckoutPath", "whopPreviewSummary", "whopPreviewNotice", "manualActivation", "Payment provider is not set to Whop"]) {
+  assert(checkoutRoute.includes(term), `checkout route missing Whop term: ${term}`);
+}
 for (const term of ["createLemonSqueezyCheckout", "provider: \"lemon_squeezy\"", "credit_subscription", "credit_topup", "lemonVariantEnvForProduct", "manualActivation"]) {
-  assert(checkoutRoute.includes(term), `checkout route missing term: ${term}`);
+  assert(checkoutRoute.includes(term), `checkout route missing parked Lemon fallback term: ${term}`);
 }
 
-const webhookRoute = readFileSync("src/app/api/lemon-squeezy/webhook/route.ts", "utf8");
-for (const term of ["order_created", "subscription_created", "subscription_payment_success", "subscription_payment_failed", "subscription_cancelled"]) {
-  assert(webhookRoute.includes(term), `webhook missing subscription term: ${term}`);
+const whopWebhookRoute = readFileSync("src/app/api/webhooks/whop/route.ts", "utf8");
+for (const term of ["payment.succeeded", "membership.deactivated", "WHOP_WEBHOOK_SECRET", "preview_setup_payment_no_full_credits", "subscription_renewal_credits", "subscription_create", "trialing", "amountMatchesUsd(amount, setupFeeUsd)", "amountMatchesUsd(amount, expectedRenewalUsd)"]) {
+  assert(whopWebhookRoute.includes(term), `Whop webhook missing preview/subscription guard term: ${term}`);
+}
+
+const whopReconcileRoute = readFileSync("src/app/api/whop/reconcile-payment/route.ts", "utf8");
+for (const term of ["retrieveWhopPayment", "preview_setup_payment_no_full_credits", "subscription_renewal_credits", "subscription_create", "trialing", "amountMatchesUsd(amount, setupFeeUsd)", "amountMatchesUsd(amount, expectedRenewalUsd)"]) {
+  assert(whopReconcileRoute.includes(term), `Whop reconcile route missing preview/subscription guard term: ${term}`);
+}
+
+for (const plan of packages) {
+  assert(whopPlanIds[plan.id]?.monthly?.startsWith("plan_"), `${plan.name} monthly Whop plan ID missing`);
+  assert(whopPlanIds[plan.id]?.yearly?.startsWith("plan_"), `${plan.name} yearly Whop plan ID missing`);
+}
+
+const deliveryRoute = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8");
+for (const term of ["previewAccessForDelivery", "previewOnly", "downloadAccess === \"closed\"", "Downloads are closed during the 24-hour preview", "readme", "source", "zip"]) {
+  assert(deliveryRoute.includes(term), `delivery route missing preview download gate term: ${term}`);
+}
+
+const revisionRoute = readFileSync("src/app/api/productions/revision/route.ts", "utf8");
+for (const term of ["providerSpendGuard", "preview_only_downloads_closed", "downloadAccess === \"closed\""]) {
+  assert(revisionRoute.includes(term), `revision route missing preview provider-spend guard term: ${term}`);
 }
 
 const paymentPage = readFileSync("src/app/dashboard/payment/page.tsx", "utf8");
-for (const term of ["Start recurring credit subscription", "Buy one-time top-up credits", "billingTermsText", "PaymentCheckoutButton", "does not renew automatically", "Lemon Squeezy"]) {
+for (const term of ["Start recurring credit subscription", "Buy one-time top-up credits", "billingTermsText", "PaymentCheckoutButton", "does not renew automatically", "Whop", "24-hour preview"]) {
   assert(paymentPage.includes(term), `payment page missing term: ${term}`);
+}
+
+const whopCheckoutPage = readFileSync("src/app/checkout/whop/page.tsx", "utf8");
+for (const term of ["Whop secure checkout", "non-refundable 24-hour preview/setup charge", "data-whop-checkout-plan-id", "data-whop-checkout-return-url"]) {
+  assert(whopCheckoutPage.includes(term), `Whop checkout page missing term: ${term}`);
 }
 
 const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
 assert(creditsPage.includes("topUpPackages"), "credits page should render top-up packages");
 
 const envExample = readFileSync(".env.example", "utf8");
-for (const term of ["PAYMENT_PROVIDER=lemon_squeezy", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
+for (const term of ["PAYMENT_PROVIDER=whop", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
   assert(envExample.includes(term), `.env.example missing ${term}`);
 }
 

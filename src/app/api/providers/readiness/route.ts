@@ -1,4 +1,5 @@
 import { buildProviderPlan } from "@/lib/provider-plan";
+import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
 import { platformVoices } from "@/lib/voice-library";
 
 function hasEnv(name: string) {
@@ -66,10 +67,10 @@ function videoPreflight(provider: string) {
 }
 
 function videoProviderReady(provider: string) {
-  if (provider === "replicate") return { ready: hasEnv("REPLICATE_API_TOKEN"), required: ["REPLICATE_API_TOKEN"], optional: ["REPLICATE_VIDEO_VERSION", "REPLICATE_MODEL"] };
-  if (provider === "runway") return { ready: hasEnv("RUNWAY_API_KEY"), required: ["RUNWAY_API_KEY"], optional: ["RUNWAY_API_VERSION", "RUNWAY_MODEL"] };
-  if (provider === "kling") return { ready: hasEnv("KLING_API_KEY"), required: ["KLING_API_KEY"], optional: ["KLING_API_URL", "KLING_STATUS_API_URL", "KLING_MODEL"] };
-  if (provider === "fal") return { ready: hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]), required: ["FAL_KEY or FAL_API_KEY"], optional: ["FAL_VIDEO_MODEL"] };
+  if (provider === "replicate") return { ready: hasProviderEnv("replicate"), required: providerEnvNames("replicate"), optional: ["REPLICATE_VIDEO_VERSION", "REPLICATE_MODEL"] };
+  if (provider === "runway") return { ready: hasProviderEnv("runway"), required: providerEnvNames("runway"), optional: ["RUNWAY_API_VERSION", "RUNWAY_MODEL"] };
+  if (provider === "kling") return { ready: hasProviderEnv("kling"), required: providerEnvNames("kling"), optional: ["KLING_API_URL", "KLING_STATUS_API_URL", "KLING_MODEL"] };
+  if (provider === "fal") return { ready: hasProviderEnv("fal"), required: providerEnvNames("fal"), optional: ["FAL_VIDEO_MODEL"] };
   return { ready: false, required: [], optional: [], error: `Unsupported VIDEO_PROVIDER: ${provider}` };
 }
 
@@ -77,21 +78,21 @@ export async function GET() {
   const providerPlan = buildProviderPlan();
   const videoProvider = selectedVideoProvider();
   const video = videoProviderReady(videoProvider);
-  const speechReady = hasEnv("ELEVENLABS_API_KEY");
-  const brainReady = hasEnv("OPENAI_API_KEY");
-  const imageReady = hasEnv("OPENAI_API_KEY");
-  const heygenReady = hasEnv("HEYGEN_API_KEY");
-  const stabilityReady = hasEnv("STABILITY_API_KEY");
-  const musicReady = hasAnyEnv(["STABLE_AUDIO_API_KEY", "STABILITY_API_KEY", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN"]);
-  const mapsReady = hasEnv("GOOGLE_MAPS_API_KEY");
-  const tiktokReady = hasEnv("TIKTOK_CLIENT_KEY") && hasEnv("TIKTOK_CLIENT_SECRET");
-  const youtubeReady = hasAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]) && hasAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
+  const speechReady = hasProviderEnv("elevenlabs");
+  const brainReady = hasProviderEnv("openai");
+  const imageReady = hasProviderEnv("openai");
+  const heygenReady = hasProviderEnv("heygen");
+  const stabilityReady = hasProviderEnv("stability");
+  const musicReady = hasProviderEnv("stableAudio") || hasProviderEnv("stability") || hasProviderEnv("mubert");
+  const mapsReady = hasProviderEnv("googleMaps");
+  const tiktokReady = hasProviderEnv("tiktokClientKey") && hasProviderEnv("tiktokClientSecret");
+  const youtubeReady = hasProviderEnv("youtubeClientId") && hasProviderEnv("youtubeClientSecret");
   const indexNowReady = hasAnyEnv(["BING_INDEXNOW_KEY", "INDEXNOW_KEY"]);
-  const whopReady = hasEnv("WHOP_API_KEY") && hasEnv("WHOP_WEBHOOK_SECRET");
-  const metaReady = hasEnv("META_APP_ID") && hasEnv("META_SYSTEM_ACCESS_TOKEN") && hasEnv("META_AD_ACCOUNT_ID");
-  const dataForSeoReady = hasEnv("DATAFORSEO_LOGIN") && hasEnv("DATAFORSEO_PASSWORD");
-  const apifyReady = hasEnv("APIFY_API_TOKEN");
-  const renderReady = hasEnv("SHOTSTACK_API_KEY");
+  const whopReady = hasProviderEnv("whopApiKey") && hasProviderEnv("whopWebhookSecret");
+  const metaReady = hasProviderEnv("metaAppId") && hasProviderEnv("metaAccessToken") && hasProviderEnv("metaAdAccount");
+  const dataForSeoReady = hasProviderEnv("dataForSeoLogin") && hasProviderEnv("dataForSeoPassword");
+  const apifyReady = hasProviderEnv("apify");
+  const renderReady = hasProviderEnv("shotstack");
 
   return Response.json({
     ...providerPlan,
@@ -103,7 +104,7 @@ export async function GET() {
     speech: {
       provider: "elevenlabs",
       ready: speechReady,
-      required: ["ELEVENLABS_API_KEY"],
+      required: providerEnvNames("elevenlabs"),
       optional: ["ELEVENLABS_VOICE_ID", "ELEVENLABS_SOCIAL_VOICE_ID", "ELEVENLABS_MALE_VOICE_ID", "ELEVENLABS_MODEL_ID"],
       mode: "approved_platform_voices_only",
       voices: platformVoices.map((voice) => ({
@@ -118,24 +119,24 @@ export async function GET() {
     brain: {
       provider: "openai",
       ready: brainReady,
-      required: ["OPENAI_API_KEY"]
+      required: providerEnvNames("openai")
     },
     image: {
       provider: "openai-images",
       ready: imageReady,
-      required: ["OPENAI_API_KEY"],
+      required: providerEnvNames("openai"),
       optional: ["OPENAI_IMAGE_MODEL"]
     },
     heygen: {
       provider: "heygen",
       ready: heygenReady,
-      required: ["HEYGEN_API_KEY"],
+      required: providerEnvNames("heygen"),
       optional: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"]
     },
     stability: {
       provider: "stability-ai",
       ready: stabilityReady,
-      required: ["STABILITY_API_KEY"],
+      required: providerEnvNames("stability"),
       optional: ["STABILITY_BASE_URL", "STABILITY_IMAGE_MODEL"]
     },
     music: {
@@ -147,19 +148,19 @@ export async function GET() {
     maps: {
       provider: "google-maps",
       ready: mapsReady,
-      required: ["GOOGLE_MAPS_API_KEY"],
+      required: providerEnvNames("googleMaps"),
       optional: ["GOOGLE_MAPS_LANGUAGE", "GOOGLE_MAPS_REGION", "GOOGLE_MAPS_SEARCH_RADIUS"]
     },
     tiktok: {
       provider: "tiktok-business-api",
       ready: tiktokReady,
-      required: ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"],
+      required: [...providerEnvNames("tiktokClientKey"), ...providerEnvNames("tiktokClientSecret")],
       optional: ["TIKTOK_ACCESS_TOKEN", "TIKTOK_ADVERTISER_ID", "NEXT_PUBLIC_TIKTOK_PIXEL_ID"]
     },
     youtube: {
       provider: "youtube-google-oauth",
       ready: youtubeReady,
-      required: ["YOUTUBE_CLIENT_ID", "YOUTUBE_CLIENT_SECRET"],
+      required: [...providerEnvNames("youtubeClientId"), ...providerEnvNames("youtubeClientSecret")],
       optional: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_ACCESS_TOKEN"]
     },
     indexnow: {
@@ -171,31 +172,31 @@ export async function GET() {
     whop: {
       provider: "whop",
       ready: whopReady,
-      required: ["WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"],
+      required: [...providerEnvNames("whopApiKey"), ...providerEnvNames("whopWebhookSecret")],
       optional: ["PAYMENT_PROVIDER", "PAYMENT_NOTIFICATION_EMAIL"]
     },
     meta: {
       provider: "meta",
       ready: metaReady,
-      required: ["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
+      required: [...providerEnvNames("metaAppId"), ...providerEnvNames("metaAccessToken"), ...providerEnvNames("metaAdAccount")],
       optional: ["META_APP_SECRET", "META_GRAPH_API_VERSION", "META_GRAPH_BASE_URL"]
     },
     dataforseo: {
       provider: "dataforseo",
       ready: dataForSeoReady,
-      required: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
+      required: [...providerEnvNames("dataForSeoLogin"), ...providerEnvNames("dataForSeoPassword")],
       optional: ["DATAFORSEO_BASE_URL", "DATAFORSEO_LOCATION_NAME", "DATAFORSEO_LANGUAGE_CODE"]
     },
     apify: {
       provider: "apify",
       ready: apifyReady,
-      required: ["APIFY_API_TOKEN"],
+      required: providerEnvNames("apify"),
       optional: ["APIFY_BASE_URL"]
     },
     render: {
       provider: "shotstack",
       ready: renderReady,
-      required: ["SHOTSTACK_API_KEY"]
+      required: providerEnvNames("shotstack")
     },
     note: "Secrets are never returned; only readiness booleans, model choices and env variable names are exposed."
   });

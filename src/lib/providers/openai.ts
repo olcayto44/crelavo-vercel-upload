@@ -1,4 +1,4 @@
-import { requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 import type { AdBrainResult, ProductSnapshot } from "./types";
 
 function parseBrainJson(text: string): AdBrainResult {
@@ -26,7 +26,7 @@ export async function createAdBrain(input: {
   targetCity?: string;
   culture?: string;
 }): Promise<AdBrainResult> {
-  const apiKey = requireEnv("OPENAI_API_KEY");
+  const apiKey = requireProviderEnv("openai");
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -34,7 +34,7 @@ export async function createAdBrain(input: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: process.env.OPENAI_AD_MODEL || "gpt-4o-mini",
+      model: optionalEnv("OPENAI_AD_MODEL") || optionalEnv("OPENAI_ASSISTANT_MODEL") || "gpt-4o-mini",
       response_format: { type: "json_object" },
       messages: [
         {

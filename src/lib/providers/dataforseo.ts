@@ -1,12 +1,12 @@
-import { requireEnv } from "./env";
+import { requireProviderEnv } from "./env";
 
 function baseUrl() {
   return process.env.DATAFORSEO_BASE_URL || "https://api.dataforseo.com/v3";
 }
 
 function authHeader() {
-  const login = requireEnv("DATAFORSEO_LOGIN");
-  const password = requireEnv("DATAFORSEO_PASSWORD");
+  const login = requireProviderEnv("dataForSeoLogin");
+  const password = requireProviderEnv("dataForSeoPassword");
   return `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
 }
 

@@ -280,6 +280,8 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     acceptance_criteria: productionQuality.acceptanceCriteria,
     store_platform: storePlatform,
     store_asset_goal: selection.selectedModules.filter((module) => ["E-commerce product pack", "Marketplace listing", "Product visual set", "Store banner", "SEO product description", "Bulk product production"].includes(module)).join(", "),
+    product_url: packageId === "campaign_product_ad_video" ? promptLinks[0] ?? "" : "",
+    product_link: packageId === "campaign_product_ad_video" ? promptLinks[0] ?? "" : "",
     product_page_notes: selection.productionType === "website" && packageId === "website_ecommerce_admin" ? selection.prompt : "",
     connected_store_targets: selection.selectedPlatforms.filter((platform) => ["Shopify", "Amazon", "Trendyol", "WooCommerce"].includes(platform)).join(", "),
     provider_test_mode: Boolean(selection.quickProviderTest),

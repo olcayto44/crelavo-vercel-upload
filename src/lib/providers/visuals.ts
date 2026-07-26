@@ -1,8 +1,8 @@
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 import type { ProviderJob } from "./types";
 
 function falApiKey() {
-  return optionalEnv("FAL_KEY") || optionalEnv("FAL_API_KEY") || requireEnv("FAL_KEY");
+  return requireProviderEnv("fal");
 }
 
 export async function createVisualVideo(input: { scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string }): Promise<ProviderJob> {
@@ -17,7 +17,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
   ].filter(Boolean).join("\n");
 
   if (provider === "replicate") {
-    const apiKey = requireEnv("REPLICATE_API_TOKEN");
+    const apiKey = requireProviderEnv("replicate");
     const version = optionalEnv("REPLICATE_VIDEO_VERSION");
     const model = optionalEnv("REPLICATE_MODEL") || "wan-video/wan-2.2-t2v-fast";
     const inputPayload = {
@@ -42,7 +42,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
   }
 
   if (provider === "runway") {
-    const apiKey = requireEnv("RUNWAY_API_KEY");
+    const apiKey = requireProviderEnv("runway");
     const response = await fetch("https://api.dev.runwayml.com/v1/image_to_video", {
       method: "POST",
       headers: {
@@ -59,7 +59,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
   }
 
   if (provider === "kling") {
-    const apiKey = requireEnv("KLING_API_KEY");
+    const apiKey = requireProviderEnv("kling");
     const response = await fetch(process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video", {
       method: "POST",
       headers: {

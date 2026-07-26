@@ -1,4 +1,4 @@
-import { requireEnv } from "./env";
+import { requireProviderEnv } from "./env";
 
 type GoogleMapsApiResponse<T> = {
   status: string;
@@ -12,7 +12,7 @@ function baseUrl() {
 }
 
 async function googleMapsJson<T>(endpoint: string, params: Record<string, string>) {
-  const apiKey = requireEnv("GOOGLE_MAPS_API_KEY");
+  const apiKey = requireProviderEnv("googleMaps");
   const url = new URL(`${baseUrl()}${endpoint}`);
   url.searchParams.set("key", apiKey);
   for (const [key, value] of Object.entries(params)) {

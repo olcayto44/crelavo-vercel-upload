@@ -6,9 +6,11 @@ import { getHeyGenAvatars } from "@/lib/providers/heygen";
 import { getMetaAdAccount } from "@/lib/providers/meta";
 import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
 import { createShotstackTestRender } from "@/lib/providers/shotstack";
+import { getShopifyReadiness } from "@/lib/providers/shopify";
 import { getStabilityBalance } from "@/lib/providers/stability";
 import { adOAuthUrl } from "@/lib/phase2/ads";
 import { buildProviderPlan } from "@/lib/provider-plan";
+import { hasProviderEnv, providerEnvNames, requireProviderEnv } from "@/lib/providers/env";
 
 function ok(provider: string, detail: unknown) {
   return Response.json({ provider, ok: true, detail });
@@ -20,8 +22,7 @@ function fail(provider: string, error: unknown, status = 500) {
 }
 
 async function testOpenAi() {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OPENAI_API_KEY missing");
+  const apiKey = requireProviderEnv("openai");
   const response = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: `Bearer ${apiKey}` } });
   if (!response.ok) throw new Error(`OpenAI models check failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
@@ -29,8 +30,7 @@ async function testOpenAi() {
 }
 
 async function testElevenLabs() {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  if (!apiKey) throw new Error("ELEVENLABS_API_KEY missing");
+  const apiKey = requireProviderEnv("elevenlabs");
   const response = await fetch("https://api.elevenlabs.io/v1/user/subscription", { headers: { "xi-api-key": apiKey, Accept: "application/json" } });
   const text = await response.text();
   if (!response.ok) {
@@ -44,8 +44,8 @@ async function testElevenLabs() {
 }
 
 async function testApify() {
-  if (!process.env.APIFY_API_TOKEN) throw new Error("APIFY_API_TOKEN missing");
-  const response = await fetch(`${process.env.APIFY_BASE_URL || "https://api.apify.com/v2"}/users/me?token=${encodeURIComponent(process.env.APIFY_API_TOKEN)}`, { headers: { Accept: "application/json" } });
+  const token = requireProviderEnv("apify");
+  const response = await fetch(`${process.env.APIFY_BASE_URL || "https://api.apify.com/v2"}/users/me?token=${encodeURIComponent(token)}`, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`Apify user check failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
   return { userId: data.data?.id ?? "connected", username: data.data?.username ?? null };
@@ -57,10 +57,10 @@ async function testDataForSeo() {
 }
 
 async function testMusicProvider() {
-  if (process.env.STABLE_AUDIO_API_KEY || process.env.STABILITY_API_KEY) {
+  if (hasProviderEnv("stableAudio") || hasProviderEnv("stability")) {
     return { primary: "stable-audio", result: await getStableAudioAccount() };
   }
-  if (process.env.MUBERT_API_KEY || process.env.MUBERT_ACCESS_TOKEN) {
+  if (hasProviderEnv("mubert")) {
     return { primary: "mubert", result: await getMubertAccount() };
   }
   throw new Error("STABLE_AUDIO_API_KEY or MUBERT_API_KEY missing");
@@ -78,9 +78,9 @@ function requireAnyEnv(names: string[]) {
 }
 
 function testWhop() {
-  if (!process.env.WHOP_API_KEY) throw new Error("WHOP_API_KEY missing");
-  if (!process.env.WHOP_WEBHOOK_SECRET) throw new Error("WHOP_WEBHOOK_SECRET missing");
-  return { connected: true, required: ["WHOP_API_KEY", "WHOP_WEBHOOK_SECRET"], note: "Secrets exist. Live webhook validation still needs a real Whop event." };
+  if (!hasProviderEnv("whopApiKey")) throw new Error(`${providerEnvNames("whopApiKey").join(" or ")} missing`);
+  if (!hasProviderEnv("whopWebhookSecret")) throw new Error(`${providerEnvNames("whopWebhookSecret").join(" or ")} missing`);
+  return { connected: true, required: [...providerEnvNames("whopApiKey"), ...providerEnvNames("whopWebhookSecret")], note: "Secrets exist. Live webhook validation still needs a real Whop event." };
 }
 
 function testIndexNow() {
@@ -90,15 +90,15 @@ function testIndexNow() {
 }
 
 function testTikTokOAuth() {
-  if (!process.env.TIKTOK_CLIENT_KEY) throw new Error("TIKTOK_CLIENT_KEY missing");
-  if (!process.env.TIKTOK_CLIENT_SECRET) throw new Error("TIKTOK_CLIENT_SECRET missing");
-  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("tiktok", "provider-test")), required: ["TIKTOK_CLIENT_KEY", "TIKTOK_CLIENT_SECRET"] };
+  if (!hasProviderEnv("tiktokClientKey")) throw new Error(`${providerEnvNames("tiktokClientKey").join(" or ")} missing`);
+  if (!hasProviderEnv("tiktokClientSecret")) throw new Error(`${providerEnvNames("tiktokClientSecret").join(" or ")} missing`);
+  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("tiktok", "provider-test")), required: [...providerEnvNames("tiktokClientKey"), ...providerEnvNames("tiktokClientSecret")] };
 }
 
 function testYouTubeOAuth() {
-  const clientIdName = requireAnyEnv(["YOUTUBE_CLIENT_ID", "GOOGLE_CLIENT_ID"]);
-  const clientSecretName = requireAnyEnv(["YOUTUBE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET"]);
-  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("youtube", "provider-test")), clientIdName, clientSecretName };
+  if (!hasProviderEnv("youtubeClientId")) throw new Error(`${providerEnvNames("youtubeClientId").join(" or ")} missing`);
+  if (!hasProviderEnv("youtubeClientSecret")) throw new Error(`${providerEnvNames("youtubeClientSecret").join(" or ")} missing`);
+  return { connected: true, oauthUrlReady: Boolean(adOAuthUrl("youtube", "provider-test")), required: [...providerEnvNames("youtubeClientId"), ...providerEnvNames("youtubeClientSecret")] };
 }
 
 export async function GET(request: Request) {
@@ -123,7 +123,7 @@ export async function GET(request: Request) {
     if (provider === "music" || provider === "stable-audio") return ok("music", await testMusicProvider());
     if (provider === "shotstack") return ok(provider, await createShotstackTestRender());
     if (["video", "kling", "fal", "runway"].includes(provider)) return ok(provider, selectedVideoReadiness());
-    if (provider === "shopify") return ok(provider, { status: "pending", note: "Shopify is paused until store URL and integration type are confirmed." });
+    if (provider === "shopify") return ok(provider, getShopifyReadiness());
     return fail(provider, new Error("Unsupported provider test."), 400);
   } catch (error) {
     return fail(provider, error);

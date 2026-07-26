@@ -61,5 +61,5 @@ export type EcommerceAdRunResult = {
   visualJob: ProviderJob;
   voiceAudioUrl: string;
   subtitleUrl: string;
-  renderJob: ProviderJob;
+  renderJob?: ProviderJob | null;
 };

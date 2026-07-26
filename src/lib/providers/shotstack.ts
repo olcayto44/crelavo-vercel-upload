@@ -1,12 +1,12 @@
-import { requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 import type { ProviderJob } from "./types";
 
 function shotstackEndpoint() {
-  return process.env.SHOTSTACK_API_URL || process.env.SHOTSTACK_RENDER_URL || "https://api.shotstack.io/stage/render";
+  return optionalEnv("SHOTSTACK_API_URL") || optionalEnv("SHOTSTACK_RENDER_URL") || "https://api.shotstack.io/stage/render";
 }
 
 function shotstackKey() {
-  return requireEnv("SHOTSTACK_API_KEY");
+  return requireProviderEnv("shotstack");
 }
 
 export async function createShotstackRender(input: {

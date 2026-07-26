@@ -28,6 +28,11 @@ function errorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function firstUrlFromText(value: unknown) {
+  const match = String(value ?? "").match(/https?:\/\/[^\s,]+/i);
+  return match?.[0] ?? "";
+}
+
 function missingSchemaColumn(error: unknown) {
   if (!error || typeof error !== "object") return "";
   const record = error as Record<string, unknown>;
@@ -383,7 +388,8 @@ export async function POST(request: Request) {
   const isProductAdVideo = packageId === "campaign_product_ad_video";
   const pipeline = isProductAdVideo ? ecommerceAdPipeline() : null;
   const automationSteps = isProductAdVideo ? ecommerceAdAutomationSteps() : initialAutomationSteps();
-  const productUrl = "";
+  const directProductUrl = String(body.product_url ?? body.productUrl ?? body.product_link ?? body.productLink ?? body.reference_url ?? body.referenceUrl ?? "").trim();
+  const productUrl = directProductUrl || firstUrlFromText(body.material_links) || firstUrlFromText(body.prompt) || "";
   const ecommerceContext = isProductAdVideo ? {
     productUrl,
     campaignGoal: body.campaign_goal ?? "Sales conversion",

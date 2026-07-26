@@ -1,5 +1,5 @@
 import { voiceById } from "@/lib/voice-library";
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 import { uploadProviderAsset } from "./storage";
 
 function voiceSettings(direction: string) {
@@ -13,7 +13,7 @@ function voiceSettings(direction: string) {
 }
 
 async function synthesizeVoice(input: { productionId: string; script: string; voiceDirection: string; voiceId?: string; filename: string }) {
-  const apiKey = requireEnv("ELEVENLABS_API_KEY");
+  const apiKey = requireProviderEnv("elevenlabs");
   const selectedVoice = voiceById(input.voiceId);
   const voiceId = selectedVoice.providerVoiceId || optionalEnv("ELEVENLABS_VOICE_ID") || "21m00Tcm4TlvDq8ikWAM";
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {

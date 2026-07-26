@@ -1,4 +1,4 @@
-import { optionalEnv, requireEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env";
 
 function graphVersion() {
   return optionalEnv("META_GRAPH_API_VERSION") || "v20.0";
@@ -9,7 +9,7 @@ function graphBaseUrl() {
 }
 
 function systemToken() {
-  return requireEnv("META_SYSTEM_ACCESS_TOKEN");
+  return requireProviderEnv("metaAccessToken");
 }
 
 async function metaJson<T>(path: string, params: Record<string, string> = {}) {
@@ -27,13 +27,13 @@ async function metaJson<T>(path: string, params: Record<string, string> = {}) {
 }
 
 export async function getMetaAdAccount(fields = "id,name,account_status,currency,timezone_name") {
-  const adAccountId = requireEnv("META_AD_ACCOUNT_ID");
+  const adAccountId = requireProviderEnv("metaAdAccount");
   const cleanId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
   return metaJson(`/${cleanId}`, { fields });
 }
 
 export async function getMetaInsights(fields = "spend,impressions,clicks,cpc,ctr,actions", datePreset = "last_7d") {
-  const adAccountId = requireEnv("META_AD_ACCOUNT_ID");
+  const adAccountId = requireProviderEnv("metaAdAccount");
   const cleanId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
   return metaJson(`/${cleanId}/insights`, { fields, date_preset: datePreset });
 }

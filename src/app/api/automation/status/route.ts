@@ -4,8 +4,10 @@ import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jobs";
+import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
-import type { NormalizedProviderStatus } from "@/lib/providers/types";
+import { mirrorProviderAsset } from "@/lib/providers/storage";
+import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/types";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function errorMessage(error: unknown, fallback: string) {
@@ -74,6 +76,36 @@ function outputWithWorkflow(production: Record<string, unknown>, output: Record<
   };
 }
 
+function existingRenderJob(output: Record<string, unknown>) {
+  return providerJobFromValue(output.renderJob);
+}
+
+async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>, visualStatus: NormalizedProviderStatus | null): Promise<{ renderJob: ProviderJob | null; renderStarted: boolean; renderError?: string }> {
+  const currentRenderJob = existingRenderJob(output);
+  if (currentRenderJob) return { renderJob: currentRenderJob, renderStarted: false };
+  if (!visualStatus || visualStatus.status !== "succeeded" || !visualStatus.outputUrl) return { renderJob: null, renderStarted: false };
+  if (String(output.pipelineType ?? "") !== "ecommerce_product_ad_video") return { renderJob: null, renderStarted: false };
+
+  const voiceAudioUrl = String(output.voiceAudioUrl ?? "").trim();
+  const subtitleUrl = String(output.subtitleUrl ?? "").trim();
+  if (!voiceAudioUrl || !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Voice or subtitle asset is missing; render cannot start." };
+
+  const brain = output.brain && typeof output.brain === "object" ? output.brain as Record<string, unknown> : {};
+  const requestedDurationSeconds = Number(output.requestedDurationSeconds ?? output.targetDurationSeconds ?? 30) || 30;
+  try {
+    const renderJob = await createShotstackRender({
+      title: String(brain.productName ?? "Crelavo product ad"),
+      videoUrl: visualStatus.outputUrl,
+      audioUrl: voiceAudioUrl,
+      subtitleUrl,
+      durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
+    });
+    return { renderJob, renderStarted: true };
+  } catch (error) {
+    return { renderJob: null, renderStarted: false, renderError: errorMessage(error, "Render job could not be started after visual output became ready.") };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
@@ -99,10 +131,16 @@ export async function POST(request: Request) {
       ? production.output_json as Record<string, unknown>
       : {};
     const visualLifecycle = await runProviderJobLifecycle(production, output.visualJob);
-    const renderLifecycle = await runProviderJobLifecycle(production, output.renderJob);
     const visualStatus = visualLifecycle.normalizedStatus;
+    const renderBridge = await maybeCreateRenderAfterVisualReady(output, visualStatus);
+    const outputWithRenderJob = renderBridge.renderJob
+      ? { ...output, renderJob: renderBridge.renderJob, renderStatus: renderBridge.renderStarted ? "render_job_created" : output.renderStatus, renderError: null }
+      : renderBridge.renderError
+        ? { ...output, renderStatus: "render_start_failed", renderError: renderBridge.renderError }
+        : output;
+    const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
     const renderStatus = renderLifecycle.normalizedStatus;
-    const existingAlternatives = Array.isArray(output.alternatives) ? output.alternatives : [];
+    const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
     const terminalStatus = renderStatus ?? visualStatus;
 
@@ -112,7 +150,7 @@ export async function POST(request: Request) {
           .from("production_requests")
           .update({
             generation_status: "alternative_provider_polling",
-            output_json: outputWithWorkflow(production, output, { alternatives: polledAlternatives, alternativeStatuses, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
+            output_json: outputWithWorkflow(production, outputWithRenderJob, { alternatives: polledAlternatives, alternativeStatuses, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
             updated_at: new Date().toISOString()
           })
           .eq("id", productionId)
@@ -138,7 +176,7 @@ export async function POST(request: Request) {
           automation_status: "failed",
           generation_status: `${terminalStatus.provider}_failed`,
           error_message: failureMessage,
-            output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
+            output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
           automation_steps: updatedSteps(production.automation_steps, terminalStatus),
           admin_notes: `Provider failed: ${failureMessage}. Credit resolution requires admin review; no automatic refund was applied.`,
           updated_at: new Date().toISOString()
@@ -194,7 +232,20 @@ export async function POST(request: Request) {
         finalizedReservedCredits = Number(production.reserved_credits ?? 0) || 0;
       }
 
-      const finalUrl = successfulStatus.outputUrl ?? "";
+      const providerFinalUrl = successfulStatus.outputUrl ?? "";
+      let finalUrl = providerFinalUrl;
+      let finalAssetMirror: Record<string, unknown> = { status: "not_attempted" };
+      try {
+        finalUrl = await mirrorProviderAsset({
+          productionId,
+          sourceUrl: providerFinalUrl,
+          filenameBase: successfulStatus.provider === "shotstack" ? "final-render" : "provider-visual",
+          fallbackContentType: "video/mp4"
+        });
+        finalAssetMirror = { status: "mirrored", providerUrl: providerFinalUrl, storedUrl: finalUrl };
+      } catch (mirrorError) {
+        finalAssetMirror = { status: "fallback_provider_url", providerUrl: providerFinalUrl, error: errorMessage(mirrorError, "Provider asset could not be mirrored to storage") };
+      }
       const updatedAlternatives = polledAlternatives.length > 0
         ? polledAlternatives.map((item, index) => index === 0 && item && typeof item === "object" ? { ...(item as Record<string, unknown>), status: "ready", preview_url: finalUrl, url: finalUrl, description: "Real output generated by the provider is ready." } : item)
         : [{ id: "provider-output-1", title: "Provider output", status: "ready", description: "Real output generated by the provider is ready.", preview_url: finalUrl, url: finalUrl }];
@@ -208,7 +259,7 @@ export async function POST(request: Request) {
           delivery_link: finalUrl,
           delivery_zip_url: finalUrl,
           reserved_credits: finalizedReservedCredits,
-          output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, finalVideoUrl: finalUrl, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
+          output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
           automation_steps: updatedSteps(production.automation_steps, successfulStatus),
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -250,7 +301,7 @@ export async function POST(request: Request) {
       .from("production_requests")
       .update({
         generation_status: renderStatus ? `shotstack_${renderStatus.status}` : visualStatus ? `${visualStatus.provider}_${visualStatus.status}` : "provider_polling",
-        output_json: outputWithWorkflow(production, output, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
+        output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
         automation_steps: updatedSteps(production.automation_steps, terminalStatus),
         updated_at: new Date().toISOString()
       })
