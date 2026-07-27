@@ -122,6 +122,7 @@ const lipSyncStartRoute = readFileSync("src/app/api/lip-sync/start/route.ts", "u
 const musicProvidersRoute = readFileSync("src/app/api/music-providers/route.ts", "utf8");
 const seoLaunchKit = readFileSync("src/lib/seo-launch-kit.ts", "utf8");
 const organicDirectory = readFileSync("src/lib/organic-directory.ts", "utf8");
+const voiceProductionGuard = readFileSync("src/lib/voice-production-guard.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -154,16 +155,22 @@ for (const term of ["DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "APIFY_API", "DAT
 for (const term of ["requireProviderEnv", "optionalProviderEnv", "hasProviderEnv", "providerEnvNames"]) {
   if (!providerEnv.includes(term)) throw new Error(`provider env helper missing term: ${term}`);
 }
-for (const term of ["MAX_TTS_CHARS", "cleanVoiceScript", "Voice-over script is empty after cleanup", "providerVoiceId", "scriptCharacters", "truncated"]) {
+for (const term of ["MAX_TTS_CHARS", "cleanVoiceScript", "Voice-over script is empty after cleanup", "providerVoiceId", "scriptCharacters", "truncated", "voiceDirectionGuard"] ) {
   if (!elevenlabsProvider.includes(term)) throw new Error(`ElevenLabs TTS guard missing term: ${term}`);
+}
+for (const term of ["voiceProductionGuard", "maxTtsCharacters", "cleanProviderText", "voiceCloneConsentRule", "avatarSpeechRule", "fallbackPolicy"]) {
+  if (!voiceProductionGuard.includes(term)) throw new Error(`voice production guard missing term: ${term}`);
 }
 for (const term of ["providerVoiceId", "scriptCharacters", "truncated"]) {
   if (!productionRevisionRoute.includes(term)) throw new Error(`production voice revision metadata missing term: ${term}`);
 }
-for (const term of ["voiceCloneReferences", "voiceCloneConsent", "voice_clone_plan", "waiting_reference_audio", "waiting_rights_confirmation", "ready_for_provider_setup", "consentRule"]) {
+for (const term of ["voiceover_plan", "sanitizedVoiceDirection", "ttsSafetyRule", "maxScriptCharacters"]) {
+  if (!productionPayload.includes(term)) throw new Error(`voiceover payload guard missing term: ${term}`);
+}
+for (const term of ["voiceCloneReferences", "voiceCloneConsent", "voice_clone_plan", "waiting_reference_audio", "waiting_rights_confirmation", "ready_for_provider_setup", "consentRule", "fallbackPolicy"]) {
   if (!productionPayload.includes(term)) throw new Error(`voice clone compliance payload missing term: ${term}`);
 }
-for (const term of ["avatarReferences", "avatarVoiceReferences", "avatar_plan", "waiting_avatar_reference_or_persona", "heygen", "Avatar/talking-head production should not start"]) {
+for (const term of ["avatarReferences", "avatarVoiceReferences", "avatar_plan", "waiting_avatar_reference_or_persona", "waiting_voice_direction", "voiceProvider", "avatarSpeechRule"]) {
   if (!productionPayload.includes(term)) throw new Error(`avatar/talking-head payload guard missing term: ${term}`);
 }
 for (const term of ["isVoiceCloneIntent", "isLipSyncIntent", "isAvatarIntent", "avatar_or_speaker_reference", "face_video_and_audio_source", "reference_audio_and_voice_consent"]) {

@@ -1,5 +1,6 @@
 import { packagesForType, type ProductionPackage } from "./production.ts";
 import { qualityProfileForProduction } from "./production-quality.ts";
+import { voiceDirectionGuard, voiceProductionGuard } from "./voice-production-guard.ts";
 
 export type UserUploadedMaterial = {
   type: "user_upload";
@@ -186,29 +187,43 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     licenseGuard: "Use generated or properly licensed music only; do not promise copyrighted-track replication.",
     mixGuard: "When narration is present, music must stay under the voice and be ducked in final render."
   } : null;
+  const voiceSignal = `${selection.productionType} ${selection.selectedVoiceProfile ?? ""} ${selection.selectedVoiceLanguage ?? ""} ${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+  const voiceoverPlan = /voice|ses|seslendirme|dublaj|tts|narration|anlatım|anlatim|konuşma|konusma/.test(voiceSignal) && !/no voice|ses yok|sessiz/.test(voiceSignal) ? {
+    requested: true,
+    provider: "elevenlabs",
+    selectedVoiceProfile: selection.selectedVoiceProfile ?? "",
+    selectedVoiceLanguage: selection.selectedVoiceLanguage ?? "",
+    sanitizedVoiceDirection: voiceDirectionGuard(`${selection.selectedVoiceProfile ?? ""}; ${selection.selectedVoiceLanguage ?? ""}; ${selection.optionSummary}`),
+    maxScriptCharacters: voiceProductionGuard.maxTtsCharacters,
+    safetyRule: voiceProductionGuard.ttsSafetyRule
+  } : null;
   const avatarReferences = uploadedMaterials.filter((material) => ["own_image_avatar", "live_sales_self_avatar", "live_sales_avatar_reference", "avatar_reference", "speaker_reference"].includes(material.reference_type));
   const avatarVoiceReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|audio|avatar|speaker|ses/i.test(material.reference_type));
+  const avatarSource = optionLineValue(selection.optionSummary, "Live sales avatar source") || optionLineValue(selection.optionSummary, "Avatar source") || "";
   const avatarPlan = ["avatar", "talking_video", "live_sales_agent"].includes(selection.productionType) ? {
     requested: true,
-    status: avatarReferences.length > 0 || optionLineValue(selection.optionSummary, "Live sales avatar source") ? "ready_for_provider_setup" : "waiting_avatar_reference_or_persona",
+    status: avatarReferences.length > 0 || avatarSource ? voiceoverPlan || avatarVoiceReferences.length > 0 || selection.selectedVoiceProfile ? "ready_for_provider_setup" : "waiting_voice_direction" : "waiting_avatar_reference_or_persona",
     provider: "heygen",
+    voiceProvider: "elevenlabs",
     referenceImageUrls: avatarReferences.filter((material) => material.kind === "image" || material.kind === "video").map((material) => material.file_url),
     voiceReferenceUrls: avatarVoiceReferences.map((material) => material.file_url),
-    avatarSource: optionLineValue(selection.optionSummary, "Live sales avatar source") || selection.selectedVoiceProfile || "",
-    guardrail: "Avatar/talking-head production should not start as a real provider job until speaker persona, avatar source and voice direction are explicit."
+    avatarSource,
+    voiceDirection: voiceoverPlan?.sanitizedVoiceDirection ?? voiceDirectionGuard(`${selection.selectedVoiceProfile ?? ""}; ${selection.selectedVoiceLanguage ?? ""}`),
+    guardrail: voiceProductionGuard.avatarSpeechRule
   } : null;
   const voiceCloneReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|vocal|clone|ses/i.test(material.reference_type));
-const voiceCloneConsent = voiceCloneReferences.length > 0 && voiceCloneReferences.every((material) => material.rights_confirmed);
-const voiceCloneSignal = `${selection.productionType} ${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
-const voiceClonePlan = selection.productionType === "voice_clone" || /voice clone|ses klon|ses klonlama|own voice|kendi ses/.test(voiceCloneSignal) ? {
+  const voiceCloneConsent = voiceCloneReferences.length > 0 && voiceCloneReferences.every((material) => material.rights_confirmed);
+  const voiceCloneSignal = `${selection.productionType} ${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+  const voiceClonePlan = selection.productionType === "voice_clone" || /voice clone|ses klon|ses klonlama|own voice|kendi ses/.test(voiceCloneSignal) ? {
     requested: true,
     status: voiceCloneReferences.length === 0 ? "waiting_reference_audio" : voiceCloneConsent ? "ready_for_provider_setup" : "waiting_rights_confirmation",
     provider: "elevenlabs",
     referenceAudioUrls: voiceCloneReferences.map((material) => material.file_url),
     rightsConfirmed: voiceCloneConsent,
     consentRequired: true,
-    consentRule: "Only clone a voice when the uploaded reference belongs to the user or they have explicit permission to use it.",
-    providerSetup: "Voice clone creation requires approved reference audio and an explicit provider-side voice profile before production TTS can use it."
+    consentRule: voiceProductionGuard.voiceCloneConsentRule,
+    providerSetup: "Voice clone creation requires approved reference audio and an explicit provider-side voice profile before production TTS can use it.",
+    fallbackPolicy: voiceProductionGuard.fallbackPolicy
   } : null;
   const liveSalesMaterialGroups = {
     ownVoice: uploadedMaterials.filter((material) => material.reference_type === "live_sales_own_voice"),
@@ -349,6 +364,7 @@ const voiceClonePlan = selection.productionType === "voice_clone" || /voice clon
     drone_details: droneDetails,
     live_sales_agent_details: liveSalesAgentDetails,
     music_plan: musicPlan,
+    voiceover_plan: voiceoverPlan,
     avatar_plan: avatarPlan,
     voice_clone_plan: voiceClonePlan,
     character_voice_consistency_plan: characterVoiceConsistencyPlan,

@@ -36,7 +36,7 @@ export function providerRequirementsForProduction(productionType: string, packag
   }
 
   if (["avatar", "talking_video", "live_sales_agent"].includes(type)) {
-    requirements.push(requirement("avatar_provider", "HeyGen avatar/talking-head provider", ["HEYGEN_API_KEY"], ["avatar presenter", "talking-head video", "speaker/avatar render"], "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery.", type === "live_sales_agent"));
+    requirements.push(requirement("avatar_provider", "HeyGen avatar/talking-head provider", ["HEYGEN_API_KEY"], ["avatar presenter", "talking-head video", "speaker/avatar render"], "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery. Avatar jobs also need a speaker/avatar reference and voice direction before provider rendering.", type === "live_sales_agent"));
   }
 
   if (needsEcommerceAdPipeline) {

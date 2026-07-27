@@ -1,3 +1,4 @@
+import { voiceDirectionGuard } from "@/lib/voice-production-guard";
 import { createVoiceover } from "./elevenlabs";
 import { optionalEnv } from "./env";
 import { createShotstackRender } from "./shotstack";
@@ -73,7 +74,7 @@ export function buildGenericVideoPlan(input: {
     script,
     visualScenes,
     subtitleLines,
-    voiceDirection: `${selectedVoiceProfile}; ${selectedVoiceLanguage}; natural conversion-focused delivery`,
+    voiceDirection: voiceDirectionGuard(`${selectedVoiceProfile}; ${selectedVoiceLanguage}; natural conversion-focused delivery`),
     durationSeconds,
     aspectRatio,
     provider

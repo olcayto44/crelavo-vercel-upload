@@ -1,15 +1,16 @@
+import { cleanProviderText, voiceDirectionGuard, voiceProductionGuard } from "@/lib/voice-production-guard";
 import { voiceById } from "@/lib/voice-library";
 import { optionalEnv, requireProviderEnv } from "./env";
 import { uploadProviderAsset } from "./storage";
 
-const MAX_TTS_CHARS = 2400;
+const MAX_TTS_CHARS = voiceProductionGuard.maxTtsCharacters;
 
 function cleanVoiceScript(script: string) {
-  return script.replace(/\s+/g, " ").trim().slice(0, MAX_TTS_CHARS);
+  return cleanProviderText(script, MAX_TTS_CHARS);
 }
 
 function voiceSettings(direction: string) {
-  const normalized = direction.toLowerCase();
+  const normalized = voiceDirectionGuard(direction).toLowerCase();
   return {
     stability: normalized.includes("enerjik") || normalized.includes("tiktok") ? 0.38 : 0.5,
     similarity_boost: 0.78,
