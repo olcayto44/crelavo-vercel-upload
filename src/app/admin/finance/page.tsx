@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminFinanceCards } from "@/components/AdminFinanceCards";
+import { productionReadinessScorePlan, providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
 
 const financeGuardrails = [
   "Payment API purchase events count as revenue; manual credit activations stay visible but separate.",
@@ -28,6 +29,34 @@ export default function AdminFinancePage() {
       </section>
 
       <section className="admin-panel-section"><AdminFinanceCards /></section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Production readiness / credit burn</span>
+        <h2>Production Readiness Score and Credit Burn Forecast</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Score status: {productionReadinessScorePlan.status}. Finance should keep payment, reserve/spend, provider cost, queue pressure and forced-failure proof visible before paid traffic scales.
+        </p>
+        <div className="admin-info-grid">
+          <div><span>Single-job cap</span><strong>{providerQueueConcurrencyGuard.defaults.maxSingleJobCredits.toLocaleString()} credits</strong><small>Block oversized jobs before provider spend</small></div>
+          <div><span>Daily user cap</span><strong>{providerQueueConcurrencyGuard.defaults.dailyUserProductionCount} jobs</strong><small>Launch-safe production count limit</small></div>
+          <div><span>Queue pressure</span><strong>{providerQueueConcurrencyGuard.defaults.maxConcurrentProviderJobs} concurrent jobs</strong><small>Raise only after low-cost provider tests pass</small></div>
+          <div><span>Retry/backoff</span><strong>{providerQueueConcurrencyGuard.defaults.maxProviderRetries} retries</strong><small>{providerQueueConcurrencyGuard.defaults.backoffSeconds.join(" / ")} sec forecast windows</small></div>
+        </div>
+        <div className="admin-grid two-col" style={{ marginTop: 16 }}>
+          <div className="mini-card">
+            <h3>Score inputs</h3>
+            <ul>{productionReadinessScorePlan.scoreInputs.map((item) => <li key={item}>{item}</li>)}</ul>
+          </div>
+          <div className="mini-card">
+            <h3>Score bands</h3>
+            <ul>{productionReadinessScorePlan.scoreBands.map((item) => <li key={item.band}><strong>{item.band}</strong>: {item.meaning}</li>)}</ul>
+          </div>
+        </div>
+        <div className="mini-card" style={{ marginTop: 16 }}>
+          <h3>Credit Burn Forecast rules</h3>
+          <ul>{productionReadinessScorePlan.creditBurnForecast.map((item) => <li key={item}>{item}</li>)}</ul>
+        </div>
+      </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Finance guardrails</span>

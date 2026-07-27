@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { AdminProviderTestPanel } from "@/components/AdminProviderTestPanel";
 import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { externalApiAccountReadiness } from "@/lib/external-launch-operations";
+import { providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function statusLabel(status: string) {
@@ -107,6 +108,17 @@ export default function AdminProvidersPage() {
         <p style={{ color: "var(--muted)" }}>{providerLiveVerificationChecks.guardrail}</p>
         <div className="admin-info-grid">
           {providerLiveVerificationChecks.liveVerification.map((item, index) => <div key={item}><span>Provider check {index + 1}</span><strong>{item}</strong><small>{providerLiveVerificationChecks.providerGroups.join(", ")}</small></div>)}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Provider queue / concurrency guard</span>
+        <h2>Launch provider spend starts with conservative limits</h2>
+        <div className="admin-info-grid">
+          <div><span>Max concurrent jobs</span><strong>{providerQueueConcurrencyGuard.defaults.maxConcurrentProviderJobs}</strong><small>{providerQueueConcurrencyGuard.status}</small></div>
+          <div><span>Max retries</span><strong>{providerQueueConcurrencyGuard.defaults.maxProviderRetries}</strong><small>Provider failures cannot silently become success.</small></div>
+          <div><span>Backoff seconds</span><strong>{providerQueueConcurrencyGuard.defaults.backoffSeconds.join(" → ")}</strong><small>Rate limits and polling failures slow down.</small></div>
+          <div><span>Single job credit cap</span><strong>{providerQueueConcurrencyGuard.defaults.maxSingleJobCredits}</strong><small>Block before provider spend.</small></div>
         </div>
       </section>
 

@@ -33,7 +33,11 @@ export function apiCostGuardConfig() {
     automationStartIpLimit: numericEnv("AUTOMATION_START_IP_LIMIT", 20, 1, 300),
     automationStartUserLimit: numericEnv("AUTOMATION_START_USER_LIMIT", 10, 1, 300),
     automationStatusIpLimit: numericEnv("AUTOMATION_STATUS_IP_LIMIT", 120, 1, 2000),
-    automationStatusUserLimit: numericEnv("AUTOMATION_STATUS_USER_LIMIT", 120, 1, 2000)
+    automationStatusUserLimit: numericEnv("AUTOMATION_STATUS_USER_LIMIT", 120, 1, 2000),
+    maxConcurrentProviderJobs: numericEnv("MAX_CONCURRENT_PROVIDER_JOBS", 2, 1, 25),
+    maxProviderRetries: numericEnv("MAX_PROVIDER_RETRIES", 2, 0, 5),
+    providerBackoffBaseSeconds: numericEnv("PROVIDER_BACKOFF_BASE_SECONDS", 30, 5, 600),
+    providerBackoffMaxSeconds: numericEnv("PROVIDER_BACKOFF_MAX_SECONDS", 300, 30, 3600)
   };
 }
 
@@ -50,6 +54,13 @@ export function enforceRouteBudget(request: Request, options: RouteBudgetOptions
   }
 
   return { ok: true as const, remaining: ipLimit.remaining, resetAt: ipLimit.resetAt };
+}
+
+export function providerBackoffSeconds(retryCount: number) {
+  const config = apiCostGuardConfig();
+  const attempt = Math.max(0, Math.floor(Number(retryCount) || 0));
+  const raw = config.providerBackoffBaseSeconds * Math.pow(2, attempt);
+  return Math.min(config.providerBackoffMaxSeconds, Math.floor(raw));
 }
 
 export function budgetBlockResponse(message: string, status = 429, details: Record<string, unknown> = {}) {

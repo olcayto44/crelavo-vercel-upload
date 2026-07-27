@@ -144,6 +144,11 @@ const legalFinalPage = readFileSync("src/app/admin/legal-final/page.tsx", "utf8"
 const socialProof = readFileSync("src/lib/social-proof.ts", "utf8");
 const externalLaunchOperations = readFileSync("src/lib/external-launch-operations.ts", "utf8");
 const adminProvidersPage = readFileSync("src/app/admin/providers/page.tsx", "utf8");
+const launchOpsReadiness = readFileSync("src/lib/launch-ops-readiness.ts", "utf8");
+const adminMonitoringPage = readFileSync("src/app/admin/monitoring/page.tsx", "utf8");
+const adminFinancePage = readFileSync("src/app/admin/finance/page.tsx", "utf8");
+const adminFinalApiChecklistPage = readFileSync("src/app/admin/final-api-checklist/page.tsx", "utf8");
+const apiCostGuard = readFileSync("src/lib/api-cost-guard.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -277,6 +282,24 @@ for (const term of ["externalSubmissionTracker", "manual_submission_required", "
 }
 for (const term of ["externalApiAccountReadiness", "external_account_or_permission_required", "Shopify Admin API", "Amazon Selling Partner API", "TikTok Content Posting API", "n8n workflow", "Shotstack"]) {
   if (!externalLaunchOperations.includes(term) || !adminProvidersPage.includes("External API account readiness") || !finalApiChecklist.includes("externalApiAccountReadiness")) throw new Error(`external API account readiness guard missing term: ${term}`);
+}
+for (const term of ["mvpApiLaterTrack", "separate_after_core_launch_e2e", "Admin/debug monitoring", "Provider queue guard", "Production readiness score"]) {
+  if (!launchOpsReadiness.includes(term) && !finalApiChecklist.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`launch ops readiness checklist missing term: ${term}`);
+}
+for (const term of ["adminDebugMonitoringPlan", "live_test_result_driven", "Any live test failure must record provider/payment route"]) {
+  if (!launchOpsReadiness.includes(term) && !adminMonitoringPage.includes(term)) throw new Error(`admin debug monitoring plan missing term: ${term}`);
+}
+for (const term of ["Admin/debug monitoring plan", "adminDebugMonitoringPlan.panels", "adminDebugMonitoringPlan.status"]) {
+  if (!adminMonitoringPage.includes(term)) throw new Error(`admin debug monitoring page missing term: ${term}`);
+}
+for (const term of ["providerQueueConcurrencyGuard", "conservative_launch_limits", "maxConcurrentProviderJobs", "maxProviderRetries", "providerBackoffSeconds", "PROVIDER_BACKOFF_BASE_SECONDS", "PROVIDER_BACKOFF_MAX_SECONDS"]) {
+  if (!launchOpsReadiness.includes(term) && !adminProvidersPage.includes(term) && !apiCostGuard.includes(term) && !finalApiChecklist.includes(term)) throw new Error(`provider queue/backoff guard missing term: ${term}`);
+}
+for (const term of ["productionReadinessScorePlan", "scorecard_ready_for_live_inputs", "forced-failure path"]) {
+  if (!launchOpsReadiness.includes(term) && !adminFinancePage.includes(term) && !finalApiChecklist.includes(term)) throw new Error(`production readiness/credit burn guard missing term: ${term}`);
+}
+for (const term of ["Production Readiness Score and Credit Burn Forecast", "Credit Burn Forecast rules", "providerQueueConcurrencyGuard.defaults", "productionReadinessScorePlan.scoreInputs"]) {
+  if (!adminFinancePage.includes(term)) throw new Error(`production readiness finance page missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

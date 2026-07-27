@@ -88,6 +88,17 @@ export default function FinalApiChecklistPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Launch ops scorecard</span>
+        <h2>MVP APIs, monitoring, provider queue and credit burn stay visible</h2>
+        <div className="admin-category-grid">
+          <div className="card admin-category-card"><span className="badge">7 · {checklist.launchCompletionControls.mvpApiLaterTrack.status}</span><h3>MVP API later track</h3><p>{checklist.launchCompletionControls.mvpApiLaterTrack.rule}</p></div>
+          <div className="card admin-category-card"><span className="badge">9 · {checklist.launchCompletionControls.adminDebugMonitoringPlan.status}</span><h3>Admin/debug monitoring</h3><p>{checklist.launchCompletionControls.adminDebugMonitoringPlan.intakeRule}</p></div>
+          <div className="card admin-category-card"><span className="badge">10 · {checklist.launchCompletionControls.providerQueueConcurrencyGuard.status}</span><h3>Provider queue guard</h3><p>{checklist.launchCompletionControls.providerQueueConcurrencyGuard.rules[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">11 · {checklist.launchCompletionControls.productionReadinessScorePlan.status}</span><h3>Production readiness score</h3><p>{checklist.launchCompletionControls.productionReadinessScorePlan.creditBurnForecast[0]}</p></div>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Validation commands</span>
         <h2>Run after final external setup</h2>
         <div className="admin-info-grid">

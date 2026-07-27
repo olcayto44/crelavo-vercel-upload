@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { apiAfterKeysReviewList, monitoringBackupLoggingControls } from "@/lib/launch-final-controls";
+import { adminDebugMonitoringPlan } from "@/lib/launch-ops-readiness";
 
 function statusClass(status: string) {
   if (status === "active") return "ready";
@@ -24,6 +25,15 @@ export default function AdminMonitoringPage() {
           ))}
         </div>
       </section>
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Admin/debug monitoring plan</span>
+        <h2>Live test failures must map to the right admin panel</h2>
+        <p style={{ color: "var(--muted)" }}>{adminDebugMonitoringPlan.intakeRule}</p>
+        <div className="admin-info-grid">
+          {adminDebugMonitoringPlan.panels.map((item) => <div key={item.panel}><span>{item.panel}</span><strong>{item.purpose}</strong><small>{adminDebugMonitoringPlan.status}</small></div>)}
+        </div>
+      </section>
+
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">API/env sonrası tekrar bakılacak</span>
         <ul>{apiAfterKeysReviewList.map((item) => <li key={item}>{item}</li>)}</ul>
