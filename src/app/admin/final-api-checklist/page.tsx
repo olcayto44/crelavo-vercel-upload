@@ -95,6 +95,11 @@ export default function FinalApiChecklistPage() {
           <div className="card admin-category-card"><span className="badge">9 · {checklist.launchCompletionControls.adminDebugMonitoringPlan.status}</span><h3>Admin/debug monitoring</h3><p>{checklist.launchCompletionControls.adminDebugMonitoringPlan.intakeRule}</p></div>
           <div className="card admin-category-card"><span className="badge">10 · {checklist.launchCompletionControls.providerQueueConcurrencyGuard.status}</span><h3>Provider queue guard</h3><p>{checklist.launchCompletionControls.providerQueueConcurrencyGuard.rules[0]}</p></div>
           <div className="card admin-category-card"><span className="badge">11 · {checklist.launchCompletionControls.productionReadinessScorePlan.status}</span><h3>Production readiness score</h3><p>{checklist.launchCompletionControls.productionReadinessScorePlan.creditBurnForecast[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">12 · {checklist.launchCompletionControls.providerCostLedgerPlan.status}</span><h3>Provider Cost Ledger</h3><p>{checklist.launchCompletionControls.providerCostLedgerPlan.reviewGate}</p></div>
+          <div className="card admin-category-card"><span className="badge">13-14 · {checklist.launchCompletionControls.productionFlowExpansionPlan.status}</span><h3>Production flow expansion</h3><p>{checklist.launchCompletionControls.productionFlowExpansionPlan.guardrails[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">15 · {checklist.launchCompletionControls.finalQaLaunchHardeningPlan.status}</span><h3>Final QA / launch hardening</h3><p>{checklist.launchCompletionControls.finalQaLaunchHardeningPlan.stopRules[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">16 · {checklist.launchCompletionControls.globalSeoExpansionPlan.status}</span><h3>Tier-1 global SEO plan</h3><p>{checklist.launchCompletionControls.globalSeoExpansionPlan.qualityGuard}</p></div>
+          <div className="card admin-category-card"><span className="badge">17 · {checklist.launchCompletionControls.technicalSeoIntegrityPlan.status}</span><h3>Technical SEO integrity</h3><p>{checklist.launchCompletionControls.technicalSeoIntegrityPlan.rule}</p></div>
         </div>
       </section>
 

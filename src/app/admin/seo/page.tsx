@@ -1,5 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { googleIndexingAllSitemapUrls, googleIndexingContinuationUrls, googleIndexingGuardrails, googleIndexingSubmittedUrls, indexingChecklist, searchEngineSubmitTargets } from "@/lib/google-indexing";
+import { globalSeoExpansionPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
+import { seoLaunchKit } from "@/lib/seo-launch-kit";
 
 const seoModules = [
   { title: "Meta title / description", file: "app metadata", fields: ["Default title", "Default description", "Page keywords", "Canonical base URL"] },
@@ -18,6 +20,28 @@ export default function AdminSeoPage() {
   return (
     <AdminShell title="SEO / Sitemap / Google" description="SEO dosyaları, Google ayarları, sitemap, robots, meta ve sosyal paylaşım önizlemelerini yönet.">
       <section className="card admin-wide-card">
+        <span className="badge">16 · Tier-1 global SEO plan</span>
+        <h2>Country/use-case SEO plan needs owner priority before scale</h2>
+        <p style={{ color: "var(--muted)" }}>{globalSeoExpansionPlan.qualityGuard}</p>
+        <div className="admin-info-grid">
+          <div><span>Status</span><strong>{globalSeoExpansionPlan.status}</strong><small>{seoLaunchKit.tier1GlobalSeoPlan.ownerGate}</small></div>
+          <div><span>Countries</span><strong>{globalSeoExpansionPlan.countryPages.length} markets</strong><small>{globalSeoExpansionPlan.countryPages.join(", ")}</small></div>
+          <div><span>Use cases</span><strong>{globalSeoExpansionPlan.useCaseClusters.length} clusters</strong><small>{globalSeoExpansionPlan.useCaseClusters.slice(0, 4).join(", ")}</small></div>
+          <div><span>Quality guard</span><strong>No thin pages</strong><small>No fake local proof or unsupported local claims.</small></div>
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">17 · Hreflang / canonical / schema</span>
+        <h2>Technical SEO integrity guard</h2>
+        <p style={{ color: "var(--muted)" }}>{technicalSeoIntegrityPlan.rule}</p>
+        <div className="admin-info-grid">
+          {technicalSeoIntegrityPlan.checks.map((item) => <div key={item}><span>SEO check</span><strong>{item}</strong><small>{technicalSeoIntegrityPlan.status}</small></div>)}
+        </div>
+        <ul>{seoLaunchKit.technicalSeoIntegrity.checks.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Google indexing continuation</span>
         <h2>Search Console devam listesi 12. URL’den başlıyor</h2>
         <p style={{ color: "var(--muted)" }}>1-11 URL kullanıcı tarafından Search Console üzerinden gönderildi. Kota/bekleme sonrası manuel URL inspection devamı aşağıdaki 12-20 listesiyle yapılmalı.</p>

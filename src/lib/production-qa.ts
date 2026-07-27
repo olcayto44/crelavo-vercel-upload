@@ -162,6 +162,24 @@ export function qaProduction(record: ProductionQaInput): ProductionQaResult {
     message: "Failed production has no credit resolution metadata.",
     fix: "Add creditResolution before refund/retry decision."
   });
+  addIssue(issues, !objectValue(metadata.providerCostLedger) && !objectValue(output.providerCostLedger), {
+    code: "provider_cost_ledger_missing",
+    severity: "warning",
+    message: "Production has no provider cost ledger metadata.",
+    fix: "Attach providerCostLedger with provider, model, estimated/actual provider cost, reserved/spent credits and margin status."
+  });
+  addIssue(issues, ["campaign", "social", "ugc", "ugc_video"].includes(productionType) && !objectValue(metadata.noFakeProofGuard), {
+    code: "social_ugc_fake_proof_guard_missing",
+    severity: "warning",
+    message: "Social/UGC production is missing No Fake Proof Guard metadata.",
+    fix: "Attach noFakeProofGuard before public captions, UGC scripts or campaign assets are delivered."
+  });
+  addIssue(issues, ["website", "saas", "mobile_app", "admin_project", "ecommerce"].includes(productionType) && !objectValue(metadata.sourceDelivery), {
+    code: "source_delivery_missing",
+    severity: "warning",
+    message: "Project production is missing source delivery metadata.",
+    fix: "Attach sourceDelivery with ZIP, README, stack, deploy notes and dashboard delivery link."
+  });
 
   const providerBlockingKeys = arrayValue(agentProviderRoutePlan?.blockingKeys).map((key) => String(key));
   const penalty = issues.reduce((sum, issue) => sum + (issue.severity === "critical" ? 28 : issue.severity === "warning" ? 12 : 4), 0);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminFinanceCards } from "@/components/AdminFinanceCards";
-import { productionReadinessScorePlan, providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
+import { productionReadinessScorePlan, providerCostLedgerPlan, providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
 
 const financeGuardrails = [
   "Payment API purchase events count as revenue; manual credit activations stay visible but separate.",
@@ -56,6 +56,16 @@ export default function AdminFinancePage() {
           <h3>Credit Burn Forecast rules</h3>
           <ul>{productionReadinessScorePlan.creditBurnForecast.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Provider Cost Ledger / margin</span>
+        <h2>Actual provider cost and margin tracking</h2>
+        <p style={{ color: "var(--muted)" }}>{providerCostLedgerPlan.reviewGate}</p>
+        <div className="admin-info-grid">
+          {providerCostLedgerPlan.fields.map((field) => <div key={field}><span>Ledger field</span><strong>{field}</strong><small>{providerCostLedgerPlan.status}</small></div>)}
+        </div>
+        <ul>{providerCostLedgerPlan.marginRules.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

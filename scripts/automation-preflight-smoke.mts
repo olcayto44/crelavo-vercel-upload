@@ -148,6 +148,9 @@ const launchOpsReadiness = readFileSync("src/lib/launch-ops-readiness.ts", "utf8
 const adminMonitoringPage = readFileSync("src/app/admin/monitoring/page.tsx", "utf8");
 const adminFinancePage = readFileSync("src/app/admin/finance/page.tsx", "utf8");
 const adminFinalApiChecklistPage = readFileSync("src/app/admin/final-api-checklist/page.tsx", "utf8");
+const adminSeoPage = readFileSync("src/app/admin/seo/page.tsx", "utf8");
+const adminProductionQaPage = readFileSync("src/app/admin/production-qa/page.tsx", "utf8");
+const productionQaLib = readFileSync("src/lib/production-qa.ts", "utf8");
 const apiCostGuard = readFileSync("src/lib/api-cost-guard.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
@@ -300,6 +303,21 @@ for (const term of ["productionReadinessScorePlan", "scorecard_ready_for_live_in
 }
 for (const term of ["Production Readiness Score and Credit Burn Forecast", "Credit Burn Forecast rules", "providerQueueConcurrencyGuard.defaults", "productionReadinessScorePlan.scoreInputs"]) {
   if (!adminFinancePage.includes(term)) throw new Error(`production readiness finance page missing term: ${term}`);
+}
+for (const term of ["providerCostLedgerPlan", "ledger_ready_pending_real_provider_costs", "Provider Cost Ledger", "actual_provider_cost", "margin_status"]) {
+  if (!launchOpsReadiness.includes(term) && !adminFinancePage.includes(term) && !adminFinalApiChecklistPage.includes(term) && !productionQaLib.includes(term)) throw new Error(`provider cost ledger guard missing term: ${term}`);
+}
+for (const term of ["productionFlowExpansionPlan", "flows_mapped_review_gated", "Social/UGC and project production flows", "No Fake Proof Guard", "sourceDelivery"]) {
+  if (!launchOpsReadiness.includes(term) && !adminProductionQaPage.includes(term) && !productionQaLib.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`production flow expansion guard missing term: ${term}`);
+}
+for (const term of ["finalQaLaunchHardeningPlan", "final_qa_hardening_ready", "Final QA / launch hardening", "Stop launch if", "provider_cost_ledger_missing"]) {
+  if (!launchOpsReadiness.includes(term) && !adminProductionQaPage.includes(term) && !productionQaLib.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`final QA launch hardening guard missing term: ${term}`);
+}
+for (const term of ["globalSeoExpansionPlan", "tier1GlobalSeoPlan", "Tier-1 global SEO plan", "No thin pages", "ownerGate"]) {
+  if (!launchOpsReadiness.includes(term) && !seoLaunchKit.includes(term) && !adminSeoPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`global SEO expansion guard missing term: ${term}`);
+}
+for (const term of ["technicalSeoIntegrityPlan", "technicalSeoIntegrity", "Hreflang / canonical / schema", "hreflang", "canonical", "sitemap", "schema", "internal links"]) {
+  if (!launchOpsReadiness.includes(term) && !seoLaunchKit.includes(term) && !adminSeoPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`technical SEO integrity guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

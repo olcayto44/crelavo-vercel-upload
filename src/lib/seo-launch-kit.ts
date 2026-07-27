@@ -40,6 +40,15 @@ export const seoLaunchKit = {
     "Wait for Whop/payment and production E2E confidence before Product Hunt or Hacker News.",
     "Track listings, unlinked mentions and approved backlinks after submission."
   ],
+  tier1GlobalSeoPlan: {
+    countries: ["US", "UK", "Canada", "Australia", "Germany", "Netherlands", "UAE", "Turkey", "India", "Singapore"],
+    useCases: ["Shopify product video", "Amazon product ad", "WooCommerce product video", "UGC video ads", "AI website builder", "AI ecommerce builder", "AI app builder", "AI social media launch"],
+    ownerGate: "Owner must approve country priorities before pages are generated or submitted."
+  },
+  technicalSeoIntegrity: {
+    checks: ["hreflang", "canonical", "sitemap", "schema", "internal links", "robots exclusions", "Search Console inspection"],
+    rule: "Every global SEO URL must have one canonical target, sitemap eligibility, page-type schema, internal links and no fake local proof."
+  },
   whopCurrencyVerification,
   publicLlmManifesto
 };
