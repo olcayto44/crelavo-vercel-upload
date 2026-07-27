@@ -176,6 +176,19 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     anotherPersonReference: uploadedMaterials.filter((material) => material.reference_type === "another_person_reference"),
     performanceVideoReference: uploadedMaterials.filter((material) => material.reference_type === "performance_video_reference")
   };
+const voiceCloneReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|vocal|clone|ses/i.test(material.reference_type));
+const voiceCloneConsent = voiceCloneReferences.length > 0 && voiceCloneReferences.every((material) => material.rights_confirmed);
+const voiceCloneSignal = `${selection.productionType} ${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+const voiceClonePlan = selection.productionType === "voice_clone" || /voice clone|ses klon|ses klonlama|own voice|kendi ses/.test(voiceCloneSignal) ? {
+    requested: true,
+    status: voiceCloneReferences.length === 0 ? "waiting_reference_audio" : voiceCloneConsent ? "ready_for_provider_setup" : "waiting_rights_confirmation",
+    provider: "elevenlabs",
+    referenceAudioUrls: voiceCloneReferences.map((material) => material.file_url),
+    rightsConfirmed: voiceCloneConsent,
+    consentRequired: true,
+    consentRule: "Only clone a voice when the uploaded reference belongs to the user or they have explicit permission to use it.",
+    providerSetup: "Voice clone creation requires approved reference audio and an explicit provider-side voice profile before production TTS can use it."
+  } : null;
   const liveSalesMaterialGroups = {
     ownVoice: uploadedMaterials.filter((material) => material.reference_type === "live_sales_own_voice"),
     selfAvatar: uploadedMaterials.filter((material) => material.reference_type === "live_sales_self_avatar"),
@@ -314,6 +327,7 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     drama_details: dramaDetails,
     drone_details: droneDetails,
     live_sales_agent_details: liveSalesAgentDetails,
+    voice_clone_plan: voiceClonePlan,
     character_voice_consistency_plan: characterVoiceConsistencyPlan,
     manual_option_details: {
       serviceNetwork: selection.selectedServiceNetwork ?? "",

@@ -79,12 +79,15 @@ const providerStorage = readFileSync("src/lib/providers/storage.ts", "utf8");
 const genericVideoProvider = readFileSync("src/lib/providers/generic-video.ts", "utf8");
 const providerAliases = readFileSync("src/lib/providers/aliases.ts", "utf8");
 const providerEnv = readFileSync("src/lib/providers/env.ts", "utf8");
+const elevenlabsProvider = readFileSync("src/lib/providers/elevenlabs.ts", "utf8");
+const productionRevisionRoute = readFileSync("src/app/api/productions/revision/route.ts", "utf8");
 const adminProviderTests = readFileSync("src/app/api/admin/provider-tests/route.ts", "utf8");
 const providerReadinessRoute = readFileSync("src/app/api/providers/readiness/route.ts", "utf8");
 const projectDelivery = readFileSync("src/lib/project-delivery.ts", "utf8");
 const automaticDeliveryBuilder = readFileSync("src/lib/automatic-delivery-builder.ts", "utf8");
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
 const productionPayload = readFileSync("src/lib/production-payload.ts", "utf8");
+const providerReadiness = readFileSync("src/lib/provider-readiness.ts", "utf8");
 const adsPhase2 = readFileSync("src/lib/phase2/ads.ts", "utf8");
 const leadExitIntentRoute = readFileSync("src/app/api/leads/exit-intent/route.ts", "utf8");
 const retentionGrowth = readFileSync("src/lib/retention-growth.ts", "utf8");
@@ -143,6 +146,18 @@ for (const term of ["DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "APIFY_API", "DAT
 }
 for (const term of ["requireProviderEnv", "optionalProviderEnv", "hasProviderEnv", "providerEnvNames"]) {
   if (!providerEnv.includes(term)) throw new Error(`provider env helper missing term: ${term}`);
+}
+for (const term of ["MAX_TTS_CHARS", "cleanVoiceScript", "Voice-over script is empty after cleanup", "providerVoiceId", "scriptCharacters", "truncated"]) {
+  if (!elevenlabsProvider.includes(term)) throw new Error(`ElevenLabs TTS guard missing term: ${term}`);
+}
+for (const term of ["providerVoiceId", "scriptCharacters", "truncated"]) {
+  if (!productionRevisionRoute.includes(term)) throw new Error(`production voice revision metadata missing term: ${term}`);
+}
+for (const term of ["voiceCloneReferences", "voiceCloneConsent", "voice_clone_plan", "waiting_reference_audio", "waiting_rights_confirmation", "ready_for_provider_setup", "consentRule"]) {
+  if (!productionPayload.includes(term)) throw new Error(`voice clone compliance payload missing term: ${term}`);
+}
+for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\""]) {
+  if (!providerReadiness.includes(term)) throw new Error(`voice clone provider readiness guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

@@ -156,6 +156,10 @@ export async function POST(request: Request) {
             voiceJob.status = "ready";
             voiceJob.audioUrl = result.audioUrl;
             voiceJob.voice = result.voice;
+            voiceJob.providerVoiceId = result.providerVoiceId;
+            voiceJob.model = result.model;
+            voiceJob.scriptCharacters = result.scriptCharacters;
+            voiceJob.truncated = result.truncated;
             voiceAudioUrl = result.audioUrl;
             nextPendingAction.status = "ready";
           } catch (voiceError) {

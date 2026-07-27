@@ -39,7 +39,7 @@ export function providerRequirementsForProduction(productionType: string, packag
     requirements.push(requirement("voice_provider", "ElevenLabs voice-over provider", ["ELEVENLABS_API_KEY"], ["ad voice-over", "voice audio asset"], "Required for the real e-commerce ad pipeline voice-over."));
     requirements.push(requirement("render_provider", "Shotstack render provider", ["SHOTSTACK_API_KEY"], ["final rendered MP4", "video + voice + subtitle assembly"], "Required to render the final customer-ready ad video after visual output is ready."));
   } else if (["video", "talking_video", "avatar", "lip_sync", "voice_clone", "dubbing", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drama", "cinematic_video", "music_video", "localization"].includes(type) || packageId.includes("voice")) {
-    requirements.push(requirement("voice_provider", "Voice/speech provider", ["ELEVENLABS_API_KEY"], ["voice-over", "voice clone", "dubbing", "lip-sync audio"], "Required when the selected production includes voice cloning or generated speech.", true));
+    requirements.push(requirement("voice_provider", "Voice/speech provider", ["ELEVENLABS_API_KEY"], ["voice-over", "voice clone", "dubbing", "lip-sync audio"], type === "voice_clone" ? "Voice clone work requires ElevenLabs plus explicit reference-audio rights confirmation before any cloned voice can be used." : "Required when the selected production includes voice cloning or generated speech.", type !== "voice_clone"));
     requirements.push({
       key: "music_provider",
       label: "Music/background provider",
