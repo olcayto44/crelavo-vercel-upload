@@ -1,3 +1,4 @@
+import { externalApiAccountReadiness, externalSubmissionTracker } from "./external-launch-operations";
 import { couponHuntCampaignGuard, liveTestFixIntake, mvpApiSeparation, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
 
 type ChecklistStatus = "ready" | "missing" | "pending" | "optional";
@@ -299,6 +300,8 @@ export function buildFinalApiChecklist() {
     launchCompletionControls: {
       liveTestFixIntake,
       mvpApiSeparation,
+      externalSubmissionTracker,
+      externalApiAccountReadiness,
       realProductionE2EChecklist,
       publicPlaceholderH1Audit,
       referralRewardAutomationGuard,

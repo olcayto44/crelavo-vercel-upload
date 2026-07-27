@@ -142,6 +142,8 @@ const packageJson = readFileSync("package.json", "utf8");
 const publicPlaceholderH1Audit = readFileSync("scripts/public-placeholder-h1-audit.mts", "utf8");
 const legalFinalPage = readFileSync("src/app/admin/legal-final/page.tsx", "utf8");
 const socialProof = readFileSync("src/lib/social-proof.ts", "utf8");
+const externalLaunchOperations = readFileSync("src/lib/external-launch-operations.ts", "utf8");
+const adminProvidersPage = readFileSync("src/app/admin/providers/page.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -269,6 +271,12 @@ for (const term of ["publicRouteBlocklist", "riskyTerms", "multiple literal <h1>
 }
 for (const term of ["proofPermissionChecklist", "Written permission for every customer logo", "Verified source for every ROAS"]) {
   if (!socialProof.includes(term) || !legalFinalPage.includes("Proof / logo permission") || !legalFinalPage.includes("Real proof can go public only after written approval")) throw new Error(`proof permission guard missing term: ${term}`);
+}
+for (const term of ["externalSubmissionTracker", "manual_submission_required", "Product Hunt", "Reddit / Quora / Indie Hackers / Hacker News", "submission_url", "listing_url"]) {
+  if (!externalLaunchOperations.includes(term) || !launchDistributionPage.includes("Manual submission tracker") || !finalApiChecklist.includes("externalSubmissionTracker")) throw new Error(`external submission tracker guard missing term: ${term}`);
+}
+for (const term of ["externalApiAccountReadiness", "external_account_or_permission_required", "Shopify Admin API", "Amazon Selling Partner API", "TikTok Content Posting API", "n8n workflow", "Shotstack"]) {
+  if (!externalLaunchOperations.includes(term) || !adminProvidersPage.includes("External API account readiness") || !finalApiChecklist.includes("externalApiAccountReadiness")) throw new Error(`external API account readiness guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

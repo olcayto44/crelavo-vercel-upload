@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminProviderTestPanel } from "@/components/AdminProviderTestPanel";
 import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
+import { externalApiAccountReadiness } from "@/lib/external-launch-operations";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function statusLabel(status: string) {
@@ -106,6 +107,22 @@ export default function AdminProvidersPage() {
         <p style={{ color: "var(--muted)" }}>{providerLiveVerificationChecks.guardrail}</p>
         <div className="admin-info-grid">
           {providerLiveVerificationChecks.liveVerification.map((item, index) => <div key={item}><span>Provider check {index + 1}</span><strong>{item}</strong><small>{providerLiveVerificationChecks.providerGroups.join(", ")}</small></div>)}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">External API account readiness</span>
+        <h2>Marketplace, social, avatar and automation APIs are separate approvals</h2>
+        <p style={{ color: "var(--muted)" }}>{externalApiAccountReadiness.rule}</p>
+        <div className="admin-category-grid">
+          {externalApiAccountReadiness.optionalMvpIntegrations.map((item) => (
+            <div className="card admin-category-card" key={item.name}>
+              <span className="badge">{externalApiAccountReadiness.status}</span>
+              <h3>{item.name}</h3>
+              <p>{item.use}</p>
+              <small>{item.requirement}</small>
+            </div>
+          ))}
         </div>
       </section>
 

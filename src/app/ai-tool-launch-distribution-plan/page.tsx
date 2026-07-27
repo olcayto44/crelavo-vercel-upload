@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { externalSubmissionTracker } from "@/lib/external-launch-operations";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
 import { organicDirectoryBacklinkOperations } from "@/lib/organic-directory";
 import { publicLlmManifesto } from "@/lib/llm-manifesto";
@@ -132,6 +133,22 @@ export default async function AiToolLaunchDistributionPlanPage() {
                 <h3>{item.channel}</h3>
                 <p>{item.action}</p>
                 <small>{item.tracking}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">Manual submission tracker</span>
+          <h2>External submissions need proof fields, not just a copy pack</h2>
+          <p style={{ color: "var(--muted)" }}>{externalSubmissionTracker.ownerAction}</p>
+          <div className="admin-category-grid">
+            {externalSubmissionTracker.channels.map((item) => (
+              <div className="card admin-category-card" key={item.name}>
+                <span className="badge">{item.priority} · {item.type}</span>
+                <h3>{item.name}</h3>
+                <p><strong>Before submit:</strong> {item.requiredBeforeSubmit.join(", ")}</p>
+                <small>Track: {item.trackingFields.join(", ")}</small>
               </div>
             ))}
           </div>
