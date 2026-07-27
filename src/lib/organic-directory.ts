@@ -1,3 +1,5 @@
+import { seoLaunchKit } from "./seo-launch-kit";
+
 export const aiDirectorySubmissionTargets = [
   { name: "There’s An AI For That", priority: "P1", type: "AI tool directory", status: "prepare_manual_submission", fit: "Broad AI tool discovery for Crelavo as an AI production studio.", category: "AI Video, AI Website Builder, AI App Builder, Marketing Automation" },
   { name: "Futurepedia", priority: "P1", type: "AI tool directory", status: "prepare_manual_submission", fit: "High-intent AI tools audience; submit after public pages and screenshots are ready.", category: "AI Tools, Productivity, Marketing, Design" },
@@ -70,11 +72,13 @@ export const aiDirectorySubmissionKit = {
     "https://www.crelavo.com/pricing",
     "https://www.crelavo.com/blog"
   ],
+  launchKit: seoLaunchKit,
   launchGuardrails: [
     "No Lemon application in this phase.",
     "Do not trigger real payout or paid ad spend from directory preparation.",
     "Product Hunt, Hacker News and major community launch wait until final Whop payment tests are complete.",
-    "Use Whop/payment wording as the active payment path."
+    "Use Whop/payment wording as the active payment path.",
+    ...seoLaunchKit.proofGuardrails
   ]
 };
 

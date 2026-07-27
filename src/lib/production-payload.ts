@@ -176,6 +176,16 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     anotherPersonReference: uploadedMaterials.filter((material) => material.reference_type === "another_person_reference"),
     performanceVideoReference: uploadedMaterials.filter((material) => material.reference_type === "performance_video_reference")
   };
+  const musicReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /music|bgm|song|şarkı|sarki|sound|audio/i.test(material.reference_type));
+  const musicSignal = `${selection.productionType} ${selection.selectedMusicProfile ?? ""} ${effectiveFeatures.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
+  const musicPlan = /music|müzik|muzik|bgm|sound|song|şarkı|sarki|music video/.test(musicSignal) && !/no music|müzik yok|muzik yok/.test(musicSignal) ? {
+    requested: true,
+    providerPrimary: "stable-audio",
+    providerSecondary: "mubert",
+    referenceAudioUrls: musicReferences.map((material) => material.file_url),
+    licenseGuard: "Use generated or properly licensed music only; do not promise copyrighted-track replication.",
+    mixGuard: "When narration is present, music must stay under the voice and be ducked in final render."
+  } : null;
   const avatarReferences = uploadedMaterials.filter((material) => ["own_image_avatar", "live_sales_self_avatar", "live_sales_avatar_reference", "avatar_reference", "speaker_reference"].includes(material.reference_type));
   const avatarVoiceReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|audio|avatar|speaker|ses/i.test(material.reference_type));
   const avatarPlan = ["avatar", "talking_video", "live_sales_agent"].includes(selection.productionType) ? {
@@ -338,6 +348,7 @@ const voiceClonePlan = selection.productionType === "voice_clone" || /voice clon
     drama_details: dramaDetails,
     drone_details: droneDetails,
     live_sales_agent_details: liveSalesAgentDetails,
+    music_plan: musicPlan,
     avatar_plan: avatarPlan,
     voice_clone_plan: voiceClonePlan,
     character_voice_consistency_plan: characterVoiceConsistencyPlan,

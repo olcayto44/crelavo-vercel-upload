@@ -118,6 +118,10 @@ const geoOffers = readFileSync("src/lib/geo-offers.ts", "utf8");
 const splashAd = readFileSync("src/components/SplashAd.tsx", "utf8");
 const campaignPromoSlot = readFileSync("src/components/CampaignPromoSlot.tsx", "utf8");
 const campaignPromoClient = readFileSync("src/components/CampaignPromoClient.tsx", "utf8");
+const lipSyncStartRoute = readFileSync("src/app/api/lip-sync/start/route.ts", "utf8");
+const musicProvidersRoute = readFileSync("src/app/api/music-providers/route.ts", "utf8");
+const seoLaunchKit = readFileSync("src/lib/seo-launch-kit.ts", "utf8");
+const organicDirectory = readFileSync("src/lib/organic-directory.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -173,6 +177,18 @@ for (const term of ["providerRouteMap", "run_lip_sync", "kling_talking_video_fal
 }
 for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\"", "avatar_provider", "HeyGen avatar/talking-head provider"]) {
   if (!providerReadiness.includes(term)) throw new Error(`voice clone provider readiness guard missing term: ${term}`);
+}
+for (const term of ["requireVerifiedRequestUser", "enforceRouteBudget", "source_audio_url", "source_video_url must be a secure https URL", "verified_user_https_source_rate_limited"]) {
+  if (!lipSyncStartRoute.includes(term)) throw new Error(`lip-sync start guard missing term: ${term}`);
+}
+for (const term of ["adminRequiredResponse", "summary", "stableAudioReady", "mubertReady", "admin_only_music_provider_readiness"]) {
+  if (!musicProvidersRoute.includes(term)) throw new Error(`music provider readiness guard missing term: ${term}`);
+}
+for (const term of ["musicReferences", "music_plan", "providerPrimary: \"stable-audio\"", "providerSecondary: \"mubert\"", "licenseGuard", "mixGuard"]) {
+  if (!productionPayload.includes(term)) throw new Error(`music/sound payload guard missing term: ${term}`);
+}
+for (const term of ["seoLaunchKit", "directoryOneLiner", "proofGuardrails", "submissionCopyFields", "launchSequence"]) {
+  if (!seoLaunchKit.includes(term) || !organicDirectory.includes("launchKit: seoLaunchKit")) throw new Error(`SEO launch kit guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

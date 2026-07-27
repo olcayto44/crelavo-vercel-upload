@@ -49,8 +49,8 @@ export function providerRequirementsForProduction(productionType: string, packag
       label: "Music/background provider",
       requiredEnv: ["STABLE_AUDIO_API_KEY", "MUBERT_API_KEY"],
       affects: ["background music", "music bed", "soundtrack"],
-      note: "Required when the selected production includes generated background music; Stable Audio or Mubert can satisfy this route.",
-      status: hasProviderEnv("stableAudio") || hasProviderEnv("mubert") ? "ready" : "optional"
+      note: "Required when the selected production includes generated background music; Stable Audio is primary and Mubert is the secondary fallback. Use manual licensed music if both are missing.",
+      status: hasProviderEnv("stableAudio") || hasProviderEnv("stability") || hasProviderEnv("mubert") ? "ready" : "optional"
     });
     requirements.push(requirement("render_provider", "Shotstack render provider", ["SHOTSTACK_API_KEY"], ["final rendered MP4", "video + voice + subtitle assembly"], "Required when voice, music or subtitles must be assembled into the final customer-ready video.", true));
   }
