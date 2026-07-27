@@ -239,10 +239,16 @@ for (const term of ["cloudflareWafFinalChecks", "protectedRoutes", "blocked inva
 for (const term of ["providerLiveVerificationChecks", "connected_pending_real_production_e2e", "real provider output", "payment -> credit reserve/spend -> provider output -> delivery -> notification"]) {
   if (!edgeProviderFinalChecks.includes(term) || !providerReadinessRoute.includes("providerLiveVerification") || !adminProviderTestsRoute.includes("providerLiveVerification")) throw new Error(`provider live verification guard missing term: ${term}`);
 }
+for (const term of ["liveTestFixIntake", "waiting_for_user_live_test_results", "requiredReportFields", "triageOrder", "Do not claim a live issue is fixed"]) {
+  if (!launchCompletionControls.includes(term) || !finalApiChecklist.includes("liveTestFixIntake") || !adminGrowthPage.includes("Fix intake")) throw new Error(`live test fix intake guard missing term: ${term}`);
+}
+for (const term of ["mvpApiSeparation", "AI Ad Performance Score Checker API", "Community Showcase API", "MVP feature APIs are a separate next integration track"]) {
+  if (!launchCompletionControls.includes(term) || !finalApiChecklist.includes("mvpApiSeparation") || !adminGrowthPage.includes("MVP API work is separated")) throw new Error(`MVP API separation guard missing term: ${term}`);
+}
 for (const term of ["realProductionE2EChecklist", "payment → credit → production → delivery E2E", "Whop webhook signature", "provider job id", "dashboard delivery", "email notification"]) {
   if (!launchCompletionControls.includes(term) || !finalApiChecklist.includes("launchCompletionControls") || !adminGrowthPage.includes("Final 19–22 launch gates")) throw new Error(`real production E2E completion guard missing term: ${term}`);
 }
-for (const term of ["publicPlaceholderH1Audit", "awaiting", "placeholder", "lorem", "exactly one primary H1", "approved customer logo"]) {
+for (const term of ["publicPlaceholderH1Audit", "publicPageScope", "allowedInternalScope", "scanWorkflow", "awaiting", "placeholder", "lorem", "exactly one primary H1", "approved customer logo"]) {
   if (!launchCompletionControls.includes(term) || !adminGrowthPage.includes("Public placeholder + H1 audit")) throw new Error(`public placeholder H1 audit guard missing term: ${term}`);
 }
 for (const term of ["referralRewardAutomationGuard", "self-referral", "duplicate account", "suspicious IP", "Whop payment idempotency", "review-gated"]) {

@@ -1,4 +1,4 @@
-import { couponHuntCampaignGuard, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
+import { couponHuntCampaignGuard, liveTestFixIntake, mvpApiSeparation, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
 
 type ChecklistStatus = "ready" | "missing" | "pending" | "optional";
 
@@ -296,6 +296,8 @@ export function buildFinalApiChecklist() {
       "Automatic referral/coupon/share-to-earn rewards and clean-export unlocks."
     ],
     launchCompletionControls: {
+      liveTestFixIntake,
+      mvpApiSeparation,
       realProductionE2EChecklist,
       publicPlaceholderH1Audit,
       referralRewardAutomationGuard,

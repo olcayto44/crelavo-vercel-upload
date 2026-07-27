@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/AdminShell";
-import { couponHuntCampaignGuard, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "@/lib/launch-completion-controls";
+import { couponHuntCampaignGuard, liveTestFixIntake, mvpApiSeparation, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "@/lib/launch-completion-controls";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { communityShowcaseAdminChecklist, communityShowcaseTemplates } from "@/lib/community-showcase";
 import { caseStudyProofs, socialProofAdminChecklist, testimonialProofs, trustedProofSlots, verifiedMetricSlots } from "@/lib/social-proof";
@@ -253,6 +253,8 @@ export default function AdminGrowthPage() {
           <div className="card admin-category-card"><span className="badge">20 · {publicPlaceholderH1Audit.status}</span><h3>Public placeholder + H1 audit</h3><p>{publicPlaceholderH1Audit.remediation}</p></div>
           <div className="card admin-category-card"><span className="badge">21 · {referralRewardAutomationGuard.status}</span><h3>Referral reward automation</h3><p>{referralRewardAutomationGuard.guardrail}</p></div>
           <div className="card admin-category-card"><span className="badge">22 · {couponHuntCampaignGuard.status}</span><h3>Coupon hunt campaign</h3><p>{couponHuntCampaignGuard.publicCopyGuard}</p></div>
+          <div className="card admin-category-card"><span className="badge">Fix intake · {liveTestFixIntake.status}</span><h3>{liveTestFixIntake.title}</h3><p>{liveTestFixIntake.guardrail}</p></div>
+          <div className="card admin-category-card"><span className="badge">MVP API · {mvpApiSeparation.status}</span><h3>MVP API work is separated</h3><p>{mvpApiSeparation.rule}</p></div>
         </div>
       </section>
 
