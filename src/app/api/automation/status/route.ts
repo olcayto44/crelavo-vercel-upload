@@ -1,6 +1,7 @@
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
+import { spendCreditBuckets } from "@/lib/credit-rollover";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jobs";
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
       if (existingCreditResolution?.status !== "spent_reserved" && finalizedReservedCredits > 0) {
         const { data: balanceRow, error: balanceReadError } = await supabase
           .from("credit_balances")
-          .select("balance, reserved")
+          .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits")
           .eq("user_id", production.user_id)
           .maybeSingle();
 
@@ -208,14 +209,14 @@ export async function POST(request: Request) {
         const balance = Number(balanceRow?.balance ?? 0) || 0;
         const reserved = Number(balanceRow?.reserved ?? 0) || 0;
         const creditDecision = computeProviderSuccessSpend({ balance, reserved, reservedCredits: finalizedReservedCredits, productionTitle: production.title ?? production.id });
+        const bucketSpend = spendCreditBuckets({ row: balanceRow, amount: creditDecision.spendAmount });
 
         const { error: balanceUpdateError } = await supabase
           .from("credit_balances")
           .upsert({
             user_id: production.user_id,
-            balance: creditDecision.nextBalance,
-            reserved: creditDecision.nextReserved,
-            updated_at: new Date().toISOString()
+            ...bucketSpend,
+            reserved: creditDecision.nextReserved
           }, { onConflict: "user_id" });
 
         if (balanceUpdateError) throw balanceUpdateError;

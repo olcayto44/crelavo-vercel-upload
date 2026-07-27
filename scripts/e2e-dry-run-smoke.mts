@@ -184,7 +184,7 @@ for (const term of ["reserved_credits: 0", "finalizedReservedCredits", "completi
 }
 
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
-for (const term of ["status: \"queued\"", "generation_status: \"automation_queued\"", "reserved_credits: estimatedCredits", "type: \"reserve\""]) {
+for (const term of ["status: \"queued\"", "generation_status: \"automation_queued\"", "reserved_credits: estimatedCredits", "type: \"reserve\"", "nextStatusForWorkflow", "nextAutomationStatusForWorkflow", "nextDeliveryLinkForWorkflow"]) {
   assertIncludes(productionsRoute, term, `production reserve creation ${term}`);
 }
 

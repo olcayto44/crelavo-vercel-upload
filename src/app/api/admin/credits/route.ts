@@ -65,8 +65,11 @@ export async function POST(request: Request) {
     if (balanceReadError) throw balanceReadError;
 
     const current = currentBalance?.balance ?? 0;
-    const nextBalance = Math.max(0, current + amount);
     const nextReserved = currentBalance?.reserved ?? 0;
+    const nextBalance = Math.max(0, current + amount);
+    if (action === "remove" && nextBalance < nextReserved) {
+      return Response.json({ error: `Cannot remove credits below the active reserved amount. Reserved: ${nextReserved}, removable: ${Math.max(0, current - nextReserved)}.` }, { status: 409 });
+    }
     const currentBonus = currentBalance?.bonus_credits ?? 0;
     const nextBonusCredits = action === "add" ? currentBonus + Math.abs(amount) : Math.max(0, currentBonus - Math.abs(amount));
 

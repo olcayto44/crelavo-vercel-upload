@@ -140,27 +140,35 @@ export async function PATCH(request: Request) {
 
     const { data: existing, error: existingError } = await supabaseAdmin()
       .from("production_requests")
-      .select("output_json")
+      .select("status, automation_status, generation_status, approval_status, reserved_credits, estimated_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, output_json")
       .eq("id", id)
       .maybeSingle();
     if (existingError) throw existingError;
     const existingOutput = existing?.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
 
+    const nextStatusForWorkflow = allowedStatuses.includes(status) ? status : existing?.status ?? undefined;
+    const nextAutomationStatusForWorkflow = automationStatus || (status === "ready" ? "completed" : status === "in_production" ? "running" : existing?.automation_status ?? undefined);
+    const nextGenerationStatusForWorkflow = generationStatus || (providerStatus ? providerStatus : existing?.generation_status ?? "operations_update");
+    const nextPreviewUrlForWorkflow = previewUrl || existing?.preview_url || null;
+    const nextDeliveryLinkForWorkflow = deliveryLink || deliveryZipUrl || previewUrl || existing?.delivery_link || null;
+    const nextDeliveryZipForWorkflow = deliveryZipUrl || deliveryLink || existing?.delivery_zip_url || null;
+    const nextSourceFilesForWorkflow = sourceFilesUrl || existing?.source_files_url || null;
+
     const updatePayload: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
-      generation_status: generationStatus || (providerStatus ? providerStatus : "operations_update"),
-      preview_url: previewUrl || null,
-      delivery_link: deliveryLink || deliveryZipUrl || previewUrl || null,
-      delivery_zip_url: deliveryZipUrl || deliveryLink || null,
-      source_files_url: sourceFilesUrl || null,
+      generation_status: nextGenerationStatusForWorkflow,
+      preview_url: nextPreviewUrlForWorkflow,
+      delivery_link: nextDeliveryLinkForWorkflow,
+      delivery_zip_url: nextDeliveryZipForWorkflow,
+      source_files_url: nextSourceFilesForWorkflow,
       readme_url: readmeUrl || null,
       admin_notes: String(body.admin_notes ?? "").trim() || null,
       output_json: {
         ...existingOutput,
         updatedBy: adminEmail,
         updatedAt: new Date().toISOString(),
-        automationStatus: automationStatus || (status === "ready" ? "completed" : status === "in_production" ? "running" : existingOutput.automationStatus),
-        deliveryReady: status === "ready" || Boolean(deliveryLink || deliveryZipUrl),
+        automationStatus: nextAutomationStatusForWorkflow,
+        deliveryReady: nextStatusForWorkflow === "ready" || Boolean(nextDeliveryLinkForWorkflow || nextDeliveryZipForWorkflow),
         previewUrl,
         preview_url: previewUrl,
         deliveryUrl: deliveryLink || deliveryZipUrl,
@@ -174,7 +182,17 @@ export async function PATCH(request: Request) {
         providerStatus: providerStatus || existingOutput.providerStatus,
         providerProgress: providerProgress ?? existingOutput.providerProgress,
         currentStep: providerStatus || existingOutput.currentStep || generationStatus || status || "operations_update",
-        workflowState: buildProductionWorkflowState({ status: status || undefined, automation_status: automationStatus || undefined, generation_status: generationStatus || undefined, preview_url: previewUrl, delivery_link: deliveryLink, delivery_zip_url: deliveryZipUrl, source_files_url: sourceFilesUrl, output_json: existingOutput })
+        workflowState: buildProductionWorkflowState({
+          ...existing,
+          status: nextStatusForWorkflow,
+          automation_status: nextAutomationStatusForWorkflow,
+          generation_status: nextGenerationStatusForWorkflow,
+          preview_url: nextPreviewUrlForWorkflow,
+          delivery_link: nextDeliveryLinkForWorkflow,
+          delivery_zip_url: nextDeliveryZipForWorkflow,
+          source_files_url: nextSourceFilesForWorkflow,
+          output_json: existingOutput
+        })
       }
     };
     Object.keys(updatePayload).forEach((key) => updatePayload[key] === undefined ? delete updatePayload[key] : undefined);
