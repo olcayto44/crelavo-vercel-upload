@@ -111,6 +111,7 @@ const homePage = readFileSync("src/app/page.tsx", "utf8");
 const geoOffers = readFileSync("src/lib/geo-offers.ts", "utf8");
 const splashAd = readFileSync("src/components/SplashAd.tsx", "utf8");
 const campaignPromoSlot = readFileSync("src/components/CampaignPromoSlot.tsx", "utf8");
+const campaignPromoClient = readFileSync("src/components/CampaignPromoClient.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -223,8 +224,11 @@ for (const term of ["GeoOfferSegment", "US", "UK", "EU", "CA_AU", "TR", "GLOBAL"
 for (const term of ["geoOfferFromHeaders", "geoOffer={geoOffer}"]) {
   if (!splashAd.includes(term)) throw new Error(`splash geo offer wiring missing term: ${term}`);
 }
-for (const term of ["geoOfferFromHeaders", "priceBadge=\"$1,300/yr\"", "crelavo-geo-team"]) {
+for (const term of ["geoOfferFromHeaders", "priceBadge=\"$1,300/yr\"", "crelavo-geo-team", "expiredLabel", "expiredBody"]) {
   if (!campaignPromoSlot.includes(term)) throw new Error(`campaign promo geo offer wiring missing term: ${term}`);
+}
+for (const term of ["countdownExpired", "Preview available", "Still open", "Secure Whop preview is still open while this campaign is active."]) {
+  if (!campaignPromoClient.includes(term)) throw new Error(`campaign countdown fallback missing term: ${term}`);
 }
 for (const term of ["geoOfferFromHeaders", "localizedPaidGrowthFunnelCards", "homepageBadge", "homepageDescription"]) {
   if (!homePage.includes(term)) throw new Error(`homepage geo Team card missing term: ${term}`);

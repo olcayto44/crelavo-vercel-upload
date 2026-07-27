@@ -24,6 +24,8 @@ type SplashPromoPayload = {
   kicker?: string;
   bonusPrimary?: string;
   bonusSecondary?: string;
+  expiredLabel?: string;
+  expiredBody?: string;
 };
 
 function parseSplashPromo(code: string, geoOffer?: GeoOfferCopy) {
@@ -42,7 +44,9 @@ function parseSplashPromo(code: string, geoOffer?: GeoOfferCopy) {
       priceBadge: String(value.priceBadge || "$1,300/yr"),
       kicker: geoOffer?.kicker || String(value.kicker || "Normally $1,560/yr → now $1,300/yr + 30,000 BONUS credits"),
       bonusPrimary: geoOffer?.bonusPrimary || String(value.bonusPrimary || "174,000 annual credits"),
-      bonusSecondary: geoOffer?.bonusSecondary || String(value.bonusSecondary || "$20 secure Whop preview")
+      bonusSecondary: geoOffer?.bonusSecondary || String(value.bonusSecondary || "$20 secure Whop preview"),
+      expiredLabel: String(value.expiredLabel || "Preview available"),
+      expiredBody: String(value.expiredBody || "Secure Whop preview is still open while this campaign is active.")
     };
   } catch {
     return null;

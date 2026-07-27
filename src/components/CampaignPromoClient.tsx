@@ -17,11 +17,13 @@ type CampaignPromoProps = {
   kicker?: string;
   bonusPrimary?: string;
   bonusSecondary?: string;
+  expiredLabel?: string;
+  expiredBody?: string;
 };
 
 function formatRemaining(ms: number) {
-  if (ms <= 0) return "00d 00h 00m";
-  const totalMinutes = Math.floor(ms / 60000);
+  const safeMs = Math.max(0, ms);
+  const totalMinutes = Math.floor(safeMs / 60000);
   const days = Math.floor(totalMinutes / 1440);
   const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
@@ -47,13 +49,16 @@ function initialEndTime(input: { endsAt?: string; durationDays?: number; storage
   }
 }
 
-export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in", priceBadge = "$79", kicker = "Don’t miss it — the timer is running", bonusPrimary = "+3,000 bonus", bonusSecondary = "Usually 9,000" }: CampaignPromoProps) {
+export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in", priceBadge = "$79", kicker = "Don’t miss it — the timer is running", bonusPrimary = "+3,000 bonus", bonusSecondary = "Usually 9,000", expiredLabel = "Preview available", expiredBody = "Secure Whop preview is still open while this campaign is active." }: CampaignPromoProps) {
   const resolvedStorageKey = `${storageKey}-${href}`;
   const [endTime] = useState(() => initialEndTime({ endsAt, durationDays, storageKey: resolvedStorageKey }));
-  const [remaining, setRemaining] = useState(() => formatRemaining(endTime - Date.now()));
+  const [now, setNow] = useState(() => Date.now());
+  const remainingMs = endTime - now;
+  const countdownExpired = remainingMs <= 0;
+  const remaining = formatRemaining(remainingMs);
 
   useEffect(() => {
-    const updateRemaining = () => setRemaining(formatRemaining(endTime - Date.now()));
+    const updateRemaining = () => setNow(Date.now());
     updateRemaining();
     const timer = window.setInterval(updateRemaining, 30000);
     return () => window.clearInterval(timer);
@@ -74,9 +79,9 @@ export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, d
           <span>{bonusPrimary}</span>
           <span>{bonusSecondary}</span>
         </div>
-        <p>{body}</p>
+        <p>{countdownExpired ? expiredBody : body}</p>
       </div>
-      <div className="campaign-promo-countdown"><span>{countdownLabel}</span><strong>{remaining}</strong></div>
+      <div className="campaign-promo-countdown"><span>{countdownExpired ? expiredLabel : countdownLabel}</span><strong>{countdownExpired ? "Still open" : remaining}</strong></div>
       <Link className="btn campaign-promo-cta" href={href}>{cta}</Link>
     </aside>
   );

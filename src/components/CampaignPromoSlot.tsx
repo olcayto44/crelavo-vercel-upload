@@ -17,6 +17,8 @@ type CampaignPromoPayload = {
   kicker?: string;
   bonusPrimary?: string;
   bonusSecondary?: string;
+  expiredLabel?: string;
+  expiredBody?: string;
 };
 
 const DEFAULT_PROMO_DAYS = 7;
@@ -38,7 +40,9 @@ function parsePromoPayload(code: string): (CampaignPromoPayload & { eyebrow: str
       priceBadge: value.priceBadge ? String(value.priceBadge) : undefined,
       kicker: value.kicker ? String(value.kicker) : undefined,
       bonusPrimary: value.bonusPrimary ? String(value.bonusPrimary) : undefined,
-      bonusSecondary: value.bonusSecondary ? String(value.bonusSecondary) : undefined
+      bonusSecondary: value.bonusSecondary ? String(value.bonusSecondary) : undefined,
+      expiredLabel: value.expiredLabel ? String(value.expiredLabel) : undefined,
+      expiredBody: value.expiredBody ? String(value.expiredBody) : undefined
     };
   } catch {
     return null;
