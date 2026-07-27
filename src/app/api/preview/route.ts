@@ -1,4 +1,11 @@
+import { validateProductionSafety } from "@/lib/content-safety";
+import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
+
 export async function POST(request: Request) {
+  const ip = clientIpFromRequest(request);
+  const previewLimit = rateLimit({ key: `image-preview:ip:${ip}`, limit: 10, windowMs: 15 * 60 * 1000 });
+  if (!previewLimit.allowed) return rateLimitResponse(previewLimit.resetAt);
+
   try {
     const body = await request.json();
     const prompt = String(body.prompt ?? "").trim();
@@ -10,6 +17,10 @@ export async function POST(request: Request) {
     if (!prompt) {
       return Response.json({ error: "Preview prompt is required." }, { status: 400 });
     }
+    const suspicious = rejectSuspiciousText([prompt, style, category, materialType, materialOption]);
+    if (!suspicious.ok) return Response.json({ error: suspicious.message }, { status: 400 });
+    const safety = validateProductionSafety([prompt, style, category, materialType, materialOption]);
+    if (!safety.ok) return Response.json({ error: safety.message }, { status: 400 });
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {

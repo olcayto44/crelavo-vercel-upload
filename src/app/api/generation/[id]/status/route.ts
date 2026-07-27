@@ -1,3 +1,4 @@
+import { spendCreditBuckets } from "@/lib/credit-rollover";
 import { getGenerationStatus } from "@/lib/generation";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -13,7 +14,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     const supabase = supabaseAdmin();
     const { data: videoRequest, error: readError } = await supabase
       .from("video_requests")
-      .select("id, user_id, status, generation_job_id, generation_status, generation_provider, reserved_credits, estimated_credits")
+      .select("id, user_id, status, generation_job_id, generation_status, generation_provider, reserved_credits, estimated_credits, final_video_url, generation_completed_at")
       .eq("id", id)
       .single();
 
@@ -45,25 +46,27 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       return Response.json({ request: data, generation: result });
     }
 
-    const reservedCredits = videoRequest.reserved_credits ?? videoRequest.estimated_credits ?? 0;
+    const reservedCredits = Number(videoRequest.reserved_credits ?? videoRequest.estimated_credits ?? 0) || 0;
+    if (reservedCredits <= 0) {
+      return Response.json({ error: "Completed provider job cannot be finalized because no reserved credits are recorded." }, { status: 409 });
+    }
     const { data: balanceRow, error: balanceError } = await supabase
       .from("credit_balances")
-      .select("balance, reserved")
+      .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits")
       .eq("user_id", videoRequest.user_id)
       .maybeSingle();
 
     if (balanceError) throw balanceError;
 
-    const balance = balanceRow?.balance ?? 0;
-    const reserved = balanceRow?.reserved ?? 0;
+    const bucketSpend = spendCreditBuckets({ row: balanceRow, amount: reservedCredits });
+    const nextReserved = Math.max(0, Number(balanceRow?.reserved ?? 0) - reservedCredits);
 
     const { error: balanceUpdateError } = await supabase
       .from("credit_balances")
       .upsert({
         user_id: videoRequest.user_id,
-        balance: Math.max(0, balance - reservedCredits),
-        reserved: Math.max(0, reserved - reservedCredits),
-        updated_at: new Date().toISOString()
+        ...bucketSpend,
+        reserved: nextReserved
       }, { onConflict: "user_id" });
 
     if (balanceUpdateError) throw balanceUpdateError;

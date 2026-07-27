@@ -127,6 +127,14 @@ for (const term of ["maybeCreateRenderAfterVisualReady", "createShotstackRender"
 for (const term of ["buildGenericVideoPlan", "runGenericVideoPipeline", "genericVideoProviderChain", "createVoiceover", "createSubtitleFile", "createShotstackRender", "genericVideoPlan"]) {
   if (!genericVideoProvider.includes(term) && !automationStart.includes(term) && !automationStatus.includes(term)) throw new Error(`generic video provider chain missing term: ${term}`);
 }
+const legacyGenerationStatus = readFileSync("src/app/api/generation/[id]/status/route.ts", "utf8");
+const imagePreviewRoute = readFileSync("src/app/api/preview/route.ts", "utf8");
+for (const term of ["spendCreditBuckets", "current_subscription_credits", "rolled_over_credits", "Completed provider job cannot be finalized"]) {
+  if (!legacyGenerationStatus.includes(term)) throw new Error(`legacy video generation spend guard missing term: ${term}`);
+}
+for (const term of ["image-preview:ip", "rateLimit", "rejectSuspiciousText", "validateProductionSafety", "OPENAI_IMAGE_MODEL"]) {
+  if (!imagePreviewRoute.includes(term)) throw new Error(`image preview generation guard missing term: ${term}`);
+}
 for (const term of ["mirrorProviderAsset", "fetch(input.sourceUrl", "uploadProviderAsset(`${input.productionId}/${input.filenameBase}.${extension}`"]) {
   if (!providerStorage.includes(term)) throw new Error(`provider storage mirror missing term: ${term}`);
 }
