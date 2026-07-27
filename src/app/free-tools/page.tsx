@@ -38,7 +38,7 @@ const couponHuntCards = [
   },
   {
     title: "Safe FOMO guardrail",
-    text: "Use wording like 'campaign-day hidden codes' or 'up to 50% off when active'. Do not show fake scarcity, expired codes or permanent daily resets.",
+    text: "Use wording like 'campaign-day hidden codes' or 'up to 50% off when active'. Do not show invented scarcity, expired codes or permanent daily resets.",
     href: "/admin/growth"
   }
 ];

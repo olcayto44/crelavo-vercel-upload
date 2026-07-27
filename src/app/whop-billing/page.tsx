@@ -109,7 +109,7 @@ export default async function WhopBillingPage() {
           <span className="badge">Checkout recovery / abandoned checkout</span>
           <h2>If checkout is not completed, reminders must stay honest and consent-safe</h2>
           <p style={{ color: "var(--muted)" }}>
-            Crelavo can prepare abandoned-checkout recovery for Whop or n8n/Resend, but it should only run when the user has provided an email or the payment provider exposes a compliant event. Recovery copy must explain the selected preview setup, not invent fake urgency.
+            Crelavo can prepare abandoned-checkout recovery for Whop or n8n/Resend, but it should only run when the user has provided an email or the payment provider exposes a compliant event. Recovery copy must explain the selected preview setup, not invent urgency.
           </p>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {checkoutRecoveryRules.map((item) => (

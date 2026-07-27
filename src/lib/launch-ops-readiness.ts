@@ -135,3 +135,28 @@ export const ugcDemoFunnelPlan = {
   steps: ["demo sample URL", "creator/product brief", "screen recording approval", "UGC caption/script pack", "rights/consent check", "manual publish or delivery handoff", "conversion tracking"],
   proofGuard: "UGC/demo funnel must show real approved demos or clearly marked samples only; no invented customer outcomes, actors, sales, reviews or performance claims."
 };
+
+export const publicSiteCleanupPlan = {
+  status: "public_site_cleanup_guarded",
+  scope: ["homepage", "pricing", "Whop billing", "checkout", "product pages", "free tools", "samples/showcase", "SEO landing pages"],
+  cleanupChecks: [
+    "Remove or replace placeholder, TODO, awaiting-real-proof and unapproved customer/logo language from buyer-facing pages.",
+    "Keep claims specific and honest; no fake urgency, fake scarcity, fake local proof, fake purchases, winner-ad claims or unverified ROAS/CAC.",
+    "Keep one clear primary H1 per public page and avoid duplicate hero messaging across programmatic routes.",
+    "Use preview/sample wording for demos until real customer permission and live E2E proof exist.",
+    "Keep Whop checkout/product descriptions in English for global purchase surfaces."
+  ],
+  releaseGate: "Public site cleanup is code-guarded, but final visual/content approval still requires owner review before paid traffic."
+};
+
+export const postLaunchV2VisionPlan = {
+  status: "v2_vision_planned_after_launch_proof",
+  tracks: [
+    { track: "Provider automation V2", gate: "Real provider success/failure data, cost ledger and account approvals are available." },
+    { track: "Growth intelligence V2", gate: "Search Console, referral, Whop CTR/conversion and social post data exist." },
+    { track: "Advanced media products V2", gate: "Stable API/provider economics and usage rights are verified." },
+    { track: "Marketplace / community V2", gate: "Approved showcase examples, creator rights and moderation workflow are proven." },
+    { track: "Enterprise/admin V2", gate: "Live support, fraud, finance and production QA patterns are understood from real users." }
+  ],
+  rule: "V2 ideas should not distract from launch hardening; prioritize only after real Whop/payment/provider E2E, public site approval and first growth data are available."
+};

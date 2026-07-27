@@ -334,6 +334,12 @@ for (const term of ["globalSocialContentKitPlan", "globalSocialContentKit", "glo
 for (const term of ["ugcDemoFunnelPlan", "ugcDemoFunnel", "ugc_demo_funnel_ready_review_gated", "review_gated_demo_funnel_ready", "rights and consent check"]) {
   if (!launchOpsReadiness.includes(term) && !socialDistribution.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`UGC demo funnel guard missing term: ${term}`);
 }
+for (const term of ["publicSiteCleanupPlan", "public_site_cleanup_guarded", "fake urgency", "fake scarcity", "Whop checkout/product descriptions in English", "Public site temizliği"]) {
+  if (!launchOpsReadiness.includes(term) && !publicPlaceholderH1Audit.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`public site cleanup guard missing term: ${term}`);
+}
+for (const term of ["postLaunchV2VisionPlan", "v2_vision_planned_after_launch_proof", "Provider automation V2", "Growth intelligence V2", "V2 roadmap"]) {
+  if (!launchOpsReadiness.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`post-launch V2 vision guard missing term: ${term}`);
+}
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);
 }
