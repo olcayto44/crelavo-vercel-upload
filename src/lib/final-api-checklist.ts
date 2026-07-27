@@ -1,3 +1,5 @@
+import { couponHuntCampaignGuard, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
+
 type ChecklistStatus = "ready" | "missing" | "pending" | "optional";
 
 type ChecklistItem = {
@@ -293,6 +295,12 @@ export function buildFinalApiChecklist() {
       "Real AI/video provider success and forced-failure paths.",
       "Automatic referral/coupon/share-to-earn rewards and clean-export unlocks."
     ],
+    launchCompletionControls: {
+      realProductionE2EChecklist,
+      publicPlaceholderH1Audit,
+      referralRewardAutomationGuard,
+      couponHuntCampaignGuard
+    },
     apiAutomationReadinessGates,
     providerFailoverChecklist,
     resendEmailTemplates,

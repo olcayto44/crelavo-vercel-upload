@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
+import { referralRewardAutomationGuard } from "@/lib/launch-completion-controls";
 import { shareToEarnLoop } from "@/lib/growth-launch-systems";
 
 const viralLoopSteps = [
@@ -58,9 +59,9 @@ export default function DashboardShareToEarnPage() {
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Abuse guard</span>
         <h2>Reward rules stay strict until automation is ready</h2>
-        <p style={{ color: "var(--muted)" }}>Rewards remain manual until self-referral, duplicate account, suspicious IP and Whop payment idempotency checks are proven.</p>
+        <p style={{ color: "var(--muted)" }}>{referralRewardAutomationGuard.guardrail}</p>
         <ul className="feature-list">
-          {viralGuardrails.map((rule) => <li key={rule}>{rule}</li>)}
+          {[...viralGuardrails, ...referralRewardAutomationGuard.abuseControls].map((rule) => <li key={rule}>{rule}</li>)}
         </ul>
       </section>
     </DashboardShell>

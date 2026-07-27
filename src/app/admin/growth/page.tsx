@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/AdminShell";
+import { couponHuntCampaignGuard, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "@/lib/launch-completion-controls";
 import { AdminGrowthIntelligenceRequests } from "@/components/AdminGrowthIntelligenceRequests";
 import { communityShowcaseAdminChecklist, communityShowcaseTemplates } from "@/lib/community-showcase";
 import { caseStudyProofs, socialProofAdminChecklist, testimonialProofs, trustedProofSlots, verifiedMetricSlots } from "@/lib/social-proof";
@@ -241,6 +242,17 @@ export default function AdminGrowthPage() {
               <p>{item.note}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Final 19–22 launch gates</span>
+        <h2>Real E2E, public scan, referral rewards and coupon hunt cannot be faked</h2>
+        <div className="admin-category-grid" style={{ marginTop: 16 }}>
+          <div className="card admin-category-card"><span className="badge">19 · {realProductionE2EChecklist.status}</span><h3>{realProductionE2EChecklist.title}</h3><p>{realProductionE2EChecklist.successDefinition}</p></div>
+          <div className="card admin-category-card"><span className="badge">20 · {publicPlaceholderH1Audit.status}</span><h3>Public placeholder + H1 audit</h3><p>{publicPlaceholderH1Audit.remediation}</p></div>
+          <div className="card admin-category-card"><span className="badge">21 · {referralRewardAutomationGuard.status}</span><h3>Referral reward automation</h3><p>{referralRewardAutomationGuard.guardrail}</p></div>
+          <div className="card admin-category-card"><span className="badge">22 · {couponHuntCampaignGuard.status}</span><h3>Coupon hunt campaign</h3><p>{couponHuntCampaignGuard.publicCopyGuard}</p></div>
         </div>
       </section>
 
