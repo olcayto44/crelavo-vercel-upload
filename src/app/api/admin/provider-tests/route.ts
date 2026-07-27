@@ -1,4 +1,5 @@
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { getApifyRun } from "@/lib/providers/apify";
 import { getKeywordVolume } from "@/lib/providers/dataforseo";
 import { geocodeAddress } from "@/lib/providers/google-maps";
@@ -95,8 +96,11 @@ function testCloudflare() {
   return {
     connected: true,
     required: [...providerEnvNames("cloudflareApiToken"), ...providerEnvNames("cloudflareZoneId")],
-    optional: [...providerEnvNames("cloudflareAccountId"), "CLOUDFLARE_WAF_RULESET_ID", "CLOUDFLARE_RATE_LIMIT_RULESET_ID"],
-    note: "Dry config check only. Live validation still requires Cloudflare dashboard/DNS/WAF verification and one allowed + one blocked request test."
+    optional: cloudflareWafFinalChecks.optionalEnv,
+    protectedRoutes: cloudflareWafFinalChecks.protectedRoutes,
+    manualValidation: cloudflareWafFinalChecks.manualValidation,
+    providerLiveVerification: providerLiveVerificationChecks.status,
+    note: cloudflareWafFinalChecks.guardrail
   };
 }
 

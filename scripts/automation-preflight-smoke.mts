@@ -130,6 +130,10 @@ const whopCurrencyGuard = readFileSync("src/lib/whop-currency-guard.ts", "utf8")
 const llmManifesto = readFileSync("src/lib/llm-manifesto.ts", "utf8");
 const launchDistributionPage = readFileSync("src/app/ai-tool-launch-distribution-plan/page.tsx", "utf8");
 const whopBillingPage = readFileSync("src/app/whop-billing/page.tsx", "utf8");
+const adSniperV2 = readFileSync("src/lib/ad-sniper-v2.ts", "utf8");
+const premiumExpansionPage = readFileSync("src/app/dashboard/premium-expansion/page.tsx", "utf8");
+const edgeProviderFinalChecks = readFileSync("src/lib/edge-provider-final-checks.ts", "utf8");
+const adminProviderTestsRoute = readFileSync("src/app/api/admin/provider-tests/route.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -221,6 +225,15 @@ for (const term of ["publicLlmManifesto", "AI-readable Crelavo facts", "aiCitati
 }
 for (const term of ["organicDirectoryBacklinkOperations", "submission URL", "listing URL", "Product Hunt / Hacker News"]) {
   if (!organicDirectory.includes(term) || !launchDistributionPage.includes("Directory backlink operations")) throw new Error(`directory backlink operation guard missing term: ${term}`);
+}
+for (const term of ["adSniperV2Plan", "extractedStructureOnly", "prohibitedReuse", "consentCheckbox", "avoid risky language"]) {
+  if (!adSniperV2.includes(term) || !premiumExpansionPage.includes("Reference ad analysis without competitor copying")) throw new Error(`ad sniper V2 guard missing term: ${term}`);
+}
+for (const term of ["cloudflareWafFinalChecks", "protectedRoutes", "blocked invalid webhook", "Cloudflare readiness is not complete"]) {
+  if (!edgeProviderFinalChecks.includes(term) || !providerReadinessRoute.includes("finalGuardrail") || !adminProviderTestsRoute.includes("manualValidation")) throw new Error(`Cloudflare WAF final guard missing term: ${term}`);
+}
+for (const term of ["providerLiveVerificationChecks", "connected_pending_real_production_e2e", "real provider output", "payment -> credit reserve/spend -> provider output -> delivery -> notification"]) {
+  if (!edgeProviderFinalChecks.includes(term) || !providerReadinessRoute.includes("providerLiveVerification") || !adminProviderTestsRoute.includes("providerLiveVerification")) throw new Error(`provider live verification guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

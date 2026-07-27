@@ -1,3 +1,4 @@
+import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { buildProviderPlan, providerRouteMap } from "@/lib/provider-plan";
 import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
 import { platformVoices } from "@/lib/voice-library";
@@ -206,11 +207,9 @@ export async function GET() {
       ready: cloudflareReady,
       required: [...providerEnvNames("cloudflareApiToken"), ...providerEnvNames("cloudflareZoneId")],
       optional: [...providerEnvNames("cloudflareAccountId"), "CLOUDFLARE_WAF_RULESET_ID", "CLOUDFLARE_RATE_LIMIT_RULESET_ID"],
-      manualValidation: [
-        "Confirm crelavo.com DNS and SSL are active in Cloudflare.",
-        "Enable WAF/rate-limit rules for /admin, /auth, /api/payments, /api/leads, /api/webhooks and provider callback endpoints.",
-        "Run one blocked invalid webhook/request test and one allowed checkout/provider callback test."
-      ]
+      manualValidation: cloudflareWafFinalChecks.manualValidation,
+      protectedRoutes: cloudflareWafFinalChecks.protectedRoutes,
+      finalGuardrail: cloudflareWafFinalChecks.guardrail
     },
     turnstile: {
       provider: "cloudflare-turnstile",
@@ -219,6 +218,7 @@ export async function GET() {
       optional: ["NEXT_PUBLIC_TURNSTILE_SITE_KEY"],
       mode: "recommended_for_public_forms_before_paid_traffic"
     },
+    providerLiveVerification: providerLiveVerificationChecks,
     note: "Secrets are never returned; only readiness booleans, model choices and env variable names are exposed."
   });
 }

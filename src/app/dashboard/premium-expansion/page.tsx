@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
+import { adSniperV2Plan } from "@/lib/ad-sniper-v2";
 import { premiumExpansionSystem } from "@/lib/growth-launch-systems";
 
 export default function DashboardPremiumExpansionPage() {
@@ -23,6 +24,17 @@ export default function DashboardPremiumExpansionPage() {
             </div>
           </div>
         ))}
+      </section>
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">{adSniperV2Plan.name}</span>
+        <h2>Reference ad analysis without competitor copying</h2>
+        <p style={{ color: "var(--muted)" }}>{adSniperV2Plan.positioning}</p>
+        <div className="admin-category-grid">
+          <div className="card admin-category-card"><h3>Extract only structure</h3><ul>{adSniperV2Plan.extractedStructureOnly.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div className="card admin-category-card"><h3>Never reuse</h3><ul>{adSniperV2Plan.prohibitedReuse.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div className="card admin-category-card"><h3>V2 output</h3><ul>{adSniperV2Plan.outputPlan.map((item) => <li key={item}>{item}</li>)}</ul></div>
+        </div>
+        <p className="workspace-action-note"><strong>Rights checkbox:</strong> {adSniperV2Plan.consentCheckbox}</p>
       </section>
     </DashboardShell>
   );

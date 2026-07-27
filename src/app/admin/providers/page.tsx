@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/AdminShell";
 import { AdminProviderTestPanel } from "@/components/AdminProviderTestPanel";
+import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { buildProviderPlan } from "@/lib/provider-plan";
 
 function statusLabel(status: string) {
@@ -89,6 +90,24 @@ export default function AdminProvidersPage() {
       </section>
 
       <AdminProviderTestPanel />
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Cloudflare / WAF final validation</span>
+        <h2>Edge security must be manually verified before paid traffic</h2>
+        <p style={{ color: "var(--muted)" }}>{cloudflareWafFinalChecks.guardrail}</p>
+        <div className="admin-info-grid">
+          {cloudflareWafFinalChecks.manualValidation.map((item, index) => <div key={item}><span>Cloudflare check {index + 1}</span><strong>{item}</strong><small>Protected routes: {cloudflareWafFinalChecks.protectedRoutes.slice(0, 4).join(", ")}...</small></div>)}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Provider live verification</span>
+        <h2>API keys are connected only after real provider E2E proves delivery</h2>
+        <p style={{ color: "var(--muted)" }}>{providerLiveVerificationChecks.guardrail}</p>
+        <div className="admin-info-grid">
+          {providerLiveVerificationChecks.liveVerification.map((item, index) => <div key={item}><span>Provider check {index + 1}</span><strong>{item}</strong><small>{providerLiveVerificationChecks.providerGroups.join(", ")}</small></div>)}
+        </div>
+      </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Safe mode policy</span>
