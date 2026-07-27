@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { legalSupportCancellationControls, manualDisputeEvidenceBundle, manualDisputeEvidenceChecklist } from "@/lib/launch-final-controls";
+import { proofPermissionChecklist } from "@/lib/social-proof";
 
 export default function AdminLegalFinalPage() {
   return (
@@ -19,6 +20,13 @@ export default function AdminLegalFinalPage() {
           ))}
         </div>
       </section>
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Proof / logo permission</span>
+        <h2>Real proof can go public only after written approval</h2>
+        <p style={{ color: "var(--muted)" }}>Use this before publishing customer logos, testimonials, before/after claims or performance metrics.</p>
+        <ul>{proofPermissionChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Refund / dispute evidence</span>
         <h2>Manual evidence checklist for refunds, disputes and chargebacks</h2>

@@ -41,6 +41,7 @@
     "smoke:api-cost-abuse": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/api-cost-abuse-smoke.mts",
     "smoke:api-guard-admin": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/api-guard-admin-smoke.mts",
     "smoke:e2e-dry-run": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/e2e-dry-run-smoke.mts",
+    "smoke:public-placeholder-h1": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/public-placeholder-h1-audit.mts",
     "smoke:non-payment-e2e": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/non-payment-e2e-smoke.mts",
     "start": "next start",
     "lint": "npm run smoke && npm run build"

@@ -271,7 +271,8 @@ export function buildFinalApiChecklist() {
       "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/assistant-conversation-smoke.mts",
       "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/non-payment-e2e-smoke.mts",
       "npm run smoke:security-privacy",
-      "npm run smoke:final-api-env-checklist"
+      "npm run smoke:final-api-env-checklist",
+      "npm run smoke:public-placeholder-h1"
     ],
     liveE2EOrder: [
       "Confirm /admin/launch-readiness has no unexpected missing blocker.",

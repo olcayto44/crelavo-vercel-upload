@@ -144,6 +144,14 @@ export const caseStudyProofs: CaseStudyProof[] = [
   }
 ];
 
+export const proofPermissionChecklist = [
+  "Written permission for every customer logo before public display.",
+  "Written approval for every testimonial name, role, company and quote.",
+  "Verified source for every ROAS, CAC, revenue lift, conversion lift or cost reduction metric.",
+  "Before/after examples must include source material ownership and customer approval.",
+  "Unapproved proof remains a sample scenario, internal admin note or hidden draft only."
+];
+
 export const socialProofAdminChecklist = [
   "Keep public proof scenarios separate from real customer testimonials until quotes are approved.",
   "Use role-based scenario labels instead of fake names when the proof is an internal MVP example.",
