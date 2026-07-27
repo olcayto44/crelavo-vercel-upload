@@ -39,7 +39,7 @@ const success = computeProviderSuccessSpend({
 assertEqual(success.spendAmount, 400, "success spend");
 assertEqual(success.nextBalance, 600, "success next balance");
 assertEqual(success.nextReserved, 0, "success next reserved");
-assertEqual(success.finalizedReservedCredits, 0, "success finalized reserved");
+assertEqual(success.finalizedReservedCredits, 400, "success finalized reserved preserved for production output audit");
 assertEqual(success.creditResolution.status, "spent_reserved", "success resolution status");
 
 const cappedSuccess = computeProviderSuccessSpend({

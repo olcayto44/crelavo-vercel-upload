@@ -1,6 +1,14 @@
+import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { getApifyDatasetItems, getApifyRun, startApifyRun } from "@/lib/providers/apify";
 
+function assertSeoProviderAccess(request: Request, body?: Record<string, unknown>) {
+  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  return null;
+}
+
 export async function GET(request: Request) {
+  const accessError = assertSeoProviderAccess(request);
+  if (accessError) return accessError;
   const url = new URL(request.url);
   const action = url.searchParams.get("action") || "status";
   const runId = url.searchParams.get("run_id") || "";
@@ -25,6 +33,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const accessError = assertSeoProviderAccess(request, body);
+    if (accessError) return accessError;
     const actorId = String(body.actor_id ?? body.actorId ?? "").trim();
     const input = body.input && typeof body.input === "object" ? body.input as Record<string, unknown> : {};
 

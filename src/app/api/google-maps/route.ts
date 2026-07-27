@@ -1,6 +1,14 @@
+import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { getPlaceDetails, geocodeAddress, searchPlaces } from "@/lib/providers/google-maps";
 
+function assertSeoProviderAccess(request: Request) {
+  if (!isAdminRequest(request)) return adminRequiredResponse();
+  return null;
+}
+
 export async function GET(request: Request) {
+  const accessError = assertSeoProviderAccess(request);
+  if (accessError) return accessError;
   const url = new URL(request.url);
   const action = url.searchParams.get("action") || "search";
   const query = url.searchParams.get("query") || url.searchParams.get("address") || "";

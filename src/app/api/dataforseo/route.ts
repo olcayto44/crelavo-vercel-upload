@@ -1,3 +1,4 @@
+import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { getKeywordVolume, getSerpLive } from "@/lib/providers/dataforseo";
 
 function keywordsFrom(value: unknown) {
@@ -5,7 +6,14 @@ function keywordsFrom(value: unknown) {
   return String(value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 }
 
+function assertSeoProviderAccess(request: Request, body?: Record<string, unknown>) {
+  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  return null;
+}
+
 export async function GET(request: Request) {
+  const accessError = assertSeoProviderAccess(request);
+  if (accessError) return accessError;
   const url = new URL(request.url);
   const action = url.searchParams.get("action") || "serp";
   const keyword = url.searchParams.get("keyword") || "";
@@ -32,6 +40,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const accessError = assertSeoProviderAccess(request, body);
+    if (accessError) return accessError;
     const action = String(body.action ?? "serp");
     const locationName = body.location_name || body.locationName;
     const languageCode = body.language_code || body.languageCode;

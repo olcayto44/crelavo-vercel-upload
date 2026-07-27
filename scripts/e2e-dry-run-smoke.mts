@@ -127,15 +127,35 @@ const finalDeliveryRecord = {
   preview_url: "https://cdn.crelavo.test/final.mp4",
   delivery_link: "https://cdn.crelavo.test/final.mp4",
   delivery_zip_url: "https://cdn.crelavo.test/final.mp4",
+  reserved_credits: 0,
   output_json: {
     finalVideoUrl: "https://cdn.crelavo.test/final.mp4",
+    providerFinalUrl: "https://provider.crelavo.test/final.mp4",
+    finalAssetMirror: { status: "mirrored", storedUrl: "https://cdn.crelavo.test/final.mp4" },
+    providerStatus: "shotstack_succeeded",
+    providerLifecycle: { render: { normalizedStatus: { status: "succeeded" } } },
+    outputRegistry: [{ kind: "video", url: "https://cdn.crelavo.test/final.mp4" }],
     creditResolution: successCredit.creditResolution,
+    finalizedReservedCredits: successCredit.finalizedReservedCredits,
+    workflowState: {
+      stage: "ready",
+      reservedCredits: 0,
+      deliveryReady: true
+    },
     completionEmailResult: { sent: true }
   }
 };
 assertEqual(finalDeliveryRecord.status, "ready", "final delivery status");
+assertEqual(finalDeliveryRecord.automation_status, "completed", "final delivery automation completed");
+assertEqual(finalDeliveryRecord.generation_status, "final_video_ready", "final delivery generation status");
+assertEqual(finalDeliveryRecord.reserved_credits, 0, "final production reserved credits cleared");
 assertEqual(finalDeliveryRecord.output_json.creditResolution.status, "spent_reserved", "final delivery spent reserved");
+assertEqual(finalDeliveryRecord.output_json.finalizedReservedCredits, 1200, "finalized reserved credits preserved in output json");
+assertEqual(finalDeliveryRecord.output_json.workflowState.reservedCredits, 0, "workflow state reserved credits cleared");
+assertEqual(finalDeliveryRecord.output_json.workflowState.deliveryReady, true, "workflow state delivery ready");
 assertIncludes(finalDeliveryRecord.delivery_link, "final.mp4", "final delivery link");
+assertIncludes(finalDeliveryRecord.preview_url, "final.mp4", "final preview link");
+assertIncludes(finalDeliveryRecord.delivery_zip_url, "final.mp4", "final zip delivery link");
 assertEqual(finalDeliveryRecord.output_json.completionEmailResult.sent, true, "completion email result recorded");
 
 const cancelledSubscription = {
@@ -156,6 +176,16 @@ assertEqual(cancelCredit.cancellationFee, 200, "cancel fee");
 const assistantWorkspace = readFileSync("src/components/AssistantWorkspace.tsx", "utf8");
 for (const term of ["productionCreditInsufficient", "Insufficient credits for this production", "Start production", "availableProductionCredits"]) {
   assertIncludes(assistantWorkspace, term, `assistant credit guard ${term}`);
+}
+
+const automationStatusRoute = readFileSync("src/app/api/automation/status/route.ts", "utf8");
+for (const term of ["reserved_credits: 0", "finalizedReservedCredits", "completionEmailResult", "finalProductionState", "providerLifecycle", "outputRegistry"]) {
+  assertIncludes(automationStatusRoute, term, `automation finalization ${term}`);
+}
+
+const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
+for (const term of ["status: \"queued\"", "generation_status: \"automation_queued\"", "reserved_credits: estimatedCredits", "type: \"reserve\""]) {
+  assertIncludes(productionsRoute, term, `production reserve creation ${term}`);
 }
 
 const adminProductions = readFileSync("src/components/AdminProductionsTable.tsx", "utf8");

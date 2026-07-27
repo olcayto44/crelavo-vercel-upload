@@ -44,7 +44,7 @@ export function computeProviderSuccessSpend(input: CreditBalanceInput & { reserv
     spendAmount,
     nextBalance: Math.max(0, balance - spendAmount),
     nextReserved: Math.max(0, reserved - reservedCredits),
-    finalizedReservedCredits: 0,
+    finalizedReservedCredits: reservedCredits,
     event: spendAmount > 0 ? { type: "spend", amount: spendAmount, note: `Reserved credits spent after provider success: ${input.productionTitle}` } : null,
     creditResolution: {
       status: "spent_reserved",

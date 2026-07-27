@@ -1,3 +1,4 @@
+import { applyCreditPurchaseToBuckets } from "@/lib/credit-rollover";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -226,25 +227,26 @@ async function addCredits(input: {
 
   const { data: balanceRow, error: balanceReadError } = await supabase
     .from("credit_balances")
-    .select("balance, reserved")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, rollover_cap, subscription_status, billing_cycle_ends_at, active_subscription_package, active_subscription_billing")
     .eq("user_id", profile.id)
     .maybeSingle();
 
   if (balanceReadError) throw balanceReadError;
 
-  const currentBalance = Number(balanceRow?.balance ?? 0) || 0;
-  const currentReserved = Number(balanceRow?.reserved ?? 0) || 0;
-  const nextBalance = currentBalance + input.credits;
+  const bucketUpdate = applyCreditPurchaseToBuckets({
+    row: balanceRow,
+    product: input.product,
+    billing: input.billing === "yearly" ? "yearly" : input.billing === "one_time" ? "one_time" : "monthly",
+    credits: input.credits
+  });
 
   const { data: balance, error: balanceError } = await supabase
     .from("credit_balances")
     .upsert({
       user_id: profile.id,
-      balance: nextBalance,
-      reserved: currentReserved,
-      updated_at: new Date().toISOString()
+      ...bucketUpdate
     }, { onConflict: "user_id" })
-    .select("balance, reserved, updated_at")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, rollover_cap, billing_cycle_ends_at, updated_at")
     .single();
 
   if (balanceError) throw balanceError;

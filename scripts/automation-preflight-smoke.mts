@@ -178,6 +178,12 @@ for (const term of ["seo/keyword-opportunity-plan.md", "seo/competitor-analysis-
 for (const term of ["optionalEnv(\"DATAFORSEO_BASE_URL\")", "optionalEnv(\"DATAFORSEO_LOCATION_NAME\")", "optionalEnv(\"DATAFORSEO_LANGUAGE_CODE\")"]) {
   if (!dataForSeoProvider.includes(term)) throw new Error(`DataForSEO provider env alias missing term: ${term}`);
 }
+const dataForSeoRoute = readFileSync("src/app/api/dataforseo/route.ts", "utf8");
+const apifyRoute = readFileSync("src/app/api/apify/route.ts", "utf8");
+const googleMapsRoute = readFileSync("src/app/api/google-maps/route.ts", "utf8");
+for (const term of ["adminRequiredResponse", "isAdminRequest", "assertSeoProviderAccess"]) {
+  if (!dataForSeoRoute.includes(term) || !apifyRoute.includes(term) || !googleMapsRoute.includes(term)) throw new Error(`SEO provider public route guard missing term: ${term}`);
+}
 for (const term of ["optionalEnv(\"APIFY_BASE_URL\")", "requireProviderEnv(\"apify\")"]) {
   if (!apifyProvider.includes(term)) throw new Error(`Apify provider env alias missing term: ${term}`);
 }

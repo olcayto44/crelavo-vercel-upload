@@ -51,7 +51,7 @@ for (const term of ["payment.succeeded", "membership.deactivated", "WHOP_WEBHOOK
 }
 
 const whopReconcileRoute = readFileSync("src/app/api/whop/reconcile-payment/route.ts", "utf8");
-for (const term of ["retrieveWhopPayment", "preview_setup_payment_no_full_credits", "subscription_renewal_credits", "subscription_create", "trialing", "amountMatchesUsd(amount, setupFeeUsd)", "amountMatchesUsd(amount, expectedRenewalUsd)"]) {
+for (const term of ["retrieveWhopPayment", "preview_setup_payment_no_full_credits", "subscription_renewal_credits", "subscription_create", "trialing", "amountMatchesUsd(amount, setupFeeUsd)", "amountMatchesUsd(amount, expectedRenewalUsd)", "applyCreditPurchaseToBuckets", "current_subscription_credits", "rolled_over_credits", "rollover_cap", "source=checkout_complete_fallback"]) {
   assert(whopReconcileRoute.includes(term), `Whop reconcile route missing preview/subscription guard term: ${term}`);
 }
 
