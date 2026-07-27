@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { CampaignPromoClient } from "@/components/CampaignPromoClient";
 import { getConfiguredAdSlots } from "@/lib/ad-config";
+import { geoOfferFromHeaders } from "@/lib/geo-offers";
 
 type CampaignPromoPayload = {
   eyebrow?: string;
@@ -51,5 +53,6 @@ export async function CampaignPromoSlot() {
   const payload = parsePromoPayload(slot.code);
   if (!payload) return null;
 
-  return <CampaignPromoClient {...payload} />;
+  const geoOffer = geoOfferFromHeaders(await headers());
+  return <CampaignPromoClient {...payload} eyebrow={geoOffer.eyebrow} title={geoOffer.title} body={geoOffer.body} cta={geoOffer.cta} href={geoOffer.href} kicker={geoOffer.kicker} bonusPrimary={geoOffer.bonusPrimary} bonusSecondary={geoOffer.bonusSecondary} priceBadge="$1,300/yr" storageKey={`crelavo-geo-team-${geoOffer.segment.toLowerCase()}-countdown`} countdownLabel="Preview window" />;
 }

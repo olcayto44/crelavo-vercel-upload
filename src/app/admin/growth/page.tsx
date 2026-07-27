@@ -85,8 +85,8 @@ const launchRetentionConversionIdeas = [
 ];
 
 const fomoRetentionExperiments = [
-  { title: "Truthful live activity proof", status: "planned", note: "Show Whop/payment or production activity only when it is real, anonymized and consent-safe. Avoid fake visitor counters or unverifiable scarcity claims." },
-  { title: "Streak and reward loop", status: "planned", note: "Test daily AI Ad Scorer streaks with capped bonus credits such as 7-day +100 and 30-day +500 after login, rate limits and abuse review." },
+  { title: "Truthful live activity proof", status: "connected_pending_live_e2e", note: "Homepage now calls /api/conversion/live-activity and shows only anonymized real lead_captures or production_requests events. If no real events exist, it shows nothing instead of fake counters or fabricated urgency." },
+  { title: "Streak and reward loop", status: "connected_pending_live_e2e", note: "Homepage daily streak capture now records source=daily_streak in lead_captures with 7-day +100 and 30-day +500 pending reward review markers. Credits are not minted automatically; abuse/account checks remain required." },
   { title: "Dynamic countdown", status: "planned", note: "Use clear campaign terms and honest session/user-level deadlines. Do not create a permanent fake countdown that resets deceptively for every visitor." }
 ];
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { CampaignPromoClient } from "@/components/CampaignPromoClient";
 import type { AdSlotConfig } from "@/lib/ad-config";
+import type { GeoOfferCopy } from "@/lib/geo-offers";
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -25,30 +26,30 @@ type SplashPromoPayload = {
   bonusSecondary?: string;
 };
 
-function parseSplashPromo(code: string) {
+function parseSplashPromo(code: string, geoOffer?: GeoOfferCopy) {
   try {
     const value = JSON.parse(code) as SplashPromoPayload;
     return {
-      eyebrow: String(value.eyebrow || "LIMITED TIME ONLY: VIP AGENCY BUNDLE"),
-      title: String(value.title || "Scale your e-commerce video production to the moon"),
-      body: String(value.body || "Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added: 174,000 total annual credits for 300+ AI ad drafts, premium Shopify/Amazon video variations, bulk social campaigns or client-ready deliveries. Start with a secure $20 Whop 24-hour preview and cancel in Whop before the main plan starts if it is not the right fit."),
-      cta: String(value.cta || "START 24-HOUR TEAM PREVIEW FOR $20"),
-      href: String(value.href || "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000"),
+      eyebrow: geoOffer?.eyebrow || String(value.eyebrow || "LIMITED TIME ONLY: VIP AGENCY BUNDLE"),
+      title: geoOffer?.title || String(value.title || "Scale your e-commerce video production to the moon"),
+      body: geoOffer?.body || String(value.body || "Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added: 174,000 total annual credits for 300+ AI ad drafts, premium Shopify/Amazon video variations, bulk social campaigns or client-ready deliveries. Start with a secure $20 Whop 24-hour preview and cancel in Whop before the main plan starts if it is not the right fit."),
+      cta: geoOffer?.cta || String(value.cta || "START 24-HOUR TEAM PREVIEW FOR $20"),
+      href: geoOffer?.href || String(value.href || "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,
       durationDays: Number(value.durationDays ?? 7),
       storageKey: String(value.storageKey || "crelavo-team-annual-174000-countdown"),
       countdownLabel: String(value.countdownLabel || "VIP deal ends in"),
       priceBadge: String(value.priceBadge || "$1,300/yr"),
-      kicker: String(value.kicker || "Normally $1,560/yr → now $1,300/yr + 30,000 BONUS credits"),
-      bonusPrimary: String(value.bonusPrimary || "174,000 annual credits"),
-      bonusSecondary: String(value.bonusSecondary || "$20 secure Whop preview")
+      kicker: geoOffer?.kicker || String(value.kicker || "Normally $1,560/yr → now $1,300/yr + 30,000 BONUS credits"),
+      bonusPrimary: geoOffer?.bonusPrimary || String(value.bonusPrimary || "174,000 annual credits"),
+      bonusSecondary: geoOffer?.bonusSecondary || String(value.bonusSecondary || "$20 secure Whop preview")
     };
   } catch {
     return null;
   }
 }
 
-export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
+export function SplashAdClient({ slot, geoOffer }: { slot: AdSlotConfig; geoOffer?: GeoOfferCopy }) {
   const [visible, setVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -99,7 +100,7 @@ export function SplashAdClient({ slot }: { slot: AdSlotConfig }) {
 
   if (!mounted || !visible) return null;
 
-  const promo = parseSplashPromo(slot.code);
+  const promo = parseSplashPromo(slot.code, geoOffer);
   const popup = (
     <aside className="splash-ad-backdrop" aria-label={slot.name} role="dialog" aria-modal="true">
       <div className="splash-ad-modal">

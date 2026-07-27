@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Clapperboard, Grid3X3, Plane, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
 import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
+import { DailyStreakCapture } from "@/components/DailyStreakCapture";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
+import { TruthfulLiveActivity } from "@/components/TruthfulLiveActivity";
+import { geoOfferFromHeaders } from "@/lib/geo-offers";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
@@ -141,6 +145,14 @@ const homeDeliveryTrust = [
 
 export default async function HomePage() {
   const siteContent = await getConfiguredSiteContentConfig();
+  const geoOffer = geoOfferFromHeaders(await headers());
+  const localizedPaidGrowthFunnelCards = paidGrowthFunnelCards.map((item) => item.href.includes("team-annual-174000") ? {
+    ...item,
+    badge: geoOffer.homepageBadge,
+    title: geoOffer.homepageTitle,
+    description: geoOffer.homepageDescription,
+    cta: "Start $20 team preview"
+  } : item);
 
   return (
     <>
@@ -185,7 +197,7 @@ export default async function HomePage() {
               <HardReloadLink className="btn" href="/free-tools/ad-performance-score-checker">Open free Ad Scorer</HardReloadLink>
             </div>
             <div className="admin-category-grid" style={{ marginTop: 16 }}>
-              {paidGrowthFunnelCards.map((item) => (
+              {localizedPaidGrowthFunnelCards.map((item) => (
                 <HardReloadLink className="card admin-category-card" href={item.href} key={item.title}>
                   <span className="badge">{item.badge}</span>
                   <h3>{item.title}</h3>
@@ -215,6 +227,9 @@ export default async function HomePage() {
               ))}
             </div>
           </section>
+
+          <TruthfulLiveActivity />
+          <DailyStreakCapture />
 
           <HomeShowcaseSlider title="Explore Crelavo" subtitle="A light moving showcase for samples, assets, Omni Assistant, generation and workspace tracking." slides={appLauncherSlides} />
 

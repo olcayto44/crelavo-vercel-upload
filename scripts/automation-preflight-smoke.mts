@@ -103,6 +103,14 @@ const paymentEmail = readFileSync("src/lib/payment-email.ts", "utf8");
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
 const lifecycleEmailRoute = readFileSync("src/app/api/payments/lifecycle-email/route.ts", "utf8");
 const checkoutButton = readFileSync("src/components/PaymentCheckoutButton.tsx", "utf8");
+const liveActivityRoute = readFileSync("src/app/api/conversion/live-activity/route.ts", "utf8");
+const streakRoute = readFileSync("src/app/api/conversion/streak/route.ts", "utf8");
+const truthfulLiveActivity = readFileSync("src/components/TruthfulLiveActivity.tsx", "utf8");
+const dailyStreakCapture = readFileSync("src/components/DailyStreakCapture.tsx", "utf8");
+const homePage = readFileSync("src/app/page.tsx", "utf8");
+const geoOffers = readFileSync("src/lib/geo-offers.ts", "utf8");
+const splashAd = readFileSync("src/components/SplashAd.tsx", "utf8");
+const campaignPromoSlot = readFileSync("src/components/CampaignPromoSlot.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -193,6 +201,36 @@ for (const term of ["preview_reminder", "abandoned_checkout", "sendPreviewRemind
 }
 for (const term of ["connected_pending_live_e2e", "checkout_intent", "23rd-hour preview reminder", "after about 1 hour"]) {
   if (!retentionGrowth.includes(term) && !adminGrowth.includes(term)) throw new Error(`Lifecycle recovery admin/readiness copy missing term: ${term}`);
+}
+for (const term of ["real_database_events_only", "lead_captures", "production_requests", "No fake activity", "anonymized"]) {
+  if (!liveActivityRoute.includes(term)) throw new Error(`truthful live activity route missing term: ${term}`);
+}
+for (const term of ["/api/conversion/live-activity", "Real activity only", "Live proof without fake counters"]) {
+  if (!truthfulLiveActivity.includes(term)) throw new Error(`truthful live activity component missing term: ${term}`);
+}
+for (const term of ["source: \"daily_streak\"", "pending_reward_review", "manual_review_required", "currentStreak", "500"]) {
+  if (!streakRoute.includes(term)) throw new Error(`daily streak route missing term: ${term}`);
+}
+for (const term of ["/api/conversion/streak", "Daily comeback loop", "no automatic credits"]) {
+  if (!dailyStreakCapture.includes(term)) throw new Error(`daily streak component missing term: ${term}`);
+}
+for (const term of ["TruthfulLiveActivity", "DailyStreakCapture"]) {
+  if (!homePage.includes(term)) throw new Error(`homepage conversion component missing term: ${term}`);
+}
+for (const term of ["GeoOfferSegment", "US", "UK", "EU", "CA_AU", "TR", "GLOBAL", "CA", "AU", "x-vercel-ip-country", "cf-ipcountry", "geoOfferGuardrail", "fake local scarcity"]) {
+  if (!geoOffers.includes(term)) throw new Error(`geo offer routing missing term: ${term}`);
+}
+for (const term of ["geoOfferFromHeaders", "geoOffer={geoOffer}"]) {
+  if (!splashAd.includes(term)) throw new Error(`splash geo offer wiring missing term: ${term}`);
+}
+for (const term of ["geoOfferFromHeaders", "priceBadge=\"$1,300/yr\"", "crelavo-geo-team"]) {
+  if (!campaignPromoSlot.includes(term)) throw new Error(`campaign promo geo offer wiring missing term: ${term}`);
+}
+for (const term of ["geoOfferFromHeaders", "localizedPaidGrowthFunnelCards", "homepageBadge", "homepageDescription"]) {
+  if (!homePage.includes(term)) throw new Error(`homepage geo Team card missing term: ${term}`);
+}
+for (const term of ["Truthful live activity proof", "Streak and reward loop", "connected_pending_live_e2e"]) {
+  if (!adminGrowth.includes(term)) throw new Error(`admin conversion roadmap missing term: ${term}`);
 }
 for (const staleTerm of ["Pre-API service workflow", "pre-API dashboard", "Final n8n/API automation can later"]) {
   if (growthIntelligencePage.includes(staleTerm) || growthIntelligencePanel.includes(staleTerm)) throw new Error(`stale Growth Intelligence copy still present: ${staleTerm}`);
