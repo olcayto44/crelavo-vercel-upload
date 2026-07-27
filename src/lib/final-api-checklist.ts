@@ -1,7 +1,7 @@
 import { coreLaunchSpine } from "./core-launch-spine";
 import { externalApiAccountReadiness, externalSubmissionTracker } from "./external-launch-operations";
 import { couponHuntCampaignGuard, liveTestFixIntake, mvpApiSeparation, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
-import { adminDebugMonitoringPlan, finalQaLaunchHardeningPlan, globalSeoExpansionPlan, mvpApiLaterTrack, productionFlowExpansionPlan, productionReadinessScorePlan, providerCostLedgerPlan, providerQueueConcurrencyGuard, technicalSeoIntegrityPlan } from "./launch-ops-readiness";
+import { adminDebugMonitoringPlan, directoryBacklinkTrackingPlan, finalQaLaunchHardeningPlan, globalSeoExpansionPlan, globalSocialContentKitPlan, mvpApiLaterTrack, productionFlowExpansionPlan, productionReadinessScorePlan, programmaticSeoQualityGuardPlan, providerCostLedgerPlan, providerQueueConcurrencyGuard, technicalSeoIntegrityPlan, ugcDemoFunnelPlan } from "./launch-ops-readiness";
 
 type ChecklistStatus = "ready" | "missing" | "pending" | "optional";
 
@@ -312,6 +312,10 @@ export function buildFinalApiChecklist() {
       finalQaLaunchHardeningPlan,
       globalSeoExpansionPlan,
       technicalSeoIntegrityPlan,
+      programmaticSeoQualityGuardPlan,
+      directoryBacklinkTrackingPlan,
+      globalSocialContentKitPlan,
+      ugcDemoFunnelPlan,
       externalSubmissionTracker,
       externalApiAccountReadiness,
       realProductionE2EChecklist,

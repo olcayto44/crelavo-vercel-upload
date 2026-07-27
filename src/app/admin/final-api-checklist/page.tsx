@@ -100,6 +100,10 @@ export default function FinalApiChecklistPage() {
           <div className="card admin-category-card"><span className="badge">15 · {checklist.launchCompletionControls.finalQaLaunchHardeningPlan.status}</span><h3>Final QA / launch hardening</h3><p>{checklist.launchCompletionControls.finalQaLaunchHardeningPlan.stopRules[0]}</p></div>
           <div className="card admin-category-card"><span className="badge">16 · {checklist.launchCompletionControls.globalSeoExpansionPlan.status}</span><h3>Tier-1 global SEO plan</h3><p>{checklist.launchCompletionControls.globalSeoExpansionPlan.qualityGuard}</p></div>
           <div className="card admin-category-card"><span className="badge">17 · {checklist.launchCompletionControls.technicalSeoIntegrityPlan.status}</span><h3>Technical SEO integrity</h3><p>{checklist.launchCompletionControls.technicalSeoIntegrityPlan.rule}</p></div>
+          <div className="card admin-category-card"><span className="badge">18 · {checklist.launchCompletionControls.programmaticSeoQualityGuardPlan.status}</span><h3>Programmatic SEO quality guard</h3><p>{checklist.launchCompletionControls.programmaticSeoQualityGuardPlan.qualityChecks[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">19 · {checklist.launchCompletionControls.directoryBacklinkTrackingPlan.status}</span><h3>Directory/backlink tracking</h3><p>{checklist.launchCompletionControls.directoryBacklinkTrackingPlan.guardrail}</p></div>
+          <div className="card admin-category-card"><span className="badge">20-21 · {checklist.launchCompletionControls.globalSocialContentKitPlan.status}</span><h3>Global social + No Fake Proof</h3><p>{checklist.launchCompletionControls.globalSocialContentKitPlan.noFakeProofRules[0]}</p></div>
+          <div className="card admin-category-card"><span className="badge">22 · {checklist.launchCompletionControls.ugcDemoFunnelPlan.status}</span><h3>UGC/demo funnel</h3><p>{checklist.launchCompletionControls.ugcDemoFunnelPlan.proofGuard}</p></div>
         </div>
       </section>
 

@@ -100,3 +100,38 @@ export const technicalSeoIntegrityPlan = {
   checks: ["canonical base URL", "hreflang map", "sitemap inclusion", "robots private-route exclusion", "SoftwareApplication/Product/FAQ/Breadcrumb schema", "internal links to pricing/dashboard/free tools", "Search Console URL inspection order"],
   rule: "Every global SEO page must have one canonical, correct sitemap eligibility, schema fit for the page type and honest internal links without fake geo-local proof."
 };
+
+export const programmaticSeoQualityGuardPlan = {
+  status: "templates_ready_with_thin_content_guard",
+  templates: ["country + use-case landing page", "platform + product video guide", "industry + campaign asset page", "problem + free tool page", "alternative comparison page"],
+  qualityChecks: [
+    "Each page must include unique local/use-case context, not only swapped country or platform words.",
+    "Block pages that lack canonical, sitemap eligibility, internal links, schema fit or owner-approved market priority.",
+    "Do not publish fake local proof, fake customer proof, fake performance metrics or unsupported local availability claims.",
+    "Search Console and analytics data must decide which template clusters expand next."
+  ]
+};
+
+export const directoryBacklinkTrackingPlan = {
+  status: "copy_pack_and_tracking_ready",
+  copyFields: ["one-line pitch", "short description", "long description", "categories", "keywords", "screenshots", "pricing summary", "founder note", "submission URL", "listing URL", "approval status", "follow-up owner"],
+  targetGroups: ["AI directories", "SaaS comparison listings", "startup directories", "AI newsletters", "Product Hunt / Hacker News later window"],
+  guardrail: "Directory/backlink work is manual submission and tracking only; no fake reviews, spam posts, paid launch spend or public claims before real Whop/payment/provider E2E is verified."
+};
+
+export const globalSocialContentKitPlan = {
+  status: "global_social_kit_ready_manual_publish",
+  platforms: ["LinkedIn", "X / Twitter", "TikTok / Reels", "YouTube Shorts", "Reddit / Indie Hackers", "Pinterest"],
+  kitItems: ["caption pack", "hook library", "short-form video ideas", "visual board map", "UTM templates", "weekly calendar", "manual publish checklist"],
+  noFakeProofRules: [
+    "Do not claim fake live users, fake purchases, fake ROAS, fake local traction or winner ads.",
+    "Use only owned samples, approved screenshots and clearly marked preview/demo outputs.",
+    "Manual review must happen before publishing; social kit does not auto-post."
+  ]
+};
+
+export const ugcDemoFunnelPlan = {
+  status: "ugc_demo_funnel_ready_review_gated",
+  steps: ["demo sample URL", "creator/product brief", "screen recording approval", "UGC caption/script pack", "rights/consent check", "manual publish or delivery handoff", "conversion tracking"],
+  proofGuard: "UGC/demo funnel must show real approved demos or clearly marked samples only; no invented customer outcomes, actors, sales, reviews or performance claims."
+};

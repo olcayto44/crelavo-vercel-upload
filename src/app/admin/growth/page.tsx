@@ -8,9 +8,9 @@ import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelP
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
-import { pinterestBoards, pinterestPinTemplates, pinterestYoutubeKeywords, socialContentCalendar, socialLaunchKeywords, socialSemiAutoChecklist, socialSharePlatforms, visualDistributionSemiAutoChecklist, youtubeShortsTemplates } from "@/lib/social-distribution";
+import { globalSocialContentKit, pinterestBoards, pinterestPinTemplates, pinterestYoutubeKeywords, socialContentCalendar, socialLaunchKeywords, socialSemiAutoChecklist, socialSharePlatforms, ugcDemoFunnel, visualDistributionSemiAutoChecklist, youtubeShortsTemplates } from "@/lib/social-distribution";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
-import { aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
+import { aiDirectoryBacklinkCopyPack, aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
 import { activationFunnelSteps, growthRewardReadiness, lifecycleNudges, retentionAdminChecklist, retentionGrowthSummary } from "@/lib/retention-growth";
 
 const metaSalesLaunchPlan = [
@@ -471,6 +471,32 @@ export default function AdminGrowthPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">19 · Directory/backlink copy pack</span>
+        <h2>AI directory submission copy and backlink tracking</h2>
+        <p style={{ color: "var(--muted)" }}>Track every manual submission from prepared copy to live listing URL; do not resubmit spam or claim unverified proof.</p>
+        <div className="admin-info-grid">
+          <div><span>Status</span><strong>{aiDirectoryBacklinkCopyPack.status}</strong><small>Manual submission and tracking only.</small></div>
+          <div><span>Copy fields</span><strong>{aiDirectoryBacklinkCopyPack.fields.length} fields</strong><small>{aiDirectoryBacklinkCopyPack.fields.slice(0, 4).join(", ")}</small></div>
+          <div><span>Tracking columns</span><strong>{aiDirectoryBacklinkCopyPack.trackingColumns.length} columns</strong><small>submission_url, listing_url, approval_status.</small></div>
+          <div><span>Targets</span><strong>{aiDirectorySubmissionTargets.length} listings</strong><small>AI directories, SaaS listings and later launch windows.</small></div>
+        </div>
+        <ul>{aiDirectoryBacklinkCopyPack.guardrails.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">20-21 · Global social kit / No Fake Proof</span>
+        <h2>Global social content kit stays manual and proof-safe</h2>
+        <p style={{ color: "var(--muted)" }}>Prepared social content can support global growth, but every post must pass No Fake Proof Guard before publishing.</p>
+        <div className="admin-info-grid">
+          <div><span>Status</span><strong>{globalSocialContentKit.status}</strong><small>Manual publish workflow.</small></div>
+          <div><span>Pillars</span><strong>{globalSocialContentKit.pillars.length} pillars</strong><small>{globalSocialContentKit.pillars.slice(0, 3).join(", ")}</small></div>
+          <div><span>Deliverables</span><strong>{globalSocialContentKit.deliverables.length} items</strong><small>captions, hooks, UTMs and calendar.</small></div>
+          <div><span>Proof guard</span><strong>No fake proof</strong><small>No fake users, purchases, ROAS or local traction.</small></div>
+        </div>
+        <ul>{globalSocialContentKit.noFakeProofGuard.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Social media sharing prep</span>
         <h2>Semi-automatic social sharing pack for Crelavo launch</h2>
         <p style={{ color: "var(--muted)" }}>Use /ai-social-media-launch-plan as the public SEO page. This is not auto-posting; it prepares copy, URLs, cadence and manual publish steps.</p>
@@ -574,6 +600,18 @@ export default function AdminGrowthPage() {
         <ul>{launchUtmTemplates.map((utm) => <li key={utm.template}>{utm.template}</li>)}</ul>
         <h3>Checklist</h3>
         <ul>{launchDistributionChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">22 · UGC/demo funnel</span>
+        <h2>UGC demo funnel is ready but review-gated</h2>
+        <p style={{ color: "var(--muted)" }}>{ugcDemoFunnel.guardrail}</p>
+        <div className="admin-info-grid">
+          <div><span>Status</span><strong>{ugcDemoFunnel.status}</strong><small>Samples and rights checked before public use.</small></div>
+          <div><span>Stages</span><strong>{ugcDemoFunnel.stages.length} steps</strong><small>{ugcDemoFunnel.stages.slice(0, 3).join(", ")}</small></div>
+          <div><span>Target URLs</span><strong>{ugcDemoFunnel.targetUrls.length} URLs</strong><small>{ugcDemoFunnel.targetUrls.slice(0, 2).join(", ")}</small></div>
+          <div><span>Conversion follow-up</span><strong>UTM tracked</strong><small>Record demo source and conversion path.</small></div>
+        </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

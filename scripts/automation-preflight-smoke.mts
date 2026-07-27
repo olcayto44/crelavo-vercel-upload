@@ -151,6 +151,7 @@ const adminFinalApiChecklistPage = readFileSync("src/app/admin/final-api-checkli
 const adminSeoPage = readFileSync("src/app/admin/seo/page.tsx", "utf8");
 const adminProductionQaPage = readFileSync("src/app/admin/production-qa/page.tsx", "utf8");
 const productionQaLib = readFileSync("src/lib/production-qa.ts", "utf8");
+const socialDistribution = readFileSync("src/lib/social-distribution.ts", "utf8");
 const apiCostGuard = readFileSync("src/lib/api-cost-guard.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
@@ -318,6 +319,18 @@ for (const term of ["globalSeoExpansionPlan", "tier1GlobalSeoPlan", "Tier-1 glob
 }
 for (const term of ["technicalSeoIntegrityPlan", "technicalSeoIntegrity", "Hreflang / canonical / schema", "hreflang", "canonical", "sitemap", "schema", "internal links"]) {
   if (!launchOpsReadiness.includes(term) && !seoLaunchKit.includes(term) && !adminSeoPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`technical SEO integrity guard missing term: ${term}`);
+}
+for (const term of ["programmaticSeoQualityGuardPlan", "programmaticSeoQualityGuard", "templates_ready_with_thin_content_guard", "thinContentRule", "no fake local proof"]) {
+  if (!launchOpsReadiness.includes(term) && !seoLaunchKit.includes(term) && !adminSeoPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`programmatic SEO quality guard missing term: ${term}`);
+}
+for (const term of ["directoryBacklinkTrackingPlan", "aiDirectoryBacklinkCopyPack", "copy_pack_and_tracking_ready", "submission_url", "listing_url", "approval_status"]) {
+  if (!launchOpsReadiness.includes(term) && !organicDirectory.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`directory backlink tracking guard missing term: ${term}`);
+}
+for (const term of ["globalSocialContentKitPlan", "globalSocialContentKit", "global_social_kit_ready_manual_publish", "No fake user counts", "winner-ad claims"]) {
+  if (!launchOpsReadiness.includes(term) && !socialDistribution.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`global social no fake proof guard missing term: ${term}`);
+}
+for (const term of ["ugcDemoFunnelPlan", "ugcDemoFunnel", "ugc_demo_funnel_ready_review_gated", "review_gated_demo_funnel_ready", "rights and consent check"]) {
+  if (!launchOpsReadiness.includes(term) && !socialDistribution.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`UGC demo funnel guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

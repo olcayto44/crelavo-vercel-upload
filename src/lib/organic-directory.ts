@@ -125,3 +125,14 @@ export const organicDirectoryChecklist = [
   "High-profile launch directories wait until final Whop tests",
   "Directory/backlink operations track submission URL, listing URL, approval status and follow-up owner"
 ];
+
+export const aiDirectoryBacklinkCopyPack = {
+  status: "copy_pack_ready_tracking_required",
+  fields: ["oneLinePitch", "shortDescription", "longDescription", "primaryCategories", "coreKeywords", "publicLinks", "screenshots", "pricingSummary", "founderNote"],
+  trackingColumns: ["target", "priority", "submission_url", "listing_url", "approval_status", "backlink_type", "follow_up_date", "owner", "notes"],
+  guardrails: [
+    "Use English Whop/product descriptions for global submissions.",
+    "Do not claim live customers, partner badges, revenue metrics, ROAS or public logos without proof permission.",
+    "Track rejected/needs-edit listings instead of resubmitting spam."
+  ]
+};

@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/AdminShell";
 import { googleIndexingAllSitemapUrls, googleIndexingContinuationUrls, googleIndexingGuardrails, googleIndexingSubmittedUrls, indexingChecklist, searchEngineSubmitTargets } from "@/lib/google-indexing";
-import { globalSeoExpansionPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
+import { globalSeoExpansionPlan, programmaticSeoQualityGuardPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
 import { seoLaunchKit } from "@/lib/seo-launch-kit";
 
 const seoModules = [
@@ -39,6 +39,16 @@ export default function AdminSeoPage() {
           {technicalSeoIntegrityPlan.checks.map((item) => <div key={item}><span>SEO check</span><strong>{item}</strong><small>{technicalSeoIntegrityPlan.status}</small></div>)}
         </div>
         <ul>{seoLaunchKit.technicalSeoIntegrity.checks.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">18 · Programmatic SEO quality guard</span>
+        <h2>Templates can expand only when thin-content checks pass</h2>
+        <p style={{ color: "var(--muted)" }}>{seoLaunchKit.programmaticSeoQualityGuard.thinContentRule}</p>
+        <div className="admin-info-grid">
+          {programmaticSeoQualityGuardPlan.templates.map((item) => <div key={item}><span>Template</span><strong>{item}</strong><small>{programmaticSeoQualityGuardPlan.status}</small></div>)}
+        </div>
+        <ul>{programmaticSeoQualityGuardPlan.qualityChecks.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

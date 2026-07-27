@@ -49,6 +49,11 @@ export const seoLaunchKit = {
     checks: ["hreflang", "canonical", "sitemap", "schema", "internal links", "robots exclusions", "Search Console inspection"],
     rule: "Every global SEO URL must have one canonical target, sitemap eligibility, page-type schema, internal links and no fake local proof."
   },
+  programmaticSeoQualityGuard: {
+    templates: ["country + use-case landing page", "platform + product video guide", "industry + campaign asset page", "problem + free tool page", "alternative comparison page"],
+    requiredBeforePublish: ["unique search intent", "specific buyer/use-case context", "canonical", "sitemap inclusion", "schema fit", "internal links", "no fake local proof"],
+    thinContentRule: "Do not publish pages that only swap country, platform or industry names without useful local/use-case details."
+  },
   whopCurrencyVerification,
   publicLlmManifesto
 };

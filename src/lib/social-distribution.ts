@@ -143,3 +143,21 @@ export const visualDistributionSemiAutoChecklist = [
   "Keep title keyword-first and description natural.",
   "Publish manually and record the posted URL for later tracking."
 ];
+
+export const globalSocialContentKit = {
+  status: "manual_publish_ready",
+  pillars: ["founder build-in-public", "free tool demos", "ecommerce workflow", "UGC/product demo", "AI tool alternatives", "visual search distribution"],
+  deliverables: ["caption pack", "hook library", "weekly calendar", "platform post templates", "UTM map", "visual board map", "manual publish log"],
+  noFakeProofGuard: [
+    "No fake user counts, fake purchases, fake ROAS, fake local traction or winner-ad claims.",
+    "Only use owned samples, approved screenshots and clearly marked preview/demo outputs.",
+    "Do not imply Crelavo is secretly used by brands, agencies or customers without permission."
+  ]
+};
+
+export const ugcDemoFunnel = {
+  status: "review_gated_demo_funnel_ready",
+  stages: ["approved demo sample", "product/creator brief", "screen recording", "caption/script pack", "rights and consent check", "manual publishing", "UTM/conversion follow-up"],
+  targetUrls: ["/samples/ugc-product-demo", "/ai-ugc-creator-program", "/free-tools/tiktok-hook-generator", "/dashboard/social-export"],
+  guardrail: "UGC/demo funnel must stay sample/proof-safe until real approved customer demos and usage rights exist."
+};
