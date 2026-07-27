@@ -224,8 +224,11 @@ for (const term of ["GeoOfferSegment", "US", "UK", "EU", "CA_AU", "TR", "GLOBAL"
 for (const term of ["geoOfferFromHeaders", "geoOffer={geoOffer}"]) {
   if (!splashAd.includes(term)) throw new Error(`splash geo offer wiring missing term: ${term}`);
 }
-for (const term of ["geoOfferFromHeaders", "priceBadge=\"$1,300/yr\"", "crelavo-geo-team", "expiredLabel", "expiredBody"]) {
-  if (!campaignPromoSlot.includes(term)) throw new Error(`campaign promo geo offer wiring missing term: ${term}`);
+for (const term of ["expiredLabel", "expiredBody", "return <CampaignPromoClient {...payload} />"]) {
+  if (!campaignPromoSlot.includes(term)) throw new Error(`campaign promo payload preservation missing term: ${term}`);
+}
+for (const forbiddenTerm of ["geoOfferFromHeaders", "crelavo-geo-team", "priceBadge=\"$1,300/yr\""]) {
+  if (campaignPromoSlot.includes(forbiddenTerm)) throw new Error(`campaign promo slot must not globally override admin payload with Team geo offer: ${forbiddenTerm}`);
 }
 for (const term of ["countdownExpired", "Preview available", "Still open", "Secure Whop preview is still open while this campaign is active."]) {
   if (!campaignPromoClient.includes(term)) throw new Error(`campaign countdown fallback missing term: ${term}`);
