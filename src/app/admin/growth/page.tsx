@@ -250,10 +250,10 @@ export default function AdminGrowthPage() {
         <span className="badge">Final 19–22 launch gates</span>
         <h2>Real E2E, public scan, referral rewards and coupon hunt cannot be faked</h2>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
-          <div className="card admin-category-card"><span className="badge">19 · {realProductionE2EChecklist.status}</span><h3>{realProductionE2EChecklist.title}</h3><p>{realProductionE2EChecklist.successDefinition}</p></div>
-          <div className="card admin-category-card"><span className="badge">20 · {publicPlaceholderH1Audit.status}</span><h3>Public placeholder + H1 audit</h3><p>{publicPlaceholderH1Audit.remediation}</p></div>
-          <div className="card admin-category-card"><span className="badge">21 · {referralRewardAutomationGuard.status}</span><h3>Referral reward automation</h3><p>{referralRewardAutomationGuard.guardrail}</p></div>
-          <div className="card admin-category-card"><span className="badge">22 · {couponHuntCampaignGuard.status}</span><h3>Coupon hunt campaign</h3><p>{couponHuntCampaignGuard.publicCopyGuard}</p></div>
+          <div className="card admin-category-card"><span className="badge">2 · {realProductionE2EChecklist.status}</span><h3>{realProductionE2EChecklist.title}</h3><p>{realProductionE2EChecklist.blockedStateRule}</p></div>
+          <div className="card admin-category-card"><span className="badge">Public audit · {publicPlaceholderH1Audit.status}</span><h3>Public placeholder + H1 audit</h3><p>{publicPlaceholderH1Audit.remediation}</p></div>
+          <div className="card admin-category-card"><span className="badge">4 · {referralRewardAutomationGuard.status}</span><h3>Referral reward automation</h3><p>{referralRewardAutomationGuard.releaseChecklist.join(" · ")}</p></div>
+          <div className="card admin-category-card"><span className="badge">5 · {couponHuntCampaignGuard.status}</span><h3>Coupon hunt campaign</h3><p>{couponHuntCampaignGuard.checkoutGuard}</p></div>
           <div className="card admin-category-card"><span className="badge">Fix intake · {liveTestFixIntake.status}</span><h3>{liveTestFixIntake.title}</h3><p>{liveTestFixIntake.guardrail}</p></div>
           <div className="card admin-category-card"><span className="badge">MVP API · {mvpApiSeparation.status}</span><h3>MVP API work is separated</h3><p>{mvpApiSeparation.rule}</p></div>
           <div className="card admin-category-card"><span className="badge">6 · {externalSubmissionTracker.status}</span><h3>External submission tracker</h3><p>{externalSubmissionTracker.ownerAction}</p></div>

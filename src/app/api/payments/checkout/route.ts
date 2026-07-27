@@ -73,18 +73,23 @@ async function recordCheckoutIntent(input: {
     gclid: safeTrackingValue(input.attribution.gclid, 500),
     gbraid: safeTrackingValue(input.attribution.gbraid, 500),
     wbraid: safeTrackingValue(input.attribution.wbraid, 500),
-    metadata: {
-      productId: input.productId,
-      productName: input.productName,
-      billing: input.billing,
-      provider: input.provider,
-      checkoutUrl: input.checkoutUrl,
-      checkoutStartedAt: new Date().toISOString(),
-      recoveryPolicy: "Send one abandoned checkout email after about 1 hour only if no Whop payment/subscription completion exists; no fake saved bonus or guaranteed discount.",
-      previewReminderPolicy: "For 24-hour previews, send a trust reminder near hour 23 or around 3 hours before the main subscription starts when provider timing allows.",
-      couponCampaignVisibility: input.couponCampaign?.visibility ?? "hidden_until_real_whop_code_verified",
-      couponAbuseGuard: input.couponCampaign?.abuseGuard ?? "coupon_claim_ip_device_redemption_limit_whop_code_required"
-    }
+      metadata: {
+        productId: input.productId,
+        productName: input.productName,
+        billing: input.billing,
+        provider: input.provider,
+        checkoutUrl: input.checkoutUrl,
+        checkoutStartedAt: new Date().toISOString(),
+        recoveryPolicy: "Send one abandoned checkout email after about 1 hour only if no Whop payment/subscription completion exists; no fake saved bonus or guaranteed discount.",
+        previewReminderPolicy: "For 24-hour previews, send a trust reminder near hour 23 or around 3 hours before the main subscription starts when provider timing allows.",
+        couponCampaignVisibility: input.couponCampaign?.visibility ?? "hidden_until_real_whop_code_verified",
+        couponCheckoutVerificationStatus: input.couponCampaign?.checkoutVerificationStatus ?? "pending_whop_checkout_verification",
+        couponMarginCheck: input.couponCampaign?.marginCheck ?? "margin_review_required",
+        couponStackingRule: input.couponCampaign?.stackingRule ?? "no_stacking_without_margin_review",
+        couponClaimFingerprint: input.couponCampaign?.claimFingerprint || null,
+        couponAbuseGuard: input.couponCampaign?.abuseGuard ?? "coupon_claim_ip_device_redemption_limit_whop_code_required"
+      }
+
   };
 
   const { error } = await supabaseAdmin().from("lead_captures").upsert(lead, { onConflict: "email,source" });

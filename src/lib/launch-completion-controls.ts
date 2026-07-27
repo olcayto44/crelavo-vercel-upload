@@ -32,6 +32,8 @@ export const realProductionE2EChecklist = {
     "Confirm customer receipt, production-ready email and admin notification are sent.",
     "Force one provider failure and confirm credits/retry/support messaging remain safe."
   ],
+  gapClosureFields: ["whop_event_id", "credit_ledger_entry", "production_id", "provider_job_id", "delivery_url", "customer_email_status", "forced_failure_result", "external_action_owner"],
+  blockedStateRule: "Any missing Whop event, credit ledger entry, provider job id, delivery URL, email state or forced-failure result must stay visible as an E2E gap instead of being called done.",
   successDefinition: "Do not mark launch production ready until payment, webhook, credit reserve/spend, provider output, dashboard delivery and email notification all pass in one real E2E chain."
 };
 
@@ -62,6 +64,8 @@ export const referralRewardAutomationGuard = {
     "+2,000 bonus credits only after invited user becomes a paid Business/Team subscriber and payment is not refunded/cancelled.",
     "Partner/affiliate commission stays finance-reviewed with hold, refund and chargeback checks."
   ],
+  eventStates: ["click_tracked", "signup_review_pending", "purchase_review_pending", "commission_pending", "commission_approved", "commission_rejected", "credit_release_ready"],
+  releaseChecklist: ["verified inviter", "verified invited user", "not self-referral", "no duplicate account cluster", "Whop event idempotency checked", "refund/chargeback window checked", "admin reviewer approved"],
   abuseControls: [
     "Block self-referral by same user id, email, payment account or obvious account family.",
     "Flag duplicate account, disposable email, repeated IP/device and suspicious signup clusters.",
@@ -80,5 +84,7 @@ export const couponHuntCampaignGuard = {
     "Add abuse controls for repeated claims, suspicious IP/device patterns and coupon scraping.",
     "Hide public coupon hunt prompts when no live Whop promo code exists."
   ],
+  integrationFields: ["code", "whopPromoCodeId", "startsAt", "endsAt", "redemptionLimit", "eligibleProductIds", "stackingRule", "marginCheck", "claimFingerprint", "checkoutVerificationStatus"],
+  checkoutGuard: "Checkout intent must carry coupon visibility and abuse metadata so public coupon hunt copy cannot drift from the real Whop promo code state.",
   publicCopyGuard: "Coupon hunt copy must say only what is true for the live code. No fake hidden discount, fake countdown, fake scarcity or guaranteed coupon claim."
 };

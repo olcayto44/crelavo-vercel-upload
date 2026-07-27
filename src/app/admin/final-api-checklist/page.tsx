@@ -91,6 +91,10 @@ export default function FinalApiChecklistPage() {
         <span className="badge">Launch ops scorecard</span>
         <h2>MVP APIs, monitoring, provider queue and credit burn stay visible</h2>
         <div className="admin-category-grid">
+          <div className="card admin-category-card"><span className="badge">2 · {checklist.launchCompletionControls.realProductionE2EChecklist.status}</span><h3>Gerçek E2E boşluk kapatma</h3><p>{checklist.launchCompletionControls.realProductionE2EChecklist.blockedStateRule}</p></div>
+          <div className="card admin-category-card"><span className="badge">4 · {checklist.launchCompletionControls.referralRewardAutomationGuard.status}</span><h3>Referral otomasyonu</h3><p>{checklist.launchCompletionControls.referralRewardAutomationGuard.guardrail}</p></div>
+          <div className="card admin-category-card"><span className="badge">5 · {checklist.launchCompletionControls.couponHuntCampaignGuard.status}</span><h3>Coupon hunt entegrasyonu</h3><p>{checklist.launchCompletionControls.couponHuntCampaignGuard.checkoutGuard}</p></div>
+          <div className="card admin-category-card"><span className="badge">6 · {checklist.launchCompletionControls.coreLaunchSpine.status}</span><h3>Core launch code spine</h3><p>{checklist.launchCompletionControls.coreLaunchSpine.rule}</p></div>
           <div className="card admin-category-card"><span className="badge">7 · {checklist.launchCompletionControls.mvpApiLaterTrack.status}</span><h3>MVP API later track</h3><p>{checklist.launchCompletionControls.mvpApiLaterTrack.rule}</p></div>
           <div className="card admin-category-card"><span className="badge">9 · {checklist.launchCompletionControls.adminDebugMonitoringPlan.status}</span><h3>Admin/debug monitoring</h3><p>{checklist.launchCompletionControls.adminDebugMonitoringPlan.intakeRule}</p></div>
           <div className="card admin-category-card"><span className="badge">10 · {checklist.launchCompletionControls.providerQueueConcurrencyGuard.status}</span><h3>Provider queue guard</h3><p>{checklist.launchCompletionControls.providerQueueConcurrencyGuard.rules[0]}</p></div>

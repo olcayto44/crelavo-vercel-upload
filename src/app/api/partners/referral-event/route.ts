@@ -28,6 +28,9 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase().slice(0, 320);
     const referredEmail = String(body.referredEmail ?? body.referred_email ?? "").trim().toLowerCase().slice(0, 320);
     const selfReferralSuspected = Boolean(userId && referredUserId && userId === referredUserId) || Boolean(email && referredEmail && email === referredEmail);
+    const whopEventId = String(body.whopEventId ?? body.whop_event_id ?? "").slice(0, 160).trim();
+    const duplicateClusterSuspected = Boolean(String(body.deviceId ?? body.device_id ?? "").trim() && String(body.referredDeviceId ?? body.referred_device_id ?? "").trim() && String(body.deviceId ?? body.device_id ?? "").trim() === String(body.referredDeviceId ?? body.referred_device_id ?? "").trim());
+    const rewardReviewState = selfReferralSuspected || duplicateClusterSuspected ? "blocked_abuse_review_required" : eventType === "purchase" && whopEventId ? "purchase_review_pending" : eventType === "signup" ? "signup_review_pending" : eventType.startsWith("commission_") ? "commission_review_pending" : "click_tracked";
     const rewardReleaseMode = eventType === "purchase" || eventType.startsWith("commission_") ? "review_gated_after_whop_idempotency" : "track_only_no_credit_release";
     const { error } = await supabaseAdmin()
       .from("partner_referral_events")
@@ -50,8 +53,11 @@ export async function POST(request: Request) {
           referredUserId: referredUserId || null,
           referredEmail: referredEmail || null,
           selfReferralSuspected,
+          duplicateClusterSuspected,
+          rewardReviewState,
           rewardReleaseMode,
-          whopEventId: String(body.whopEventId ?? body.whop_event_id ?? "").slice(0, 160) || null,
+          whopEventId: whopEventId || null,
+          releaseChecklist: ["verified inviter", "verified invited user", "not self-referral", "no duplicate account cluster", "Whop event idempotency checked", "refund/chargeback window checked", "admin reviewer approved"],
           abuseGuard: "self_referral_duplicate_account_ip_device_review_required"
         }
       });
