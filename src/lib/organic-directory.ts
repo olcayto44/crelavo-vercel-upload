@@ -109,10 +109,19 @@ export const organicDirectoryLaunchPlan = [
   }
 ];
 
+export const organicDirectoryBacklinkOperations = [
+  { channel: "There’s An AI For That", priority: "P1", action: "Submit Crelavo with AI production studio positioning and dashboard delivery wording.", tracking: "Record submission URL, approval status and backlink/live listing URL." },
+  { channel: "Futurepedia", priority: "P1", action: "Submit after public screenshots and pricing/Whop preview wording are stable.", tracking: "Track category, listing URL, approval email and required edits." },
+  { channel: "Toolify.ai / OpenTools / TopAI.tools", priority: "P1", action: "Use the same one-line pitch, short description and public link pack without exaggerated proof claims.", tracking: "Track each listing state: prepared, submitted, live, rejected or needs edit." },
+  { channel: "AlternativeTo / SaaSHub / BetaList", priority: "P2", action: "Prepare profile/comparison copy after core AI directory submissions.", tracking: "Track referral URL, backlink type and next follow-up date." },
+  { channel: "Product Hunt / Hacker News", priority: "P3", action: "Wait until final Whop payment, production E2E and onboarding confidence are verified.", tracking: "Keep as launch-window candidates, not immediate submission tasks." }
+];
+
 export const organicDirectoryChecklist = [
   "Public pages are live and consistent",
   "Screenshots and short product copy are ready",
   "Primary categories and keywords match the site",
   "Launch guardrails still block Lemon and paid spend",
-  "High-profile launch directories wait until final Whop tests"
+  "High-profile launch directories wait until final Whop tests",
+  "Directory/backlink operations track submission URL, listing URL, approval status and follow-up owner"
 ];

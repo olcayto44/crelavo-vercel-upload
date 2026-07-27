@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
+import { whopCurrencyVerification } from "@/lib/whop-currency-guard";
 
 export const metadata = {
   title: "Billing and cancellation | Crelavo",
@@ -92,6 +93,15 @@ export default async function WhopBillingPage() {
           <div className="button-nav" style={{ marginTop: 18 }}>
             <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Go to Whop</a>
             <Link className="btn secondary" href="/dashboard/contact">Contact support</Link>
+          </div>
+        </section>
+
+        <section className="card" style={{ marginTop: 24 }}>
+          <span className="badge">Currency display</span>
+          <h2>Whop checkout is the currency source of record</h2>
+          <p style={{ color: "var(--muted)" }}>{whopCurrencyVerification.publicCopyCurrencyRule}</p>
+          <div className="admin-info-grid">
+            {whopCurrencyVerification.guardrails.map((item) => <div key={item}><span>Guardrail</span><strong>{item}</strong><small>Verify checkout display manually before paid traffic.</small></div>)}
           </div>
         </section>
 

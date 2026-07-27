@@ -1,3 +1,6 @@
+import { publicLlmManifesto } from "./llm-manifesto";
+import { whopCurrencyVerification } from "./whop-currency-guard";
+
 export const seoLaunchKit = {
   pageTitle: "Crelavo AI Production Studio Launch Kit",
   canonicalUrl: "https://www.crelavo.com/launch-kit",
@@ -36,5 +39,7 @@ export const seoLaunchKit = {
     "Submit lower-risk AI directories before major community launches.",
     "Wait for Whop/payment and production E2E confidence before Product Hunt or Hacker News.",
     "Track listings, unlinked mentions and approved backlinks after submission."
-  ]
+  ],
+  whopCurrencyVerification,
+  publicLlmManifesto
 };

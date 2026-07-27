@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
+import { organicDirectoryBacklinkOperations } from "@/lib/organic-directory";
+import { publicLlmManifesto } from "@/lib/llm-manifesto";
+import { whopCurrencyVerification } from "@/lib/whop-currency-guard";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
@@ -102,6 +105,44 @@ export default async function AiToolLaunchDistributionPlanPage() {
           <ol>{launchCopyPack.xThread.map((line) => <li key={line}>{line}</li>)}</ol>
           <h3>Community-safe post</h3>
           <p>{launchCopyPack.communityPost}</p>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">Whop currency verification</span>
+          <h2>Multi-currency checkout checks without local price claims</h2>
+          <p>{whopCurrencyVerification.publicCopyCurrencyRule}</p>
+          <div className="admin-category-grid">
+            {whopCurrencyVerification.countriesToCheck.map((item) => (
+              <div className="card admin-category-card" key={item.segment}>
+                <span className="badge">{item.segment}</span>
+                <h3>{item.expected}</h3>
+                <p>{item.note}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">Directory backlink operations</span>
+          <h2>Submission tracking for external AI directories and backlinks</h2>
+          <div className="admin-category-grid">
+            {organicDirectoryBacklinkOperations.map((item) => (
+              <div className="card admin-category-card" key={item.channel}>
+                <span className="badge">{item.priority}</span>
+                <h3>{item.channel}</h3>
+                <p>{item.action}</p>
+                <small>{item.tracking}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 18 }}>
+          <span className="badge">AI-readable manifesto</span>
+          <h2>{publicLlmManifesto.title}</h2>
+          <p>{publicLlmManifesto.summary}</p>
+          <div className="workspace-action-note"><strong>AI citation block:</strong><p>{publicLlmManifesto.aiCitationBlock}</p></div>
+          <ul>{publicLlmManifesto.guardrails.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>

@@ -126,6 +126,10 @@ const voiceProductionGuard = readFileSync("src/lib/voice-production-guard.ts", "
 const productionProgress = readFileSync("src/lib/production-progress.ts", "utf8");
 const productionWorkspace = readFileSync("src/components/ProductionWorkspace.tsx", "utf8");
 const campaignDeadline = readFileSync("src/lib/campaign-deadline.ts", "utf8");
+const whopCurrencyGuard = readFileSync("src/lib/whop-currency-guard.ts", "utf8");
+const llmManifesto = readFileSync("src/lib/llm-manifesto.ts", "utf8");
+const launchDistributionPage = readFileSync("src/app/ai-tool-launch-distribution-plan/page.tsx", "utf8");
+const whopBillingPage = readFileSync("src/app/whop-billing/page.tsx", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -208,6 +212,15 @@ for (const term of ["bannerSegmentLabel", "safeOfferNote", "geo=${segment.toLowe
 }
 for (const term of ["campaignDeadlineGuardrail", "sessionDeadlineStorageKey", "campaignModeForRemaining", "Preview available", "Still open"]) {
   if (!campaignDeadline.includes(term) || !campaignPromoClient.includes("data-campaign-mode")) throw new Error(`session countdown guard missing term: ${term}`);
+}
+for (const term of ["whopCurrencyVerification", "publicCopyCurrencyRule", "countriesToCheck", "No local currency claim", "Whop checkout is the billing source of record"]) {
+  if (!whopCurrencyGuard.includes(term) || !whopBillingPage.includes("Currency display")) throw new Error(`Whop multi-currency guard missing term: ${term}`);
+}
+for (const term of ["publicLlmManifesto", "AI-readable Crelavo facts", "aiCitationBlock", "Do not claim official partner status"]) {
+  if (!llmManifesto.includes(term) || !launchDistributionPage.includes("AI-readable manifesto")) throw new Error(`public LLM manifesto guard missing term: ${term}`);
+}
+for (const term of ["organicDirectoryBacklinkOperations", "submission URL", "listing URL", "Product Hunt / Hacker News"]) {
+  if (!organicDirectory.includes(term) || !launchDistributionPage.includes("Directory backlink operations")) throw new Error(`directory backlink operation guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);
