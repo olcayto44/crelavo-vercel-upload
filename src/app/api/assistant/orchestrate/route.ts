@@ -65,13 +65,27 @@ function isGrowthIntelligenceRequest(message: string) {
   return /growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report|public signal/.test(text);
 }
 
+function isVoiceCloneIntent(text: string) {
+  return /voice clone|ses klon|ses klonlama|sesimi klon|kendi ses|own voice/.test(text);
+}
+
+function isLipSyncIntent(text: string) {
+  return /lip sync|lip-sync|dudak|ağzını oynat|agzini oynat|sesle konuştur|sesle konustur/.test(text);
+}
+
+function isAvatarIntent(text: string) {
+  return /avatar|talking head|talking video|konuşmalı|konusmali|sunucu|spokesperson|ai presenter/.test(text);
+}
+
 function inferProductionType(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
   if (isGrowthIntelligenceRequest(message)) return "document_pack";
   if (/müzik video|muzik video|müzik klip|muzik klip|\bklip\b|\bmv\b|şarkıma|sarkima|şarkı|sarki/.test(text)) return "music_video";
   if (/drone|dron|uydu|satellite|harita|map|rota|route|eyfel|eiffel|mekan tanıtım|mekan tanitim/.test(text)) return "drone_video";
   if (/canlı yayın|canli yayin|live sales|live commerce|satış ajan|satis ajan|yayın satış|yayin satis/.test(text)) return "live_sales_agent";
-  if (/konuşmalı|konusmali|lip-sync|dudak|avatar|spokesperson|sunucu|kendi görüntümle konuş|kendi goruntumle konus/.test(text)) return "talking_video";
+  if (isVoiceCloneIntent(text)) return "voice_clone";
+  if (isLipSyncIntent(text)) return "lip_sync";
+  if (isAvatarIntent(text)) return "avatar";
   if (/belgesel|documentary|sağlık|saglik|anlatımlı belgesel|anlatimli belgesel/.test(text)) return "video";
   if (/e-?ticaret|eticaret|mağaza|magaza|shopify|woocommerce|sepet|checkout/.test(text)) return "website";
   if (/web sitesi|website|landing|site kur|site yap|site yaptır|site yaptir/.test(text)) return "website";
@@ -101,7 +115,9 @@ function inferJobTypes(message: string) {
   if (/müzik video|muzik video|müzik klip|muzik klip|\bklip\b|\bmv\b/.test(text)) types.add("music_video");
   if (/drone|dron|uydu|satellite|harita|map|eyfel|eiffel/.test(text)) types.add("drone_video");
   if (/canlı yayın|canli yayin|live sales|live commerce|satış ajan|satis ajan/.test(text)) types.add("live_sales_agent");
-  if (/konuşmalı|konusmali|lip-sync|dudak|avatar|spokesperson/.test(text)) types.add("talking_video");
+  if (isVoiceCloneIntent(text)) types.add("voice_clone");
+  if (isLipSyncIntent(text)) types.add("lip_sync");
+  if (isAvatarIntent(text)) types.add("avatar");
   if (/video|reklam|kampanya|tiktok|instagram|reels|shorts|belgesel|documentary|animasyon|animation/.test(text)) types.add(inferProductionType(message));
   if (/logo|brand kit|marka kiti|etiket|ambalaj|packaging|poster|afiş|afis|görsel|gorsel/.test(text)) types.add("image");
   if (!types.size) types.add(inferProductionType(message));
@@ -111,7 +127,7 @@ function inferJobTypes(message: string) {
 function actionNameForType(type: string) {
   if (["campaign", "video", "music_video", "animation", "drone_video"].includes(type)) return "create_ai_video";
   if (["image", "brand_kit"].includes(type)) return "generate_image";
-  if (["talking_video", "live_sales_agent"].includes(type)) return "run_lip_sync";
+  if (["talking_video", "avatar", "lip_sync", "live_sales_agent", "voice_clone"].includes(type)) return "run_lip_sync";
   if (type === "website") return "create_website_project";
   if (type === "saas") return "create_saas_project";
   if (type === "mobile_app") return "create_mobile_app_project";
@@ -134,6 +150,9 @@ function defaultsForType(type: string, message: string) {
     drone_video: ["Drone-style aerial video", "Voice-over", "Subtitles"],
     live_sales_agent: ["AI Live Sales Agent", "Avatar design", "Voice-over"],
     talking_video: ["Advanced talking video", "Voice-to-video", "Lip-sync"],
+    avatar: ["AI avatar", "Talking head setup", "Voice-over"],
+    lip_sync: ["Lip-sync video", "Face/video source", "Voice/audio source"],
+    voice_clone: ["Voice clone", "Reference audio", "Consent and usage rules"],
     image: ["Visual/image pack", "Brand kit"],
     document_pack: growthIntelligence ? ["Growth Intelligence brief", "Competitor monitoring", "Weekly executive report", "Campaign response actions"] : ["PDF/document", "Report package"],
     campaign: ["AI video", "Product ad video", "Voice-over"],
@@ -151,6 +170,9 @@ function defaultsForType(type: string, message: string) {
   };
   const requiredMaterials = [
     ownMaterial ? "User image/video/audio material" : null,
+    type === "avatar" ? "Avatar image/reference or speaker persona" : null,
+    type === "lip_sync" ? "Face/video source and voice/audio source" : null,
+    type === "voice_clone" ? "Reference audio with explicit voice rights confirmation" : null,
     type === "music_video" ? "Song/audio or lyrics" : null,
     type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? "Brand/business details" : null,
     type === "drone_video" ? "Location, map route or real footage if exact place is required" : null,

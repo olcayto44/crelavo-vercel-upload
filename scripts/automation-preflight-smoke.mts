@@ -83,6 +83,9 @@ const elevenlabsProvider = readFileSync("src/lib/providers/elevenlabs.ts", "utf8
 const productionRevisionRoute = readFileSync("src/app/api/productions/revision/route.ts", "utf8");
 const adminProviderTests = readFileSync("src/app/api/admin/provider-tests/route.ts", "utf8");
 const providerReadinessRoute = readFileSync("src/app/api/providers/readiness/route.ts", "utf8");
+const assistantPlanRoute = readFileSync("src/app/api/assistant/plan/route.ts", "utf8");
+const assistantOrchestrateRoute = readFileSync("src/app/api/assistant/orchestrate/route.ts", "utf8");
+const providerPlan = readFileSync("src/lib/provider-plan.ts", "utf8");
 const projectDelivery = readFileSync("src/lib/project-delivery.ts", "utf8");
 const automaticDeliveryBuilder = readFileSync("src/lib/automatic-delivery-builder.ts", "utf8");
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
@@ -156,7 +159,19 @@ for (const term of ["providerVoiceId", "scriptCharacters", "truncated"]) {
 for (const term of ["voiceCloneReferences", "voiceCloneConsent", "voice_clone_plan", "waiting_reference_audio", "waiting_rights_confirmation", "ready_for_provider_setup", "consentRule"]) {
   if (!productionPayload.includes(term)) throw new Error(`voice clone compliance payload missing term: ${term}`);
 }
-for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\""]) {
+for (const term of ["avatarReferences", "avatarVoiceReferences", "avatar_plan", "waiting_avatar_reference_or_persona", "heygen", "Avatar/talking-head production should not start"]) {
+  if (!productionPayload.includes(term)) throw new Error(`avatar/talking-head payload guard missing term: ${term}`);
+}
+for (const term of ["isVoiceCloneIntent", "isLipSyncIntent", "isAvatarIntent", "avatar_or_speaker_reference", "face_video_and_audio_source", "reference_audio_and_voice_consent"]) {
+  if (!assistantPlanRoute.includes(term)) throw new Error(`assistant plan media intent guard missing term: ${term}`);
+}
+for (const term of ["isVoiceCloneIntent", "isLipSyncIntent", "isAvatarIntent", "Voice clone", "Reference audio with explicit voice rights confirmation", "run_lip_sync"]) {
+  if (!assistantOrchestrateRoute.includes(term)) throw new Error(`assistant orchestrator media intent guard missing term: ${term}`);
+}
+for (const term of ["providerRouteMap", "run_lip_sync", "kling_talking_video_fallback", "reference_audio_consent"]) {
+  if (!providerPlan.includes(term) || !providerReadinessRoute.includes("routeMap")) throw new Error(`provider router map missing term: ${term}`);
+}
+for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\"", "avatar_provider", "HeyGen avatar/talking-head provider"]) {
   if (!providerReadiness.includes(term)) throw new Error(`voice clone provider readiness guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {

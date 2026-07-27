@@ -1,4 +1,4 @@
-import { buildProviderPlan } from "@/lib/provider-plan";
+import { buildProviderPlan, providerRouteMap } from "@/lib/provider-plan";
 import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
 import { platformVoices } from "@/lib/voice-library";
 
@@ -98,6 +98,7 @@ export async function GET() {
 
   return Response.json({
     ...providerPlan,
+    routeMap: providerRouteMap(),
     video: {
       provider: videoProvider,
       ...video,

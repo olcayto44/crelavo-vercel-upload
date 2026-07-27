@@ -176,7 +176,18 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     anotherPersonReference: uploadedMaterials.filter((material) => material.reference_type === "another_person_reference"),
     performanceVideoReference: uploadedMaterials.filter((material) => material.reference_type === "performance_video_reference")
   };
-const voiceCloneReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|vocal|clone|ses/i.test(material.reference_type));
+  const avatarReferences = uploadedMaterials.filter((material) => ["own_image_avatar", "live_sales_self_avatar", "live_sales_avatar_reference", "avatar_reference", "speaker_reference"].includes(material.reference_type));
+  const avatarVoiceReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|audio|avatar|speaker|ses/i.test(material.reference_type));
+  const avatarPlan = ["avatar", "talking_video", "live_sales_agent"].includes(selection.productionType) ? {
+    requested: true,
+    status: avatarReferences.length > 0 || optionLineValue(selection.optionSummary, "Live sales avatar source") ? "ready_for_provider_setup" : "waiting_avatar_reference_or_persona",
+    provider: "heygen",
+    referenceImageUrls: avatarReferences.filter((material) => material.kind === "image" || material.kind === "video").map((material) => material.file_url),
+    voiceReferenceUrls: avatarVoiceReferences.map((material) => material.file_url),
+    avatarSource: optionLineValue(selection.optionSummary, "Live sales avatar source") || selection.selectedVoiceProfile || "",
+    guardrail: "Avatar/talking-head production should not start as a real provider job until speaker persona, avatar source and voice direction are explicit."
+  } : null;
+  const voiceCloneReferences = uploadedMaterials.filter((material) => material.kind === "audio" && /voice|vocal|clone|ses/i.test(material.reference_type));
 const voiceCloneConsent = voiceCloneReferences.length > 0 && voiceCloneReferences.every((material) => material.rights_confirmed);
 const voiceCloneSignal = `${selection.productionType} ${effectiveFeatures.join(" ")} ${selection.selectedModules.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
 const voiceClonePlan = selection.productionType === "voice_clone" || /voice clone|ses klon|ses klonlama|own voice|kendi ses/.test(voiceCloneSignal) ? {
@@ -327,6 +338,7 @@ const voiceClonePlan = selection.productionType === "voice_clone" || /voice clon
     drama_details: dramaDetails,
     drone_details: droneDetails,
     live_sales_agent_details: liveSalesAgentDetails,
+    avatar_plan: avatarPlan,
     voice_clone_plan: voiceClonePlan,
     character_voice_consistency_plan: characterVoiceConsistencyPlan,
     manual_option_details: {

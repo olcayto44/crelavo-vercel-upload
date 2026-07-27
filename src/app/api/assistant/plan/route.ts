@@ -83,6 +83,18 @@ function actionNameForProductionType(productionType: string) {
   return "create_production";
 }
 
+function isVoiceCloneIntent(text: string) {
+  return /voice clone|ses klon|ses klonlama|sesimi klon|kendi ses|own voice/.test(text);
+}
+
+function isLipSyncIntent(text: string) {
+  return /lip sync|lip-sync|dudak|ağzını oynat|agzini oynat|sesle konuştur|sesle konustur/.test(text);
+}
+
+function isAvatarIntent(text: string) {
+  return /avatar|talking head|talking video|konuşmalı|konusmali|sunucu|spokesperson|ai presenter/.test(text);
+}
+
 function detectProductionType(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
   if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "ad_score_checker";
@@ -96,7 +108,9 @@ function detectProductionType(message: string) {
   if (/çöp adam|cop adam|stickman/.test(text)) return "stickman_animation";
   if (/rakip|competitor|seo|keyword|anahtar kelime|growth intelligence|site analizi|site analiz/.test(text)) return "document_pack";
   if (/shopify|amazon|trendyol|woocommerce|ürün link|urun link|product link|kampanya|reklam|ad video|tiktok reklam|instagram reklam|marketplace/.test(text)) return "campaign";
-  if (/konuşmalı|konusmali|talking video|lip sync|lip-sync|dudak|avatar|avatar video/.test(text)) return "talking_video";
+  if (isVoiceCloneIntent(text)) return "voice_clone";
+  if (isLipSyncIntent(text)) return "lip_sync";
+  if (isAvatarIntent(text)) return "avatar";
   if (/web sitesi|website|landing|site|e-?commerce|e-ticaret|storefront|checkout|sepet/.test(text)) return "website";
   if (/saas|dashboard|portal|subscription|billing/.test(text)) return "saas";
   if (/mobil|mobile app|uygulama|ios|android|expo/.test(text)) return "mobile_app";
@@ -153,6 +167,9 @@ function detectPlatforms(message: string, productionType: string) {
 
 function detectModules(message: string, productionType: string) {
   if (productionType === "campaign") return ["E-commerce product pack", "Product visual set"];
+  if (productionType === "avatar") return ["AI avatar", "Talking head setup", "Voice-over"];
+  if (productionType === "lip_sync") return ["Lip-sync video", "Face/video source", "Voice/audio source"];
+  if (productionType === "voice_clone") return ["Voice clone", "Reference audio", "Consent and usage rules"];
   if (productionType === "website") return ["Website", "Responsive pages"];
   if (productionType === "saas") return ["SaaS screen", "Dashboard flow"];
   if (productionType === "mobile_app") return ["Mobile app", "App screens"];
@@ -254,7 +271,9 @@ function missingFields(message: string, productionType: string) {
   const missing: string[] = [];
   if (productionType === "campaign" && /link|shopify|amazon|trendyol|ürün|urun|product/.test(text) && !hasUrl(message)) missing.push("product_url");
   if (["website", "saas", "mobile_app", "admin_project"].includes(productionType) && !/(marka|brand|şirket|sirket|business|proje|project|uygulama|app|site)/.test(text)) missing.push("project_name_or_business_context");
-  if (productionType === "talking_video" && !/(ses|voice|kişi|kisi|person|avatar)/.test(text)) missing.push("speaker_or_voice_direction");
+  if (["talking_video", "avatar"].includes(productionType) && !/(ses|voice|kişi|kisi|person|avatar|foto|görüntü|goruntu)/.test(text)) missing.push("avatar_or_speaker_reference");
+  if (productionType === "lip_sync" && !/(ses|voice|audio|video|yüz|yuz|face|avatar)/.test(text)) missing.push("face_video_and_audio_source");
+  if (productionType === "voice_clone" && !/(ses|voice|audio|referans|reference|izin|onay|consent)/.test(text)) missing.push("reference_audio_and_voice_consent");
   return missing;
 }
 

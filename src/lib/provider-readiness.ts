@@ -35,6 +35,10 @@ export function providerRequirementsForProduction(productionType: string, packag
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output."));
   }
 
+  if (["avatar", "talking_video", "live_sales_agent"].includes(type)) {
+    requirements.push(requirement("avatar_provider", "HeyGen avatar/talking-head provider", ["HEYGEN_API_KEY"], ["avatar presenter", "talking-head video", "speaker/avatar render"], "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery.", type === "live_sales_agent"));
+  }
+
   if (needsEcommerceAdPipeline) {
     requirements.push(requirement("voice_provider", "ElevenLabs voice-over provider", ["ELEVENLABS_API_KEY"], ["ad voice-over", "voice audio asset"], "Required for the real e-commerce ad pipeline voice-over."));
     requirements.push(requirement("render_provider", "Shotstack render provider", ["SHOTSTACK_API_KEY"], ["final rendered MP4", "video + voice + subtitle assembly"], "Required to render the final customer-ready ad video after visual output is ready."));

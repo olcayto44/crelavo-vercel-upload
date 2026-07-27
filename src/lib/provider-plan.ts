@@ -217,6 +217,17 @@ function paymentPlan(): ProviderPlanItem {
   };
 }
 
+export function providerRouteMap() {
+  return {
+    create_ai_video: { primary: "video_provider", required: ["video", "storage"], fallback: ["manual_delivery", "demo_plan"] },
+    generate_image: { primary: "image_provider", required: ["image", "storage"], fallback: ["manual_visual_brief"] },
+    run_lip_sync: { primary: "heygen", required: ["avatar", "voice", "storage"], fallback: ["elevenlabs_voice_plus_manual_avatar", "kling_talking_video_fallback"] },
+    voice_clone: { primary: "elevenlabs", required: ["voice", "reference_audio_consent", "storage"], fallback: ["approved_platform_voice_only"] },
+    create_website_project: { primary: "openai", required: ["brain", "storage"], fallback: ["structured_project_brief"] },
+    create_saas_project: { primary: "openai", required: ["brain", "storage"], fallback: ["structured_saas_brief"] }
+  };
+}
+
 export function buildProviderPlan() {
   const plans: ProviderPlanItem[] = [
     brainPlan(),
