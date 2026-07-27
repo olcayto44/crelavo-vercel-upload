@@ -4,8 +4,8 @@ import { join, relative } from "node:path";
 const root = process.cwd();
 const appDir = join(root, "src", "app");
 const publicRouteBlocklist = ["admin", "dashboard", "api"];
-const riskyTerms = ["lorem", "approved customer logo", "approved brand story", "TODO", "awaiting real", "fake proof"];
-const allowedPlaceholderContexts = ["placeholder=", "placeholder:", "customer-preview-placeholder", "final-video-placeholder", "delivery ZIP placeholders"];
+const riskyTerms = ["lorem", "approved customer logo", "approved brand story", "TODO", "awaiting real", "fake proof", "secretly using", "winner ad", "guaranteed winner", "fake local", "unverified ROAS", "unverified CAC"];
+const allowedPlaceholderContexts = ["placeholder=", "placeholder:", "customer-preview-placeholder", "final-video-placeholder", "delivery ZIP placeholders", "No Fake Proof Guard", "riskli söylemleri engellemek"];
 
 function walk(dir: string, files: string[] = []) {
   for (const entry of readdirSync(dir)) {

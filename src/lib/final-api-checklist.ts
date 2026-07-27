@@ -1,3 +1,4 @@
+import { coreLaunchSpine } from "./core-launch-spine";
 import { externalApiAccountReadiness, externalSubmissionTracker } from "./external-launch-operations";
 import { couponHuntCampaignGuard, liveTestFixIntake, mvpApiSeparation, publicPlaceholderH1Audit, realProductionE2EChecklist, referralRewardAutomationGuard } from "./launch-completion-controls";
 
@@ -298,6 +299,7 @@ export function buildFinalApiChecklist() {
       "Automatic referral/coupon/share-to-earn rewards and clean-export unlocks."
     ],
     launchCompletionControls: {
+      coreLaunchSpine,
       liveTestFixIntake,
       mvpApiSeparation,
       externalSubmissionTracker,

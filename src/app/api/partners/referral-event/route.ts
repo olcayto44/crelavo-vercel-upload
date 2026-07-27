@@ -23,6 +23,12 @@ export async function POST(request: Request) {
 
   try {
     const ip = clientIpFromRequest(request);
+    const userId = String(body.userId ?? body.user_id ?? "").trim();
+    const referredUserId = String(body.referredUserId ?? body.referred_user_id ?? "").trim();
+    const email = String(body.email ?? "").trim().toLowerCase().slice(0, 320);
+    const referredEmail = String(body.referredEmail ?? body.referred_email ?? "").trim().toLowerCase().slice(0, 320);
+    const selfReferralSuspected = Boolean(userId && referredUserId && userId === referredUserId) || Boolean(email && referredEmail && email === referredEmail);
+    const rewardReleaseMode = eventType === "purchase" || eventType.startsWith("commission_") ? "review_gated_after_whop_idempotency" : "track_only_no_credit_release";
     const { error } = await supabaseAdmin()
       .from("partner_referral_events")
       .insert({
@@ -32,15 +38,21 @@ export async function POST(request: Request) {
         landing_url: String(body.landingUrl ?? body.landing_url ?? "").slice(0, 1000) || null,
         referrer_url: String(body.referrerUrl ?? body.referrer_url ?? "").slice(0, 1000) || null,
         visitor_id: String(body.visitorId ?? body.visitor_id ?? "").slice(0, 160) || null,
-        user_id: body.userId ?? body.user_id ?? null,
-        email: String(body.email ?? "").slice(0, 320) || null,
+        user_id: userId || null,
+        email: email || null,
         ip_address: ip,
         country: "Unknown",
         city: "Unknown",
         user_agent: request.headers.get("user-agent")?.slice(0, 1000) ?? null,
         metadata: {
           pageTitle: String(body.pageTitle ?? "").slice(0, 300),
-          storedAt: new Date().toISOString()
+          storedAt: new Date().toISOString(),
+          referredUserId: referredUserId || null,
+          referredEmail: referredEmail || null,
+          selfReferralSuspected,
+          rewardReleaseMode,
+          whopEventId: String(body.whopEventId ?? body.whop_event_id ?? "").slice(0, 160) || null,
+          abuseGuard: "self_referral_duplicate_account_ip_device_review_required"
         }
       });
 

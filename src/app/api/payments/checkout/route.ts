@@ -1,3 +1,4 @@
+import { normalizeCouponCampaign } from "@/lib/coupon-campaign-guard";
 import { findPaymentProduct } from "@/lib/data";
 import { findConfiguredCreditProduct, normalizePackageConfig, PACKAGE_CONFIG_KEY, paymentLinkForConfiguredCreditProduct } from "@/lib/package-config";
 import { createLemonSqueezyCheckout, isLemonSqueezyEnabled, lemonVariantEnvForProduct, type BillingMode } from "@/lib/payment-provider";
@@ -48,6 +49,7 @@ async function recordCheckoutIntent(input: {
   pageUrl: unknown;
   referrer: unknown;
   attribution: Record<string, unknown>;
+  couponCampaign?: ReturnType<typeof normalizeCouponCampaign>;
 }) {
   if (!input.consent || !isEmail(input.email)) return { skipped: true, reason: "Consent/email missing." };
 
@@ -79,7 +81,9 @@ async function recordCheckoutIntent(input: {
       checkoutUrl: input.checkoutUrl,
       checkoutStartedAt: new Date().toISOString(),
       recoveryPolicy: "Send one abandoned checkout email after about 1 hour only if no Whop payment/subscription completion exists; no fake saved bonus or guaranteed discount.",
-      previewReminderPolicy: "For 24-hour previews, send a trust reminder near hour 23 or around 3 hours before the main subscription starts when provider timing allows."
+      previewReminderPolicy: "For 24-hour previews, send a trust reminder near hour 23 or around 3 hours before the main subscription starts when provider timing allows.",
+      couponCampaignVisibility: input.couponCampaign?.visibility ?? "hidden_until_real_whop_code_verified",
+      couponAbuseGuard: input.couponCampaign?.abuseGuard ?? "coupon_claim_ip_device_redemption_limit_whop_code_required"
     }
   };
 
@@ -94,6 +98,7 @@ export async function POST(request: Request) {
   const billing = normalizeBilling(body.billing);
   const partnerCode = normalizePartnerCode(body.partnerCode ?? body.ref);
   const campaign = String(body.campaign ?? "").trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+  const couponCampaign = normalizeCouponCampaign(typeof body.couponCampaign === "object" && body.couponCampaign ? body.couponCampaign as Record<string, unknown> : {});
   const attribution = typeof body.attribution === "object" && body.attribution ? body.attribution as Record<string, unknown> : {};
   const adAttribution = {
     utmSource: safeTrackingValue(attribution.utmSource, 80),
@@ -141,7 +146,7 @@ export async function POST(request: Request) {
     const previewNote = whopPreviewNotice(product, effectiveBilling);
 
     if (configuredDirectUrl) {
-      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "configured_direct_checkout", checkoutUrl: configuredDirectUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "configured_direct_checkout", checkoutUrl: configuredDirectUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
         url: configuredDirectUrl,
         mode: checkoutMode,
@@ -165,7 +170,7 @@ export async function POST(request: Request) {
       const origin = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin || "https://www.crelavo.com";
       const returnUrl = new URL(whopReturnPath, origin).toString();
       const checkoutUrl = whopCheckoutPath(whopPlanId, returnUrl, { partnerCode, campaign, adAttribution });
-      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "whop", checkoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "whop", checkoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
         url: checkoutUrl,
         mode: checkoutMode,
@@ -199,7 +204,7 @@ export async function POST(request: Request) {
       return Response.json({ error: checkout.error }, { status: checkout.status });
     }
 
-    const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "lemon_squeezy", checkoutUrl: checkout.url, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+    const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "lemon_squeezy", checkoutUrl: checkout.url, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
 
     return Response.json({
       url: checkout.url,
