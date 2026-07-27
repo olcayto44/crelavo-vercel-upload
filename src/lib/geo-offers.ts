@@ -14,6 +14,8 @@ export type GeoOfferCopy = {
   homepageBadge: string;
   homepageTitle: string;
   homepageDescription: string;
+  bannerSegmentLabel: string;
+  safeOfferNote: string;
 };
 
 const euCountries = new Set([
@@ -57,9 +59,11 @@ export function geoOfferForCountry(countryCode: string): GeoOfferCopy {
     segment,
     country,
     cta: "START 24-HOUR TEAM PREVIEW FOR $20",
-    href: baseHref,
+    href: `${baseHref}&geo=${segment.toLowerCase()}`,
     bonusPrimary: "174,000 annual credits",
-    bonusSecondary: "$20 secure Whop preview"
+    bonusSecondary: "$20 secure Whop preview",
+    bannerSegmentLabel: segment === "GLOBAL" ? "Global default" : `${segment} visitor segment`,
+    safeOfferNote: "Same Whop checkout path and USD site copy; location only changes relevance, not price promises or fake local scarcity."
   };
 
   if (segment === "US") {

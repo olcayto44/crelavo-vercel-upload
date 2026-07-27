@@ -1,5 +1,6 @@
 import { CampaignPromoClient } from "@/components/CampaignPromoClient";
 import { getConfiguredAdSlots } from "@/lib/ad-config";
+import { campaignDeadlineGuardrail } from "@/lib/campaign-deadline";
 
 type CampaignPromoPayload = {
   eyebrow?: string;
@@ -17,6 +18,8 @@ type CampaignPromoPayload = {
   bonusSecondary?: string;
   expiredLabel?: string;
   expiredBody?: string;
+  geoSegment?: string;
+  safeOfferNote?: string;
 };
 
 const DEFAULT_PROMO_DAYS = 7;
@@ -40,7 +43,9 @@ function parsePromoPayload(code: string): (CampaignPromoPayload & { eyebrow: str
       bonusPrimary: value.bonusPrimary ? String(value.bonusPrimary) : undefined,
       bonusSecondary: value.bonusSecondary ? String(value.bonusSecondary) : undefined,
       expiredLabel: value.expiredLabel ? String(value.expiredLabel) : undefined,
-      expiredBody: value.expiredBody ? String(value.expiredBody) : undefined
+      expiredBody: value.expiredBody ? String(value.expiredBody) : undefined,
+      geoSegment: "Global default",
+      safeOfferNote: campaignDeadlineGuardrail
     };
   } catch {
     return null;

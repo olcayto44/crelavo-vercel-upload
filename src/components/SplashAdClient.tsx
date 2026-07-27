@@ -46,7 +46,9 @@ function parseSplashPromo(code: string, geoOffer?: GeoOfferCopy) {
       bonusPrimary: geoOffer?.bonusPrimary || String(value.bonusPrimary || "174,000 annual credits"),
       bonusSecondary: geoOffer?.bonusSecondary || String(value.bonusSecondary || "$20 secure Whop preview"),
       expiredLabel: String(value.expiredLabel || "Preview available"),
-      expiredBody: String(value.expiredBody || "Secure Whop preview is still open while this campaign is active.")
+      expiredBody: String(value.expiredBody || "Secure Whop preview is still open while this campaign is active."),
+      geoSegment: geoOffer?.bannerSegmentLabel || "Global default",
+      safeOfferNote: geoOffer?.safeOfferNote
     };
   } catch {
     return null;

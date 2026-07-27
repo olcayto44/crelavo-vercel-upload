@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { campaignDeadlineGuardrail, campaignModeForRemaining, safeCampaignDurationDays, sessionDeadlineStorageKey } from "@/lib/campaign-deadline";
 
 type CampaignPromoProps = {
   eyebrow: string;
@@ -19,6 +20,8 @@ type CampaignPromoProps = {
   bonusSecondary?: string;
   expiredLabel?: string;
   expiredBody?: string;
+  geoSegment?: string;
+  safeOfferNote?: string;
 };
 
 function formatRemaining(ms: number) {
@@ -34,7 +37,7 @@ function initialEndTime(input: { endsAt?: string; durationDays?: number; storage
   const fixedEndTime = input.endsAt ? new Date(input.endsAt).getTime() : NaN;
   if (Number.isFinite(fixedEndTime)) return fixedEndTime;
 
-  const days = Math.min(Math.max(Math.floor(input.durationDays ?? 7) || 7, 1), 31);
+  const days = safeCampaignDurationDays(input.durationDays);
   const durationMs = days * 24 * 60 * 60 * 1000;
   if (typeof window === "undefined") return Date.now() + durationMs;
 
@@ -49,12 +52,13 @@ function initialEndTime(input: { endsAt?: string; durationDays?: number; storage
   }
 }
 
-export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in", priceBadge = "$79", kicker = "Don’t miss it — the timer is running", bonusPrimary = "+3,000 bonus", bonusSecondary = "Usually 9,000", expiredLabel = "Preview available", expiredBody = "Secure Whop preview is still open while this campaign is active." }: CampaignPromoProps) {
-  const resolvedStorageKey = `${storageKey}-${href}`;
+export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, durationDays = 7, storageKey = "crelavo-business-12000-countdown", countdownLabel = "Offer ends in", priceBadge = "$79", kicker = "Don’t miss it — the timer is running", bonusPrimary = "+3,000 bonus", bonusSecondary = "Usually 9,000", expiredLabel = "Preview available", expiredBody = "Secure Whop preview is still open while this campaign is active.", geoSegment = "Global default", safeOfferNote = campaignDeadlineGuardrail }: CampaignPromoProps) {
+  const resolvedStorageKey = sessionDeadlineStorageKey({ storageKey, href, segment: geoSegment, campaign: countdownLabel });
   const [endTime] = useState(() => initialEndTime({ endsAt, durationDays, storageKey: resolvedStorageKey }));
   const [now, setNow] = useState(() => Date.now());
   const remainingMs = endTime - now;
   const countdownExpired = remainingMs <= 0;
+  const campaignMode = campaignModeForRemaining(remainingMs);
   const remaining = formatRemaining(remainingMs);
 
   useEffect(() => {
@@ -72,6 +76,7 @@ export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, d
         <span className="campaign-promo-pulse">{eyebrow}</span>
         <span className="campaign-promo-price">{priceBadge}</span>
       </div>
+      <small className="campaign-promo-geo-note">{geoSegment} · {safeOfferNote}</small>
       <div className="campaign-promo-main">
         <span className="campaign-promo-kicker">{kicker}</span>
         <h3>{title}</h3>
@@ -81,7 +86,7 @@ export function CampaignPromoClient({ eyebrow, title, body, cta, href, endsAt, d
         </div>
         <p>{countdownExpired ? expiredBody : body}</p>
       </div>
-      <div className="campaign-promo-countdown"><span>{countdownExpired ? expiredLabel : countdownLabel}</span><strong>{countdownExpired ? "Still open" : remaining}</strong></div>
+      <div className="campaign-promo-countdown" data-campaign-mode={campaignMode}><span>{countdownExpired ? expiredLabel : countdownLabel}</span><strong>{countdownExpired ? "Still open" : remaining}</strong></div>
       <Link className="btn campaign-promo-cta" href={href}>{cta}</Link>
     </aside>
   );

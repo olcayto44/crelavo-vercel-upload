@@ -123,6 +123,9 @@ const musicProvidersRoute = readFileSync("src/app/api/music-providers/route.ts",
 const seoLaunchKit = readFileSync("src/lib/seo-launch-kit.ts", "utf8");
 const organicDirectory = readFileSync("src/lib/organic-directory.ts", "utf8");
 const voiceProductionGuard = readFileSync("src/lib/voice-production-guard.ts", "utf8");
+const productionProgress = readFileSync("src/lib/production-progress.ts", "utf8");
+const productionWorkspace = readFileSync("src/components/ProductionWorkspace.tsx", "utf8");
+const campaignDeadline = readFileSync("src/lib/campaign-deadline.ts", "utf8");
 for (const term of ["provider === \"fal\"", "queue.fal.run", "FAL_VIDEO_MODEL", "falApiKey"]) {
   if (!visuals.includes(term) && !status.includes(term)) throw new Error(`FAL provider integration missing term: ${term}`);
 }
@@ -196,6 +199,15 @@ for (const term of ["musicReferences", "music_plan", "providerPrimary: \"stable-
 }
 for (const term of ["seoLaunchKit", "directoryOneLiner", "proofGuardrails", "submissionCopyFields", "launchSequence"]) {
   if (!seoLaunchKit.includes(term) || !organicDirectory.includes("launchKit: seoLaunchKit")) throw new Error(`SEO launch kit guard missing term: ${term}`);
+}
+for (const term of ["productionProgressSteps", "productionProgressPercent", "GPT script / brief", "Voice generated", "Final MP4 / delivery"]) {
+  if (!productionProgress.includes(term) || !productionWorkspace.includes("realtimeProgressSteps")) throw new Error(`realtime production progress UI guard missing term: ${term}`);
+}
+for (const term of ["bannerSegmentLabel", "safeOfferNote", "geo=${segment.toLowerCase()}", "Geo personalization changes message relevance only"]) {
+  if (!geoOffers.includes(term)) throw new Error(`geo banner guard missing term: ${term}`);
+}
+for (const term of ["campaignDeadlineGuardrail", "sessionDeadlineStorageKey", "campaignModeForRemaining", "Preview available", "Still open"]) {
+  if (!campaignDeadline.includes(term) || !campaignPromoClient.includes("data-campaign-mode")) throw new Error(`session countdown guard missing term: ${term}`);
 }
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);

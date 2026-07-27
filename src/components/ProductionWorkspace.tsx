@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, Film, Globe2, ImageIcon, LibraryBig, Mic2, Music2, Pencil, PlayCircle, RefreshCcw, Share2, Subtitles, UploadCloud } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
+import { productionProgressPercent, productionProgressSteps } from "@/lib/production-progress";
 
 type ProductionWorkspaceProps = {
   production: {
@@ -226,7 +227,9 @@ const [notice, setNotice] = useState("");
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
   const voiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
   const providerStatus = String(outputJson.providerStatus ?? "");
-  const providerProgress = Number.isFinite(Number(outputJson.providerProgress)) ? Math.max(0, Math.min(100, Number(outputJson.providerProgress))) : null;
+  const realtimeProgressSteps = productionProgressSteps({ status: production.status, generationStatus: production.generation_status, automationStatus: production.automation_status, outputJson });
+  const inferredProgress = productionProgressPercent(realtimeProgressSteps);
+  const providerProgress = Number.isFinite(Number(outputJson.providerProgress)) ? Math.max(0, Math.min(100, Number(outputJson.providerProgress))) : inferredProgress;
   const providerTestMode = Boolean(outputJson.providerTestMode ?? metadata.providerTestMode);
   const providerPreflight = outputJson.providerPreflight && typeof outputJson.providerPreflight === "object" ? outputJson.providerPreflight as Record<string, unknown> : null;
   const providerReadiness = outputJson.providerReadiness && typeof outputJson.providerReadiness === "object" ? outputJson.providerReadiness as Record<string, any> : null;
@@ -651,10 +654,19 @@ const [notice, setNotice] = useState("");
             <p>{nextLiveStep}</p>
             {providerProgress !== null ? (
               <div className="customer-progress-meter">
-                <div><span>Provider progress</span><strong>{providerProgress}%</strong></div>
+                <div><span>Realtime production progress</span><strong>{providerProgress}%</strong></div>
                 <progress value={providerProgress} max={100} />
               </div>
             ) : null}
+            <div className="provider-job-list realtime-production-timeline" aria-label="Realtime production timeline">
+              {realtimeProgressSteps.map((step) => (
+                <div className={`provider-job-chip ${step.status === "done" ? "ready" : step.status === "running" ? "active" : step.status === "blocked" ? "failed" : "unknown"}`} key={`progress-${step.key}`}>
+                  <strong>{step.label}</strong>
+                  <span>{step.status}</span>
+                  <small>{step.detail}</small>
+                </div>
+              ))}
+            </div>
             {providerStatus ? <p className="provider-poll-note">Provider status: {providerStatus}</p> : null}
             <div className="customer-delivery-files delivery-command-center">
               <div className="delivery-command-head">
