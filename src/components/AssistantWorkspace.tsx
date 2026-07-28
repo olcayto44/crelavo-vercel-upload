@@ -2258,14 +2258,18 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   }, [providerTestPreset, initialIdea, initialCategory, initialMode]);
 
   const manualWizardSteps = [
-    { id: "provider", title: "1. Üretim motoru", subtitle: "Video/görsel motorunu seç.", options: ["Auto provider", "Kling", "Runway", "Fal", "Replicate", "Seedance route"], value: selectedProviderService || "Auto provider", apply: (value: string) => { setSelectedServiceNetwork(value === "Auto provider" ? "" : "video"); setSelectedProviderService(value === "Auto provider" ? "" : value); } },
-    { id: "quality", title: "2. Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
-    { id: "duration", title: "3. Süre", subtitle: "İstersen özel süreyi chat’e veya brief’e yazabilirsin; seçilen değer payload’a gider.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
-    { id: "voice", title: "4. Seslendirme", subtitle: "Konuşma dili, yaş/cinsiyet/tını yönü.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Energetic sales voice", "Calm documentary voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
-    { id: "language", title: "5. Konuşma dili", subtitle: "Voice-over ve altyazı dili.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
-    { id: "music", title: "6. Arka fon müziği", subtitle: "Müzik sağlayıcı/ruh hali route’a yazılır.", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Stable Audio", "Mubert", "User music reference"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); if (["Stable Audio", "Mubert"].includes(value)) { setSelectedServiceNetwork("music"); setSelectedProviderService(value); } } },
-    { id: "environment", title: "7. Ortam / sahne", subtitle: "Video, konuşma, drone veya canlı satış için sahne yönü.", options: ["Auto scene environment", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
-    { id: "delivery", title: "8. Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+    { id: "category", title: "1. Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "modules", title: "2. Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
+    { id: "features", title: "3. Özellikler", subtitle: "Ses, altyazı, revizyon, final ZIP gibi ek özellikleri seç.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
+    { id: "style", title: "4. Stil", subtitle: "Görsel/yaratıcı yönü seç.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
+    { id: "provider", title: "5. Üretim motoru", subtitle: "Video/görsel motorunu seç.", options: ["Auto provider", "Kling", "Runway", "Fal", "Replicate", "Seedance route"], value: selectedProviderService || "Auto provider", apply: (value: string) => { setSelectedServiceNetwork(value === "Auto provider" ? "" : "video"); setSelectedProviderService(value === "Auto provider" ? "" : value); } },
+    { id: "quality", title: "6. Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "7. Süre", subtitle: "İstersen özel süreyi chat’e veya brief’e yazabilirsin; seçilen değer payload’a gider.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "voice", title: "8. Seslendirme", subtitle: "Konuşma dili, yaş/cinsiyet/tını yönü.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Energetic sales voice", "Calm documentary voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
+    { id: "language", title: "9. Konuşma dili", subtitle: "Voice-over ve altyazı dili.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
+    { id: "music", title: "10. Arka fon müziği", subtitle: "Müzik sağlayıcı/ruh hali route’a yazılır.", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Stable Audio", "Mubert", "User music reference"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); if (["Stable Audio", "Mubert"].includes(value)) { setSelectedServiceNetwork("music"); setSelectedProviderService(value); } } },
+    { id: "environment", title: "11. Ortam / sahne", subtitle: "Video, konuşma, drone veya canlı satış için sahne yönü.", options: ["Auto scene environment", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
+    { id: "delivery", title: "12. Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
 
   function selectedOptionSummary() {
@@ -3098,21 +3102,7 @@ async function startRawMicrophoneFallback() {
             <span className="badge">Manual setup</span>
             <small>İstersen chat yerine buradan adım adım seç: motor, kalite, süre, ses, müzik, ortam ve teslim.</small>
           </div>
-          {manualWizardOpen ? (
-            <div className="production-example-grid">
-              {manualWizardSteps.map((step, index) => index === manualWizardStep ? (
-                <div className="clean-tool-group" key={step.id}>
-                  <strong>{step.title}</strong>
-                  <small>{step.subtitle}</small>
-                  <div className="clean-tool-grid two">
-                    {step.options.map((option) => <button className={step.value === option ? "active" : ""} type="button" key={option} onClick={() => step.apply(option)}><strong>{option}</strong></button>)}
-                  </div>
-                </div>
-              ) : null)}
-            </div>
-          ) : (
-            <p>Kullanıcı hiçbir kategori bilmeden başlayabilir; seçimler production payload’a ve provider route’a yazılır.</p>
-          )}
+          <p>Kullanıcı hiçbir kategori bilmeden başlayabilir; seçimler splash ekranda kategori, modül, özellik, stil, motor, kalite, süre, ses, müzik, ortam ve teslim şeklinde sırayla sorulur.</p>
           <div className="production-example-actions">
             <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.max(0, manualWizardStep - 1)); }}>Önceki</button>
             <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.min(manualWizardSteps.length - 1, manualWizardStep + 1)); }}>Sonraki seçenek</button>
@@ -3232,6 +3222,31 @@ async function startRawMicrophoneFallback() {
         </section>
 
       </aside>
+
+      {manualWizardOpen ? (
+        <div className="production-start-modal-backdrop">
+          <div className="production-start-modal credit-splash-modal">
+            <button className="splash-ad-close" type="button" onClick={() => setManualWizardOpen(false)} aria-label="Close manual setup">×</button>
+            <span className="badge">Manual production setup</span>
+            <h3>Adım {manualWizardStep + 1} / {manualWizardSteps.length}: {manualWizardSteps[manualWizardStep]?.title}</h3>
+            <p>{manualWizardSteps[manualWizardStep]?.subtitle}</p>
+            <div className="progress-mini"><span style={{ width: `${Math.round(((manualWizardStep + 1) / manualWizardSteps.length) * 100)}%` }} /></div>
+            <div className="clean-tool-grid two" style={{ marginTop: 14 }}>
+              {manualWizardSteps[manualWizardStep]?.options.map((option) => (
+                <button className={manualWizardSteps[manualWizardStep]?.value === option ? "active" : ""} type="button" key={option} onClick={() => manualWizardSteps[manualWizardStep]?.apply(option)}>
+                  <strong>{option}</strong>
+                </button>
+              ))}
+            </div>
+            <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Seçim özeti</strong><pre>{selectedOptionSummary()}</pre></div>
+            <div className="production-example-actions">
+              <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button>
+              <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.min(manualWizardSteps.length - 1, current + 1))}>Sonraki</button>
+              <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else { setManualWizardOpen(false); openStartProductionModal(); } }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Seç ve devam et" : "Üretime hazırla"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {startModalOpen ? (
         <div className="production-start-modal-backdrop">
