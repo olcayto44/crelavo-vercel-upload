@@ -1443,6 +1443,7 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [selectedDeliveryHandoff, setSelectedDeliveryHandoff] = useState("Dashboard delivery");
   const [manualWizardOpen, setManualWizardOpen] = useState(false);
   const [manualWizardStep, setManualWizardStep] = useState(0);
+  const [manualWizardCompleted, setManualWizardCompleted] = useState(false);
   const [voiceListening, setVoiceListening] = useState(false);
   const [assistantCreditState, setAssistantCreditState] = useState<AssistantCreditState>(emptyAssistantCreditState);
   const [lastOrchestratorPlan, setLastOrchestratorPlan] = useState<AssistantOrchestratorResponse | null>(null);
@@ -2321,7 +2322,25 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     return "video";
   }
 
+  function openManualWizard() {
+    setManualWizardOpen(true);
+    setManualWizardStep(0);
+  }
+
+  function completeManualWizardAndOpenStart() {
+    setManualWizardCompleted(true);
+    setManualWizardOpen(false);
+    setProductionStartingIntent(true);
+    setStartError("");
+    setStartState("idle");
+    setStartModalOpen(true);
+  }
+
   function openStartProductionModal() {
+    if (!manualWizardCompleted) {
+      openManualWizard();
+      return;
+    }
     setProductionStartingIntent(true);
     setStartError("");
     setStartState("idle");
@@ -3106,7 +3125,7 @@ async function startRawMicrophoneFallback() {
           <div className="production-example-actions">
             <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.max(0, manualWizardStep - 1)); }}>Önceki</button>
             <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.min(manualWizardSteps.length - 1, manualWizardStep + 1)); }}>Sonraki seçenek</button>
-            <button className="btn" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(0); }}>Adım adım seç</button>
+            <button className="btn" type="button" onClick={openManualWizard}>Adım adım seç</button>
             <button className="btn" type="button" onClick={openStartProductionModal}>Örnekleri göster / üretime hazırla</button>
           </div>
         </section>
@@ -3242,7 +3261,7 @@ async function startRawMicrophoneFallback() {
             <div className="production-example-actions">
               <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button>
               <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.min(manualWizardSteps.length - 1, current + 1))}>Sonraki</button>
-              <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else { setManualWizardOpen(false); openStartProductionModal(); } }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Seç ve devam et" : "Üretime hazırla"}</button>
+              <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else completeManualWizardAndOpenStart(); }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Seç ve devam et" : "Üretime hazırla"}</button>
             </div>
           </div>
         </div>
