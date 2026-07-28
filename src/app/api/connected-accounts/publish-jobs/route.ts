@@ -1,4 +1,4 @@
-import { buildGuardedWorkerPlan } from "@/lib/connected-account-automation";
+import { buildGuardedWorkerPlan, evaluateConnectedAccountReadiness } from "@/lib/connected-account-automation";
 import { connectedAccountGuardrails, normalizeConnectedProvider } from "@/lib/connected-accounts";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
@@ -39,7 +39,28 @@ export async function POST(request: Request) {
     status = "queued";
   }
 
-  const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval });
+  let readinessStatus = jobType === "export_ready" ? "connected" : "not_checked";
+  let accountRecord: Record<string, any> | null = null;
+  if (connectedAccountId) {
+    const { data: account, error: accountError } = await supabaseAdmin()
+      .from("connected_accounts")
+      .select("id, user_id, provider, status, scopes, token_expires_at, access_token_encrypted, refresh_token_encrypted, error_message")
+      .eq("id", connectedAccountId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (accountError) return Response.json({ error: accountError.message }, { status: 500 });
+    if (!account) return Response.json({ error: "Connected account not found for this user." }, { status: 404 });
+    if (account.provider !== provider) return Response.json({ error: "Connected account provider does not match requested provider." }, { status: 400 });
+    accountRecord = account;
+    const readiness = evaluateConnectedAccountReadiness(account);
+    readinessStatus = String(readiness.status ?? "not_connected");
+    if (readinessStatus !== "connected" && jobType !== "export_ready") {
+      status = "blocked";
+      errorMessage = `Connected account is not ready: ${readinessStatus}. Refresh or reconnect before upload/publish.`;
+    }
+}
+
+  const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval, readinessStatus, hasConnectedAccount: Boolean(accountRecord) });
 
   const { data, error } = await supabaseAdmin()
     .from("connected_account_jobs")

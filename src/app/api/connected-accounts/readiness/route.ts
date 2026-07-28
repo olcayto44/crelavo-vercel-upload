@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabaseAdmin()
     .from("connected_accounts")
-    .select("id, provider, display_name, status, token_expires_at, access_token_encrypted, refresh_token_encrypted")
+    .select("id, provider, display_name, status, scopes, token_expires_at, access_token_encrypted, refresh_token_encrypted, error_message")
     .eq("user_id", userId);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });

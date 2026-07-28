@@ -170,11 +170,24 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
 const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 const [notice, setNotice] = useState("");
 
-  function prepareSocialSharing() {
+  async function prepareSocialSharing() {
     setTargetPart("Social media sharing");
     setAction("Prepare social sharing");
-    setMessage("Prepare caption, hashtags, platform format and posting plan for the final output.");
-    setNotice("Social sharing request is ready below. Review it and send from the assistant intervention area.");
+    setMessage(`Prepare export-ready delivery using this caption/product description: ${deliveryCaption}\nHashtags/product tags: ${deliveryHashtags}\nStore product ID: ${deliveryProductId || "not selected"}`);
+    setNotice("Saving social/store delivery preferences...");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) {
+      setNotice(auth.message);
+      window.setTimeout(() => document.getElementById("social-share-panel")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+      return;
+    }
+    const response = await fetch(`/api/productions/${production.id}/delivery-preferences`, {
+      method: "POST",
+      headers: authHeaders(auth.accessToken),
+      body: JSON.stringify({ caption: deliveryCaption, hashtags: deliveryHashtags, product_id: deliveryProductId })
+    });
+    const data = await response.json().catch(() => ({}));
+    setNotice(response.ok ? "Social/store delivery preferences saved into the export-ready pack. Review it and send from the assistant intervention area." : (data.error ?? "Delivery preferences could not be saved."));
     window.setTimeout(() => document.getElementById("social-share-panel")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
   const [localRevisions, setLocalRevisions] = useState<RevisionRequest[]>([]);

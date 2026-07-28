@@ -62,6 +62,8 @@ export function buildExportReadyPack(input: {
   caption?: string;
   hashtags?: string[];
   targetProviders?: ConnectedProvider[];
+  productId?: string;
+  productTags?: string[];
 }) {
   const defaultProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram"];
   const targetProviders: ConnectedProvider[] = input.targetProviders?.length ? input.targetProviders : defaultProviders;
@@ -73,6 +75,8 @@ export function buildExportReadyPack(input: {
     title: input.title || "Crelavo production export",
     caption: input.caption || "Review and edit this caption before publishing.",
     hashtags: input.hashtags?.length ? input.hashtags : ["#ai", "#videomarketing", "#ecommerce"],
+    productId: input.productId || "",
+    productTags: input.productTags?.length ? input.productTags : [],
     format: provider === "youtube" ? "Shorts-ready 9:16 or long-form 16:9" : provider === "shopify" || provider === "woocommerce" ? "Product media + description assets" : "Vertical 9:16 social video",
     guardrail: "Manual download/export is safe now. Direct upload/publish requires connected account verification and final approval."
   }));

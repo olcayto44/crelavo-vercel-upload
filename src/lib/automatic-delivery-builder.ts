@@ -134,7 +134,10 @@ export function buildDeliveryManifest(production: ProductionLike) {
     social_store_export_pack: buildExportReadyPack({
       title: value(production.title, "Crelavo production"),
       mediaUrl: links.previewUrl,
-      caption: value(production.prompt, "Review and edit caption before publishing."),
+      caption: value(metadata.deliveryPreferences?.caption ?? input.deliveryPreferences?.caption ?? production.output_json?.deliveryPreferences?.caption ?? production.prompt, "Review and edit caption before publishing."),
+      hashtags: Array.isArray(production.output_json?.deliveryPreferences?.hashtags) ? production.output_json?.deliveryPreferences?.hashtags.map(String) : undefined,
+      productId: value(production.output_json?.deliveryPreferences?.productId, ""),
+      productTags: Array.isArray(production.output_json?.deliveryPreferences?.productTags) ? production.output_json?.deliveryPreferences?.productTags.map(String) : undefined,
       targetProviders: ["tiktok", "youtube", "instagram", "meta", "shopify", "woocommerce"]
     }),
     reference_link_safety: value(metadata.referenceLinkSafety ?? input.referenceLinkSafety, "References are used for analysis and inspiration only; final outputs must be original."),

@@ -1,3 +1,4 @@
+import { normalizeTokenExpiry } from "@/lib/connected-account-automation";
 import { buildExportReadyPack, connectedAccountGuardrails, connectedProviderLabels, encryptConnectedToken, normalizeConnectedProvider, normalizeConnectedStatus, providerAccountTypes, safeAccountResponse } from "@/lib/connected-accounts";
 import { requireVerifiedRequestUser } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
         status,
         access_token_encrypted: accessToken,
         refresh_token_encrypted: refreshToken,
-        token_expires_at: clean(body.token_expires_at ?? body.tokenExpiresAt) || null,
+        token_expires_at: normalizeTokenExpiry(body.token_expires_at ?? body.tokenExpiresAt),
         scopes,
         last_verified_at: status === "connected" ? new Date().toISOString() : null,
         metadata: {
