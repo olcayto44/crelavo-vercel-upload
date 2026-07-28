@@ -994,7 +994,7 @@ function productionFollowUpReply(message: string, language: string) {
 function detectWorkspaceIntent(message: string): WorkspaceIntent {
   const text = message.toLocaleLowerCase("tr-TR").trim();
   const normalized = text.replace(/[.!?]+$/g, "").trim();
-  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|onay verdim|evet|evet veriyorum|veriyorum|tamam veriyorum|kabul|kabul ediyorum|olur|tamam olur|tamam buyurun|buyurun sunun|sunun|üretime geç|uretime gec|evet başla|evet basla|hemen başla|hemen basla|start|confirm|create production)$/i.test(normalized);
+  const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|onay verdim|evet|evet veriyorum|veriyorum|tamam veriyorum|kabul|kabul ediyorum|olur|tamam olur|tamam buyurun|buyurun sunun|sunun|üretime geç|uretime gec|evet başla|evet basla|hemen başla|hemen basla|start|start production|start production now|begin production|begin production now|confirm|confirm production|create production|create production now)$/i.test(normalized);
   const hasNewSubjectAfterHadi = /^hadi\s+\S+/.test(normalized) && !/^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et)$/i.test(normalized);
   if (/^(selam|merhaba|hello|hi|hey|sa|slm|günaydın|gunaydin|iyi akşamlar|iyi aksamlar)\b/.test(text)) return "greeting";
   if (/^(nasılsın|nasilsin|naber|ne haber|how are you)\b/.test(text)) return "greeting";
@@ -1004,7 +1004,7 @@ function detectWorkspaceIntent(message: string): WorkspaceIntent {
   if (/\b(kod|code|bug|hata|debug|api|component|react|next|supabase|veritabanı|veritabani|sql|çözebilir misin|cozebilir misin|yardımcı olur musun|yardimci olur musun|bakabilir misin|düzeltir misin|duzeltir misin|sıkıntı|sikinti|problem|çalışmazsa|calismazsa)\b/.test(text)) return "consultation";
   if (/\b(nasıl|nasil|ne yaparsın|ne yaparsin|yardım|yardim|destek|olursa|olduğunda|oldugunda|mümkün mü|mumkun mu|yapabilir misin)\b/.test(text) && /\b(site|website|web|kod|code|hata|bug|api|supabase|react|next|sql)\b/.test(text)) return "consultation";
   if (isGeneralInformationQuestion(message)) return "consultation";
-  if (startOnly || /\b(üretime geç|uretime gec)\b/.test(text)) return "start_confirmation";
+  if (startOnly || /\b(üretime geç|uretime gec|start production|start production now|begin production|begin production now|create production now|proceed to production approval)\b/.test(text)) return "start_confirmation";
   if (/\b(nasıl yardımcı|nasil yardimci|yardım|yardim|ne yapabilirim|anlat|seçenek|secenek|hangi|how|help|explain|options)\b/.test(text)) return "help";
 
   if (/\b(video|reklam|website|web site|site|saas|mobil|uygulama|avatar|animasyon|müzik|muzik|klip|mv|kampanya|ürün|urun|shopify|amazon|trendyol|logo|brand|seslendirme|altyazı|altyazi|klonlama|lip-sync|konuşmalı|konusmali|görüntülü|goruntulu|içecek|icecek|tavuk|yemek|gıda|gida|restoran|menü|menu|kafe|cafe|e-ticaret|eticaret|admin panel)\b/.test(text)) return "production_request";
@@ -2512,7 +2512,8 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     }
 
 const recentContext = normalizeTurkishQuery(messages.slice(-8).map((item) => item.content).join(" "));
-const currentTurnLanguage = turnLanguage(clean, activeLanguage);
+const briefHasEnglishLock = productionBrief.includes("Language lock:") || wantsEnglishProductionLanguage(productionBrief);
+const currentTurnLanguage = briefHasEnglishLock || wantsEnglishProductionLanguage(clean) ? "en" : turnLanguage(clean, activeLanguage);
 const followUpProduction = isShortProductionFollowUp(clean, recentContext) || (dynamicWizard.open && isShortProductionFollowUp(clean, `${recentContext} video proje uretim`));
 const followUpDuration = followUpProduction ? durationFromFollowUp(clean) : "";
 const intent = followUpProduction ? "production_request" : detectWorkspaceIntent(clean);
@@ -2545,12 +2546,12 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       if (isAiVideoOnlyIntent(existingBrief)) {
         applyAiVideoOnlyPreset(existingBrief);
       } else if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
-      const startReply = activeLanguage === "tr"
+      const startReply = currentTurnLanguage === "tr"
         ? "Tamam. Chat cevabı üretmiyorum; gerçek üretim/kredi kontrol ekranını açıyorum. Kredi bu onay adımında kontrol edilir, üretim kaydı da buradan oluşur."
         : "Understood. I am not pretending the production has started in chat; I am opening the real production/credit confirmation step now.";
       setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: startReply }]);
       if (source === "chat") setChatInput("");
-      setStatus(activeLanguage === "tr" ? "Üretim onayı hazır. Seçilen ayarlar üretim alanına işlendi." : "Production approval is ready. Selected options are reflected in the work area.");
+      setStatus(currentTurnLanguage === "tr" ? "Üretim onayı hazır. Seçilen ayarlar üretim alanına işlendi." : "Production approval is ready. Selected options are reflected in the work area.");
       openStartProductionModal();
       return;
     }
