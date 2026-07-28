@@ -1,4 +1,5 @@
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { buildMusicProviderRoute } from "@/lib/music-provider-routing";
 import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
 import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
 
@@ -11,7 +12,8 @@ export async function GET(request: Request) {
     stableAudioReady: hasProviderEnv("stableAudio") || hasProviderEnv("stability"),
     mubertReady: hasProviderEnv("mubert"),
     required: { stableAudio: ["STABLE_AUDIO_API_KEY or STABILITY_API_KEY"], mubert: providerEnvNames("mubert") },
-    guard: "admin_only_music_provider_readiness"
+    guard: "admin_only_music_provider_readiness",
+    route: buildMusicProviderRoute()
   };
   if (!["stable-audio", "mubert", "summary"].includes(provider)) return Response.json({ error: "provider must be stable-audio, mubert or summary.", readiness }, { status: 400 });
   if (provider === "summary") return Response.json({ provider, readiness });

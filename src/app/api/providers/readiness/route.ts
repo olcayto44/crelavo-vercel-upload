@@ -1,5 +1,6 @@
 import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { buildProviderPlan, providerRouteMap } from "@/lib/provider-plan";
+import { buildProductionProviderRoutingCheck } from "@/lib/production-provider-routing-check";
 import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
 import { platformVoices } from "@/lib/voice-library";
 
@@ -219,6 +220,7 @@ export async function GET() {
       mode: "recommended_for_public_forms_before_paid_traffic"
     },
     providerLiveVerification: providerLiveVerificationChecks,
+    productionProviderRouting: buildProductionProviderRoutingCheck(),
     note: "Secrets are never returned; only readiness booleans, model choices and env variable names are exposed."
   });
 }

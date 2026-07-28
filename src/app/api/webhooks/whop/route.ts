@@ -6,6 +6,7 @@ import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail, sendPayme
 import { business12000LaunchAffiliateCampaign, calculatePartnerCommission, normalizePartnerCode } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
+import { buildWhopCreditReconciliation } from "@/lib/whop-reconciliation";
 
 type WhopObject = Record<string, unknown>;
 
@@ -497,7 +498,9 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   });
 
   if (!mappedPlan || !product) {
-    return { receiptEmailResult, adminPaymentNotificationResult, activation: { activated: false, reason: "whop_plan_not_mapped", planId } };
+    const activation = { activated: false, reason: "whop_plan_not_mapped", planId };
+    const creditReconciliation = buildWhopCreditReconciliation({ event, webhookId, paymentReference, customerEmail: email, activation, receiptEmailResult, adminPaymentNotificationResult });
+    return { receiptEmailResult, adminPaymentNotificationResult, activation, creditReconciliation };
   }
 
   const partnerCommissionResult = await recordPartnerCommissionFromPayment({
@@ -530,7 +533,9 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   }) : [{ provider: "meta" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }, { provider: "google_ads" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }];
 
   if (!activationDecision.add) {
-    return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation: { activated: false, reason: activationDecision.reason, productId: product.id } };
+    const activation = { activated: false, reason: activationDecision.reason, productId: product.id };
+    const creditReconciliation = buildWhopCreditReconciliation({ event, webhookId, paymentReference, customerEmail: email, activation, receiptEmailResult, adminPaymentNotificationResult });
+    return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditReconciliation };
   }
 
   const credits = creditsForProduct(product, mappedPlan.billing);
@@ -557,7 +562,18 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
       })
     : { skipped: true, reason: activation.reason };
 
-  return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditActivationEmailResult };
+  const creditReconciliation = buildWhopCreditReconciliation({
+    event,
+    webhookId,
+    paymentReference,
+    customerEmail: email,
+    activation,
+    receiptEmailResult,
+    adminPaymentNotificationResult,
+    creditActivationEmailResult
+  });
+
+  return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditActivationEmailResult, creditReconciliation };
 }
 
 async function clearCreditsAfterMembershipEnd(payment: WhopObject) {

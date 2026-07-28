@@ -1,3 +1,4 @@
+import { buildMusicProviderRoute } from "./music-provider-routing";
 import { paymentProviderName } from "./payment-provider";
 import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv, optionalEnv } from "./providers/env";
 
@@ -229,6 +230,7 @@ export function providerRouteMap() {
 }
 
 export function buildProviderPlan() {
+  const musicRoute = buildMusicProviderRoute();
   const plans: ProviderPlanItem[] = [
     brainPlan(),
     imagePlan(),
@@ -272,9 +274,9 @@ export function buildProviderPlan() {
       intendedUse: "Background music, campaign music beds and generated music workflows.",
       requiredEnv: ["STABLE_AUDIO_API_KEY or STABILITY_API_KEY"],
       optionalEnv: ["STABLE_AUDIO_MODEL", "STABLE_AUDIO_ACCOUNT_URL", "MUBERT_API_KEY", "MUBERT_ACCESS_TOKEN", "MUBERT_ACCOUNT_URL"],
-      status: stableAudioReady() || hasProviderEnv("mubert") ? "ready" : "missing",
-      safeMode: "If music APIs are missing, use manual licensed music fallback and do not promise generated music.",
-      finalSetup: "Use Stable Audio first, Mubert second; test account access before enabling music jobs."
+      status: musicRoute.ready ? "ready" : "missing",
+      safeMode: `${musicRoute.costGuard.policy} If music APIs are missing, use manual licensed music fallback and do not promise generated music.`,
+      finalSetup: `Use ${musicRoute.primary} first with ${musicRoute.fallback} fallback; estimated ${musicRoute.costGuard.estimatedCredits} credits, review above ${musicRoute.costGuard.maxCreditsBeforeReview} credits before enabling music jobs.`
     },
     {
       id: "social-tiktok",
