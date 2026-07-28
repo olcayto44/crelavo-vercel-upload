@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/AdminShell";
+import { AdminSeoCompetitorAgent } from "@/components/AdminSeoCompetitorAgent";
 import { googleIndexingAllSitemapUrls, googleIndexingContinuationUrls, googleIndexingGuardrails, googleIndexingSubmittedUrls, indexingChecklist, searchEngineSubmitTargets } from "@/lib/google-indexing";
 import { globalSeoExpansionPlan, growthDataOptimizationPlan, programmaticSeoQualityGuardPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
 import { seoLaunchKit } from "@/lib/seo-launch-kit";
@@ -60,6 +61,8 @@ export default function AdminSeoPage() {
         </div>
         <ul>{growthDataOptimizationPlan.optimizationLoops.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
+
+      <AdminSeoCompetitorAgent />
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Google indexing continuation</span>
