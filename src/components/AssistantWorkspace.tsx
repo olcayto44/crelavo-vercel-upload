@@ -3509,23 +3509,13 @@ async function startRawMicrophoneFallback() {
             <small>Provider status</small>
             {studioProviderSignals.map((item) => <span key={item.label}><b>{item.label}</b>{item.value} · {item.status}</span>)}
           </div>
-          {startedProduction ? (
-            <div className={`studio-started-card ${startedProduction?.status === "waiting_provider_config" || startedProduction?.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-              <small>{startedProduction?.status === "automation_warning" || startedProduction?.status === "waiting_provider_config" ? "Attention needed" : "Production started"}</small>
-              <strong>{startedProduction?.message}</strong>
-              <span><b>Production ID</b>{startedProduction?.id}</span>
-              {startedProduction?.providerStatus ? <span><b>Provider status</b>{startedProduction?.providerStatus}</span> : null}
-              {startedProduction?.missingProviderKeys?.length ? <span><b>Missing provider</b>{startedProduction?.missingProviderKeys?.join(", ")}</span> : null}
-              {startedProduction?.nextAction ? <p className="workspace-action-note">{startedProduction?.nextAction}</p> : null}
-              <a className="btn secondary" href={startedProduction?.detailUrl ?? "/dashboard/productions"}>Open details</a>
-            </div>
-          ) : (
+          {!startedProduction ? (
             <div className="studio-started-card production-draft-card">
               <small>Not live yet</small>
               <strong>No production ID yet.</strong>
               <span><b>Next step</b>Use Start Production to create a real record.</span>
             </div>
-          )}
+          ) : null}
           {assistantCreditState.chargedCredits !== null ? <p className="workspace-action-note">Last assistant charge: {formatCredits(assistantCreditState.chargedCredits)} credits ({assistantCreditState.chargeSource === "assistant_trial" ? "free assistant credits" : "production credits"}).</p> : null}
           {assistantCreditState.redirect ? <p className="workspace-action-note error">Credits required. Top up on the credits page to continue chatting.</p> : null}
           {assistantCreditState.assistantBalance !== null && (assistantCreditState.assistantBalance ?? 0) > 0 && (assistantCreditState.assistantBalance ?? 0) < 300 && !assistantCreditState.redirect ? <p className="workspace-action-note warning">Your free assistant credits are running low. When they run out, messages will use production credits.</p> : null}

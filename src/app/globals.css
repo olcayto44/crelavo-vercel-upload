@@ -9420,6 +9420,27 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 .clean-completion-card {
   max-width: 520px;
   margin-top: 8px;
+  align-self: start;
+}
+.clean-output-viewer .clean-completion-card {
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+}
+.clean-output-viewer .clean-completion-card strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+.clean-output-viewer .clean-completion-card span {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.clean-output-viewer .clean-completion-card .workspace-action-note {
+  margin: 2px 0;
+  font-size: 12px;
+  line-height: 1.3;
 }
 .production-example-directions {
   display: grid;
