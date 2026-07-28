@@ -9,6 +9,17 @@ function shotstackKey() {
   return requireProviderEnv("shotstack");
 }
 
+export function getShotstackReadiness() {
+  const apiKey = shotstackKey();
+  return {
+    connected: true,
+    keyLength: apiKey.length,
+    endpoint: shotstackEndpoint(),
+    checked: "configuration-only",
+    note: "Safe readiness check only. No render job was created. Run a controlled render test only when explicitly approved."
+  };
+}
+
 export async function createShotstackRender(input: {
   title: string;
   videoUrl?: string;

@@ -5,8 +5,8 @@ import { getKeywordVolume } from "@/lib/providers/dataforseo";
 import { geocodeAddress } from "@/lib/providers/google-maps";
 import { getHeyGenAvatars } from "@/lib/providers/heygen";
 import { getMetaAdAccount } from "@/lib/providers/meta";
-import { getMubertAccount, getStableAudioAccount } from "@/lib/providers/music";
-import { createShotstackTestRender } from "@/lib/providers/shotstack";
+import { getMubertAccount } from "@/lib/providers/music";
+import { getShotstackReadiness } from "@/lib/providers/shotstack";
 import { getShopifyReadiness } from "@/lib/providers/shopify";
 import { getStabilityBalance } from "@/lib/providers/stability";
 import { adOAuthUrl } from "@/lib/phase2/ads";
@@ -15,6 +15,10 @@ import { hasProviderEnv, providerEnvNames, requireProviderEnv } from "@/lib/prov
 
 function ok(provider: string, detail: unknown) {
   return Response.json({ provider, ok: true, detail });
+}
+
+function notReady(provider: string, detail: { error: string } & Record<string, unknown>, status = 200) {
+  return Response.json({ provider, ok: false, error: detail.error, detail }, { status });
 }
 
 function fail(provider: string, error: unknown, status = 500) {
@@ -59,7 +63,12 @@ async function testDataForSeo() {
 
 async function testMusicProvider() {
   if (hasProviderEnv("stableAudio") || hasProviderEnv("stability")) {
-    return { primary: "stable-audio", result: await getStableAudioAccount() };
+    return {
+      connected: true,
+      primary: hasProviderEnv("stableAudio") ? "stable-audio" : "stability-ai",
+      checked: "configuration-only",
+      note: "Safe readiness check only. No paid music generation or unreliable account endpoint was called. Run a controlled generation test only when explicitly approved."
+    };
   }
   if (hasProviderEnv("mubert")) {
     return { primary: "mubert", result: await getMubertAccount() };
@@ -67,9 +76,31 @@ async function testMusicProvider() {
   throw new Error("STABLE_AUDIO_API_KEY or MUBERT_API_KEY missing");
 }
 
+function providerPlanById(id: string) {
+  return buildProviderPlan().plans.find((item) => item.id === id);
+}
+
 function selectedVideoReadiness() {
   const plan = buildProviderPlan().plans.find((item) => item.category === "video");
   return { note: "No video generation was started. This only checks selected video provider readiness to avoid spend.", readiness: plan };
+}
+
+function specificVideoReadiness(provider: "kling" | "fal" | "runway") {
+  const aliasMap = {
+    kling: "kling",
+    fal: "fal",
+    runway: "runway"
+  } as const;
+  const envKey = aliasMap[provider];
+  const ready = hasProviderEnv(envKey);
+  const plan = providerPlanById(`video-${provider}`);
+  return {
+    connected: ready,
+    provider,
+    required: providerEnvNames(envKey),
+    readiness: plan ?? null,
+    note: ready ? `${provider} credentials are present. No generation was started.` : `${provider} credentials are missing. No generation was started.`
+  };
 }
 
 function requireAnyEnv(names: string[]) {
@@ -137,9 +168,16 @@ export async function GET(request: Request) {
     if (provider === "heygen") return ok(provider, await getHeyGenAvatars());
     if (provider === "stability") return ok(provider, await getStabilityBalance());
     if (provider === "music" || provider === "stable-audio") return ok("music", await testMusicProvider());
-    if (provider === "shotstack") return ok(provider, await createShotstackTestRender());
-    if (["video", "kling", "fal", "runway"].includes(provider)) return ok(provider, selectedVideoReadiness());
-    if (provider === "shopify") return ok(provider, getShopifyReadiness());
+    if (provider === "shotstack") return ok(provider, getShotstackReadiness());
+    if (provider === "video") return ok(provider, selectedVideoReadiness());
+    if (provider === "kling" || provider === "fal" || provider === "runway") {
+      const detail = specificVideoReadiness(provider);
+      return detail.connected ? ok(provider, detail) : notReady(provider, { ...detail, error: `${provider} credentials are missing.` });
+    }
+    if (provider === "shopify") {
+      const detail = getShopifyReadiness();
+      return detail.connected ? ok(provider, detail) : notReady(provider, { ...detail, error: "Shopify app credentials are not fully configured." });
+    }
     return fail(provider, new Error("Unsupported provider test."), 400);
   } catch (error) {
     return fail(provider, error);

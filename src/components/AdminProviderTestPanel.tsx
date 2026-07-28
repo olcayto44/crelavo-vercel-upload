@@ -19,11 +19,11 @@ const providerTests = [
   { id: "elevenlabs", label: "ElevenLabs" },
   { id: "heygen", label: "HeyGen" },
   { id: "stability", label: "Stability AI" },
-  { id: "music", label: "Music API" },
+  { id: "music", label: "Music API safe readiness" },
   { id: "kling", label: "Kling readiness" },
   { id: "fal", label: "Fal readiness" },
   { id: "runway", label: "Runway readiness" },
-  { id: "shotstack", label: "Shotstack render" },
+  { id: "shotstack", label: "Shotstack safe readiness" },
   { id: "video", label: "Selected video provider" },
   { id: "shopify", label: "Shopify app" }
 ];
@@ -44,26 +44,30 @@ export function AdminProviderTestPanel() {
 
   async function runTest(provider: string) {
     setRunning(provider);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch(`/api/admin/provider-tests?provider=${encodeURIComponent(provider)}`, { headers: adminApiHeaders(adminEmail, adminToken) });
+      const response = await fetch(`/api/admin/provider-tests?provider=${encodeURIComponent(provider)}`, { headers: adminApiHeaders(adminEmail, adminToken), signal: controller.signal });
       const data = await response.json().catch(() => ({ ok: false, error: "Invalid provider test response" }));
       setResults((current) => ({ ...current, [provider]: data }));
     } catch (error) {
+      const timedOut = error instanceof Error && error.name === "AbortError";
       setResults((current) => ({
         ...current,
         [provider]: {
           ok: false,
           provider,
-          error: error instanceof Error ? error.message : "Provider test could not be started."
+          error: timedOut ? "Provider test timed out after 20 seconds." : error instanceof Error ? error.message : "Provider test could not be started."
         }
       }));
     } finally {
+      window.clearTimeout(timeout);
       setRunning("");
     }
   }
 
   async function runSafeBatch() {
-    for (const item of providerTests.filter((test) => !["shotstack"].includes(test.id))) {
+    for (const item of providerTests) {
       await runTest(item.id);
     }
   }
