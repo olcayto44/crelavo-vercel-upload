@@ -75,6 +75,7 @@ export const adminMenu = [
 ];
 
 export const adminDailyFocus = [
+  { label: "Üyeler / Kredi yükleme", href: "/admin/users", priority: "Günlük", note: "Kullanıcı bul, üyeyi aç, manuel kredi yükleme ve hesap/kredi durumunu hızlı kontrol et." },
   { label: "Bugün bakılacak özet", href: "/admin", priority: "Günlük", note: "Genel durum, canlı ziyaretçi, istekler, finans ve launch durumunu tek ekranda gör." },
   { label: "Üretimler / İstekler", href: "/admin/productions", priority: "Günlük", note: "Yeni iş var mı, üretim bekliyor mu, teslimat linki veya hata var mı kontrol et." },
   { label: "Gelen e-posta / bildirim", href: "/admin/growth", priority: "Günlük", note: "Contact form, lead, kullanıcı mesajı, şikayet, support veya takip isteyen bildirimleri kontrol et." },
