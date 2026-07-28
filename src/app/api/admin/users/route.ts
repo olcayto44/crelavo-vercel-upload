@@ -37,7 +37,12 @@ export async function GET(request: Request) {
 
     if (profilesError) throw profilesError;
 
-    const userIds = (profiles ?? []).map((profile) => profile.id);
+    const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
+    if (authUsersError) throw authUsersError;
+    const authUsers = authUsersData.users ?? [];
+    const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+    const mergedUserIds = Array.from(new Set([...(profiles ?? []).map((profile) => profile.id), ...authUsers.map((user) => user.id).filter(Boolean)]));
+    const userIds = mergedUserIds;
     const { data: balances, error: balancesError } = userIds.length > 0
       ? await supabase.from("credit_balances").select("user_id, balance, reserved, updated_at").in("user_id", userIds)
       : { data: [], error: null };
@@ -56,9 +61,7 @@ export async function GET(request: Request) {
       acceptanceMap.set(acceptance.user_id, { latest: current.latest, count: current.count + 1 });
     }
 
-    const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
-    if (authUsersError) throw authUsersError;
-    const authUserMap = new Map((authUsersData.users ?? []).map((user) => [user.id, user]));
+    const authUserMap = new Map(authUsers.map((user) => [user.id, user]));
 
     const { data: creditEvents, error: creditEventsError } = userIds.length > 0
       ? await supabase.from("credit_events").select("user_id, type, amount, note, created_at").in("user_id", userIds).order("created_at", { ascending: false })
@@ -87,23 +90,25 @@ export async function GET(request: Request) {
     }
 
     const balanceMap = new Map((balances ?? []).map((balance) => [balance.user_id, balance]));
-    const users = (profiles ?? []).map((profile) => {
-      const balance = balanceMap.get(profile.id);
-      const authUser = authUserMap.get(profile.id);
+    const users = userIds.map((userId) => {
+      const profile = profileMap.get(userId);
+      const balance = balanceMap.get(userId);
+      const authUser = authUserMap.get(userId);
       const credits = balance?.balance ?? 0;
-      const legal = acceptanceMap.get(profile.id);
+      const legal = acceptanceMap.get(userId);
       const provider = authUser?.app_metadata?.provider ?? "email";
       const emailConfirmed = Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at);
       const latestLegal = legal?.latest ?? null;
-      const finance = financeMap.get(profile.id);
+      const finance = financeMap.get(userId);
+      const email = profile?.email || authUser?.email || "unknown@email";
       return {
-        id: profile.id,
-        name: profile.full_name || String(authUser?.user_metadata?.full_name ?? "") || profile.email?.split("@")[0] || "Unnamed user",
-        email: profile.email,
+        id: userId,
+        name: profile?.full_name || String(authUser?.user_metadata?.full_name ?? "") || email.split("@")[0] || "Unnamed user",
+        email,
         ip: latestLegal?.ip_address ?? "IP later",
         country: String(authUser?.user_metadata?.country ?? "Unknown"),
         city: String(authUser?.user_metadata?.city ?? "Unknown"),
-        role: profile.role,
+        role: profile?.role ?? String(authUser?.user_metadata?.role ?? "user"),
         provider,
         email_confirmed: emailConfirmed,
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
@@ -111,7 +116,7 @@ export async function GET(request: Request) {
         reserved: balance?.reserved ?? 0,
         available: credits - (balance?.reserved ?? 0),
         value: `$${estimateCreditValueUsd(credits)}`,
-        created_at: profile.created_at ?? authUser?.created_at ?? null,
+        created_at: profile?.created_at ?? authUser?.created_at ?? null,
         updated_at: balance?.updated_at ?? null,
         legal_acceptance_count: legal?.count ?? 0,
         latest_legal_acceptance: latestLegal,

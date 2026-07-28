@@ -1057,11 +1057,21 @@ function localizedWorkspaceReply(kind: "default" | "greeting" | "continue" | "fl
   return (copy[language] ?? copy.en)[kind] ?? copy.en[kind] ?? copy.en.default ?? "Understood.";
 }
 
+function wantsEnglishProductionLanguage(message: string) {
+  return /\b(fully\s+in\s+english|final\s+video\s+must\s+be\s+fully\s+in\s+english|voiceover\s+must\s+be\s+english|on-screen\s+text\s+must\s+be\s+english|do\s+not\s+answer\s+in\s+turkish|do\s+not\s+translate\s+.*turkish|language\s*:\s*english|english\s+voiceover)\b/i.test(message);
+}
+
+function englishProductionLanguageLock() {
+  return "Language lock: The production brief, script, narration, voiceover, scene plan, final prompt, and any on-screen text must be in English. Do not translate the production content into Turkish.";
+}
+
 function responseLanguage(message: string, activeLanguage = "") {
+  if (wantsEnglishProductionLanguage(message)) return "en";
   return isLikelyTurkish(message, activeLanguage) ? "tr" : activeLanguage || "en";
 }
 
 function turnLanguage(message: string, activeLanguage = "") {
+  if (wantsEnglishProductionLanguage(message)) return "en";
   const normalized = normalizeTurkishQuery(message);
   if (/[\u0600-\u06ff]/.test(message)) return "ar";
   if (/[çğıöşüÇĞİÖŞÜ]/.test(message) || hasTurkishQuestionWords(normalized)) return "tr";
@@ -1521,6 +1531,25 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const hasKnownProductionCredits = typeof availableProductionCredits === "number";
   const productionCreditShortfall = hasKnownProductionCredits ? Math.max(0, costEstimate.totalCredits - (availableProductionCredits ?? 0)) : 0;
   const productionCreditInsufficient = hasKnownProductionCredits && productionCreditShortfall > 0;
+  async function refreshProductionCredits() {
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) return;
+    const response = await fetch(`/api/credits?user_id=${auth.user.id}&t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { ...authHeaders(auth.accessToken), "Cache-Control": "no-cache" }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || typeof data.available !== "number") return;
+    setProductionCreditAvailable(data.available);
+    setAssistantCreditState((current) => ({
+      ...current,
+      productionAvailable: data.available,
+      productionBalance: typeof data.balance === "number" ? data.balance : current.productionBalance,
+      requiredCredits: data.available >= costEstimate.totalCredits ? null : current.requiredCredits,
+      redirect: data.available >= costEstimate.totalCredits ? null : current.redirect
+    }));
+  }
+
   const productionExampleDirections = (() => {
     const recentProductionContext = messages.slice(-12).map((item) => item.content).join(" ");
     const subjectText = `${productionBrief} ${input} ${recentProductionContext} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
@@ -1573,14 +1602,9 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
         window.localStorage.removeItem("clipora_assistant_workspace_messages");
       }
     }
+    refreshProductionCredits().catch(() => undefined);
     requireVerifiedBrowserUser().then((auth) => {
       if (!auth.ok || cancelled) return;
-      fetch(`/api/credits?user_id=${auth.user.id}`, { cache: "no-store", headers: authHeaders(auth.accessToken) })
-        .then((res) => res.json())
-        .then((data) => {
-          if (!cancelled && typeof data.available === "number") setProductionCreditAvailable(data.available);
-        })
-        .catch(() => undefined);
       fetch(`/api/assistant-chat?user_id=${auth.user.id}`, { headers: authHeaders(auth.accessToken) })
         .then((res) => res.json())
         .then((data) => {
@@ -1599,6 +1623,23 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
     });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    function syncCredits() {
+      refreshProductionCredits().catch(() => undefined);
+    }
+    function syncCreditsWhenVisible() {
+      if (document.visibilityState === "visible") syncCredits();
+    }
+    window.addEventListener("focus", syncCredits);
+    document.addEventListener("visibilitychange", syncCreditsWhenVisible);
+    window.addEventListener("clipora:credits-updated", syncCredits);
+    return () => {
+      window.removeEventListener("focus", syncCredits);
+      document.removeEventListener("visibilitychange", syncCreditsWhenVisible);
+      window.removeEventListener("clipora:credits-updated", syncCredits);
+    };
+  }, [costEstimate.totalCredits]);
 
   useEffect(() => {
     if (messages.length) {
@@ -2456,7 +2497,9 @@ const isStartConfirmation = intent === "start_confirmation";
 const conversationalOnly = intent === "greeting" || intent === "help" || intent === "consultation" || isStartConfirmation;
 const conversationalReplyKind = intent === "greeting" ? "greeting" : intent === "help" ? "help" : "consultation";
 if (intent === "production_request" || followUpProduction) {
-  setProductionBrief((current) => current && followUpProduction ? `${current}\n${clean}` : clean);
+  const languageLockedClean = wantsEnglishProductionLanguage(clean) && !clean.includes("Language lock:") ? `${clean}\n\n${englishProductionLanguageLock()}` : clean;
+  if (wantsEnglishProductionLanguage(clean)) setSelectedVoiceLanguage("English");
+  setProductionBrief((current) => current && followUpProduction ? `${current}\n${languageLockedClean}` : languageLockedClean);
 }
 const optionSummary = selectedOptionSummary();
 const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Production follow-up detail" : "Production request"}: ${clean}\n\nRecent context:\n${messages.slice(-6).map((item) => `${item.role}: ${item.content}`).join("\n")}\n\nProduction options:\n${optionSummary}`;
@@ -3384,7 +3427,7 @@ async function startRawMicrophoneFallback() {
             {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
           </div>
           <div className="studio-credit-trust-panel">
-            <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Check"}</strong></span>
+            <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Check"}</strong><button className="btn secondary" type="button" onClick={() => refreshProductionCredits().catch(() => undefined)}>Refresh credits</button></span>
             <span><small>Reserved now</small><strong>{startedProduction ? "Production record" : "0 credits"}</strong></span>
             <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
             {productionCreditInsufficient ? <p className="workspace-action-note error">Missing: {productionCreditShortfall.toLocaleString()} credits. Add credits before starting or reduce quality/scope.</p> : <p className="workspace-action-note">No credits are reserved before a real record exists.</p>}

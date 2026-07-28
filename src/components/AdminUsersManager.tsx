@@ -74,20 +74,24 @@ export function AdminUsersManager() {
     loadUsers();
   }, []);
 
+  const matchesQuery = (user: AdminUser, clean: string) =>
+    !clean ||
+    user.id.toLowerCase().includes(clean) ||
+    user.name.toLowerCase().includes(clean) ||
+    user.email.toLowerCase().includes(clean) ||
+    user.ip.toLowerCase().includes(clean) ||
+    user.country.toLowerCase().includes(clean);
+
   const filteredUsers = useMemo(() => {
     const clean = query.toLowerCase().trim();
     const visibleUsers = users.filter((user) => String(user.role ?? "user").toLowerCase() !== "admin");
-    if (!clean) return visibleUsers;
-    return visibleUsers.filter((user) =>
-      user.id.toLowerCase().includes(clean) ||
-      user.name.toLowerCase().includes(clean) ||
-      user.email.toLowerCase().includes(clean) ||
-      user.ip.toLowerCase().includes(clean) ||
-      user.country.toLowerCase().includes(clean)
-    );
+    return visibleUsers.filter((user) => matchesQuery(user, clean));
   }, [query, users]);
 
-  const adminUsers = users.filter((user) => String(user.role ?? "").toLowerCase() === "admin");
+  const adminUsers = useMemo(() => {
+    const clean = query.toLowerCase().trim();
+    return users.filter((user) => String(user.role ?? "").toLowerCase() === "admin" && matchesQuery(user, clean));
+  }, [query, users]);
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -125,7 +129,7 @@ export function AdminUsersManager() {
             <span className="btn">Detay aç</span>
           </Link>
         ))}
-        {!filteredUsers.length ? <section className="card admin-wide-card"><p className="form-message">Üye bulunamadı veya admin oturumu doğrulanmadı.</p></section> : null}
+        {!filteredUsers.length && !adminUsers.length ? <section className="card admin-wide-card"><p className="form-message">Üye bulunamadı veya admin oturumu doğrulanmadı. Admin hesabını arıyorsan artık aşağıdaki Admin hesapları bölümünde de filtrelenir.</p></section> : null}
       </section>
 
       <section className="card admin-wide-card">
