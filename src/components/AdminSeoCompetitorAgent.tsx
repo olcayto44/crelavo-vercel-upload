@@ -90,8 +90,9 @@ export function AdminSeoCompetitorAgent() {
           <div className="provider-job-list">
             {report.opportunities.map((item) => (
               <div className="provider-job-chip active" key={item.keyword}>
-                <strong>{item.keyword} · {item.difficulty}</strong>
+                <strong>{item.keyword} · {item.difficulty} · volume {item.searchVolume ?? "n/a"}</strong>
                 <span>Crelavo rank: {item.ownRank ?? "not top 10"}</span>
+                <small>{item.contentGap}</small>
                 <small>{item.action}</small>
               </div>
             ))}
@@ -101,10 +102,37 @@ export function AdminSeoCompetitorAgent() {
           <div className="provider-job-list">
             {report.actionPlan?.map((item) => (
               <div className="provider-job-chip active" key={`${item.keyword}-${item.pageType}`}>
-                <strong>{item.priority} · {item.cluster} · {item.pageType}</strong>
-                <span>{item.keyword}</span>
+                <strong>{item.priority} · {item.estimatedImpact} impact · {item.automationStatus}</strong>
+                <span>{item.pageSlug} · {item.cluster} · {item.pageType}</span>
                 <small>{item.brief}</small>
+                <small>H1: {item.contentBrief.h1}</small>
+                <small>Title: {item.contentBrief.titleTag}</small>
+                <small>Meta: {item.contentBrief.metaDescription}</small>
+                <small>Sections: {item.contentBrief.sections.join(" → ")}</small>
+                <small>FAQ: {item.contentBrief.faqs.join(" | ")}</small>
                 <small>Internal links: {item.internalLinks.join(", ")}</small>
+              </div>
+            ))}
+          </div>
+
+          <h3>Otomatik üretim kuyruğu</h3>
+          <div className="provider-job-list">
+            {report.automationQueue?.map((item) => (
+              <div className="provider-job-chip active" key={`${item.keyword}-${item.pageSlug}`}>
+                <strong>{item.status}</strong>
+                <span>{item.pageSlug}</span>
+                <small>{item.keyword}: {item.nextStep}</small>
+              </div>
+            ))}
+          </div>
+
+          <h3>Internal link kuyruğu</h3>
+          <div className="provider-job-list">
+            {report.internalLinkQueue?.slice(0, 16).map((item) => (
+              <div className="provider-job-chip active" key={`${item.from}-${item.to}-${item.anchor}`}>
+                <strong>{item.from} → {item.to}</strong>
+                <span>{item.anchor}</span>
+                <small>{item.reason}</small>
               </div>
             ))}
           </div>
@@ -115,6 +143,7 @@ export function AdminSeoCompetitorAgent() {
               <div className="card admin-category-card" key={page.title}>
                 <span className="badge">SEO action</span>
                 <h3>{page.title}</h3>
+                <small>{page.slug}</small>
                 <p>{page.reason}</p>
                 <small>{page.guardrail}</small>
               </div>

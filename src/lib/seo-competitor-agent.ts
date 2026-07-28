@@ -13,6 +13,8 @@ export type KeywordOpportunity = {
   ownRank: number | null;
   competitorRanks: Array<{ domain: string; rank: number }>;
   difficulty: "easy" | "medium" | "hard";
+  searchVolume?: number | null;
+  contentGap: string;
   action: string;
 };
 
@@ -36,8 +38,10 @@ export type SeoCompetitorAnalysisReport = {
     competitors: Array<{ domain: string; rank: number | null }>;
     topResults: SerpItemSummary[];
   }>;
-  recommendedPages: Array<{ title: string; reason: string; guardrail: string }>;
+  recommendedPages: Array<{ title: string; slug: string; reason: string; guardrail: string }>;
   actionPlan: SeoActionPlanItem[];
+  automationQueue: Array<{ keyword: string; pageSlug: string; status: SeoActionPlanItem["automationStatus"]; nextStep: string }>;
+  internalLinkQueue: Array<{ from: string; to: string; anchor: string; reason: string }>;
   guardrails: string[];
 };
 
@@ -102,11 +106,24 @@ function classifyDifficulty(ownRank: number | null, competitorRanks: Array<{ dom
   return "easy" as const;
 }
 
-function actionFor(keyword: string, ownRank: number | null, difficulty: KeywordOpportunity["difficulty"]) {
-  if (ownRank && ownRank <= 10) return `Mevcut görünürlüğü güçlendir: ${keyword} sayfasında title/meta CTR testi ve iç link ekle.`;
-  if (difficulty === "hard") return `Rakip güçlü: ${keyword} için doğrudan satış sayfası yerine karşılaştırma + kullanım senaryosu sayfası hazırla.`;
-  if (difficulty === "medium") return `Fırsat var: ${keyword} için özgün örnekler, fiyat/credit farkı ve FAQ içeren landing page oluştur.`;
-  return `Hızlı kazanım: ${keyword} için ince ama kopya olmayan kısa SEO sayfası veya blog/free-tool CTA üret.`;
+function actionFor(keyword: string, ownRank: number | null, difficulty: KeywordOpportunity["difficulty"], searchVolume?: number | null) {
+  const volumeSignal = typeof searchVolume === "number" ? ` Aylık hacim sinyali: ${searchVolume}.` : "";
+  if (ownRank && ownRank <= 10) return `Mevcut görünürlüğü güçlendir: ${keyword} sayfasında title/meta CTR testi, schema ve iç link ekle.${volumeSignal}`;
+  if (difficulty === "hard") return `Rakip güçlü: ${keyword} için karşılaştırma + kullanım senaryosu + pricing/credit farkı sayfası hazırla.${volumeSignal}`;
+  if (difficulty === "medium") return `Fırsat var: ${keyword} için özgün örnekler, fiyat/credit farkı, FAQ ve internal link içeren landing page oluştur.${volumeSignal}`;
+  return `Hızlı kazanım: ${keyword} için otomatik brief’li landing/blog/free-tool sayfası üret, kopya programmatic içerikten kaçın.${volumeSignal}`;
+}
+
+function contentGapFor(snapshot: { ownRank: number | null; competitors: Array<{ domain: string; rank: number | null }>; topResults: SerpItemSummary[] }) {
+  if (!snapshot.topResults.length) return "SERP boş ya da veri sınırlı; önce manuel SERP kontrolü yap.";
+  if (!snapshot.ownRank && snapshot.competitors.some((item) => typeof item.rank === "number" && item.rank <= 5)) return "Crelavo görünmüyor, rakip ilk 5’te; dedicated landing/comparison page gerekiyor.";
+  if (!snapshot.ownRank) return "Crelavo top 10’da değil; yeni sayfa + iç link ağı gerekiyor.";
+  if (snapshot.ownRank > 5) return "Crelavo top 10’da ama üst sıra değil; CTR, FAQ, schema ve internal link iyileştirmesi gerekiyor.";
+  return "Crelavo görünür; sayfayı güncel tut, yeni iç linklerle koru.";
+}
+
+function searchVolumeFor(keyword: string, volumeResults?: Record<string, number | null>) {
+  return volumeResults?.[keyword.toLowerCase()] ?? null;
 }
 
 export function buildSeoCompetitorReport(input: {
@@ -116,6 +133,7 @@ export function buildSeoCompetitorReport(input: {
   locationName: string;
   languageCode: string;
   serpResults: Array<{ keyword: string; result: unknown }>;
+  volumeResults?: Record<string, number | null>;
 }): SeoCompetitorAnalysisReport {
   const ownDomain = normalizeDomain(input.ownDomain);
   const competitors = normalizeDomains(input.competitors).filter((domain) => domain !== ownDomain);
@@ -135,20 +153,37 @@ export function buildSeoCompetitorReport(input: {
       .filter((item): item is { domain: string; rank: number } => typeof item.rank === "number")
       .sort((a, b) => a.rank - b.rank);
     const difficulty = classifyDifficulty(snapshot.ownRank, competitorRanks);
+    const searchVolume = searchVolumeFor(snapshot.keyword, input.volumeResults);
     return {
       keyword: snapshot.keyword,
       ownRank: snapshot.ownRank,
       competitorRanks,
       difficulty,
-      action: actionFor(snapshot.keyword, snapshot.ownRank, difficulty)
+      searchVolume,
+      contentGap: contentGapFor(snapshot),
+      action: actionFor(snapshot.keyword, snapshot.ownRank, difficulty, searchVolume)
     };
   }).sort((a, b) => {
+    const volumeA = a.searchVolume ?? 0;
+    const volumeB = b.searchVolume ?? 0;
     const score = { easy: 0, medium: 1, hard: 2 };
-    return score[a.difficulty] - score[b.difficulty];
+    return score[a.difficulty] - score[b.difficulty] || volumeB - volumeA;
   });
 
   const ownTop10Count = snapshots.filter((item) => typeof item.ownRank === "number" && item.ownRank <= 10).length;
   const competitorTop10Wins = snapshots.reduce((total, item) => total + item.competitors.filter((competitor) => typeof competitor.rank === "number" && competitor.rank <= 10).length, 0);
+  const actionPlan = buildSeoActionPlan(opportunities);
+  const internalLinkQueue = actionPlan.flatMap((item) => item.internalLinkPlan);
+  const automationQueue = actionPlan.map((item) => ({
+    keyword: item.keyword,
+    pageSlug: item.pageSlug,
+    status: item.automationStatus,
+    nextStep: item.automationStatus === "ready_to_draft"
+      ? "Generate page draft from the content brief and add internal links."
+      : item.automationStatus === "needs_manual_review"
+        ? "Review competitor/legal wording before publishing the page draft."
+        : "Monitor rank/CTR and refresh metadata instead of creating a new page."
+  }));
 
   return {
     generatedAt: new Date().toISOString(),
@@ -165,12 +200,15 @@ export function buildSeoCompetitorReport(input: {
     },
     opportunities,
     serpSnapshots: snapshots,
-    recommendedPages: opportunities.slice(0, 5).map((item) => ({
-      title: `${item.keyword} landing/comparison page`,
-      reason: item.action,
-      guardrail: "Sahte kullanıcı, sahte ROAS, sahte yerel kanıt veya rakip marka kötüleme kullanma. Gerçek ürün farklarını ve Crelavo kredi/preview mantığını anlat."
+    recommendedPages: actionPlan.slice(0, 6).map((item) => ({
+      title: item.contentBrief.h1,
+      slug: item.pageSlug,
+      reason: item.brief,
+      guardrail: item.contentBrief.guardrails.join(" ")
     })),
-    actionPlan: buildSeoActionPlan(opportunities),
+    actionPlan,
+    automationQueue,
+    internalLinkQueue,
     guardrails: [
       "Rakip adını kullanırken yanıltıcı bağlılık veya resmi karşılaştırma iddiası oluşturma.",
       "Sahte yorum, sahte rating, sahte yerel müşteri veya garanti edilmiş sonuç yazma.",
