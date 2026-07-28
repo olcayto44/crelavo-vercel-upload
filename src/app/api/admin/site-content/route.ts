@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { defaultSiteContentConfig, normalizeSiteContentConfig } from "@/lib/site-content-config";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -16,7 +16,8 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "content");
+  if (!access.ok) return access.response;
 
   try {
     const { data, error } = await supabaseAdmin()
@@ -38,10 +39,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
-
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, "content", body);
+    if (!access.ok) return access.response;
     const siteContent = normalizeSiteContentConfig(body.siteContent);
 
     const { data, error } = await supabaseAdmin()

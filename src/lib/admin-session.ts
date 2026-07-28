@@ -3,7 +3,7 @@ import crypto from "crypto";
 export const ADMIN_SESSION_COOKIE = "crelavo_admin_session";
 const ADMIN_SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
 
-type AdminSessionPayload = {
+export type AdminSessionPayload = {
   email: string;
   exp: number;
 };
@@ -52,25 +52,29 @@ export function createAdminSessionToken(email: string) {
   return `${encodedPayload}.${signature}`;
 }
 
-export function verifyAdminSessionToken(token?: string | null) {
-  if (!token || !token.includes(".")) return false;
+export function getAdminSessionPayload(token?: string | null) {
+  if (!token || !token.includes(".")) return null;
   const [encodedPayload, signature] = token.split(".");
-  if (!encodedPayload || !signature) return false;
+  if (!encodedPayload || !signature) return null;
   const expectedSignature = signPayload(encodedPayload);
-  if (!expectedSignature) return false;
+  if (!expectedSignature) return null;
 
   const actual = Buffer.from(signature);
   const expected = Buffer.from(expectedSignature);
-  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return false;
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) return null;
 
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload)) as AdminSessionPayload;
-    if (!payload.email || !payload.email.includes("@")) return false;
-    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return false;
-    return true;
+    if (!payload.email || !payload.email.includes("@")) return null;
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function verifyAdminSessionToken(token?: string | null) {
+  return Boolean(getAdminSessionPayload(token));
 }
 
 export function adminSessionCookieHeader(token: string) {

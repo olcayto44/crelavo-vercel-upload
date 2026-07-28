@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function estimateCreditValueUsd(credits: number) {
@@ -24,7 +24,8 @@ function noteValue(note: string | null | undefined, key: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["users", "support", "finance"]);
+  if (!access.ok) return access.response;
 
   try {
     const supabase = supabaseAdmin();
@@ -135,10 +136,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
-
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, "users", body);
+    if (!access.ok) return access.response;
     const userId = String(body.user_id ?? "").trim();
     const action = String(body.action ?? "").trim();
     const banHours = Number(body.ban_hours ?? 24) || 24;

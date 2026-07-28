@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { findPaymentProduct } from "@/lib/data";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -36,7 +36,8 @@ function periodSums(createdAt: string, revenueUsd: number) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "finance");
+  if (!access.ok) return access.response;
 
   try {
     const supabase = supabaseAdmin();

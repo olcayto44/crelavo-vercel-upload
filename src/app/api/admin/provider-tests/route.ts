@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/edge-provider-final-checks";
 import { getApifyRun } from "@/lib/providers/apify";
 import { getKeywordVolume } from "@/lib/providers/dataforseo";
@@ -148,7 +148,8 @@ function testYouTubeOAuth() {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "providers");
+  if (!access.ok) return access.response;
   const url = new URL(request.url);
   const provider = (url.searchParams.get("provider") || "readiness").toLowerCase();
 

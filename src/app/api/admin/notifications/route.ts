@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 type NotificationItem = {
@@ -36,7 +36,8 @@ async function safeRecentLeads() {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["support", "productions", "growth"]);
+  if (!access.ok) return access.response;
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return Response.json({ total: 0, items: [], recentLeads: [], mode: "mock" }, { headers: { "Cache-Control": "no-store" } });

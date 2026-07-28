@@ -1,9 +1,10 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "owner", body);
+  if (!access.ok) return access.response;
 
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");

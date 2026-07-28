@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { apiServiceGroups } from "@/lib/api-services";
 import { normalizeApiServicesConfig, API_SERVICES_CONFIG_KEY } from "@/lib/api-services-loader";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -17,7 +17,8 @@ function serviceSummary(groups: typeof apiServiceGroups) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["providers", "content"]);
+  if (!access.ok) return access.response;
 
   try {
     const { data, error } = await supabaseAdmin()
@@ -41,10 +42,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
-
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, ["providers", "content"], body);
+    if (!access.ok) return access.response;
     const groups = normalizeApiServicesConfig(body.apiServiceGroups);
 
     const { data, error } = await supabaseAdmin()

@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function isEmail(value: string) {
@@ -71,7 +71,8 @@ async function safeLogEmail(to: string, subject: string, body: string, status: s
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "support", body);
+  if (!access.ok) return access.response;
 
   const targetType = String(body.target_type ?? body.targetType ?? "").trim();
   const recipientEmail = String(body.recipient_email ?? body.recipientEmail ?? "").trim();

@@ -83,7 +83,7 @@ export function AdminCreateAdminManager() {
               </label>
             ))}
           </div>
-          <small>Not: Yetkiler hesap kaydına yazılır. Tam sayfa/API erişim kilidi için sonraki güvenlik adımında route guard da genişletilebilir.</small>
+          <small>Not: Yetkiler hesap kaydına yazılır ve kritik admin API route’larında kontrol edilir. Owner yetkisi tüm alanlara ve yeni admin oluşturma işlemine erişir.</small>
         </div>
         <div className="field" style={{ alignSelf: "end" }}>
           <button className="btn" type="submit" disabled={loading || permissions.length === 0}>{loading ? "Oluşturuluyor..." : "Admin oluştur"}</button>

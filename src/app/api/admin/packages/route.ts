@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { defaultPackageConfig, normalizePackageConfig, PACKAGE_CONFIG_KEY } from "@/lib/package-config";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -7,7 +7,8 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["content", "finance"]);
+  if (!access.ok) return access.response;
   try {
     const { data, error } = await supabaseAdmin()
       .from("platform_configs")
@@ -22,9 +23,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, ["content", "finance"], body);
+    if (!access.ok) return access.response;
     const config = normalizePackageConfig({ ...body.config, updatedAt: new Date().toISOString() });
     const { data, error } = await supabaseAdmin()
       .from("platform_configs")

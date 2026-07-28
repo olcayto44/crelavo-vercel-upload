@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { buildSeoCompetitorReport, normalizeDomains } from "@/lib/seo-competitor-agent";
 import { getSerpLive } from "@/lib/providers/dataforseo";
 
@@ -19,7 +19,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["growth", "content"], body);
+  if (!access.ok) return access.response;
 
   const ownDomain = clean(body.own_domain ?? body.ownDomain) || "crelavo.com";
   const competitors = normalizeDomains(listFrom(body.competitors)).slice(0, 5);

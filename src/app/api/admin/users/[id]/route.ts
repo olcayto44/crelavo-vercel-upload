@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -25,7 +25,8 @@ async function safeTable<T>(loader: () => PromiseLike<{ data: T | null; error: a
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["users", "support", "finance"]);
+  if (!access.ok) return access.response;
 
   const { id } = await params;
   const userId = String(id ?? "").trim();
