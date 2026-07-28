@@ -5,6 +5,8 @@ export type ApiService = {
   useCase: string;
   image: string;
   alt: string;
+  readiness?: "ready" | "configured" | "permission_limited" | "pending" | "manual_e2e_required";
+  safeTest?: string;
 };
 
 export type ApiServiceGroup = {
@@ -24,7 +26,9 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         summary: "Assistant reasoning, planning and production brief generation.",
         useCase: "Beyin, brief, routing, copy, analysis, planning and workflow orchestration.",
         image: "/blog/managed-delivery-workflow.svg",
-        alt: "Crelavo OpenAI assistant reasoning and production planning illustration"
+        alt: "Crelavo OpenAI assistant reasoning and production planning illustration",
+        readiness: "ready",
+        safeTest: "Safe readiness: API key presence and low-cost assistant route check."
       },
       {
         slug: "fal-ai",
@@ -32,7 +36,9 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         summary: "Fast and flexible multi-model creative routing.",
         useCase: "Draft video, quick tests, image generation and fallback creative workflows.",
         image: "/showcase/production-dashboard.png",
-        alt: "Crelavo Fal.ai fast AI video and image production dashboard illustration"
+        alt: "Crelavo Fal.ai fast AI video and image production dashboard illustration",
+        readiness: "ready",
+        safeTest: "Safe readiness: key/balance present; paid generation only from production job."
       },
       {
         slug: "kling",
@@ -40,7 +46,9 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         summary: "Premium video generation and motion quality.",
         useCase: "Standard to Ultra video, product motion, image-to-video and cinematic clips.",
         image: "/showcase/ai-production-studio.webp",
-        alt: "Crelavo Kling premium video generation and cinematic motion illustration"
+        alt: "Crelavo Kling premium video generation and cinematic motion illustration",
+        readiness: "ready",
+        safeTest: "Safe readiness: key/balance present; live production E2E still validates job routing."
       },
       {
         slug: "runway",
@@ -92,7 +100,9 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         summary: "Store and product data for ecommerce workflows.",
         useCase: "Product import, storefront context, product video flows and ecommerce kit delivery.",
         image: "/blog/ecommerce-product-campaigns.svg",
-        alt: "Crelavo Shopify ecommerce product campaign illustration"
+        alt: "Crelavo Shopify ecommerce product campaign illustration",
+        readiness: "manual_e2e_required",
+        safeTest: "Safe readiness: connected account and product list first; product mutation waits for approval-gated E2E."
       },
       {
         slug: "apify",
@@ -108,7 +118,9 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         summary: "SERP and keyword intelligence.",
         useCase: "Keyword research, competitor analysis, SERP tracking and SEO audits.",
         image: "/blog/brand-content-seo.svg",
-        alt: "Crelavo DataForSEO keyword research and SEO intelligence illustration"
+        alt: "Crelavo DataForSEO keyword research and SEO intelligence illustration",
+        readiness: "ready",
+        safeTest: "Safe readiness: SERP endpoint checked through admin competitor agent."
       },
       {
         slug: "google-maps",

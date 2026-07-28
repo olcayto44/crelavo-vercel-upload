@@ -10,6 +10,13 @@ export type PlatformFormatLimit = {
 
 export type ConnectedReadinessStatus = "connected" | "oauth_ready" | "permission_limited" | "expired" | "error" | "not_connected";
 
+export type PlatformFormatValidation = {
+  ok: boolean;
+  warnings: string[];
+  blockers: string[];
+  hints: string[];
+};
+
 export const platformFormatLimits: Record<ConnectedProvider, PlatformFormatLimit> = {
   tiktok: { provider: "tiktok", video: "Prefer 9:16 MP4, short-form vertical, review TikTok Content Posting limits before upload.", image: "Cover image should be vertical-safe.", caption: "Keep caption concise; hashtags reviewed before publish." },
   youtube: { provider: "youtube", video: "Shorts: 9:16 short video; long-form: 16:9. Confirm upload type before queueing.", image: "Thumbnail required for long-form; Shorts can use frame/cover.", caption: "Title/description must be reviewed before upload." },
@@ -64,11 +71,32 @@ export function evaluateConnectedAccountReadiness(account: { status?: string; to
   return { status, action: "Connection not ready for platform mutation.", tokenPresent, refreshAvailable, expiringSoon, expired, scopes };
 }
 
-export function buildGuardedWorkerPlan(input: { provider: ConnectedProvider; jobType: string; finalApproval?: boolean; readinessStatus?: string; hasConnectedAccount?: boolean }) {
+export function validatePlatformFormat(input: { provider: ConnectedProvider; jobType?: string; mediaUrl?: string; caption?: string; hashtags?: string[]; productId?: string; aspectRatio?: string; durationSeconds?: number | null; mediaType?: string }) : PlatformFormatValidation {
+  const warnings: string[] = [];
+  const blockers: string[] = [];
+  const hints = [platformFormatLimits[input.provider].video, platformFormatLimits[input.provider].caption, platformFormatLimits[input.provider].productMedia].filter(Boolean) as string[];
+  const captionLength = String(input.caption ?? "").length;
+  const ratio = String(input.aspectRatio ?? "").trim();
+  const mediaUrl = String(input.mediaUrl ?? "").trim();
+  const productId = String(input.productId ?? "").trim();
+
+  if (input.jobType !== "export_ready" && !mediaUrl) blockers.push("media_url is required before draft upload or publish job.");
+  if ((input.provider === "shopify" || input.provider === "woocommerce") && input.jobType === "store_upload" && !productId) blockers.push("product_id is required for store upload jobs.");
+  if (["tiktok", "instagram"].includes(input.provider) && ratio && ratio !== "9:16" && ratio !== "4:5") warnings.push(`${input.provider} usually needs vertical 9:16 or 4:5 media.`);
+  if (input.provider === "youtube" && ratio && ratio !== "9:16" && ratio !== "16:9") warnings.push("YouTube needs a Shorts 9:16 or long-form 16:9 decision.");
+  if (captionLength > 2200 && ["instagram", "meta"].includes(input.provider)) warnings.push("Caption is long for Meta/Instagram review.");
+  if (captionLength > 4000 && input.provider === "youtube") warnings.push("YouTube description is long; confirm title/description split before upload.");
+  if ((input.hashtags?.length ?? 0) > 30) warnings.push("Hashtag count is high; review platform spam limits before publishing.");
+
+  return { ok: blockers.length === 0, warnings, blockers, hints };
+}
+
+export function buildGuardedWorkerPlan(input: { provider: ConnectedProvider; jobType: string; finalApproval?: boolean; readinessStatus?: string; hasConnectedAccount?: boolean; formatValidation?: PlatformFormatValidation }) {
   const limits = platformFormatLimits[input.provider];
   const approvalRequired = input.jobType !== "export_ready";
   const accountReady = input.jobType === "export_ready" || (input.hasConnectedAccount === true && input.readinessStatus === "connected");
-  const canStartLiveMutation = approvalRequired && input.finalApproval === true && accountReady;
+  const formatReady = input.formatValidation?.ok ?? true;
+  const canStartLiveMutation = approvalRequired && input.finalApproval === true && accountReady && formatReady;
   return {
     provider: input.provider,
     providerLabel: connectedProviderLabels[input.provider],
@@ -76,8 +104,10 @@ export function buildGuardedWorkerPlan(input: { provider: ConnectedProvider; job
     canStartLiveMutation,
     approvalRequired,
     accountReady,
+    formatReady,
     readinessStatus: input.readinessStatus ?? "not_checked",
     limits,
+    formatValidation: input.formatValidation ?? validatePlatformFormat({ provider: input.provider, jobType: input.jobType }),
     workerSkeleton: providerWorkerSkeletons[input.provider],
     nextSteps: canStartLiveMutation
       ? ["Validate token/scopes again immediately before provider call", "Validate media/product format", ...providerWorkerSkeletons[input.provider], "Store provider response and rollback notes"]

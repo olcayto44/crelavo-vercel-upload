@@ -1,4 +1,4 @@
-import { buildGuardedWorkerPlan, evaluateConnectedAccountReadiness } from "@/lib/connected-account-automation";
+import { buildGuardedWorkerPlan, evaluateConnectedAccountReadiness, validatePlatformFormat } from "@/lib/connected-account-automation";
 import { connectedAccountGuardrails, normalizeConnectedProvider } from "@/lib/connected-accounts";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
@@ -60,7 +60,24 @@ export async function POST(request: Request) {
     }
   }
 
-  const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval, readinessStatus, hasConnectedAccount: Boolean(accountRecord) });
+  const hashtags = Array.isArray(body.hashtags) ? body.hashtags.map(clean).filter(Boolean) : [];
+  const formatValidation = validatePlatformFormat({
+    provider,
+    jobType,
+    mediaUrl: clean(body.media_url ?? body.mediaUrl),
+    caption: clean(body.caption),
+    hashtags,
+    productId: clean(body.product_id ?? body.productId),
+    aspectRatio: clean(body.aspect_ratio ?? body.aspectRatio),
+    durationSeconds: Number(body.duration_seconds ?? body.durationSeconds) || null,
+    mediaType: clean(body.media_type ?? body.mediaType)
+  });
+  if (!formatValidation.ok && jobType !== "export_ready") {
+    status = "blocked";
+    errorMessage = [...(errorMessage ? [errorMessage] : []), ...formatValidation.blockers].join(" ");
+  }
+
+  const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval, readinessStatus, hasConnectedAccount: Boolean(accountRecord), formatValidation });
 
   const { data, error } = await supabaseAdmin()
     .from("connected_account_jobs")
@@ -76,7 +93,7 @@ export async function POST(request: Request) {
         title: clean(body.title),
         mediaUrl: clean(body.media_url ?? body.mediaUrl),
         caption: clean(body.caption),
-        hashtags: Array.isArray(body.hashtags) ? body.hashtags.map(clean).filter(Boolean) : [],
+        hashtags,
         productId: clean(body.product_id ?? body.productId),
         target: clean(body.target),
         finalUserApproval: finalApproval,

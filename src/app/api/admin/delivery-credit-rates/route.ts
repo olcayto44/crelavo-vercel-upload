@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { defaultDeliveryCreditRatesConfig, normalizeDeliveryCreditRates } from "@/lib/delivery-credit-rates";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -9,7 +9,8 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["credits", "finance"]);
+  if (!access.ok) return access.response;
   try {
     const { data, error } = await supabaseAdmin()
       .from("platform_configs")
@@ -24,9 +25,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, ["credits", "finance"], body);
+    if (!access.ok) return access.response;
     const config = normalizeDeliveryCreditRates(body.config);
     const { data, error } = await supabaseAdmin()
       .from("platform_configs")

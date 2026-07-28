@@ -97,6 +97,18 @@ export function AdminSeoCompetitorAgent() {
             ))}
           </div>
 
+          <h3>SEO aksiyon planı</h3>
+          <div className="provider-job-list">
+            {report.actionPlan?.map((item) => (
+              <div className="provider-job-chip active" key={`${item.keyword}-${item.pageType}`}>
+                <strong>{item.priority} · {item.cluster} · {item.pageType}</strong>
+                <span>{item.keyword}</span>
+                <small>{item.brief}</small>
+                <small>Internal links: {item.internalLinks.join(", ")}</small>
+              </div>
+            ))}
+          </div>
+
           <h3>Önerilen sayfalar</h3>
           <div className="admin-category-grid">
             {report.recommendedPages.map((page) => (

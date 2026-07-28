@@ -1,3 +1,5 @@
+import { buildSeoActionPlan, type SeoActionPlanItem } from "@/lib/seo-action-plan";
+
 export type SerpItemSummary = {
   title: string;
   url: string;
@@ -35,6 +37,7 @@ export type SeoCompetitorAnalysisReport = {
     topResults: SerpItemSummary[];
   }>;
   recommendedPages: Array<{ title: string; reason: string; guardrail: string }>;
+  actionPlan: SeoActionPlanItem[];
   guardrails: string[];
 };
 
@@ -167,6 +170,7 @@ export function buildSeoCompetitorReport(input: {
       reason: item.action,
       guardrail: "Sahte kullanıcı, sahte ROAS, sahte yerel kanıt veya rakip marka kötüleme kullanma. Gerçek ürün farklarını ve Crelavo kredi/preview mantığını anlat."
     })),
+    actionPlan: buildSeoActionPlan(opportunities),
     guardrails: [
       "Rakip adını kullanırken yanıltıcı bağlılık veya resmi karşılaştırma iddiası oluşturma.",
       "Sahte yorum, sahte rating, sahte yerel müşteri veya garanti edilmiş sonuç yazma.",

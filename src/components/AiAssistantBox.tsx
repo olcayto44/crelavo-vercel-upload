@@ -69,12 +69,12 @@ const fallbackSuggestion: AssistantSuggestion = {
   premiumMaterialType: "No premium material",
   premiumMaterialOption: "None",
   suggestedPrompt: "I want a premium website, mobile app or SaaS screen for an AI production platform.",
-  note: "Write what you want to do; the assistant chooses the right automatic next step for production, credits, delivery, payment, account and operations flow.",
-  assistantReply: "Hello, you can describe any site action in a normal sentence: start production, buy credits, open delivery, create a Shopify campaign, AI agent, global localization, payment or account task. I will route you to the right fully automatic action.",
+  note: "Write what you want to do; the assistant chooses the right managed next step for production, credits, delivery, payment, account and operations flow.",
+  assistantReply: "Hello, you can describe any site action in a normal sentence: start production, buy credits, open delivery, create a Shopify campaign, AI agent, global localization, payment or account task. I will route you to the right managed production action.",
   action: "start_automatic_production",
   route: "/dashboard/assistant-workspace",
   automationLevel: "full_auto",
-  nextStep: "Start the fully automatic production request"
+  nextStep: "Start the managed production request"
 };
 
 function normalizeTurkishText(text: string) {
@@ -261,7 +261,7 @@ export function AiAssistantBox() {
       setActivityItems([
         mode === "voice" ? "Voice request processed." : "Written request processed.",
         `Smart decision: ${nextSuggestion.action ?? "start_automatic_production"}`,
-        `Next step: ${nextSuggestion.nextStep ?? "Start the fully automatic flow"}`,
+        `Next step: ${nextSuggestion.nextStep ?? "Start the managed production flow"}`,
         `Route: ${nextSuggestion.route ?? "/dashboard/assistant-workspace"}`
       ]);
       setMessages([...nextMessages, { role: "assistant", content: reply }]);
@@ -487,7 +487,7 @@ async function startVoiceCommand() {
     const actionRoute = suggestion.route || "/dashboard/assistant-workspace";
     setActivityItems([
       `Action running: ${suggestion.action ?? "start_automatic_production"}`,
-      `Next step: ${suggestion.nextStep ?? "Start the fully automatic production flow"}`,
+      `Next step: ${suggestion.nextStep ?? "Start the managed production flow"}`,
       `Opening page: ${actionRoute}`
     ]);
 
@@ -598,7 +598,7 @@ async function startVoiceCommand() {
           <p>The credit estimate increases or decreases as options change. If you create directly, credits are reserved and the request is tracked in Dashboard / My Productions.</p>
           {requestStatus ? <p>{requestStatus}</p> : null}
         </div>
-        <button className="assistant-primary" type="button" onClick={runAssistantAction}>{suggestion.nextStep ?? "Start the fully automatic action"}</button>
+        <button className="assistant-primary" type="button" onClick={runAssistantAction}>{suggestion.nextStep ?? "Start the managed production action"}</button>
         <button className="assistant-secondary" type="button" onClick={showAllAutomations}>View all automations</button>
       </div>
     </div>

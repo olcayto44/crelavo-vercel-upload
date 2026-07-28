@@ -244,9 +244,10 @@ export default async function ApiDocumentationPage() {
                     <img alt={service.alt} className="api-service-image" src={service.image} />
                   </div>
 
-                <span className="badge">{service.name}</span>
+                <span className="badge">{service.name} · {service.readiness ?? "configured"}</span>
                 <h3>{service.summary}</h3>
                 <p>{service.useCase}</p>
+                {service.safeTest ? <small>{service.safeTest}</small> : null}
                 <Link className="text-link" href={`/api-documentation#api-${service.slug}`}>Read service notes</Link>
               </div>
             ))}

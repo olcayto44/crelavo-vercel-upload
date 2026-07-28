@@ -61,6 +61,8 @@ export function ConnectedAccountsPanel() {
 
   const selectedIsCommerce = commerceProviders.includes(selectedProvider);
   const connectedCount = useMemo(() => accounts.filter((account) => account.status === "connected").length, [accounts]);
+  const selectedLimit = jobRecords[Object.keys(jobRecords)[0] || ""]?.result?.workerPlan?.formatValidation;
+  const defaultFormatNotes = ["TikTok/Instagram: prefer 9:16 or 4:5", "YouTube: decide Shorts 9:16 or long-form 16:9", "Shopify/WooCommerce: product_id is required for store uploads", "Captions/hashtags must be reviewed before publish."];
 
   async function currentUser() {
     const { data } = await supabaseBrowser().auth.getSession();
@@ -249,7 +251,8 @@ export function ConnectedAccountsPanel() {
       <div className="card connection-card">
         <span className="badge">Export-ready pack</span>
         <h3>Prepare platform/store delivery pack first</h3>
-        <p>This is the safe current customer-facing mode: downloadable video/image/caption/hashtag/product-media notes without claiming automatic publishing.</p>
+        <p>This is the safe current customer-facing mode: downloadable video/image/caption/hashtag/product-media notes without claiming live publishing automation.</p>
+        <ul>{(selectedLimit?.hints?.length ? selectedLimit.hints : defaultFormatNotes).map((note: string) => <li key={note}>{note}</li>)}</ul>
         <div className="field"><label>Export title</label><input value={exportTitle} onChange={(event) => setExportTitle(event.target.value)} /></div>
         <div className="field"><label>Caption draft</label><textarea value={exportCaption} onChange={(event) => setExportCaption(event.target.value)} /></div>
         <button className="btn" type="button" onClick={generateExportPack}>Create export-ready pack</button>
