@@ -41,6 +41,16 @@ const socialProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", 
 const commerceProviders: ConnectedProvider[] = ["shopify", "woocommerce"];
 const allProviders: ConnectedProvider[] = [...socialProviders, ...commerceProviders];
 
+function ProviderIcon({ provider }: { provider: ConnectedProvider }) {
+  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true };
+  if (provider === "youtube") return <svg {...common}><path d="M4.5 7.4c.2-1.1 1.1-2 2.2-2.2C8.5 5 12 5 12 5s3.5 0 5.3.2c1.1.2 2 1.1 2.2 2.2.2 1.2.2 4.6.2 4.6s0 3.4-.2 4.6c-.2 1.1-1.1 2-2.2 2.2-1.8.2-5.3.2-5.3.2s-3.5 0-5.3-.2c-1.1-.2-2-1.1-2.2-2.2-.2-1.2-.2-4.6-.2-4.6s0-3.4.2-4.6Z" fill="currentColor"/><path d="m10.4 15.3 4.6-3.3-4.6-3.3v6.6Z" fill="#fff"/></svg>;
+  if (provider === "tiktok") return <svg {...common}><path d="M14.8 3c.4 2.9 2 4.7 4.5 5v3.3c-1.6.1-3.1-.4-4.4-1.3v5.7c0 3.4-2.1 5.3-5 5.3-2.8 0-5.1-2-5.1-4.8 0-3.2 2.8-5.3 6.2-4.7v3.4c-1.5-.5-2.7.2-2.7 1.4 0 1 .8 1.6 1.7 1.6 1.1 0 1.7-.7 1.7-2.1V3h3.1Z" fill="currentColor"/></svg>;
+  if (provider === "instagram") return <svg {...common}><rect x="4" y="4" width="16" height="16" rx="5" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3.4" stroke="currentColor" strokeWidth="2"/><circle cx="16.8" cy="7.2" r="1.1" fill="currentColor"/></svg>;
+  if (provider === "meta") return <svg {...common}><path d="M4 14.2C4 10 6.1 6.5 8.9 6.5c1.8 0 3.1 1.2 4.2 2.9 1-1.7 2.2-2.9 4-2.9 2.3 0 3.9 2.1 3.9 5.2 0 3.3-1.7 5.8-4.1 5.8-1.6 0-2.8-1-4.1-3.1-1.3 2.1-2.5 3.1-4.2 3.1C6 17.5 4 16.2 4 14.2Zm2.4-.1c0 .8.8 1.3 1.8 1.3 1.1 0 1.9-.9 3.2-3.1-1-1.8-1.7-2.7-2.7-2.7-1.3 0-2.3 2-2.3 4.5Zm7.9-1.8c1.2 2.2 2 3.1 3.1 3.1.9 0 1.4-1.1 1.4-3.4 0-1.5-.6-2.4-1.6-2.4-1 0-1.8.9-2.9 2.7Z" fill="currentColor"/></svg>;
+  if (provider === "shopify") return <svg {...common}><path d="M7.2 8.5 8 20.2h8.4l.9-11.7H7.2Z" fill="currentColor"/><path d="M9.2 8.5c.1-2.7 1.4-4.7 3.3-4.7s3.1 2 3.2 4.7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/><path d="M10.2 12.1c.8-.5 2.1-.7 3.1-.2.9.4 1.2 1.4.7 2.1-.4.6-1 .8-2 .9-.9.1-1.3.2-1.5.6-.2.5.3.9 1.1 1 .8.1 1.8-.1 2.6-.6" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/></svg>;
+  return <svg {...common}><path d="M5 7.5h14v10.2a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7.5Z" stroke="currentColor" strokeWidth="2"/><path d="M8.5 7.5a3.5 3.5 0 0 1 7 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M9 12h6M9 15h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>;
+}
+
 export function ConnectedAccountsPanel() {
   const [message, setMessage] = useState("");
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
@@ -250,9 +260,31 @@ export function ConnectedAccountsPanel() {
         <span className="badge">Connected accounts V1</span>
         <h3>Social and store account records</h3>
         <p>Save OAuth-ready or connected records for TikTok, YouTube, Instagram/Meta, Shopify and WooCommerce. Tokens are stored server-side and hidden from the UI.</p>
-        <div className="provider-job-list">
-          <div className="provider-job-chip active"><strong>Social OAuth</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => startOAuth("youtube")}>▶ YouTube bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("tiktok")}>♪ TikTok bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("instagram")}>◎ Instagram bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("meta")}>f Meta bağla</button></div></div>
-          <div className="provider-job-chip active"><strong>E-commerce</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => startOAuth("shopify")}>🛍 Shopify bağla</button><button className="btn secondary" type="button" onClick={() => { setSelectedProvider("woocommerce"); setMessage("WooCommerce için mağaza URL, consumer key ve consumer secret gerekir. Mağaza yoksa bu adım beklemede kalır."); }}>🧩 WooCommerce doğrula</button></div></div>
+        <div className="connection-launch-panel">
+          <div className="connection-launch-section">
+            <strong>Social OAuth</strong>
+            <div className="connection-launch-grid">
+              {socialProviders.map((provider) => (
+                <button className={`connection-launch-button ${provider}`} type="button" key={provider} onClick={() => startOAuth(provider)}>
+                  <span className="connection-launch-icon"><ProviderIcon provider={provider} /></span>
+                  <span><b>{connectedProviderLabels[provider]}</b><small>Hesabı bağla</small></span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="connection-launch-section">
+            <strong>E-commerce</strong>
+            <div className="connection-launch-grid commerce">
+              <button className="connection-launch-button shopify" type="button" onClick={() => startOAuth("shopify")}>
+                <span className="connection-launch-icon"><ProviderIcon provider="shopify" /></span>
+                <span><b>Shopify</b><small>Mağazayı bağla</small></span>
+              </button>
+              <button className="connection-launch-button woocommerce" type="button" onClick={() => { setSelectedProvider("woocommerce"); setMessage("WooCommerce için mağaza URL, consumer key ve consumer secret gerekir. Mağaza yoksa bu adım beklemede kalır."); }}>
+                <span className="connection-launch-icon"><ProviderIcon provider="woocommerce" /></span>
+                <span><b>WooCommerce</b><small>REST doğrula</small></span>
+              </button>
+            </div>
+          </div>
         </div>
         <div className="field"><label>Provider</label><select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value as ConnectedProvider)}>{allProviders.map((provider) => <option value={provider} key={provider}>{connectedProviderLabels[provider]}</option>)}</select></div>
         <div className="field"><label>Display name</label><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></div>
