@@ -56,6 +56,7 @@ export function ConnectedAccountsPanel() {
   const [products, setProducts] = useState<Record<string, StoreProduct[]>>({});
   const [selectedProduct, setSelectedProduct] = useState<Record<string, string>>({});
   const [readiness, setReadiness] = useState<Record<string, string>>({});
+  const [jobRecords, setJobRecords] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
 
   const selectedIsCommerce = commerceProviders.includes(selectedProvider);
@@ -173,6 +174,35 @@ export function ConnectedAccountsPanel() {
     setMessage(`${connectedProviderLabels[account.provider]} products loaded for approval-gated upload selection.`);
   }
 
+  async function refreshAccount(account: ConnectedAccount) {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to refresh this account.");
+    const response = await fetch("/api/connected-accounts/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ user_id: userId, connected_account_id: account.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Refresh could not be completed.");
+    setReadiness((current) => ({ ...current, [account.id]: `${data.readiness?.status}: ${data.readiness?.action}` }));
+    setMessage(`${connectedProviderLabels[account.provider]} token refresh checked.`);
+    await loadAccounts();
+  }
+
+  async function runJob(account: ConnectedAccount, jobId: string, mode: "run" | "retry") {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to run this worker plan.");
+    const response = await fetch(`/api/connected-accounts/jobs/${jobId}/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ user_id: userId, final_user_approval: true })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Worker plan could not be updated.");
+    setJobRecords((current) => ({ ...current, [account.id]: data.job }));
+    setMessage(`${connectedProviderLabels[account.provider]} ${mode} recorded as ${data.job?.status}. Provider mutation remains guard-controlled.`);
+  }
+
   async function createPublishJob(account: ConnectedAccount, jobType: "draft_upload" | "one_click_publish" | "store_upload") {
     const { userId, token } = await currentUser();
     if (!userId || !token) return setMessage("You must sign in to create a publish/upload job.");
@@ -194,6 +224,7 @@ export function ConnectedAccountsPanel() {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) return setMessage(data.error ?? "Publish/upload job could not be created.");
+    if (data.job?.id) setJobRecords((current) => ({ ...current, [account.id]: data.job }));
     setMessage(`${connectedProviderLabels[account.provider]} ${jobType} job recorded as ${data.job?.status}. No live platform mutation happens without explicit final approval.`);
   }
 
@@ -247,9 +278,13 @@ export function ConnectedAccountsPanel() {
                     ) : null}
                   </div>
                 ) : null}
+                {jobRecords[account.id] ? <small>Last job: {jobRecords[account.id].job_type} · {jobRecords[account.id].status} · {jobRecords[account.id].error_message ?? "guarded"}</small> : null}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                  <button className="btn secondary" type="button" onClick={() => refreshAccount(account)}>Refresh token</button>
                   <button className="btn secondary" type="button" onClick={() => createPublishJob(account, account.account_type === "commerce" ? "store_upload" : "draft_upload")}>Create draft job</button>
                   <button className="btn secondary" type="button" onClick={() => createPublishJob(account, "one_click_publish")}>Test publish guard</button>
+                  {jobRecords[account.id]?.id ? <button className="btn secondary" type="button" onClick={() => runJob(account, jobRecords[account.id].id, "retry")}>Retry job</button> : null}
+                  {jobRecords[account.id]?.id ? <button className="btn secondary" type="button" onClick={() => runJob(account, jobRecords[account.id].id, "run")}>Run worker plan</button> : null}
                 </div>
               </div>
             ))}

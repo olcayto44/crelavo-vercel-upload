@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       status = "blocked";
       errorMessage = `Connected account is not ready: ${readinessStatus}. Refresh or reconnect before upload/publish.`;
     }
-}
+  }
 
   const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval, readinessStatus, hasConnectedAccount: Boolean(accountRecord) });
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, Film, Globe2, ImageIcon, LibraryBig, Mic2, Music2, Pencil, PlayCircle, RefreshCcw, Share2, Subtitles, UploadCloud } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
+import { ConnectedAccountsPanel } from "@/components/ConnectedAccountsPanel";
 import { productionProgressPercent, productionProgressSteps } from "@/lib/production-progress";
 
 type ProductionWorkspaceProps = {
@@ -988,6 +989,12 @@ const [notice, setNotice] = useState("");
             <a className="btn secondary" href="/dashboard/connections">Connect store/accounts</a>
           </div>
           {!deliveryUrl ? <p className="workspace-action-note warning">Final delivery is not ready yet. You can prepare the social plan now, then attach the final file when delivery opens.</p> : null}
+        </div>
+
+        <div className="social-share-card">
+          <h2>Connected store/product selector</h2>
+          <p>Use this to load connected Shopify/WooCommerce products and create approval-gated upload jobs from the production workspace.</p>
+          <ConnectedAccountsPanel />
         </div>
       </aside>
     </div>
