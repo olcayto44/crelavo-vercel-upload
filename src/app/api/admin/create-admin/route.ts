@@ -8,6 +8,9 @@ export async function POST(request: Request) {
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
   const fullName = String(body.full_name ?? body.fullName ?? "Admin User").trim() || "Admin User";
+  const rawPermissions: string[] = Array.isArray(body.permissions) ? body.permissions.map((item: unknown) => String(item)) : [];
+  const allowedPermissions = ["users", "credits", "productions", "support", "finance", "content", "providers", "growth", "owner"];
+  const permissions = rawPermissions.filter((item: string) => allowedPermissions.includes(item));
 
   if (!email || !email.includes("@")) {
     return Response.json({ error: "Geçerli bir admin e-postası gerekli." }, { status: 400 });
@@ -15,6 +18,10 @@ export async function POST(request: Request) {
 
   if (!password || password.length < 10) {
     return Response.json({ error: "Admin şifresi en az 10 karakter olmalı." }, { status: 400 });
+  }
+
+  if (!permissions.length) {
+    return Response.json({ error: "En az bir admin yetkisi seçmelisin." }, { status: 400 });
   }
 
   try {
@@ -25,7 +32,8 @@ export async function POST(request: Request) {
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
-        role: "admin"
+        role: "admin",
+        admin_permissions: permissions
       }
     });
 
@@ -53,7 +61,8 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email.toLowerCase(),
         full_name: fullName,
-        role: "admin"
+        role: "admin",
+        permissions
       }
     });
   } catch (error) {

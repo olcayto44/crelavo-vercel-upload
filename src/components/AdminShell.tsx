@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AdminLogoutButton } from "@/components/AdminLoginPanel";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
 import { adminDailyFocus, adminMenu, adminMenuGroups } from "@/lib/admin";
@@ -13,14 +13,16 @@ function isActiveAdminHref(pathname: string, href: string) {
 
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <main className="container section admin-shell-layout">
       <div className="nav" style={{ paddingTop: 0 }}>
-        <Link className="logo" href="/"><span className="logo-mark">▶</span><span>Crelavo Admin</span></Link>
+        <Link className="logo" href="/admin"><span className="logo-mark">▶</span><span>Crelavo Yönetimi</span></Link>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Link className="btn secondary" href="/">Home</Link>
-          <Link className="btn secondary" href="/dashboard">User dashboard</Link>
+          <button className="btn secondary" type="button" onClick={() => router.back()}>Geri</button>
+          <Link className="btn secondary" href="/admin">Admin ana ekran</Link>
+          <Link className="btn secondary" href="/">Canlı site</Link>
           <AdminLogoutButton />
         </div>
       </div>

@@ -124,6 +124,7 @@ export function SiteStructuredData() {
           priceCurrency: "USD",
           lowPrice: 10,
           highPrice: 1300,
+          offerCount: 6,
           availability: "https://schema.org/OnlineOnly"
         }
       },

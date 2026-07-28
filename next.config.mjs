@@ -17,6 +17,12 @@ const nextConfig = {
   experimental: {
     serverActions: { allowedOrigins: [] }
   },
+  async redirects() {
+    return [
+      { source: "/categories-Categories", destination: "/categories", permanent: true },
+      { source: "/alternatives/crelavo-vs-creatify", destination: "/alternatives/creatify-alternative", permanent: true }
+    ];
+  },
   async headers() {
     return [
       {
