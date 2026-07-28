@@ -4,9 +4,15 @@ import { alternativePages } from "@/lib/alternative-pages";
 import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { freeTools } from "@/lib/free-tools";
+import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 
 const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admin"];
+
+function canonicalSiteUrl() {
+  const configured = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "");
+  return configured.replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
+}
 
 const publicRoutes = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },
@@ -39,7 +45,7 @@ const publicRoutes = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
+  const baseUrl = canonicalSiteUrl();
   const now = new Date();
 
   if (publicRoutes.some((route) => privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))) {
@@ -85,7 +91,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  return [...publicRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
+  const localizedEuropeRoutes = localizedEuropePages.map((page) => ({
+    path: page.path,
+    priority: 0.78,
+    changeFrequency: "monthly" as const
+  }));
+
+  return [...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,

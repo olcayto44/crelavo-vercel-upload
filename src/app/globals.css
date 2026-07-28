@@ -1093,6 +1093,57 @@ main.auth-screen .auth-card {
   margin-top: 4px;
 }
 
+.header-language-links {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.header-language-links a,
+.localized-language-switcher a {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.header-language-links a:hover,
+.localized-language-switcher a:hover,
+.localized-language-switcher a.active {
+  color: #ffffff;
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(14, 165, 233, 0.18);
+}
+
+.localized-hero {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+
+.localized-hero h1 {
+  max-width: 920px;
+  font-size: clamp(2.4rem, 6vw, 5.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.07em;
+}
+
+.localized-market-note {
+  color: var(--muted);
+  max-width: 760px;
+}
+
+.localized-language-switcher {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 980px) {
   .admin-member-row {
     grid-template-columns: 1fr;

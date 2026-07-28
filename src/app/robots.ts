@@ -1,7 +1,12 @@
 import type { MetadataRoute } from "next";
 
+function canonicalSiteUrl() {
+  const configured = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "");
+  return configured.replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
+}
+
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
+  const baseUrl = canonicalSiteUrl();
 
   const privateDisallow = ["/admin", "/api", "/wp-admin"];
   // Dashboard/auth pages carry X-Robots-Tag: noindex from next.config.

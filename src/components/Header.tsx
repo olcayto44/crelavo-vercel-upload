@@ -3,6 +3,7 @@ import { Clapperboard } from "lucide-react";
 import { HeaderCreditPill } from "@/components/HeaderCreditPill";
 import { LocalizedNavLink } from "@/components/LocalizedNavLink";
 import { UserInfoPill } from "@/components/UserInfoPill";
+import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { footerGroups } from "@/lib/site-content";
 import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-config";
 
@@ -72,6 +73,9 @@ export function Header({ navLinks = defaultPublicNavLinks }: HeaderProps) {
         ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} />)}
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">
+        <div className="header-language-links" aria-label="Language pages">
+          {localizedEuropePages.map((page) => <Link href={page.path} key={page.path}>{page.locale.toUpperCase()}</Link>)}
+        </div>
         <HeaderCreditPill />
         <UserInfoPill />
       </div>
