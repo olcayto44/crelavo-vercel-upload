@@ -93,6 +93,20 @@ export function ConnectedAccountsPanel() {
     loadAccounts();
   }, []);
 
+  async function startOAuth(provider: ConnectedProvider) {
+    const { userId, token } = await currentUser();
+    if (!userId) return setMessage("You must sign in before starting OAuth.");
+    const commerce = provider === "shopify";
+    const response = await fetch(commerce ? "/api/commerce/shopify/oauth/start" : "/api/ads/oauth/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(commerce ? { user_id: userId, shop: storeUrl } : { user_id: userId, platform: provider })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.url) return setMessage(data.error ?? `${connectedProviderLabels[provider]} OAuth could not be started.`);
+    window.location.href = data.url;
+  }
+
   async function saveAccount(status: "oauth_ready" | "connected") {
     const { userId, token } = await currentUser();
     if (!userId || !token) return setMessage("You must sign in to save a connected account.");
@@ -236,6 +250,10 @@ export function ConnectedAccountsPanel() {
         <span className="badge">Connected accounts V1</span>
         <h3>Social and store account records</h3>
         <p>Save OAuth-ready or connected records for TikTok, YouTube, Instagram/Meta, Shopify and WooCommerce. Tokens are stored server-side and hidden from the UI.</p>
+        <div className="provider-job-list">
+          <div className="provider-job-chip active"><strong>Social OAuth</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => startOAuth("youtube")}>▶ YouTube bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("tiktok")}>♪ TikTok bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("instagram")}>◎ Instagram bağla</button><button className="btn secondary" type="button" onClick={() => startOAuth("meta")}>f Meta bağla</button></div></div>
+          <div className="provider-job-chip active"><strong>E-commerce</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => startOAuth("shopify")}>🛍 Shopify bağla</button><button className="btn secondary" type="button" onClick={() => { setSelectedProvider("woocommerce"); setMessage("WooCommerce için mağaza URL, consumer key ve consumer secret gerekir. Mağaza yoksa bu adım beklemede kalır."); }}>🧩 WooCommerce doğrula</button></div></div>
+        </div>
         <div className="field"><label>Provider</label><select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value as ConnectedProvider)}>{allProviders.map((provider) => <option value={provider} key={provider}>{connectedProviderLabels[provider]}</option>)}</select></div>
         <div className="field"><label>Display name</label><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></div>
         <div className="field"><label>External account/store ID</label><input value={externalId} onChange={(event) => setExternalId(event.target.value)} placeholder="channel, business account, store id or handle" /></div>
