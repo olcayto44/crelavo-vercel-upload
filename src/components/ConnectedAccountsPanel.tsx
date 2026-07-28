@@ -1,154 +1,232 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { connectedAccountGuardrails, connectedProviderLabels, type ConnectedProvider } from "@/lib/connected-account-constants";
 import { supabaseBrowser } from "@/lib/supabase";
 
-type ConnectedStore = {
+type ConnectedAccount = {
   id: string;
-  platform: string;
-  store_name: string;
-  store_url: string;
+  provider: ConnectedProvider;
+  account_type: "social" | "commerce";
+  display_name: string;
+  external_account_id: string;
+  store_url: string | null;
   status: string;
+  token_present?: boolean;
+  refresh_token_present?: boolean;
+  updated_at?: string;
 };
 
-type SocialPlatform = "meta" | "instagram" | "tiktok" | "youtube" | "linkedin" | "x";
+type ExportPackItem = {
+  provider: ConnectedProvider;
+  label: string;
+  status: string;
+  mediaUrl: string;
+  title: string;
+  caption: string;
+  hashtags: string[];
+  format: string;
+  guardrail: string;
+};
 
-const socialPlatforms: { id: SocialPlatform; label: string; helper: string; placeholder: string }[] = [
-  { id: "meta", label: "Facebook / Meta Ads", helper: "Meta export, ad account and campaign planning", placeholder: "Meta Business account / ad account name" },
-  { id: "instagram", label: "Instagram / Reels", helper: "Reels, stories and Instagram export planning", placeholder: "Instagram business account name" },
-  { id: "tiktok", label: "TikTok", helper: "TikTok organic/video ad planning", placeholder: "TikTok Ads or profile name" },
-  { id: "youtube", label: "YouTube / Shorts", helper: "Shorts and channel video upload preparation", placeholder: "YouTube channel name" },
-  { id: "linkedin", label: "LinkedIn", helper: "B2B post and company page planning", placeholder: "LinkedIn company page" },
-  { id: "x", label: "X / Twitter", helper: "Tweet, media post and campaign export planning", placeholder: "X account or brand profile" }
-];
+const socialProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", "meta"];
+const commerceProviders: ConnectedProvider[] = ["shopify", "woocommerce"];
+const allProviders: ConnectedProvider[] = [...socialProviders, ...commerceProviders];
 
 export function ConnectedAccountsPanel() {
   const [message, setMessage] = useState("");
-  const [stores, setStores] = useState<ConnectedStore[]>([]);
+  const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<ConnectedProvider>("instagram");
+  const [displayName, setDisplayName] = useState("My Instagram business account");
+  const [externalId, setExternalId] = useState("my-instagram-business-account");
   const [storeUrl, setStoreUrl] = useState("https://your-shopify-store.com");
-  const [storeName, setStoreName] = useState("My store");
-  const [platform, setPlatform] = useState("shopify");
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
-  const [selectedSocialPlatform, setSelectedSocialPlatform] = useState<SocialPlatform>("instagram");
-  const [socialAccountName, setSocialAccountName] = useState("My Instagram business account");
-  const [socialGoal, setSocialGoal] = useState("Organic + paid export planning");
+  const [exportTitle, setExportTitle] = useState("New Crelavo production");
+  const [exportCaption, setExportCaption] = useState("Review this caption before publishing.");
+  const [exportPack, setExportPack] = useState<ExportPackItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const selectedSocial = socialPlatforms.find((item) => item.id === selectedSocialPlatform) ?? socialPlatforms[0];
 
-  async function currentUserId() {
-    const { data } = await supabaseBrowser().auth.getUser();
-    return data.user?.id ?? "";
+  const selectedIsCommerce = commerceProviders.includes(selectedProvider);
+  const connectedCount = useMemo(() => accounts.filter((account) => account.status === "connected").length, [accounts]);
+
+  async function currentUser() {
+    const { data } = await supabaseBrowser().auth.getSession();
+    const token = data.session?.access_token ?? "";
+    const userId = data.session?.user?.id ?? "";
+    return { userId, token };
   }
 
-  async function loadStores() {
-    const userId = await currentUserId();
-    if (!userId) {
+  async function loadAccounts() {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) {
       setMessage("You must sign in to connect accounts and stores.");
       return;
     }
 
-    const response = await fetch(`/api/commerce/stores?user_id=${encodeURIComponent(userId)}`);
+    const response = await fetch(`/api/connected-accounts?user_id=${encodeURIComponent(userId)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setMessage(data.error ?? "Stores could not be loaded.");
+      setMessage(data.error ?? "Connected accounts could not be loaded.");
       return;
     }
-    setStores(Array.isArray(data.stores) ? data.stores : []);
+    setAccounts(Array.isArray(data.accounts) ? data.accounts : []);
   }
 
   useEffect(() => {
-    loadStores();
+    loadAccounts();
   }, []);
 
-  async function connectAd(platformName: SocialPlatform) {
-    const userId = await currentUserId();
-    if (!userId) return setMessage("You must sign in to prepare a social media connection.");
-    setMessage(`${selectedSocial.label} planning record is being prepared...`);
-
-    const response = await fetch("/api/ads/oauth/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, platform: platformName, account_name: socialAccountName, goal: socialGoal })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok && data.url) window.location.href = data.url;
-    else setMessage(data.error ?? "Connection could not be started. Check the account details or try again from the dashboard.");
-  }
-
-  async function connectStore() {
-    const userId = await currentUserId();
-    if (!userId) return setMessage("You must sign in to connect a store.");
+  async function saveAccount(status: "oauth_ready" | "connected") {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to save a connected account.");
     setLoading(true);
-    setMessage("Store connection is being saved...");
+    setMessage("Connection record is being saved...");
 
-    const response = await fetch("/api/commerce/stores", {
+    const response = await fetch("/api/connected-accounts", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, platform, store_name: storeName, store_url: storeUrl, access_token: accessToken, refresh_token: refreshToken })
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        user_id: userId,
+        provider: selectedProvider,
+        display_name: displayName,
+        external_account_id: externalId || displayName,
+        store_url: selectedIsCommerce ? storeUrl : "",
+        status,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        scopes: selectedIsCommerce ? ["store_media", "product_update", "draft_upload"] : ["media_upload", "draft_create", "publish_after_approval"]
+      })
     });
     const data = await response.json().catch(() => ({}));
     setLoading(false);
 
     if (!response.ok) {
-      setMessage(data.error ?? "Store could not be connected.");
+      setMessage(data.error ?? "Connection could not be saved.");
       return;
     }
 
-    setMessage("Store target saved for export planning and delivery handoff.");
-    await loadStores();
+    setMessage(status === "connected" ? "Connected account saved. Direct publish/upload still requires final user approval." : "OAuth-ready planning record saved. Use this until live OAuth/token exchange is complete.");
+    setAccessToken("");
+    setRefreshToken("");
+    await loadAccounts();
+  }
+
+  async function generateExportPack() {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to create an export-ready pack.");
+    const response = await fetch("/api/connected-accounts/export-ready", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        user_id: userId,
+        title: exportTitle,
+        caption: exportCaption,
+        target_providers: allProviders,
+        hashtags: ["#ai", "#videomarketing", "#ecommerce"]
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Export pack could not be created.");
+    setExportPack(Array.isArray(data.pack) ? data.pack : []);
+    setMessage("Export-ready pack created. This is safe for download/manual handoff; direct publishing is still approval-gated.");
+  }
+
+  async function createPublishJob(account: ConnectedAccount, jobType: "draft_upload" | "one_click_publish" | "store_upload") {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to create a publish/upload job.");
+    const response = await fetch("/api/connected-accounts/publish-jobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        user_id: userId,
+        connected_account_id: account.id,
+        provider: account.provider,
+        job_type: jobType,
+        final_user_approval: jobType !== "one_click_publish",
+        title: exportTitle,
+        caption: exportCaption,
+        media_url: "dashboard_delivery_asset",
+        target: account.store_url || account.external_account_id
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Publish/upload job could not be created.");
+    setMessage(`${connectedProviderLabels[account.provider]} ${jobType} job recorded as ${data.job?.status}. No live platform mutation happens without explicit final approval.`);
   }
 
   return (
     <div className="grid connection-grid">
       <div className="card connection-card">
-        <span className="badge">Social targets</span>
-        <h3>Prepare Facebook, Instagram, TikTok, YouTube, LinkedIn and X targets</h3>
-        <p>Choose the platform and account name for export planning, approvals and campaign delivery notes.</p>
-        <div className="field"><label>Platform</label><select value={selectedSocialPlatform} onChange={(event) => setSelectedSocialPlatform(event.target.value as SocialPlatform)}>{socialPlatforms.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></div>
-        <div className="field"><label>Account / channel name</label><input value={socialAccountName} onChange={(event) => setSocialAccountName(event.target.value)} placeholder={selectedSocial.placeholder} /></div>
-        <div className="field"><label>Planning goal</label><select value={socialGoal} onChange={(event) => setSocialGoal(event.target.value)}><option>Organic export planning</option><option>Paid ads planning</option><option>Organic + paid export planning</option><option>ROAS review planning only</option></select></div>
-        <div className="connection-selected-platform">
-          <strong>{selectedSocial.label}</strong>
-          <span>{selectedSocial.helper}</span>
+        <span className="badge">Connected accounts V1</span>
+        <h3>Social and store account records</h3>
+        <p>Save OAuth-ready or connected records for TikTok, YouTube, Instagram/Meta, Shopify and WooCommerce. Tokens are stored server-side and hidden from the UI.</p>
+        <div className="field"><label>Provider</label><select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value as ConnectedProvider)}>{allProviders.map((provider) => <option value={provider} key={provider}>{connectedProviderLabels[provider]}</option>)}</select></div>
+        <div className="field"><label>Display name</label><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></div>
+        <div className="field"><label>External account/store ID</label><input value={externalId} onChange={(event) => setExternalId(event.target.value)} placeholder="channel, business account, store id or handle" /></div>
+        {selectedIsCommerce ? <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} /></div> : null}
+        <div className="field"><label>Access token</label><input value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="Optional; leave empty for oauth_ready" type="password" /></div>
+        <div className="field"><label>Refresh token</label><input value={refreshToken} onChange={(event) => setRefreshToken(event.target.value)} placeholder="Optional refresh token" type="password" /></div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="btn secondary" type="button" onClick={() => saveAccount("oauth_ready")} disabled={loading}>{loading ? "Saving..." : "Save OAuth-ready"}</button>
+          <button className="btn" type="button" onClick={() => saveAccount("connected")} disabled={loading}>{loading ? "Saving..." : "Save connected"}</button>
         </div>
-        <button className="btn" type="button" onClick={() => connectAd(selectedSocialPlatform)}>Prepare {selectedSocial.label}</button>
       </div>
 
       <div className="card connection-card">
-        <span className="badge">E-commerce export target</span>
-        <h3>Prepare Shopify / Amazon / Trendyol targets</h3>
-        <p>Shopify is the first binding step: save the store URL now, then add app credentials later when the live OAuth or private app setup is ready.</p>
-        <div className="field"><label>Platform</label><select value={platform} onChange={(event) => setPlatform(event.target.value)}><option value="shopify">Shopify</option><option value="amazon">Amazon</option><option value="trendyol">Trendyol</option><option value="woocommerce">WooCommerce</option><option value="custom">Custom store</option></select></div>
-        <div className="field"><label>Store name</label><input value={storeName} onChange={(event) => setStoreName(event.target.value)} /></div>
-        <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} placeholder="https://your-shopify-store.com" /></div>
-        {platform === "shopify" ? (
-          <>
-            <div className="field"><label>Shopify access token</label><input value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="Optional for now" /></div>
-            <div className="field"><label>Shopify refresh token</label><input value={refreshToken} onChange={(event) => setRefreshToken(event.target.value)} placeholder="Optional for now" /></div>
-          </>
-        ) : null}
-        <p style={{ color: "var(--muted)", marginTop: 0 }}>If you only want planning mode, leave the token fields empty. If you already have a Shopify app token, paste it here and save the store target.</p>
-        <button className="btn" type="button" onClick={connectStore} disabled={loading}>{loading ? "Saving..." : "Save store target"}</button>
+        <span className="badge">Export-ready pack</span>
+        <h3>Prepare platform/store delivery pack first</h3>
+        <p>This is the safe current customer-facing mode: downloadable video/image/caption/hashtag/product-media notes without claiming automatic publishing.</p>
+        <div className="field"><label>Export title</label><input value={exportTitle} onChange={(event) => setExportTitle(event.target.value)} /></div>
+        <div className="field"><label>Caption draft</label><textarea value={exportCaption} onChange={(event) => setExportCaption(event.target.value)} /></div>
+        <button className="btn" type="button" onClick={generateExportPack}>Create export-ready pack</button>
       </div>
 
       <div className="card connection-card">
-        <span className="badge">Saved store targets</span>
-        <h3>Export targets</h3>
-        {stores.length === 0 ? <p>No connected store yet. A store appears here after it is connected.</p> : (
+        <span className="badge">Saved accounts</span>
+        <h3>{accounts.length} records · {connectedCount} connected</h3>
+        {accounts.length === 0 ? <p>No connected account yet. Save an OAuth-ready or connected target first.</p> : (
           <div className="admin-info-grid compact-info-grid">
-            {stores.map((store) => (
-              <div key={store.id}><span>{store.platform}</span><strong>{store.store_name}</strong><small>{store.status} - {store.store_url}</small></div>
+            {accounts.map((account) => (
+              <div key={account.id}>
+                <span>{connectedProviderLabels[account.provider] ?? account.provider}</span>
+                <strong>{account.display_name}</strong>
+                <small>{account.status} · token {account.token_present ? "stored" : "not stored"} · {account.store_url || account.external_account_id}</small>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                  <button className="btn secondary" type="button" onClick={() => createPublishJob(account, account.account_type === "commerce" ? "store_upload" : "draft_upload")}>Create draft job</button>
+                  <button className="btn secondary" type="button" onClick={() => createPublishJob(account, "one_click_publish")}>Test publish guard</button>
+                </div>
+              </div>
             ))}
           </div>
         )}
       </div>
 
       <div className="card connection-card">
-        <span className="badge">Export-first flow</span>
-        <h3>One line from production to delivery</h3>
-        <p>The user gives a brief/link, tracks the system, downloads the final package and uses manual export notes now. Direct connected publishing is post-launch/API dependent.</p>
+        <span className="badge">Safety guard</span>
+        <h3>No silent social/store mutation</h3>
+        <ul>{connectedAccountGuardrails.map((note) => <li key={note}>{note}</li>)}</ul>
       </div>
+
+      {exportPack.length > 0 ? (
+        <section className="card admin-wide-card" style={{ gridColumn: "1 / -1" }}>
+          <span className="badge">Generated export pack</span>
+          <h3>Download/manual handoff assets</h3>
+          <div className="admin-category-grid">
+            {exportPack.map((item) => (
+              <div className="card admin-category-card" key={item.provider}>
+                <span className="badge">{item.status}</span>
+                <h3>{item.label}</h3>
+                <p>{item.caption}</p>
+                <small>{item.format}</small>
+                <div className="social-export-detail-list"><span><small>Hashtags</small><strong>{item.hashtags.join(" ")}</strong></span><span><small>Guardrail</small><strong>{item.guardrail}</strong></span></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {message ? <p className="form-message connection-message">{message}</p> : null}
     </div>

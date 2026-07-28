@@ -64,8 +64,8 @@ const integrationGroups: IntegrationGroup[] = [
     title: "Ecommerce and marketplace integrations",
     description: "Product page, catalog and marketplace data integrations for product-link-to-video and seller campaign workflows.",
     items: [
-      { name: "Shopify Admin API", status: "pending", useCase: "Store catalog, product data, order context and app installation workflow." },
-      { name: "WooCommerce REST API", status: "pending", useCase: "WooCommerce product data and store campaign workflows." },
+      { name: "Shopify Admin API", status: "pending", useCase: "Connected store setup for export-ready product media, managed setup and approval-gated draft upload; automatic product mutation is not claimed until live E2E is verified." },
+      { name: "WooCommerce REST API", status: "pending", useCase: "WooCommerce store connection for catalog ingest, product media handoff and approval-gated upload planning." },
       { name: "Amazon Selling Partner API", status: "pending", useCase: "Amazon seller catalog, listing context and marketplace campaign support." },
       { name: "Trendyol API", status: "pending", useCase: "Trendyol seller catalog and regional marketplace product-video workflows." },
       { name: "TikTok Shop API", status: "pending", useCase: "Shop product context, live sales paths and commerce content workflows." },
@@ -76,7 +76,7 @@ const integrationGroups: IntegrationGroup[] = [
   },
   {
     title: "Social publishing and ad channel APIs",
-    description: "Social publishing, content distribution and ad platform connections for post-launch growth automation.",
+    description: "Social publishing, content distribution and ad platform connections for export-ready delivery, managed setup and approval-gated automation.",
     items: [
       { name: "Meta Graph API", status: "pending", useCase: "Facebook/Instagram OAuth callback, page/ad account discovery and connected account preparation path; live ad-account access still needs final token setup." },
       { name: "YouTube Data API", status: "available", useCase: "OAuth URL readiness for YouTube publishing and channel workflows; live upload still requires connected account flow." },
@@ -226,7 +226,7 @@ export default async function ApiDocumentationPage() {
           <span className="badge">Current status</span>
           <h2>Managed integrations first, public API access later</h2>
           <p>
-            Crelavo is currently structured around managed production workflows: users submit a request, credits are reserved, providers are routed, admin review validates the result and delivery appears in the dashboard. Public self-serve API keys should come after the payment, credit, provider, refund evidence and security flow is stable.
+            Crelavo is currently structured around managed production workflows: users submit a request, credits are reserved, providers are routed, admin review validates the result and delivery appears in the dashboard. Social/store delivery is export-ready and connected-account prepared, while draft upload or publishing remains approval-gated until live E2E is verified. Public self-serve API keys should come after the payment, credit, provider, refund evidence and security flow is stable.
           </p>
           <p>
             This page is intentionally conservative: it explains the integration map and technical roadmap without claiming that every listed API is already live. It also gives search engines a clear technical page for enterprise, ecommerce and developer-intent queries.

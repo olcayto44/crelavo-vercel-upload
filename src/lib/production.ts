@@ -267,8 +267,8 @@ export const productionPackages: ProductionPackage[] = [
     productionType: "campaign",
     name: "Campaign Autopilot Setup",
     credits: 15000,
-    description: "Advanced campaign system design for automatic publishing, analytics loops and reusable winning templates.",
-    deliverables: ["Automation map", "API integration plan", "Content calendar", "A/B test strategy", "Cache/template strategy"]
+    description: "Advanced campaign system design for export-ready publishing packs, approval-gated connected account setup, analytics loops and reusable winning templates.",
+    deliverables: ["Automation map", "Connected account plan", "Content calendar", "A/B test strategy", "Approval-gated publish guard"]
   },
   {
     id: "agent_brand_face",

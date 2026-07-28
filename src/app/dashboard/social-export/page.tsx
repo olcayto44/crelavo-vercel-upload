@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
+import { connectedAccountGuardrails } from "@/lib/connected-account-constants";
 import { launchBlockedNotes, socialExportPack } from "@/lib/growth-launch-systems";
 
 export default function DashboardSocialExportPage() {
@@ -16,6 +17,13 @@ export default function DashboardSocialExportPage() {
           <Link className="btn secondary" href="/dashboard/create">Create new production</Link>
         </div>
       </section>
+      <section className="admin-info-grid" style={{ marginTop: 20 }}>
+        <div><span>Step 1</span><strong>Export-ready</strong><small>Download/manual handoff is available now.</small></div>
+        <div><span>Step 2</span><strong>Connected accounts</strong><small>Account verification and token storage.</small></div>
+        <div><span>Step 3</span><strong>Draft upload</strong><small>Upload/store draft after approval.</small></div>
+        <div><span>Step 4</span><strong>One-click publish</strong><small>Final user approval required.</small></div>
+      </section>
+
       <section className="admin-category-grid social-export-grid" style={{ marginTop: 20 }}>
         {socialExportPack.map((item) => (
           <div className="card admin-category-card social-export-card" key={item.platform}>
@@ -30,6 +38,7 @@ export default function DashboardSocialExportPage() {
           </div>
         ))}
       </section>
+      <section className="card" style={{ marginTop: 20 }}><span className="badge">Connected account guardrails</span><ul>{connectedAccountGuardrails.map((note) => <li key={note}>{note}</li>)}</ul></section>
       <section className="card" style={{ marginTop: 20 }}><span className="badge">Blocked automation</span><ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul></section>
     </DashboardShell>
   );
