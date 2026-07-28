@@ -120,6 +120,16 @@ export default function ManualE2EChecklistPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Connected accounts migration</span>
+        <h2>Apply before social/store automation tests</h2>
+        <ul>
+          <li>Run <code>supabase/migration_connected_accounts.sql</code> before testing TikTok, YouTube, Instagram/Meta, Shopify or WooCommerce connections.</li>
+          <li>Confirm <code>connected_accounts</code> and <code>connected_account_jobs</code> exist in Supabase.</li>
+          <li>Direct publish/store upload remains approval-gated; first test export-ready, then draft upload job records.</li>
+        </ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Whop live payment prep</span>
         <h2>Payment and subscription test notes before live smoke</h2>
         <ul>{whopLiveTestPrepNotes.map((note) => <li key={note}>{note}</li>)}</ul>

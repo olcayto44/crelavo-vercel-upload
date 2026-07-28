@@ -1,3 +1,4 @@
+import { buildGuardedWorkerPlan } from "@/lib/connected-account-automation";
 import { connectedAccountGuardrails, normalizeConnectedProvider } from "@/lib/connected-accounts";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
     status = "queued";
   }
 
+  const workerPlan = buildGuardedWorkerPlan({ provider, jobType, finalApproval });
+
   const { data, error } = await supabaseAdmin()
     .from("connected_account_jobs")
     .insert({
@@ -60,6 +63,7 @@ export async function POST(request: Request) {
       },
       result: {
         directApiCallStarted: false,
+        workerPlan,
         note: status === "queued" ? "Queued as an approved job record. Platform-specific live upload worker is still gated by provider permissions." : "No platform upload/publish call was started."
       },
       error_message: errorMessage,

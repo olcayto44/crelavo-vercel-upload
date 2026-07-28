@@ -1,10 +1,11 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "productions", body);
+  if (!access.ok) return access.response;
 
   const allowed = ["pending", "in_production", "ready", "failed", "cancelled"];
   if (body.status && !allowed.includes(body.status)) {

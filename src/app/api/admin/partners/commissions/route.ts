@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { normalizePartnerCode } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -16,7 +16,8 @@ function toMoney(value: unknown) {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
 
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "finance", body);
+  if (!access.ok) return access.response;
 
   const partnerCode = normalizePartnerCode(body.partner_code ?? body.partnerCode);
   const customerEmail = String(body.customer_email ?? body.customerEmail ?? "").trim().toLowerCase();

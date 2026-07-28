@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const allowedPayoutStatuses = ["pending_review", "approved", "rejected", "paid", "manual_margin_review", "no_commission"];
@@ -7,7 +7,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
 
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "finance", body);
+  if (!access.ok) return access.response;
 
   const payoutStatus = String(body.payout_status ?? body.payoutStatus ?? "").trim();
   const adminNotes = String(body.admin_notes ?? body.adminNotes ?? "").trim();

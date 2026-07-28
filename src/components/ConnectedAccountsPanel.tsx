@@ -17,6 +17,14 @@ type ConnectedAccount = {
   updated_at?: string;
 };
 
+type StoreProduct = {
+  id: string;
+  title: string;
+  status: string;
+  handle: string;
+  image?: string | null;
+};
+
 type ExportPackItem = {
   provider: ConnectedProvider;
   label: string;
@@ -45,6 +53,9 @@ export function ConnectedAccountsPanel() {
   const [exportTitle, setExportTitle] = useState("New Crelavo production");
   const [exportCaption, setExportCaption] = useState("Review this caption before publishing.");
   const [exportPack, setExportPack] = useState<ExportPackItem[]>([]);
+  const [products, setProducts] = useState<Record<string, StoreProduct[]>>({});
+  const [selectedProduct, setSelectedProduct] = useState<Record<string, string>>({});
+  const [readiness, setReadiness] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
   const selectedIsCommerce = commerceProviders.includes(selectedProvider);
@@ -134,6 +145,34 @@ export function ConnectedAccountsPanel() {
     setMessage("Export-ready pack created. This is safe for download/manual handoff; direct publishing is still approval-gated.");
   }
 
+  async function checkReadiness() {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to check connection readiness.");
+    const response = await fetch("/api/connected-accounts/readiness", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ user_id: userId })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Readiness could not be checked.");
+    const next: Record<string, string> = {};
+    for (const item of Array.isArray(data.accounts) ? data.accounts : []) next[item.id] = `${item.readiness?.status}: ${item.readiness?.action}`;
+    setReadiness(next);
+    setMessage("Connected account readiness checked.");
+  }
+
+  async function loadProducts(account: ConnectedAccount) {
+    const { userId, token } = await currentUser();
+    if (!userId || !token) return setMessage("You must sign in to load store products.");
+    const response = await fetch(`/api/commerce/products?user_id=${encodeURIComponent(userId)}&connected_account_id=${encodeURIComponent(account.id)}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return setMessage(data.error ?? "Products could not be loaded.");
+    setProducts((current) => ({ ...current, [account.id]: Array.isArray(data.products) ? data.products : [] }));
+    setMessage(`${connectedProviderLabels[account.provider]} products loaded for approval-gated upload selection.`);
+  }
+
   async function createPublishJob(account: ConnectedAccount, jobType: "draft_upload" | "one_click_publish" | "store_upload") {
     const { userId, token } = await currentUser();
     if (!userId || !token) return setMessage("You must sign in to create a publish/upload job.");
@@ -149,6 +188,7 @@ export function ConnectedAccountsPanel() {
         title: exportTitle,
         caption: exportCaption,
         media_url: "dashboard_delivery_asset",
+        product_id: selectedProduct[account.id] || "",
         target: account.store_url || account.external_account_id
       })
     });
@@ -187,6 +227,7 @@ export function ConnectedAccountsPanel() {
       <div className="card connection-card">
         <span className="badge">Saved accounts</span>
         <h3>{accounts.length} records · {connectedCount} connected</h3>
+        <button className="btn secondary" type="button" onClick={checkReadiness}>Check readiness / token expiry</button>
         {accounts.length === 0 ? <p>No connected account yet. Save an OAuth-ready or connected target first.</p> : (
           <div className="admin-info-grid compact-info-grid">
             {accounts.map((account) => (
@@ -194,6 +235,18 @@ export function ConnectedAccountsPanel() {
                 <span>{connectedProviderLabels[account.provider] ?? account.provider}</span>
                 <strong>{account.display_name}</strong>
                 <small>{account.status} · token {account.token_present ? "stored" : "not stored"} · {account.store_url || account.external_account_id}</small>
+                {readiness[account.id] ? <small>{readiness[account.id]}</small> : null}
+                {account.account_type === "commerce" ? (
+                  <div style={{ marginTop: 8 }}>
+                    <button className="btn secondary" type="button" onClick={() => loadProducts(account)}>Load products</button>
+                    {products[account.id]?.length ? (
+                      <select value={selectedProduct[account.id] ?? ""} onChange={(event) => setSelectedProduct((current) => ({ ...current, [account.id]: event.target.value }))}>
+                        <option value="">Select product for upload</option>
+                        {products[account.id].map((product) => <option value={product.id} key={product.id}>{product.title} · {product.status}</option>)}
+                      </select>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                   <button className="btn secondary" type="button" onClick={() => createPublishJob(account, account.account_type === "commerce" ? "store_upload" : "draft_upload")}>Create draft job</button>
                   <button className="btn secondary" type="button" onClick={() => createPublishJob(account, "one_click_publish")}>Test publish guard</button>

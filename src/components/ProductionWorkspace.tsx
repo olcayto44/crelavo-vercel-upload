@@ -183,6 +183,9 @@ const [notice, setNotice] = useState("");
   const [approvalLoading, setApprovalLoading] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const [previewMode, setPreviewMode] = useState<"normal" | "compact" | "shorts">("normal");
+  const [deliveryCaption, setDeliveryCaption] = useState(String(production.prompt ?? "Review this caption before publishing."));
+  const [deliveryHashtags, setDeliveryHashtags] = useState("#ai #videomarketing #ecommerce");
+  const [deliveryProductId, setDeliveryProductId] = useState("");
 
   const type = String(production.production_type ?? "general");
   const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(type);
@@ -959,6 +962,11 @@ const [notice, setNotice] = useState("");
           <p>When the final output is ready, caption, hashtags, platform format, and posting time are prepared here.</p>
           <div className="social-chip-row">
             {["Instagram", "TikTok", "YouTube Shorts", "LinkedIn", "Facebook", "X"].map((platform) => <span key={platform}>{platform}</span>)}
+          </div>
+          <div className="revision-target-grid">
+            <label><span>Caption / product description</span><textarea value={deliveryCaption} onChange={(event) => setDeliveryCaption(event.target.value)} /></label>
+            <label><span>Hashtags / product tags</span><input value={deliveryHashtags} onChange={(event) => setDeliveryHashtags(event.target.value)} /></label>
+            <label><span>Store product ID</span><input value={deliveryProductId} onChange={(event) => setDeliveryProductId(event.target.value)} placeholder="Select from connected store or paste product id" /></label>
           </div>
           <div className="social-share-action-grid">
             <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>

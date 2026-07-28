@@ -1,5 +1,5 @@
 import { defaultAdSlots, normalizeAdSlots, type AdSlotConfig } from "@/lib/ad-config";
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const CONFIG_KEY = "ad_slots";
@@ -13,7 +13,8 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["growth", "content"]);
+  if (!access.ok) return access.response;
 
   try {
     const { data, error } = await supabaseAdmin()
@@ -32,10 +33,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
-
   try {
     const body = await request.json();
+    const access = await requireAdminPermission(request, ["growth", "content"], body);
+    if (!access.ok) return access.response;
     const slots = normalizeAdSlots(body.slots);
     if (!slots.length) return Response.json({ error: "At least one valid ad slot is required." }, { status: 400 });
 

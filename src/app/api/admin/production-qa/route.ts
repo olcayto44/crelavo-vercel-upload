@@ -1,9 +1,10 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { qaProduction, summarizeProductionQa } from "@/lib/production-qa";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "productions");
+  if (!access.ok) return access.response;
 
   try {
     const { searchParams } = new URL(request.url);

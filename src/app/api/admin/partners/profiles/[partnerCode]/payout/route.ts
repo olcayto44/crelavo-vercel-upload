@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const allowedPayoutStatuses = ["pending_bank_details", "pending_verification", "verified", "rejected", "paused"];
@@ -15,7 +15,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ pa
   const { partnerCode } = await params;
   const body = await request.json().catch(() => ({}));
 
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "finance", body);
+  if (!access.ok) return access.response;
 
   const cleanCode = cleanPartnerCode(partnerCode);
   if (!cleanCode) return Response.json({ error: "Partner code is required." }, { status: 400 });

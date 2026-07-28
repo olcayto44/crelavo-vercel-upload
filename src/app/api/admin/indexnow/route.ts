@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { googleIndexingAllSitemapUrls } from "@/lib/google-indexing";
 
 const INDEXNOW_KEY = process.env.BING_INDEXNOW_KEY || process.env.INDEXNOW_KEY || "crelavo-indexnow-B09A1EA26FA6A860";
@@ -48,7 +48,8 @@ function defaultUrls() {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["growth", "content"]);
+  if (!access.ok) return access.response;
 
   return Response.json({
     key: INDEXNOW_KEY,
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
     body = {};
   }
 
-  if (!isAdminRequest(request, body as Record<string, unknown>)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["growth", "content"], body as Record<string, unknown>);
+  if (!access.ok) return access.response;
 
   const requestedUrls = Array.isArray(body.urlList) ? body.urlList : body.urls;
   const { validUrls, rejectedUrls } = normalizeUrls(requestedUrls ?? defaultUrls());

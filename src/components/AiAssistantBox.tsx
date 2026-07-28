@@ -128,7 +128,7 @@ export function AiAssistantBox() {
   const chatWindowRef = useRef<HTMLDivElement | null>(null);
   const voiceTranscriptReceivedRef = useRef(false);
   const voiceTimeoutRef = useRef<number | null>(null);
-  const [input, setInput] = useState("I want a fully automatic campaign from a Shopify product link.");
+  const [input, setInput] = useState("I want an export-ready campaign from a Shopify product link.");
   const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const language = getStoredLanguage();

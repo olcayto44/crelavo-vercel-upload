@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const allowedAdminStatuses = ["new", "reviewed", "needs_follow_up", "converted_to_request", "closed"];
@@ -13,7 +13,8 @@ function clean(value: unknown) {
 }
 
 export async function GET(request: Request) {
-  if (!isAdminRequest(request)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["support", "growth"]);
+  if (!access.ok) return access.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -59,7 +60,8 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   const body = await request.json().catch(() => ({}));
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, ["support", "growth"], body);
+  if (!access.ok) return access.response;
 
   const id = clean(body.id);
   const adminStatus = clean(body.admin_status || "new");

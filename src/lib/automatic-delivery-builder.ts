@@ -1,3 +1,4 @@
+import { buildExportReadyPack } from "./connected-accounts.ts";
 import { deliveryPackageForProduction, type DeliveryPackage } from "./delivery-package.ts";
 import { buildOutputRegistry } from "./output-registry.ts";
 import { qualityProfileForProduction, type ProductionQualityProfile } from "./production-quality.ts";
@@ -130,6 +131,12 @@ export function buildDeliveryManifest(production: ProductionLike) {
       store_asset_goal: value(metadata.commerceWorkflow?.storeAssetGoal ?? input.commerceWorkflow?.storeAssetGoal),
       connected_store_targets: value(metadata.commerceWorkflow?.connectedStoreTargets ?? input.commerceWorkflow?.connectedStoreTargets)
     },
+    social_store_export_pack: buildExportReadyPack({
+      title: value(production.title, "Crelavo production"),
+      mediaUrl: links.previewUrl,
+      caption: value(production.prompt, "Review and edit caption before publishing."),
+      targetProviders: ["tiktok", "youtube", "instagram", "meta", "shopify", "woocommerce"]
+    }),
     reference_link_safety: value(metadata.referenceLinkSafety ?? input.referenceLinkSafety, "References are used for analysis and inspiration only; final outputs must be original."),
     materials: Array.isArray(production.materials_json) ? production.materials_json.map((item) => ({ title: item.title ?? item.id ?? "Material", type: item.type ?? item.kind ?? "material", url: item.file_url ?? item.preview_url ?? item.previewUrl ?? null })) : [],
     links
@@ -138,7 +145,7 @@ export function buildDeliveryManifest(production: ProductionLike) {
 
 export function buildDeliveryReadme(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# ${manifest.title}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
+  return `# ${manifest.title}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n\n## Social / Store Export-Ready Pack\n${list(manifest.social_store_export_pack.map((item: { label: string; format: string; guardrail: string }) => `${item.label}: ${item.format} — ${item.guardrail}`))}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
 }
 
 export function buildSourceGuide(production: ProductionLike) {

@@ -1,4 +1,4 @@
-import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
+import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function makePartnerCode(name: string, email: string) {
@@ -42,7 +42,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
 
-  if (!isAdminRequest(request, body)) return adminRequiredResponse();
+  const access = await requireAdminPermission(request, "growth", body);
+  if (!access.ok) return access.response;
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return Response.json({ error: "SUPABASE_SERVICE_ROLE_KEY is required to create partner profile." }, { status: 503 });

@@ -1,4 +1,5 @@
-import { requireEnv, optionalEnv } from "@/lib/providers/env";
+import { encryptConnectedToken, providerAccountTypes } from "@/lib/connected-accounts";
+import { requireEnv, optionalEnv, optionalProviderEnv } from "@/lib/providers/env";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { AdPlatform } from "@/lib/phase2/types";
 
@@ -28,6 +29,7 @@ type MetaPage = {
 };
 
 const supportedMetaPlatforms: AdPlatform[] = ["meta", "instagram"];
+const supportedConnectedPlatforms: AdPlatform[] = ["meta", "instagram", "tiktok", "youtube"];
 
 function appUrl() {
   return optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
@@ -76,6 +78,63 @@ async function exchangeCodeForToken(code: string, platform: AdPlatform) {
   return token.access_token;
 }
 
+async function exchangeConnectedCodeForToken(code: string, platform: AdPlatform) {
+  if (platform === "meta" || platform === "instagram") return exchangeCodeForToken(code, platform);
+
+  if (platform === "youtube") {
+    const clientId = requireEnv("YOUTUBE_CLIENT_ID");
+    const clientSecret = requireEnv("YOUTUBE_CLIENT_SECRET");
+    const response = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: `${appUrl()}/api/ads/oauth/callback?platform=youtube`,
+        grant_type: "authorization_code"
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.access_token) throw new Error(data.error_description ?? data.error ?? "YouTube OAuth token exchange failed.");
+    return String(data.access_token);
+  }
+
+  if (platform === "tiktok") {
+    const clientKey = optionalProviderEnv("tiktokClientKey") || requireEnv("TIKTOK_CLIENT_KEY");
+    const clientSecret = optionalProviderEnv("tiktokClientSecret") || requireEnv("TIKTOK_CLIENT_SECRET");
+    const response = await fetch("https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_id: clientKey, secret: clientSecret, auth_code: code })
+    });
+    const data = await response.json().catch(() => ({}));
+    const token = data?.data?.access_token || data?.access_token;
+    if (!response.ok || !token) throw new Error(data?.message ?? "TikTok OAuth token exchange failed.");
+    return String(token);
+  }
+
+  throw new Error("Unsupported OAuth platform.");
+}
+
+async function upsertConnectedAccount(input: { userId: string; platform: AdPlatform; name: string; externalId: string; token: string; scopes?: string[] }) {
+  const provider = input.platform === "instagram" ? "instagram" : input.platform === "meta" ? "meta" : input.platform === "tiktok" ? "tiktok" : "youtube";
+  const { error } = await supabaseAdmin().from("connected_accounts").upsert({
+    user_id: input.userId,
+    provider,
+    account_type: providerAccountTypes[provider],
+    display_name: input.name,
+    external_account_id: input.externalId || input.name,
+    status: "connected",
+    access_token_encrypted: encryptConnectedToken(input.token),
+    scopes: input.scopes ?? ["media_upload", "draft_create", "publish_after_approval"],
+    last_verified_at: new Date().toISOString(),
+    metadata: { source: "oauth_callback", publishGuard: "final_user_approval_required" },
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id,provider,external_account_id" });
+  if (error) throw error;
+}
+
 async function loadMetaConnections(platform: AdPlatform, accessToken: string) {
   if (platform === "instagram") {
     const url = new URL(`https://graph.facebook.com/${metaGraphVersion()}/me/accounts`);
@@ -115,15 +174,27 @@ export async function GET(request: Request) {
   const providerError = String(url.searchParams.get("error_description") ?? url.searchParams.get("error") ?? "");
 
   try {
-    if (!supportedMetaPlatforms.includes(platform)) throw new Error("Unsupported Meta OAuth platform.");
+    if (!supportedConnectedPlatforms.includes(platform)) throw new Error("Unsupported OAuth platform.");
     if (providerError) throw new Error(providerError);
-    if (!code) throw new Error("Meta OAuth code is missing.");
+    if (!code) throw new Error("OAuth code is missing.");
 
     const state = decodeState(rawState);
     const userId = String(state.userId ?? "").trim();
     if (!userId) throw new Error("OAuth state does not include user id.");
 
-    const accessToken = await exchangeCodeForToken(code, platform);
+    const accessToken = await exchangeConnectedCodeForToken(code, platform);
+
+    if (!supportedMetaPlatforms.includes(platform)) {
+      await upsertConnectedAccount({
+        userId,
+        platform,
+        name: platform === "youtube" ? "YouTube channel" : "TikTok account",
+        externalId: `${platform}-${userId}`,
+        token: accessToken
+      });
+      return redirectWithStatus("/dashboard/connections", { connected: platform, count: "1" });
+    }
+
     const connections = await loadMetaConnections(platform, accessToken);
     if (!connections.length) throw new Error(platform === "instagram" ? "No Instagram business account was found for this Meta login." : "No Meta ad account or Facebook page was found for this Meta login.");
 
@@ -139,6 +210,14 @@ export async function GET(request: Request) {
 
     const { error } = await supabaseAdmin().from("connected_ad_accounts").insert(rows);
     if (error) throw error;
+
+    await Promise.all(connections.map((connection) => upsertConnectedAccount({
+      userId,
+      platform,
+      name: connection.accountName,
+      externalId: connection.externalAccountId,
+      token: accessToken
+    })));
 
     return redirectWithStatus("/dashboard/connections", { connected: platform, count: String(rows.length) });
   } catch (error) {
