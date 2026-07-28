@@ -49,13 +49,15 @@ const integrationGroups: IntegrationGroup[] = [
     items: [
       { name: "OpenAI", status: "available", useCase: "Assistant reasoning, content analysis, brief generation and structured production planning." },
       { name: "Google Maps", status: "available", useCase: "Location context, local business pages, regional campaign planning and map-based discovery." },
-      { name: "Runway", status: "available", useCase: "AI video generation and creative video provider routing." },
-      { name: "ElevenLabs", status: "available", useCase: "Voice-over, narration and voice delivery workflows." },
-      { name: "Replicate", status: "available", useCase: "Model routing for image, video and creative experiments where supported." },
+      { name: "Runway", status: "available", useCase: "Selected video-provider readiness path for AI video generation and creative routing." },
+      { name: "DataForSEO", status: "available", useCase: "Keyword volume, SERP snapshots, competitor SEO analysis and growth intelligence reports." },
+      { name: "Stability AI", status: "available", useCase: "Image provider readiness and account/balance checks where configured." },
+      { name: "ElevenLabs", status: "pending", useCase: "Voice-over, narration and voice workflows; current key permission scope may require final provider-side adjustment." },
       { name: "Apify", status: "available", useCase: "Public data extraction, research workflows and ecommerce/content collection where permitted." },
-      { name: "Shotstack", status: "pending", useCase: "Programmatic video editing, render automation and timeline assembly after portal access is stable." },
-      { name: "D-ID", status: "pending", useCase: "Talking video and avatar-video provider option after API access is finalized." },
-      { name: "Music generation API", status: "pending", useCase: "Background music, song and audio generation provider layer." }
+      { name: "Kling", status: "pending", useCase: "Separate video provider readiness path; enable only when Kling credentials are configured." },
+      { name: "Fal.ai", status: "pending", useCase: "Separate video provider readiness path; enable only when Fal credentials are configured." },
+      { name: "Shotstack", status: "pending", useCase: "Programmatic video editing and render automation; admin checks use safe readiness unless a real render is explicitly approved." },
+      { name: "Music generation API", status: "pending", useCase: "Background music, song and audio generation provider layer; safe checks do not start paid generation." }
     ]
   },
   {
@@ -76,9 +78,9 @@ const integrationGroups: IntegrationGroup[] = [
     title: "Social publishing and ad channel APIs",
     description: "Social publishing, content distribution and ad platform connections for post-launch growth automation.",
     items: [
-      { name: "Meta Graph API", status: "available", useCase: "Facebook/Instagram OAuth callback, page/ad account discovery and connected account preparation path." },
-      { name: "YouTube Data API", status: "pending", useCase: "YouTube Shorts metadata, publishing and channel content workflows." },
-      { name: "TikTok Content Posting API", status: "pending", useCase: "TikTok publishing workflow after app approval and permission setup." },
+      { name: "Meta Graph API", status: "pending", useCase: "Facebook/Instagram OAuth callback, page/ad account discovery and connected account preparation path; live ad-account access still needs final token setup." },
+      { name: "YouTube Data API", status: "available", useCase: "OAuth URL readiness for YouTube publishing and channel workflows; live upload still requires connected account flow." },
+      { name: "TikTok Content Posting API", status: "available", useCase: "OAuth URL readiness for TikTok publishing and business workflows; live posting still requires app approval/permissions." },
       { name: "TikTok Ads API", status: "planned", useCase: "Ad campaign signal connection and paid growth measurement." },
       { name: "Meta Ads API", status: "planned", useCase: "Paid campaign reporting, creative testing and ad performance signals." },
       { name: "Google Ads API", status: "planned", useCase: "Search, YouTube and shopping campaign measurement integration." },
@@ -112,9 +114,11 @@ const integrationGroups: IntegrationGroup[] = [
       { name: "TikTok Pixel", status: "planned", useCase: "TikTok traffic, retargeting and conversion measurement." },
       { name: "Vercel", status: "internal", useCase: "Hosting, deployment, preview builds and production release flow." },
       { name: "Vercel Analytics", status: "planned", useCase: "Lightweight performance and traffic insight for public pages." },
-      { name: "Cloudflare", status: "planned", useCase: "DNS, caching, security and CDN rules if moved into Cloudflare management." },
-      { name: "Google Search Console", status: "planned", useCase: "Indexing, sitemap submission and SEO performance monitoring." },
-      { name: "Bing Webmaster Tools", status: "planned", useCase: "Bing/Yandex-style discovery support and indexing diagnostics." }
+      { name: "Cloudflare DNS", status: "internal", useCase: "DNS is managed through Cloudflare while the domain remains registered at Namecheap." },
+      { name: "Cloudflare WAF / Turnstile", status: "planned", useCase: "Security, bot protection and public-form abuse controls before larger paid traffic." },
+      { name: "Google Search Console", status: "available", useCase: "Indexing, sitemap submission and SEO performance monitoring." },
+      { name: "Bing Webmaster Tools", status: "available", useCase: "Bing sitemap discovery, URL submission and indexing diagnostics." },
+      { name: "Yandex Webmaster", status: "pending", useCase: "Yandex sitemap processing and regional discovery follow-up." }
     ]
   }
 ];
@@ -146,7 +150,7 @@ const faq = [
   },
   {
     question: "Which integrations are already acquired?",
-    answer: "The current acquired provider set includes OpenAI, Google Maps, Runway, ElevenLabs, Replicate, Apify and Resend. Other commerce, social, automation and video APIs remain pending or planned."
+    answer: "The current verified/acquired set includes OpenAI, Google Maps, Runway, DataForSEO, Stability AI, Apify, Resend, Whop, Bing IndexNow and OAuth readiness for YouTube/TikTok. Some providers may still need permission-scope or live E2E validation before customer-facing automation is enabled."
   }
 ];
 
@@ -213,7 +217,7 @@ export default async function ApiDocumentationPage() {
 
         <section className="admin-info-grid service-info-grid" style={{ marginTop: 18 }}>
           <div><span>Total map</span><strong>{totalIntegrations} integrations</strong><small>Provider, commerce, social, payment and infrastructure coverage.</small></div>
-          <div><span>Available</span><strong>{statusCounts.available} acquired</strong><small>OpenAI, Google Maps, Runway, ElevenLabs, Replicate, Apify and Resend.</small></div>
+          <div><span>Available</span><strong>{statusCounts.available} verified/acquired</strong><small>OpenAI, Maps, Runway, DataForSEO, Stability, Apify, Resend and selected OAuth/indexing paths.</small></div>
           <div><span>Pending</span><strong>{statusCounts.pending} APIs</strong><small>Commerce, social, video editing and automation access still needs setup.</small></div>
           <div><span>Security</span><strong>No secrets exposed</strong><small>Keys stay in environment variables and provider dashboards.</small></div>
         </section>
