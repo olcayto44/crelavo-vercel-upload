@@ -8,6 +8,7 @@ import { analyticsEnvVariables, analyticsReadinessChecklist, paidTrafficChannelP
 import { aiNewsletterOutreachTargets, aiNewsletterPitchPack, aiNewsletterSubmissionChecklist, aiUgcCreatorCrowdsourcingTargets, aiUgcCreatorIntakeChecklist, growthExecutionOrder, growthMeasurementChecklist, growthWorkstreams, launchChannelPriorities, launchGrowthSequence, rewardCreditRules, watermarkPolicy } from "@/lib/growth";
 import { launchBlockedNotes, shareToEarnLoop, shortFormGrowthSystem, socialExportPack } from "@/lib/growth-launch-systems";
 import { launchCopyPack, launchDistributionChannels, launchDistributionChecklist, launchDistributionKeywords, launchDistributionUrlPacks, launchUtmTemplates } from "@/lib/launch-distribution";
+import { growthDataOptimizationPlan } from "@/lib/launch-ops-readiness";
 import { globalSocialContentKit, pinterestBoards, pinterestPinTemplates, pinterestYoutubeKeywords, socialContentCalendar, socialLaunchKeywords, socialSemiAutoChecklist, socialSharePlatforms, ugcDemoFunnel, visualDistributionSemiAutoChecklist, youtubeShortsTemplates } from "@/lib/social-distribution";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { aiDirectoryBacklinkCopyPack, aiDirectorySubmissionKit, aiDirectorySubmissionTargets, organicDirectoryChecklist, organicDirectoryLaunchPlan, organicKeywordCoverage } from "@/lib/organic-directory";
@@ -257,6 +258,7 @@ export default function AdminGrowthPage() {
           <div className="card admin-category-card"><span className="badge">Fix intake · {liveTestFixIntake.status}</span><h3>{liveTestFixIntake.title}</h3><p>{liveTestFixIntake.guardrail}</p></div>
           <div className="card admin-category-card"><span className="badge">3 · Public site cleanup</span><h3>Buyer-facing copy stays clean</h3><p>No placeholder, fake proof, fake urgency, fake local proof, winner-ad or unverified metric claims before paid traffic.</p></div>
           <div className="card admin-category-card"><span className="badge">24 · V2 roadmap</span><h3>Post-launch vision stays gated</h3><p>V2 planning starts after real E2E, public approval and first growth data, without distracting from launch hardening.</p></div>
+          <div className="card admin-category-card"><span className="badge">23 · {growthDataOptimizationPlan.status}</span><h3>SEO/social optimization waits for real data</h3><p>{growthDataOptimizationPlan.nextAction}</p></div>
           <div className="card admin-category-card"><span className="badge">MVP API · {mvpApiSeparation.status}</span><h3>MVP API work is separated</h3><p>{mvpApiSeparation.rule}</p></div>
           <div className="card admin-category-card"><span className="badge">6 · {externalSubmissionTracker.status}</span><h3>External submission tracker</h3><p>{externalSubmissionTracker.ownerAction}</p></div>
           <div className="card admin-category-card"><span className="badge">7 · {externalApiAccountReadiness.status}</span><h3>External API account readiness</h3><p>{externalApiAccountReadiness.rule}</p></div>

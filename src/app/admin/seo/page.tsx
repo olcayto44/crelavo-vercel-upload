@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/AdminShell";
 import { googleIndexingAllSitemapUrls, googleIndexingContinuationUrls, googleIndexingGuardrails, googleIndexingSubmittedUrls, indexingChecklist, searchEngineSubmitTargets } from "@/lib/google-indexing";
-import { globalSeoExpansionPlan, programmaticSeoQualityGuardPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
+import { globalSeoExpansionPlan, growthDataOptimizationPlan, programmaticSeoQualityGuardPlan, technicalSeoIntegrityPlan } from "@/lib/launch-ops-readiness";
 import { seoLaunchKit } from "@/lib/seo-launch-kit";
 
 const seoModules = [
@@ -49,6 +49,16 @@ export default function AdminSeoPage() {
           {programmaticSeoQualityGuardPlan.templates.map((item) => <div key={item}><span>Template</span><strong>{item}</strong><small>{programmaticSeoQualityGuardPlan.status}</small></div>)}
         </div>
         <ul>{programmaticSeoQualityGuardPlan.qualityChecks.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">23 · SEO/social data optimization</span>
+        <h2>Optimize only after real growth signals arrive</h2>
+        <p style={{ color: "var(--muted)" }}>{growthDataOptimizationPlan.nextAction}</p>
+        <div className="admin-info-grid">
+          {growthDataOptimizationPlan.requiredInputs.map((item) => <div key={item}><span>Required input</span><strong>{item}</strong><small>{growthDataOptimizationPlan.status}</small></div>)}
+        </div>
+        <ul>{growthDataOptimizationPlan.optimizationLoops.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>

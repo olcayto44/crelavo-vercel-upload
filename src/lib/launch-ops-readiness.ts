@@ -160,3 +160,21 @@ export const postLaunchV2VisionPlan = {
   ],
   rule: "V2 ideas should not distract from launch hardening; prioritize only after real Whop/payment/provider E2E, public site approval and first growth data are available."
 };
+
+export const growthDataOptimizationPlan = {
+  status: "waiting_for_real_growth_data",
+  requiredInputs: ["Search Console impressions/clicks/CTR", "indexed URL coverage", "Whop preview sales/conversion", "referral source traffic", "directory listing status", "social post reach/clicks", "country/device split", "top converting pages"],
+  optimizationLoops: [
+    "Promote SEO pages with impressions but low CTR into title/meta and internal-link tests.",
+    "Expand only page clusters that show clicks, qualified checkout intent or Whop preview conversion.",
+    "Pause social hooks with reach but no clicks; rewrite around verified demo/sample outcomes only.",
+    "Move directory/backlink targets from submitted to follow-up only when listing status and referral quality are known.",
+    "Use country/device data to adjust global SEO priorities, posting windows and checkout UX notes."
+  ],
+  guardrails: [
+    "Do not claim SEO/social optimization is complete without real Search Console, referral, Whop and social data.",
+    "No fake local proof, fake traction, fake winner ad or unverified performance metric should be introduced during optimization.",
+    "Every optimization action must record source metric, hypothesis, changed URL/post and follow-up date."
+  ],
+  nextAction: "Collect first live growth data, then optimize SEO and social surfaces from measured signals instead of guesses."
+};

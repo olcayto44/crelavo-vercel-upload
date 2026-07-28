@@ -340,6 +340,9 @@ for (const term of ["publicSiteCleanupPlan", "public_site_cleanup_guarded", "fak
 for (const term of ["postLaunchV2VisionPlan", "v2_vision_planned_after_launch_proof", "Provider automation V2", "Growth intelligence V2", "V2 roadmap"]) {
   if (!launchOpsReadiness.includes(term) && !adminGrowthPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`post-launch V2 vision guard missing term: ${term}`);
 }
+for (const term of ["growthDataOptimizationPlan", "waiting_for_real_growth_data", "Search Console impressions/clicks/CTR", "Whop preview sales/conversion", "SEO/social data optimization", "SEO/social optimization waits for real data"]) {
+  if (!launchOpsReadiness.includes(term) && !adminGrowthPage.includes(term) && !adminSeoPage.includes(term) && !adminFinalApiChecklistPage.includes(term)) throw new Error(`growth data optimization guard missing term: ${term}`);
+}
 for (const term of ["getShopifyReadiness", "requireProviderEnv(\"openai\")", "requireProviderEnv(\"elevenlabs\")", "requireProviderEnv(\"apify\")", "hasProviderEnv(\"whopWebhookSecret\")", "testCloudflare", "hasProviderEnv(\"cloudflareApiToken\")"]) {
   if (!adminProviderTests.includes(term)) throw new Error(`admin provider test alias wiring missing term: ${term}`);
 }
