@@ -54,6 +54,21 @@ async function sendEmail(to: string, subject: string, body: string) {
   return { to, sent: true };
 }
 
+async function safeLogEmail(to: string, subject: string, body: string, status: string) {
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    await supabaseAdmin().from("admin_email_logs").insert({
+      recipient_email: to,
+      subject,
+      body,
+      status,
+      created_at: new Date().toISOString()
+    });
+  } catch {
+    // Optional admin reply history must not block real email delivery.
+  }
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   if (!isAdminRequest(request, body)) return adminRequiredResponse();
@@ -74,7 +89,9 @@ export async function POST(request: Request) {
 
     const results = [];
     for (const to of recipients) {
-      results.push(await sendEmail(to, subject, messageBody));
+      const result = await sendEmail(to, subject, messageBody);
+      results.push(result);
+      await safeLogEmail(to, subject, messageBody, result.sent ? "sent" : "failed");
     }
 
     const sentCount = results.filter((item) => item.sent).length;

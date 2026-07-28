@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/AdminShell";
 import { AdminStatsCards } from "@/components/AdminStatsCards";
 import { AdminFinanceCards } from "@/components/AdminFinanceCards";
 import { AdminLiveVisitorsCard } from "@/components/AdminLiveVisitorsCard";
+import { adminDailyFocus, adminOwnerRoutine } from "@/lib/admin";
 import { buildFinalApiChecklist } from "@/lib/final-api-checklist";
 import { buildLaunchReadiness } from "@/lib/launch-readiness";
 import { buildManualE2EChecklist } from "@/lib/manual-e2e-checklist";
@@ -21,37 +22,6 @@ function hasEnv(name: string) {
   const value = process.env[name];
   return Boolean(value && !value.includes("TODO") && !value.includes("your_") && !value.includes("change_me"));
 }
-
-const quickModules = [
-  { title: "Members", href: "/admin/users", note: "Search users, view full user ID, registration date, last sign-in, IP/country/city/credit data, and add or remove credits." },
-  { title: "All Requests", href: "/admin/productions", note: "Manage user production requests, delivery links and status updates." },
-  { title: "Finance Dashboard", href: "/admin/finance", note: "Review revenue, provider spend estimates, reserved credit exposure, production margin and manual payment activations." },
-  { title: "Ad Slots", href: "/admin/ads", note: "Manage splash, right/left, sidebar, header and in-content ad slots from the top priority area." },
-  { title: "Site Content", href: "/admin/site-content", note: "Edit homepage, landing copy and important public content blocks." },
-  { title: "Packages", href: "/admin/packages", note: "Management area for credit packages and production packages." },
-  { title: "Category Cards", href: "/admin/categories", note: "Edit site category cards and add new cards." },
-  { title: "Sample Output Videos", href: "/admin/sample-videos", note: "Manage public sample/demo videos shown before stronger API/provider demos are ready." },
-  { title: "FAQ Management", href: "/admin/faqs", note: "Update public questions, answers and support guidance." },
-  { title: "Free Tools Funnel", href: "/admin/free-tools", note: "Review public free tools, ecommerce script funnels, ad scoring tools, CTA paths and premium feature roadmap." },
-  { title: "SEO Service Pages", href: "/admin/service-pages", note: "Control service-page publish status, noindex state, sitemap visibility and FAQ/internal-link blocks." },
-  { title: "SEO / Google", href: "/admin/seo", note: "Sitemap, robots, meta, Google and social sharing settings." },
-  { title: "Launch Readiness", href: "/admin/launch-readiness", note: "Check env keys, domain, Whop, email, providers, safe capacity policy and manual launch blockers." },
-  { title: "Final API Checklist", href: "/admin/final-api-checklist", note: "Use on final setup day to connect Whop, Supabase, Resend and provider keys, then run live E2E in order." },
-  { title: "Manual E2E Checklist", href: "/admin/manual-e2e-checklist", note: "Track pre-API and final API browser checks with PASS, FAIL and BLOCKED launch validation states." },
-  { title: "Provider Readiness", href: "/admin/providers", note: "Review Claude/OpenAI, image, video, voice, render, email and payment provider routing before final API setup." },
-  { title: "Security / Fraud Guard", href: "/admin/security-fraud", note: "Review abuse, payment-first production, rewards, partner commission and sensitive AI usage guardrails." },
-  { title: "Monitoring / Error Logging", href: "/admin/monitoring", note: "Review health checks, provider readiness, API guard, backup plan, analytics and external logging blockers." },
-  { title: "Legal / Support Final", href: "/admin/legal-final", note: "Confirm terms, refund policy, privacy, Whop billing/cancel and support paths are public." },
-  { title: "Product Hunt / Global Launch", href: "/admin/global-launch", note: "Prepare launch copy, AI directory list and Product Hunt timing while major launch waits for final Whop/provider tests." },
-  { title: "Lemon Integration — Last", href: "/admin/lemon-final", note: "Keep Lemon parked until Whop, provider, legal, monitoring and launch checks are stable." },
-  { title: "Growth Backlog", href: "/admin/growth", note: "Post-launch growth planning after core launch validation: referral, share loops, analytics and organic launch assets." },
-  { title: "Analytics Dashboard", href: "/admin/analytics", note: "Review live visitors, first-touch UTM/ref capture, event taxonomy and paid traffic analytics blockers." },
-  { title: "Partner Program", href: "/admin/partners", note: "Prepare affiliate applications, creator assets, commission placeholders and API launch blockers before payout tracking goes live." },
-  { title: "E-commerce Product Ad", href: "/admin/ecommerce-product-ad", note: "Monitor product-link campaign planning, provider preflight, delivery package and final dashboard output status." },
-  { title: "Connected Accounts & Stores", href: "/admin/connections", note: "Phase-2 backlog for future social/store targets, export planning and API-dependent publishing." },
-  { title: "Appearance / Theme", href: "/admin/appearance", note: "Header, sidebar, color, card, landing page and module appearance settings." },
-  { title: "Code Backup", href: "/admin/backup", note: "Full code backup, restore and secure archive area for the site." }
-];
 
 export default function AdminPage() {
   const launchReadiness = buildLaunchReadiness();
@@ -104,6 +74,37 @@ export default function AdminPage() {
       description="A detailed control center similar to WordPress: members, requests, packages, categories, SEO, ads, appearance, payments and backups are managed from one panel."
     >
       <section className="card admin-user-info-card">
+        <span className="badge">Günlük kontrol merkezi</span>
+        <h2>En sık takip edeceğin bölümler</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Admin paneli kalabalık olduğu için günlük işlerde önce buraya bak: üretimler, krediler, finans, QA, provider ve monitoring. Diğer modüller aşağıda kalır.
+        </p>
+        <div className="admin-category-grid" style={{ marginTop: 14 }}>
+          {adminDailyFocus.map((item) => (
+            <Link className="card admin-category-card" href={item.href} key={item.href}>
+              <span className="badge">{item.priority}</span>
+              <h2>{item.label}</h2>
+              <p>{item.note}</p>
+              <span className="btn">Aç</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Bakma rutini</span>
+        <h2>Günlük / düzenli kontrol sırası</h2>
+        <div className="admin-grid three-col" style={{ marginTop: 14 }}>
+          {adminOwnerRoutine.map((routine) => (
+            <div className="mini-card" key={routine.cadence}>
+              <h3>{routine.cadence}</h3>
+              <ul>{routine.items.map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card admin-user-info-card" style={{ marginTop: 20 }}>
         <span className="badge">Control center</span>
         <h2>Quick access for site management</h2>
         <p style={{ color: "var(--muted)" }}>
@@ -149,15 +150,18 @@ export default function AdminPage() {
       <section className="admin-panel-section"><AdminStatsCards /></section>
       <section className="admin-panel-section"><AdminFinanceCards /></section>
 
-      <section className="admin-category-grid">
-        {quickModules.map((item) => (
-          <Link className="card admin-category-card" href={item.href} key={item.href}>
-            <span className="badge">Admin module</span>
-            <h2>{item.title}</h2>
-            <p>{item.note}</p>
-            <span className="btn">Open module</span>
-          </Link>
-        ))}
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
+        <span className="badge">Ayrı sayfa sistemi</span>
+        <h2>Modüller artık ana sayfayı uzatmadan kendi ekranında açılır</h2>
+        <p style={{ color: "var(--muted)" }}>
+          Ana panel sadece günlük özet ve kritik kontrol merkezi olarak kalır. Üye, üretim, kredi, finans, SEO, growth, provider, appearance ve diğer modüller sol menüden kendi ayrı admin sayfasında açılır.
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+          <Link className="btn" href="/admin/productions">Üretimler</Link>
+          <Link className="btn secondary" href="/admin/users">Members</Link>
+          <Link className="btn secondary" href="/admin/credits">Krediler</Link>
+          <Link className="btn secondary" href="/admin/seo">SEO</Link>
+        </div>
       </section>
     </AdminShell>
   );

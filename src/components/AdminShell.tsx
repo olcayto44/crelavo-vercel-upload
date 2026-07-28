@@ -1,8 +1,19 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AdminLogoutButton } from "@/components/AdminLoginPanel";
-import { adminMenu, adminMenuGroups } from "@/lib/admin";
+import { AdminNotificationBell } from "@/components/AdminNotificationBell";
+import { adminDailyFocus, adminMenu, adminMenuGroups } from "@/lib/admin";
+
+function isActiveAdminHref(pathname: string, href: string) {
+  if (href === "/admin") return pathname === "/admin";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
+  const pathname = usePathname();
+
   return (
     <main className="container section admin-shell-layout">
       <div className="nav" style={{ paddingTop: 0 }}>
@@ -16,14 +27,21 @@ export function AdminShell({ children, title, description }: { children: React.R
 
       <div className="admin-shell">
         <aside className="admin-sidebar-card">
-          <span className="badge">Admin sidebar</span>
-          <h3>Management options</h3>
+          <span className="badge">Günlük takip</span>
+          <h3>En sık bakılacaklar</h3>
+          <nav className="admin-menu-group">
+            {adminDailyFocus.slice(0, 7).map((item) => (
+              <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} key={item.href} href={item.href}>{item.priority} · {item.label}</Link>
+            ))}
+          </nav>
+          <span className="badge" style={{ marginTop: 16 }}>Tüm menü</span>
+          <h3>Diğer yönetim alanları</h3>
           <nav>
             {adminMenuGroups.map((group) => (
               <div className="admin-menu-group" key={group}>
                 <strong>{group}</strong>
                 {adminMenu.filter((item) => item.group === group).map((item) => (
-                  <Link key={item.href} href={item.href}>{item.label}</Link>
+                  <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} key={item.href} href={item.href}>{item.label}</Link>
                 ))}
               </div>
             ))}
@@ -32,9 +50,14 @@ export function AdminShell({ children, title, description }: { children: React.R
 
         <div className="admin-main-stack">
           <section className="production-hero-card admin-overview-hero">
-            <span className="badge">Admin panel</span>
-            <h2>{title}</h2>
-            {description ? <p>{description}</p> : null}
+            <div className="admin-hero-with-notifications">
+              <div>
+                <span className="badge">Admin panel</span>
+                <h2>{title}</h2>
+                {description ? <p>{description}</p> : null}
+              </div>
+              <AdminNotificationBell />
+            </div>
           </section>
           {children}
         </div>

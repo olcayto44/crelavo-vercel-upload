@@ -74,6 +74,26 @@ export const adminMenu = [
   { label: "Legacy Video Requests", href: "/admin/legacy", group: "Archive" }
 ];
 
+export const adminDailyFocus = [
+  { label: "Bugün bakılacak özet", href: "/admin", priority: "Günlük", note: "Genel durum, canlı ziyaretçi, istekler, finans ve launch durumunu tek ekranda gör." },
+  { label: "Üretimler / İstekler", href: "/admin/productions", priority: "Günlük", note: "Yeni iş var mı, üretim bekliyor mu, teslimat linki veya hata var mı kontrol et." },
+  { label: "Gelen e-posta / bildirim", href: "/admin/growth", priority: "Günlük", note: "Contact form, lead, kullanıcı mesajı, şikayet, support veya takip isteyen bildirimleri kontrol et." },
+  { label: "Krediler", href: "/admin/credits", priority: "Günlük", note: "Manuel kredi yükleme, kredi düşüşü, receipt/reference ve kullanıcı kredi işlemleri." },
+  { label: "Finans", href: "/admin/finance", priority: "Günlük", note: "Gelir, reserved credit, provider cost ve margin risklerini kontrol et." },
+  { label: "Production QA", href: "/admin/production-qa", priority: "Günlük", note: "Teslim edilen işlerde output, credit ledger, source delivery ve No Fake Proof kontrolleri." },
+  { label: "Provider durumu", href: "/admin/providers", priority: "Sık", note: "API/provider hazır mı, low-cost test ve rate limit/backoff guardları ne durumda." },
+  { label: "Monitoring", href: "/admin/monitoring", priority: "Sık", note: "Hata, backup, logging ve canlı test failure intake durumları." },
+  { label: "SEO", href: "/admin/seo", priority: "Haftalık", note: "Search Console, sitemap, hreflang, programmatic SEO ve growth data optimizasyonu." },
+  { label: "Growth", href: "/admin/growth", priority: "Haftalık", note: "Directory, sosyal medya, UGC/demo funnel ve gerçek veriyle optimizasyon işleri." },
+  { label: "Final checklist", href: "/admin/final-api-checklist", priority: "Launch", note: "Launch öncesi Whop, E2E, API, güvenlik, SEO ve growth guardlarını toplu kontrol et." }
+];
+
+export const adminOwnerRoutine = [
+  { cadence: "Her gün", items: ["Yeni üretim/istek var mı?", "Gelen e-posta, şikayet, support veya takip isteyen bildirim var mı?", "Kredi/reserved düşüşü normal mi?", "Teslimat linki ve QA sorunu var mı?", "Ödeme/Whop veya kullanıcı mesajı var mı?"] },
+  { cadence: "Haftada 2-3 kez", items: ["Provider/API durumları", "Monitoring/log/error durumu", "Finance margin ve provider spend", "Social/UGC/directory takipleri"] },
+  { cadence: "Haftalık", items: ["SEO/Search Console verisi", "Growth optimizasyon loopları", "Public site copy/proof kontrolü", "V2 fikirleri launch hardening’i dağıtıyor mu?"] }
+];
+
 export const adminMenuGroups = Array.from(new Set(adminMenu.map((item) => item.group)));
 
 export const adminProductionSections = {

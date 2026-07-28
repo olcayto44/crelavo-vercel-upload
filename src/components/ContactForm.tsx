@@ -4,12 +4,26 @@ import { useState } from "react";
 
 type State = "idle" | "loading" | "success" | "error";
 
+const requesterTypes = [
+  "Normal member / customer",
+  "Affiliate / partner applicant",
+  "Company / enterprise",
+  "Visitor / general information"
+];
+
 const topics = [
-  "Production support",
-  "Account or credit help",
-  "AI + Human QA request",
-  "Partnership or launch question",
-  "Security or login issue"
+  "Credit was not loaded",
+  "Production is delayed or failed",
+  "Production revision / output problem",
+  "Account, login or email verification issue",
+  "Billing, payment or invoice question",
+  "Affiliate / partnership application",
+  "Affiliate complaint or payout problem",
+  "Affiliate technical problem",
+  "Affiliate collaboration offer",
+  "Enterprise / company offer request",
+  "Security, abuse or urgent problem",
+  "General information request"
 ];
 
 export function ContactForm() {
@@ -25,6 +39,7 @@ export function ContactForm() {
     const payload = {
       fullName: String(form.get("full_name") ?? "").trim(),
       email: String(form.get("email") ?? "").trim().toLowerCase(),
+      requesterType: String(form.get("requester_type") ?? "").trim(),
       topic: String(form.get("topic") ?? "").trim(),
       message: String(form.get("message") ?? "").trim(),
       company: String(form.get("company") ?? "").trim(),
@@ -54,6 +69,13 @@ export function ContactForm() {
     <form className="contact-form" onSubmit={onSubmit}>
       <div className="field"><label>Full name</label><input name="full_name" required placeholder="Your full name" /></div>
       <div className="field"><label>Email</label><input name="email" type="email" required placeholder="you@example.com" /></div>
+      <div className="field">
+        <label>Who is contacting us?</label>
+        <select name="requester_type" required defaultValue="">
+          <option value="" disabled>Select who you are</option>
+          {requesterTypes.map((type) => <option value={type} key={type}>{type}</option>)}
+        </select>
+      </div>
       <div className="field">
         <label>Topic</label>
         <select name="topic" required defaultValue="">
