@@ -36,11 +36,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!access.ok) return access.response;
 
   const hashtagsRaw = clean(body.hashtags ?? body.product_tags ?? body.productTags);
+  const productDescription = clean(body.product_description ?? body.productDescription ?? body.caption);
+  const productTags = hashtagsRaw.split(/[\s,]+/).map((item) => item.replace(/^#/, "").trim()).filter(Boolean);
   const preferences = {
-    caption: clean(body.caption ?? body.product_description ?? body.productDescription),
+    caption: clean(body.caption ?? productDescription),
     hashtags: hashtagsRaw.split(/[\s,]+/).map((item) => item.trim()).filter(Boolean).map((item) => item.startsWith("#") ? item : `#${item}`),
     productId: clean(body.product_id ?? body.productId),
-    productTags: hashtagsRaw.split(/[\s,]+/).map((item) => item.replace(/^#/, "").trim()).filter(Boolean),
+    productTitle: clean(body.product_title ?? body.productTitle),
+    productDescription,
+    productTags,
+    connectedAccountId: clean(body.connected_account_id ?? body.connectedAccountId),
+    provider: clean(body.provider),
+    storeUrl: clean(body.store_url ?? body.storeUrl),
+    uploadPayload: {
+      productId: clean(body.product_id ?? body.productId),
+      title: clean(body.product_title ?? body.productTitle),
+      description: productDescription,
+      tags: productTags,
+      caption: clean(body.caption ?? productDescription),
+      mediaUrl: clean(body.media_url ?? body.mediaUrl),
+      finalApprovalRequired: true
+    },
     updatedAt: new Date().toISOString(),
     policy: "Stored for export-ready delivery pack; live social/store mutation still requires final approval."
   };
@@ -54,7 +70,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       caption: preferences.caption,
       hashtags: preferences.hashtags,
       productId: preferences.productId,
+      productTitle: preferences.productTitle,
+      productDescription: preferences.productDescription,
       productTags: preferences.productTags,
+      connectedAccountId: preferences.connectedAccountId,
+      provider: preferences.provider,
+      storeUrl: preferences.storeUrl,
+      uploadPayload: preferences.uploadPayload,
       updatedAt: preferences.updatedAt
     }
   };

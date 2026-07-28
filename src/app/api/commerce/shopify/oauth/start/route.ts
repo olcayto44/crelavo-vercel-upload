@@ -2,25 +2,35 @@ import { optionalEnv, requireEnv } from "@/lib/providers/env";
 import { requireVerifiedRequestUser } from "@/lib/supabase";
 
 function appUrl() {
-  return optionalEnv("NEXT_PUBLIC_APP_URL") || "https://www.crelavo.com";
+  return optionalEnv("NEXT_PUBLIC_APP_URL") || optionalEnv("APP_URL") || "https://www.crelavo.com";
 }
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function isPlaceholderShop(raw: string) {
+  const value = raw.toLowerCase();
+  return !value || value.includes("your-shopify-store") || value.includes("example.com") || value.includes("placeholder");
+}
+
 function normalizeShop(raw: string) {
   const value = raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim().toLowerCase();
   if (!value) return "";
-  return value.endsWith(".myshopify.com") ? value : `${value}.myshopify.com`;
+  if (value.endsWith(".myshopify.com")) return value;
+  if (value.includes(".")) return value;
+  return `${value}.myshopify.com`;
 }
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const userId = clean(body.user_id ?? body.userId);
-  const shop = normalizeShop(clean(body.shop ?? body.store_url ?? body.storeUrl));
+  const submittedShop = clean(body.shop ?? body.store_url ?? body.storeUrl);
+  const envShop = optionalEnv("SHOPIFY_STORE_DOMAIN");
+  const shopSource = isPlaceholderShop(submittedShop) ? envShop : submittedShop;
+  const shop = normalizeShop(shopSource);
   if (!userId) return Response.json({ error: "user_id is required." }, { status: 400 });
-  if (!shop) return Response.json({ error: "Shopify store domain is required." }, { status: 400 });
+  if (!shop) return Response.json({ error: "Shopify store domain is required. Add your .myshopify.com domain or set SHOPIFY_STORE_DOMAIN in Vercel." }, { status: 400 });
 
   const auth = await requireVerifiedRequestUser(request, userId);
   if (!auth.ok) return auth.response;

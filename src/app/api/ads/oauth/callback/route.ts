@@ -1,5 +1,6 @@
 import { encryptConnectedToken, providerAccountTypes } from "@/lib/connected-accounts";
-import { requireEnv, optionalEnv, optionalProviderEnv } from "@/lib/providers/env";
+import { optionalEnv, optionalProviderEnv, requireEnv } from "@/lib/providers/env";
+import { adOAuthAppUrl, adOAuthRedirectUri } from "@/lib/phase2/ads";
 import { supabaseAdmin } from "@/lib/supabase";
 import type { AdPlatform } from "@/lib/phase2/types";
 
@@ -32,7 +33,7 @@ const supportedMetaPlatforms: AdPlatform[] = ["meta", "instagram"];
 const supportedConnectedPlatforms: AdPlatform[] = ["meta", "instagram", "tiktok", "youtube"];
 
 function appUrl() {
-  return optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
+  return adOAuthAppUrl();
 }
 
 function metaGraphVersion() {
@@ -66,7 +67,7 @@ async function fetchMetaJson<T>(url: string) {
 async function exchangeCodeForToken(code: string, platform: AdPlatform) {
   const clientId = requireEnv("META_APP_ID");
   const clientSecret = requireEnv("META_APP_SECRET");
-  const redirectUri = `${appUrl()}/api/ads/oauth/callback?platform=${platform}`;
+  const redirectUri = adOAuthRedirectUri();
   const url = new URL(`https://graph.facebook.com/${metaGraphVersion()}/oauth/access_token`);
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("client_secret", clientSecret);
@@ -91,7 +92,7 @@ async function exchangeConnectedCodeForToken(code: string, platform: AdPlatform)
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: `${appUrl()}/api/ads/oauth/callback?platform=youtube`,
+        redirect_uri: adOAuthRedirectUri(),
         grant_type: "authorization_code"
       })
     });
@@ -168,17 +169,17 @@ async function loadMetaConnections(platform: AdPlatform, accessToken: string) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const platform = String(url.searchParams.get("platform") ?? "meta") as AdPlatform;
   const code = String(url.searchParams.get("code") ?? "");
   const rawState = String(url.searchParams.get("state") ?? "");
   const providerError = String(url.searchParams.get("error_description") ?? url.searchParams.get("error") ?? "");
+  const state = decodeState(rawState);
+  const platform = String(state.platform ?? url.searchParams.get("platform") ?? "meta") as AdPlatform;
 
   try {
     if (!supportedConnectedPlatforms.includes(platform)) throw new Error("Unsupported OAuth platform.");
     if (providerError) throw new Error(providerError);
     if (!code) throw new Error("OAuth code is missing.");
 
-    const state = decodeState(rawState);
     const userId = String(state.userId ?? "").trim();
     if (!userId) throw new Error("OAuth state does not include user id.");
 
@@ -203,13 +204,13 @@ export async function GET(request: Request) {
       platform,
       account_name: connection.accountName,
       external_account_id: connection.externalAccountId,
-      access_token_encrypted: accessToken,
+      access_token_encrypted: encryptConnectedToken(accessToken),
       status: "connected",
       updated_at: new Date().toISOString()
     }));
 
     const { error } = await supabaseAdmin().from("connected_ad_accounts").insert(rows);
-    if (error) throw error;
+    if (error) console.warn("Legacy connected_ad_accounts insert skipped", error.message);
 
     await Promise.all(connections.map((connection) => upsertConnectedAccount({
       userId,

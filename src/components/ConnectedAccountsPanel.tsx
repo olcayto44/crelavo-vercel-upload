@@ -57,7 +57,7 @@ export function ConnectedAccountsPanel() {
   const [selectedProvider, setSelectedProvider] = useState<ConnectedProvider>("instagram");
   const [displayName, setDisplayName] = useState("My Instagram business account");
   const [externalId, setExternalId] = useState("my-instagram-business-account");
-  const [storeUrl, setStoreUrl] = useState("https://your-shopify-store.com");
+  const [storeUrl, setStoreUrl] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [exportTitle, setExportTitle] = useState("New Crelavo production");
@@ -107,13 +107,17 @@ export function ConnectedAccountsPanel() {
     const { userId, token } = await currentUser();
     if (!userId) return setMessage("You must sign in before starting OAuth.");
     const commerce = provider === "shopify";
+    setMessage(`${connectedProviderLabels[provider]} OAuth başlatılıyor...`);
     const response = await fetch(commerce ? "/api/commerce/shopify/oauth/start" : "/api/ads/oauth/start", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(commerce ? { user_id: userId, shop: storeUrl } : { user_id: userId, platform: provider })
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.url) return setMessage(data.error ?? `${connectedProviderLabels[provider]} OAuth could not be started.`);
+    if (!response.ok || !data.url) {
+      const details = [data.error, data.requiredEnv ? `Eksik env: ${data.requiredEnv}` : ""].filter(Boolean).join(" · ");
+      return setMessage(details || `${connectedProviderLabels[provider]} OAuth could not be started.`);
+    }
     window.location.href = data.url;
   }
 
@@ -289,7 +293,7 @@ export function ConnectedAccountsPanel() {
         <div className="field"><label>Provider</label><select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value as ConnectedProvider)}>{allProviders.map((provider) => <option value={provider} key={provider}>{connectedProviderLabels[provider]}</option>)}</select></div>
         <div className="field"><label>Display name</label><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} /></div>
         <div className="field"><label>External account/store ID</label><input value={externalId} onChange={(event) => setExternalId(event.target.value)} placeholder="channel, business account, store id or handle" /></div>
-        {selectedIsCommerce ? <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} /></div> : null}
+        {selectedIsCommerce ? <div className="field"><label>Store URL</label><input value={storeUrl} onChange={(event) => setStoreUrl(event.target.value)} placeholder="your-store.myshopify.com" /></div> : null}
         <div className="field"><label>Access token</label><input value={accessToken} onChange={(event) => setAccessToken(event.target.value)} placeholder="Optional; leave empty for oauth_ready" type="password" /></div>
         <div className="field"><label>Refresh token</label><input value={refreshToken} onChange={(event) => setRefreshToken(event.target.value)} placeholder="Optional refresh token" type="password" /></div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

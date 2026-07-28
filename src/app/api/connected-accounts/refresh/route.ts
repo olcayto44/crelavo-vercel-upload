@@ -1,4 +1,5 @@
 import { evaluateConnectedAccountReadiness, normalizeTokenExpiry, tokenExpiryFromSeconds } from "@/lib/connected-account-automation";
+import { markConnectedAccountError } from "@/lib/connected-account-errors";
 import { decryptConnectedToken, encryptConnectedToken } from "@/lib/connected-accounts";
 import { optionalEnv, optionalProviderEnv, requireEnv } from "@/lib/providers/env";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
@@ -117,12 +118,7 @@ export async function POST(request: Request) {
     if (updateError) throw updateError;
     return Response.json({ refreshed: true, readiness: evaluateConnectedAccountReadiness(updated) });
   } catch (refreshError) {
-    const message = refreshError instanceof Error ? refreshError.message : "Token refresh failed.";
-    await supabase
-      .from("connected_accounts")
-      .update({ status: "permission_limited", error_message: message, updated_at: new Date().toISOString() })
-      .eq("id", accountId)
-      .eq("user_id", userId);
-    return Response.json({ refreshed: false, error: message }, { status: 400 });
+    const marked = await markConnectedAccountError({ supabase, accountId, userId, error: refreshError, fallback: "Token refresh failed." });
+    return Response.json({ refreshed: false, ...marked.payload, account: marked.account, readiness: marked.readiness }, { status: 400 });
   }
 }

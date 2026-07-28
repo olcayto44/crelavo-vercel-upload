@@ -3,7 +3,7 @@ import { optionalEnv, requireEnv } from "@/lib/providers/env";
 import { supabaseAdmin } from "@/lib/supabase";
 
 function appUrl() {
-  return optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
+  return optionalEnv("NEXT_PUBLIC_APP_URL") || optionalEnv("APP_URL") || "https://www.crelavo.com";
 }
 
 function decodeState(rawState: string) {

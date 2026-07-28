@@ -5,12 +5,18 @@ function metaGraphVersion() {
   return optionalEnv("META_GRAPH_API_VERSION") || "v20.0";
 }
 
-export function adOAuthUrl(platform: AdPlatform, state: string) {
-  const appUrl = optionalEnv("NEXT_PUBLIC_APP_URL") || "https://crelavo.com";
+export function adOAuthAppUrl() {
+  return optionalEnv("NEXT_PUBLIC_APP_URL") || optionalEnv("APP_URL") || "https://www.crelavo.com";
+}
 
+export function adOAuthRedirectUri() {
+  return `${adOAuthAppUrl()}/api/ads/oauth/callback`;
+}
+
+export function adOAuthUrl(platform: AdPlatform, state: string) {
   if (platform === "meta" || platform === "instagram") {
     const clientId = requireProviderEnv("metaAppId");
-    const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=${platform}`);
+    const redirectUri = encodeURIComponent(adOAuthRedirectUri());
     const scope = encodeURIComponent(platform === "instagram"
       ? "instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement,business_management"
       : "ads_management,ads_read,business_management,pages_show_list,pages_read_engagement");
@@ -19,27 +25,27 @@ export function adOAuthUrl(platform: AdPlatform, state: string) {
 
   if (platform === "tiktok") {
     const clientKey = requireProviderEnv("tiktokClientKey");
-    const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=tiktok`);
-    const scope = encodeURIComponent("advertiser.management,ad.upload,ad.manage,report.integrated");
+    const redirectUri = encodeURIComponent(adOAuthRedirectUri());
+    const scope = encodeURIComponent("user.info.basic,video.upload,video.publish");
     return `https://business-api.tiktok.com/portal/auth?app_id=${clientKey}&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}&scope=${scope}`;
   }
 
   if (platform === "youtube") {
     const clientId = requireProviderEnv("youtubeClientId");
-    const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=youtube`);
+    const redirectUri = encodeURIComponent(adOAuthRedirectUri());
     const scope = encodeURIComponent("https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly");
     return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${scope}&state=${encodeURIComponent(state)}`;
   }
 
   if (platform === "linkedin") {
     const clientId = requireEnv("LINKEDIN_CLIENT_ID");
-    const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=linkedin`);
+    const redirectUri = encodeURIComponent(adOAuthRedirectUri());
     const scope = encodeURIComponent("openid profile w_member_social r_ads w_organization_social r_organization_social");
     return `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${encodeURIComponent(state)}`;
   }
 
   const clientId = requireEnv("X_CLIENT_ID");
-  const redirectUri = encodeURIComponent(`${appUrl}/api/ads/oauth/callback?platform=x`);
+  const redirectUri = encodeURIComponent(adOAuthRedirectUri());
   const scope = encodeURIComponent("tweet.read tweet.write users.read offline.access");
   return `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${encodeURIComponent(state)}&code_challenge=clipora_code_challenge&code_challenge_method=plain`;
 }
