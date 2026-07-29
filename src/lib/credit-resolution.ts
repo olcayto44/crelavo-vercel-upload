@@ -77,6 +77,35 @@ export function computeAdminReservedRefund(input: CreditBalanceInput & { reserve
   };
 }
 
+export function computeAdminCostAwareReservedRefund(input: CreditBalanceInput & { reservedCredits: number; productionTitle: string; providerCostCredits?: number; now?: string; existingResolution?: Record<string, unknown> | null }) {
+  const reservedCredits = positiveNumber(input.reservedCredits);
+  const balance = positiveNumber(input.balance);
+  const reserved = positiveNumber(input.reserved);
+  const costCredits = Math.min(reservedCredits, positiveNumber(input.providerCostCredits));
+  const refundAmount = Math.max(0, Math.min(reservedCredits, reserved) - costCredits);
+
+  return {
+    spentAmount: costCredits,
+    refundAmount,
+    nextBalance: Math.max(0, balance - costCredits),
+    nextReserved: Math.max(0, reserved - Math.min(reservedCredits, reserved)),
+    events: [
+      costCredits > 0 ? { type: "spend", amount: costCredits, note: `Provider/API cost deducted before admin refund: ${input.productionTitle}` } : null,
+      refundAmount > 0 ? { type: "refund", amount: refundAmount, note: `Remaining reserved credits released by admin: ${input.productionTitle}` } : null
+    ].filter((event): event is { type: string; amount: number; note: string } => Boolean(event)),
+    creditResolution: {
+      ...(input.existingResolution ?? {}),
+      status: costCredits > 0 ? "provider_cost_deducted_refunded_remaining" : "refunded_reserved_no_provider_cost",
+      reason: costCredits > 0 ? "provider_cost_recorded_before_admin_refund" : "no_provider_cost_recorded_before_admin_refund",
+      spentCredits: costCredits,
+      refundedCredits: refundAmount,
+      releasedReservedCredits: refundAmount,
+      resolvedAt: input.now ?? new Date().toISOString(),
+      instruction: costCredits > 0 ? "Provider/API maliyeti kaydedildiği için bu tutar düşüldü; kalan rezerve kredi kullanıcıya geri açıldı." : "Provider/API maliyeti oluşmadığı için rezerve kredi tam olarak kullanıcıya geri açıldı."
+    }
+  };
+}
+
 export function computeExpiredBeforeProviderStartRefund(input: CreditBalanceInput & { reservedCredits: number; productionTitle: string; productionId: string; now?: string }) {
   const reservedCredits = positiveNumber(input.reservedCredits);
   const balance = positiveNumber(input.balance);

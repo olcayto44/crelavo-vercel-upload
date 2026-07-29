@@ -448,9 +448,9 @@ export async function POST(request: Request) {
         const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
           .update({
-            status: "in_production",
-            generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : genericRun ? "waiting_provider_config" : "preview_ready",
-            output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : genericRun ? "waiting_provider_config" : "demo_ready" },
+            status: visualJob || renderJob ? "in_production" : "queued",
+            generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "waiting_provider_config",
+            output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : "waiting_provider_config", providerStatus: visualJob || renderJob ? "provider_started" : "waiting_provider_config" },
             admin_notes: providerNote,
             updated_at: new Date().toISOString()
           })

@@ -452,9 +452,44 @@ async function refundReservedCredits(item: ProductionRow) {
     setSelectedDeleteIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
-function clearDeleteSelection() {
-  setSelectedDeleteIds([]);
-}
+  function clearDeleteSelection() {
+    setSelectedDeleteIds([]);
+  }
+
+  async function bulkRefundAndHideSelectedProductions() {
+    const uniqueIds = Array.from(new Set(selectedDeleteIds)).filter((id) => rows.some((row) => row.id === id));
+    if (!uniqueIds.length) return;
+    const confirmed = window.confirm(`Seçilen ${uniqueIds.length} kayıt için rezerve kredi çözülecek ve kayıtlar admin listesinden gizlenecek. Provider/API maliyeti kaydedilmişse o tutar düşülür; maliyet yoksa tam iade edilir. Devam edilsin mi?`);
+    if (!confirmed) return;
+    setBulkDeleting(true);
+    setMessage("");
+    const removed: string[] = [];
+    let refunded = 0;
+    let spent = 0;
+    try {
+      for (const id of uniqueIds) {
+        const response = await fetch("/api/admin/productions/refund-reserved", {
+          method: "POST",
+          headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+          body: JSON.stringify({ production_id: id, cost_aware: true, hide_after_refund: true, admin_email: adminEmail, admin_token: adminToken })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error ?? "Reserved credits could not be resolved.");
+        refunded += Number(data.refunded_credits ?? 0) || 0;
+        spent += Number(data.spent_credits ?? 0) || 0;
+        removed.push(id);
+      }
+      setRows((current) => current.filter((row) => !removed.includes(row.id)));
+      setSelectedDeleteIds((current) => current.filter((id) => !removed.includes(id)));
+      setMessage(`${removed.length} kayıt gizlendi. İade: ${refunded.toLocaleString()} kredi. Maliyet düşümü: ${spent.toLocaleString()} kredi.`);
+    } catch (error) {
+      setRows((current) => current.filter((row) => !removed.includes(row.id)));
+      setSelectedDeleteIds((current) => current.filter((id) => !removed.includes(id)));
+      setMessage(error instanceof Error ? `${removed.length} kayıt işlendi, sonra durdu: ${error.message}` : `${removed.length} kayıt işlendi, sonra durdu.`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
 
   const visibleRows = productionTypeFilter ? rows.filter((row) => row.production_type === productionTypeFilter) : rows;
   const selectedVisibleDeleteIds = selectedDeleteIds.filter((id) => visibleRows.some((row) => row.id === id));
@@ -518,7 +553,8 @@ function clearDeleteSelection() {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="btn secondary" type="button" onClick={() => setSelectedDeleteIds(visibleRows.map((row) => row.id))}>Tümünü seç</button>
             <button className="btn secondary" type="button" onClick={clearDeleteSelection} disabled={!selectedVisibleDeleteIds.length}>Seçimi temizle</button>
-            <button className="btn" type="button" onClick={bulkDeleteSelectedProductions} disabled={!selectedVisibleDeleteIds.length || bulkDeleting}>{bulkDeleting ? "Kaldırılıyor..." : "Seçilenleri listeden kaldır"}</button>
+            <button className="btn secondary" type="button" onClick={bulkRefundAndHideSelectedProductions} disabled={!selectedVisibleDeleteIds.length || bulkDeleting}>{bulkDeleting ? "İşleniyor..." : "Rezervi iade et + gizle"}</button>
+            <button className="btn" type="button" onClick={bulkDeleteSelectedProductions} disabled={!selectedVisibleDeleteIds.length || bulkDeleting}>{bulkDeleting ? "Kaldırılıyor..." : "Sadece listeden kaldır"}</button>
           </div>
         </div>
       ) : null}
@@ -542,9 +578,9 @@ function clearDeleteSelection() {
         const musicVideoGroupSummary = musicVideoMaterialGroups ? Object.entries(musicVideoMaterialGroups).filter(([, urls]) => Array.isArray(urls) && urls.length > 0).map(([key, urls]) => `${key.replaceAll("_", " ")}: ${urls?.length ?? 0}`).join(", ") : "";
         const dramaDetails = item.request_metadata?.dramaDetails as { format?: string; genreTone?: string; structure?: string; characters?: string; hookType?: string; dialogueVoice?: string } | undefined;
         const dramaDetailsSummary = dramaDetails ? [dramaDetails.format, dramaDetails.genreTone, dramaDetails.structure, dramaDetails.characters, dramaDetails.hookType].filter(Boolean).join(" · ") : "";
-        const droneDetails = item.request_metadata?.droneDetails as { locationAddress?: string; routePath?: string; markedArea?: string; shotType?: string; mapStyle?: string; cameraMovement?: string; visualStyle?: string; narrationLanguage?: string; subtitleOption?: string; musicStyle?: string; materialGroups?: Record<string, string[]> } | undefined;
+        const droneDetails = item.production_type === "drone_video" ? item.request_metadata?.droneDetails as { locationAddress?: string; routePath?: string; markedArea?: string; shotType?: string; mapStyle?: string; cameraMovement?: string; visualStyle?: string; narrationLanguage?: string; subtitleOption?: string; musicStyle?: string; materialGroups?: Record<string, string[]> } | undefined : undefined;
         const droneDetailsSummary = droneDetails ? [droneDetails.locationAddress, droneDetails.shotType, droneDetails.mapStyle, droneDetails.visualStyle].filter(Boolean).join(" · ") : "";
-        const liveSalesAgentDetails = item.request_metadata?.liveSalesAgentDetails as { productLinkDetails?: string; brandName?: string; productCategory?: string; targetMarketLanguage?: string; targetPlatform?: string; persona?: string; avatarSource?: string; avatarStyle?: string; voiceSource?: string; voiceLanguage?: string; voiceTone?: string; background?: string; visualStyle?: string; subtitleOption?: string; interactionMode?: string; streamGoal?: string; humanFallback?: string; providerReadiness?: string; ctaOffer?: string; complianceNotes?: string; creditPolicy?: string; materialGroups?: Record<string, string[]> } | undefined;
+        const liveSalesAgentDetails = item.production_type === "live_sales_agent" ? item.request_metadata?.liveSalesAgentDetails as { productLinkDetails?: string; brandName?: string; productCategory?: string; targetMarketLanguage?: string; targetPlatform?: string; persona?: string; avatarSource?: string; avatarStyle?: string; voiceSource?: string; voiceLanguage?: string; voiceTone?: string; background?: string; visualStyle?: string; subtitleOption?: string; interactionMode?: string; streamGoal?: string; humanFallback?: string; providerReadiness?: string; ctaOffer?: string; complianceNotes?: string; creditPolicy?: string; materialGroups?: Record<string, string[]> } | undefined : undefined;
         const liveSalesAgentSummary = liveSalesAgentDetails ? [liveSalesAgentDetails.brandName, liveSalesAgentDetails.productCategory, liveSalesAgentDetails.targetPlatform, liveSalesAgentDetails.streamGoal, liveSalesAgentDetails.creditPolicy].filter(Boolean).join(" · ") : "";
         const commerceWorkflow = item.request_metadata?.commerceWorkflow as { storePlatform?: string; storeAssetGoal?: string; connectedStoreTargets?: string } | undefined;
         const manualOptionSummary = item.request_metadata?.manualOptionSummary as { provider?: string; quality?: string; durationSeconds?: number; aspectRatio?: string; voiceProfile?: string; voiceLanguage?: string; musicProfile?: string; environmentProfile?: string; deliveryHandoff?: string; selectedFeatures?: string[]; selectedPlatforms?: string[] } | undefined;

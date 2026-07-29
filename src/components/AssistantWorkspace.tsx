@@ -3260,7 +3260,7 @@ async function startRawMicrophoneFallback() {
           <div className="production-start-modal credit-splash-modal">
             <button className="splash-ad-close" type="button" onClick={() => setManualWizardOpen(false)} aria-label="Close manual setup">×</button>
             <span className="badge">Manual production setup</span>
-            <h3>Adım {Math.min(manualWizardStep + 1, manualWizardSteps.length)} / {manualWizardSteps.length}: {currentManualWizardStep?.title}</h3>
+            <h3 key={`manual-step-title-${manualWizardStep}-${currentManualWizardStep?.id}`}>Adım {Math.min(manualWizardStep + 1, manualWizardSteps.length)} / {manualWizardSteps.length}: {currentManualWizardStep?.title}</h3>
             <p>{currentManualWizardStep?.subtitle}</p>
             <div className="progress-mini"><span style={{ width: `${Math.round(((manualWizardStep + 1) / manualWizardSteps.length) * 100)}%` }} /></div>
             <div className="clean-tool-grid two" style={{ marginTop: 14 }}>
