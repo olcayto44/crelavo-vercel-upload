@@ -1,10 +1,12 @@
 "use client";
 
+import { clearAssistantWorkspaceSession } from "@/lib/assistant-session-client";
 import { supabaseBrowser } from "@/lib/supabase";
 
 export function SignOutButton() {
   async function signOut() {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return;
+    clearAssistantWorkspaceSession();
     await supabaseBrowser().auth.signOut();
     window.location.href = "/";
   }

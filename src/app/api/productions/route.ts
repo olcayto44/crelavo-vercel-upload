@@ -95,6 +95,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("production_requests")
       .select("*")
+      .neq("status", "deleted")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -239,6 +240,43 @@ export async function PATCH(request: Request) {
     return Response.json({ production: data && completionEmailResult ? { ...data, output_json: { ...(data.output_json ?? {}), completionEmailResult } } : data, completionEmailResult });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not update production request") }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const adminEmail = getAdminEmail(request, body);
+    const id = String(body.id ?? body.production_id ?? "").trim();
+
+    if (!isAdminRequest(request, body)) return adminRequiredResponse();
+    if (!id) return Response.json({ error: "Production id is required." }, { status: 400 });
+
+    const { data: existing, error: existingError } = await supabaseAdmin()
+      .from("production_requests")
+      .select("output_json")
+      .eq("id", id)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    const existingOutput = existing?.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+
+    const { data, error } = await supabaseAdmin()
+      .from("production_requests")
+      .update({
+        status: "deleted",
+        automation_status: "deleted_by_admin",
+        generation_status: "deleted_by_admin",
+        updated_at: new Date().toISOString(),
+        output_json: { ...existingOutput, adminDeleted: true, deletedAt: new Date().toISOString(), deletedBy: adminEmail }
+      })
+      .eq("id", id)
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    return Response.json({ deleted: true, production_id: data.id });
+  } catch (error) {
+    return Response.json({ error: errorMessage(error, "Production could not be deleted") }, { status: 500 });
   }
 }
 

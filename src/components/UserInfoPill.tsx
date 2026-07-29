@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { clearAssistantWorkspaceSession } from "@/lib/assistant-session-client";
 import { supabaseBrowser } from "@/lib/supabase";
 
 type UserInfo = {
@@ -35,6 +36,7 @@ export function UserInfoPill() {
   }, []);
 
   async function signOut() {
+    clearAssistantWorkspaceSession();
     await supabaseBrowser().auth.signOut();
     window.location.href = "/";
   }

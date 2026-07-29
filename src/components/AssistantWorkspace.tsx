@@ -9,6 +9,7 @@ import { getStoredLanguage } from "@/lib/i18n";
 import { activePlatformMaterials } from "@/lib/platform-materials";
 import { defaultDeliveryCreditRatesConfig, type DeliveryCreditRatesConfig } from "@/lib/delivery-credit-rates";
 import { footerGroups } from "@/lib/site-content";
+import { ASSISTANT_WORKSPACE_MESSAGES_KEY } from "@/lib/assistant-session-client";
 import { buildAssistantProductionPayload, packageIdFromSelection, type UserUploadedMaterial } from "@/lib/production-payload";
 import { estimateProductionCost, productionPackages, productionTypes, type ProductionPackage } from "@/lib/production";
 import { productionWorkspacePath } from "@/lib/production-url";
@@ -1449,6 +1450,8 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [lastOrchestratorPlan, setLastOrchestratorPlan] = useState<AssistantOrchestratorResponse | null>(null);
   const [assistantConversationId, setAssistantConversationId] = useState("");
   const [productionCreditAvailable, setProductionCreditAvailable] = useState<number | null>(null);
+  const [productionCreditBalance, setProductionCreditBalance] = useState<number | null>(null);
+  const [productionCreditReserved, setProductionCreditReserved] = useState<number | null>(null);
 const [dynamicWizard, setDynamicWizard] = useState<DynamicWizardState>(emptyDynamicWizard);
 const [startedProduction, setStartedProduction] = useState<StartedProductionState>(null);
 const [productionStartingIntent, setProductionStartingIntent] = useState(false);
@@ -1530,6 +1533,8 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   });
   const availableProductionCredits = productionCreditAvailable ?? assistantCreditState.productionAvailable;
   const hasKnownProductionCredits = typeof availableProductionCredits === "number";
+const displayedProductionBalanceText = typeof productionCreditBalance === "number" ? `${productionCreditBalance.toLocaleString()} credits` : null;
+const displayedProductionReservedText = typeof productionCreditReserved === "number" ? `${productionCreditReserved.toLocaleString()} reserved · ${(availableProductionCredits ?? 0).toLocaleString()} available` : null;
   const productionCreditShortfall = hasKnownProductionCredits ? Math.max(0, costEstimate.totalCredits - (availableProductionCredits ?? 0)) : 0;
   const productionCreditInsufficient = hasKnownProductionCredits && productionCreditShortfall > 0;
   async function refreshProductionCredits() {
@@ -1542,6 +1547,8 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
     const data = await response.json().catch(() => ({}));
     if (!response.ok || typeof data.available !== "number") return;
     setProductionCreditAvailable(data.available);
+    setProductionCreditBalance(typeof data.balance === "number" ? data.balance : null);
+    setProductionCreditReserved(typeof data.reserved === "number" ? data.reserved : null);
     setAssistantCreditState((current) => ({
       ...current,
       productionAvailable: data.available,
@@ -1594,13 +1601,15 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
 
   useEffect(() => {
     let cancelled = false;
-    const cachedMessages = window.localStorage.getItem("clipora_assistant_workspace_messages");
+    window.localStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
+    const cachedMessages = window.sessionStorage.getItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
     if (cachedMessages) {
       try {
         const parsed = JSON.parse(cachedMessages) as Message[];
         if (Array.isArray(parsed) && parsed.length) setMessages(cleanAssistantMessages(parsed).slice(-200));
       } catch {
-        window.localStorage.removeItem("clipora_assistant_workspace_messages");
+        window.localStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
+        window.sessionStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
       }
     }
     refreshProductionCredits().catch(() => undefined);
@@ -1645,7 +1654,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   useEffect(() => {
     if (messages.length) {
       const cleanedMessages = cleanAssistantMessages(messages);
-      window.localStorage.setItem("clipora_assistant_workspace_messages", JSON.stringify(cleanedMessages.slice(-200)));
+      window.sessionStorage.setItem(ASSISTANT_WORKSPACE_MESSAGES_KEY, JSON.stringify(cleanedMessages.slice(-200)));
       if (cleanedMessages.length !== messages.length) setMessages(cleanedMessages);
     }
   }, [messages]);
@@ -2384,6 +2393,8 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
       prompt: clean,
       optionSummary: selectedOptionSummary()
     });
+    const mustPreserveEnglishProductionText = productionBrief.includes("Language lock:") || wantsEnglishProductionLanguage(productionBrief) || wantsEnglishProductionLanguage(clean) || wantsEnglishProductionLanguage(String(orchestratorPayload?.prompt ?? ""));
+    const preservedPrompt = mustPreserveEnglishProductionText ? fallbackPayload.prompt : String(orchestratorPayload?.prompt ?? fallbackPayload.prompt);
     const productionPayload = orchestratorPayload ? {
       ...fallbackPayload,
       ...orchestratorPayload,
@@ -2392,7 +2403,8 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
       production_type: String(orchestratorPayload.production_type ?? fallbackPayload.production_type),
       package_id: String(orchestratorPayload.package_id ?? fallbackPayload.package_id),
       title: String(orchestratorPayload.title ?? fallbackPayload.title),
-      prompt: String(orchestratorPayload.prompt ?? fallbackPayload.prompt),
+      prompt: preservedPrompt,
+      project_details: mustPreserveEnglishProductionText ? `${preservedPrompt}\n\nProduction options:\n${selectedOptionSummary()}\n\nEnglish production text preservation: user requested English production content; do not translate the brief, script, narration, scene plan, final prompt, voiceover, or on-screen text.` : String(orchestratorPayload.project_details ?? fallbackPayload.project_details ?? preservedPrompt),
       legal_acceptance: fallbackPayload.legal_acceptance,
       uploaded_materials: fallbackPayload.uploaded_materials,
       selected_material_ids: fallbackPayload.selected_material_ids,
@@ -3258,7 +3270,7 @@ async function startRawMicrophoneFallback() {
                 </button>
               ))}
             </div>
-            <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Seçim özeti</strong><pre>{selectedOptionSummary()}</pre></div>
+            <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Seçim özeti</strong><pre>{manualWizardStep === 0 ? "Kategori seçimini yaptıktan sonra özet dolacak. Eski/default paketler burada gösterilmiyor." : selectedOptionSummary()}</pre></div>
             <div className="production-example-actions">
               <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button>
               <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.min(manualWizardSteps.length - 1, current + 1))}>Sonraki</button>
@@ -3462,7 +3474,7 @@ async function startRawMicrophoneFallback() {
             {studioQualityTiers.map((tier) => <button className={selectedQuality.toLowerCase().includes(tier.toLowerCase()) ? "active" : ""} type="button" key={tier} onClick={() => setSelectedQuality(tier)}>{tier}</button>)}
           </div>
           <div className="studio-credit-trust-panel">
-            <span><small>Available</small><strong>{hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} credits` : "Check"}</strong><button className="btn secondary" type="button" onClick={() => refreshProductionCredits().catch(() => undefined)}>Refresh credits</button></span>
+            <span><small>Total credits</small><strong>{displayedProductionBalanceText ?? (hasKnownProductionCredits ? `${(availableProductionCredits ?? 0).toLocaleString()} available` : "Check")}</strong><small>{displayedProductionReservedText ?? "Refresh for reserved/available"}</small><button className="btn secondary" type="button" onClick={() => refreshProductionCredits().catch(() => undefined)}>Refresh credits</button></span>
             <span><small>Reserved now</small><strong>{startedProduction ? "Production record" : "0 credits"}</strong></span>
             <span><small>After confirmation</small><strong>{costEstimate.totalCredits.toLocaleString()} reserve</strong></span>
             {productionCreditInsufficient ? <p className="workspace-action-note error">Missing: {productionCreditShortfall.toLocaleString()} credits. Add credits before starting or reduce quality/scope.</p> : <p className="workspace-action-note">No credits are reserved before a real record exists.</p>}

@@ -260,6 +260,7 @@ export function AdminProductionsTable({ productionTypeFilter }: { productionType
   const [adminEmail, setAdminEmail] = useState("");
   const [adminToken, setAdminToken] = useState("");
   const [refundingId, setRefundingId] = useState("");
+  const [deletingId, setDeletingId] = useState("");
   const [manualDeliveryDrafts, setManualDeliveryDrafts] = useState<Record<string, ManualDeliveryDraft>>({});
   const [savingDeliveryId, setSavingDeliveryId] = useState("");
 
@@ -391,6 +392,26 @@ async function refundReservedCredits(item: ProductionRow) {
       setRows((current) => current.map((row) => row.id === item.id ? data.production : row));
       setMessage(`${Number(data.refunded_credits ?? 0).toLocaleString()} reserved credits released.`);
     }
+  }
+
+  async function deleteProduction(item: ProductionRow) {
+    const confirmed = window.confirm(`Bu üretimi admin listesinden silmek istiyor musun?\n\n${item.title}\n${item.id}`);
+    if (!confirmed) return;
+    setDeletingId(item.id);
+    setMessage("");
+    const response = await fetch("/api/productions", {
+      method: "DELETE",
+      headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+      body: JSON.stringify(adminApiBody({ id: item.id }, adminEmail, adminToken))
+    });
+    const data = await response.json().catch(() => ({}));
+    setDeletingId("");
+    if (!response.ok) {
+      setMessage(data.error ?? "Production could not be deleted.");
+      return;
+    }
+    setRows((current) => current.filter((row) => row.id !== item.id));
+    setMessage("Production hidden from the admin operation list.");
   }
 
   const visibleRows = productionTypeFilter ? rows.filter((row) => row.production_type === productionTypeFilter) : rows;
@@ -878,6 +899,7 @@ async function refundReservedCredits(item: ProductionRow) {
             {(item.delivery_link || item.delivery_zip_url) ? <a className="btn" href={(item.delivery_link || item.delivery_zip_url)!} target="_blank" rel="noreferrer">One-click delivery</a> : <span className="badge">Automatic delivery pending</span>}
             {item.source_files_url ? <a className="btn secondary" href={item.source_files_url} target="_blank" rel="noreferrer">Source/package</a> : null}
             {item.readme_url ? <a className="btn secondary" href={item.readme_url} target="_blank" rel="noreferrer">How-to-use</a> : null}
+            <button className="btn secondary" type="button" onClick={() => deleteProduction(item)} disabled={deletingId === item.id}>{deletingId === item.id ? "Deleting..." : "Sil / listeden kaldır"}</button>
           </div>
 
           {item.admin_notes ? <p style={{ color: "var(--muted)", marginTop: 10 }}>{item.admin_notes}</p> : null}

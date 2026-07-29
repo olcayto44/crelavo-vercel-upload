@@ -1,4 +1,4 @@
-import { computeAdminReservedRefund, computeCancellationCreditResolution, computeProviderSuccessSpend } from "../src/lib/credit-resolution.ts";
+import { computeAdminReservedRefund, computeCancellationCreditResolution, computeExpiredBeforeProviderStartRefund, computeProviderSuccessSpend } from "../src/lib/credit-resolution.ts";
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
   if (actual !== expected) {
@@ -65,5 +65,19 @@ assertEqual(refund.nextBalance, 700, "refund keeps balance");
 assertEqual(refund.nextReserved, 0, "refund next reserved");
 assertEqual(refund.creditResolution.status, "refunded_reserved", "refund status");
 assertEqual(refund.event?.type, "refund", "refund event type");
+
+const expired = computeExpiredBeforeProviderStartRefund({
+  balance: 700,
+  reserved: 400,
+  reservedCredits: 400,
+  productionTitle: "Queued production",
+  productionId: "prod-expired",
+  now: "2026-01-01T00:00:00.000Z"
+});
+assertEqual(expired.releaseAmount, 400, "expired release amount");
+assertEqual(expired.nextBalance, 700, "expired keeps balance");
+assertEqual(expired.nextReserved, 0, "expired next reserved");
+assertEqual(expired.creditResolution.status, "expired_before_provider_start_refunded", "expired status");
+assertEqual(expired.creditResolution.spentCredits, 0, "expired spent zero");
 
 console.log("credit-resolution-smoke ok");

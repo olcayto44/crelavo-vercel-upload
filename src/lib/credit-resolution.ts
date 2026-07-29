@@ -76,3 +76,26 @@ export function computeAdminReservedRefund(input: CreditBalanceInput & { reserve
     }
   };
 }
+
+export function computeExpiredBeforeProviderStartRefund(input: CreditBalanceInput & { reservedCredits: number; productionTitle: string; productionId: string; now?: string }) {
+  const reservedCredits = positiveNumber(input.reservedCredits);
+  const balance = positiveNumber(input.balance);
+  const reserved = positiveNumber(input.reserved);
+  const releaseAmount = Math.min(reservedCredits, reserved);
+
+  return {
+    releaseAmount,
+    nextBalance: balance,
+    nextReserved: Math.max(0, reserved - releaseAmount),
+    event: releaseAmount > 0 ? { type: "refund", amount: releaseAmount, note: `Reserved credits released after 24h expiry before provider start: ${input.productionTitle} (${input.productionId})` } : null,
+    creditResolution: {
+      status: "expired_before_provider_start_refunded",
+      reason: "provider_not_started_within_24h",
+      spentCredits: 0,
+      refundedCredits: releaseAmount,
+      releasedReservedCredits: releaseAmount,
+      resolvedAt: input.now ?? new Date().toISOString(),
+      instruction: "Provider job did not start within 24 hours, so the production was auto-cancelled and reserved credits were fully released. No provider spend was deducted."
+    }
+  };
+}

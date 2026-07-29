@@ -283,7 +283,8 @@ const [notice, setNotice] = useState("");
   const hasDelivery = Boolean(deliveryUrl || sourceUrl || readmeUrl);
   const isFailed = production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed");
   const isReady = production.status === "ready" || production.automation_status === "completed" || hasDelivery;
-  const liveStatusLabel = isFailed ? "Needs review" : isReady ? "Ready" : hasPreview ? "Preview ready" : visualJob || hasAlternativeJobs || providerStatus ? "Processing" : "Record created";
+  const isProviderRunning = /provider_started|automation_started|in_progress|processing|running|queued/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs || providerStatus);
+  const liveStatusLabel = isFailed ? "Needs review" : isReady ? "Ready" : hasPreview ? "Preview ready" : isProviderRunning ? "Production running" : "Record created";
   const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const reservedCreditsText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const previewUrlLower = previewUrl.toLowerCase();
@@ -296,12 +297,12 @@ const [notice, setNotice] = useState("");
       ? "Final delivery is ready; the user can preview, download, share, or request a revision."
       : hasPreview
         ? "Preview is ready; the user can choose an alternative or request changes."
-        : visualJob || hasAlternativeJobs
-          ? "Provider generation is running; status is checked automatically and the page updates when ready."
+        : isProviderRunning
+          ? "Production has started. Provider generation/automation is running; status is checked automatically and preview will appear here when ready."
           : "Production record is ready; provider job or project package can be started.";
   const liveSteps = [
     { label: "Request received", active: true },
-    { label: "Provider / package", active: Boolean(visualJob || hasAlternativeJobs || providerPreflight || hasPreview || hasDelivery) },
+    { label: "Provider / package", active: Boolean(isProviderRunning || providerPreflight || hasPreview || hasDelivery) },
     { label: "Preview", active: hasPreview },
     { label: "Final delivery", active: hasDelivery }
   ];
@@ -945,7 +946,7 @@ const [notice, setNotice] = useState("");
         </form>
 
         <div className="revision-history-card">
-          <h2>Revision history</h2>
+          <h2>{isReady || hasPreview ? "Revision history" : "Production activity"}</h2>
           {revisions.length > 0 ? (
             <div className="revision-history-list">
               {revisions.slice(-5).reverse().map((revision, index) => (
@@ -956,7 +957,7 @@ const [notice, setNotice] = useState("");
                 </div>
               ))}
             </div>
-          ) : <p>No revision requests yet. Choose an action from the cards or type a direct command in the assistant area.</p>}
+          ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : "Production has started. Provider/automation status is being tracked; revision actions unlock after a preview or delivery is available."}</p>}
         </div>
 
         <div className="final-delivery-card">

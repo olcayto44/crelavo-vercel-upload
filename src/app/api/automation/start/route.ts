@@ -154,13 +154,21 @@ export async function POST(request: Request) {
 
     const activeJobLimit = safeActiveVideoJobLimit();
     if (isVideoLikeProductionType(productionType)) {
-        const { count: activeVideoJobs, error: activeVideoJobsError } = await supabase
-          .from("production_requests")
-          .select("id", { count: "exact", head: true })
-          .in("status", ["queued", "in_production"])
-          .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "cultural_localization"]);
-        if (activeVideoJobsError) throw activeVideoJobsError;
-      if ((activeVideoJobs ?? 0) >= activeJobLimit) {
+      const { data: activeVideoRows, error: activeVideoJobsError } = await supabase
+        .from("production_requests")
+        .select("id, status, automation_status, generation_status, output_json")
+        .neq("status", "deleted")
+        .in("production_type", ["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "cultural_localization"])
+        .limit(100);
+      if (activeVideoJobsError) throw activeVideoJobsError;
+      const activeVideoJobs = (activeVideoRows ?? []).filter((row) => {
+        const status = String(row.status ?? "").toLowerCase();
+        const automationStatus = String(row.automation_status ?? "").toLowerCase();
+        const generationStatus = String(row.generation_status ?? "").toLowerCase();
+        const output = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
+        return status === "in_production" || automationStatus === "running" || /running|processing|provider_started/.test(generationStatus) || isActiveProviderJob(output.visualJob) || isActiveProviderJob(output.renderJob);
+      }).length;
+      if (activeVideoJobs >= activeJobLimit) {
         const queuedOutput = {
           ...existingOutput,
           automationMode: "fully_automatic",
