@@ -17,7 +17,8 @@ const PROJECT_TYPES = new Set(["website", "saas", "mobile_app", "admin_project"]
 export function isAutomaticProjectDelivery(productionType: string, packageId = "") {
   const type = String(productionType || "");
   const pkg = String(packageId || "");
-  return PROJECT_TYPES.has(type) || pkg.includes("website") || pkg.includes("mobile") || pkg.includes("saas") || pkg.includes("ecommerce") || pkg.includes("shopify_app");
+  if (!PROJECT_TYPES.has(type)) return false;
+  return pkg.includes("website") || pkg.includes("mobile") || pkg.includes("saas") || pkg.includes("ecommerce") || pkg.includes("shopify_app") || PROJECT_TYPES.has(type);
 }
 
 function text(value: unknown, fallback = "Not specified") {

@@ -261,6 +261,8 @@ export function AdminProductionsTable({ productionTypeFilter }: { productionType
   const [adminToken, setAdminToken] = useState("");
   const [refundingId, setRefundingId] = useState("");
   const [deletingId, setDeletingId] = useState("");
+  const [selectedDeleteIds, setSelectedDeleteIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [manualDeliveryDrafts, setManualDeliveryDrafts] = useState<Record<string, ManualDeliveryDraft>>({});
   const [savingDeliveryId, setSavingDeliveryId] = useState("");
 
@@ -394,27 +396,68 @@ async function refundReservedCredits(item: ProductionRow) {
     }
   }
 
-  async function deleteProduction(item: ProductionRow) {
-    const confirmed = window.confirm(`Bu üretimi admin listesinden silmek istiyor musun?\n\n${item.title}\n${item.id}`);
-    if (!confirmed) return;
-    setDeletingId(item.id);
-    setMessage("");
+  async function removeProductionFromList(id: string) {
     const response = await fetch("/api/productions", {
       method: "DELETE",
       headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
-      body: JSON.stringify(adminApiBody({ id: item.id }, adminEmail, adminToken))
+      body: JSON.stringify(adminApiBody({ id }, adminEmail, adminToken))
     });
     const data = await response.json().catch(() => ({}));
-    setDeletingId("");
-    if (!response.ok) {
-      setMessage(data.error ?? "Production could not be deleted.");
-      return;
-    }
-    setRows((current) => current.filter((row) => row.id !== item.id));
-    setMessage("Production hidden from the admin operation list.");
+    if (!response.ok) throw new Error(data.error ?? "Production could not be removed from the admin list.");
   }
 
+  async function deleteProduction(item: ProductionRow) {
+    const confirmed = window.confirm(`Bu üretim admin listesinden gizlenecek. Bu işlem kredi iadesi yapmaz.\n\n${item.title}\n${item.id}`);
+    if (!confirmed) return;
+    setDeletingId(item.id);
+    setMessage("");
+    try {
+      await removeProductionFromList(item.id);
+      setRows((current) => current.filter((row) => row.id !== item.id));
+      setSelectedDeleteIds((current) => current.filter((id) => id !== item.id));
+      setMessage("Production removed from the admin list. Reserved credits were not changed.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Production could not be removed from the admin list.");
+    } finally {
+      setDeletingId("");
+    }
+  }
+
+  async function bulkDeleteSelectedProductions() {
+    const uniqueIds = Array.from(new Set(selectedDeleteIds)).filter((id) => rows.some((row) => row.id === id));
+    if (!uniqueIds.length) return;
+    const confirmed = window.confirm(`Seçilen ${uniqueIds.length} üretim kaydı admin listesinden gizlenecek. Bu işlem kredi iadesi yapmaz. Kredi iadesi gerekiyorsa önce refund işlemini yapın. Devam edilsin mi?`);
+    if (!confirmed) return;
+    setBulkDeleting(true);
+    setMessage("");
+    const removed: string[] = [];
+    try {
+      for (const id of uniqueIds) {
+        await removeProductionFromList(id);
+        removed.push(id);
+      }
+      setRows((current) => current.filter((row) => !removed.includes(row.id)));
+      setSelectedDeleteIds((current) => current.filter((id) => !removed.includes(id)));
+      setMessage(`${removed.length} production removed from the admin list. Reserved credits were not changed.`);
+    } catch (error) {
+      setRows((current) => current.filter((row) => !removed.includes(row.id)));
+      setSelectedDeleteIds((current) => current.filter((id) => !removed.includes(id)));
+      setMessage(error instanceof Error ? `${removed.length} removed, then stopped: ${error.message}` : `${removed.length} removed, then stopped.`);
+    } finally {
+      setBulkDeleting(false);
+    }
+  }
+
+  function toggleDeleteSelection(id: string) {
+    setSelectedDeleteIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+function clearDeleteSelection() {
+  setSelectedDeleteIds([]);
+}
+
   const visibleRows = productionTypeFilter ? rows.filter((row) => row.production_type === productionTypeFilter) : rows;
+  const selectedVisibleDeleteIds = selectedDeleteIds.filter((id) => visibleRows.some((row) => row.id === id));
 
   async function refreshAutomationStatus(item: ProductionRow) {
     setRefreshingId(item.id);
@@ -465,6 +508,20 @@ async function refundReservedCredits(item: ProductionRow) {
         </div>
         {message ? <p className="form-message">{message}</p> : null}
       </div>
+
+      {visibleRows.length > 0 ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <strong>{selectedVisibleDeleteIds.length} kayıt seçildi</strong>
+            <p style={{ color: "var(--muted)", margin: "4px 0 0" }}>Seçilen kayıtlar sadece admin listesinden gizlenir; kredi iadesi yapılmaz.</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="btn secondary" type="button" onClick={() => setSelectedDeleteIds(visibleRows.map((row) => row.id))}>Tümünü seç</button>
+            <button className="btn secondary" type="button" onClick={clearDeleteSelection} disabled={!selectedVisibleDeleteIds.length}>Seçimi temizle</button>
+            <button className="btn" type="button" onClick={bulkDeleteSelectedProductions} disabled={!selectedVisibleDeleteIds.length || bulkDeleting}>{bulkDeleting ? "Kaldırılıyor..." : "Seçilenleri listeden kaldır"}</button>
+          </div>
+        </div>
+      ) : null}
 
       {visibleRows.length === 0 ? <div className="card"><span className="badge">Filter</span><h3>No productions in this category</h3><p style={{ color: "var(--muted)" }}>{productionTypeFilter ? `No production records exist for ${productionTypeFilter} yet.` : "No production records yet."}</p></div> : null}
 
@@ -521,17 +578,21 @@ async function refundReservedCredits(item: ProductionRow) {
 
         return (
         <div className="card admin-production-card" key={item.id}>
-          <div className="admin-production-head">
-            <div>
-              <span className="badge">{item.production_type.replace("_", " ")}</span>
-              {agentAction ? <span className="badge">{String(agentAction.name ?? "agent action")}</span> : null}
-              {agentProviderRoutePlan ? <span className="badge">{String(agentProviderRoutePlan.providerCategory ?? "provider")}</span> : null}
-              {providerTestMode ? <span className="badge">Quick provider test</span> : null}
-              {providerReadiness ? <span className="badge">{String(providerReadiness.status ?? "provider check")}</span> : null}
-              <h3>{item.title}</h3>
-              <p>{item.prompt}</p>
-              {item.input_json ? <small style={{ color: "var(--muted)" }}>Package: {String(item.input_json.packageName ?? item.package_id ?? "-")}</small> : null}
-            </div>
+            <div className="admin-production-head">
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <label title="Toplu listeden kaldırma için seç" style={{ display: "inline-flex", alignItems: "center", gap: 6, paddingTop: 3 }}>
+                  <input type="checkbox" checked={selectedDeleteIds.includes(item.id)} onChange={() => toggleDeleteSelection(item.id)} />
+                </label>
+                <div>
+                  <div className="badge-row">
+                    <span className="badge">{item.production_type}</span>
+                    <span className="badge">{pipelineType}</span>
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.prompt}</p>
+                  <small>Paket: {item.package_id ?? "auto"}</small>
+                </div>
+              </div>
             <div className="admin-production-status">
               <strong>{statusLabel(item.status)}</strong>
               <small>{item.generation_status ?? item.automation_status ?? "automation_queued"}</small>

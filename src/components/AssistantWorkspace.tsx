@@ -2275,6 +2275,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     { id: "delivery", title: "Teslim", subtitle: "Final dosya ve platform çıktısını seç.", options: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
   const manualWizardSteps = isManualAiVideoFlow ? aiVideoWizardSteps : defaultManualWizardSteps;
+  const currentManualWizardStep = manualWizardSteps[Math.min(manualWizardStep, manualWizardSteps.length - 1)] ?? manualWizardSteps[0];
 
   function selectedOptionSummary() {
     const materialNames = materials.filter((material) => selectedMaterials.includes(material.id)).map((material) => material.title);
@@ -3259,20 +3260,19 @@ async function startRawMicrophoneFallback() {
           <div className="production-start-modal credit-splash-modal">
             <button className="splash-ad-close" type="button" onClick={() => setManualWizardOpen(false)} aria-label="Close manual setup">×</button>
             <span className="badge">Manual production setup</span>
-            <h3>Adım {manualWizardStep + 1} / {manualWizardSteps.length}: {manualWizardSteps[manualWizardStep]?.title}</h3>
-            <p>{manualWizardSteps[manualWizardStep]?.subtitle}</p>
+            <h3>Adım {Math.min(manualWizardStep + 1, manualWizardSteps.length)} / {manualWizardSteps.length}: {currentManualWizardStep?.title}</h3>
+            <p>{currentManualWizardStep?.subtitle}</p>
             <div className="progress-mini"><span style={{ width: `${Math.round(((manualWizardStep + 1) / manualWizardSteps.length) * 100)}%` }} /></div>
             <div className="clean-tool-grid two" style={{ marginTop: 14 }}>
-              {manualWizardSteps[manualWizardStep]?.options.map((option) => (
-                <button className={manualWizardSteps[manualWizardStep]?.value === option ? "active" : ""} type="button" key={option} onClick={() => manualWizardSteps[manualWizardStep]?.apply(option)}>
+              {currentManualWizardStep?.options.map((option) => (
+                <button className={currentManualWizardStep?.value === option ? "active" : ""} type="button" key={option} onClick={() => currentManualWizardStep?.apply(option)}>
                   <strong>{option}</strong>
                 </button>
               ))}
             </div>
             <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Seçim özeti</strong><pre>{manualWizardStep === 0 ? "Kategori seçimini yaptıktan sonra özet dolacak. Eski/default paketler burada gösterilmiyor." : selectedOptionSummary()}</pre></div>
             <div className="production-example-actions">
-              <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button>
-              <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.min(manualWizardSteps.length - 1, current + 1))}>Sonraki</button>
+              {manualWizardStep > 0 ? <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button> : null}
               <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else completeManualWizardAndOpenStart(); }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Seç ve devam et" : "Üretime hazırla"}</button>
             </div>
           </div>
