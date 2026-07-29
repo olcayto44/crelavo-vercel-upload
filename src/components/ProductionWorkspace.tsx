@@ -281,15 +281,18 @@ const [notice, setNotice] = useState("");
   const productionIdShort = production.id.length > 10 ? `${production.id.slice(0, 8)}...${production.id.slice(-4)}` : production.id;
   const hasPreview = Boolean(previewUrl || voiceAudioUrl || savedAlternatives.some((alternative: Record<string, any>) => alternative.preview_url || alternative.previewUrl || alternative.url));
   const hasDelivery = Boolean(deliveryUrl || sourceUrl || readmeUrl);
-  const isFailed = production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed");
+  const hasAutomationWarning = /warning|schema|does not exist|42703|error/i.test(`${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(production.error_message ?? "")}`);
+  const isFailed = production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
   const isReady = production.status === "ready" || production.automation_status === "completed" || hasDelivery;
-  const isProviderRunning = /provider_started|automation_started|in_progress|processing|running|queued/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs || providerStatus);
-  const liveStatusLabel = isFailed ? "Needs review" : isReady ? "Ready" : hasPreview ? "Preview ready" : isProviderRunning ? "Production running" : "Record created";
+  const isProviderRunning = !hasAutomationWarning && (/provider_started|automation_started|in_progress|processing|running/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs));
+  const liveStatusLabel = isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
   const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const reservedCreditsText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const previewUrlLower = previewUrl.toLowerCase();
   const previewKind = previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : previewUrl ? "web" : "pending";
-  const nextLiveStep = isWaitingProviderConfig
+  const nextLiveStep = hasAutomationWarning
+    ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
+    : isWaitingProviderConfig
     ? "Production scope and delivery package are ready. Demo delivery can be downloaded while the final production handoff is prepared."
     : isQueuedForRenderSlot
     ? "This production is safely queued for the next render slot. The page can be left open or closed; completion email is sent when ready."

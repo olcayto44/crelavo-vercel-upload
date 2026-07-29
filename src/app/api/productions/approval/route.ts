@@ -76,7 +76,6 @@ export async function POST(request: Request) {
         },
         extra_credit_required: 0,
         generation_status: "generation_ready_after_member_choice",
-        automation_status: "running",
         updated_at: new Date().toISOString()
       })
       .eq("id", productionId)

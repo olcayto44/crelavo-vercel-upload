@@ -1439,6 +1439,7 @@ const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [selectedProviderService, setSelectedProviderService] = useState("");
   const [selectedVoiceProfile, setSelectedVoiceProfile] = useState("Adult neutral voice");
   const [selectedVoiceLanguage, setSelectedVoiceLanguage] = useState("English");
+  const [selectedCharacterProfile, setSelectedCharacterProfile] = useState("No presenter / UI-only video");
   const [selectedMusicProfile, setSelectedMusicProfile] = useState("Cinematic background music");
   const [selectedEnvironmentProfile, setSelectedEnvironmentProfile] = useState("Auto scene environment");
   const [selectedDeliveryHandoff, setSelectedDeliveryHandoff] = useState("Dashboard delivery");
@@ -1471,9 +1472,10 @@ const hasUserVisibleProductionSelection = Boolean(
     selectedPlatforms.join("|") !== "Dashboard delivery|MP4 download" ||
   selectedProviderService ||
   selectedServiceNetwork ||
-  selectedVoiceProfile !== "Adult neutral voice" ||
-  selectedVoiceLanguage !== "English" ||
-  selectedMusicProfile !== "Cinematic background music" ||
+    selectedVoiceProfile !== "Adult neutral voice" ||
+    selectedVoiceLanguage !== "English" ||
+    selectedCharacterProfile !== "No presenter / UI-only video" ||
+    selectedMusicProfile !== "Cinematic background music" ||
   selectedEnvironmentProfile !== "Auto scene environment" ||
   selectedDeliveryHandoff !== "Dashboard delivery" ||
   selectedMaterials.length ||
@@ -1602,32 +1604,15 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
   useEffect(() => {
     let cancelled = false;
     window.localStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
-    const cachedMessages = window.sessionStorage.getItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
-    if (cachedMessages) {
-      try {
-        const parsed = JSON.parse(cachedMessages) as Message[];
-        if (Array.isArray(parsed) && parsed.length) setMessages(cleanAssistantMessages(parsed).slice(-200));
-      } catch {
-        window.localStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
-        window.sessionStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
-      }
-    }
+    window.sessionStorage.removeItem(ASSISTANT_WORKSPACE_MESSAGES_KEY);
     refreshProductionCredits().catch(() => undefined);
     requireVerifiedBrowserUser().then((auth) => {
       if (!auth.ok || cancelled) return;
-      fetch(`/api/assistant-chat?user_id=${auth.user.id}`, { headers: authHeaders(auth.accessToken) })
+      fetch(`/api/assistant-chat?user_id=${auth.user.id}&fresh=1`, { headers: authHeaders(auth.accessToken) })
         .then((res) => res.json())
         .then((data) => {
           if (cancelled) return;
           if (data.conversation?.id) setAssistantConversationId(String(data.conversation.id));
-          const persistedMessages = Array.isArray(data.messages)
-            ? data.messages
-              .map((item: { role?: string; content?: string }) => ({ role: item.role === "assistant" ? "assistant" as const : "user" as const, content: String(item.content ?? "") }))
-              .filter((item: Message) => item.content.trim())
-            : [];
-          const cleanedPersistedMessages = cleanAssistantMessages(persistedMessages);
-          if (cleanedPersistedMessages.length) setMessages(cleanedPersistedMessages.slice(-200));
-
         })
         .catch(() => undefined);
     });
@@ -2267,20 +2252,29 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     }
   }, [providerTestPreset, initialIdea, initialCategory, initialMode]);
 
-  const manualWizardSteps = [
-    { id: "category", title: "1. Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
-    { id: "modules", title: "2. Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
-    { id: "features", title: "3. Özellikler", subtitle: "Ses, altyazı, revizyon, final ZIP gibi ek özellikleri seç.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
-    { id: "style", title: "4. Stil", subtitle: "Görsel/yaratıcı yönü seç.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
-    { id: "provider", title: "5. Üretim motoru", subtitle: "Video/görsel motorunu seç.", options: ["Auto provider", "Kling", "Runway", "Fal", "Replicate", "Seedance route"], value: selectedProviderService || "Auto provider", apply: (value: string) => { setSelectedServiceNetwork(value === "Auto provider" ? "" : "video"); setSelectedProviderService(value === "Auto provider" ? "" : value); } },
-    { id: "quality", title: "6. Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
-    { id: "duration", title: "7. Süre", subtitle: "İstersen özel süreyi chat’e veya brief’e yazabilirsin; seçilen değer payload’a gider.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
-    { id: "voice", title: "8. Seslendirme", subtitle: "Konuşma dili, yaş/cinsiyet/tını yönü.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Energetic sales voice", "Calm documentary voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
-    { id: "language", title: "9. Konuşma dili", subtitle: "Voice-over ve altyazı dili.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
-    { id: "music", title: "10. Arka fon müziği", subtitle: "Müzik sağlayıcı/ruh hali route’a yazılır.", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Stable Audio", "Mubert", "User music reference"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); if (["Stable Audio", "Mubert"].includes(value)) { setSelectedServiceNetwork("music"); setSelectedProviderService(value); } } },
-    { id: "environment", title: "11. Ortam / sahne", subtitle: "Video, konuşma, drone veya canlı satış için sahne yönü.", options: ["Auto scene environment", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
-    { id: "delivery", title: "12. Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+  const isManualAiVideoFlow = selectedProductionType === "video";
+  const defaultManualWizardSteps = [
+    { id: "category", title: "Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "modules", title: "Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
+    { id: "features", title: "Ek özellikler", subtitle: "Ses, altyazı, revizyon veya teslimat eklerini seç.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
+    { id: "style", title: "Stil", subtitle: "Görsel/yaratıcı yönü seç.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
+    { id: "quality", title: "Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "Süre", subtitle: "Üretim süresini seç.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "delivery", title: "Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
+  const aiVideoWizardSteps = [
+    { id: "category", title: "Kategori", subtitle: "Yapay Zeka Videosu seçili. İstersen farklı kategoriye geçebilirsin.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "character", title: "Karakter / Sunucu", subtitle: "Videoda insan/avatar olacak mı?", options: ["No presenter / UI-only video", "Male presenter", "Female presenter", "Young presenter", "Senior presenter", "AI avatar", "Brand mascot"], value: selectedCharacterProfile, apply: setSelectedCharacterProfile },
+    { id: "voice", title: "Seslendirme", subtitle: "Ses tarzını seç.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Energetic sales voice", "Professional SaaS narrator", "Calm documentary voice", "Premium ad voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
+    { id: "language", title: "Seslendirme dili", subtitle: "Voice-over ve altyazı dilini seç.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
+    { id: "environment", title: "Arka plan / Sahne", subtitle: "Videonun ana görsel ortamını seç.", options: ["Website visitor + AI chat scene", "Office / SaaS dashboard", "Product UI screens", "Studio background", "Clean abstract tech background", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
+    { id: "music", title: "Arka fon müziği", subtitle: "Müzik olsun mu, hangi ruh halinde olsun?", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Technology SaaS music"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); } },
+    { id: "style", title: "Görsel stil", subtitle: "Video dili ve tempo seçimi.", options: ["SaaS modern", "Cinematic", "Premium ad", "Fast CTA video"], value: selectedStyle, apply: setSelectedStyle },
+    { id: "quality", title: "Kalite ve oran", subtitle: "Kalite / platform formatını seç.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "Süre", subtitle: "Video süresini seç.", options: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "2 min"], value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "delivery", title: "Teslim", subtitle: "Final dosya ve platform çıktısını seç.", options: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+  ];
+  const manualWizardSteps = isManualAiVideoFlow ? aiVideoWizardSteps : defaultManualWizardSteps;
 
   function selectedOptionSummary() {
     const materialNames = materials.filter((material) => selectedMaterials.includes(material.id)).map((material) => material.title);
@@ -2296,7 +2290,8 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   `Production modules: ${selectedModules.join(", ") || "Auto"}`,
   `Extra features: ${selectedFeatures.join(", ") || "None"}`,
   `Delivery/platform: ${selectedPlatforms.join(", ") || "Dashboard"}`,
-  `Manual provider: ${selectedProviderService || selectedServiceNetwork || "Auto provider"}`,
+  `Provider routing: Automatic by selected media type`,
+  `Character/presenter: ${selectedCharacterProfile}`,
   `Voice profile: ${selectedVoiceProfile}`,
   `Voice language: ${selectedVoiceLanguage}`,
   `Music profile: ${selectedMusicProfile}`,
@@ -2359,7 +2354,9 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   async function startProduction() {
     const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
     const productionType = productionTypeFromSelection();
-    const selection = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
+    const characterLine = selectedCharacterProfile && selectedCharacterProfile !== "No presenter / UI-only video" ? `\nCharacter/presenter: ${selectedCharacterProfile}` : "\nCharacter/presenter: No presenter / UI-only video";
+    const selectionInput = `${productionBrief || input}${characterLine}`;
+    const selection = { input: selectionInput, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
     const packageId = packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
@@ -2530,7 +2527,7 @@ const followUpProduction = isShortProductionFollowUp(clean, recentContext) || (d
 const followUpDuration = followUpProduction ? durationFromFollowUp(clean) : "";
 const intent = followUpProduction ? "production_request" : detectWorkspaceIntent(clean);
 const isStartConfirmation = intent === "start_confirmation";
-const conversationalOnly = intent === "greeting" || intent === "help" || intent === "consultation" || isStartConfirmation;
+const conversationalOnly = intent === "greeting" || intent === "help" || intent === "consultation";
 const conversationalReplyKind = intent === "greeting" ? "greeting" : intent === "help" ? "help" : "consultation";
 if (intent === "production_request" || followUpProduction) {
   const languageLockedClean = wantsEnglishProductionLanguage(clean) && !clean.includes("Language lock:") ? `${clean}\n\n${englishProductionLanguageLock()}` : clean;
@@ -2554,17 +2551,19 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       return;
     }
     if (isStartConfirmation && hasProductionContext) {
-      const existingBrief = productionBrief.trim() || messages.slice(-8).map((item) => item.content).join("\n");
+      const existingBrief = productionBrief.trim() || messages.slice(-8).filter((item) => item.role === "user").map((item) => item.content).join("\n") || input.trim() || "AI video production";
       if (isAiVideoOnlyIntent(existingBrief)) {
         applyAiVideoOnlyPreset(existingBrief);
       } else if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
-      const startReply = currentTurnLanguage === "tr"
-        ? "Tamam. Chat cevabı üretmiyorum; gerçek üretim/kredi kontrol ekranını açıyorum. Kredi bu onay adımında kontrol edilir, üretim kaydı da buradan oluşur."
-        : "Understood. I am not pretending the production has started in chat; I am opening the real production/credit confirmation step now.";
-      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: startReply }]);
+      setProductionBrief((current) => current.trim() ? current : existingBrief);
+      setManualWizardCompleted(true);
+      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: currentTurnLanguage === "tr" ? "Onayı aldım. Chat içinde tekrar soru sormadan gerçek kredi rezerv/onay ekranını açıyorum." : "Confirmed. I am opening the real credit reserve and production approval step now." }]);
       if (source === "chat") setChatInput("");
-      setStatus(currentTurnLanguage === "tr" ? "Üretim onayı hazır. Seçilen ayarlar üretim alanına işlendi." : "Production approval is ready. Selected options are reflected in the work area.");
-      openStartProductionModal();
+      setStatus(currentTurnLanguage === "tr" ? "Üretim onayı açıldı; kredi harcanmadan önce rezerv ekranı görünecek." : "Production approval opened; credits are reserved before provider start.");
+      setProductionStartingIntent(true);
+      setStartError("");
+      setStartState("idle");
+      setStartModalOpen(true);
       return;
     }
     if (!conversationalOnly && !followUpProduction) {
@@ -3125,7 +3124,7 @@ async function startRawMicrophoneFallback() {
           </div>
           <div className="clean-hero-credit-pill">
             <CreditCard size={15} />
-            <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+            <span><small>Tahmini rezerv</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></span>
           </div>
         </section>
 
