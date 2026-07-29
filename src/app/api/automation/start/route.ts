@@ -447,13 +447,17 @@ export async function POST(request: Request) {
     outputJson.outputRegistry = providerLifecycle.outputRegistry;
         const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
-          .update({
-            status: visualJob || renderJob ? "in_production" : "queued",
-            generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "waiting_provider_config",
-            output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : "waiting_provider_config", providerStatus: visualJob || renderJob ? "provider_started" : "waiting_provider_config" },
-            admin_notes: providerNote,
-            updated_at: new Date().toISOString()
-          })
+        .update({
+          status: visualJob || renderJob ? "in_production" : "queued",
+          generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "waiting_provider_config",
+          preview_url: visualJob || renderJob ? undefined : null,
+          delivery_link: visualJob || renderJob ? undefined : null,
+          delivery_zip_url: visualJob || renderJob ? undefined : null,
+          readme_url: visualJob || renderJob ? undefined : null,
+          output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : "waiting_provider_config", providerStatus: visualJob || renderJob ? "provider_started" : "waiting_provider_config", previewUrl: visualJob || renderJob ? outputJson.previewUrl : null, deliveryLink: visualJob || renderJob ? outputJson.deliveryLink : null, deliveryZipUrl: visualJob || renderJob ? outputJson.deliveryZipUrl : null, readmeUrl: visualJob || renderJob ? outputJson.readmeUrl : null },
+          admin_notes: providerNote,
+          updated_at: new Date().toISOString()
+        })
       .eq("id", productionId)
       .select("*")
       .single();
