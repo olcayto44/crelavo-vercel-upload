@@ -57,15 +57,18 @@ export function buildOutputRegistry(production: RegistryProductionInput): Output
   const base = `/api/productions/${production.id}/delivery`;
   const isMediaProduction = ["video", "campaign", "music_video", "cinematic_video", "animation", "anime_short_film", "avatar", "lip_sync", "talking_video", "live_sales_agent", "studio", "drama", "video_tools", "video_clipping"].includes(String(production.production_type ?? ""));
   const mediaFinalReady = Boolean(output.finalVideoUrl || /provider_succeeded|final_video_ready|completed/i.test(`${String(output.providerStatus ?? "")} ${String(production.generation_status ?? "")}`));
-  const previewStatus: OutputRegistryStatus = production.preview_url || mediaFinalReady ? "ready" : isMediaProduction ? "waiting_provider" : "generated_on_download";
+  const effectivePreviewUrl = isMediaProduction && !mediaFinalReady ? "" : production.preview_url;
+  const effectiveDeliveryLink = isMediaProduction && !mediaFinalReady ? "" : production.delivery_link;
+  const effectiveDeliveryZipUrl = isMediaProduction && !mediaFinalReady ? "" : production.delivery_zip_url;
+  const previewStatus: OutputRegistryStatus = effectivePreviewUrl || mediaFinalReady ? "ready" : isMediaProduction ? "waiting_provider" : "generated_on_download";
   const items: OutputRegistryItem[] = [
     registryItem({ id: "manifest", outputType: "manifest", deliveryRole: "delivery_manifest", status: "generated_on_download", filename: "manifest.json", url: `${base}?file=manifest`, note: "Machine-readable delivery manifest." }),
     registryItem({ id: "readme", outputType: "readme", deliveryRole: "customer_instructions", status: production.readme_url ? "ready" : isMediaProduction ? "planned" : "generated_on_download", filename: "README.md", url: production.readme_url ?? `${base}?file=readme`, note: "Customer delivery README." }),
-    registryItem({ id: "preview", outputType: "preview", deliveryRole: "browser_preview", status: previewStatus, filename: "preview.html", url: production.preview_url ?? (isMediaProduction ? null : `${base}?file=preview`), note: "Browser preview or live output preview." })
+    registryItem({ id: "preview", outputType: "preview", deliveryRole: "browser_preview", status: previewStatus, filename: "preview.html", url: effectivePreviewUrl || (isMediaProduction ? null : `${base}?file=preview`), note: "Browser preview or live output preview." })
   ];
 
   if (requirements.wantsZip || requirements.formats.includes("final_zip")) {
-    items.push(registryItem({ id: "final_zip", outputType: "zip", deliveryRole: "final_delivery_package", status: production.delivery_zip_url || production.delivery_link ? "ready" : isMediaProduction ? "waiting_provider" : "generated_on_download", filename: "delivery-package.zip", url: production.delivery_zip_url ?? production.delivery_link ?? (isMediaProduction ? null : `${base}?file=zip`), note: "Final ZIP generated from requested delivery requirements." }));
+    items.push(registryItem({ id: "final_zip", outputType: "zip", deliveryRole: "final_delivery_package", status: effectiveDeliveryZipUrl || effectiveDeliveryLink ? "ready" : isMediaProduction ? "waiting_provider" : "generated_on_download", filename: "delivery-package.zip", url: effectiveDeliveryZipUrl || effectiveDeliveryLink || (isMediaProduction ? null : `${base}?file=zip`), note: "Final ZIP generated from requested delivery requirements." }));
   }
   if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(String(production.production_type ?? ""))) {
     items.push(registryItem({ id: "source_code", outputType: "source", deliveryRole: "source_package", status: production.source_files_url ? "ready" : "generated_on_download", filename: "source-guide.md", url: production.source_files_url ?? `${base}?file=source`, note: "Source package or source delivery guide." }));
@@ -74,7 +77,7 @@ export function buildOutputRegistry(production: RegistryProductionInput): Output
     items.push(registryItem({ id: "admin_panel", outputType: "admin_panel", deliveryRole: "admin_panel_package", status: "planned", filename: "admin-panel/admin-requirements.md", note: "Admin panel scope and package requirements." }));
   }
   if (requirements.wantsFinalVideo) {
-    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: output.finalVideoUrl || production.delivery_link ? "ready" : "waiting_provider", filename: "final-video.mp4", url: output.finalVideoUrl ?? production.delivery_link ?? null, note: "Final MP4 from provider or admin upload." }));
+    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: output.finalVideoUrl || effectiveDeliveryLink ? "ready" : "waiting_provider", filename: "final-video.mp4", url: output.finalVideoUrl ?? effectiveDeliveryLink ?? null, note: "Final MP4 from provider or admin upload." }));
   }
   if (requirements.wantsSubtitles) {
     items.push(registryItem({ id: "subtitles", outputType: "subtitle", deliveryRole: "subtitle_file", status: output.subtitleUrl ? "ready" : "planned", filename: "subtitles.srt", url: output.subtitleUrl ?? null, note: "Subtitle file for final media." }));

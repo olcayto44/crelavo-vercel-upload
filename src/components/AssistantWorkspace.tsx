@@ -2480,7 +2480,9 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
       const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
       const providerReadiness = automationData.provider_readiness && typeof automationData.provider_readiness === "object" ? automationData.provider_readiness as Record<string, any> : null;
       const missingProviderKeys = Array.isArray(providerReadiness?.blocking) ? providerReadiness.blocking.map((item: Record<string, unknown>) => String(item.key ?? item.label ?? "provider_config")) : [];
-      const waitingProviderConfig = Boolean(automationData.waiting_provider_config);
+      const returnedGenerationStatus = String(automationData.production?.generation_status ?? "");
+      const returnedProviderStatus = String(automationData.production?.output_json?.providerStatus ?? "");
+      const waitingProviderConfig = Boolean(automationData.waiting_provider_config) || /waiting_provider_config|queued_for_render_slot/.test(`${returnedGenerationStatus} ${returnedProviderStatus}`);
       const alreadyRunning = Boolean(automationData.already_running);
       setStartState("idle");
       setStartModalOpen(false);
