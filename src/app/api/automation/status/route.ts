@@ -639,7 +639,15 @@ const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url 
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
-    const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl ? normalizedRenderStatus : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl ? normalizedVisualStatus : null;
+    const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
+    const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
+    const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
+      ? normalizedRenderStatus
+      : heygenVideoAgentVisualReady
+        ? normalizedVisualStatus
+        : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
+          ? normalizedVisualStatus
+          : null;
     if (visualStatus?.status === "succeeded" && visualStatus.outputUrl && requiresFinalRender && !successfulStatus) {
       const rawVisualPreviewUrl = urlValue(visualStatus.outputUrl, visualLifecycle.outputRegistry, outputWithRenderJob.visualJob, outputWithRenderJob.visualStatus, outputWithRenderJob);
       const fallbackPatch = rawVisualPreviewUrl
