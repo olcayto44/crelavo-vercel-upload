@@ -82,9 +82,9 @@ function httpsUrlFrom(value: unknown) {
 
 const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
 
-function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean }) {
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; providerPrompt?: string }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
-  const userPrompt = String(input.prompt ?? input.title).trim();
+  const userPrompt = String(input.providerPrompt || input.prompt || input.title).trim();
   const scriptLine = input.script ? `\nUse this script/voiceover content as the main narration, but keep the edit fast and visual:\n${input.script}` : "";
   const visualSourceLine = input.hasVisualFiles
     ? "Use the provided website/product visual files as optional B-roll references. Do not make the video a slow screen recording; use them only as quick visual proof, overlays, or animated callout moments."
@@ -122,7 +122,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
   const files = [screenshotUrl, productUrl].filter(Boolean).slice(0, 20).map((url) => ({ type: "url" as const, url }));
   const payload = {
-    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0 }),
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, providerPrompt: String(selected.providerPrompt ?? selected.creativeProviderPrompt ?? "").trim(), script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0 }),
     mode: "generate" as const,
     avatar_id: avatarId,
     voice_id: voiceId,

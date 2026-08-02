@@ -1,3 +1,4 @@
+import { buildPresenterCreativeBrief } from "@/lib/creative-director";
 import { createRevisionVoiceover } from "@/lib/providers/elevenlabs";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { createVisualVideo } from "@/lib/providers/visuals";
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
     const supabase = supabaseAdmin();
     const { data: production, error: productionError } = await supabase
       .from("production_requests")
-      .select("id, user_id, title, prompt, production_type, status, automation_status, output_json, estimated_credits, reserved_credits")
+      .select("id, user_id, title, prompt, production_type, status, automation_status, request_metadata, input_json, output_json, estimated_credits, reserved_credits")
       .eq("id", productionId)
       .eq("user_id", userId)
       .single();
@@ -98,7 +99,10 @@ export async function POST(request: Request) {
     };
 
     const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
-    const requestMetadata = outputJson.requestMetadata && typeof outputJson.requestMetadata === "object" ? outputJson.requestMetadata as Record<string, unknown> : {};
+    const rowRequestMetadata = production.request_metadata && typeof production.request_metadata === "object" ? production.request_metadata as Record<string, unknown> : {};
+    const rowInputJson = production.input_json && typeof production.input_json === "object" ? production.input_json as Record<string, unknown> : {};
+    const embeddedRequestMetadata = outputJson.requestMetadata && typeof outputJson.requestMetadata === "object" ? outputJson.requestMetadata as Record<string, unknown> : {};
+    const requestMetadata = { ...rowRequestMetadata, ...rowInputJson, ...embeddedRequestMetadata };
     const existingRevisions = Array.isArray(outputJson.revisionRequests) ? outputJson.revisionRequests : [];
     const existingMetadataRevisions = Array.isArray(requestMetadata.revisionRequests) ? requestMetadata.revisionRequests : [];
     const existingAlternatives = Array.isArray(outputJson.alternatives) ? outputJson.alternatives : [];
@@ -109,6 +113,13 @@ export async function POST(request: Request) {
     const pendingOutputActions = Array.isArray(outputJson.pendingOutputActions) ? outputJson.pendingOutputActions : [];
     const existingVoiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
     const providerGuard = providerSpendGuard(production as Record<string, unknown>, requestMetadata);
+    const presenterRevisionCreative = buildPresenterCreativeBrief({
+      prompt: String(requestMetadata.work_prompt ?? requestMetadata.providerPrompt ?? production.prompt ?? production.title ?? ""),
+      selectedOptions: requestMetadata.selectedOptions,
+      productionSetup: requestMetadata.productionSetup,
+      title: String(production.title ?? ""),
+      revisionMessage: message
+    });
     const nextPendingAction = {
       id: revision.id,
       targetPart,
@@ -182,7 +193,10 @@ export async function POST(request: Request) {
         id: `rev-alt-${Date.now()}`,
         title: `${targetPart} revize alternatifi`,
         status: "revision_queued",
-        description: message,
+        description: presenterRevisionCreative.creativeBrief,
+        userMessage: message,
+        creativePreset: presenterRevisionCreative.preset,
+        creativeTags: presenterRevisionCreative.tags,
         preview_url: "",
         sourceRevisionId: revision.id
       };
@@ -199,10 +213,10 @@ export async function POST(request: Request) {
             const durationText = `${String(requestMetadata.duration ?? "")} ${String(requestMetadata.selectedDuration ?? "")} ${String(requestMetadata.selectedOptions ?? "")} ${String(production.prompt ?? "")}`;
             const durationSeconds = /30\s*(sec|second|saniye|sn)/i.test(durationText) ? 30 : /15\s*(sec|second|saniye|sn)/i.test(durationText) ? 15 : 10;
             const visualJob = await createVisualVideo({
-              scenes: [message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
+              scenes: [presenterRevisionCreative.providerPrompt || message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
               productImageUrls: [],
               durationSeconds,
-              style: String(requestMetadata.style ?? production.title ?? "Crelavo revision")
+              style: `${presenterRevisionCreative.preset}: ${String(requestMetadata.style ?? production.title ?? "Crelavo revision")}`
             });
               revisionAlternative.status = "provider_job_created";
               revisionAlternative.visualJob = visualJob;
