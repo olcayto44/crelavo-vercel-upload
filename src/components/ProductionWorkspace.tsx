@@ -210,6 +210,8 @@ function workflowActionTone(status?: string) {
 }
 
 function creativeLiveCards(input: { metadata: Record<string, any>; inputJson: Record<string, any>; outputJson: Record<string, any>; type: string }) {
+  const savedLog = Array.isArray(input.outputJson.creativeActivityLog) ? input.outputJson.creativeActivityLog : Array.isArray(input.metadata.creativeActivityLog) ? input.metadata.creativeActivityLog : Array.isArray(input.inputJson.creativeActivityLog) ? input.inputJson.creativeActivityLog : [];
+  if (savedLog.length > 0) return savedLog.map((item: Record<string, any>) => ({ title: String(item.title ?? "Creative step"), status: String(item.status ?? "working"), description: String(item.description ?? "Creative production step is being processed.") }));
   const text = `${String(input.metadata.creativeBrief ?? input.inputJson.creativeBrief ?? input.outputJson.creativeBrief ?? "")} ${String(input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "")} ${String(input.metadata.providerPrompt ?? input.inputJson.providerPrompt ?? "")} ${String(input.outputJson.providerStatus ?? "")}`.toLocaleLowerCase("tr-TR");
   const isPresenter = ["talking_video", "avatar", "lip_sync"].includes(input.type) || /presenter|avatar|heygen|ugc/.test(text);
   if (!isPresenter) return [];

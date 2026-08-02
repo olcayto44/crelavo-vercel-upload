@@ -1,6 +1,7 @@
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
+import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { spendCreditBuckets } from "@/lib/credit-rollover";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
 import { pollDedicatedFinalAssembly, pollImageToVideoJobs, runCharacterSheetGeneration, runDedicatedFinalAssembly, runImageToVideoGeneration, runSceneImageGeneration, runVoiceSegmentGeneration } from "@/lib/pipelines/character-dialogue-runtime";
@@ -711,7 +712,13 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
           .single();
         return Response.json({ production: data, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, quality_blocked: true, reason: "generic_provider_output_rejected_for_character_consistency" });
       }
-      const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, providerStatus: `${successfulStatus.provider}_succeeded`, alternatives: polledAlternatives, alternativeStatuses };
+      const completedCreativeActivityLog = mergeCreativeActivityLog(outputWithRenderJob.creativeActivityLog, [
+  creativeActivityItem("provider-job", "Provider job", "completed", `Provider completed successfully: ${successfulStatus.provider}.`, successfulStatus.provider),
+  creativeActivityItem("a-roll", "A-roll scene", "completed", "Presenter A-roll video is ready.", successfulStatus.provider),
+  creativeActivityItem("b-roll", "B-roll / UI overlays", "completed", "Supporting overlays, captions and motion elements are ready.", successfulStatus.provider),
+  creativeActivityItem("final-video", "Final video", "ready", "Final provider video is ready for preview and delivery.", successfulStatus.provider)
+]);
+const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, alternatives: polledAlternatives, alternativeStatuses };
       const readyGate = productionReadyGate({ ...production, preview_url: providerFinalUrl, delivery_link: providerFinalUrl, delivery_zip_url: providerFinalUrl, output_json: qualityOutputCandidate }, qualityOutputCandidate);
       const readinessSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
       const explicitNoVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(readinessSignal);
@@ -816,7 +823,7 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
           delivery_link: finalUrl,
           delivery_zip_url: finalUrl,
           reserved_credits: 0,
-          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
+          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
           automation_steps: updatedSteps(production.automation_steps, successfulStatus),
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),

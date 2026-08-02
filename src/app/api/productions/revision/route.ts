@@ -1,4 +1,4 @@
-import { buildPresenterCreativeBrief } from "@/lib/creative-director";
+import { buildPresenterCreativeBrief, creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { createRevisionVoiceover } from "@/lib/providers/elevenlabs";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { createVisualVideo } from "@/lib/providers/visuals";
@@ -249,6 +249,11 @@ export async function POST(request: Request) {
           alternatives: nextAlternatives,
           voiceAudioUrl,
           voiceJobs: nextVoiceJobs,
+          creativeActivityLog: mergeCreativeActivityLog(outputJson.creativeActivityLog ?? requestMetadata.creativeActivityLog, [
+            creativeActivityItem("revision-request", "Revision request", "completed", message),
+            creativeActivityItem("creative-blueprint", "Creative blueprint", "completed", presenterRevisionCreative.creativeBrief),
+            creativeActivityItem("provider-job", "Provider job", nextPendingAction.status === "provider_job_created" ? "working" : "queued", nextPendingAction.status === "provider_job_created" ? "Revision provider job was created." : "Revision is queued for provider processing.")
+          ]),
           pendingOutputActions: [...pendingOutputActions, nextPendingAction],
           revisionRequests: [...existingRevisions, revision]
         },

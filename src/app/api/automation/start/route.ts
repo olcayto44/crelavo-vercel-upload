@@ -5,6 +5,7 @@ import { automaticDeliveryLinks } from "@/lib/automatic-delivery-builder";
 import { createAutomationJobId, ecommerceAdPipeline, runningAutomationSteps, runningEcommerceAdAutomationSteps } from "@/lib/automation";
 import { buildProviderPreflight, detectCharacterDialogueAnimationNeed } from "@/lib/automation-preflight";
 import { buildDemoAutomationOutput } from "@/lib/demo-automation";
+import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenVoices } from "@/lib/providers/heygen";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
@@ -370,6 +371,11 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         heygenVideoAgent: heygenJob.provider === "heygen_video_agent" ? heygenJob : null,
         visualJob: { provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw },
         visualJobs: [{ provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw }],
+        creativeActivityLog: mergeCreativeActivityLog(existingOutput.creativeActivityLog ?? requestMetadata.creativeActivityLog ?? inputJson.creativeActivityLog, [
+          creativeActivityItem("provider-job", "Provider job", "working", heygenJob.provider === "heygen_video_agent" ? `HeyGen Video Agent session created: ${heygenJob.id}` : `HeyGen talking provider job created: ${heygenJob.id}`, heygenJob.provider),
+          creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", heygenJob.provider),
+          creativeActivityItem("b-roll", "B-roll / UI overlays", "working", "Motion graphics, product proof overlays and captions are being prepared by the provider.", heygenJob.provider)
+        ]),
         currentStep: heygenJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "HeyGen talking/lip-sync provider job created",
         providerReadiness,
         workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: { ...existingOutput, heygenJob, providerReadiness } })
