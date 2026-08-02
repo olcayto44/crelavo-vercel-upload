@@ -715,8 +715,8 @@ outputPlan,
 
   try {
     const supabase = supabaseAdmin();
-    const providerProofTestAllowed = serverHeyGenPresenterIntent && reserveCredits > 0 && reserveCredits <= apiCostGuardConfig().lowCostProductionTestLimit;
-    const dailyBudget = await enforceDailyProductionBudget(supabase, { userId, estimatedCredits: reserveCredits, allowProviderProofTest: providerProofTestAllowed });
+    const providerProofStartAllowed = serverHeyGenPresenterIntent && reserveCredits > 0;
+    const dailyBudget = await enforceDailyProductionBudget(supabase, { userId, estimatedCredits: reserveCredits, allowProviderProofTest: providerProofStartAllowed });
     if (!dailyBudget.ok) return dailyBudget.response;
 
     const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(userId);

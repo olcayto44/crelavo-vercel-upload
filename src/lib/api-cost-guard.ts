@@ -122,9 +122,9 @@ export async function enforceDailyProductionBudget(supabase: SupabaseClient, opt
   }, 0);
 
   const lowCostTestAllowed = estimatedCredits > 0 && estimatedCredits <= config.lowCostProductionTestLimit;
-  const providerProofTestAllowed = Boolean(options.allowProviderProofTest) && lowCostTestAllowed;
+  const providerProofStartAllowed = Boolean(options.allowProviderProofTest);
 
-  if (dailyCount >= config.dailyProductionCountLimit && !providerProofTestAllowed) {
+  if (dailyCount >= config.dailyProductionCountLimit && !providerProofStartAllowed) {
     return {
       ok: false as const,
       response: budgetBlockResponse(
