@@ -95,8 +95,19 @@ function isAvatarIntent(text: string) {
   return /avatar|talking head|talking video|konuşmalı|konusmali|sunucu|spokesperson|ai presenter/.test(text);
 }
 
+function isCharacterDialogueAnimationPrompt(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  const sceneCount = (text.match(/sahne\s*\d+\s*:/g) ?? []).length;
+  const quotedDialogueCount = (message.match(/[“\"][^”\"]{2,160}[”\"]/g) ?? []).length;
+  const wantsAnimation = /animasyon|animation|çizgi film|cizgi film|cartoon|2d/.test(text);
+  const wantsSpeech = /seslendirme|voice-over|voiceover|diyalog|dialogue|konuş|konus|subtitles|subtitle|altyaz/.test(text);
+  const hasCharacterContinuity = /consistent characters|same character|karakter|character|dede|babaanne|torun|anne|baba|aynı görün|ayni gorun/.test(text);
+  return wantsAnimation && wantsSpeech && hasCharacterContinuity && sceneCount >= 2 && quotedDialogueCount >= 2;
+}
+
 function detectProductionType(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
+  if (isCharacterDialogueAnimationPrompt(message)) return "animation";
   if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "ad_score_checker";
   if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model_studio";
   if (/kültürel yerelleştirme|kulturel yerellestirme|cultural localization|global localization|yerelleştirme|yerellestirme/.test(text)) return "cultural_localization";
@@ -111,10 +122,11 @@ function detectProductionType(message: string) {
   if (isVoiceCloneIntent(text)) return "voice_clone";
   if (isLipSyncIntent(text)) return "lip_sync";
   if (isAvatarIntent(text)) return "avatar";
-  if (/web sitesi|website|landing|site|e-?commerce|e-ticaret|storefront|checkout|sepet/.test(text)) return "website";
-  if (/saas|dashboard|portal|subscription|billing/.test(text)) return "saas";
-  if (/mobil|mobile app|uygulama|ios|android|expo/.test(text)) return "mobile_app";
+  if (/mobil uygulama|mobile app|ios|android|expo|react native|app store|play store/.test(text)) return "mobile_app";
+  if (/saas|yazılım|software|dashboard|portal|crm|abonelik/.test(text)) return "saas";
   if (/admin panel|yönetim panel|yonetim panel|crud/.test(text)) return "admin_project";
+  if (/e-?commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|checkout|cart|sepet|ürün|urun/.test(text)) return "website";
+  if (/web sitesi|website|landing|site/.test(text)) return "website";
   if (/logo|brand kit|marka kiti|kurumsal kimlik|visual identity/.test(text)) return "brand_kit";
   if (/pdf|doküman|dokuman|pitch deck|sunum|proposal|document/.test(text)) return "document_pack";
   if (/görsel|gorsel|image|poster|afiş|afis|banner|thumbnail|kapak/.test(text)) return "image";
@@ -190,10 +202,11 @@ function detectModules(message: string, productionType: string) {
 
 function detectFeatures(message: string, productionType: string) {
   const text = message.toLocaleLowerCase("tr-TR");
+  const wantsSourcePackage = /(?:^|\b)(?:source|kaynak|zip|readme|kurulum|setup)(?:\b|$)/.test(text) && !/no\s+(?:saas\s+)?source\s+code|not\s+(?:a\s+)?working\s+saas|not\s+(?:a\s+)?working\s+app|no\s+expo\s+source\s+zip|no\s+app\s+development\s+package|no\s+website\s+builder\s+package/.test(text);
   const features = [
-    /voice|seslendirme|dublaj|kendi ses/.test(text) ? "Voice-over" : null,
-    /subtitle|altyaz/.test(text) ? "Subtitles" : null,
-    /source|kaynak|zip|readme|kurulum|setup/.test(text) ? "Working source package" : "Production package",
+    /voice|voice acting|per-character voice|different voices|seslendirme|dublaj|kendi ses/.test(text) ? "Voice-over" : null,
+    /subtitle|subtitles|add subtitles|altyaz/.test(text) ? "Subtitles" : null,
+    wantsSourcePackage ? "Working source package" : "Production package",
     /3 alternatif|3 alternatives|varyasyon/.test(text) ? "3 alternatives" : null,
     /5 alternatif|5 alternatives/.test(text) ? "5 alternatives" : null,
     /revision|revizyon/.test(text) ? "Revision right" : null
@@ -248,11 +261,12 @@ function detectMusicProfile(message: string) {
 
 function deliveryRequirements(message: string, productionType: string, features: string[], platforms: string[], quality: string) {
   const signal = `${message} ${productionType} ${features.join(" ")} ${platforms.join(" ")} ${quality}`.toLocaleLowerCase("tr-TR");
+  const promoVideo = isSaasPromoVideoIntent(message);
   const formats = [
     /mp4|video|reklam|campaign|tiktok|instagram/.test(signal) ? "final_mp4" : null,
-    /zip|paket/.test(signal) ? "final_zip" : null,
-    /source|kaynak|working source/.test(signal) ? "source_code" : null,
-    /readme|setup|kurulum/.test(signal) ? "readme" : null,
+    !promoVideo && /zip|paket/.test(signal) ? "final_zip" : null,
+    !promoVideo && /\bworking source\b|\bkaynak\b/.test(signal) ? "source_code" : null,
+    !promoVideo && /readme|setup|kurulum/.test(signal) ? "readme" : null,
     /subtitle|altyaz/.test(signal) ? "subtitle_file" : null,
     /thumbnail|cover|kapak/.test(signal) ? "thumbnail" : null,
     /pdf|document|doküman|dokuman/.test(signal) ? "pdf" : null,
@@ -295,6 +309,16 @@ function cleanStringArray(value: unknown, fallback: string[]) {
   return cleaned.length ? Array.from(new Set(cleaned)) : fallback;
 }
 
+function isSaasPromoVideoIntent(message: string) {
+  const text = message.toLocaleLowerCase("tr-TR");
+  return /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|website\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo|tiktok|reels|shorts/.test(text) && /video|mp4|ad|reklam|promo|tanıtım|tanitim|commercial/.test(text);
+}
+
+function safeProductionType(message: string, proposedType: string) {
+  if (isSaasPromoVideoIntent(message)) return "video";
+  return proposedType;
+}
+
 async function openAiProductionDraft(message: string, mode: PlanMode, history: AssistantHistoryMessage[], userContextPrompt = ""): Promise<AiProductionDraft | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -324,6 +348,43 @@ async function openAiProductionDraft(message: string, mode: PlanMode, history: A
   const content = data.choices?.[0]?.message?.content;
   if (!content) return null;
 
+  try {
+    return JSON.parse(content) as AiProductionDraft;
+  } catch {
+    return null;
+  }
+}
+
+async function geminiProductionDraft(message: string, mode: PlanMode, history: AssistantHistoryMessage[], userContextPrompt = ""): Promise<AiProductionDraft | null> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) return null;
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      generationConfig: { temperature: 0, responseMimeType: "application/json" },
+      contents: [{
+        role: "user",
+        parts: [{ text: `You are Crelavo's production intent router. Return only JSON with production_type, selected_quality, selected_duration, selected_style, selected_modules, selected_features, selected_platforms, missing_fields, provider_route, voice_profile, voice_language, music_profile, environment_profile, delivery_handoff, workflow_stage, next_user_action, delivery_path, summary, next_step.
+Valid production_type values: campaign, video, talking_video, documentary, animation, anime_short_film, animal_video, nature_video, planet_space_video, drone_video, drama, cinematic_video, video_clipping, avatar, lip_sync, voice_clone, video_tools, music_video, website, saas, mobile_app, admin_project, brand_kit, document_pack, image.
+Critical routing rules:
+- SaaS promo, Crelavo promo, product/website link to ad, ready-to-post video ad, TikTok/Reels/Shorts export as ad output => production_type video, not saas, not website, not video_clipping, not animation.
+- "No cartoon" is a negative instruction, never route to animation because of it.
+- Reels/Shorts/TikTok as export destination is not clipping unless user asks to extract clips from existing long footage.
+- If user asks for working app/source code, then saas/website/mobile_app may be used.
+Use user's language for summary.
+${buildAssistantRoutingRules()}
+${userContextPrompt}
+History: ${JSON.stringify(history.slice(-6))}
+Mode: ${mode}
+Latest request: ${message}` }]
+      }]
+    })
+  });
+  if (!response.ok) return null;
+  const data = await response.json().catch(() => null);
+  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) return null;
   try {
     return JSON.parse(content) as AiProductionDraft;
   } catch {
@@ -394,8 +455,11 @@ export async function POST(request: Request) {
 
     const userContext = await loadAssistantUserContext(supabase, userId);
     const userContextPrompt = buildAssistantUserContextPrompt(userContext);
-    const aiDraft = await openAiProductionDraft(message, mode, history, userContextPrompt);
-    const productionType = aiDraft?.production_type?.trim() || detectProductionType(message);
+    const openAiDraft = await openAiProductionDraft(message, mode, history, userContextPrompt);
+    const geminiDraft = openAiDraft ? null : await geminiProductionDraft(message, mode, history, userContextPrompt);
+    const aiDraft = openAiDraft || geminiDraft;
+    const assistantBrain = openAiDraft ? "openai" : geminiDraft ? "gemini" : "local_rules";
+    const productionType = safeProductionType(message, aiDraft?.production_type?.trim() || detectProductionType(message));
     const selectedQuality = aiDraft?.selected_quality?.trim() || detectQuality(message);
     const selectedDuration = aiDraft?.selected_duration?.trim() || detectDuration(message, productionType);
     const selectedStyle = aiDraft?.selected_style?.trim() || detectStyle(message, productionType);
@@ -415,7 +479,7 @@ export async function POST(request: Request) {
     const { data: packageConfigRow } = await supabase.from("platform_configs").select("value").eq("key", PACKAGE_CONFIG_KEY).maybeSingle();
     const deliveryCreditRates = normalizeDeliveryCreditRates(deliveryRateRow?.value);
     const packageConfig = normalizePackageConfig(packageConfigRow?.value);
-    const packageId = packageIdFromSelection(productionType, selection, packageConfig.productionPackages);
+    const packageId = isSaasPromoVideoIntent(message) ? "video_premium" : packageIdFromSelection(productionType, selection, packageConfig.productionPackages);
     const durationSeconds = Number(selectedDuration.replace(/\D/g, "")) || 30;
     const estimate = estimateProductionCost(packageId, {
       outputCount: selectedFeatures.includes("5 alternatives") ? 5 : selectedFeatures.includes("3 alternatives") ? 3 : 1,
@@ -429,9 +493,10 @@ export async function POST(request: Request) {
     });
 
     const missing = cleanStringArray(aiDraft?.missing_fields, missingFields(message, productionType));
-    const agentAction: AgentAction = aiDraft?.agent_action ?? {
+    const rawAgentAction = aiDraft?.agent_action;
+    const agentAction: AgentAction = {
+      intent: rawAgentAction?.intent ?? "create_confirmed_production",
       name: actionNameForProductionType(productionType),
-      intent: "create_confirmed_production",
       production_type: productionType,
       confirmation_required: true,
       credit_check_required: true,
@@ -439,6 +504,7 @@ export async function POST(request: Request) {
       state_before_confirmation: "draft_ready",
       next_backend_endpoint: "/api/productions",
       args: {
+        ...(rawAgentAction?.args ?? {}),
         prompt: message,
         package_id: packageId,
         selected_quality: selectedQuality,
@@ -487,7 +553,7 @@ export async function POST(request: Request) {
       delivery_path: cleanStringArray(aiDraft?.delivery_path, ["Brief", "Materials", "Production setup", "Preview", "Revision", "Final delivery"]),
       agent_action: agentAction,
       summary,
-      assistant_brain: aiDraft ? "openai" : "local_rules"
+      assistant_brain: assistantBrain
     };
 
     const suggestion = {
@@ -501,7 +567,7 @@ export async function POST(request: Request) {
       action: missing.length ? "collect_missing_fields" : agentAction.name,
       agent_action: agentAction,
       route: "/dashboard/assistant-workspace",
-      automationLevel: aiDraft ? "assistant_brain_openai_v2" : "assistant_brain_local_v1",
+        automationLevel: assistantBrain === "openai" ? "assistant_brain_openai_v2" : assistantBrain === "gemini" ? "assistant_brain_gemini_v1" : "assistant_brain_local_v1",
       nextStep: aiDraft?.next_step?.trim() || (missing.length ? `Collect: ${missing.join(", ")}` : "Review credits and start production")
     };
 

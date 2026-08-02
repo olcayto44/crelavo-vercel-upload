@@ -1,9 +1,9 @@
 export const providerEnvAliases = {
   openai: ["OPENAI_API_KEY"],
-  runway: ["RUNWAY_API_KEY", "DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "RUNWAY_DEV_API_KEY"],
+  runway: ["RUNWAY_API_KEY"],
   fal: ["FAL_KEY", "FAL_API_KEY"],
   replicate: ["REPLICATE_API_TOKEN", "REPLICATE_API_KEY"],
-  kling: ["KLING_API_KEY", "KLING_AI_API_KEY"],
+  kling: ["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"],
   elevenlabs: ["ELEVENLABS_API_KEY", "ELEVENLABS_KEY"],
   shotstack: ["SHOTSTACK_API_KEY", "SHOTSTACK_KEY"],
   stability: ["STABILITY_API_KEY", "STABILITY_AI_API_KEY", "STABILITYAI_API_KEY"],

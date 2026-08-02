@@ -1,5 +1,6 @@
 import { buildMusicProviderRoute } from "./music-provider-routing";
 import { paymentProviderName } from "./payment-provider";
+import { providerEnvAliases } from "./providers/aliases";
 import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv, optionalEnv } from "./providers/env";
 
 export type ProviderPlanStatus = "ready" | "missing" | "pending" | "optional";
@@ -20,7 +21,7 @@ export type ProviderPlanItem = {
 };
 
 function selectedVideoProvider() {
-  return (optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "runway").toLowerCase();
+  return (optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").toLowerCase();
 }
 
 function selectedBrainProvider() {
@@ -37,6 +38,12 @@ function stableAudioReady() {
 
 function youtubeReady() {
   return hasProviderEnv("youtubeClientId") && hasProviderEnv("youtubeClientSecret");
+}
+
+function metaReady() {
+  return hasAnyConfiguredEnv([...providerEnvAliases.metaAppId])
+    && hasAnyConfiguredEnv([...providerEnvAliases.metaAccessToken])
+    && hasAnyConfiguredEnv([...providerEnvAliases.metaAdAccount]);
 }
 
 function requiredStatus(requiredEnv: string[], optional = false): ProviderPlanStatus {
@@ -328,9 +335,9 @@ export function buildProviderPlan() {
       primaryModel: "graph_ads_insights_api",
       fallbackModels: ["Manual ad export", "Organic social planning"],
       intendedUse: "Meta ad account checks, campaign export planning, insights review, pages context and social growth signals.",
-      requiredEnv: ["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
-      optionalEnv: ["META_APP_SECRET", "META_GRAPH_API_VERSION", "META_GRAPH_BASE_URL"],
-      status: requiredStatus(["META_APP_ID", "META_SYSTEM_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"]),
+      requiredEnv: ["META_APP_ID or FACEBOOK_APP_ID", "META_SYSTEM_ACCESS_TOKEN or META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID or META_AD_ACCOUNT"],
+      optionalEnv: ["META_APP_SECRET", "FACEBOOK_APP_SECRET", "META_GRAPH_API_VERSION", "META_GRAPH_BASE_URL"],
+      status: metaReady() ? "ready" : "optional",
       safeMode: "If Meta is missing, keep ad launch and reporting as manual export plans only.",
       finalSetup: "Add Meta app/system token/ad account envs, test ad-account lookup and insights, then enable campaign handoff."
     },

@@ -13,6 +13,7 @@ export type ProductionDailyBudgetOptions = {
   userId: string;
   estimatedCredits: number;
   now?: Date;
+  allowProviderProofTest?: boolean;
 };
 
 function numericEnv(name: string, fallback: number, min: number, max: number) {
@@ -25,6 +26,7 @@ export function apiCostGuardConfig() {
   return {
     singleProductionCreditLimit: numericEnv("MAX_SINGLE_PRODUCTION_CREDITS", 50000, 1000, 500000),
     dailyProductionCreditLimit: numericEnv("DAILY_PRODUCTION_CREDIT_LIMIT", 100000, 1000, 1000000),
+    lowCostProductionTestLimit: numericEnv("LOW_COST_PRODUCTION_TEST_CREDITS", 15000, 1000, 100000),
     dailyProductionCountLimit: numericEnv("DAILY_PRODUCTION_COUNT_LIMIT", 20, 1, 200),
     assistantChatIpLimit: numericEnv("ASSISTANT_CHAT_IP_LIMIT", 30, 1, 500),
     assistantChatUserLimit: numericEnv("ASSISTANT_CHAT_USER_LIMIT", 20, 1, 500),
@@ -98,20 +100,31 @@ export async function enforceDailyProductionBudget(supabase: SupabaseClient, opt
 
   const { data, error } = await supabase
     .from("production_requests")
-    .select("id, estimated_credits, reserved_credits, created_at")
+    .select("id, estimated_credits, reserved_credits, created_at, status, automation_status, generation_status, output_json")
     .eq("user_id", options.userId)
     .gte("created_at", dayStart.toISOString());
 
   if (error) throw error;
 
   const rows = Array.isArray(data) ? data : [];
-  const dailyCount = rows.length;
-  const dailyCredits = rows.reduce((sum, row) => {
+  const billableRows = rows.filter((row) => {
+    const record = row as Record<string, unknown>;
+    const output = record.output_json && typeof record.output_json === "object" ? record.output_json as Record<string, unknown> : {};
+    const statusText = `${record.status ?? ""} ${record.automation_status ?? ""} ${record.generation_status ?? ""} ${String(output.automationStatus ?? "")} ${String(output.providerStatus ?? "")}`.toLowerCase();
+    const hasProviderJob = Boolean(output.visualJob || output.renderJob || output.providerFinalUrl || output.finalVideoUrl);
+    if (/deleted|cancelled|failed|expired_before_provider_start|provider_start_failed|waiting_provider_config|queued_for_render_slot|automation_queued/.test(statusText) && !hasProviderJob) return false;
+    return hasProviderJob || /in_production|provider_started|provider_visual_job_created|render_job_created|completed|ready/.test(statusText);
+  });
+  const dailyCount = billableRows.length;
+  const dailyCredits = billableRows.reduce((sum, row) => {
     const record = row as Record<string, unknown>;
     return sum + (Number(record.reserved_credits ?? record.estimated_credits ?? 0) || 0);
   }, 0);
 
-  if (dailyCount >= config.dailyProductionCountLimit) {
+  const lowCostTestAllowed = estimatedCredits > 0 && estimatedCredits <= config.lowCostProductionTestLimit;
+  const providerProofTestAllowed = Boolean(options.allowProviderProofTest) && lowCostTestAllowed;
+
+  if (dailyCount >= config.dailyProductionCountLimit && !providerProofTestAllowed) {
     return {
       ok: false as const,
       response: budgetBlockResponse(
@@ -122,16 +135,16 @@ export async function enforceDailyProductionBudget(supabase: SupabaseClient, opt
     };
   }
 
-  if (dailyCredits + estimatedCredits > config.dailyProductionCreditLimit) {
+  if (dailyCredits + estimatedCredits > config.dailyProductionCreditLimit && !lowCostTestAllowed) {
     return {
       ok: false as const,
       response: budgetBlockResponse(
         "Daily production credit safety limit reached. Please wait before starting more high-cost jobs or contact support.",
         402,
-        { dailyProductionCreditLimit: config.dailyProductionCreditLimit, dailyCredits, requiredCredits: estimatedCredits }
+        { dailyProductionCreditLimit: config.dailyProductionCreditLimit, lowCostProductionTestLimit: config.lowCostProductionTestLimit, dailyCredits, requiredCredits: estimatedCredits }
       )
     };
   }
 
-  return { ok: true as const, dailyCount, dailyCredits, estimatedCredits };
+  return { ok: true as const, dailyCount, dailyCredits, estimatedCredits, lowCostTestAllowed };
 }

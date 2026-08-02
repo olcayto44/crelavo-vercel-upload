@@ -33,6 +33,24 @@ function firstUrlFromText(value: unknown) {
   return match?.[0] ?? "";
 }
 
+function appBaseUrl(request: Request) {
+  const origin = request.headers.get("origin") || request.headers.get("x-forwarded-host");
+  if (origin?.startsWith("http")) return origin.replace(/\/$/, "");
+  if (origin) return `https://${origin.replace(/\/$/, "")}`;
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
+
+function forwardAutomationHeaders(request: Request) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const authorization = request.headers.get("authorization");
+  const cookie = request.headers.get("cookie");
+  if (authorization) headers.Authorization = authorization;
+  if (cookie) headers.Cookie = cookie;
+  return headers;
+}
+
 function missingSchemaColumn(error: unknown) {
   if (!error || typeof error !== "object") return "";
   const record = error as Record<string, unknown>;
@@ -289,12 +307,20 @@ export async function POST(request: Request) {
   const userId = String(body.user_id ?? "").trim();
   const title = String(body.title ?? "").trim();
   const prompt = String(body.prompt ?? "").trim();
-  const productionType = String(body.production_type ?? "").trim();
+  let productionType = String(body.production_type ?? "").trim();
   const packageId = String(body.package_id ?? "").trim();
+  const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
+  const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
+  const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
+  const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(serverRouteText)
+    && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(serverRouteText);
+  const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter/.test(serverRouteText)
+    || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()));
+  if (serverHeyGenPresenterIntent && productionType === "video") productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
-  const requestedOutputCount = Number(body.output_count ?? 1);
-  const outputCount = [1, 3, 5].includes(requestedOutputCount) ? requestedOutputCount : 1;
+  const requestedOutputCount = Number(body.output_count ?? body.requested_clip_count ?? body.requested_alternative_count ?? 1);
+  const outputCount = [1, 3, 5, 10].includes(requestedOutputCount) ? requestedOutputCount : 1;
   let selectedPackage = getProductionPackage(packageId);
 
   if (!userId) return Response.json({ error: "User session is required." }, { status: 401 });
@@ -483,9 +509,16 @@ const agentAction = body.agent_action && typeof body.agent_action === "object"
   ? body.agent_action as Record<string, unknown>
   : null;
 const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, productionType, packageId);
+const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !agentProviderRoutePlan.canStartRealProvider;
+const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits;
 
 const costGuardConfig = apiCostGuardConfig();
+  const clientRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
+  const clientInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
+  const clientOutputIntent = clientRequestMetadata.outputIntent && typeof clientRequestMetadata.outputIntent === "object" ? clientRequestMetadata.outputIntent as Record<string, unknown> : clientInputJson.outputIntent && typeof clientInputJson.outputIntent === "object" ? clientInputJson.outputIntent as Record<string, unknown> : {};
+  const clientSourceHandling = clientRequestMetadata.sourceHandling && typeof clientRequestMetadata.sourceHandling === "object" ? clientRequestMetadata.sourceHandling as Record<string, unknown> : clientInputJson.sourceHandling && typeof clientInputJson.sourceHandling === "object" ? clientInputJson.sourceHandling as Record<string, unknown> : {};
   const outputPlan = {
+    ...clientOutputIntent,
     outputCount,
     durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
     aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
@@ -501,7 +534,16 @@ const costGuardConfig = apiCostGuardConfig();
       dailyProductionCreditLimit: costGuardConfig.dailyProductionCreditLimit,
       dailyProductionCountLimit: costGuardConfig.dailyProductionCountLimit
     },
-    variationStrategy: outputCount === 1 ? "single_best_output" : "multi_variant_hooks_styles_scenes"
+    requestedClipCount: Number(body.requested_clip_count ?? 0) || 0,
+    requestedAlternativeCount: Number(body.requested_alternative_count ?? 0) || 0,
+    uniqueOutputsRequired: outputCount > 1,
+    duplicatePolicy: Number(body.requested_clip_count ?? 0) > 0
+      ? "Each clip must come from a different source moment/timestamp. Do not duplicate the same clip with minor edits."
+      : outputCount > 1
+        ? "Each alternative must use a distinct hook, visual angle or scene structure. Do not repeat the same output."
+        : "Single best output",
+    timestampPolicy: Number(body.requested_clip_count ?? 0) > 0 ? "different_source_timestamps_required" : "not_applicable",
+    variationStrategy: outputCount === 1 ? "single_best_output" : Number(body.requested_clip_count ?? 0) > 0 ? "unique_source_moment_clips" : "multi_variant_hooks_styles_scenes"
   };
 
   const socialWorkflow = {
@@ -555,6 +597,7 @@ const costGuardConfig = apiCostGuardConfig();
   };
 
   const requestMetadata = {
+    ...clientRequestMetadata,
     productionType,
     packageId,
     packageName: selectedPackage.name,
@@ -596,6 +639,8 @@ const costGuardConfig = apiCostGuardConfig();
     materialCount: materials.length,
     materialBytes,
 outputPlan,
+    outputIntent: outputPlan,
+    sourceHandling: clientSourceHandling,
     agentAction,
     agentProviderRoutePlan,
     deliveryTargets,
@@ -608,9 +653,12 @@ outputPlan,
     capacityPolicy,
     automationMode: "fully_automatic",
     providerTestMode,
+    preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.preferredProvider ?? clientInputJson.preferredProvider ?? undefined,
+    presenterMode: serverHeyGenPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
     providerTestTarget: providerTestMode ? "low_cost_5s_720p_single_output" : null
   };
   const inputJson = {
+    ...clientInputJson,
     packageName: selectedPackage.name,
     packageDescription: selectedPackage.description,
     deliverables: selectedPackage.deliverables,
@@ -645,9 +693,13 @@ outputPlan,
     liveSalesAgentDetails,
     automationMode: "fully_automatic",
     providerTestMode,
+    preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientInputJson.preferredProvider ?? clientRequestMetadata.preferredProvider ?? undefined,
+    presenterMode: serverHeyGenPresenterIntent || Boolean(clientInputJson.presenterMode ?? clientRequestMetadata.presenterMode),
     providerTestTarget: providerTestMode ? "low_cost_5s_720p_single_output" : null,
     automationPipeline: pipeline,
     outputPlan,
+    outputIntent: outputPlan,
+    sourceHandling: clientSourceHandling,
     deliveryTargets,
     deliveryPackage,
     deliveryRequirements,
@@ -663,7 +715,8 @@ outputPlan,
 
   try {
     const supabase = supabaseAdmin();
-    const dailyBudget = await enforceDailyProductionBudget(supabase, { userId, estimatedCredits });
+    const providerProofTestAllowed = serverHeyGenPresenterIntent && reserveCredits > 0 && reserveCredits <= apiCostGuardConfig().lowCostProductionTestLimit;
+    const dailyBudget = await enforceDailyProductionBudget(supabase, { userId, estimatedCredits: reserveCredits, allowProviderProofTest: providerProofTestAllowed });
     if (!dailyBudget.ok) return dailyBudget.response;
 
     const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(userId);
@@ -692,24 +745,30 @@ outputPlan,
     const reserved = balanceRow?.reserved ?? 0;
     const available = balance - reserved;
 
-    if (available < estimatedCredits) {
+    if (reserveCredits > 0 && available < reserveCredits) {
       return Response.json({
-        error: `Not enough credits. Required: ${estimatedCredits}, available: ${available}.`,
+        error: `Not enough credits. Required: ${reserveCredits}, available: ${available}.`,
+        required: reserveCredits,
+        requiredCredits: reserveCredits,
+        available,
+        shortfall: Math.max(0, reserveCredits - available),
         redirect: "/dashboard/credits"
       }, { status: 402 });
     }
 
-    const { error: reserveError } = await supabase
-      .from("credit_balances")
-      .upsert({ user_id: userId, balance, reserved: reserved + estimatedCredits, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (reserveCredits > 0) {
+      const { error: reserveError } = await supabase
+        .from("credit_balances")
+        .upsert({ user_id: userId, balance, reserved: reserved + reserveCredits, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 
-    if (reserveError) throw reserveError;
+      if (reserveError) throw reserveError;
 
-    const { error: reserveEventError } = await supabase
-      .from("credit_events")
-      .insert({ user_id: userId, type: "reserve", amount: estimatedCredits, note: `Reserved for ${selectedPackage.name}: ${title}` });
+      const { error: reserveEventError } = await supabase
+        .from("credit_events")
+        .insert({ user_id: userId, type: "reserve", amount: reserveCredits, note: `Reserved for ${selectedPackage.name}: ${title}` });
 
-    if (reserveEventError) throw reserveEventError;
+      if (reserveEventError) throw reserveEventError;
+    }
 
     const initialOutputJson = {
       automationMode: "fully_automatic",
@@ -733,8 +792,8 @@ outputPlan,
       deliveryPackage,
       workflowState: buildProductionWorkflowState({
         status: "queued",
-        generation_status: "automation_queued",
-        reserved_credits: estimatedCredits,
+        generation_status: dedicatedProviderBlocked ? "waiting_provider_config" : "automation_queued",
+        reserved_credits: reserveCredits,
         estimated_credits: estimatedCredits,
         output_json: {
           providerReadiness: {
@@ -756,12 +815,14 @@ outputPlan,
       title,
       prompt,
       status: "queued",
-      generation_status: "automation_queued",
+      generation_status: dedicatedProviderBlocked ? "waiting_provider_config" : "automation_queued",
       request_metadata: { ...requestMetadata, materials, inputJson },
+      input_json: inputJson,
+      materials_json: materials,
       estimated_credits: estimatedCredits,
-      reserved_credits: estimatedCredits,
-      output_json: { ...initialOutputJson, requestMetadata: { ...requestMetadata, materials, inputJson }, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
-      admin_notes: "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
+      reserved_credits: reserveCredits,
+      output_json: { ...initialOutputJson, automationStatus: dedicatedProviderBlocked ? "waiting_provider_config_no_charge" : "queued", providerStatus: dedicatedProviderBlocked ? "waiting_provider_config_no_charge" : undefined, requestMetadata: { ...requestMetadata, materials, inputJson }, materials, inputJson, legalAcceptanceSnapshot: legalSnapshot },
+      admin_notes: dedicatedProviderBlocked ? "Talking/lip-sync provider is not configured. Production record created with no credit reserve; connect provider before real start." : "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
     };
 
     const { data, removedColumns } = await insertProductionRequestSchemaSafe(supabase, productionInsertPayload);
@@ -804,7 +865,16 @@ outputPlan,
       }
     };
 
-    return Response.json({ production: productionWithLegal, automation_job_id: automationJobId, automation_status: "queued" });
+    const shouldAutoStartProvider = !dedicatedProviderBlocked && ["video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video"].includes(productionType);
+    if (shouldAutoStartProvider) {
+      fetch(`${appBaseUrl(request)}/api/automation/start`, {
+        method: "POST",
+        headers: forwardAutomationHeaders(request),
+        body: JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true })
+      }).catch((error) => console.error("Auto provider start failed", error));
+    }
+
+    return Response.json({ production: productionWithLegal, automation_job_id: automationJobId, automation_status: shouldAutoStartProvider ? "start_requested" : "queued", provider_start_requested: shouldAutoStartProvider });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not create production request") }, { status: 500 });
   }

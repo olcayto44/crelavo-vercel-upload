@@ -318,11 +318,11 @@ const wizardCategoryOptions: Record<string, string[]> = {
   campaign_calendar: ["Campaign brief", "Seasonal hook list", "Product launch checklist", "Script pack", "Campaign asset plan"],
   crelavo_academy: ["Free lesson path", "Premium template", "Done-with-you brief", "UGC lesson pack", "Product video workflow"],
   community_showcase: ["Use similar style", "Template reuse", "AI ad example", "UGC example", "Product video example"],
-  video: ["Prompt-to-video", "Link-to-video", "Voice-to-video", "Own voice-over", "Photo/avatar input", "Choose character", "Create character", "Choose AI voice", "Create AI voice", "Background music", "Emotion-matched music"],
+  video: ["Prompt-to-video", "Link-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Voice-over", "Background music", "Subtitles"],
   talking_video: ["Self-in-video", "Photo/avatar input", "Choose character", "Create character", "Own voice-over", "Choose AI voice", "Create AI voice", "2/3/4/5+ people", "7-8 person panel", "Separate voices", "Regional clothing", "Dialect voice"],
   documentary: ["Topic research", "Narration outline", "Interview map", "Archival visuals", "Documentary music", "Own voice-over", "Choose AI voice", "Create AI voice"],
-  animation: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Photo/avatar input", "Choose character", "Create character", "Animation music", "Own voice-over", "Choose AI voice", "Create AI voice", "Child voices"],
-  anime_short_film: ["Anime style", "Character setup", "Photo/avatar input", "Choose character", "Create character", "Dialogue", "Action scene", "Anime music", "Own voice-over", "Choose AI voice", "Create AI voice", "User materials"],
+  animation: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation", "Explainer animation", "Animation music", "Voice-over", "Subtitles"],
+  anime_short_film: ["Anime style", "Character setup", "Dialogue", "Action scene", "Fantasy scene", "Anime music", "Voice-over", "Subtitles", "User materials"],
   animal_video: ["Funny animal", "Exciting animal", "Cinematic", "Animated", "3D style", "Own voice-over"],
   nature_video: ["Wildlife", "Landscape", "Weather", "Documentary", "Cinematic music", "Narration"],
   planet_space_video: ["Planet explainer", "Galaxy scene", "3D space", "Cosmic music", "Narration", "Subtitles"],
@@ -607,12 +607,12 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
   },
   video: {
     title: "AI video options",
-    note: "Format, duration, self-in-video, multi-person dialogue, regional culture, voice, subtitles, music, scene plan and video delivery decisions.",
-    modules: ["AI video", "Prompt-to-video", "Link-to-video", "Image-to-video", "Script-to-video", "Voice-to-video", "Self-in-video", "Character/photo input", "Character selection", "Character creation", "Voice selection", "AI voice creation", "Multi-person talking video", "Regional culture video", "Local dialect voice", "Script + scene plan", "Visual/image pack", "Voice-over", "Background music direction", "User audio upload", "Drone-style aerial video", "AI map/location drone-style video"],
-    features: ["Script", "Scene plan", "Photo/avatar input", "Choose character", "Create character", "Add yourself to video", "Choose AI voice", "Create AI voice", "Voice clone", "2-person conversation", "3-person conversation", "4-person conversation", "5+ person conversation", "7-8 person conversation", "Separate voice per person", "Regional clothing", "Traditional outfit", "Regional environment", "Local accent voice-over", "Dialect voice-over", "Cultural scene direction", "Drone-style aerial video", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Thumbnail", "Shorts/Reels cut", "Watermark-free output", "3 alternatives"],
+    note: "Prompt/link/image-to-video, product ads, explainers, cinematic clips, voice-over, subtitles, music and delivery decisions. Talking presenter, avatar, lip-sync, long-video clipping and MV requests use their own categories.",
+    modules: ["AI video", "Prompt-to-video", "Link-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Visual/image pack", "Voice-over", "Background music direction", "User audio upload"],
+    features: ["Script", "Scene plan", "Choose AI voice", "Create AI voice", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Thumbnail", "Watermark-free output", "3 alternatives"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "1080p cinematic", "Vertical 9:16", "YouTube 16:9"],
-    style: ["Cinematic", "Cinematic animation", "Realistic UGC", "Documentary", "Product demo"],
+    quality: ["480p draft", "720p", "1080p", "1080p premium", "1080p cinematic", "Vertical 9:16", "YouTube 16:9"],
+    style: ["Premium ad", "Cinematic", "Cinematic animation", "Realistic UGC", "Documentary", "Product demo"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "2 min"]
   },
   talking_video: {
@@ -637,21 +637,21 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
   },
   animation: {
     title: "Animation options",
-    note: "2D, 2.5D, 3D, character, explainer, multi-person animated dialogue, optional user photo/avatar, selected/created characters, selected/created voices, regional culture and social animation decisions.",
-    modules: ["Animation video", "2D animation", "2.5D animation", "3D animation", "Character animation", "Character/photo input", "Character selection", "Character creation", "Voice selection", "AI voice creation", "Multi-person talking video", "Regional culture video", "Local dialect voice", "Motion control", "Script + scene plan", "Animation background music", "User audio upload"],
-    features: ["Script", "Scene plan", "Photo/avatar input", "Choose character", "Create character", "Choose AI voice", "Create AI voice", "Voice clone", "2-person conversation", "3-person conversation", "4-person conversation", "5+ person conversation", "Separate voice per person", "Regional clothing", "Traditional outfit", "Regional environment", "Local accent voice-over", "Dialect voice-over", "Cultural scene direction", "Voice-over", "Own voice-over", "Child voices", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Character", "3 alternatives", "Revision right"],
+    note: "2D, 2.5D, 3D, character, explainer, motion graphics and whiteboard animation decisions. Talking avatar, lip-sync and multi-person dialogue are handled in Advanced Talking Video.",
+    modules: ["Animation video", "2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation", "Explainer animation", "Script + scene plan", "Animation background music", "User audio upload"],
+    features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Character", "3 alternatives", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["480p draft", "720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
   },
   anime_short_film: {
     title: "Anime short film options",
-    note: "User-selected anime style, uploaded photo/avatar, selected/created characters, dialogue, action scenes, selected/created voice, subtitles, Crelavo materials and final anime short delivery decisions.",
-    modules: ["Anime short film", "Anime style selection", "Character setup", "Character/photo input", "Character selection", "Character creation", "Dialogue scene", "Action scene", "Voice selection", "AI voice creation", "Voice-over", "Lip-sync", "Anime background music", "User audio upload", "Material reference"],
-    features: ["Script", "Scene plan", "Photo/avatar input", "Choose character", "Create character", "Character breakdown", "Dialogue sync", "Action sequence", "Choose AI voice", "Create AI voice", "Voice clone", "Voice-over", "Own voice-over", "Child voices", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Revision right"],
+    note: "Anime style, character setup, action/drama scene, voice-over, subtitles, music and final anime short delivery decisions. Lip-sync/talking face jobs are routed separately.",
+    modules: ["Anime short film", "Anime style selection", "Character setup", "Dialogue scene", "Action scene", "Fantasy scene", "Anime background music", "User audio upload", "Material reference"],
+    features: ["Script", "Scene plan", "Character breakdown", "Action sequence", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "ZIP source", "YouTube Shorts", "Instagram Reels"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["480p draft", "720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Anime cinematic", "Shonen action", "Slice of life", "Fantasy anime", "Mecha anime", "Cute chibi"],
     duration: ["15 sec", "30 sec", "60 sec", "2 min", "Project based"]
   },
@@ -930,6 +930,16 @@ function isAiVideoOnlyIntent(message: string) {
   const hasVideoOnlyGuard = /(not a website|not website|only ai video|ai video only|sadece ai video|yalnizca ai video|yalnızca ai video|website degil|website değil|site degil|site değil|source code degil|source code değil|zip source degil|zip source değil|admin panel degil|admin panel değil|remove website|remove zip|remove source)/.test(normalized);
   const hasProjectBuild = /(source code|kaynak kod|admin panel|zip source|website project|web sitesi projesi|site projesi)/.test(normalized) && !hasVideoOnlyGuard;
   return hasVideo && (hasVideoOnlyGuard || /\b(ai video|promo video|promotional video|tanitim videosu|tanıtım videosu|mp4)\b/.test(normalized)) && !hasProjectBuild;
+}
+
+function isCharacterDialogueAnimationPrompt(message: string) {
+  const normalized = normalizeTurkishQuery(message);
+  const sceneCount = (normalized.match(/sahne\s*\d+\s*:/g) ?? []).length;
+  const quotedDialogueCount = (message.match(/[“\"][^”\"]{2,160}[”\"]/g) ?? []).length;
+  const wantsAnimation = /animasyon|animation|çizgi film|cizgi film|cartoon|2d/.test(normalized);
+  const wantsSpeech = /seslendirme|voice-over|voiceover|diyalog|dialogue|konuş|konus|subtitles|subtitle|altyaz/.test(normalized);
+  const hasCharacterContinuity = /consistent characters|same character|karakter|character|dede|babaanne|torun|anne|baba|aynı görün|ayni gorun/.test(normalized);
+  return wantsAnimation && wantsSpeech && hasCharacterContinuity && sceneCount >= 2 && quotedDialogueCount >= 2;
 }
 
 function cleanNegativeDurationMentions(message: string) {
@@ -1499,6 +1509,34 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const configuredPackageOptionsForSelectedType = configuredProductionPackages.filter((item) => item.productionType === selectedProductionType).map((item) => item.name);
   const baseCategoryProfile = categoryOptionProfiles[selectedProductionType] ?? categoryOptionProfiles.video;
   const activeCategoryProfile = configuredPackageOptionsForSelectedType.length ? { ...baseCategoryProfile, quality: configuredPackageOptionsForSelectedType } : baseCategoryProfile;
+  const promptIntentText = `${chatInput} ${input} ${productionBrief}`.toLocaleLowerCase("tr-TR");
+  const promptSuggestedCategory = isCharacterDialogueAnimationPrompt(`${chatInput} ${input} ${productionBrief}`)
+    ? "animation"
+    : /web site|website|landing|saas site|admin panel|dashboard/.test(promptIntentText)
+      ? "website"
+      : /mobil|mobile app|android|ios|uygulama/.test(promptIntentText)
+        ? "mobile_app"
+        : /talking|konuş|konus|avatar|lip.?sync|dudak|sunucu|presenter/.test(promptIntentText)
+          ? "talking_video"
+          : /(?:^|\b)(clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|hook extraction|best moments)(?:\b|$)/.test(promptIntentText)
+            ? "video_clipping"
+            : /anime/.test(promptIntentText)
+              ? "anime_short_film"
+              : /animasyon|animation|2d|3d/.test(promptIntentText)
+                ? "animation"
+                : /kısa film|kisa film|drama|senaryo|hikaye|story/.test(promptIntentText)
+                  ? "drama"
+                  : "video";
+  const promptOptionGroups = [
+    { label: "Categories", value: productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? selectedProduction?.label ?? "AI Video", options: Array.from(new Set([productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? "AI Video", selectedProduction?.label ?? "AI Video", "Advanced Talking Video", "Website", "Mobile App", "Animation", "Drama / Short Series", "Video Clipping"])).filter(Boolean), apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) applyCategorySelection(match.id); } },
+    { label: "Quality", value: selectedQuality, options: activeCategoryProfile.quality.slice(0, 6), apply: setSelectedQuality },
+    { label: "Style / Motion", value: selectedStyle, options: activeCategoryProfile.style.slice(0, 6), apply: setSelectedStyle },
+    { label: "Duration / Scope", value: selectedDuration, options: activeCategoryProfile.duration.slice(0, 6), apply: setSelectedDuration },
+    { label: "Modules", value: selectedModules.join(", ") || "Auto", options: activeCategoryProfile.modules.slice(0, 8), apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
+    { label: "Features", value: selectedFeatures.join(", ") || "None", options: activeCategoryProfile.features.slice(0, 8), apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
+    { label: "Materials", value: selectedMaterials.length || uploadedMaterials.length ? "Materials selected" : "Not uploaded", options: ["Not uploaded", "Use uploaded images", "Use product link", "Use brand kit", "Use reference video"], apply: (value: string) => { if (value !== "Not uploaded") setOptionsOpen(true); } },
+    { label: "Delivery", value: selectedPlatforms.join(", ") || selectedDeliveryHandoff, options: activeCategoryProfile.platforms.slice(0, 6), apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+  ];
   const currentAiVideoOnly = selectedProductionType === "video" && (isAiVideoOnlyIntent(`${productionBrief} ${input} ${selectedModules.join(" ")} ${selectedPlatforms.join(" ")}`) || selectedModules.join("|") === "AI video");
   const selectedCostFeatures = Array.from(new Set([...selectedFeatures, ...selectedModules]));
   const selectedOutputCount = currentAiVideoOnly ? 1 : selectedCostFeatures.includes("5 alternatives") ? 5 : selectedCostFeatures.includes("3 alternatives") ? 3 : 1;
@@ -1560,6 +1598,11 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
     }));
   }
 
+  const quickStartBriefes = [
+    { id: "qs-saas", title: "SaaS landing 15s hero", brief: "Cinematic 9:16 hero ad for a SaaS website visitor who is comparing AI video tools. Premium ad voice, English, technology background music, subtitles." },
+    { id: "qs-product", title: "E-commerce product ad 15s", brief: "Cinematic 9:16 product ad for an online store. Young presenter, premium ad voice, English, cinematic background music, subtitles." },
+    { id: "qs-app", title: "Mobile app teaser 15s", brief: "Cinematic 9:16 mobile app teaser. Premium ad voice, English, technology background music, subtitles." }
+  ];
   const productionExampleDirections = (() => {
     const recentProductionContext = messages.slice(-12).map((item) => item.content).join(" ");
     const subjectText = `${productionBrief} ${input} ${recentProductionContext} ${selectedProduction?.label ?? selectedProductionType}`.toLocaleLowerCase("tr-TR");
@@ -1655,8 +1698,9 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
 
   useEffect(() => {
     if (!providerTestPreset) return;
-    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
+    setQuickProviderTest(true);
   }, [providerTestPreset]);
+
 
   useEffect(() => {
     setMessages((current) => {
@@ -2253,6 +2297,39 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   }, [providerTestPreset, initialIdea, initialCategory, initialMode]);
 
   const isManualAiVideoFlow = selectedProductionType === "video";
+  const characterStepCopy = (() => {
+    if (["drama", "studio", "anime_short_film", "animation", "stickman_animation"].includes(selectedProductionType)) {
+      return {
+        title: "Oyuncu / Karakter",
+        subtitle: "Hikâyede oyuncu veya ana karakter olacak mı?",
+        summaryLabel: "Oyuncu/karakter",
+        options: ["Yok — sadece sahne / ortam", "Ana karakter", "Kadın oyuncu", "Erkek oyuncu", "Çocuk karakter", "Yaşlı karakter", "Çoklu karakter", "Maskot / yaratık"]
+      };
+    }
+    if (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(selectedProductionType)) {
+      return {
+        title: "Sunucu / Avatar",
+        subtitle: "Ekranda konuşacak kişi veya avatarı seç.",
+        summaryLabel: "Sunucu/avatar",
+        options: ["Kadın sunucu", "Erkek sunucu", "AI avatar", "Kendi fotoğrafımı konuştur", "Çoklu konuşmacı / panel", "Satış temsilcisi avatarı"]
+      };
+    }
+    if (["documentary"].includes(selectedProductionType)) {
+      return {
+        title: "Anlatıcı / Röportaj",
+        subtitle: "Belgeselde görünen anlatıcı/röportaj kişisi olsun mu?",
+        summaryLabel: "Anlatıcı/röportaj",
+        options: ["Yok — sadece görüntü + dış ses", "Anlatıcı görünsün", "Röportaj kişisi", "Uzman konuşmacı", "Saha muhabiri"]
+      };
+    }
+    return {
+      title: "Konuşan kişi / avatar",
+      subtitle: "Videoda konuşan kişi seçersen dudak senkronlu talking video hattı kullanılır. Sadece ürün/ekran/sahne için ilk seçeneği seç.",
+      summaryLabel: "Konuşan kişi/avatar",
+      options: ["Yok — sadece ürün / ekran / sahne videosu", "Kadın sunucu", "Erkek sunucu", "AI avatar", "Kendi fotoğrafımı konuştur", "Çoklu konuşmacı / panel", "Marka maskotu"]
+    };
+  })();
+  const isNoPresenterSelection = (value: string) => /no presenter|ui-only|yok|sadece ürün|sadece urun|sadece sahne|sadece ekran|sadece görüntü|sadece goruntu/i.test(value);
   const defaultManualWizardSteps = [
     { id: "category", title: "Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
     { id: "modules", title: "Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
@@ -2264,7 +2341,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   ];
   const aiVideoWizardSteps = [
     { id: "category", title: "Kategori", subtitle: "Yapay Zeka Videosu seçili. İstersen farklı kategoriye geçebilirsin.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
-    { id: "character", title: "Karakter / Sunucu", subtitle: "Videoda insan/avatar olacak mı?", options: ["No presenter / UI-only video", "Male presenter", "Female presenter", "Young presenter", "Senior presenter", "AI avatar", "Brand mascot"], value: selectedCharacterProfile, apply: setSelectedCharacterProfile },
+    { id: "character", title: characterStepCopy.title, subtitle: characterStepCopy.subtitle, options: characterStepCopy.options, value: selectedCharacterProfile, apply: setSelectedCharacterProfile },
     { id: "voice", title: "Seslendirme", subtitle: "Ses tarzını seç.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Energetic sales voice", "Professional SaaS narrator", "Calm documentary voice", "Premium ad voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
     { id: "language", title: "Seslendirme dili", subtitle: "Voice-over ve altyazı dilini seç.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
     { id: "environment", title: "Arka plan / Sahne", subtitle: "Videonun ana görsel ortamını seç.", options: ["Website visitor + AI chat scene", "Office / SaaS dashboard", "Product UI screens", "Studio background", "Clean abstract tech background", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
@@ -2305,8 +2382,22 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
 
   function productionTypeFromSelection() {
     const moduleText = selectedModules.join(" ").toLowerCase();
+    const featureText = selectedFeatures.join(" ").toLowerCase();
+    const characterText = selectedCharacterProfile.toLowerCase();
+    const briefText = `${productionBrief} ${input}`.toLocaleLowerCase("tr-TR");
     const styleText = selectedStyle.toLowerCase();
-    const text = `${moduleText} ${styleText}`;
+    const rawBriefText = `${productionBrief} ${input}`;
+    const text = `${moduleText} ${featureText} ${characterText} ${briefText} ${styleText}`;
+    const characterDialogueAnimation = isCharacterDialogueAnimationPrompt(rawBriefText);
+const wantsClipping = !characterDialogueAnimation && /clipping|clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|long video|uzun video|tiktok cut|best moments|komik an|korku|scary|exciting moments|hook extraction/.test(text);
+if (characterDialogueAnimation || selectedProductionType === "animation") return "animation";
+if (wantsClipping || selectedProductionType === "video_clipping") return "video_clipping";
+    const hasPresenter = selectedCharacterProfile !== "No presenter / UI-only video";
+    const explicitSpeakingRequest = /talking|konuş|konus|sunucu|presenter|avatar|lip-sync|lip sync|dudak|röportaj|roportaj|diyalog|dialogue|testimonial|self-in-video|add yourself|multi-person|conversation|panel/.test(`${moduleText} ${featureText} ${briefText} ${styleText}`);
+    const selectedTalkingCategory = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(selectedProductionType);
+    const wantsSynchronizedSpeaking = !characterDialogueAnimation && (hasPresenter || explicitSpeakingRequest || (selectedTalkingCategory && hasPresenter));
+    if (wantsSynchronizedSpeaking) return "talking_video";
+    if (selectedTalkingCategory && !hasPresenter) return "video";
     if (styleText.includes("çöp adam")) return "stickman_animation";
     if (selectedProductionType === "drama" || text.includes("drama / short series") || text.includes("short drama") || text.includes("viral short film")) return "drama";
     if (selectedProductionType === "drone_video" || text.includes("drone-style") || text.includes("satellite") || text.includes("map/location")) return "drone_video";
@@ -2346,6 +2437,9 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
       openManualWizard();
       return;
     }
+    const selectedProductionFallback = selectedProduction ? `${String((selectedProduction as { description?: string; label?: string }).description ?? "")} ${String((selectedProduction as { description?: string; label?: string }).label ?? "")}`.trim() : "";
+    const existingBrief = productionBrief.trim() || input.trim() || selectedProductionFallback || "Assistant workspace production";
+    setProductionBrief((current) => current.trim() ? current : existingBrief);
     setProductionStartingIntent(true);
     setStartError("");
     setStartState("idle");
@@ -2438,7 +2532,11 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
       setStartState("error");
       setStartError(data.error ?? "Production could not be started.");
       if (response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""))) {
-        setAssistantCreditState((current) => ({ ...current, requiredCredits: Number(data.required ?? data.requiredCredits ?? costEstimate.totalCredits) || costEstimate.totalCredits, redirect: "/dashboard/credits" }));
+        const required = Number(data.required ?? data.requiredCredits ?? costEstimate.totalCredits) || costEstimate.totalCredits;
+        const available = Number(data.available ?? availableProductionCredits ?? 0) || 0;
+        const shortfall = Number(data.shortfall ?? Math.max(0, required - available)) || 0;
+        setAssistantCreditState((current) => ({ ...current, requiredCredits: required, productionAvailable: available, redirect: "/dashboard/credits" }));
+        setStartError(`Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits. Your draft stays here; open Credits only when you want to top up.`);
         setCreditSplashOpen(true);
       }
       return;
@@ -3112,6 +3210,13 @@ async function startRawMicrophoneFallback() {
             <span className="badge">Crelavo AI Studio</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
+            {!startedProduction && productionBrief.trim().length === 0 ? (
+              <div className="clean-hero-selection-chips" aria-label="Quick start examples">
+                {quickStartBriefes.map((example) => (
+                  <button key={example.id} type="button" className="btn secondary" onClick={() => { setInput(example.brief); setProductionBrief(example.brief); }}>{example.title}</button>
+                ))}
+              </div>
+            ) : null}
             {!startedProduction && hasUserVisibleProductionSelection ? (
               <div className="clean-hero-selection-chips" aria-label="Selected production options">
                 <span><Film size={13} /><strong>{selectedProduction?.label ?? selectedProductionType}</strong></span>
@@ -3128,6 +3233,31 @@ async function startRawMicrophoneFallback() {
           <div className="clean-hero-credit-pill">
             <CreditCard size={15} />
             <span><small>Tahmini rezerv</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></span>
+          </div>
+        </section>
+
+        <section className="prompt-first-options-panel clean-prompt-first-panel" aria-label="Prompt based production options">
+          <div className="drawer-head">
+            <div>
+              <span className="badge">Prompt, plan, routing</span>
+              <h3>Prompt’a göre üretim seçenekleri</h3>
+              <p>Prompt yazınca kategori, kalite, stil, süre, modül, özellik, materyal ve teslimat seçenekleri burada dinamikleşir.</p>
+            </div>
+            <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
+          </div>
+          <div className="prompt-first-engine-strip compact-engines" aria-label="AI Core production engines">
+            {serviceNetworkGroups.map((engine) => <span key={engine.label}><strong>{engine.label}</strong></span>)}
+          </div>
+          <div className="prompt-first-option-grid">
+            {promptOptionGroups.map((group) => (
+              <div className="prompt-first-option-card" key={group.label}>
+                <small>{group.label}</small>
+                <strong>{group.value}</strong>
+                <div className="option-grid compact-option-grid">
+                  {group.options.map((option) => <button className="option-pill" type="button" key={`${group.label}-${option}`} onClick={() => group.apply(option)}>{option}</button>)}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -3194,41 +3324,7 @@ async function startRawMicrophoneFallback() {
           </div>
         </section>
 
-        <section className="clean-service-network-row" aria-label="Production service networks">
-          {serviceNetworkGroups.map((group) => {
-            const isRelevant = serviceGroupIsRelevant(group, selectedProductionType, selectedModules, selectedFeatures, selectedPlatforms);
-            return (
-              <div className={`service-network-pill ${isRelevant ? "active" : ""} ${selectedServiceNetwork === group.key ? "selected" : ""}`} key={group.key} tabIndex={0} onClick={() => { setSelectedServiceNetwork(group.key); setSelectedProviderService(group.services[0] ?? ""); }}>
-                <span>{group.shortLabel}</span>
-                <strong>{group.label}</strong>
-                <small>{selectedServiceNetwork === group.key ? (selectedProviderService || "Selected") : isRelevant ? "Relevant" : "Ready"}</small>
-                <div className="service-network-dropdown" onClick={(event) => event.stopPropagation()}>
-                  <b>{group.note}</b>
-                  {group.services.map((service) => (
-                    <button className={selectedProviderService === service ? "selected" : ""} type="button" key={service} onClick={() => { setSelectedServiceNetwork(group.key); setSelectedProviderService(service); }}>
-                      {service}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-          {cleanToolSections.map((section) => (
-            <div className="service-network-pill production-option-pill" key={section.id} tabIndex={0}>
-              <strong>{section.label}</strong>
-              <div className="service-network-dropdown production-option-dropdown" onClick={(event) => event.stopPropagation()}>
-                <b>{section.detail}</b>
-                {section.content}
-              </div>
-            </div>
-          ))}
-          <button className="service-network-pill production-action-pill primary" type="button" onClick={openStartProductionModal}>
-            <strong>Start Production</strong>
-          </button>
-          <a className="service-network-pill production-action-pill" href="/dashboard/productions">
-            <strong>Production Studio</strong>
-          </a>
-        </section>
+
 
       </main>
 
@@ -3302,7 +3398,7 @@ async function startRawMicrophoneFallback() {
             {startError ? <p className="workspace-action-note error">{startError}</p> : null}
             <div className="production-start-actions">
               <button className="btn secondary" type="button" onClick={() => { setStartModalOpen(false); setProductionStartingIntent(false); }} disabled={startState === "loading"}>Cancel</button>
-              <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading" || productionCreditInsufficient}>{startState === "loading" ? "Starting..." : "I understand, start production"}</button>
+              <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading"}>{startState === "loading" ? "Starting..." : productionCreditInsufficient ? "Kredi ekle / üretimi başlat" : "I understand, start production"}</button>
             </div>
           </div>
         </div>
@@ -3388,6 +3484,30 @@ async function startRawMicrophoneFallback() {
               <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
               <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
             </div>
+            <div className="prompt-first-engine-strip" aria-label="AI Core production engines">
+              {serviceNetworkGroups.map((engine) => <span key={engine.label}><strong>{engine.label}</strong><small>{engine.services.join(" · ")}</small></span>)}
+            </div>
+            <section className="prompt-first-options-panel" aria-label="Prompt based production options">
+              <div className="drawer-head">
+                <div>
+                  <span className="badge">Prompt, plan, routing</span>
+                  <h3>Prompt’a göre üretim seçenekleri</h3>
+                  <p>Kullanıcı ne yazarsa ilgili kategori, kalite, stil, süre, modül, materyal ve teslimat seçenekleri burada açılır.</p>
+                </div>
+                <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
+              </div>
+              <div className="prompt-first-option-grid">
+                {promptOptionGroups.map((group) => (
+                  <div className="prompt-first-option-card" key={group.label}>
+                    <small>{group.label}</small>
+                    <strong>{group.value}</strong>
+                    <div className="option-grid compact-option-grid">
+                      {group.options.map((option) => <button className="option-pill" type="button" key={`${group.label}-${option}`} onClick={() => group.apply(option)}>{option}</button>)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className="ai-output-canvas-preview" aria-label="Production output canvas">
               <div className="ai-output-card large"><small>Preview</small><strong>{selectedProduction?.label ?? "Production"}</strong><span>{productionBrief ? "Brief hazır" : "Komut bekleniyor"}</span></div>
               <div className="ai-output-card"><small>Action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong><span>Onaydan önce üretim başlamaz</span></div>
@@ -3488,7 +3608,7 @@ async function startRawMicrophoneFallback() {
             </div>
           ) : null}
           <div className="studio-side-actions">
-            <button className="btn" type="button" onClick={() => setStartModalOpen(true)} disabled={productionCreditInsufficient}>Start Production</button>
+            <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
             <button className="btn secondary" type="button" onClick={() => setOptionsOpen((current) => !current)}>{optionsOpen ? "Close settings" : "Quality / features"}</button>
             {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
             <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
@@ -3558,7 +3678,7 @@ async function startRawMicrophoneFallback() {
               {startError ? <p className="workspace-action-note error">{startError}</p> : null}
               <div className="production-start-actions">
                 <button className="btn secondary" type="button" onClick={() => { setStartModalOpen(false); setProductionStartingIntent(false); }} disabled={startState === "loading"}>Cancel</button>
-                <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading" || productionCreditInsufficient}>{startState === "loading" ? "Starting..." : "I understand, start production"}</button>
+                <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading"}>{startState === "loading" ? "Starting..." : productionCreditInsufficient ? "Kredi ekle / üretimi başlat" : "I understand, start production"}</button>
               </div>
             </div>
           </div>

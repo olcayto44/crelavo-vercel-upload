@@ -58,19 +58,21 @@ function deliveryRequirementsFromProduction(production: ProductionLike) {
   const metadata = production.request_metadata ?? {};
   const input = production.input_json ?? {};
   const requirements = objectValue(metadata.deliveryRequirements) ?? objectValue(input.deliveryRequirements);
-  const formats = Array.isArray(requirements?.formats) ? requirements.formats.map(String) : [];
+  const rawFormats = Array.isArray(requirements?.formats) ? requirements.formats.map(String) : [];
+  const projectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(String(production.production_type ?? ""));
+  const formats = projectProduction ? rawFormats.filter((format) => !["final_mp4", "subtitle_file", "thumbnail"].includes(format)) : rawFormats;
   return {
     requested: Boolean(requirements?.requested ?? formats.length > 0),
     status: String(requirements?.status ?? "pending"),
-    formats: formats.length ? formats : ["dashboard_delivery"],
+    formats: formats.length ? formats : projectProduction ? ["preview_link", "source_code", "readme", "deployment_guide"] : ["dashboard_delivery"],
     wantsZip: Boolean(requirements?.wantsZip ?? formats.includes("final_zip")),
-    wantsSourceCode: Boolean(requirements?.wantsSourceCode ?? formats.includes("source_code")),
-    wantsReadme: Boolean(requirements?.wantsReadme ?? formats.includes("readme")),
+    wantsSourceCode: projectProduction || Boolean(requirements?.wantsSourceCode ?? formats.includes("source_code")),
+    wantsReadme: projectProduction || Boolean(requirements?.wantsReadme ?? formats.includes("readme")),
     wantsDeploymentGuide: Boolean(requirements?.wantsDeploymentGuide ?? formats.includes("deployment_guide")),
     wantsAdminPanel: Boolean(requirements?.wantsAdminPanel ?? formats.includes("admin_panel")),
-    wantsFinalVideo: Boolean(requirements?.wantsFinalVideo ?? formats.includes("final_mp4")),
-    wantsSubtitles: Boolean(requirements?.wantsSubtitles ?? formats.includes("subtitle_file")),
-    wantsThumbnail: Boolean(requirements?.wantsThumbnail ?? formats.includes("thumbnail")),
+    wantsFinalVideo: !projectProduction && Boolean(requirements?.wantsFinalVideo ?? formats.includes("final_mp4")),
+    wantsSubtitles: !projectProduction && Boolean(requirements?.wantsSubtitles ?? formats.includes("subtitle_file")),
+    wantsThumbnail: !projectProduction && Boolean(requirements?.wantsThumbnail ?? formats.includes("thumbnail")),
     wantsPdf: Boolean(requirements?.wantsPdf ?? formats.includes("pdf")),
     wantsBrandKit: Boolean(requirements?.wantsBrandKit ?? formats.includes("brand_kit")),
     packageNote: String(requirements?.packageNote ?? "Delivery requirements are generated from the production wizard.")
@@ -122,9 +124,9 @@ export function buildDeliveryManifest(production: ProductionLike) {
     generated_files: generatedFiles,
     output_registry: outputRegistry,
     project: {
-      modules: value(metadata.projectWorkflow?.modules ?? input.projectWorkflow?.modules),
-      technical_stack: value(metadata.projectWorkflow?.technicalStack ?? input.projectWorkflow?.technicalStack),
-      source_delivery: value(metadata.projectWorkflow?.sourceDelivery ?? input.projectWorkflow?.sourceDelivery)
+      modules: value(metadata.projectWorkflow?.modules ?? input.projectWorkflow?.modules, projectFeatureSet(production).entities.join(", ")),
+      technical_stack: value(metadata.projectWorkflow?.technicalStack ?? input.projectWorkflow?.technicalStack, deliveryPackage.standard === "commerce_export" ? "Next.js storefront/admin source package, product catalog, cart/checkout flows, marketplace export notes" : deliveryPackage.standard === "project_source" ? "Next.js / Expo source package, TypeScript, responsive UI, dashboard delivery" : deliveryPackage.fileFormats.join(", ")),
+      source_delivery: value(metadata.projectWorkflow?.sourceDelivery ?? input.projectWorkflow?.sourceDelivery, deliveryPackage.standard)
     },
     commerce: {
       store_platform: value(metadata.commerceWorkflow?.storePlatform ?? input.commerceWorkflow?.storePlatform ?? production.output_json?.deliveryPreferences?.provider),
@@ -170,7 +172,13 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
   ];
   if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(type)) {
     files.push({ path: "source/SOURCE-GUIDE.md", purpose: "Source package guide" });
-    files.push({ path: "source/project-structure.md", purpose: "Suggested source structure and file map" });
+    files.push({ path: "source/project-structure.md", purpose: "Delivered source structure and file map" });
+    if (type === "mobile_app") {
+      files.push({ path: "source/App.tsx", purpose: "Expo mobile app entry screen" });
+      files.push({ path: "source/src/screens/HomeScreen.tsx", purpose: "Main mobile home screen" });
+      files.push({ path: "source/src/screens/AdminScreen.tsx", purpose: "Mobile admin/control screen" });
+      files.push({ path: "source/src/theme.ts", purpose: "Mobile app theme tokens" });
+    }
   }
   if (type === "campaign" || deliveryPackageFromProduction(production).standard === "commerce_export") {
     files.push({ path: "campaign/copy-pack.md", purpose: "Ad script, captions, subtitle lines and CTA variations" });
@@ -205,12 +213,23 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
 
 function buildProjectStructure(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# Project Structure\n\nProduction: ${manifest.title}\n\n## Recommended Package Layout\n\n\`\`\`text\ndelivery/\n├─ README.md\n├─ manifest.json\n├─ preview.html\n├─ source/\n│  ├─ app/page.tsx\n│  ├─ app/layout.tsx\n│  ├─ app/globals.css\n│  ├─ components/\n│  ├─ lib/config.ts\n│  └─ package.json\n├─ admin-panel/\n├─ docs/\n├─ media/\n├─ brand-kit/\n└─ documents/\n\`\`\`\n\n## Technical Stack\n${manifest.project.technical_stack}\n\n## Modules\n${manifest.project.modules}\n`;
+  return `# Project Structure\n\nProduction: ${manifest.title}\n\n## Delivered Package Layout\n\n\`\`\`text\ndelivery/\n├─ README.md\n├─ manifest.json\n├─ preview.html\n├─ source/\n│  ├─ app/page.tsx\n│  ├─ app/admin/page.tsx\n│  ├─ app/layout.tsx\n│  ├─ app/globals.css\n│  ├─ lib/config.ts\n│  └─ package.json\n├─ admin-panel/\n├─ docs/\n├─ media/\n├─ brand-kit/\n└─ documents/\n\`\`\`\n\n## Technical Stack\n${manifest.project.technical_stack}\n\n## Modules\n${manifest.project.modules}\n\n## Run Locally\n1. Open the source folder.\n2. Run npm install.\n3. Run npm run dev.\n4. Replace sample data/media with the customer's final assets.\n`;
 }
 
 function buildSourcePackageJson(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
   const safeName = manifest.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-project";
+  if (manifest.production_type === "mobile_app") {
+    return JSON.stringify({
+      name: safeName,
+      version: "0.1.0",
+      private: true,
+      main: "node_modules/expo/AppEntry.js",
+      scripts: { start: "expo start", android: "expo start --android", ios: "expo start --ios", web: "expo start --web" },
+      dependencies: { expo: "latest", react: "latest", "react-native": "latest", "expo-status-bar": "latest" },
+      devDependencies: { typescript: "latest", "@types/react": "latest" }
+    }, null, 2);
+  }
   return JSON.stringify({
     name: safeName,
     version: "0.1.0",
@@ -239,14 +258,235 @@ function buildSourceLayout(production: ProductionLike) {
   return `import "./globals.css";\n\nexport const metadata = { title: ${JSON.stringify(manifest.title)}, description: ${JSON.stringify(manifest.user_promise)} };\n\nexport default function RootLayout({ children }: { children: React.ReactNode }) {\n  return <html lang="en"><body>{children}</body></html>;\n}\n`;
 }
 
+function projectFeatureSet(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const prompt = `${production.prompt ?? ""} ${manifest.project.modules}`.toLowerCase();
+  const isMobile = manifest.production_type === "mobile_app" || /mobile app|ios|android|expo|react native|uygulama|mobil/.test(prompt);
+  const isStreaming = /movie|film|stream|netflix|watch|series|cinema/.test(prompt);
+  const isCommerce = /shop|store|ecommerce|e-commerce|product|cart|checkout/.test(prompt);
+  const isSaas = /saas|subscription|billing|workspace|dashboard|crm|portal/.test(prompt);
+  if (isMobile) {
+    return {
+      vertical: "Mobile app",
+      heroCta: "Open app preview",
+      entities: ["Home screen", "Login flow", "User dashboard", "Push-ready structure", "Settings", "Admin/control screen"],
+      cards: ["Welcome screen", "Main action", "Activity feed", "Profile"],
+      adminRows: ["Users", "Screens", "Notifications", "Content", "App settings"]
+    };
+  }
+  if (isStreaming) {
+    return {
+      vertical: "Streaming platform",
+      heroCta: "Start watching",
+      entities: ["Featured movies", "Categories", "Watch page", "User dashboard", "Admin movie manager", "Subscription plans"],
+      cards: ["Midnight Signal", "Ocean Protocol", "City of Glass", "Northern Lights"],
+      adminRows: ["Movies", "Users", "Plans", "Watch history", "Content moderation"]
+    };
+  }
+  if (isCommerce) {
+    return {
+      vertical: "Commerce platform",
+      heroCta: "Shop collection",
+      entities: ["Storefront", "Product pages", "Cart", "Checkout", "Admin product manager", "Orders"],
+      cards: ["Hero Product", "Best Seller", "Limited Offer", "Bundle Pack"],
+      adminRows: ["Products", "Orders", "Customers", "Inventory", "Discounts"]
+    };
+  }
+  if (isSaas || manifest.production_type === "saas") {
+    return {
+      vertical: "SaaS platform",
+      heroCta: "Open dashboard",
+      entities: ["Landing page", "Auth", "Workspace", "Billing", "Admin panel", "Settings"],
+      cards: ["Analytics", "Automations", "Team seats", "Reports"],
+      adminRows: ["Users", "Subscriptions", "Invoices", "Usage", "Support"]
+    };
+  }
+  return {
+    vertical: "Business website",
+    heroCta: "Get started",
+    entities: ["Homepage", "Service pages", "Lead form", "Pricing", "Dashboard", "Admin content manager"],
+    cards: ["Core offer", "Client proof", "Pricing", "Contact"],
+    adminRows: ["Leads", "Pages", "Testimonials", "Forms", "Settings"]
+  };
+}
+
 function buildSourcePage(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  const items = manifest.required_items.map((item) => `          <li>${item}</li>`).join("\n");
-  return `import { projectConfig } from "../lib/config";\n\nexport default function Page() {\n  return (\n    <main className="page-shell">\n      <section className="hero">\n        <span>${manifest.delivery_standard}</span>\n        <h1>{projectConfig.title}</h1>\n        <p>${manifest.user_promise}</p>\n      </section>\n      <section className="card">\n        <h2>Included delivery</h2>\n        <ul>\n${items}\n        </ul>\n      </section>\n      <section className="card">\n        <h2>Modules</h2>\n        <p>{projectConfig.modules}</p>\n      </section>\n    </main>\n  );\n}\n`;
+  const featureSet = projectFeatureSet(production);
+  const payload = JSON.stringify({
+    title: manifest.title,
+    brief: value(production.prompt, manifest.user_promise),
+    standard: manifest.delivery_standard,
+    modules: manifest.project.modules,
+    stack: manifest.project.technical_stack,
+    ...featureSet
+  }, null, 2);
+  return `const project = ${payload} as const;
+
+export default function Page() {
+  return (
+    <main className="site-shell">
+      <nav className="topbar">
+        <strong>{project.title}</strong>
+        <a href="#features">Features</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="/admin">Admin</a>
+      </nav>
+      <section className="hero-grid">
+        <div>
+          <span className="eyebrow">{project.vertical}</span>
+          <h1>{project.title}</h1>
+          <p>{project.brief}</p>
+          <div className="hero-actions"><a className="primary" href="#features">{project.heroCta}</a><a className="secondary" href="/admin">Open admin</a></div>
+        </div>
+        <div className="preview-panel">
+          <span>Live package</span>
+          <strong>{project.standard}</strong>
+          <p>{project.stack}</p>
+        </div>
+      </section>
+      <section id="features" className="section">
+        <div className="section-head"><span>Included modules</span><h2>Ready-to-customize product structure</h2></div>
+        <div className="feature-grid">{project.entities.map((item) => <article key={item}><h3>{item}</h3><p>Included in the delivered source package and wired into the customer-facing flow.</p></article>)}</div>
+      </section>
+      <section className="section">
+        <div className="section-head"><span>Content model</span><h2>Sample records</h2></div>
+        <div className="content-row">{project.cards.map((item) => <article key={item}><div className="poster" /><h3>{item}</h3><p>Replace this sample with real customer data, media and copy.</p></article>)}</div>
+      </section>
+      <section id="dashboard" className="dashboard-card">
+        <span>User dashboard</span>
+        <h2>Account, subscription and activity area</h2>
+        <p>{project.modules}</p>
+      </section>
+    </main>
+  );
+}
+`;
+}
+
+function buildMobileTheme() {
+  return `export const theme = {
+  colors: {
+    background: "#070b18",
+    panel: "#111827",
+    text: "#f8fbff",
+    muted: "#aeb8cc",
+    cyan: "#22d3ee",
+    purple: "#7c5cff",
+    green: "#22c55e"
+  },
+  radius: 22
+} as const;
+`;
+}
+
+function buildMobileHomeScreen(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const featureSet = projectFeatureSet(production);
+  const payload = JSON.stringify({ title: manifest.title, brief: value(production.prompt, manifest.user_promise), features: featureSet.entities, cards: featureSet.cards }, null, 2);
+  return `import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { theme } from "../theme";
+
+const app = ${payload} as const;
+
+export function HomeScreen() {
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }} contentContainerStyle={{ padding: 22, gap: 18 }}>
+      <View style={{ padding: 22, borderRadius: theme.radius, backgroundColor: theme.colors.panel }}>
+        <Text style={{ color: theme.colors.cyan, fontWeight: "900", textTransform: "uppercase" }}>Mobile app preview</Text>
+        <Text style={{ color: theme.colors.text, fontSize: 36, fontWeight: "900", marginTop: 10 }}>{app.title}</Text>
+        <Text style={{ color: theme.colors.muted, marginTop: 12, lineHeight: 22 }}>{app.brief}</Text>
+        <TouchableOpacity style={{ marginTop: 18, backgroundColor: theme.colors.purple, padding: 14, borderRadius: 999 }}><Text style={{ color: "white", fontWeight: "900", textAlign: "center" }}>Get started</Text></TouchableOpacity>
+      </View>
+      {app.features.map((feature) => <View key={feature} style={{ padding: 18, borderRadius: 18, backgroundColor: "#0f172a" }}><Text style={{ color: theme.colors.text, fontWeight: "800", fontSize: 18 }}>{feature}</Text><Text style={{ color: theme.colors.muted, marginTop: 6 }}>Included in this delivered mobile app source package.</Text></View>)}
+    </ScrollView>
+  );
+}
+`;
+}
+
+function buildMobileAdminScreen(production: ProductionLike) {
+  const rows = projectFeatureSet(production).adminRows;
+  return `import { ScrollView, Text, View } from "react-native";
+import { theme } from "../theme";
+
+const rows = ${JSON.stringify(rows, null, 2)} as const;
+
+export function AdminScreen() {
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: theme.colors.background }} contentContainerStyle={{ padding: 22, gap: 12 }}>
+      <Text style={{ color: theme.colors.text, fontSize: 30, fontWeight: "900" }}>Admin control</Text>
+      {rows.map((row) => <View key={row} style={{ padding: 16, borderRadius: 16, backgroundColor: theme.colors.panel }}><Text style={{ color: theme.colors.text, fontWeight: "900" }}>{row}</Text><Text style={{ color: theme.colors.green, marginTop: 4 }}>Ready</Text></View>)}
+    </ScrollView>
+  );
+}
+`;
+}
+
+function buildMobileAppEntry() {
+  return `import { StatusBar } from "expo-status-bar";
+import { HomeScreen } from "./src/screens/HomeScreen";
+
+export default function App() {
+  return <><HomeScreen /><StatusBar style="light" /></>;
+}
+`;
+}
+
+function buildSourceAdminPage(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const featureSet = projectFeatureSet(production);
+  const rows = featureSet.adminRows.map((row, index) => ({ name: row, status: index < 2 ? "Ready" : "Configured", count: 12 + index * 7 }));
+  const payload = JSON.stringify({ title: manifest.title, rows, modules: manifest.project.modules }, null, 2);
+  return `const admin = ${payload} as const;
+
+export default function AdminPage() {
+  return (
+    <main className="site-shell admin-shell">
+      <nav className="topbar"><strong>{admin.title} Admin</strong><a href="/">Back to site</a></nav>
+      <section className="section-head admin-head"><span>Admin panel</span><h1>Manage content, users and delivery workflow</h1><p>{admin.modules}</p></section>
+      <section className="admin-table">{admin.rows.map((row) => <article key={row.name}><strong>{row.name}</strong><span>{row.status}</span><small>{row.count} records</small></article>)}</section>
+    </main>
+  );
+}
+`;
 }
 
 function buildSourceCss() {
-  return `:root { color-scheme: dark; font-family: Inter, Arial, sans-serif; background: #020617; color: #e5e7eb; }\nbody { margin: 0; }\n.page-shell { max-width: 980px; margin: 0 auto; padding: 48px 24px; }\n.hero, .card { border: 1px solid #243044; background: #0f172a; border-radius: 24px; padding: 28px; margin-bottom: 18px; }\n.hero span { color: #93c5fd; text-transform: uppercase; letter-spacing: .12em; font-size: 12px; }\nh1 { font-size: clamp(34px, 6vw, 68px); line-height: 1; margin: 18px 0; }\np, li { color: #cbd5e1; line-height: 1.7; }\n`;
+  return `:root { color-scheme: dark; font-family: Inter, Arial, sans-serif; background: #050816; color: #f8fbff; }
+* { box-sizing: border-box; }
+body { margin: 0; background: radial-gradient(circle at 10% 10%, rgba(34,211,238,.22), transparent 28rem), radial-gradient(circle at 90% 0%, rgba(124,92,255,.25), transparent 28rem), linear-gradient(135deg,#081226,#10172f 55%,#0b1020); }
+a { color: inherit; text-decoration: none; }
+.site-shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 0 28px; }
+.topbar strong { font-size: 18px; }
+.topbar a { color: #cbd5e1; font-weight: 700; }
+.hero-grid { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(320px,.7fr); gap: 22px; align-items: stretch; }
+.hero-grid > div, .section, .dashboard-card, .preview-panel, .admin-table article { border: 1px solid rgba(255,255,255,.14); background: rgba(15,23,42,.72); border-radius: 28px; box-shadow: 0 28px 80px rgba(0,0,0,.32); }
+.hero-grid > div:first-child { padding: clamp(28px,5vw,58px); }
+.eyebrow, .section-head span, .preview-panel span, .dashboard-card span, .admin-head span { color: #22d3ee; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 900; }
+h1 { font-size: clamp(42px, 7vw, 84px); line-height: .95; margin: 18px 0; letter-spacing: -0.06em; }
+h2 { font-size: clamp(28px, 4vw, 46px); margin: 8px 0 16px; letter-spacing: -0.04em; }
+h3 { margin: 0 0 8px; }
+p { color: #cbd5e1; line-height: 1.75; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
+.primary, .secondary { border-radius: 999px; padding: 13px 18px; font-weight: 900; display: inline-flex; }
+.primary { background: linear-gradient(135deg,#22d3ee,#7c5cff); color: white; }
+.secondary { border: 1px solid rgba(255,255,255,.18); color: #dbeafe; }
+.preview-panel { padding: 26px; display: flex; flex-direction: column; justify-content: center; }
+.preview-panel strong { font-size: 28px; margin: 12px 0; }
+.section, .dashboard-card { margin-top: 22px; padding: 28px; }
+.feature-grid, .content-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 14px; }
+.feature-grid article, .content-row article { border: 1px solid rgba(255,255,255,.1); background: rgba(2,6,23,.45); border-radius: 22px; padding: 18px; }
+.poster { height: 150px; border-radius: 18px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(34,211,238,.3), rgba(124,92,255,.45)), radial-gradient(circle at 50% 20%, #fff3, transparent 40%); }
+.dashboard-card { background: linear-gradient(135deg, rgba(34,211,238,.16), rgba(124,92,255,.18)); }
+.admin-head { padding: 30px; border: 1px solid rgba(255,255,255,.14); background: rgba(15,23,42,.72); border-radius: 28px; }
+.admin-table { display: grid; gap: 12px; margin-top: 18px; }
+.admin-table article { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 16px 18px; }
+.admin-table span { color: #22c55e; font-weight: 900; }
+.admin-table small { color: #93c5fd; }
+@media (max-width: 820px) { .hero-grid { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } .admin-table article { grid-template-columns: 1fr; } }
+`;
 }
 
 function buildAdminRequirements(production: ProductionLike) {
@@ -259,9 +499,45 @@ function buildDeploymentGuide(production: ProductionLike) {
   return `# Deployment Guide\n\nProduction: ${manifest.title}\n\n## Before Deploying\n- Review README.md and manifest.json.\n- Replace placeholders with verified business data.\n- Confirm all requested delivery requirements are present.\n\n## Suggested Stack\n${manifest.project.technical_stack}\n\n## Delivery Links\n- Preview: ${manifest.links.previewUrl}\n- ZIP: ${manifest.links.deliveryZipUrl}\n- Source guide: ${manifest.links.sourceFilesUrl}\n`;
 }
 
-function buildMediaPlaceholder(production: ProductionLike) {
+function buildVideoProductionPackage(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# Final Video Slot\n\nProduction: ${manifest.title}\n\nThe real final MP4 should replace this placeholder when provider generation or admin upload completes.\n\nRequested formats: ${manifest.delivery_requirements.formats.join(", ")}\n`;
+  return `# Video Production Package\n\nProduction: ${manifest.title}\n\n## User Request\n${value(production.prompt, manifest.user_promise)}\n\n## Deliverable\nThis package contains the production-ready video brief, scene list, caption pack, export specs and provider handoff data. If a connected video provider is available, the final MP4 URL is attached to the production record. If no provider is connected, this package is the ready-to-run handoff for the video provider/admin renderer.\n\n## Scenes\n1. Hook opening\n2. Main value demonstration\n3. Feature/proof section\n4. CTA / closing frame\n\n## Export Specs\n- Format: MP4\n- Social variants: 9:16, 1:1, 16:9 when requested\n- Captions: included as editable copy in captions.srt\n- Revision target: hook, CTA, subtitle style, music direction\n`;
+}
+
+function buildCaptionsSrt(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  const text = value(production.prompt, manifest.title).replace(/\s+/g, " ").slice(0, 120);
+  return `1\n00:00:00,000 --> 00:00:03,000\n${manifest.title}\n\n2\n00:00:03,000 --> 00:00:08,000\n${text}\n\n3\n00:00:08,000 --> 00:00:12,000\nCreated with Crelavo production delivery.\n`;
+}
+
+function buildImageAssetPack(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Image Asset Pack\n\nProduction: ${manifest.title}\n\n## User Request\n${value(production.prompt, manifest.user_promise)}\n\n## Included\n- image-brief.md\n- prompts/final-prompt.txt\n- export-specs.md\n- usage-rights.md\n\n## Export Specs\nPNG/JPG delivery should be attached when the image provider returns final files. This package stores the exact creative brief, prompt and export standard so the image can be regenerated or revised.\n`;
+}
+
+function buildVoiceScriptPackage(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Voice Production Package\n\nProduction: ${manifest.title}\n\n## Script\n${value(production.prompt, "Voice-over script prepared from the user request.")}\n\n## Delivery\n- voice-script.md\n- pronunciation-notes.md\n- voice-settings.json\n- usage-rights.md\n\n## Output Standard\nFinal audio should be delivered as MP3/WAV when the voice provider is connected. This package keeps the script and voice direction ready for rendering and revision.\n`;
+}
+
+function buildSeoContentPack(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# SEO Content Pack\n\nProduction: ${manifest.title}\n\n## Brief\n${value(production.prompt, manifest.user_promise)}\n\n## Deliverables\n- metadata.md\n- content-outline.md\n- keywords.csv\n- page-copy.md\n- implementation-checklist.md\n\n## Metadata Draft\nTitle: ${manifest.title}\nDescription: ${value(production.prompt, manifest.user_promise).slice(0, 155)}\n`;
+}
+
+function buildEcommerceStorefront(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `export default function StorefrontPage() {\n  const products = [\"Hero Product\", \"Best Seller\", \"Bundle Offer\", \"Limited Drop\"];\n  return (\n    <main className=\"site-shell\">\n      <section className=\"hero-grid\"><div><span className=\"eyebrow\">E-commerce storefront</span><h1>${manifest.title}</h1><p>${value(production.prompt, manifest.user_promise)}</p></div></section>\n      <section className=\"section\"><h2>Products</h2><div className=\"feature-grid\">{products.map((product) => <article key={product}><h3>{product}</h3><p>Catalog, cart and checkout-ready product slot.</p></article>)}</div></section>\n    </main>\n  );\n}\n`;
+}
+
+function buildSaasDashboard(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `export default function DashboardPage() {\n  const widgets = [\"Analytics\", \"Users\", \"Billing\", \"Automations\", \"Reports\"];\n  return (\n    <main className=\"site-shell\">\n      <section className=\"dashboard-card\"><span>SaaS dashboard</span><h1>${manifest.title}</h1><p>${value(production.prompt, manifest.user_promise)}</p></section>\n      <section className=\"feature-grid\">{widgets.map((widget) => <article key={widget}><h3>{widget}</h3><p>Ready dashboard module.</p></article>)}</section>\n    </main>\n  );\n}\n`;
+}
+
+function buildAdminCrudPage(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `export default function AdminCrudPage() {\n  const tables = [\"Users\", \"Records\", \"Roles\", \"Settings\", \"Activity\"];\n  return (\n    <main className=\"site-shell\">\n      <section className=\"admin-head\"><span>Admin panel</span><h1>${manifest.title}</h1><p>${value(production.prompt, manifest.user_promise)}</p></section>\n      <section className=\"admin-table\">{tables.map((table) => <article key={table}><strong>{table}</strong><span>CRUD ready</span><small>Role controlled</small></article>)}</section>\n    </main>\n  );\n}\n`;
 }
 
 function buildSubtitlesTemplate() {
@@ -435,35 +711,75 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
   if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
     entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
     entries.push({ name: "source/package.json", content: buildSourcePackageJson(production) });
-    entries.push({ name: "source/app/layout.tsx", content: buildSourceLayout(production) });
-    entries.push({ name: "source/app/page.tsx", content: buildSourcePage(production) });
-    entries.push({ name: "source/app/globals.css", content: buildSourceCss() });
-    entries.push({ name: "source/lib/config.ts", content: buildSourceConfig(production) });
+    if (manifest.production_type === "mobile_app") {
+      entries.push({ name: "source/App.tsx", content: buildMobileAppEntry() });
+      entries.push({ name: "source/src/screens/HomeScreen.tsx", content: buildMobileHomeScreen(production) });
+      entries.push({ name: "source/src/screens/AdminScreen.tsx", content: buildMobileAdminScreen(production) });
+      entries.push({ name: "source/src/theme.ts", content: buildMobileTheme() });
+    } else {
+      entries.push({ name: "source/app/layout.tsx", content: buildSourceLayout(production) });
+      entries.push({ name: "source/app/page.tsx", content: buildSourcePage(production) });
+      entries.push({ name: "source/app/admin/page.tsx", content: buildSourceAdminPage(production) });
+      entries.push({ name: "source/app/globals.css", content: buildSourceCss() });
+      entries.push({ name: "source/lib/config.ts", content: buildSourceConfig(production) });
+    }
   }
-  if (manifest.delivery_standard === "commerce_export" || manifest.production_type === "campaign") {
-    entries.push({ name: "campaign/copy-pack.md", content: buildCampaignCopyPack(production) });
-    entries.push({ name: "campaign/social-export-plan.md", content: buildSocialExportPlan(production) });
-    entries.push({ name: "campaign/marketplace-export.json", content: buildMarketplaceExportJson(production) });
-  }
-  if (isSocialContentDelivery(production)) {
-    entries.push({ name: "social/caption-pack.md", content: buildSocialCaptionPack(production) });
-    entries.push({ name: "social/posting-calendar.md", content: buildSocialPostingCalendar(production) });
-    entries.push({ name: "social/platform-format-plan.json", content: buildPlatformFormatPlan(production) });
-  }
-  if (isGrowthDelivery(production)) {
-    entries.push({ name: "growth/conversion-funnel-plan.md", content: buildConversionFunnelPlan(production) });
-    entries.push({ name: "growth/monetization-plan.json", content: buildGrowthMonetizationPlan(production) });
-    entries.push({ name: "growth/lifecycle-nudges.md", content: buildLifecycleNudgePlan(production) });
-  }
-  if (isSeoResearchDelivery(production)) {
-    entries.push({ name: "seo/keyword-opportunity-plan.md", content: buildKeywordOpportunityPlan(production) });
-    entries.push({ name: "seo/competitor-analysis-brief.md", content: buildCompetitorAnalysisBrief(production) });
-    entries.push({ name: "seo/provider-research-map.json", content: buildProviderResearchMap(production) });
-  }
-  if (requirements.wantsAdminPanel) entries.push({ name: "admin-panel/admin-requirements.md", content: buildAdminRequirements(production) });
-  if (requirements.wantsDeploymentGuide) entries.push({ name: "docs/deployment-guide.md", content: buildDeploymentGuide(production) });
-  if (requirements.wantsFinalVideo) entries.push({ name: "media/final-video-placeholder.md", content: buildMediaPlaceholder(production) });
-  if (requirements.wantsSubtitles) entries.push({ name: "media/subtitles-template.srt", content: buildSubtitlesTemplate() });
+if (manifest.delivery_standard === "commerce_export" || manifest.production_type === "campaign") {
+  entries.push({ name: "campaign/copy-pack.md", content: buildCampaignCopyPack(production) });
+  entries.push({ name: "campaign/social-export-plan.md", content: buildSocialExportPlan(production) });
+}
+if (manifest.delivery_standard === "commerce_export" || manifest.production_type === "campaign") {
+  entries.push({ name: "campaign/marketplace-export.json", content: buildMarketplaceExportJson(production) });
+}
+if (isSocialContentDelivery(production)) {
+  entries.push({ name: "social/caption-pack.md", content: buildSocialCaptionPack(production) });
+  entries.push({ name: "social/posting-calendar.md", content: buildSocialPostingCalendar(production) });
+  entries.push({ name: "social/platform-format-plan.json", content: buildPlatformFormatPlan(production) });
+}
+if (isGrowthDelivery(production)) {
+  entries.push({ name: "growth/conversion-funnel-plan.md", content: buildConversionFunnelPlan(production) });
+  entries.push({ name: "growth/monetization-plan.json", content: buildGrowthMonetizationPlan(production) });
+  entries.push({ name: "growth/lifecycle-nudges.md", content: buildLifecycleNudgePlan(production) });
+}
+if (isSeoResearchDelivery(production)) {
+  entries.push({ name: "seo/keyword-opportunity-plan.md", content: buildKeywordOpportunityPlan(production) });
+  entries.push({ name: "seo/competitor-analysis-brief.md", content: buildCompetitorAnalysisBrief(production) });
+  entries.push({ name: "seo/provider-research-map.json", content: buildProviderResearchMap(production) });
+}
+if (requirements.wantsAdminPanel) entries.push({ name: "admin-panel/admin-requirements.md", content: buildAdminRequirements(production) });
+if (requirements.wantsDeploymentGuide) entries.push({ name: "docs/deployment-guide.md", content: buildDeploymentGuide(production) });
+if (["ecommerce", "campaign"].includes(manifest.production_type) || /ecommerce|store|shop|commerce|product/.test(`${manifest.package_id} ${production.prompt ?? ""}`.toLowerCase())) {
+  entries.push({ name: "source/app/store/page.tsx", content: buildEcommerceStorefront(production) });
+  entries.push({ name: "ecommerce/catalog-schema.json", content: JSON.stringify({ products: ["Hero Product", "Best Seller", "Bundle Offer"], checkout: "ready", admin: "ready" }, null, 2) });
+}
+if (manifest.production_type === "saas") {
+  entries.push({ name: "source/app/dashboard/page.tsx", content: buildSaasDashboard(production) });
+  entries.push({ name: "source/app/billing/page.tsx", content: buildSaasDashboard(production) });
+  entries.push({ name: "database/schema.sql", content: "create table users (id uuid primary key, email text, created_at timestamptz default now());\ncreate table subscriptions (id uuid primary key, user_id uuid, status text);\n" });
+}
+if (manifest.production_type === "admin_project") {
+  entries.push({ name: "source/app/admin/records/page.tsx", content: buildAdminCrudPage(production) });
+  entries.push({ name: "database/admin-schema.sql", content: "create table admin_records (id uuid primary key, title text, status text, created_at timestamptz default now());\n" });
+}
+if (["video", "talking_video", "avatar", "lip_sync", "drama", "documentary", "drone_video"].includes(manifest.production_type) || requirements.wantsFinalVideo) {
+  entries.push({ name: "video/video-production-package.md", content: buildVideoProductionPackage(production) });
+  entries.push({ name: "video/captions.srt", content: buildCaptionsSrt(production) });
+  entries.push({ name: "video/export-specs.json", content: JSON.stringify({ format: "mp4", variants: ["9:16", "1:1", "16:9"], status: "provider_ready" }, null, 2) });
+}
+if (["image", "brand_kit"].includes(manifest.production_type)) {
+  entries.push({ name: "image/image-asset-pack.md", content: buildImageAssetPack(production) });
+  entries.push({ name: "image/prompts/final-prompt.txt", content: value(production.prompt, manifest.title) });
+  entries.push({ name: "image/export-specs.json", content: JSON.stringify({ formats: ["png", "jpg"], status: "provider_ready" }, null, 2) });
+}
+if (["voice", "voice_clone", "dubbing"].includes(manifest.production_type)) {
+  entries.push({ name: "voice/voice-production-package.md", content: buildVoiceScriptPackage(production) });
+  entries.push({ name: "voice/voice-settings.json", content: JSON.stringify({ format: "mp3/wav", language: "auto", status: "provider_ready" }, null, 2) });
+}
+if (["seo", "document", "localization"].includes(manifest.production_type) || /seo|content|document|growth/.test(`${manifest.package_id} ${production.prompt ?? ""}`.toLowerCase())) {
+  entries.push({ name: "seo/seo-content-pack.md", content: buildSeoContentPack(production) });
+  entries.push({ name: "seo/keywords.csv", content: "keyword,intent,priority\nprimary keyword,commercial,high\nsecondary keyword,informational,medium\n" });
+}
+if (requirements.wantsSubtitles) entries.push({ name: "media/subtitles-template.srt", content: buildSubtitlesTemplate() });
   if (requirements.wantsThumbnail) entries.push({ name: "media/thumbnail-brief.md", content: buildThumbnailBrief(production) });
   if (requirements.wantsPdf) entries.push({ name: "documents/final-document.md", content: buildDocumentSource(production) });
   if (requirements.wantsBrandKit) entries.push({ name: "brand-kit/brand-guide.md", content: buildBrandGuide(production) });
@@ -473,8 +789,11 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
 
 export function buildPreviewHtml(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  const items = manifest.required_items.map((item) => `<li>${item}</li>`).join("");
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${manifest.title}</title><style>body{font-family:Inter,Arial,sans-serif;background:#0f172a;color:#e5e7eb;margin:0;padding:32px}main{max-width:880px;margin:auto;background:#111827;border:1px solid #334155;border-radius:24px;padding:28px}span{color:#93c5fd;text-transform:uppercase;font-size:12px;letter-spacing:.12em}h1{font-size:34px}li{margin:8px 0}.card{background:#020617;border:1px solid #1f2937;border-radius:18px;padding:18px;margin-top:18px}</style></head><body><main><span>${manifest.delivery_standard}</span><h1>${manifest.title}</h1><p>${manifest.user_promise}</p><div class="card"><h2>Required delivery items</h2><ul>${items}</ul></div><div class="card"><h2>Production quality</h2><p>${manifest.production_quality.minimumStandard}</p></div><div class="card"><h2>Reference safety</h2><p>${manifest.reference_link_safety}</p></div></main></body></html>`;
+  const featureSet = projectFeatureSet(production);
+  const modules = featureSet.entities.map((item) => `<article><h3>${item}</h3><p>Included in the delivered project package.</p></article>`).join("");
+  const cards = featureSet.cards.map((item) => `<article><div></div><h3>${item}</h3><p>Sample data slot ready for customer content.</p></article>`).join("");
+  const mobileClass = manifest.production_type === "mobile_app" ? " mobile-preview" : "";
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${manifest.title}</title><style>body{font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 10% 10%,#22d3ee38,transparent 28rem),radial-gradient(circle at 90% 0,#7c5cff42,transparent 28rem),linear-gradient(135deg,#081226,#10172f 55%,#0b1020);color:#f8fbff;margin:0}main{width:min(1120px,calc(100% - 32px));margin:auto;padding:32px 0 56px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center}.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:20px;margin-top:28px}.mobile-preview .hero{grid-template-columns:minmax(0,1fr) minmax(280px,380px)}.mobile-preview .panel{border-radius:42px;min-height:520px;background:linear-gradient(180deg,#111827,#020617);border:10px solid #030712}.panel,.hero>div,article{border:1px solid #ffffff24;background:#0f172ab8;border-radius:28px;padding:26px;box-shadow:0 28px 80px #0007}.eyebrow{color:#22d3ee;text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:900}h1{font-size:clamp(42px,7vw,78px);line-height:.95;margin:18px 0;letter-spacing:-.06em}p{color:#cbd5e1;line-height:1.7}.btn{display:inline-flex;margin-top:18px;border-radius:999px;padding:13px 18px;font-weight:900;background:linear-gradient(135deg,#22d3ee,#7c5cff)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:18px}.poster{height:120px;border-radius:18px;background:linear-gradient(135deg,#22d3ee55,#7c5cff77)}section{margin-top:24px}@media(max-width:820px){.hero{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}</style></head><body><main class="${mobileClass.trim()}"><div class="top"><strong>${manifest.title}</strong><span class="eyebrow">${featureSet.vertical}</span></div><section class="hero"><div><span class="eyebrow">Customer preview</span><h1>${manifest.title}</h1><p>${value(production.prompt, manifest.user_promise)}</p><span class="btn">${featureSet.heroCta}</span></div><div class="panel"><span class="eyebrow">Delivered source</span><h2>${manifest.delivery_standard}</h2><p>${manifest.project.technical_stack}</p></div></section><section><span class="eyebrow">Included modules</span><div class="grid">${modules}</div></section><section><span class="eyebrow">Sample content</span><div class="grid">${cards}</div></section></main></body></html>`;
 }
 
 type ZipEntry = { name: string; content: string };

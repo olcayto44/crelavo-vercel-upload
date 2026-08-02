@@ -26,18 +26,6 @@ function revisionVoiceScript(message: string, fallbackPrompt: unknown, fallbackT
   return String(fallbackPrompt ?? fallbackTitle ?? "Crelavo üretimi için yeni seslendirme hazırlanıyor.");
 }
 
-function isActiveProviderJob(value: unknown) {
-  if (!value || typeof value !== "object") return false;
-  const record = value as Record<string, unknown>;
-  const provider = typeof record.provider === "string" && record.provider.length > 0;
-  const status = String(record.status ?? "").toLowerCase();
-  return provider && !["succeeded", "success", "completed", "complete", "done", "ready", "failed", "failure", "error", "canceled", "cancelled", "provider_failed"].includes(status);
-}
-
-function hasActiveAlternativeJob(alternatives: unknown[]) {
-  return alternatives.some((item) => item && typeof item === "object" && isActiveProviderJob((item as Record<string, unknown>).visualJob));
-}
-
 function hasDuplicateVoiceRequest(voiceJobs: unknown[], message: string, selectedVoiceId: string) {
   const normalized = message.trim().toLocaleLowerCase("tr-TR");
   return voiceJobs.some((item) => {
@@ -59,6 +47,13 @@ function providerSpendGuard(production: Record<string, unknown>, requestMetadata
   const previewOnly = previewAccess.previewOnly === true || previewAccess.downloadAccess === "closed" || previewAccess.downloadsOpen === false;
   if (previewOnly) {
     return { ok: false as const, reason: "preview_only_downloads_closed", reservedCredits, estimatedCredits };
+  }
+  const selectedOptionsText = `${String(requestMetadata.selectedOptions ?? "")} ${String(requestMetadata.features ?? "")} ${String(requestMetadata.extras ?? "")}`.toLowerCase();
+  const outputJson = objectValue(production.output_json);
+  const hasCompletedDelivery = Boolean(outputJson.providerFinalUrl || outputJson.finalVideoUrl || outputJson.deliveryUrl || outputJson.delivery_url || outputJson.previewUrl || outputJson.preview_url) || ["ready", "completed"].includes(String(production.status ?? "").toLowerCase());
+  const hasRevisionRight = selectedOptionsText.includes("revision") || selectedOptionsText.includes("revizyon");
+  if (hasCompletedDelivery && hasRevisionRight) {
+    return { ok: true as const, reservedCredits, estimatedCredits, revisionRight: true };
   }
   if (reservedCredits <= 0 || (estimatedCredits > 0 && reservedCredits < estimatedCredits)) {
     return { ok: false as const, reason: "payment_or_credit_required", reservedCredits, estimatedCredits };
@@ -181,42 +176,52 @@ export async function POST(request: Request) {
     }
 
     const voiceRevision = isVoiceRevision(action, message, targetPart);
-    const activeVisualJob = isActiveProviderJob(outputJson.visualJob) || isActiveProviderJob(outputJson.renderJob) || hasActiveAlternativeJob(existingAlternatives);
-    if (!voiceRevision && (lowerAction.includes("alternatif") || lowerAction.includes("yeniden") || lowerMessage.includes("başka") || lowerMessage.includes("yeniden"))) {
+    const visualRevision = ["final mp4", "visual", "video", "görsel", "gorsel", "ofis", "insan", "people", "office", "split-screen", "bölünmüş", "bolunmus", "yeniden", "revize"].some((word) => `${targetPart} ${action} ${message}`.toLocaleLowerCase("tr-TR").includes(word));
+    if (visualRevision || lowerAction.includes("alternatif") || lowerAction.includes("yeniden") || lowerMessage.includes("başka") || lowerMessage.includes("yeniden")) {
       const revisionAlternative: Record<string, unknown> = {
         id: `rev-alt-${Date.now()}`,
         title: `${targetPart} revize alternatifi`,
-        status: activeVisualJob ? "already_running" : "revision_queued",
+        status: "revision_queued",
         description: message,
         preview_url: "",
         sourceRevisionId: revision.id
       };
-      if (activeVisualJob) {
-        revisionAlternative.providerNote = "A new paid revision job was not opened before the active provider job completed.";
-        nextPendingAction.status = "already_running";
-      } else if (!providerGuard.ok) {
+      if (!providerGuard.ok) {
         revisionAlternative.status = "payment_or_credit_required";
         revisionAlternative.providerNote = "A new paid revision job was not opened before payment, credit reservation and preview eligibility were confirmed.";
         revisionAlternative.providerGuard = providerGuard;
         nextPendingAction.status = "payment_or_credit_required";
       } else {
         try {
-          if (["video", "campaign", "music_video", "stickman_animation", "localization"].includes(String(production.production_type))) {
+          const productionType = String(production.production_type ?? "").toLowerCase();
+          const videoLikeRevision = ["video", "ai_video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video", "localization"].includes(productionType) || productionType.includes("video") || productionType.includes("film");
+          if (videoLikeRevision) {
+            const durationText = `${String(requestMetadata.duration ?? "")} ${String(requestMetadata.selectedDuration ?? "")} ${String(requestMetadata.selectedOptions ?? "")} ${String(production.prompt ?? "")}`;
+            const durationSeconds = /30\s*(sec|second|saniye|sn)/i.test(durationText) ? 30 : /15\s*(sec|second|saniye|sn)/i.test(durationText) ? 15 : 10;
             const visualJob = await createVisualVideo({
               scenes: [message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
               productImageUrls: [],
-              durationSeconds: 8,
+              durationSeconds,
               style: String(requestMetadata.style ?? production.title ?? "Crelavo revision")
             });
-            revisionAlternative.status = "provider_job_created";
-            revisionAlternative.visualJob = visualJob;
+              revisionAlternative.status = "provider_job_created";
+              revisionAlternative.visualJob = visualJob;
+              nextPendingAction.status = "provider_job_created";
+            } else {
+              revisionAlternative.status = "provider_type_not_supported";
+              revisionAlternative.providerNote = `Revision provider is not mapped for production_type=${productionType}`;
+              nextPendingAction.status = "provider_type_not_supported";
+            }
+          } catch (providerError) {
+            revisionAlternative.status = "provider_failed";
+            revisionAlternative.providerError = errorMessage(providerError, "Provider revizyon job başlatılamadı");
+            nextPendingAction.status = "provider_failed";
           }
-        } catch (providerError) {
-          revisionAlternative.providerError = errorMessage(providerError, "Provider revizyon job başlatılamadı");
         }
-      }
-      nextAlternatives = [...nextAlternatives, revisionAlternative];
+        nextAlternatives = [...nextAlternatives, revisionAlternative];
     }
+
+    revision.status = nextPendingAction.status;
 
     const { data, error } = await supabase
       .from("production_requests")

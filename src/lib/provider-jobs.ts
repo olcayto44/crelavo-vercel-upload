@@ -70,9 +70,17 @@ export async function checkProviderJobStatus(job: ProviderJob | null): Promise<N
   return getProviderStatus(job);
 }
 
+function usableProviderUrl(value: unknown) {
+  const url = String(value ?? "").trim();
+  if (!url) return "";
+  if (/\?final=demo|\?delivery=demo|\?preview=alt-|readme=demo/i.test(url)) return "";
+  if (/^\/dashboard\/productions\//i.test(url)) return "";
+  return url;
+}
+
 export function collectProviderOutputs(production: ProviderJobProduction, normalizedStatus: NormalizedProviderStatus | null) {
   const output = production.output_json ?? {};
-  const finalOutputUrl = normalizedStatus?.status === "succeeded" && normalizedStatus.outputUrl ? normalizedStatus.outputUrl : String(output.finalVideoUrl ?? production.delivery_link ?? production.preview_url ?? "") || null;
+  const finalOutputUrl = normalizedStatus?.status === "succeeded" && normalizedStatus.outputUrl ? normalizedStatus.outputUrl : usableProviderUrl(output.finalVideoUrl) || usableProviderUrl(production.delivery_link) || usableProviderUrl(production.preview_url) || null;
   const outputJson = finalOutputUrl ? { ...output, finalVideoUrl: finalOutputUrl } : output;
   return {
     finalOutputUrl,
@@ -90,7 +98,7 @@ export function providerLifecycleFromJobs(production: ProviderJobProduction, job
   const visualJob = providerJobFromValue(jobs.visualJob);
   const renderJob = providerJobFromValue(jobs.renderJob);
   const output = production.output_json ?? {};
-  const finalOutputUrl = String(output.finalVideoUrl ?? renderJob?.url ?? visualJob?.url ?? production.delivery_link ?? production.preview_url ?? "") || null;
+  const finalOutputUrl = usableProviderUrl(output.finalVideoUrl) || usableProviderUrl(renderJob?.url) || usableProviderUrl(visualJob?.url) || usableProviderUrl(production.delivery_link) || usableProviderUrl(production.preview_url) || null;
   const outputJson = finalOutputUrl ? { ...output, finalVideoUrl: finalOutputUrl } : output;
   const outputRegistry = buildOutputRegistry({ ...production, output_json: outputJson });
   return {

@@ -1,3 +1,5 @@
+import { productionWorkspacePath } from "@/lib/production-url";
+
 type ProductionCompletionEmailInput = {
   to: string;
   title: string;
@@ -28,9 +30,10 @@ export async function sendProductionCompletionEmail(input: ProductionCompletionE
 
   const from = process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>";
   const supportEmail = process.env.SUPPORT_EMAIL || "support@crelavo.com";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
-  const dashboardUrl = `${appUrl}/dashboard/productions`;
-  const deliveryUrl = input.deliveryUrl || input.previewUrl || dashboardUrl;
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com").replace(/\/$/, "");
+  const workspaceUrl = `${appUrl}${productionWorkspacePath({ id: input.productionId, title: input.title })}`;
+  const dashboardUrl = workspaceUrl;
+  const deliveryUrl = workspaceUrl;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",

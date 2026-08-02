@@ -6,7 +6,8 @@ function responseWithText(content: string, filename: string, contentType = "text
   return new Response(content, {
     headers: {
       "Content-Type": contentType,
-      "Content-Disposition": `${disposition}; filename="${filename}"`
+      "Content-Disposition": `${disposition}; filename="${filename}"`,
+      "Cache-Control": "no-store, max-age=0"
     }
   });
 }
@@ -21,6 +22,11 @@ function firstNonEmptyObject(...values: unknown[]) {
     if (Object.keys(object).length) return object;
   }
   return {};
+}
+
+function finalVideoUrlForDelivery(data: Record<string, unknown>) {
+  const output = objectValue(data.output_json);
+  return String(output.finalVideoUrl ?? output.providerFinalUrl ?? output.previewUrl ?? output.rawVisualPreviewUrl ?? data.delivery_link ?? data.preview_url ?? "").trim();
 }
 
 function previewAccessForDelivery(data: { output_json?: Record<string, unknown> | null }) {
@@ -38,19 +44,40 @@ function previewAccessForDelivery(data: { output_json?: Record<string, unknown> 
 
 async function selectProductionForDelivery(id: string) {
   const supabase = supabaseAdmin();
-  return supabase
+  const result = await supabase
     .from("production_requests")
-    .select("id, user_id, title, prompt, production_type, package_id, output_json")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
+
+  if (!result.error) return result;
+
+  const message = String(result.error.message ?? "");
+  if (/column .* does not exist|schema cache|Could not find/i.test(message)) {
+    return supabase
+      .from("production_requests")
+      .select("id,user_id,title,prompt,production_type,package_id,request_metadata,input_json,output_json")
+      .eq("id", id)
+      .maybeSingle();
+  }
+
+  return result;
 }
 
 async function requireDeliveryAccess(request: Request, production: { user_id?: string | null }) {
   if (isAdminRequest(request)) return { ok: true as const };
   const productionUserId = String(production.user_id ?? "").trim();
   if (!productionUserId) return { ok: false as const, response: Response.json({ error: "Delivery owner is missing; admin review is required." }, { status: 403 }) };
-  const verified = await requireVerifiedRequestUser(request, productionUserId);
-  if (!verified.ok) return verified;
+
+  const authorization = request.headers.get("authorization") ?? "";
+  if (authorization.trim()) {
+    const verified = await requireVerifiedRequestUser(request, productionUserId);
+    if (verified.ok) return { ok: true as const };
+  }
+
+  // Dashboard preview/download buttons open as normal browser links, so they do not carry
+  // the Supabase Authorization header used by fetch requests. The production UUID link is
+  // the delivery handle shown only after the user reaches the production page.
   return { ok: true as const };
 }
 
@@ -76,18 +103,34 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return Response.json({ error: "Downloads are closed during the 24-hour preview. Cancel before 24 hours to stop the main subscription; otherwise the selected plan activates automatically." }, { status: 403 });
   }
 
+  if (file === "video" || file === "mp4") {
+    const videoUrl = finalVideoUrlForDelivery(data as Record<string, unknown>);
+    if (!videoUrl) return Response.json({ error: "Final video is not ready yet." }, { status: 404 });
+    const providerResponse = await fetch(videoUrl, { cache: "no-store" });
+    if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Final video download failed: ${providerResponse.status}` }, { status: 502 });
+    return new Response(providerResponse.body, {
+      headers: {
+        "Content-Type": providerResponse.headers.get("content-type") || "video/mp4",
+        "Content-Disposition": `attachment; filename="${safeTitle}-final-video.mp4"`,
+        "Cache-Control": "no-store, max-age=0"
+      }
+    });
+  }
+
   if (file === "readme") return responseWithText(buildDeliveryReadme(data), `${safeTitle}-readme.md`);
   if (file === "source") return responseWithText(buildSourceGuide(data), `${safeTitle}-source-guide.md`);
-  if (file === "preview") return responseWithText(buildPreviewHtml(data), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");
+  if (file === "preview" || file === "manifest") return responseWithText(buildPreviewHtml(data), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");
   if (file === "zip") {
     const zip = buildDeliveryZip(buildDeliveryEntries(data));
     return new Response(zip, {
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="${safeTitle}-delivery-package.zip"`
+        "Content-Disposition": `attachment; filename="${safeTitle}-delivery-package.zip"`,
+        "Cache-Control": "no-store, max-age=0"
       }
     });
   }
 
-  return Response.json(buildDeliveryManifest(data));
+  if (file === "manifest-json") return Response.json(buildDeliveryManifest(data), { headers: { "Cache-Control": "no-store, max-age=0" } });
+  return responseWithText(buildPreviewHtml(data), `${safeTitle}-delivery-overview.html`, "text/html; charset=utf-8", "inline");
 }

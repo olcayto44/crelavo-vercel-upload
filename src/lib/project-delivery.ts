@@ -36,9 +36,9 @@ function projectKind(type: string, packageId: string) {
 function stackFor(kind: string, metadata: Record<string, any>, input: Record<string, any>) {
   const requested = text(metadata.projectWorkflow?.technicalStack ?? input.projectWorkflow?.technicalStack ?? metadata.technicalStack ?? input.technicalStack, "");
   if (requested) return requested;
-  if (kind === "mobile_app") return "Expo / React Native starter, TypeScript, modular screens, API client placeholders";
+  if (kind === "mobile_app") return "Expo / React Native, TypeScript, modular screens, API client, app source package";
   if (kind === "saas") return "Next.js, TypeScript, Supabase auth/database, dashboard/admin modules, billing hooks";
-  if (kind === "ecommerce") return "Next.js storefront/admin starter, product catalog, cart/checkout placeholders, Shopify/export notes";
+  if (kind === "ecommerce") return "Next.js storefront/admin source package, product catalog, cart/checkout flows, Shopify/export notes";
   if (kind === "admin_project") return "Next.js admin dashboard, Supabase, role-based modules, request/status management";
   return "Next.js, TypeScript, responsive pages, SEO metadata, contact/lead forms";
 }
@@ -82,11 +82,15 @@ export function buildProjectDeliveryOutput(production: ProjectProduction, jobId:
         "preview.html",
         "SOURCE-GUIDE.md",
         "source/project-structure.md",
+        "source/app/page.tsx",
+        "source/app/admin/page.tsx",
+        "source/app/globals.css",
+        "source/package.json",
         "docs/deployment-guide.md",
         "admin-panel/admin-requirements.md"
       ],
       deliveryStatus: "ready_for_customer_review",
-      implementationStatus: "starter_source_package_ready"
+      implementationStatus: "working_source_package_ready"
     },
     previewUrl: links.previewUrl,
     deliveryLink: links.deliveryLink,

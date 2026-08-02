@@ -24,18 +24,27 @@ function requirement(key: string, label: string, requiredEnv: string[], affects:
 
 export function providerRequirementsForProduction(productionType: string, packageId = "") {
   const type = productionType || "general";
+  const hasPlanningBrain = hasAnyConfiguredEnv(["OPENAI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"]);
   const requirements: ProviderRequirement[] = [
-    requirement("openai", "OpenAI planning/brain", ["OPENAI_API_KEY"], ["assistant brief", "script", "production plan"], "Needed for live assistant planning, scripts, briefs and code/content generation.")
+    {
+      key: "planning_brain",
+      label: "AI planning/brain",
+      requiredEnv: ["OPENAI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY"],
+      affects: ["assistant brief", "script", "production plan"],
+      note: "Needed for live assistant planning, scripts, briefs and content generation. OpenAI or Gemini is sufficient.",
+      status: hasPlanningBrain ? "ready" : "missing"
+    }
   ];
 
-  const needsVideoProvider = ["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "avatar", "lip_sync", "localization", "cultural_localization", "talking_video"].includes(type) || packageId.includes("video");
+  const heygenOnlyVideoTypes = ["avatar", "talking_video", "lip_sync", "live_sales_agent"];
+  const needsVideoProvider = !heygenOnlyVideoTypes.includes(type) && (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization"].includes(type) || packageId.includes("video"));
   const needsEcommerceAdPipeline = type === "campaign" || packageId === "campaign_product_ad_video";
 
   if (needsVideoProvider) {
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output."));
   }
 
-  if (["avatar", "talking_video", "live_sales_agent"].includes(type)) {
+  if (["avatar", "talking_video", "lip_sync", "live_sales_agent"].includes(type)) {
     requirements.push(requirement("avatar_provider", "HeyGen avatar/talking-head provider", ["HEYGEN_API_KEY"], ["avatar presenter", "talking-head video", "speaker/avatar render"], "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery. Avatar jobs also need a speaker/avatar reference and voice direction before provider rendering.", type === "live_sales_agent"));
   }
 

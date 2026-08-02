@@ -198,11 +198,29 @@ function deliveryRequirementFormats(row: ProductionRow) {
   return Array.isArray(requirements?.formats) ? requirements.formats.map(String) : [];
 }
 
+function isMediaProductionRow(row: ProductionRow) {
+  return ["video", "campaign", "music_video", "cinematic_video", "animation", "anime_short_film", "avatar", "lip_sync", "talking_video", "live_sales_agent", "studio", "drama", "video_tools", "video_clipping"].includes(String(row.production_type ?? ""));
+}
+
+function mediaFinalReady(row: ProductionRow) {
+  const output = row.output_json ?? {};
+  return Boolean(
+    output.finalVideoUrl
+    || output.providerFinalUrl
+    || output.previewUrl
+    || output.rawVisualPreviewUrl
+    || row.preview_url
+    || row.delivery_link
+    || /provider_succeeded|final_video_ready|completed|admin_force_ready|quality_gate_blocked/i.test(`${String(row.generation_status ?? "")} ${String(row.automation_status ?? "")} ${String(output.providerStatus ?? "")} ${String(output.releaseSource ?? "")}`)
+  );
+}
+
 function deliveryReadyStatus(row: ProductionRow, format: string) {
-  if (format === "final_zip") return row.delivery_zip_url || row.delivery_link ? "ready" : "generated_on_download";
+  const mediaWaiting = isMediaProductionRow(row) && !mediaFinalReady(row);
+  if (format === "final_zip") return mediaWaiting ? "waiting_provider" : row.delivery_zip_url || row.delivery_link ? "ready" : "generated_on_download";
   if (format === "source_code") return row.source_files_url ? "ready" : "generated_on_download";
-  if (format === "readme") return row.readme_url ? "ready" : "generated_on_download";
-  if (format === "final_mp4") return row.output_json?.finalVideoUrl || row.preview_url || row.delivery_link ? "ready" : "waiting_provider";
+  if (format === "readme") return mediaWaiting ? "planned" : row.readme_url ? "ready" : "generated_on_download";
+  if (format === "final_mp4") return mediaWaiting ? "waiting_provider" : row.output_json?.finalVideoUrl || row.preview_url || row.delivery_link ? "ready" : "waiting_provider";
   return "planned";
 }
 
@@ -265,6 +283,10 @@ export function AdminProductionsTable({ productionTypeFilter }: { productionType
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [manualDeliveryDrafts, setManualDeliveryDrafts] = useState<Record<string, ManualDeliveryDraft>>({});
   const [savingDeliveryId, setSavingDeliveryId] = useState("");
+  const [resettingLostOutputId, setResettingLostOutputId] = useState("");
+  const [forcingReadyId, setForcingReadyId] = useState("");
+  const [debuggingId, setDebuggingId] = useState("");
+  const [debugReport, setDebugReport] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     async function loadProductions() {
@@ -369,6 +391,82 @@ async function retryProviderJob(item: ProductionRow) {
     setRows((current) => current.map((row) => row.id === item.id ? data.production : row));
     setMessage(data.already_running ? "An active provider job already exists; no new job was opened." : "Provider retry started for this production.");
   }
+}
+
+async function resetLostOutput(item: ProductionRow) {
+  const confirmed = window.confirm(`Bu kayıt eski çıktısı silinmiş gibi resetlenecek ve yeniden üretime hazır queued durumuna alınacak.\n\n${item.title}\n${item.id}`);
+  if (!confirmed) return;
+  setResettingLostOutputId(item.id);
+  setMessage("");
+
+  const response = await fetch("/api/admin/productions/reset-lost-output", {
+    method: "POST",
+    headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+    body: JSON.stringify(adminApiBody({ production_id: item.id }, adminEmail, adminToken))
+  });
+
+  const data = await response.json().catch(() => ({}));
+  setResettingLostOutputId("");
+
+  if (!response.ok) {
+    setMessage(data.error ?? "Deleted output reset could not be applied.");
+    return;
+  }
+
+  if (data.production) {
+    setRows((current) => current.map((row) => row.id === item.id ? { ...row, ...data.production } : row));
+    setMessage("Deleted output reset applied. Open the production and press Start Production to regenerate.");
+  }
+}
+
+async function forceReadyDelivery(item: ProductionRow) {
+  const confirmed = window.confirm(`Provider videosu hazır ama kalite kapısı blokluyorsa bu kayıt Ready yapılacak.\n\n${item.title}\n${item.id}`);
+  if (!confirmed) return;
+  setForcingReadyId(item.id);
+  setMessage("");
+
+  const response = await fetch("/api/admin/productions/force-ready", {
+    method: "POST",
+    headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+    body: JSON.stringify(adminApiBody({ production_id: item.id }, adminEmail, adminToken))
+  });
+
+  const data = await response.json().catch(() => ({}));
+  setForcingReadyId("");
+
+  if (!response.ok) {
+    setMessage(data.error ?? "Production could not be forced ready.");
+    return;
+  }
+
+  if (data.production) {
+    setRows((current) => current.map((row) => row.id === item.id ? data.production : row));
+    setMessage("Production released as Ready. Customer can preview and download final MP4.");
+  }
+}
+
+async function debugProduction(item: ProductionRow) {
+  setDebuggingId(item.id);
+  setMessage("");
+  setDebugReport(null);
+
+  const response = await fetch("/api/admin/productions/debug", {
+    method: "POST",
+    headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+    body: JSON.stringify(adminApiBody({ production_id: item.id }, adminEmail, adminToken))
+  });
+
+  const data = await response.json().catch(() => ({}));
+  setDebuggingId("");
+
+  if (!response.ok) {
+    setMessage(data.error ?? "Production debug could not be loaded.");
+    return;
+  }
+
+  setDebugReport(data);
+  const diagnosis = data.diagnosis && typeof data.diagnosis === "object" ? data.diagnosis as Record<string, unknown> : {};
+  setMessage(`DEBUG hazır: gerçek video URL ${diagnosis.hasRealVideoUrl ? "VAR" : "YOK"}. Aşağıdaki debug kutusunu kopyalayıp paylaş.`);
 }
 
 async function refundReservedCredits(item: ProductionRow) {
@@ -515,7 +613,27 @@ async function refundReservedCredits(item: ProductionRow) {
     if (data.production) {
       setRows((current) => current.map((row) => row.id === item.id ? data.production : row));
       const emailNote = data.completionEmailResult?.sent ? " Completion email sent." : data.completionEmailResult?.skipped ? ` Completion email skipped: ${data.completionEmailResult.reason ?? "not configured"}.` : "";
-      setMessage(`${data.finalVideoUrl ? "Final video ready and delivered." : "Provider status refreshed."}${emailNote}`);
+      const nextStatus = String(data.production.status ?? "");
+      const nextGeneration = String(data.production.generation_status ?? "");
+      const isActuallyReady = nextStatus === "ready" || nextGeneration === "final_video_ready";
+      const providerSucceeded = /succeeded|completed|ready/i.test(`${data.visualStatus?.status ?? ""} ${data.renderStatus?.status ?? ""} ${data.production.output_json?.providerStatus ?? ""} ${data.production.generation_status ?? ""}`);
+      if (!isActuallyReady && providerSucceeded) {
+        const releaseResponse = await fetch("/api/admin/productions/force-ready", {
+          method: "POST",
+          headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+          body: JSON.stringify(adminApiBody({ production_id: item.id }, adminEmail, adminToken))
+        });
+        const releaseData = await releaseResponse.json().catch(() => ({}));
+        if (releaseResponse.ok && releaseData.production) {
+          setRows((current) => current.map((row) => row.id === item.id ? releaseData.production : row));
+          setMessage(`Provider succeeded and production was released as Ready.${emailNote}`);
+          return;
+        }
+        setMessage(releaseData.error ? `Provider succeeded, but Ready release failed: ${releaseData.error}` : `Provider succeeded, but Ready release failed.${emailNote}`);
+        return;
+      }
+      const isBlocked = nextGeneration === "quality_gate_blocked" || String(data.production.automation_status ?? "") === "quality_blocked";
+      setMessage(`${isActuallyReady ? "Final video ready and delivered." : isBlocked ? "Provider video exists, but quality gate is still blocking delivery." : "Provider status refreshed."}${emailNote}`);
     }
   }
 
@@ -542,6 +660,15 @@ async function refundReservedCredits(item: ProductionRow) {
           <div><span>Total tracked jobs</span><strong>{allProviderJobs.length}</strong></div>
         </div>
         {message ? <p className="form-message">{message}</p> : null}
+        {debugReport ? (
+          <div className="card" style={{ marginBottom: 16, border: "1px solid rgba(255, 214, 102, 0.45)", background: "rgba(20, 15, 5, 0.55)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10 }}>
+              <strong>Production debug sonucu</strong>
+              <button className="btn secondary" type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugReport, null, 2))}>Kopyala</button>
+            </div>
+            <pre style={{ maxHeight: 420, overflow: "auto", whiteSpace: "pre-wrap", fontSize: 12 }}>{JSON.stringify(debugReport, null, 2)}</pre>
+          </div>
+        ) : null}
       </div>
 
       {visibleRows.length > 0 ? (
@@ -605,8 +732,8 @@ async function refundReservedCredits(item: ProductionRow) {
         const isQueuedForRenderSlot = item.status === "queued" || item.automation_status === "queued" || item.generation_status === "queued_for_render_slot" || queueStatus === "waiting_for_video_provider_slot";
         const creditResolution = item.output_json?.creditResolution && typeof item.output_json.creditResolution === "object" ? item.output_json.creditResolution as Record<string, unknown> : null;
         const reservedCredits = Number(item.reserved_credits ?? item.estimated_credits ?? 0) || 0;
-        const canRetryProvider = item.status === "failed" && creditResolution?.status === "admin_review_required" && reservedCredits > 0;
         const retryBlockedAfterRefund = item.status === "failed" && creditResolution?.status === "refunded_reserved";
+        const canRetryProvider = !retryBlockedAfterRefund && !["ready", "cancelled"].includes(String(item.status ?? ""));
         const manualDraft = draftFor(item);
         const workflowState = workflowStateFor(item);
         const workflowActions = Array.isArray(workflowState?.actions) ? workflowState.actions : [];
@@ -614,6 +741,13 @@ async function refundReservedCredits(item: ProductionRow) {
 
         return (
         <div className="card admin-production-card" key={item.id}>
+  <div style={{ display: "grid", gap: 8, margin: "0 16px 12px" }}>
+    {canRetryProvider ? <button className="btn" style={{ width: "100%", fontSize: 16, fontWeight: 800 }} type="button" onClick={() => retryProviderJob(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "SAĞLAYICI BAŞLATILIYOR..." : "BAŞLAT: OTOMASYONU / SAĞLAYICIYI ÇALIŞTIR"}</button> : null}
+    <button className="btn" style={{ width: "100%", fontSize: 16, fontWeight: 800 }} type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "PROVIDER DURUMU ÇEKİLİYOR..." : "POLL: PROVIDER DURUMUNU KONTROL ET"}</button>
+    <button className="btn" style={{ width: "100%", fontSize: 16, fontWeight: 800 }} type="button" onClick={() => forceReadyDelivery(item)} disabled={forcingReadyId === item.id}>{forcingReadyId === item.id ? "READY YAPILIYOR..." : "READY YAP: PROVIDER VİDEOSUNU YAYINA AL"}</button>
+    <button className="btn secondary" style={{ width: "100%", fontSize: 14, fontWeight: 800 }} type="button" onClick={() => debugProduction(item)} disabled={debuggingId === item.id}>{debuggingId === item.id ? "DEBUG ÇEKİLİYOR..." : "DEBUG: ÜRETİM KAYDINI İNCELE"}</button>
+    <button className="btn secondary" style={{ width: "100%", fontSize: 14, fontWeight: 800 }} type="button" onClick={() => resetLostOutput(item)} disabled={resettingLostOutputId === item.id}>{resettingLostOutputId === item.id ? "RESETLENİYOR..." : "Silinmiş çıktıyı resetle / yeniden üretime hazırla"}</button>
+  </div>
             <div className="admin-production-head">
               <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                 <label title="Toplu listeden kaldırma için seç" style={{ display: "inline-flex", alignItems: "center", gap: 6, paddingTop: 3 }}>
@@ -635,7 +769,7 @@ async function refundReservedCredits(item: ProductionRow) {
               {item.automation_job_id ? <small>{item.automation_job_id}</small> : null}
               {isQueuedForRenderSlot ? <small>Render queue: {String(renderQueuePolicy?.label ?? (queueStatus || "waiting"))}</small> : null}
               {legalSnapshot?.accepted ? <small>Legal: {legalSnapshot.version ?? "accepted"} {item.legal_acceptance_id ? `- ${item.legal_acceptance_id}` : ""}</small> : <small style={{ color: "#fca5a5" }}>Legal acceptance missing</small>}
-              <small>{(item.reserved_credits ?? item.estimated_credits).toLocaleString()} credits</small>
+              <small>{reservedCredits.toLocaleString()} credits</small>
             </div>
           </div>
 
@@ -668,7 +802,7 @@ async function refundReservedCredits(item: ProductionRow) {
             </div>
             <div>
               <span>Payment / credits</span>
-              <strong>{(item.reserved_credits ?? item.estimated_credits).toLocaleString()} reserved</strong>
+              <strong>{reservedCredits.toLocaleString()} reserved</strong>
               {creditResolution ? <small>{String(creditResolution.status ?? "admin_review_required")}</small> : null}
             </div>
             <div>
@@ -951,7 +1085,6 @@ async function refundReservedCredits(item: ProductionRow) {
               <p>{pipelineType === "ecommerce_product_ad_video" ? "Product link - GPT-4o - Runway/Kling - ElevenLabs - Whisper - Shotstack/Remotion - final MP4" : "API cost breakdown plus visual, render, alternative and voice provider job states are monitored here."}</p>
               {providerPreflight ? <p className="provider-poll-note">Preflight: {String(providerPreflight.provider)} · {String(providerPreflight.model)} · {String(providerPreflight.durationSeconds)} sec · {String(providerPreflight.aspectRatio)}</p> : null}
               {creditResolution ? <p className="workspace-action-note error">{String(creditResolution.instruction ?? "Provider failed; credit resolution requires admin review.")}</p> : null}
-              {canRetryProvider ? <button className="btn" type="button" onClick={() => retryProviderJob(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "Starting provider retry..." : "Retry provider job"}</button> : null}
               {creditResolution?.status === "admin_review_required" ? <button className="btn secondary" type="button" onClick={() => refundReservedCredits(item)} disabled={refundingId === item.id}>{refundingId === item.id ? "Refunding credits..." : "Refund reserved credits"}</button> : null}
               {retryBlockedAfterRefund ? <p className="provider-poll-note">Provider retry is closed for this record because reserved credits were refunded. Create a new production instead.</p> : null}
               {profitEstimate?.providerCostLines?.length ? (
@@ -970,7 +1103,7 @@ async function refundReservedCredits(item: ProductionRow) {
                   {providerJobs.map((job) => (
                     <div className={`provider-job-chip ${job.kind}`} key={`${item.id}-${job.label}-${job.id}`}>
                       <strong>{job.label}</strong>
-                      <span>{job.provider} · {job.status}</span>
+                      <span>{job.provider} · {mediaFinalReady(item) ? "ready" : job.status}</span>
                       <small>{job.id}</small>
                     </div>
                   ))}

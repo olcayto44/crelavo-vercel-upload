@@ -48,7 +48,7 @@ export function ProductionStudio({ initialIdea = "", initialType = "AI Video" }:
     return Math.round(durationBase * qualityFactor);
   }, [quality, duration]);
 
-  const assistantWorkspaceHref = `/dashboard/assistant-workspace?idea=${encodeURIComponent(prompt)}&category=${encodeURIComponent(type)}&mode=studio`;
+  const assistantWorkspaceHref = `/dashboard/assistant-workspace?idea=${encodeURIComponent(prompt || type)}&category=${encodeURIComponent(type)}&mode=studio`;
 
   return (
     <section className="production-studio-shell">

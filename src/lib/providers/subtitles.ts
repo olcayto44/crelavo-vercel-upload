@@ -10,11 +10,14 @@ function srtTime(seconds: number) {
 }
 
 export async function createSubtitleFile(input: { productionId: string; lines: string[]; durationSeconds: number }) {
-  const safeLines = input.lines.length > 0 ? input.lines : ["Discover the product", "See why customers love it", "Shop now"];
-  const slot = input.durationSeconds / safeLines.length;
+  const cleanedLines = input.lines.map((line) => String(line).replace(/\s+/g, " ").trim()).filter(Boolean);
+  const safeLines = cleanedLines.length > 0 ? cleanedLines : ["Kısa animasyon başlıyor.", "Sahne neşeli bir şekilde devam ediyor."];
+  const wordCount = safeLines.join(" ").split(/\s+/).filter(Boolean).length;
+  const estimatedSpeechSeconds = Math.max(3, Math.min(Math.max(3, input.durationSeconds - 0.25), wordCount / 2.05 + 2));
+  const slot = estimatedSpeechSeconds / safeLines.length;
   const srt = safeLines.map((line, index) => {
     const start = index * slot;
-    const end = Math.min(input.durationSeconds, start + slot - 0.1);
+    const end = Math.min(estimatedSpeechSeconds, start + slot - 0.08);
     return `${index + 1}\n${srtTime(start)} --> ${srtTime(end)}\n${line}\n`;
   }).join("\n");
 

@@ -6,11 +6,24 @@ export async function uploadProviderAsset(path: string, body: Blob | ArrayBuffer
   const supabase = supabaseAdmin();
   const payload = typeof body === "string" ? new Blob([body], { type: contentType }) : body;
 
-  const { error } = await supabase.storage
+  await supabase.storage.updateBucket(bucket, { public: true }).catch(() => undefined);
+
+  let { error } = await supabase.storage
     .from(bucket)
     .upload(path, payload, { contentType, upsert: true });
 
+  if (error && /bucket not found/i.test(error.message ?? "")) {
+    const { error: createError } = await supabase.storage.createBucket(bucket, { public: true });
+    if (createError && !/already exists/i.test(createError.message ?? "")) throw createError;
+    const retry = await supabase.storage
+      .from(bucket)
+      .upload(path, payload, { contentType, upsert: true });
+    error = retry.error;
+  }
+
   if (error) throw error;
+
+  await supabase.storage.updateBucket(bucket, { public: true }).catch(() => undefined);
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   if (data.publicUrl) return data.publicUrl;

@@ -138,7 +138,7 @@ function lemonVariantEnvNames() {
 }
 
 function providerItem(): ChecklistItem {
-  const provider = (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "runway").toLowerCase();
+  const provider = (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
   if (provider === "replicate") {
     return item("Selected video provider", ["REPLICATE_API_TOKEN"], "Replicate is selected for video/generation provider tests.", "Run one low-cost provider success production and confirm provider status polling.");
   }

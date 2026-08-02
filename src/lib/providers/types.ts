@@ -36,6 +36,11 @@ export type NormalizedProviderStatus = {
   id?: string;
   status: "queued" | "running" | "succeeded" | "failed" | "unknown";
   outputUrl?: string;
+  width?: number;
+  height?: number;
+  durationSeconds?: number;
+  hasAudio?: boolean;
+  resolutionLabel?: string;
   error?: string;
   raw?: unknown;
 };

@@ -1,5 +1,10 @@
 import { optionalEnv, requireProviderEnv } from "./env";
+import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus } from "./heygen";
 import type { NormalizedProviderStatus, ProviderJob } from "./types";
+
+function asciiHeaderValue(value: unknown, fallback = "") {
+  return String(value ?? fallback).replace(/[^\x20-\x7E]/g, "").trim() || fallback;
+}
 
 function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
   const status = value.toLowerCase();
@@ -15,9 +20,67 @@ function firstUrl(value: unknown): string | undefined {
   if (Array.isArray(value)) return value.map(firstUrl).find(Boolean);
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    return firstUrl(record.url) || firstUrl(record.output) || firstUrl(record.video) || firstUrl(record.result) || firstUrl(record.src);
+    return firstUrl(record.url)
+      || firstUrl(record.output)
+      || firstUrl(record.outputs)
+      || firstUrl(record.video)
+      || firstUrl(record.videos)
+      || firstUrl(record.video_url)
+      || firstUrl(record.videoUrl)
+      || firstUrl(record.result)
+      || firstUrl(record.results)
+      || firstUrl(record.task_result)
+      || firstUrl(record.taskResult)
+      || firstUrl(record.src)
+      || firstUrl(record.file)
+      || firstUrl(record.files)
+      || firstUrl(record.data);
   }
   return undefined;
+}
+
+function isRealMediaUrl(url: string | undefined) {
+  if (!url) return false;
+  if (/api\.replicate\.com\/v1\/predictions|preview\.html|manifest|readme|placeholder|generated_on_download|\/api\/productions\/.*\/delivery\?file=/i.test(url)) return false;
+  return /\.mp4(\?|$)|\.mov(\?|$)|\.webm(\?|$)|replicate\.delivery|fal\.media|heygen\.ai|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url);
+}
+
+function firstRealMediaUrl(value: unknown): string | undefined {
+  const url = firstUrl(value);
+  return isRealMediaUrl(url) ? url : undefined;
+}
+
+function numberFrom(value: unknown): number | undefined {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+function deepFind(record: unknown, keys: string[]): unknown {
+  if (!record || typeof record !== "object") return undefined;
+  if (Array.isArray(record)) {
+    for (const item of record) {
+      const found = deepFind(item, keys);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  }
+  const obj = record as Record<string, unknown>;
+  for (const key of keys) if (obj[key] !== undefined) return obj[key];
+  for (const value of Object.values(obj)) {
+    const found = deepFind(value, keys);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
+function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" | "height" | "durationSeconds" | "hasAudio" | "resolutionLabel"> {
+  const width = numberFrom(deepFind(value, ["width", "w"]));
+  const height = numberFrom(deepFind(value, ["height", "h"]));
+  const durationSeconds = numberFrom(deepFind(value, ["durationSeconds", "duration_seconds", "duration", "length"]));
+  const audioValue = deepFind(value, ["hasAudio", "has_audio", "audio", "audioUrl", "audio_url"]);
+  const hasAudio = typeof audioValue === "boolean" ? audioValue : typeof audioValue === "string" ? audioValue.trim().length > 0 : undefined;
+  const resolutionLabel = typeof deepFind(value, ["resolution", "resolutionLabel", "quality"]) === "string" ? String(deepFind(value, ["resolution", "resolutionLabel", "quality"])) : undefined;
+  return { width, height, durationSeconds, hasAudio, resolutionLabel };
 }
 
 function falApiKey() {
@@ -37,12 +100,15 @@ export async function getReplicateStatus(job: ProviderJob): Promise<NormalizedPr
   });
   if (!response.ok) throw new Error(`Replicate status failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
+  const normalized = normalizeStatus(String(data.status ?? "unknown"));
+  const outputUrl = firstRealMediaUrl(data.output);
   return {
     provider: "replicate",
     id: job.id,
-    status: normalizeStatus(String(data.status ?? "unknown")),
-    outputUrl: firstUrl(data.output),
-    error: typeof data.error === "string" ? data.error : undefined,
+    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
+    outputUrl,
+    ...mediaMetadata(data),
+    error: typeof data.error === "string" ? data.error : normalized === "succeeded" && !outputUrl ? "Provider succeeded, but no real video file URL was found in Replicate data.output." : undefined,
     raw: data
   };
 }
@@ -52,8 +118,8 @@ export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProvi
   if (!job.id) return { provider: "runway", status: "unknown", error: "Missing Runway job id" };
   const response = await fetch(`https://api.dev.runwayml.com/v1/tasks/${job.id}`, {
     headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "X-Runway-Version": process.env.RUNWAY_API_VERSION || "2024-11-06"
+      Authorization: asciiHeaderValue(`Bearer ${apiKey}`),
+      "X-Runway-Version": "2024-11-06"
     }
   });
   if (!response.ok) throw new Error(`Runway status failed: ${response.status} ${await response.text()}`);
@@ -63,6 +129,7 @@ export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProvi
     id: job.id,
     status: normalizeStatus(String(data.status ?? "unknown")),
     outputUrl: firstUrl(data.output) || firstUrl(data.artifacts),
+    ...mediaMetadata(data),
     error: typeof data.failure === "string" ? data.failure : undefined,
     raw: data
   };
@@ -71,18 +138,26 @@ export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProvi
 export async function getKlingStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
   const apiKey = requireProviderEnv("kling");
   if (!job.id) return { provider: "kling", status: "unknown", error: "Missing Kling job id" };
-  const baseUrl = optionalEnv("KLING_STATUS_API_URL") || optionalEnv("KLING_API_URL") || "https://api.klingai.com/v1/videos/text2video";
+  const baseUrl = optionalEnv("KLING_STATUS_API_URL") || optionalEnv("KLING_API_URL") || optionalEnv("KLING_I2V_API_URL") || "https://api.klingai.com/v1/videos/image2video";
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${job.id}`, {
     headers: { Authorization: `Bearer ${apiKey}` }
   });
   if (!response.ok) throw new Error(`Kling status failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
+  const payload = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const nestedData = payload.data && typeof payload.data === "object" ? payload.data as Record<string, unknown> : {};
+  const taskResult = nestedData.task_result ?? payload.task_result ?? nestedData.result ?? payload.result;
+  const rawStatus = payload.status ?? payload.task_status ?? nestedData.status ?? nestedData.task_status ?? job.status ?? "unknown";
+  const normalized = normalizeStatus(String(rawStatus));
+  const outputUrl = firstRealMediaUrl(taskResult) || firstRealMediaUrl(nestedData) || firstRealMediaUrl(payload);
+  const errorValue = payload.error ?? nestedData.error ?? payload.message ?? nestedData.message;
   return {
     provider: "kling",
     id: job.id,
-    status: normalizeStatus(String(data.status ?? data.task_status ?? "unknown")),
-    outputUrl: firstUrl(data.output) || firstUrl(data.video_url) || firstUrl(data.result),
-    error: typeof data.error === "string" ? data.error : undefined,
+    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
+    outputUrl,
+    ...mediaMetadata(data),
+    error: typeof errorValue === "string" && normalizeStatus(String(rawStatus)) === "failed" ? errorValue : normalized === "succeeded" && !outputUrl ? "Kling succeeded, but no real video file URL was found in task_result." : undefined,
     raw: data
   };
 }
@@ -90,8 +165,12 @@ export async function getKlingStatus(job: ProviderJob): Promise<NormalizedProvid
 export async function getFalStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
   const apiKey = falApiKey();
   if (!job.id) return { provider: "fal", status: "unknown", error: "Missing FAL request id" };
+  const raw = job.raw && typeof job.raw === "object" ? job.raw as Record<string, unknown> : {};
   const model = falModel(job);
-  const statusResponse = await fetch(`https://queue.fal.run/${model}/requests/${job.id}/status`, {
+  const statusUrl = String(raw.status_url ?? raw.statusUrl ?? "").trim() || `https://queue.fal.run/${model}/requests/${job.id}/status`;
+  const responseUrl = String(raw.response_url ?? raw.responseUrl ?? "").trim() || `https://queue.fal.run/${model}/requests/${job.id}`;
+  const statusResponse = await fetch(statusUrl, {
+    method: "GET",
     headers: { Authorization: `Key ${apiKey}` }
   });
   if (!statusResponse.ok) throw new Error(`FAL status failed: ${statusResponse.status} ${await statusResponse.text()}`);
@@ -101,7 +180,8 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
   let outputUrl = firstUrl(statusData);
 
   if (normalized === "succeeded") {
-    const resultResponse = await fetch(`https://queue.fal.run/${model}/requests/${job.id}`, {
+    const resultResponse = await fetch(responseUrl, {
+      method: "GET",
       headers: { Authorization: `Key ${apiKey}` }
     });
     if (resultResponse.ok) {
@@ -115,15 +195,88 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
     id: job.id,
     status: normalized,
     outputUrl,
+    ...mediaMetadata(resultData),
     error: typeof (statusData as Record<string, unknown>).error === "string" ? String((statusData as Record<string, unknown>).error) : undefined,
     raw: resultData
   };
 }
 
-export async function getShotstackStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
+function shotstackStatusBaseUrl() {
+  const configured = optionalEnv("SHOTSTACK_API_URL") || optionalEnv("SHOTSTACK_RENDER_URL");
+  if (configured) return configured.replace(/\/render$/, "");
+  const stage = (optionalEnv("SHOTSTACK_STAGE") || "v1").toLowerCase();
+  return `https://api.shotstack.io/${stage === "stage" || stage === "sandbox" ? "stage" : "v1"}`;
+}
+
+export async function getHeyGenStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
+  if (!job.id) return { provider: "heygen", status: "unknown", error: "Missing HeyGen video id" };
+  const data = await getHeyGenVideoStatus(job.id);
+  const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const nested = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const rawStatus = String(nested.status ?? nested.video_status ?? record.status ?? "unknown");
+  const normalized = normalizeStatus(rawStatus);
+  const outputUrl = firstRealMediaUrl(nested.video_url) || firstRealMediaUrl(nested.videoUrl) || firstRealMediaUrl(nested.url) || firstRealMediaUrl(nested);
+  const error = typeof nested.error === "string" ? nested.error : typeof record.error === "string" ? record.error : normalized === "succeeded" && !outputUrl ? "HeyGen succeeded, but no real video URL was found." : undefined;
+  return {
+    provider: "heygen",
+    id: job.id,
+    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
+    outputUrl,
+    ...mediaMetadata(nested),
+    error,
+    raw: data
+  };
+}
+
+export async function getHeyGenV3VideoStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
+  if (!job.id) return { provider: job.provider, status: "unknown", error: "Missing HeyGen v3 video id" };
+  const data = await getHeyGenV3Video(job.id);
+  const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const nested = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const rawStatus = String(nested.status ?? record.status ?? "unknown");
+  const normalized = normalizeStatus(rawStatus);
+  const outputUrl = firstRealMediaUrl(nested.captioned_video_url) || firstRealMediaUrl(nested.captionedVideoUrl) || firstRealMediaUrl(nested.video_url) || firstRealMediaUrl(nested.videoUrl) || firstRealMediaUrl(nested.url) || firstRealMediaUrl(nested);
+  const error = typeof nested.failure_message === "string" ? nested.failure_message : typeof nested.error === "string" ? nested.error : typeof record.error === "string" ? record.error : normalized === "succeeded" && !outputUrl ? "HeyGen v3 succeeded, but no real video URL was found." : undefined;
+  return {
+    provider: job.provider,
+    id: job.id,
+    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
+    outputUrl,
+    ...mediaMetadata(nested),
+    error,
+    raw: data
+  };
+}
+
+export async function getHeyGenVideoAgentStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
+  if (!job.id) return { provider: "heygen_video_agent", status: "unknown", error: "Missing HeyGen Video Agent session id" };
+  const sessionData = await getHeyGenVideoAgentSession(job.id);
+  const sessionRecord = sessionData && typeof sessionData === "object" ? sessionData as Record<string, unknown> : {};
+  const session = sessionRecord.data && typeof sessionRecord.data === "object" ? sessionRecord.data as Record<string, unknown> : sessionRecord;
+  const videoId = String(session.video_id ?? session.videoId ?? "").trim();
+  const sessionStatus = normalizeStatus(String(session.status ?? "unknown"));
+  if (videoId) {
+    const videoStatus = await getHeyGenV3VideoStatus({ provider: "heygen_video_agent", id: videoId, status: String(session.status ?? "processing"), raw: { session: sessionData } });
+    return {
+      ...videoStatus,
+      id: job.id,
+      raw: { session: sessionData, video: videoStatus.raw }
+    };
+  }
+  return {
+    provider: "heygen_video_agent",
+    id: job.id,
+    status: sessionStatus === "succeeded" ? "running" : sessionStatus,
+    outputUrl: undefined,
+    error: sessionStatus === "failed" ? String(session.messages ?? session.error ?? "HeyGen Video Agent session failed.") : undefined,
+    raw: sessionData
+  };
+}
+
+async function getShotstackStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
   const apiKey = requireProviderEnv("shotstack");
   if (!job.id) return { provider: "shotstack", status: "unknown", error: "Missing Shotstack render id" };
-  const endpoint = (process.env.SHOTSTACK_API_URL || "https://api.shotstack.io/stage/render").replace(/\/render$/, "");
+  const endpoint = shotstackStatusBaseUrl();
   const response = await fetch(`${endpoint}/render/${job.id}`, {
     headers: { "x-api-key": apiKey }
   });
@@ -135,6 +288,7 @@ export async function getShotstackStatus(job: ProviderJob): Promise<NormalizedPr
     id: job.id,
     status: normalizeStatus(String(render.status ?? "unknown")),
     outputUrl: firstUrl(render.url) || firstUrl(render.output),
+    ...mediaMetadata(render),
     error: typeof render.error === "string" ? render.error : undefined,
     raw: data
   };
@@ -145,6 +299,19 @@ export async function getProviderStatus(job: ProviderJob): Promise<NormalizedPro
   if (job.provider === "runway") return getRunwayStatus(job);
   if (job.provider === "kling") return getKlingStatus(job);
   if (job.provider === "fal") return getFalStatus(job);
+  if (job.provider === "heygen") return getHeyGenStatus(job);
+  if (job.provider === "heygen_v3_video") return getHeyGenV3VideoStatus(job);
+  if (job.provider === "heygen_video_agent") return getHeyGenVideoAgentStatus(job);
   if (job.provider === "shotstack") return getShotstackStatus(job);
+  if (job.provider === "website_screenshot_reference") {
+    return {
+      provider: job.provider,
+      id: job.id,
+      status: job.url ? "succeeded" : "failed",
+      outputUrl: job.url,
+      error: job.url ? undefined : "Website screenshot reference job is missing its image URL.",
+      raw: job.raw
+    };
+  }
   return { provider: job.provider, id: job.id, status: "unknown", outputUrl: job.url, raw: job.raw };
 }

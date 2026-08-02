@@ -59,6 +59,54 @@ export async function createVoiceover(input: { productionId: string; script: str
   return result.audioUrl;
 }
 
+export type VoiceAudioSegment = {
+  speaker: string;
+  audioUrl: string;
+  start: number;
+  length: number;
+  text: string;
+  voiceId: string;
+};
+
+function voiceIdForSpeaker(speaker: string) {
+  const normalized = speaker.toLocaleLowerCase("tr-TR");
+  if (/dede|baba|erkek/.test(normalized)) return "clipora-corporate-male-tr";
+  if (/babaanne|anne|kadın|kadin/.test(normalized)) return "clipora-premium-female-tr";
+  if (/torun|çocuk|cocuk|karakter/.test(normalized)) return "clipora-dynamic-social-tr";
+  return "clipora-premium-female-tr";
+}
+
+export async function createVoiceoverSegments(input: {
+  productionId: string;
+  segments: Array<{ speaker: string; text: string; start: number; length: number }>;
+  voiceDirection: string;
+}) {
+  const safeSegments = input.segments
+    .filter((segment) => String(segment.text ?? "").trim())
+    .slice(0, 18);
+  const results: VoiceAudioSegment[] = [];
+  for (let index = 0; index < safeSegments.length; index += 1) {
+    const segment = safeSegments[index];
+    const voiceId = voiceIdForSpeaker(segment.speaker);
+    const result = await synthesizeVoice({
+      productionId: input.productionId,
+      script: segment.text,
+      voiceDirection: `${input.voiceDirection}; character voice for ${segment.speaker}`,
+      voiceId,
+      filename: `voice-segments/${String(index + 1).padStart(2, "0")}-${segment.speaker.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase()}.mp3`
+    });
+    results.push({
+      speaker: segment.speaker,
+      audioUrl: result.audioUrl,
+      start: segment.start,
+      length: segment.length,
+      text: segment.text,
+      voiceId
+    });
+  }
+  return results;
+}
+
 export async function createRevisionVoiceover(input: { productionId: string; revisionId: string; script: string; voiceDirection: string; voiceId?: string }) {
   return synthesizeVoice({
     productionId: input.productionId,

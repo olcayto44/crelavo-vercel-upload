@@ -51,12 +51,30 @@ function registryItem(item: OutputRegistryItem): OutputRegistryItem {
   return item;
 }
 
+function isUsableProviderUrl(value: unknown) {
+  const url = String(value ?? "").trim();
+  if (!url) return false;
+  if (/\?final=demo|\?delivery=demo|\?preview=alt-|readme=demo/i.test(url)) return false;
+  if (/^\/dashboard\/productions\//i.test(url)) return false;
+  return /^(https?:\/\/|\/api\/)/i.test(url);
+}
+
 export function buildOutputRegistry(production: RegistryProductionInput): OutputRegistryItem[] {
   const output = production.output_json ?? {};
   const requirements = deliveryRequirementsFrom(production);
   const base = `/api/productions/${production.id}/delivery`;
+  const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(String(production.production_type ?? ""));
+  if (isProjectProduction) {
+    requirements.formats = requirements.formats.filter((format) => !["final_mp4", "subtitle_file", "thumbnail"].includes(format));
+    requirements.wantsFinalVideo = false;
+    requirements.wantsSubtitles = false;
+    requirements.wantsThumbnail = false;
+    requirements.wantsSourceCode = true;
+    requirements.wantsReadme = true;
+  }
   const isMediaProduction = ["video", "campaign", "music_video", "cinematic_video", "animation", "anime_short_film", "avatar", "lip_sync", "talking_video", "live_sales_agent", "studio", "drama", "video_tools", "video_clipping"].includes(String(production.production_type ?? ""));
-  const mediaFinalReady = Boolean(output.finalVideoUrl || /provider_succeeded|final_video_ready|completed/i.test(`${String(output.providerStatus ?? "")} ${String(production.generation_status ?? "")}`));
+  const usableFinalVideoUrl = isUsableProviderUrl(output.finalVideoUrl) ? String(output.finalVideoUrl) : "";
+  const mediaFinalReady = Boolean(usableFinalVideoUrl || /provider_succeeded|final_video_ready|completed/i.test(`${String(output.providerStatus ?? "")} ${String(production.generation_status ?? "")}`));
   const effectivePreviewUrl = isMediaProduction && !mediaFinalReady ? "" : production.preview_url;
   const effectiveDeliveryLink = isMediaProduction && !mediaFinalReady ? "" : production.delivery_link;
   const effectiveDeliveryZipUrl = isMediaProduction && !mediaFinalReady ? "" : production.delivery_zip_url;
@@ -77,7 +95,7 @@ export function buildOutputRegistry(production: RegistryProductionInput): Output
     items.push(registryItem({ id: "admin_panel", outputType: "admin_panel", deliveryRole: "admin_panel_package", status: "planned", filename: "admin-panel/admin-requirements.md", note: "Admin panel scope and package requirements." }));
   }
   if (requirements.wantsFinalVideo) {
-    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: output.finalVideoUrl || effectiveDeliveryLink ? "ready" : "waiting_provider", filename: "final-video.mp4", url: output.finalVideoUrl ?? effectiveDeliveryLink ?? null, note: "Final MP4 from provider or admin upload." }));
+    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: usableFinalVideoUrl || effectiveDeliveryLink ? "ready" : "waiting_provider", filename: "final-video.mp4", url: usableFinalVideoUrl || effectiveDeliveryLink || null, note: "Final MP4 from provider or admin upload." }));
   }
   if (requirements.wantsSubtitles) {
     items.push(registryItem({ id: "subtitles", outputType: "subtitle", deliveryRole: "subtitle_file", status: output.subtitleUrl ? "ready" : "planned", filename: "subtitles.srt", url: output.subtitleUrl ?? null, note: "Subtitle file for final media." }));

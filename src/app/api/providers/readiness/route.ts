@@ -9,7 +9,7 @@ function hasEnv(name: string) {
 }
 
 function selectedVideoProvider() {
-  return (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "runway").toLowerCase();
+  return (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
 }
 
 function hasAnyEnv(names: string[]) {

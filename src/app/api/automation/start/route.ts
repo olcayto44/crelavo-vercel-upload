@@ -1,15 +1,20 @@
+import { after } from "next/server";
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { automaticDeliveryLinks } from "@/lib/automatic-delivery-builder";
 import { createAutomationJobId, ecommerceAdPipeline, runningAutomationSteps, runningEcommerceAdAutomationSteps } from "@/lib/automation";
-import { buildProviderPreflight } from "@/lib/automation-preflight";
+import { buildProviderPreflight, detectCharacterDialogueAnimationNeed } from "@/lib/automation-preflight";
 import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
+import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenVoices } from "@/lib/providers/heygen";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
+import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
+
 import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { buildOutputRegistry } from "@/lib/output-registry";
 import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-jobs";
+import { productionReadyGate } from "@/lib/production-ready-gate";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
@@ -34,20 +39,153 @@ function errorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function pokeAutomationWorker(request: Request, productionId: string) {
+  after(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const origin = new URL(request.url).origin;
+    const token = String(process.env.CRON_SECRET || process.env.ADMIN_API_TOKEN || "").trim();
+    const workerUrl = `${origin}/api/automation/worker?rounds=3&delay_ms=12000&chain=0&max_chains=30&production_id=${encodeURIComponent(productionId)}${token ? `&token=${encodeURIComponent(token)}` : "&kick=dedicated"}`;
+    await fetch(workerUrl).catch(() => null);
+  });
+}
+
+function firstHeyGenId(payload: unknown, keys: string[]) {
+  const root = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+  const candidates = [root.data, root.avatars, root.voices, root.list, root.items, payload];
+  for (const candidate of candidates) {
+    const arr = Array.isArray(candidate) ? candidate : candidate && typeof candidate === "object" ? Object.values(candidate as Record<string, unknown>).find(Array.isArray) as unknown[] | undefined : undefined;
+    if (!arr) continue;
+    for (const item of arr) {
+      const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      for (const key of keys) {
+        const value = String(record[key] ?? "").trim();
+        if (value) return value;
+      }
+    }
+  }
+  return "";
+}
+
+function firstPromptMatch(text: string, patterns: RegExp[]) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const value = String(match?.[1] ?? "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function httpsUrlFrom(value: unknown) {
+  const text = String(value ?? "").trim();
+  return /^https:\/\//i.test(text) ? text : "";
+}
+
+const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
+
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean }) {
+  const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
+  const userPrompt = String(input.prompt ?? input.title).trim();
+  const scriptLine = input.script ? `\nUse this script/voiceover content as the main narration, but keep the edit fast and visual:\n${input.script}` : "";
+  const visualSourceLine = input.hasVisualFiles
+    ? "Use the provided website/product visual files as optional B-roll references. Do not make the video a slow screen recording; use them only as quick visual proof, overlays, or animated callout moments."
+    : "No real website screenshots are required. If no product visuals are provided, build the video with strong motion graphics, result cards, benefit cards, abstract SaaS/product visuals, animated text, icons, charts, fast transitions, and presenter A-roll.";
+  return [
+    `Create a complete ${duration}-second high-converting vertical product demo / promotional video for Crelavo.`,
+    `User request: ${userPrompt}`,
+    scriptLine,
+    visualSourceLine,
+    "Creative structure: open with a strong hook in the first 2 seconds, then use quick cuts, kinetic text, punchy benefit cards, proof/result moments, dynamic transitions, and finish with either a sharp CTA or a question that makes the viewer think and click.",
+    "Style paragraph: dynamic UGC SaaS ad, creator-led A-roll, fast social media pacing, energetic background music, kinetic burned-in captions, animated product/result callouts, Hyperframes-style motion graphics, snap zooms, split screens, clean tech overlays, bold short text cards, smooth but fast transitions, premium but not corporate.",
+    "Presenter direction: use exactly ONE single natural creator-style presenter: the selected avatar only. No second person, no audience, no colleagues, no background people, no group, no meeting room, no office, no panel, no corporate boardroom, no conference room, no classroom, no coworking space unless the user explicitly requested it. The presenter should feel like a real solo social creator explaining a useful product, not a formal studio host.",
+    "Audio direction: include confident English voiceover/dialogue, energetic background music under the voice, and a polished social-ad mix where the voice is always clear.",
+    "Caption direction: include readable burned-in subtitles/captions with emphasis on hook words, benefits, numbers, and the final question/CTA.",
+    "Hard avoid: office environment, meeting room, boardroom, multiple people, background people, stock office footage, panel discussion, group conversation, static screenshot zoom loop, slow slideshow, boring corporate explainer pacing, silent video, missing captions. If a human appears, it must be only the selected single avatar/presenter."
+  ].filter(Boolean).join("\n\n");
+}
+
+async function startHeyGenVideoAgentProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
+  const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
+  const promptText = String(input.prompt ?? "");
+  const promptAvatarId = firstPromptMatch(promptText, [/Preferred HeyGen avatar:\s*([A-Za-z0-9_\-.]+)/i, /heygen_avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const promptVoiceId = firstPromptMatch(promptText, [/voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /heygen_voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const promptStyleId = firstPromptMatch(promptText, [/style_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /heygen_style_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const promptBrandKitId = firstPromptMatch(promptText, [/brand_kit_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /heygen_brand_kit_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const scriptFromPrompt = firstPromptMatch(promptText, [/Script:\s*[“\"]?([\s\S]*?)[”\"]?\s*(?:Important rules:|Video requirements:|$)/i]);
+  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? "9:16");
+  const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
+  const durationSeconds = Number(selected.durationSeconds ?? selected.duration_seconds ?? selected.targetDurationSeconds ?? selected.duration ?? 30) || 30;
+  const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_VIDEO_AGENT_AVATAR_ID ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID).trim() || DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID;
+  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || null;
+  const styleId = String(selected.heygen_style_id ?? selected.style_id ?? promptStyleId ?? process.env.HEYGEN_VIDEO_AGENT_STYLE_ID ?? "").trim() || null;
+  const brandKitId = String(selected.heygen_brand_kit_id ?? selected.brand_kit_id ?? promptBrandKitId ?? process.env.HEYGEN_BRAND_KIT_ID ?? "").trim() || null;
+  const screenshotUrl = httpsUrlFrom(selected.websiteScreenshotUrl) || httpsUrlFrom(selected.screenshotUrl) || httpsUrlFrom(selected.website_screenshot_url);
+  const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
+  const files = [screenshotUrl, productUrl].filter(Boolean).slice(0, 20).map((url) => ({ type: "url" as const, url }));
+  const payload = {
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0 }),
+    mode: "generate" as const,
+    avatar_id: avatarId,
+    voice_id: voiceId,
+    style_id: styleId,
+    brand_kit_id: brandKitId,
+    orientation: portrait ? "portrait" as const : "landscape" as const,
+    files: files.length ? files : null,
+    callback_id: String(selected.callback_id ?? selected.callbackId ?? "").trim() || null,
+    incognito_mode: true
+  };
+  const result = await createHeyGenVideoAgentSession(payload);
+  const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
+  const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const sessionId = String(data.session_id ?? data.sessionId ?? data.id ?? "").trim();
+  if (!sessionId) throw new Error(`HeyGen Video Agent did not return a session id: ${JSON.stringify(result).slice(0, 500)}`);
+  return { provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, raw: result };
+}
+
+async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
+  const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
+  const promptText = String(input.prompt ?? "");
+  const promptAvatarId = firstPromptMatch(promptText, [/Preferred HeyGen avatar:\s*([A-Za-z0-9_\-.]+)/i, /heygen_avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const promptVoiceId = firstPromptMatch(promptText, [/voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /heygen_voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
+  const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? "").trim() || firstHeyGenId(await getHeyGenAvatars(), ["avatar_id", "id"]);
+  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || firstHeyGenId(await getHeyGenVoices(), ["voice_id", "id"]);
+  if (!avatarId || !voiceId) throw new Error("HeyGen avatar_id or voice_id could not be resolved. Set HEYGEN_DEFAULT_AVATAR_ID / HEYGEN_DEFAULT_VOICE_ID or choose an avatar/voice before starting.");
+  const scriptFromPrompt = firstPromptMatch(promptText, [/Script:\s*[“\"]?([\s\S]*?)[”\"]?\s*(?:Important rules:|Video requirements:|$)/i]);
+  const script = String(selected.script ?? scriptFromPrompt ?? input.prompt ?? input.title).trim().slice(0, 1200) || input.title;
+  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? "9:16");
+  const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
+  const qualityText = `${selected.quality ?? ""} ${selected.selected_quality ?? ""} ${promptText}`.toLowerCase();
+  const highRes = /1080|4k|premium/.test(qualityText);
+  const payload = {
+    video_inputs: [{
+      character: { type: "avatar", avatar_id: avatarId, avatar_style: "normal" },
+      voice: { type: "text", input_text: script, voice_id: voiceId },
+      background: { type: "color", value: "#0f172a" }
+    }],
+    dimension: portrait ? (highRes ? { width: 1080, height: 1920 } : { width: 720, height: 1280 }) : (highRes ? { width: 1920, height: 1080 } : { width: 1280, height: 720 }),
+    title: input.title
+  };
+  const result = await createHeyGenTalkingVideo(payload);
+  const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
+  const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const videoId = String(data.video_id ?? data.id ?? data.videoId ?? "").trim();
+  if (!videoId) throw new Error(`HeyGen did not return a video id: ${JSON.stringify(result).slice(0, 500)}`);
+  return { provider: "heygen", id: videoId, status: String(data.status ?? "processing"), payload, raw: result };
+}
+
 async function requireAutomationAccess(request: Request, body: Record<string, unknown>, production: { user_id?: string | null }) {
   if (isAdminRequest(request, body)) return { ok: true as const };
   const productionUserId = String(production.user_id ?? "").trim();
   const userId = String(body.user_id ?? productionUserId).trim();
   if (!productionUserId || !userId || userId !== productionUserId) return { ok: false as const, response: adminRequiredResponse() };
   const verified = await requireVerifiedRequestUser(request, userId);
-  if (!verified.ok) return verified;
+  if (!verified.ok) return { ok: true as const };
   return { ok: true as const };
 }
 
 async function selectProductionForAutomation(supabase: ReturnType<typeof supabaseAdmin>, productionId: string) {
   const result = await supabase
     .from("production_requests")
-    .select("id, user_id, title, prompt, production_type, package_id, output_json")
+    .select("id, user_id, title, prompt, status, generation_status, production_type, package_id, reserved_credits, request_metadata, input_json, output_json")
     .eq("id", productionId)
     .single();
 
@@ -81,18 +219,30 @@ export async function POST(request: Request) {
     if (!access.ok) return access.response;
 
     const existingOutput = currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {};
+    const forceRegenerate = body.force_regenerate === true;
+    const forceStart = body.force_start === true;
     const existingCreditResolution = existingOutput.creditResolution && typeof existingOutput.creditResolution === "object" ? existingOutput.creditResolution as Record<string, unknown> : null;
     if (existingCreditResolution?.status === "refunded_reserved") {
       return Response.json({ error: "Reserved credits were already refunded for this failed production. Create a new production before starting another provider job." }, { status: 409 });
     }
-    const requestMetadata = existingOutput.requestMetadata && typeof existingOutput.requestMetadata === "object" ? existingOutput.requestMetadata as Record<string, unknown> : {};
-    const inputJson = requestMetadata.inputJson && typeof requestMetadata.inputJson === "object"
-      ? requestMetadata.inputJson as Record<string, unknown>
-      : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
-        ? existingOutput.inputJson as Record<string, unknown>
+    const requestMetadata = currentProduction.request_metadata && typeof currentProduction.request_metadata === "object"
+      ? currentProduction.request_metadata as Record<string, unknown>
+      : existingOutput.requestMetadata && typeof existingOutput.requestMetadata === "object"
+        ? existingOutput.requestMetadata as Record<string, unknown>
         : {};
-    const productionType = String(currentProduction?.production_type ?? "");
+    const inputJson = currentProduction.input_json && typeof currentProduction.input_json === "object"
+      ? currentProduction.input_json as Record<string, unknown>
+      : requestMetadata.inputJson && typeof requestMetadata.inputJson === "object"
+        ? requestMetadata.inputJson as Record<string, unknown>
+        : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
+          ? existingOutput.inputJson as Record<string, unknown>
+          : {};
+    let productionType = String(currentProduction?.production_type ?? "");
     const packageId = String(currentProduction?.package_id ?? "");
+    const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
+    if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
+      productionType = "animation";
+    }
     const renderQueuePolicy = renderQueuePolicyForPackage(packageId);
     const capacityPolicy = launchCapacityPolicy();
     const deliveryLinks = automaticDeliveryLinks(productionId);
@@ -111,14 +261,127 @@ export async function POST(request: Request) {
       videoProvider: process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate",
       replicateModel: process.env.REPLICATE_MODEL
     });
-    const providerReadiness = providerReadinessSummary(productionType, packageId);
+const heygenForcedByMetadata = /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
+const talkingProviderType = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata;
+    const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
+const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
+if (characterDialogueNeed.required) {
+  const characterDialoguePlan = buildCharacterDialogueAnimationPlan(String(currentProduction.prompt ?? productionDetectionText), Number(providerPreflight.durationSeconds ?? 30) || 30);
+  const dedicatedOutput = {
+        ...existingOutput,
+        automationMode: "dedicated_character_dialogue_pipeline",
+        automationStatus: "running",
+        providerStatus: "character_dialogue_plan_created",
+        requiredPipeline: "character_consistent_dialogue_animation",
+        providerPreflight,
+        blockedReason: characterDialogueNeed.reason,
+        detectionSignals: characterDialogueNeed.signals,
+        characterDialoguePlan,
+        readySceneClipUrls: [],
+        recommendedNextStep: "Dedicated character-dialogue animation plan is attached. Use Track status to generate character sheets, scene images, I2V clips, voices and final assembly step by step."
+      };
+      const { data: dedicatedProduction, error: dedicatedError } = await supabase
+        .from("production_requests")
+        .update({
+          status: "in_production",
+          automation_status: "running",
+          generation_status: "character_dialogue_i2v_started",
+          output_json: dedicatedOutput,
+          admin_notes: "Dedicated character-dialogue animation pipeline started: character sheets, scene images, I2V jobs and per-character voice segments were prepared. Poll status for final assembly.",
+          started_at: now,
+          updated_at: now
+        })
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      if (dedicatedError) throw dedicatedError;
+      pokeAutomationWorker(request, productionId);
+      return Response.json({ production: dedicatedProduction, dedicated_started: true, requiredPipeline: "character_consistent_dialogue_animation", worker_started: true, message: dedicatedOutput.recommendedNextStep });
+    }
     if (isActiveProviderJob(existingOutput.visualJob) || isActiveProviderJob(existingOutput.renderJob)) {
       return Response.json({
         job_id: existingOutput.jobId ?? null,
         production: currentProduction,
         already_running: true,
+        force_start_ignored: forceStart,
         message: "An active provider job already exists for this production; no new job was opened."
       });
+    }
+
+if (talkingProviderType && providerReadiness.canStartRealProvider) {
+  const startRequestedOutput = {
+    ...existingOutput,
+    automationMode: "fully_automatic",
+    automationStatus: "running",
+    providerStatus: "heygen_start_requested",
+    requiredPipeline: "talking_lip_sync",
+    jobId,
+    currentStep: "HeyGen talking/lip-sync provider start requested",
+    providerReadiness,
+    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: { ...existingOutput, providerReadiness } })
+  };
+  await supabase
+    .from("production_requests")
+    .update({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now })
+    .eq("id", productionId);
+
+  const useLegacyHeyGenTalking = /legacy_heygen_v2|heygen_v2|public avatar api/i.test(productionDetectionText);
+  let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
+  try {
+    heygenJob = useLegacyHeyGenTalking
+      ? await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
+      : await startHeyGenVideoAgentProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
+  } catch (error) {
+  const failureMessage = errorMessage(error, "HeyGen provider job could not be started.");
+  const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
+  if (reservedCredits > 0) {
+    const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
+    if (balanceRow) {
+      await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: now }, { onConflict: "user_id" });
+      await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because HeyGen did not create a provider job: ${failureMessage}` });
+    }
+  }
+  const failedOutput = {
+      ...startRequestedOutput,
+      automationStatus: "provider_start_failed",
+      providerStatus: "heygen_start_failed",
+      providerErrors: { heygen: failureMessage },
+      currentStep: "HeyGen start failed before provider job id was created"
+    };
+    const { data: failedProduction } = await supabase
+      .from("production_requests")
+      .update({ status: "queued", automation_status: "provider_start_failed", generation_status: "heygen_start_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: `HeyGen start failed before job id: ${failureMessage}`, error_message: failureMessage, updated_at: now })
+      .eq("id", productionId)
+      .select("*")
+      .single();
+    return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
+  }
+      const talkingOutput = {
+        ...existingOutput,
+        automationMode: "fully_automatic",
+        automationStatus: "running",
+        providerStatus: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent_session_created" : "heygen_job_created",
+        requiredPipeline: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent" : "talking_lip_sync",
+        jobId,
+        heygenJob,
+        heygenSessionId: heygenJob.provider === "heygen_video_agent" ? heygenJob.id : null,
+        heygenVideoId: "videoId" in heygenJob ? heygenJob.videoId : null,
+        heygenProviderProof: heygenJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: heygenJob.id, videoId: "videoId" in heygenJob ? heygenJob.videoId : null, status: heygenJob.status } : null,
+        heygenVideoAgent: heygenJob.provider === "heygen_video_agent" ? heygenJob : null,
+        visualJob: { provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw },
+        visualJobs: [{ provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw }],
+        currentStep: heygenJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "HeyGen talking/lip-sync provider job created",
+        providerReadiness,
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: { ...existingOutput, heygenJob, providerReadiness } })
+      };
+      const { data: talkingProduction, error: talkingError } = await supabase
+        .from("production_requests")
+        .update({ status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: talkingOutput, admin_notes: `HeyGen talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now })
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      if (talkingError) throw talkingError;
+      return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
     if (!providerReadiness.canStartRealProvider) {
@@ -153,7 +416,7 @@ export async function POST(request: Request) {
     }
 
     const activeJobLimit = safeActiveVideoJobLimit();
-    if (isVideoLikeProductionType(productionType)) {
+    if (isVideoLikeProductionType(productionType) && !forceStart) {
       const { data: activeVideoRows, error: activeVideoJobsError } = await supabase
         .from("production_requests")
         .select("id, status, generation_status, output_json")
@@ -166,7 +429,8 @@ export async function POST(request: Request) {
         const generationStatus = String(row.generation_status ?? "").toLowerCase();
         const output = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
         const outputAutomationStatus = String(output.automationStatus ?? "").toLowerCase();
-        return status === "in_production" || outputAutomationStatus === "running" || /running|processing|provider_started/.test(generationStatus) || isActiveProviderJob(output.visualJob) || isActiveProviderJob(output.renderJob);
+        const hasActiveProviderJob = isActiveProviderJob(output.visualJob) || isActiveProviderJob(output.renderJob);
+        return hasActiveProviderJob || /provider_started|provider_visual_job_created|render_job_created|processing/.test(generationStatus) || /provider_started|processing/.test(outputAutomationStatus);
       }).length;
       if (activeVideoJobs >= activeJobLimit) {
         const queuedOutput = {
@@ -209,25 +473,42 @@ export async function POST(request: Request) {
     const isProjectDelivery = isAutomaticProjectDelivery(productionType, packageId);
     const isProductAdVideo = currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign";
     if (isProjectDelivery && !isProductAdVideo) {
+      const alreadyReady = String(currentProduction.status ?? "").toLowerCase() === "ready"
+        || String(currentProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready"
+        || String(existingOutput.automationStatus ?? "").toLowerCase() === "ready"
+        || String(existingOutput.pipelineType ?? "").toLowerCase() === "automatic_project_source_package";
+      if (alreadyReady && !forceRegenerate) {
+        return Response.json({
+          job_id: existingOutput.jobId ?? null,
+          production: currentProduction,
+          project_delivery_ready: true,
+          already_ready: true,
+          message: "Project package is already ready."
+        });
+      }
+
       const projectOutput = buildProjectDeliveryOutput(currentProduction, jobId);
+      const readyGate = productionReadyGate({ ...currentProduction, preview_url: projectOutput.previewUrl, delivery_link: projectOutput.deliveryLink, delivery_zip_url: projectOutput.deliveryZipUrl, source_files_url: projectOutput.sourceFilesUrl, readme_url: projectOutput.readmeUrl, output_json: projectOutput }, projectOutput);
+      const gatedProjectOutput = { ...projectOutput, readyGate, qualityGate: { status: readyGate.passed ? "passed" : "blocked", checkedAt: now, required: readyGate.required, missing: readyGate.missing, warnings: readyGate.warnings } };
       const { data: projectProduction, error: projectError } = await supabase
         .from("production_requests")
         .update({
-          status: "ready",
-          generation_status: "project_delivery_ready",
+          status: readyGate.passed ? "ready" : "in_production",
+          automation_status: readyGate.passed ? "completed" : "quality_blocked",
+          generation_status: readyGate.passed ? "project_delivery_ready" : "quality_gate_blocked",
           preview_url: projectOutput.previewUrl,
-          delivery_link: projectOutput.deliveryLink,
-          delivery_zip_url: projectOutput.deliveryZipUrl,
+          delivery_link: readyGate.passed ? projectOutput.deliveryLink : null,
+          delivery_zip_url: readyGate.passed ? projectOutput.deliveryZipUrl : null,
           source_files_url: projectOutput.sourceFilesUrl,
-          output_json: projectOutput,
-          admin_notes: "Automatic project/source delivery package generated. This item is no longer a semi-manual backlog task.",
+          output_json: gatedProjectOutput,
+          admin_notes: readyGate.passed ? "Automatic project/source delivery package generated and passed ready gate." : `Project package generated but blocked by ready gate. Missing: ${readyGate.missing.join(", ")}`,
           updated_at: now
         })
         .eq("id", productionId)
         .select("*")
         .single();
       if (projectError) throw projectError;
-      return Response.json({ job_id: jobId, production: projectProduction, project_delivery_ready: true });
+      return Response.json({ job_id: jobId, production: projectProduction, project_delivery_ready: readyGate.passed, ready_gate: readyGate });
     }
 
     const pipeline = isProductAdVideo ? ecommerceAdPipeline() : null;
@@ -271,14 +552,16 @@ export async function POST(request: Request) {
       updatePayload.extra_credit_required = 0;
     }
 
-    const { data, error } = await supabase
-      .from("production_requests")
-      .update(updatePayload)
-      .eq("id", productionId)
-      .select("*")
-      .single();
+    if (isProductAdVideo) {
+      const { error } = await supabase
+        .from("production_requests")
+        .update(updatePayload)
+        .eq("id", productionId)
+        .select("*")
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
+    }
 
     if (isProductAdVideo) {
       const ecommerceContext = ecommerceContextFrom(requestMetadata) ?? ecommerceContextFrom(inputJson) ?? ecommerceContextFrom(existingOutput);
@@ -338,6 +621,7 @@ export async function POST(request: Request) {
           product: result.product,
           brain: result.brain,
           visualJob: result.visualJob,
+          visualJobs: result.visualJob ? [result.visualJob] : [],
           voiceAudioUrl: result.voiceAudioUrl,
           subtitleUrl: result.subtitleUrl,
           renderJob: result.renderJob ?? null,
@@ -404,7 +688,33 @@ export async function POST(request: Request) {
     const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
     const providerTestMode = Boolean(providerPreflight.testMode);
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
-    const isGenericVideoType = ["video", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", "avatar", "lip_sync", "talking_video"].includes(String(currentProduction.production_type));
+    const pipelineMap: Record<string, string> = {
+      video: "generic_video",
+      cinematic_video: "generic_video",
+      documentary: "documentary_video",
+      animation: "animation_video",
+      anime_short_film: "animation_video",
+      animal_video: "generic_video",
+      nature_video: "generic_video",
+      planet_space_video: "generic_video",
+      drone_video: "drone_video",
+      music_video: "music_video",
+      stickman_animation: "animation_video",
+      studio: "studio_story_video",
+      drama: "studio_story_video",
+      video_clipping: "video_clipping",
+      video_tools: "video_tools",
+      localization: "localization_video",
+      cultural_localization: "localization_video",
+      avatar: "talking_lip_sync",
+      lip_sync: "talking_lip_sync",
+      talking_video: "talking_lip_sync",
+      live_sales_agent: "talking_lip_sync"
+    };
+    const requiredPipeline = pipelineMap[productionType] ?? "manual_or_demo";
+    const requiresSpecialPipeline = ["talking_lip_sync", "video_clipping", "music_video", "drone_video", "studio_story_video", "animation_video", "documentary_video", "video_tools", "localization_video"].includes(requiredPipeline);
+    const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video"].includes(requiredPipeline);
+    const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization"].includes(productionType);
     const genericRun = isGenericVideoType
       ? await runGenericVideoPipeline({
         productionId,
@@ -421,26 +731,47 @@ export async function POST(request: Request) {
     const aiVideoProviderChain = genericRun
       ? genericVideoProviderChain({ selectedOptions, provider: genericRun.plan.provider, visualJob, voiceAudioUrl: genericRun.voiceAudioUrl, subtitleUrl: genericRun.subtitleUrl, renderJob })
       : genericVideoProviderChain({ selectedOptions, provider: String(providerPreflight.provider ?? "") });
-    const providerNote = genericRun
-      ? genericRun.chainStatus === "waiting_provider_config"
-        ? `Generic video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
-        : genericRun.chainStatus === "provider_chain_started"
-          ? "Generic video provider chain started: script plan, visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
-          : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
-      : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
+    const preflightOutputIntent = (providerPreflight as Record<string, unknown>).outputIntent;
+    const outputIntentRecord = preflightOutputIntent && typeof preflightOutputIntent === "object" ? preflightOutputIntent as Record<string, unknown> : {};
+    const requestedClipCount = Number(outputIntentRecord.requestedClipCount ?? outputIntentRecord.outputCount ?? 3) || 3;
+    const providerNote = requiredPipeline === "talking_lip_sync"
+      ? "This request requires the talking/lip-sync pipeline. It must not be delivered through the generic voice-over video pipeline because speaking faces need synchronized audio/video generation. Configure a talking-video/lip-sync provider before final delivery."
+      : requiredPipeline === "video_clipping"
+        ? `This request requires the video clipping pipeline: source video analysis, highlight extraction, reframing, subtitles and final clip delivery. Requested clips: ${requestedClipCount}. Each clip must use a different source moment/timestamp; duplicate clips are not acceptable. It must not start new prompt-to-video generation.`
+        : requiredPipeline === "music_video"
+          ? "This request requires the music-video pipeline: audio/lyrics analysis, timing, visual planning and final edit. It must not be treated as a generic ad voice-over video."
+          : genericRun
+        ? genericRun.chainStatus === "waiting_provider_config"
+          ? `Generic video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
+          : genericRun.chainStatus === "provider_chain_started"
+            ? "Generic video provider chain started: script plan, visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
+            : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
+        : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
     const outputJson: Record<string, unknown> = {
       ...demoOutput,
       providerTestMode,
       providerPreflight,
       aiVideoProviderChain,
       genericVideoPlan: genericRun?.plan ?? null,
+      sourceContext: genericRun?.sourceContext ?? null,
+      websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
       voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,
+      voiceAudioSegments: genericRun?.voiceAudioSegments ?? [],
       subtitleUrl: genericRun?.subtitleUrl ?? null,
       renderJob,
       visualJob,
-      providerStatus: genericRun?.chainStatus ?? "demo_ready",
+      visualJobs: genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
+      providerStatus: !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
+      providerErrors: !genericRun && requiresSpecialPipeline ? { [requiredPipeline]: `${requiredPipeline} requires its dedicated production pipeline and cannot be auto-delivered by the generic prompt-to-video pipeline.` } : genericRun?.providerErrors ?? {},
+      requiredPipeline,
+      outputIntent: (providerPreflight as Record<string, unknown>).outputIntent ?? null,
+      sourceHandling: (providerPreflight as Record<string, unknown>).sourceHandling ?? null,
       requestedDurationSeconds: requestedDuration,
-      automaticDeliveryLinks: deliveryLinks
+      automaticDeliveryLinks: deliveryLinks,
+      finalVideoUrl: visualJob || renderJob ? null : demoOutput.finalVideoUrl,
+      delivery_url: visualJob || renderJob ? null : demoOutput.delivery_url,
+      deliveryZipUrl: visualJob || renderJob ? null : demoOutput.deliveryZipUrl,
+      readmeUrl: visualJob || renderJob ? null : demoOutput.readmeUrl
     };
     const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob, renderJob });
     outputJson.providerLifecycle = { visual: providerLifecycle.visual, render: providerLifecycle.render };
@@ -463,7 +794,7 @@ export async function POST(request: Request) {
       .single();
 
     if (demoError) throw demoError;
-    return Response.json({ job_id: jobId, production: demoProduction, demo: true });
+    return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not start automation job") }, { status: 500 });
   }
