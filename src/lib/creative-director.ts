@@ -90,6 +90,40 @@ export function mergeCreativeActivityLog(existing: unknown, updates: CreativeAct
   return Array.from(byId.values()).slice(-30);
 }
 
+export type RevisionAnchorIntent = {
+  hasAnchor: boolean;
+  anchorType?: "character" | "version" | "scene";
+  timestampSeconds?: number;
+  sceneNumber?: number;
+  usePreviousVersion?: boolean;
+  rawInstruction: string;
+  providerInstruction?: string;
+};
+
+export function parseRevisionAnchorIntent(message: string): RevisionAnchorIntent {
+  const rawInstruction = String(message ?? "").trim();
+  const text = rawInstruction.toLocaleLowerCase("tr-TR");
+  const secondMatch = text.match(/(\d{1,3})\s*(sn|sny|saniye|second|sec|s)\b/);
+  const sceneMatch = text.match(/(?:scene|sahne)\s*(\d{1,2})|(?:\b(\d{1,2})\.\s*sahne\b)/);
+  const timestampSeconds = secondMatch ? Number(secondMatch[1]) : undefined;
+  const sceneNumber = sceneMatch ? Number(sceneMatch[1] ?? sceneMatch[2]) : undefined;
+  const wantsCharacter = /karakter|character|kişi|kisi|sunucu|avatar|narrator|presenter|yüz|yuz|surat|face/.test(text);
+  const useAllScenes = /hepsinde|tüm\s+videoda|tum\s+videoda|her\s+sahnede|all\s+scenes|entire\s+video|sadece\s+o|only\s+that|same/.test(text);
+  const previousVersion = /önceki|onceki|bir\s+önceki|bir\s+onceki|eski|previous|last\s+version|o\s+video|bu\s+değil|bu\s+degil/.test(text);
+  const hasAnchor = Boolean((wantsCharacter && (timestampSeconds || sceneNumber || useAllScenes)) || previousVersion);
+  const anchorType = wantsCharacter ? "character" : previousVersion ? "version" : sceneNumber ? "scene" : undefined;
+  const providerInstruction = hasAnchor ? [
+    "Revision anchor instruction:",
+    timestampSeconds ? `Use the presenter/character visible around ${timestampSeconds} seconds as the identity anchor.` : "",
+    sceneNumber ? `Use scene ${sceneNumber} as the reference scene.` : "",
+    wantsCharacter ? "Keep that exact character/presenter identity across the entire revised video. Do not change face, hair, outfit, body proportions or presenter identity between scenes." : "",
+    useAllScenes ? "Apply the selected identity to every scene; only one presenter should appear." : "",
+    previousVersion ? "The user is referring to a previous/generated version. Preserve the intended version context and avoid replacing it with an unrelated older artifact." : "",
+    "If outdoor environments are needed, change the background, B-roll and overlays; do not regenerate a different-looking person per scene."
+  ].filter(Boolean).join("\n") : undefined;
+  return { hasAnchor, anchorType, timestampSeconds, sceneNumber, usePreviousVersion: previousVersion, rawInstruction, providerInstruction };
+}
+
 export function initialPresenterActivityLog(brief: PresenterCreativeBrief) {
   return [
     creativeActivityItem("creative-blueprint", "Creative blueprint", "completed", `Selected direction: ${brief.preset}.`),

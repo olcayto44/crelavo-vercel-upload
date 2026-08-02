@@ -1,4 +1,4 @@
-import { buildPresenterCreativeBrief, creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
+import { buildPresenterCreativeBrief, creativeActivityItem, mergeCreativeActivityLog, parseRevisionAnchorIntent } from "@/lib/creative-director";
 import { createRevisionVoiceover } from "@/lib/providers/elevenlabs";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { createVisualVideo } from "@/lib/providers/visuals";
@@ -113,13 +113,15 @@ export async function POST(request: Request) {
     const pendingOutputActions = Array.isArray(outputJson.pendingOutputActions) ? outputJson.pendingOutputActions : [];
     const existingVoiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
     const providerGuard = providerSpendGuard(production as Record<string, unknown>, requestMetadata);
+    const revisionAnchorIntent = parseRevisionAnchorIntent(message);
     const presenterRevisionCreative = buildPresenterCreativeBrief({
       prompt: String(requestMetadata.work_prompt ?? requestMetadata.providerPrompt ?? production.prompt ?? production.title ?? ""),
       selectedOptions: requestMetadata.selectedOptions,
       productionSetup: requestMetadata.productionSetup,
       title: String(production.title ?? ""),
-      revisionMessage: message
+      revisionMessage: revisionAnchorIntent.providerInstruction ? `${message}\n\n${revisionAnchorIntent.providerInstruction}` : message
     });
+    const revisionProviderPrompt = revisionAnchorIntent.providerInstruction ? `${presenterRevisionCreative.providerPrompt}\n\n${revisionAnchorIntent.providerInstruction}` : presenterRevisionCreative.providerPrompt;
     const nextPendingAction = {
       id: revision.id,
       targetPart,
@@ -197,6 +199,7 @@ export async function POST(request: Request) {
         userMessage: message,
         creativePreset: presenterRevisionCreative.preset,
         creativeTags: presenterRevisionCreative.tags,
+        revisionAnchorIntent,
         preview_url: "",
         sourceRevisionId: revision.id
       };
@@ -213,7 +216,7 @@ export async function POST(request: Request) {
             const durationText = `${String(requestMetadata.duration ?? "")} ${String(requestMetadata.selectedDuration ?? "")} ${String(requestMetadata.selectedOptions ?? "")} ${String(production.prompt ?? "")}`;
             const durationSeconds = /30\s*(sec|second|saniye|sn)/i.test(durationText) ? 30 : /15\s*(sec|second|saniye|sn)/i.test(durationText) ? 15 : 10;
             const visualJob = await createVisualVideo({
-              scenes: [presenterRevisionCreative.providerPrompt || message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
+              scenes: [revisionProviderPrompt || message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
               productImageUrls: [],
               durationSeconds,
               style: `${presenterRevisionCreative.preset}: ${String(requestMetadata.style ?? production.title ?? "Crelavo revision")}`
@@ -249,8 +252,10 @@ export async function POST(request: Request) {
           alternatives: nextAlternatives,
           voiceAudioUrl,
           voiceJobs: nextVoiceJobs,
+          revisionAnchorIntent,
           creativeActivityLog: mergeCreativeActivityLog(outputJson.creativeActivityLog ?? requestMetadata.creativeActivityLog, [
             creativeActivityItem("revision-request", "Revision request", "completed", message),
+            ...(revisionAnchorIntent.hasAnchor ? [creativeActivityItem("revision-anchor", revisionAnchorIntent.anchorType === "character" ? "Character anchor selected" : "Version/scene anchor selected", "completed", revisionAnchorIntent.providerInstruction ?? revisionAnchorIntent.rawInstruction)] : []),
             creativeActivityItem("creative-blueprint", "Creative blueprint", "completed", presenterRevisionCreative.creativeBrief),
             creativeActivityItem("provider-job", "Provider job", nextPendingAction.status === "provider_job_created" ? "working" : "queued", nextPendingAction.status === "provider_job_created" ? "Revision provider job was created." : "Revision is queued for provider processing.")
           ]),
