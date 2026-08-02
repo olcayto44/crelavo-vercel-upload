@@ -314,8 +314,11 @@ export async function POST(request: Request) {
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(serverRouteText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(serverRouteText);
-  const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter/.test(serverRouteText)
-    || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()));
+  const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter|outdoor ugc dynamic presenter|creator-style saas presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir/.test(serverRouteText)
+    || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase())
+    || Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)
+    || Boolean(initialRequestMetadata.providerPrompt ?? initialInputJson.providerPrompt)
+    || /presenter|ugc/.test(String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()));
   if (serverHeyGenPresenterIntent && productionType === "video") productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
