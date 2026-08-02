@@ -122,20 +122,12 @@ export async function enforceDailyProductionBudget(supabase: SupabaseClient, opt
   }, 0);
 
   const lowCostTestAllowed = estimatedCredits > 0 && estimatedCredits <= config.lowCostProductionTestLimit;
-  const providerProofStartAllowed = Boolean(options.allowProviderProofTest);
 
-  if (dailyCount >= config.dailyProductionCountLimit && !providerProofStartAllowed) {
-    return {
-      ok: false as const,
-      response: budgetBlockResponse(
-        "Daily production start limit reached. Please wait before creating more jobs or contact support.",
-        429,
-        { dailyProductionCountLimit: config.dailyProductionCountLimit, dailyCount }
-      )
-    };
-  }
+// Do not block production starts by raw daily job count. Cost safety is enforced by
+// single-job credit limit, daily credit limit, credit reservation and provider-start guards.
+// The old count blocker interrupted legitimate provider integration tests before any provider job could start.
 
-  if (dailyCredits + estimatedCredits > config.dailyProductionCreditLimit && !lowCostTestAllowed) {
+if (dailyCredits + estimatedCredits > config.dailyProductionCreditLimit && !lowCostTestAllowed) {
     return {
       ok: false as const,
       response: budgetBlockResponse(
