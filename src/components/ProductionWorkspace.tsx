@@ -209,6 +209,22 @@ function workflowActionTone(status?: string) {
   return "unknown";
 }
 
+function creativeLiveCards(input: { metadata: Record<string, any>; inputJson: Record<string, any>; outputJson: Record<string, any>; type: string }) {
+  const text = `${String(input.metadata.creativeBrief ?? input.inputJson.creativeBrief ?? input.outputJson.creativeBrief ?? "")} ${String(input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "")} ${String(input.metadata.providerPrompt ?? input.inputJson.providerPrompt ?? "")} ${String(input.outputJson.providerStatus ?? "")}`.toLocaleLowerCase("tr-TR");
+  const isPresenter = ["talking_video", "avatar", "lip_sync"].includes(input.type) || /presenter|avatar|heygen|ugc/.test(text);
+  if (!isPresenter) return [];
+  const providerStatus = String(input.outputJson.providerStatus ?? input.outputJson.visualJob?.status ?? input.outputJson.heygenVideoAgent?.status ?? "working").replaceAll("_", " ");
+  const cards = [
+    { title: "Creative blueprint", status: input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "Creator presenter", description: "Assistant is turning the user request into a directed video concept instead of sending a raw prompt." },
+    { title: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "Outdoor UGC direction" : "Presenter direction", status: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "Outdoor / city" : "Single presenter", description: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "One moving presenter in a modern outside/city environment, with natural gestures and direct eye contact." : "One realistic presenter only, no group, no office panel, no background people." },
+    { title: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "Hook + FOMO" : "Hook design", status: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "Strong hook" : "Opening hook", description: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "First seconds focus on a cover-style hook, urgency, FOMO, and brand recall." : "The first seconds are structured to explain the pain and catch attention quickly." },
+    { title: "A-roll scene", status: providerStatus, description: "Presenter speaking directly to camera with energetic delivery and clear Crelavo brand mention." },
+    { title: "B-roll / UI overlays", status: providerStatus, description: "Product proof cards, app UI overlays, kinetic captions, fast cuts, and result moments support the presenter." },
+    { title: "Provider job", status: String(input.outputJson.heygenProviderProof?.provider ?? input.outputJson.visualJob?.provider ?? input.outputJson.providerProof ?? "heygen_video_agent"), description: `Live provider status: ${providerStatus}` }
+  ];
+  return cards;
+}
+
 export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
   useEffect(() => {
     let shouldForceTop = true;
@@ -280,7 +296,10 @@ const [notice, setNotice] = useState("");
     : "Write a revision request: This voice does not fit; use a deeper and more confident voice. Scene 2 is too dark; make it a brighter office.";
   const metadata = production.request_metadata ?? {};
   const outputJson = production.output_json ?? {};
-  const inputJson = outputJson.inputJson && typeof outputJson.inputJson === "object" ? outputJson.inputJson as Record<string, any> : {};
+  const rowInputJson = production.input_json && typeof production.input_json === "object" ? production.input_json as Record<string, any> : {};
+  const embeddedInputJson = outputJson.inputJson && typeof outputJson.inputJson === "object" ? outputJson.inputJson as Record<string, any> : {};
+  const inputJson = { ...rowInputJson, ...embeddedInputJson };
+  const creativeActivityCards = creativeLiveCards({ metadata, inputJson, outputJson, type });
   const metadataProductionCards = Array.isArray(metadata.productionCards) ? metadata.productionCards.map(String) : Array.isArray(metadata.selectedOptions) ? metadata.selectedOptions.map(String) : Array.isArray(inputJson.productionCards) ? inputJson.productionCards.map(String) : [];
   const typeLockedProductionCards = productionCardsFromRecord(production, outputJson);
   const waitingRoom = productionWaitingRoomCopy(production, typeLockedProductionCards, outputJson);
@@ -1174,6 +1193,23 @@ const data = await response.json().catch(() => ({}));
             <p>Each requested output is tracked with a delivery role, status and download route when available.</p>
             <div className="cost-note-list">
               {outputRegistry.map((item) => <span key={`output-${String(item.id)}`}>{String(item.filename)}: {String(item.status)}</span>)}
+            </div>
+          </section>
+        ) : null}
+
+        {creativeActivityCards.length > 0 ? (
+          <section className="automation-brief-card">
+            <span className="badge">Creative director live board</span>
+            <h3>Assistant is shaping the video like a creative director</h3>
+            <p>These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status.</p>
+            <div className="automation-part-list">
+              {creativeActivityCards.map((card, index) => (
+                <div key={`${card.title}-${index}`}>
+                  <strong>{card.title}</strong>
+                  <small>{String(card.status)}</small>
+                  <p>{card.description}</p>
+                </div>
+              ))}
             </div>
           </section>
         ) : null}
