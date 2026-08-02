@@ -113,15 +113,31 @@ export async function POST(request: Request) {
     const pendingOutputActions = Array.isArray(outputJson.pendingOutputActions) ? outputJson.pendingOutputActions : [];
     const existingVoiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
     const providerGuard = providerSpendGuard(production as Record<string, unknown>, requestMetadata);
-    const revisionAnchorIntent = parseRevisionAnchorIntent(message);
-    const presenterRevisionCreative = buildPresenterCreativeBrief({
+const revisionAnchorIntent = parseRevisionAnchorIntent(message);
+const anchorSourceVideoUrl = typeof outputJson.finalVideoUrl === "string" ? outputJson.finalVideoUrl
+  : typeof outputJson.providerFinalUrl === "string" ? outputJson.providerFinalUrl
+    : typeof outputJson.deliveryUrl === "string" ? outputJson.deliveryUrl
+      : typeof outputJson.delivery_url === "string" ? outputJson.delivery_url
+        : typeof outputJson.previewUrl === "string" ? outputJson.previewUrl
+          : typeof outputJson.preview_url === "string" ? outputJson.preview_url
+            : "";
+const anchorFrameRequest = revisionAnchorIntent.hasAnchor && anchorSourceVideoUrl ? {
+  sourceVideoUrl: anchorSourceVideoUrl,
+  timestampSeconds: revisionAnchorIntent.timestampSeconds,
+  sceneNumber: revisionAnchorIntent.sceneNumber,
+  anchorType: revisionAnchorIntent.anchorType,
+  status: "pending_frame_extract",
+  instruction: revisionAnchorIntent.providerInstruction ?? revisionAnchorIntent.rawInstruction
+} : null;
+const anchorSourceInstruction = anchorFrameRequest ? `\n\nAnchor source video URL: ${anchorFrameRequest.sourceVideoUrl}\nAnchor timestamp: ${anchorFrameRequest.timestampSeconds ?? "not specified"} seconds\nAnchor scene: ${anchorFrameRequest.sceneNumber ?? "not specified"}\nUse this source video/timestamp as the reference for identity extraction before regenerating the revision.` : "";
+const presenterRevisionCreative = buildPresenterCreativeBrief({
       prompt: String(requestMetadata.work_prompt ?? requestMetadata.providerPrompt ?? production.prompt ?? production.title ?? ""),
       selectedOptions: requestMetadata.selectedOptions,
       productionSetup: requestMetadata.productionSetup,
       title: String(production.title ?? ""),
-      revisionMessage: revisionAnchorIntent.providerInstruction ? `${message}\n\n${revisionAnchorIntent.providerInstruction}` : message
-    });
-    const revisionProviderPrompt = revisionAnchorIntent.providerInstruction ? `${presenterRevisionCreative.providerPrompt}\n\n${revisionAnchorIntent.providerInstruction}` : presenterRevisionCreative.providerPrompt;
+  revisionMessage: revisionAnchorIntent.providerInstruction ? `${message}\n\n${revisionAnchorIntent.providerInstruction}${anchorSourceInstruction}` : `${message}${anchorSourceInstruction}`
+});
+const revisionProviderPrompt = revisionAnchorIntent.providerInstruction || anchorSourceInstruction ? `${presenterRevisionCreative.providerPrompt}\n\n${revisionAnchorIntent.providerInstruction ?? ""}${anchorSourceInstruction}` : presenterRevisionCreative.providerPrompt;
     const nextPendingAction = {
       id: revision.id,
       targetPart,
@@ -200,6 +216,7 @@ export async function POST(request: Request) {
         creativePreset: presenterRevisionCreative.preset,
         creativeTags: presenterRevisionCreative.tags,
         revisionAnchorIntent,
+        anchorFrameRequest,
         preview_url: "",
         sourceRevisionId: revision.id
       };
@@ -252,10 +269,12 @@ export async function POST(request: Request) {
           alternatives: nextAlternatives,
           voiceAudioUrl,
           voiceJobs: nextVoiceJobs,
-          revisionAnchorIntent,
-          creativeActivityLog: mergeCreativeActivityLog(outputJson.creativeActivityLog ?? requestMetadata.creativeActivityLog, [
+revisionAnchorIntent,
+anchorFrameRequest,
+creativeActivityLog: mergeCreativeActivityLog(outputJson.creativeActivityLog ?? requestMetadata.creativeActivityLog, [
             creativeActivityItem("revision-request", "Revision request", "completed", message),
             ...(revisionAnchorIntent.hasAnchor ? [creativeActivityItem("revision-anchor", revisionAnchorIntent.anchorType === "character" ? "Character anchor selected" : "Version/scene anchor selected", "completed", revisionAnchorIntent.providerInstruction ?? revisionAnchorIntent.rawInstruction)] : []),
+            ...(anchorFrameRequest ? [creativeActivityItem("anchor-frame", "Anchor frame extraction", "queued", `Source video frame requested at ${anchorFrameRequest.timestampSeconds ?? "unknown"}s / scene ${anchorFrameRequest.sceneNumber ?? "unknown"}.`)] : []),
             creativeActivityItem("creative-blueprint", "Creative blueprint", "completed", presenterRevisionCreative.creativeBrief),
             creativeActivityItem("provider-job", "Provider job", nextPendingAction.status === "provider_job_created" ? "working" : "queued", nextPendingAction.status === "provider_job_created" ? "Revision provider job was created." : "Revision is queued for provider processing.")
           ]),
