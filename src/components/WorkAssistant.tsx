@@ -440,7 +440,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const wantsSubtitles = !noSubtitles && subtitlesRequestedByPrompt(text);
   const wantsNoPeopleMotionAd = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatarlar\s*olmasın|insan\s*olmasın|avatars?/.test(text)
     && /motion\s+graphics|kinetic|typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/.test(text);
-  const wantsHeyGenStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
+  const wantsHeyGenStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
     && !/no\s*people|no\s*presenter|ui-only|screenshot-only/.test(text);
   return Object.fromEntries(profile.groups.map((group) => {
@@ -480,7 +480,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       if (wanted) selected = [wanted];
     }
     if (["sourceHandling", "visualDirection"].includes(group.id)) {
-      if (/with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen/.test(text)) {
+      if (wantsHeyGenStylePresenterAd || /with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi/.test(text)) {
         const presenter = group.options.find((option) => /with presenter/i.test(option));
         if (presenter) selected = [presenter];
       }
@@ -491,11 +491,12 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
     }
     if (group.id === "background") {
       const motionGraphics = wantsNoPeopleMotionAd || /motion\s*graphics|kinetic\s*typography|animated\s*text|text\s*cards|glitch\s*transitions|swipe\s*transitions/.test(text) ? group.options.find((option) => /motion graphics/i.test(option)) : undefined;
-      const lifestyle = /lifestyle|creator-style|ugc|outdoor|walking|casual|natural/.test(text) ? group.options.find((option) => /lifestyle|home\/lifestyle/i.test(option)) : undefined;
-      const brand = /brand\s*color|marka\s*rengi|crelavo\s*brand/.test(text) ? group.options.find((option) => /brand color/i.test(option)) : undefined;
-      const cinematic = /cinematic\s*scene/.test(text) ? group.options.find((option) => /cinematic scene/i.test(option)) : undefined;
-      const studio = /studio/.test(text) && !/not\s*studio|avoid\s*studio|not\s*corporate\s*studio/.test(text) ? group.options.find((option) => /studio/i.test(option)) : undefined;
-      const wanted = motionGraphics || lifestyle || brand || cinematic || studio;
+const city = /dışarıda|disarida|outdoor|sokak|street|şehir|sehir|city/.test(text) ? group.options.find((option) => /city/i.test(option)) : undefined;
+const lifestyle = /lifestyle|creator-style|ugc|outdoor|walking|casual|natural|hareketli|uygulamalı|uygulamali/.test(text) ? group.options.find((option) => /lifestyle|home\/lifestyle/i.test(option)) : undefined;
+const brand = /brand\s*color|marka\s*rengi|crelavo\s*brand/.test(text) ? group.options.find((option) => /brand color/i.test(option)) : undefined;
+const cinematic = /cinematic\s*scene|sinematik/.test(text) ? group.options.find((option) => /cinematic scene/i.test(option)) : undefined;
+const studio = /studio/.test(text) && !/not\s*studio|avoid\s*studio|not\s*corporate\s*studio/.test(text) ? group.options.find((option) => /studio/i.test(option)) : undefined;
+const wanted = motionGraphics || city || lifestyle || brand || cinematic || studio;
       if (wanted) selected = [wanted];
     }
     if (group.id === "voice") {
@@ -873,7 +874,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftCardsForIntent = plan ? Array.from(new Set([...(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(plan)), ...setupItems, ...(plan.selected_features || [])])) : [];
   const draftNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(draftPromptText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(draftPromptText);
-  const draftWantsPresenterVideo = Boolean(plan) && !draftNoPeopleMotionIntent && (draftCardsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(draftPromptText));
+  const draftWantsPresenterVideo = Boolean(plan) && !draftNoPeopleMotionIntent && (draftCardsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(draftPromptText));
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
 
@@ -1046,7 +1047,7 @@ const cardCreditsForPayload = productionCardCredits(productionCards);
 const totalEstimatedCreditsForPayload = baseDraftCredits(activePlan) + setupCreditsForPayload + cardCreditsForPayload;
 const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(clean)
   && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(clean);
-const wantsPresenterVideo = !noPeopleMotionIntent && (selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(clean));
+const wantsPresenterVideo = !noPeopleMotionIntent && (selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(clean));
 const productionTypeForPayload = wantsPresenterVideo && activePlan.production_type === "video" ? "talking_video" : activePlan.production_type;
 const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: clean, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlan.summary }) : null;
 const providerPrompt = presenterCreative?.providerPrompt ?? clean;
