@@ -869,6 +869,13 @@ const cardCredits = productionCardCredits(selectedProductionCards);
 const draftBaseCredits = baseDraftCredits(plan);
 const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const estimatedCredits = totalEstimatedCredits ? totalEstimatedCredits.toLocaleString() : "Calculated on start";
+  const draftPromptText = productionPrompt || input;
+  const draftCardsForIntent = plan ? Array.from(new Set([...(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(plan)), ...setupItems, ...(plan.selected_features || [])])) : [];
+  const draftNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(draftPromptText)
+    && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(draftPromptText);
+  const draftWantsPresenterVideo = Boolean(plan) && !draftNoPeopleMotionIntent && (draftCardsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(draftPromptText));
+  const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup, title: plan.summary }) : null;
+  const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
@@ -1131,6 +1138,7 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
           {studioChips.map((chip) => <button type="button" key={chip} onClick={() => useChip(chip)}>{chip}</button>)}
         </div>
 
+        <div className="omni-agent-workbench">
         <main className="omni-chat-panel" ref={chatRef}>
           {messages.length === 0 ? (
             <div className="omni-empty-state">
@@ -1203,6 +1211,38 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
             </article>
           ) : null}
         </main>
+
+        <aside className="omni-live-board-panel">
+          <div className="omni-live-board-head">
+            <span className="badge">Live creative board</span>
+            <h3>{draftCreative?.preset ?? "Assistant production board"}</h3>
+            <p>{draftCreative ? "Crelavo is converting your request into a creative video blueprint before production starts." : "As you describe the production, Crelavo will prepare the route, assets, provider and delivery plan here."}</p>
+          </div>
+          <div className="omni-live-board-list">
+            {(draftActivityLog.length ? draftActivityLog : [
+              { id: "assistant", title: "Assistant routing", status: plan ? "completed" : "waiting", description: plan ? `Draft ready: ${labelFor(plan.production_type)}` : "Write your request to start routing." },
+              { id: "setup", title: "Setup choices", status: setupItems.length ? "active" : "waiting", description: setupItems.length ? setupItems.join(" · ") : "Video type, quality, duration, format, voice and extras will appear here." },
+              { id: "delivery", title: "Delivery package", status: plan ? "queued" : "waiting", description: plan ? (plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).join(", ") : "Preview, final files and revision path will be prepared after routing." }
+            ]).map((item) => (
+              <article className="omni-live-board-card" key={String(item.id)}>
+                <small>{String(item.status)}</small>
+                <strong>{String(item.title)}</strong>
+                <p>{String(item.description)}</p>
+              </article>
+            ))}
+          </div>
+          <div className="omni-resource-board">
+            <strong>Resources</strong>
+            <div>
+              <span>Avatars {draftWantsPresenterVideo ? "1" : "0"}</span>
+              <span>Voices {setupItems.some((item) => /voice|ses/i.test(item)) ? "1" : "0"}</span>
+              <span>Media {materials.length}</span>
+              <span>Audio {setupItems.some((item) => /music|audio|voice/i.test(item)) ? "1" : "0"}</span>
+              <span>Design Elements {draftCreative ? draftCreative.tags.length + 4 : setupItems.length}</span>
+            </div>
+          </div>
+        </aside>
+        </div>
 
         {status ? <p className="omni-status-line">{status}</p> : null}
 
