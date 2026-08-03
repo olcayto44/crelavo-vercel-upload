@@ -1132,7 +1132,7 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
             <h1>Ask AI to build anything</h1>
             <p>One workspace for videos, websites, apps, voices, images, SEO packs, campaigns, and source packages.</p>
           </div>
-          <div className="omni-live-pill"><span /> AI router + HeyGen bridge online</div>
+          <div className="omni-live-pill"><span /> AI router online</div>
         </header>
 
         <div className="omni-chip-row">
@@ -1215,13 +1215,13 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
 
         <aside className="omni-live-board-panel">
           <div className="omni-live-board-head">
-            <span className="badge">{draftWantsPresenterVideo ? "HeyGen Video Agent Bridge" : "Live creative board"}</span>
+            <span className="badge">{draftWantsPresenterVideo ? "Presenter video route" : "Live creative board"}</span>
             <h3>{draftCreative?.preset ?? "Assistant production board"}</h3>
-            <p>{draftWantsPresenterVideo ? "Bu istek HeyGen Video Agent native session/artifacts akışına yönlenecek. Production başladıktan sonra gerçek HeyGen blueprint, resource ve video çıktıları sağ panelde görünecek." : "As you describe the production, Crelavo will prepare the route, assets, provider and delivery plan here."}</p>
+            <p>{draftWantsPresenterVideo ? "Bu istek presenter video akışına yönlenecek. Üretim başladığında plan, kaynaklar ve video çıktıları production panelinde takip edilir." : "As you describe the production, Crelavo will prepare the route, assets, provider and delivery plan here."}</p>
           </div>
           <div className="omni-live-board-list">
             {((draftWantsPresenterVideo ? [{ id: "heygen-native-bridge", title: "HeyGen native artifacts", status: "ready", description: "Crelavo will open a HeyGen Video Agent session and mirror real session artifacts/resources into the production panel." }] : []).concat(draftActivityLog.length ? draftActivityLog : [
-              { id: "heygen-global-bridge", title: "HeyGen Video Agent Bridge", status: "online", description: "Presenter video requests are routed to HeyGen native session/artifact tracking, then mirrored into Crelavo production." },
+              { id: "heygen-global-bridge", title: "Video Agent route", status: "ready", description: "Presenter içeren video istekleri üretim başladığında HeyGen Video Agent akışına bağlanır ve çıktılar production panelinde görünür." },
               { id: "assistant", title: "Assistant routing", status: plan ? "completed" : "waiting", description: plan ? `Draft ready: ${labelFor(plan.production_type)}` : "Write your request to start routing." },
               { id: "setup", title: "Setup choices", status: setupItems.length ? "active" : "waiting", description: setupItems.length ? setupItems.join(" · ") : "Video type, quality, duration, format, voice and extras will appear here." },
               { id: "delivery", title: "Delivery package", status: plan ? "queued" : "waiting", description: plan ? (plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).join(", ") : "Preview, final files and revision path will be prepared after routing." }

@@ -18,10 +18,6 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
 
   return (
     <main className="omni-work-route">
-      <section style={{ margin: "0 auto 16px", maxWidth: 1180, border: "2px solid #7c3aed", borderRadius: 16, padding: "12px 16px", background: "linear-gradient(135deg, rgba(124,58,237,.16), rgba(236,72,153,.10))", color: "#fff" }}>
-        <strong>HEYGEN BRIDGE LIVE</strong>
-        <span style={{ marginLeft: 10 }}>assistant-workspace route marker · Video Agent native artifacts aktif</span>
-      </section>
       <WorkspaceErrorBoundary fallback={
         <section className="omni-fallback">
           <h1>Assistant Workspace</h1>
