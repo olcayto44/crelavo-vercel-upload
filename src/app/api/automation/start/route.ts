@@ -98,7 +98,10 @@ function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; scr
     "Creative structure: open with a strong hook in the first 2 seconds, then use quick cuts, kinetic text, punchy benefit cards, proof/result moments, dynamic transitions, and finish with either a sharp CTA or a question that makes the viewer think and click.",
     "Style paragraph: dynamic UGC SaaS ad, creator-led A-roll, fast social media pacing, energetic background music, kinetic burned-in captions, animated product/result callouts, Hyperframes-style motion graphics, snap zooms, split screens, clean tech overlays, bold short text cards, smooth but fast transitions, premium but not corporate.",
     "Presenter direction: use exactly ONE single natural creator-style presenter: the selected avatar only. No second person, no audience, no colleagues, no background people, no group, no meeting room, no office, no panel, no corporate boardroom, no conference room, no classroom, no coworking space unless the user explicitly requested it. The presenter should feel like a real solo social creator explaining a useful product, not a formal studio host.",
-    "Audio direction: include confident English voiceover/dialogue, energetic background music under the voice, and a polished social-ad mix where the voice is always clear.",
+    "Presenter identity lock: keep the exact same selected avatar/presenter identity across every scene. Do not regenerate a different face, hairstyle, outfit, body shape or person per scene. If locations change, only the background, B-roll, camera angle and overlays may change.",
+    "Language lock: keep all Crelavo assistant/blueprint/planning language Turkish. Do not switch to another language in assistant-facing text. Video dialogue may be English only when the user explicitly requests English dialogue; otherwise respect the user's language.",
+    `Duration lock: target duration is ${duration} seconds. Stay close to this duration and do not expand it into a 30-45 second video unless the user explicitly approved a longer cut.`,
+    "Audio direction: include confident voiceover/dialogue, energetic background music under the voice, and a polished social-ad mix where the voice is always clear.",
     "Caption direction: include readable burned-in subtitles/captions with emphasis on hook words, benefits, numbers, and the final question/CTA.",
     "Hard avoid: office environment, meeting room, boardroom, multiple people, background people, stock office footage, panel discussion, group conversation, static screenshot zoom loop, slow slideshow, boring corporate explainer pacing, silent video, missing captions. If a human appears, it must be only the selected single avatar/presenter."
   ].filter(Boolean).join("\n\n");
@@ -369,6 +372,9 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         heygenVideoId: "videoId" in heygenJob ? heygenJob.videoId : null,
         heygenProviderProof: heygenJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: heygenJob.id, videoId: "videoId" in heygenJob ? heygenJob.videoId : null, status: heygenJob.status } : null,
         heygenVideoAgent: heygenJob.provider === "heygen_video_agent" ? heygenJob : null,
+        heygenAgentBridge: heygenJob.provider === "heygen_video_agent" ? { mode: "native_session_artifacts", sessionId: heygenJob.id, status: "tracking_session_resources", artifactField: "heygenAgentArtifacts" } : null,
+        heygenAgentArtifacts: [],
+        latestHeyGenVideoArtifact: null,
         visualJob: { provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw },
         visualJobs: [{ provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw }],
         creativeActivityLog: mergeCreativeActivityLog(existingOutput.creativeActivityLog ?? requestMetadata.creativeActivityLog ?? inputJson.creativeActivityLog, [

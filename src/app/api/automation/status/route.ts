@@ -133,6 +133,15 @@ function heygenV3Metadata(status: NormalizedProviderStatus | null) {
   return { captionedVideoUrl, subtitleUrl, videoPageUrl };
 }
 
+function heygenAgentArtifactsFromStatus(status: NormalizedProviderStatus | null) {
+  const raw = status?.raw && typeof status.raw === "object" ? status.raw as Record<string, unknown> : {};
+  const artifacts = Array.isArray(raw.heygenAgentArtifacts) ? raw.heygenAgentArtifacts : [];
+  const latestVideoArtifact = raw.latestVideoArtifact && typeof raw.latestVideoArtifact === "object" ? raw.latestVideoArtifact as Record<string, unknown> : null;
+  const latestVideoUrl = String(latestVideoArtifact?.previewUrl ?? status?.outputUrl ?? "").trim();
+  const latestVideoResourceId = String(latestVideoArtifact?.providerResourceId ?? "").trim();
+  return { artifacts, latestVideoArtifact, latestVideoUrl, latestVideoResourceId };
+}
+
 function existingRenderJob(output: Record<string, unknown>) {
   return providerJobFromValue(output.renderJob);
 }
@@ -641,7 +650,8 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
     const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
-    const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
+    const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "" };
+    const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
       ? normalizedRenderStatus
       : heygenVideoAgentVisualReady
@@ -677,7 +687,7 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
       return Response.json({ production: data, visualStatus, renderStatus, renderPending: true, rawVisualPreviewUrl: rawVisualPreviewUrl || null, renderError: renderBridge.renderError ?? null });
     }
     if (successfulStatus) {
-      const providerFinalUrl = successfulStatus.outputUrl ?? "";
+      const providerFinalUrl = heygenAgentBridge.latestVideoUrl || (successfulStatus.outputUrl ?? "");
       const heygenMeta = heygenV3Metadata(successfulStatus);
       const dedicatedRequired = String(outputWithRenderJob.requiredPipeline ?? "") === "character_consistent_dialogue_animation" || Boolean(outputWithRenderJob.characterDialoguePlan);
       const dedicatedShotstackReady = String(successfulStatus.provider ?? "") === "shotstack" && String(outputWithRenderJob.providerStatus ?? "").includes("shotstack");
@@ -718,7 +728,7 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
   creativeActivityItem("b-roll", "B-roll / UI overlays", "completed", "Supporting overlays, captions and motion elements are ready.", successfulStatus.provider),
   creativeActivityItem("final-video", "Final video", "ready", "Final provider video is ready for preview and delivery.", successfulStatus.provider)
 ]);
-const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, alternatives: polledAlternatives, alternativeStatuses };
+const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, alternatives: polledAlternatives, alternativeStatuses };
       const readyGate = productionReadyGate({ ...production, preview_url: providerFinalUrl, delivery_link: providerFinalUrl, delivery_zip_url: providerFinalUrl, output_json: qualityOutputCandidate }, qualityOutputCandidate);
       const readinessSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
       const explicitNoVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(readinessSignal);
@@ -823,7 +833,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
           delivery_link: finalUrl,
           delivery_zip_url: finalUrl,
           reserved_credits: 0,
-          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
+          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
           automation_steps: updatedSteps(production.automation_steps, successfulStatus),
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -865,7 +875,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       .from("production_requests")
       .update({
         generation_status: renderStatus ? `shotstack_${renderStatus.status}` : visualStatus ? `${visualStatus.provider}_${visualStatus.status}` : "provider_polling",
-        output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
+        output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
         automation_steps: updatedSteps(production.automation_steps, terminalStatus),
         updated_at: new Date().toISOString()
       })

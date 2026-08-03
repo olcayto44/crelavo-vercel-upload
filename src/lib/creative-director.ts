@@ -53,6 +53,9 @@ export function buildPresenterCreativeBrief(input: {
       ? "Applied demo: show the presenter explaining the product while app UI overlays demonstrate the flow: paste a product link, website, or idea; Crelavo turns it into a ready-to-use marketing video; subtitles, music, captions, and MP4 delivery are included."
       : "Product proof: use animated UI overlays, benefit cards, result cards, and short captions to make the product value obvious.",
     "Pacing: use quick cuts, kinetic captions, snap zooms, moving backgrounds, product UI overlays, and energetic music. Avoid slow slideshow pacing.",
+    "Language lock: keep Crelavo user-facing assistant/blueprint language Turkish. Do not switch to another language. Only the generated video dialogue may be English if the user explicitly asks for English dialogue.",
+    "Duration lock: stay close to the selected/requested duration. Do not expand a 10-second request into a 30-45 second video unless the user explicitly approves a longer cut.",
+    "Presenter identity lock: use one selected presenter/avatar identity across the whole video. Keep the same face, hair, outfit, body proportions and presenter identity between all scenes; change only background, B-roll, overlays and camera movement.",
     "Hard avoid: boring corporate video, static studio host, office meeting, boardroom, panel discussion, group of people, background people, generic stock office footage, slow screen recording, silent video.",
     "Presenter rule: exactly one realistic presenter only. The presenter must be the focus and should feel like a social creator explaining something useful, not a formal corporate speaker.",
     "CTA: end with a short direct call to action that tells the viewer to turn an idea/link/website into a ready-to-use video with Crelavo."

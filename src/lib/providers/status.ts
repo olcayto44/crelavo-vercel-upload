@@ -1,5 +1,5 @@
 import { optionalEnv, requireProviderEnv } from "./env";
-import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus } from "./heygen";
+import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, latestHeyGenVideoArtifact, normalizeHeyGenVideoAgentArtifacts } from "./heygen";
 import type { NormalizedProviderStatus, ProviderJob } from "./types";
 
 function asciiHeaderValue(value: unknown, fallback = "") {
@@ -253,23 +253,34 @@ export async function getHeyGenVideoAgentStatus(job: ProviderJob): Promise<Norma
   const sessionData = await getHeyGenVideoAgentSession(job.id);
   const sessionRecord = sessionData && typeof sessionData === "object" ? sessionData as Record<string, unknown> : {};
   const session = sessionRecord.data && typeof sessionRecord.data === "object" ? sessionRecord.data as Record<string, unknown> : sessionRecord;
-  const videoId = String(session.video_id ?? session.videoId ?? "").trim();
+  const artifacts = normalizeHeyGenVideoAgentArtifacts(sessionData);
+  const latestVideoArtifact = latestHeyGenVideoArtifact(artifacts);
+  const latestArtifactVideoUrl = latestVideoArtifact?.previewUrl && isRealMediaUrl(latestVideoArtifact.previewUrl) ? latestVideoArtifact.previewUrl : undefined;
+  const videoId = String(latestVideoArtifact?.providerResourceId ?? session.video_id ?? session.videoId ?? "").trim();
   const sessionStatus = normalizeStatus(String(session.status ?? "unknown"));
-  if (videoId) {
-    const videoStatus = await getHeyGenV3VideoStatus({ provider: "heygen_video_agent", id: videoId, status: String(session.status ?? "processing"), raw: { session: sessionData } });
-    return {
-      ...videoStatus,
-      id: job.id,
-      raw: { session: sessionData, video: videoStatus.raw }
-    };
+  let v3VideoStatus: NormalizedProviderStatus | null = null;
+  if (videoId && !latestArtifactVideoUrl) {
+    try {
+      v3VideoStatus = await getHeyGenV3VideoStatus({ provider: "heygen_video_agent", id: videoId, status: String(session.status ?? "processing"), raw: { session: sessionData } });
+      return {
+        ...v3VideoStatus,
+        id: job.id,
+        raw: { session: sessionData, video: v3VideoStatus.raw, heygenAgentArtifacts: artifacts, latestVideoArtifact }
+      };
+    } catch (error) {
+      v3VideoStatus = { provider: "heygen_video_agent", id: videoId, status: "unknown", error: error instanceof Error ? error.message : "HeyGen v3 video lookup failed", raw: { session: sessionData } };
+    }
   }
+  const outputUrl = latestArtifactVideoUrl || firstRealMediaUrl(session);
+  const normalizedStatus = outputUrl ? "succeeded" : sessionStatus === "succeeded" ? "running" : sessionStatus;
   return {
     provider: "heygen_video_agent",
     id: job.id,
-    status: sessionStatus === "succeeded" ? "running" : sessionStatus,
-    outputUrl: undefined,
-    error: sessionStatus === "failed" ? String(session.messages ?? session.error ?? "HeyGen Video Agent session failed.") : undefined,
-    raw: sessionData
+    status: normalizedStatus,
+    outputUrl,
+    ...mediaMetadata(sessionData),
+    error: normalizedStatus === "failed" ? String(session.messages ?? session.error ?? "HeyGen Video Agent session failed.") : undefined,
+    raw: { session: sessionData, video: v3VideoStatus?.raw, videoLookupError: v3VideoStatus?.error, heygenAgentArtifacts: artifacts, latestVideoArtifact }
   };
 }
 

@@ -1,3 +1,4 @@
+import { extractAnchorFrame } from "@/lib/anchor-frame";
 import { buildPresenterCreativeBrief, creativeActivityItem, mergeCreativeActivityLog, parseRevisionAnchorIntent } from "@/lib/creative-director";
 import { createRevisionVoiceover } from "@/lib/providers/elevenlabs";
 import { ProviderConfigError } from "@/lib/providers/types";
@@ -129,7 +130,9 @@ const anchorFrameRequest = revisionAnchorIntent.hasAnchor && anchorSourceVideoUr
   status: "pending_frame_extract",
   instruction: revisionAnchorIntent.providerInstruction ?? revisionAnchorIntent.rawInstruction
 } : null;
-const anchorSourceInstruction = anchorFrameRequest ? `\n\nAnchor source video URL: ${anchorFrameRequest.sourceVideoUrl}\nAnchor timestamp: ${anchorFrameRequest.timestampSeconds ?? "not specified"} seconds\nAnchor scene: ${anchorFrameRequest.sceneNumber ?? "not specified"}\nUse this source video/timestamp as the reference for identity extraction before regenerating the revision.` : "";
+const anchorFrameResult = anchorFrameRequest ? await extractAnchorFrame({ productionId, request: anchorFrameRequest }) : null;
+const resolvedAnchorFrameRequest = anchorFrameRequest ? { ...anchorFrameRequest, status: anchorFrameResult?.status ?? anchorFrameRequest.status, frameUrl: anchorFrameResult?.frameUrl, extraction: anchorFrameResult } : null;
+const anchorSourceInstruction = resolvedAnchorFrameRequest ? `\n\nAnchor source video URL: ${resolvedAnchorFrameRequest.sourceVideoUrl}\nAnchor timestamp: ${resolvedAnchorFrameRequest.timestampSeconds ?? "not specified"} seconds\nAnchor scene: ${resolvedAnchorFrameRequest.sceneNumber ?? "not specified"}\n${resolvedAnchorFrameRequest.frameUrl ? `Anchor extracted frame URL: ${resolvedAnchorFrameRequest.frameUrl}\nUse this frame as the visual identity reference for the presenter/character.` : "Use this source video/timestamp as the reference for identity extraction before regenerating the revision."}` : "";
 const presenterRevisionCreative = buildPresenterCreativeBrief({
       prompt: String(requestMetadata.work_prompt ?? requestMetadata.providerPrompt ?? production.prompt ?? production.title ?? ""),
       selectedOptions: requestMetadata.selectedOptions,
@@ -216,7 +219,8 @@ const revisionProviderPrompt = revisionAnchorIntent.providerInstruction || ancho
         creativePreset: presenterRevisionCreative.preset,
         creativeTags: presenterRevisionCreative.tags,
         revisionAnchorIntent,
-        anchorFrameRequest,
+        anchorFrameRequest: resolvedAnchorFrameRequest,
+        anchorFrameResult,
         preview_url: "",
         sourceRevisionId: revision.id
       };
@@ -234,7 +238,7 @@ const revisionProviderPrompt = revisionAnchorIntent.providerInstruction || ancho
             const durationSeconds = /30\s*(sec|second|saniye|sn)/i.test(durationText) ? 30 : /15\s*(sec|second|saniye|sn)/i.test(durationText) ? 15 : 10;
             const visualJob = await createVisualVideo({
               scenes: [revisionProviderPrompt || message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
-              productImageUrls: [],
+              productImageUrls: resolvedAnchorFrameRequest?.frameUrl ? [resolvedAnchorFrameRequest.frameUrl] : [],
               durationSeconds,
               style: `${presenterRevisionCreative.preset}: ${String(requestMetadata.style ?? production.title ?? "Crelavo revision")}`
             });
@@ -270,11 +274,12 @@ const revisionProviderPrompt = revisionAnchorIntent.providerInstruction || ancho
           voiceAudioUrl,
           voiceJobs: nextVoiceJobs,
 revisionAnchorIntent,
-anchorFrameRequest,
+anchorFrameRequest: resolvedAnchorFrameRequest,
+anchorFrameResult,
 creativeActivityLog: mergeCreativeActivityLog(outputJson.creativeActivityLog ?? requestMetadata.creativeActivityLog, [
             creativeActivityItem("revision-request", "Revision request", "completed", message),
             ...(revisionAnchorIntent.hasAnchor ? [creativeActivityItem("revision-anchor", revisionAnchorIntent.anchorType === "character" ? "Character anchor selected" : "Version/scene anchor selected", "completed", revisionAnchorIntent.providerInstruction ?? revisionAnchorIntent.rawInstruction)] : []),
-            ...(anchorFrameRequest ? [creativeActivityItem("anchor-frame", "Anchor frame extraction", "queued", `Source video frame requested at ${anchorFrameRequest.timestampSeconds ?? "unknown"}s / scene ${anchorFrameRequest.sceneNumber ?? "unknown"}.`)] : []),
+            ...(resolvedAnchorFrameRequest ? [creativeActivityItem("anchor-frame", "Anchor frame extraction", resolvedAnchorFrameRequest.frameUrl ? "completed" : resolvedAnchorFrameRequest.status === "failed" ? "failed" : "queued", resolvedAnchorFrameRequest.frameUrl ? `Anchor frame extracted and attached: ${resolvedAnchorFrameRequest.frameUrl}` : `Source video frame requested at ${resolvedAnchorFrameRequest.timestampSeconds ?? "unknown"}s / scene ${resolvedAnchorFrameRequest.sceneNumber ?? "unknown"}. Status: ${resolvedAnchorFrameRequest.status}.`)] : []),
             creativeActivityItem("creative-blueprint", "Creative blueprint", "completed", presenterRevisionCreative.creativeBrief),
             creativeActivityItem("provider-job", "Provider job", nextPendingAction.status === "provider_job_created" ? "working" : "queued", nextPendingAction.status === "provider_job_created" ? "Revision provider job was created." : "Revision is queued for provider processing.")
           ]),

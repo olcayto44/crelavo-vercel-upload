@@ -67,6 +67,113 @@ export type CreateHeyGenVideoAgentInput = {
   incognito_mode?: boolean;
 };
 
+export type HeyGenAgentArtifact = {
+  id: string;
+  provider: "heygen";
+  providerResourceId: string;
+  type: "blueprint" | "image" | "video" | "audio" | "file" | "message";
+  title: string;
+  status: string;
+  previewUrl?: string;
+  thumbnailUrl?: string;
+  description?: string;
+  createdAt?: string;
+  raw?: unknown;
+};
+
+function firstString(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return "";
+}
+
+function firstHttpsUrl(value: unknown): string {
+  if (typeof value === "string") {
+    const direct = value.trim();
+    if (/^https?:\/\//i.test(direct)) return direct;
+    return direct.match(/https?:\/\/[^\s"'<>]+/i)?.[0] ?? "";
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstHttpsUrl(item);
+      if (found) return found;
+    }
+    return "";
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["captioned_video_url", "captionedVideoUrl", "video_url", "videoUrl", "download_url", "downloadUrl", "preview_url", "previewUrl", "url", "src", "file", "files", "output", "result", "data", "thumbnail_url", "thumbnailUrl"]) {
+      const found = firstHttpsUrl(record[key]);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+function inferArtifactType(record: Record<string, unknown>, id: string, url: string): HeyGenAgentArtifact["type"] {
+  const signal = `${id} ${firstString(record, ["type", "resource_type", "resourceType", "kind", "mime_type", "mimeType"])} ${url}`.toLowerCase();
+  if (/video|\.mp4|\.mov|\.webm/.test(signal)) return "video";
+  if (/image|avatar|poster|thumbnail|\.png|\.jpe?g|\.webp|\.gif/.test(signal)) return "image";
+  if (/audio|voice|\.mp3|\.wav|\.m4a|\.aac/.test(signal)) return "audio";
+  if (/draft|blueprint|storyboard|plan|script/.test(signal)) return "blueprint";
+  if (/message|assistant|chat/.test(signal)) return "message";
+  return url ? "file" : "message";
+}
+
+function artifactStatus(record: Record<string, unknown>) {
+  return firstString(record, ["status", "state", "resource_status", "resourceStatus", "video_status", "videoStatus"]) || "available";
+}
+
+function walkObjects(value: unknown, visit: (record: Record<string, unknown>) => void, seen = new WeakSet<object>()) {
+  if (!value || typeof value !== "object") return;
+  if (seen.has(value)) return;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    for (const item of value) walkObjects(item, visit, seen);
+    return;
+  }
+  const record = value as Record<string, unknown>;
+  visit(record);
+  for (const nested of Object.values(record)) walkObjects(nested, visit, seen);
+}
+
+export function normalizeHeyGenVideoAgentArtifacts(sessionPayload: unknown): HeyGenAgentArtifact[] {
+  const byId = new Map<string, HeyGenAgentArtifact>();
+  walkObjects(sessionPayload, (record) => {
+    const providerResourceId = firstString(record, ["resource_id", "resourceId", "asset_id", "assetId", "video_id", "videoId", "id"]);
+    const url = firstHttpsUrl(record);
+    const hasResourceSignal = Boolean(providerResourceId && (/^(video|image|audio|draft|resource|asset|file|message)_/i.test(providerResourceId) || url || record.resource_id || record.resourceId || record.video_id || record.videoId));
+    if (!hasResourceSignal) return;
+    const type = inferArtifactType(record, providerResourceId, url);
+    const title = firstString(record, ["title", "name", "label"]) || (type === "video" ? "HeyGen video" : type === "image" ? "HeyGen visual" : type === "blueprint" ? "HeyGen blueprint" : "HeyGen artifact");
+    const thumbnailUrl = firstHttpsUrl(record.thumbnail_url ?? record.thumbnailUrl ?? record.cover_url ?? record.coverUrl);
+    const artifact: HeyGenAgentArtifact = {
+      id: providerResourceId,
+      provider: "heygen",
+      providerResourceId,
+      type,
+      title,
+      status: artifactStatus(record),
+      previewUrl: type === "video" || type === "image" || type === "audio" || type === "file" ? url || undefined : undefined,
+      thumbnailUrl: thumbnailUrl || undefined,
+      description: firstString(record, ["description", "text", "content", "message"]),
+      createdAt: firstString(record, ["created_at", "createdAt", "updated_at", "updatedAt"]),
+      raw: record
+    };
+    const previous = byId.get(providerResourceId);
+    if (!previous || (!previous.previewUrl && artifact.previewUrl) || (previous.type !== "video" && artifact.type === "video")) byId.set(providerResourceId, artifact);
+  });
+  return Array.from(byId.values()).sort((a, b) => String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")) || a.id.localeCompare(b.id));
+}
+
+export function latestHeyGenVideoArtifact(artifacts: HeyGenAgentArtifact[]) {
+  const videos = artifacts.filter((artifact) => artifact.type === "video");
+  return videos[videos.length - 1] ?? null;
+}
+
 export async function createHeyGenVideoAgentSession(input: CreateHeyGenVideoAgentInput) {
   return heygenJson("/v3/video-agents", {
     method: "POST",

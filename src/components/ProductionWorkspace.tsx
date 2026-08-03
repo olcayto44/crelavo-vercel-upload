@@ -209,7 +209,9 @@ function workflowActionTone(status?: string) {
   return "unknown";
 }
 
-function creativeLiveCards(input: { metadata: Record<string, any>; inputJson: Record<string, any>; outputJson: Record<string, any>; type: string }) {
+function creativeLiveCards(input: { metadata: Record<string, any>; inputJson: Record<string, any>; outputJson: Record<string, any>; type: string }): Array<{ title: string; status: string; description: string; previewUrl?: string; thumbnailUrl?: string; type?: string; providerResourceId?: string }> {
+  const heygenArtifacts = Array.isArray(input.outputJson.heygenAgentArtifacts) ? input.outputJson.heygenAgentArtifacts : [];
+  if (heygenArtifacts.length > 0) return heygenArtifacts.map((item: Record<string, any>) => ({ title: String(item.title ?? "HeyGen artifact"), status: `${String(item.type ?? "artifact")} · ${String(item.status ?? "available")}`, description: String(item.description ?? item.providerResourceId ?? "HeyGen Video Agent produced this resource."), previewUrl: String(item.previewUrl ?? item.thumbnailUrl ?? ""), thumbnailUrl: String(item.thumbnailUrl ?? ""), type: String(item.type ?? "file"), providerResourceId: String(item.providerResourceId ?? item.id ?? "") }));
   const savedLog = Array.isArray(input.outputJson.creativeActivityLog) ? input.outputJson.creativeActivityLog : Array.isArray(input.metadata.creativeActivityLog) ? input.metadata.creativeActivityLog : Array.isArray(input.inputJson.creativeActivityLog) ? input.inputJson.creativeActivityLog : [];
   if (savedLog.length > 0) return savedLog.map((item: Record<string, any>) => ({ title: String(item.title ?? "Creative step"), status: String(item.status ?? "working"), description: String(item.description ?? "Creative production step is being processed.") }));
   const text = `${String(input.metadata.creativeBrief ?? input.inputJson.creativeBrief ?? input.outputJson.creativeBrief ?? "")} ${String(input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "")} ${String(input.metadata.providerPrompt ?? input.inputJson.providerPrompt ?? "")} ${String(input.outputJson.providerStatus ?? "")}`.toLocaleLowerCase("tr-TR");
@@ -1181,7 +1183,7 @@ const data = await response.json().catch(() => ({}));
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
 {visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Scene {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
 {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
-{heygenSessionId || heygenVideoId ? <p className="provider-job-note">HeyGen proof: session {heygenSessionId || "pending"}{heygenVideoId ? ` · video ${heygenVideoId}` : ""}</p> : null}
+{heygenSessionId || heygenVideoId ? <p className="provider-job-note">HeyGen proof: session {heygenSessionId || "pending"}{heygenVideoId ? ` · video ${heygenVideoId}` : ""}{outputJson.heygenLatestVideoResourceId ? ` · latest resource ${String(outputJson.heygenLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.heygenAgentArtifacts) ? ` · artifacts ${outputJson.heygenAgentArtifacts.length}` : ""}</p> : null}
 {providerJobMissingWhileRunning ? <p className="provider-poll-note provider-start-note">Production is marked running, but no provider job is attached yet. Press Start Production once to attach the video provider job.</p> : null}
             {providerStartNote ? <p className="provider-poll-note provider-start-note">{providerStartNote}</p> : null}
             {pollingNote ? <p className="provider-poll-note">{pollingNote}</p> : null}
@@ -1201,15 +1203,17 @@ const data = await response.json().catch(() => ({}));
 
         {creativeActivityCards.length > 0 ? (
           <section className="automation-brief-card">
-            <span className="badge">Creative director live board</span>
-            <h3>Assistant is shaping the video like a creative director</h3>
-            <p>These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status.</p>
+            <span className="badge">{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "HeyGen Video Agent artifacts" : "Creative director live board"}</span>
+            <h3>{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "HeyGen agent üretimleri" : "Assistant is shaping the video like a creative director"}</h3>
+            <p>{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "Bu panel HeyGen session içinden gelen gerçek blueprint, görsel, video ve resource çıktılarını gösterir." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
             <div className="automation-part-list">
               {creativeActivityCards.map((card, index) => (
                 <div key={`${card.title}-${index}`}>
                   <strong>{card.title}</strong>
                   <small>{String(card.status)}</small>
+                  {card.previewUrl && String(card.type) === "video" ? <video src={card.previewUrl} controls playsInline style={{ width: "100%", borderRadius: 12, marginTop: 8 }} /> : card.previewUrl ? <img src={card.previewUrl} alt={card.title} style={{ width: "100%", borderRadius: 12, marginTop: 8 }} /> : null}
                   <p>{card.description}</p>
+                  {card.providerResourceId ? <small>Resource: {card.providerResourceId}</small> : null}
                 </div>
               ))}
             </div>
