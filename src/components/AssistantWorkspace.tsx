@@ -3207,9 +3207,13 @@ async function startRawMicrophoneFallback() {
       <main className="clean-studio-main" aria-label="Production workspace">
         <section className="clean-studio-hero">
           <div className="clean-hero-copy">
-            <span className="badge">Crelavo AI Studio</span>
+            <span className="badge">Crelavo AI Studio · HeyGen Bridge Online</span>
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
+            <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status">
+              <span><Sparkles size={13} /><strong>HeyGen Video Agent Bridge aktif</strong></span>
+              <span><Bot size={13} /><strong>Native session/artifact tracking</strong></span>
+            </div>
             {!startedProduction && productionBrief.trim().length === 0 ? (
               <div className="clean-hero-selection-chips" aria-label="Quick start examples">
                 {quickStartBriefes.map((example) => (
