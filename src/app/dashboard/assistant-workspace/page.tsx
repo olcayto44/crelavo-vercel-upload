@@ -1,11 +1,9 @@
-import { HeyGenVideoAgentWorkspace } from "@/components/HeyGenVideoAgentWorkspace";
 import { WorkAssistant } from "@/components/WorkAssistant";
 import { WorkspaceErrorBoundary } from "@/components/WorkspaceErrorBoundary";
 
 type AssistantWorkspaceSearchParams = {
   idea?: string | string[];
   category?: string | string[];
-  legacy?: string | string[];
 };
 
 function firstParam(value?: string | string[]) {
@@ -17,7 +15,6 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
   const idea = firstParam(params?.idea).normalize("NFC");
   const category = firstParam(params?.category).normalize("NFC");
   const initialIdea = idea || category;
-  const legacyMode = firstParam(params?.legacy) === "1";
 
   return (
     <main className="omni-work-route">
@@ -28,7 +25,7 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
           <a className="btn" href="/dashboard/create">Start production</a>
         </section>
       }>
-        {legacyMode ? <WorkAssistant initialIdea={initialIdea} initialCategory={category} /> : <HeyGenVideoAgentWorkspace initialIdea={initialIdea} />}
+        <WorkAssistant initialIdea={initialIdea} initialCategory={category} />
       </WorkspaceErrorBoundary>
     </main>
   );
