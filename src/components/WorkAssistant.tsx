@@ -42,6 +42,17 @@ type PlanResponse = {
   redirect?: string;
 };
 
+type HeyGenAgentArtifact = {
+  id: string;
+  type?: string;
+  title?: string;
+  status?: string;
+  previewUrl?: string;
+  thumbnailUrl?: string;
+  description?: string;
+  providerResourceId?: string;
+};
+
 const studioChips = ["Video", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
 
 const productionLabels: Record<string, string> = {
@@ -845,6 +856,8 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState("");
   const [materials, setMaterials] = useState<UserUploadedMaterial[]>([]);
+  const [heygenAgentArtifacts, setHeygenAgentArtifacts] = useState<HeyGenAgentArtifact[]>([]);
+  const [heygenAgentSessionId, setHeygenAgentSessionId] = useState("");
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -962,6 +975,24 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
     resetSetupFor(normalized, clean);
     setProductionPrompt(clean);
+    const presenterIntentForAgent = normalized.production_type === "video" && /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(clean);
+    if (presenterIntentForAgent) {
+      try {
+        setStatus("HeyGen Video Agent is preparing the session...");
+        const agentResponse = await fetch("/api/heygen-agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userMessage: clean, orientation: "portrait" }) });
+        const agentData = await agentResponse.json().catch(() => ({}));
+        if (agentResponse.ok) {
+          setHeygenAgentSessionId(String(agentData.sessionId ?? ""));
+          setHeygenAgentArtifacts(Array.isArray(agentData.artifacts) ? agentData.artifacts : []);
+          setMessages((current) => [...current, { id: uid(), role: "assistant", content: agentData.reply ? String(agentData.reply) : assistantReply(normalized) }]);
+          setStatus("HeyGen Video Agent session ready. Press Start Production to continue.");
+          return;
+        }
+        setStatus(agentData.error ? `HeyGen Agent fallback: ${agentData.error}` : "HeyGen Agent fallback used. Draft is ready.");
+      } catch {
+        setStatus("HeyGen Agent fallback used. Draft is ready.");
+      }
+    }
     setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized) }]);
     setStatus("Draft ready. Press Start Production to continue.");
   }
@@ -1213,37 +1244,6 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
           ) : null}
         </main>
 
-        <aside className="omni-live-board-panel">
-          <div className="omni-live-board-head">
-            <span className="badge">{draftWantsPresenterVideo ? "Presenter video route" : "Live creative board"}</span>
-            <h3>{draftCreative?.preset ?? "Assistant production board"}</h3>
-            <p>{draftWantsPresenterVideo ? "Bu istek presenter video akışına yönlenecek. Üretim başladığında plan, kaynaklar ve video çıktıları production panelinde takip edilir." : "As you describe the production, Crelavo will prepare the route, assets, provider and delivery plan here."}</p>
-          </div>
-          <div className="omni-live-board-list">
-            {((draftWantsPresenterVideo ? [{ id: "heygen-native-bridge", title: "HeyGen native artifacts", status: "ready", description: "Crelavo will open a HeyGen Video Agent session and mirror real session artifacts/resources into the production panel." }] : []).concat(draftActivityLog.length ? draftActivityLog : [
-              { id: "heygen-global-bridge", title: "Video Agent route", status: "ready", description: "Presenter içeren video istekleri üretim başladığında HeyGen Video Agent akışına bağlanır ve çıktılar production panelinde görünür." },
-              { id: "assistant", title: "Assistant routing", status: plan ? "completed" : "waiting", description: plan ? `Draft ready: ${labelFor(plan.production_type)}` : "Write your request to start routing." },
-              { id: "setup", title: "Setup choices", status: setupItems.length ? "active" : "waiting", description: setupItems.length ? setupItems.join(" · ") : "Video type, quality, duration, format, voice and extras will appear here." },
-              { id: "delivery", title: "Delivery package", status: plan ? "queued" : "waiting", description: plan ? (plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).join(", ") : "Preview, final files and revision path will be prepared after routing." }
-            ])).map((item) => (
-              <article className="omni-live-board-card" key={String(item.id)}>
-                <small>{String(item.status)}</small>
-                <strong>{String(item.title)}</strong>
-                <p>{String(item.description)}</p>
-              </article>
-            ))}
-          </div>
-          <div className="omni-resource-board">
-            <strong>Resources</strong>
-            <div>
-              <span>Avatars {draftWantsPresenterVideo ? "1" : "0"}</span>
-              <span>Voices {setupItems.some((item) => /voice|ses/i.test(item)) ? "1" : "0"}</span>
-              <span>Media {materials.length}</span>
-              <span>Audio {setupItems.some((item) => /music|audio|voice/i.test(item)) ? "1" : "0"}</span>
-              <span>Design Elements {draftCreative ? draftCreative.tags.length + 4 : setupItems.length}</span>
-            </div>
-          </div>
-        </aside>
         </div>
 
         {status ? <p className="omni-status-line">{status}</p> : null}
