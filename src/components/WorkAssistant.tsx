@@ -42,7 +42,7 @@ type PlanResponse = {
   redirect?: string;
 };
 
-const studioChips = ["AI Video", "Presenter Video", "Product Ad", "UGC Sales Video", "Link to Video", "Social Ad", "Campaign Video"];
+const studioChips = ["Video", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
 
 const productionLabels: Record<string, string> = {
   video: "AI Video",
@@ -1128,9 +1128,9 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
       <div className="omni-studio-shell">
         <header className="omni-studio-header">
           <div>
-            <span className="badge"><Sparkles size={14} /> Crelavo Video Agent</span>
-            <h1>Tell Crelavo what video to create</h1>
-            <p>Describe the video in one prompt. Crelavo routes presenter, product, UGC and campaign videos into the right production flow.</p>
+            <span className="badge"><Sparkles size={14} /> Omnichannel Studio</span>
+            <h1>Ask AI to build anything</h1>
+            <p>One workspace for videos, websites, apps, voices, images, SEO packs, campaigns, and source packages.</p>
           </div>
           <div className="omni-live-pill"><span /> AI router online</div>
         </header>
@@ -1144,8 +1144,8 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
           {messages.length === 0 ? (
             <div className="omni-empty-state">
               <Bot size={48} />
-              <h2>Tell Crelavo what video to create</h2>
-              <p>Example: Crelavo için dışarıda hareketli bir kişinin anlattığı, güçlü hook ve FOMO içeren 10 saniyelik dikey tanıtım videosu yap.</p>
+              <h2>Tell Crelavo what to create</h2>
+              <p>Example: Create a premium online movie streaming website with login, categories, watch page, admin panel, and source code delivery.</p>
             </div>
           ) : null}
 
@@ -1251,7 +1251,7 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
         <form className="omni-input-bar" onSubmit={submitPrompt}>
           <input ref={fileRef} type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" hidden onChange={(event) => uploadMaterial(event.currentTarget.files)} />
           <button className="omni-icon-button" type="button" onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Attach material"><Paperclip size={18} /></button>
-          <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKeyDown} placeholder="Describe the video you want to create..." />
+          <textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={handleKeyDown} placeholder="Describe what you want to create..." />
           <button className="omni-send-button" type="submit" disabled={planning || !input.trim()}><Send size={18} /></button>
         </form>
       </div>
