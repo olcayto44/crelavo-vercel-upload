@@ -3211,8 +3211,9 @@ async function startRawMicrophoneFallback() {
             <h1>{selectedProduction?.label ?? "AI Production"}</h1>
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
             <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status">
-              <span><Sparkles size={13} /><strong>HeyGen Video Agent Bridge aktif</strong></span>
-              <span><Bot size={13} /><strong>Native session/artifact tracking</strong></span>
+              <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
+              <span><Bot size={13} /><strong>Video Agent native artifacts aktif</strong></span>
+              <span><Gauge size={13} /><strong>Build marker: assistant-workspace-bridge</strong></span>
             </div>
             {!startedProduction && productionBrief.trim().length === 0 ? (
               <div className="clean-hero-selection-chips" aria-label="Quick start examples">
@@ -3478,9 +3479,14 @@ async function startRawMicrophoneFallback() {
         <main className="ai-dashboard-canvas" aria-label="Production overview">
           <section className="studio-preview-plan ai-preview-hero">
             <div>
-              <span className="badge">Production preview</span>
+              <span className="badge">Production preview · HeyGen Bridge Online</span>
               <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
               <p>{productionBrief || "Henüz üretim brief'i yok. Soldaki tek sohbet alanına isteğini yazınca burada üretim planı, teslimatlar, action ve kredi tahmini görünür."}</p>
+              <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status secondary">
+                <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
+                <span><Bot size={13} /><strong>Video Agent native artifacts aktif</strong></span>
+                <span><Gauge size={13} /><strong>Build marker: assistant-workspace-bridge</strong></span>
+              </div>
             </div>
             <div className="studio-preview-metrics">
               <span><small>Kalite</small><strong>{selectedQuality}</strong></span>
