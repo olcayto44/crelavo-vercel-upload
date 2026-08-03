@@ -1170,9 +1170,6 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
           {studioChips.map((chip) => <button type="button" key={chip} onClick={() => useChip(chip)}>{chip}</button>)}
         </div>
 
-        <section className="omni-heygen-embed" style={{ width: "min(920px, 100%)", margin: "0 auto 18px", borderRadius: 24, overflow: "hidden", border: "1px solid rgba(96,165,250,.22)", background: "rgba(15,23,42,.72)", boxShadow: "0 24px 70px rgba(2,6,23,.28)" }}>
-          <iframe width="560" height="315" src="https://app.heygen.com/embeds/a8cf141046bf4947a695a38303dde3f8" title="Check out a new AI Video I just made!" frameBorder="0" allow="encrypted-media; fullscreen;" allowFullScreen style={{ width: "100%", aspectRatio: "16 / 9", height: "auto", display: "block" }} />
-        </section>
 
         <div className="omni-agent-workbench">
         <main className="omni-chat-panel" ref={chatRef}>
