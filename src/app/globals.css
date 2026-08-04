@@ -12,6 +12,23 @@
   --orange: #f59e0b;
 }
 
+.omni-gallery-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.omni-gallery-actions button { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.omni-gallery-actions small { color: var(--muted); }
+.omni-gallery-modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(0,0,0,.68); padding: 20px; }
+.omni-gallery-card { width: min(960px, 96vw); max-height: 86vh; overflow: auto; border: 1px solid var(--line); border-radius: 24px; background: #0b1020; color: var(--text); padding: 20px; box-shadow: 0 24px 80px rgba(0,0,0,.45); }
+.omni-gallery-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.omni-gallery-head p { margin: 4px 0 0; color: var(--muted); }
+.omni-gallery-head button { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px; width: 34px; height: 34px; cursor: pointer; }
+.omni-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.omni-gallery-grid button { text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 18px; padding: 10px; cursor: pointer; display: grid; gap: 8px; }
+.omni-gallery-grid button.active { border-color: var(--cyan); background: rgba(34,211,238,.12); }
+.omni-gallery-grid img, .omni-gallery-placeholder { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 14px; background: var(--panel-strong); display: grid; place-items: center; font-size: 40px; }
+.omni-gallery-grid small { color: var(--muted); }
+.omni-gallery-grid.voice { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.omni-gallery-grid audio { width: 100%; }
+.omni-gallery-empty { min-height: 120px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); }
+
 * {
   box-sizing: border-box;
 }

@@ -53,6 +53,26 @@ type WorkProductionCard = {
   output_json?: Record<string, unknown> | null;
 };
 
+type HeyGenGalleryAvatar = {
+  id: string;
+  avatarId?: string;
+  lookId?: string;
+  name: string;
+  imageUrl?: string;
+  gender?: string;
+  style?: string;
+};
+
+type HeyGenGalleryVoice = {
+  id: string;
+  name: string;
+  language?: string;
+  gender?: string;
+  age?: string;
+  style?: string;
+  previewAudioUrl?: string;
+};
+
 const studioChips = ["Video", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
 
 const productionLabels: Record<string, string> = {
@@ -120,6 +140,7 @@ const setupProfiles: Record<string, SetupProfile> = {
     note: "Only video-specific production choices are shown here.",
     groups: [
       { id: "videoStyle", title: "Video style", options: ["AI presenter", "Voice-over only", "Silent / music only"] },
+      { id: "presenterChoice", title: "Presenter choice", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
       { id: "videoType", title: "Video type", options: ["Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Social media short", "Cinematic promo"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
       { id: "duration", title: "Duration", options: sharedVideoDuration, credit: 350 },
@@ -319,6 +340,14 @@ const trUiLabels: Record<string, string> = {
   "AI video setup": "Video üretim ayarları",
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
   "Video style": "Video tarzı",
+  "Presenter choice": "Sunucu seçimi",
+  "Auto choose best presenter": "En uygun sunucuyu otomatik seç",
+  "Female presenter": "Kadın sunucu",
+  "Male presenter": "Erkek sunucu",
+  "Young energetic creator": "Genç enerjik creator",
+  "Professional business presenter": "Profesyonel iş sunucusu",
+  "Energetic UGC creator": "Enerjik UGC creator",
+  "Mature trustworthy presenter": "Olgun güvenilir sunucu",
   "AI presenter": "AI sunuculu",
   "Voice-over only": "Sadece seslendirmeli",
   "Silent / music only": "Sessiz / müzikli",
@@ -484,6 +513,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       note: isCompetitorComparison ? "Options focus on safe competitor analysis, positioning angle, comparison hook, and an original Crelavo ad." : isUgcProductRecommendation ? "Options focus on a native creator-style recommendation using the supplied product link." : "Options are generated from the supplied link and the selected ad/video intent.",
       groups: [
         { id: "videoType", title: "Ad type", options: isCompetitorComparison ? ["Competitor comparison", "Alternative positioning", "Market gap ad", "Website promo", "Explainer video", "Social media short"] : isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
+        { id: "presenterChoice", title: "Presenter choice", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
         { id: "source", title: isCompetitorComparison ? "Competitor analysis" : "Link analysis", multi: true, options: isCompetitorComparison ? ["Analyze competitor page", "Extract competitor offer", "Extract benefits", "Find positioning angle", "Create comparison hook", "Create Crelavo CTA", "Safe no-copy guard"] : ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
@@ -636,6 +666,15 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
     }
     if (group.id === "videoType" && /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text)) {
       const wanted = group.options.find((option) => /ugc-style product script|social media short|product ad video/.test(option.toLowerCase()));
+      if (wanted) selected = [wanted];
+    }
+    if (group.id === "presenterChoice") {
+      const female = /female\s*(presenter|creator|host|avatar)|woman\s*(presenter|creator|host|avatar)|kad[ıi]n\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /female presenter/i.test(option)) : undefined;
+      const male = /male\s*(presenter|creator|host|avatar)|man\s*(presenter|creator|host|avatar)|erkek\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /male presenter/i.test(option)) : undefined;
+      const ugc = /ugc|koc|creator|tiktok|reels|influencer|social\s+media\s+creator|energetic|enerjik/.test(text) ? group.options.find((option) => /energetic ugc creator|young energetic creator/i.test(option)) : undefined;
+      const professional = /saas|business|professional|demo|explainer|kurumsal|profesyonel/.test(text) ? group.options.find((option) => /professional business presenter/i.test(option)) : undefined;
+      const trustworthy = /product\s+ad|e-?commerce|ecommerce|trustworthy|güvenilir|guvenilir|mature|olgun/.test(text) ? group.options.find((option) => /mature trustworthy presenter/i.test(option)) : undefined;
+      const wanted = female || male || ugc || professional || trustworthy;
       if (wanted) selected = [wanted];
     }
     if (group.id === "videoStyle") {
@@ -1065,6 +1104,52 @@ function writeStoredWorkDraft(draft: StoredWorkDraft) {
   }
 }
 
+function collectRecords(value: unknown, limit = 80): Record<string, any>[] {
+  const out: Record<string, any>[] = [];
+  const walk = (node: unknown) => {
+    if (out.length >= limit || !node) return;
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (typeof node !== "object") return;
+    const record = node as Record<string, any>;
+    if (record.id || record.avatar_id || record.look_id || record.voice_id || record.preview_audio_url || record.preview_image_url || record.image_url) out.push(record);
+    Object.values(record).forEach(walk);
+  };
+  walk(value);
+  return out;
+}
+
+function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
+  return collectRecords(payload).map((item) => {
+    const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? item.id ?? "").trim();
+    const lookId = String(item.look_id ?? item.lookId ?? item.id ?? "").trim();
+    const imageUrl = String(item.preview_image_url ?? item.previewImageUrl ?? item.image_url ?? item.imageUrl ?? item.thumbnail_url ?? item.thumbnailUrl ?? item.avatar?.preview_image_url ?? "").trim();
+    return {
+      id: lookId || avatarId,
+      avatarId,
+      lookId,
+      name: String(item.name ?? item.display_name ?? item.avatar_name ?? item.avatar?.name ?? "HeyGen avatar"),
+      imageUrl,
+      gender: String(item.gender ?? item.avatar?.gender ?? "").trim(),
+      style: String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim()
+    };
+  }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 48);
+}
+
+function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
+  return collectRecords(payload).map((item) => {
+    const id = String(item.voice_id ?? item.voiceId ?? item.id ?? "").trim();
+    return {
+      id,
+      name: String(item.name ?? item.display_name ?? item.voice_name ?? "HeyGen voice"),
+      language: String(item.language ?? item.locale ?? item.languages?.[0] ?? "").trim(),
+      gender: String(item.gender ?? "").trim(),
+      age: String(item.age ?? item.age_group ?? "").trim(),
+      style: String(item.style ?? item.tone ?? item.emotion ?? item.category ?? "").trim(),
+      previewAudioUrl: String(item.preview_audio_url ?? item.previewAudioUrl ?? item.sample_audio_url ?? item.audio_url ?? "").trim()
+    };
+  }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 80);
+}
+
 export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAssistantProps) {
   const storedDraft = readStoredWorkDraft();
   const restoredDraftPrompt = storedDraft?.productionPrompt || "";
@@ -1091,6 +1176,13 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [status, setStatus] = useState("");
   const [materials, setMaterials] = useState<UserUploadedMaterial[]>([]);
   const [activeProduction, setActiveProduction] = useState<WorkProductionCard | null>(null);
+  const [avatarGallery, setAvatarGallery] = useState<HeyGenGalleryAvatar[]>([]);
+  const [voiceGallery, setVoiceGallery] = useState<HeyGenGalleryVoice[]>([]);
+  const [galleryMode, setGalleryMode] = useState<"avatar" | "voice" | null>(null);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryError, setGalleryError] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<HeyGenGalleryAvatar | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<HeyGenGalleryVoice | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -1148,13 +1240,31 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   function toggleSetupOption(group: SetupGroup, option: string) {
     setProductionSetup((current) => {
-      const selected = current[group.id] ?? [];
-      if (group.multi) {
-        return { ...current, [group.id]: selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] };
-      }
-      return { ...current, [group.id]: selected.includes(option) ? [] : [option] };
+      const currentValues = current[group.id] ?? [];
+      const nextValues = group.multi ? (currentValues.includes(option) ? currentValues.filter((item) => item !== option) : [...currentValues, option]) : [option];
+      return { ...current, [group.id]: nextValues };
     });
   }
+
+  async function openHeyGenGallery(mode: "avatar" | "voice") {
+    setGalleryMode(mode);
+    setGalleryError("");
+    const alreadyLoaded = mode === "avatar" ? avatarGallery.length > 0 : voiceGallery.length > 0;
+    if (alreadyLoaded) return;
+    setGalleryLoading(true);
+    try {
+      const action = mode === "avatar" ? "avatar_looks" : "voices";
+      const response = await fetch(`/api/heygen?action=${action}&limit=60`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(data.error ?? "HeyGen gallery could not be loaded."));
+      if (mode === "avatar") setAvatarGallery(normalizeAvatarGallery(data.result ?? data));
+      else setVoiceGallery(normalizeVoiceGallery(data.result ?? data));
+    } catch (error) {
+      setGalleryError(error instanceof Error ? error.message : "HeyGen gallery could not be loaded.");
+  } finally {
+    setGalleryLoading(false);
+  }
+}
 
   async function refreshActiveProduction(productionId: string, userId: string, accessToken: string) {
     const response = await fetch(`/api/productions?user_id=${encodeURIComponent(userId)}`, { headers: authHeaders(accessToken) }).catch(() => null);
@@ -1168,7 +1278,16 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const project = isProjectType(activePlanInput.production_type);
     const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), cleanInput);
     const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
-    const setupForPayload = { ...productionSetup, voice: sanitizedSetup.voice ?? productionSetup.voice, subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles };
+    const setupForPayload = {
+      ...productionSetup,
+      voice: sanitizedSetup.voice ?? productionSetup.voice,
+      subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles,
+      ...(selectedAvatar?.avatarId ? { heygen_avatar_id: [selectedAvatar.avatarId] } : {}),
+      ...(selectedAvatar?.lookId ? { heygen_look_id: [selectedAvatar.lookId] } : {}),
+      ...(selectedVoice?.id ? { heygen_voice_id: [selectedVoice.id] } : {}),
+      ...(selectedAvatar?.name ? { selected_presenter_name: [selectedAvatar.name] } : {}),
+      ...(selectedVoice?.name ? { selected_voice_name: [selectedVoice.name] } : {})
+    };
     const setupFields = setupDerivedFields(activePlanInput.production_type, setupForPayload);
     const setupItemsForPayload = selectedSetupItems(setupForPayload);
     const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
@@ -1215,8 +1334,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         estimated_credits: totalEstimatedCreditsForPayload,
         delivery_level: project ? "working_source_package" : "production_package",
         delivery_requirements: { requested: true, status: "pending", formats },
-        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        input_json: { work_prompt: cleanInput, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar, selectedVoice, heygen_avatar_id: selectedAvatar?.avatarId, heygen_look_id: selectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        input_json: { work_prompt: cleanInput, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar, selectedVoice, heygen_avatar_id: selectedAvatar?.avatarId, heygen_look_id: selectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
         uploaded_materials: materials,
         legal_acceptance: true
       })
@@ -1529,6 +1648,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                             return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{ux(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
                           })}
                         </div>
+                        {group.id === "presenterChoice" ? <div className="omni-gallery-actions">
+                          <button type="button" onClick={() => openHeyGenGallery("avatar")}>{workUiLanguage === "tr" ? "Avatar galerisinden seç" : "Choose from avatar gallery"}</button>
+                          <button type="button" onClick={() => openHeyGenGallery("voice")}>{workUiLanguage === "tr" ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
+                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili avatar" : "Selected avatar"}: {selectedAvatar.name}</small> : null}
+                          {selectedVoice ? <small>{workUiLanguage === "tr" ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
+                        </div> : null}
                       </section>
                     ))}
                     <div className="omni-setup-summary">
@@ -1545,6 +1670,34 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             </article>
           ) : null}
         </main>
+
+        {galleryMode ? <div className="omni-gallery-modal" role="dialog" aria-modal="true">
+          <div className="omni-gallery-card">
+            <div className="omni-gallery-head">
+              <div>
+                <strong>{galleryMode === "avatar" ? (workUiLanguage === "tr" ? "Avatar galerisi" : "Avatar gallery") : (workUiLanguage === "tr" ? "Ses galerisi" : "Voice gallery")}</strong>
+                <p>{galleryMode === "avatar" ? (workUiLanguage === "tr" ? "Görerek bir HeyGen sunucusu seç." : "Choose a HeyGen presenter visually.") : (workUiLanguage === "tr" ? "Sesi dinleyip üretime bağla." : "Preview and attach a voice to production.")}</p>
+              </div>
+              <button type="button" onClick={() => setGalleryMode(null)}>×</button>
+            </div>
+            {galleryLoading ? <div className="omni-gallery-empty"><Loader2 size={16} className="spin" /> {workUiLanguage === "tr" ? "Galeri yükleniyor..." : "Loading gallery..."}</div> : null}
+            {galleryError ? <div className="omni-gallery-empty">{galleryError}</div> : null}
+            {!galleryLoading && !galleryError && galleryMode === "avatar" ? <div className="omni-gallery-grid">
+              {avatarGallery.length ? avatarGallery.map((avatar) => <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
+                {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
+                <strong>{avatar.name}</strong>
+                <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
+              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
+            </div> : null}
+            {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
+              {voiceGallery.length ? voiceGallery.map((voice) => <button type="button" key={voice.id} className={selectedVoice?.id === voice.id ? "active" : ""} onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>
+                <strong>{voice.name}</strong>
+                <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "HeyGen voice"}</small>
+                {voice.previewAudioUrl ? <audio controls src={voice.previewAudioUrl} onClick={(event) => event.stopPropagation()} /> : null}
+              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
+            </div> : null}
+          </div>
+        </div> : null}
 
         </div>
 

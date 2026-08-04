@@ -109,6 +109,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
   const durationSeconds = Number(selected.durationSeconds ?? selected.duration_seconds ?? selected.targetDurationSeconds ?? selected.duration ?? 30) || 30;
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_VIDEO_AGENT_AVATAR_ID ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID).trim() || DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID;
+  const lookId = String(selected.heygen_look_id ?? selected.look_id ?? selected.avatar_look_id ?? "").trim() || null;
   const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || null;
   const styleId = String(selected.heygen_style_id ?? selected.style_id ?? promptStyleId ?? process.env.HEYGEN_VIDEO_AGENT_STYLE_ID ?? "").trim() || null;
   const brandKitId = String(selected.heygen_brand_kit_id ?? selected.brand_kit_id ?? promptBrandKitId ?? process.env.HEYGEN_BRAND_KIT_ID ?? "").trim() || null;
@@ -119,6 +120,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, providerPrompt: String(selected.providerPrompt ?? selected.creativeProviderPrompt ?? "").trim(), script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0 }),
     mode: "generate" as const,
     avatar_id: avatarId,
+    look_id: lookId,
     voice_id: voiceId,
     style_id: styleId,
     brand_kit_id: brandKitId,

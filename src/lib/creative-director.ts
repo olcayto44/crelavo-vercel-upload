@@ -24,6 +24,20 @@ export function buildPresenterCreativeBrief(input: {
   const wantsDynamic = includesAny(signal, ["dinamik", "dynamic", "akıcı", "akici", "hızlı", "hizli", "enerjik", "energetic", "hareketli", "dikkat", "viral", "ugc", "creator"]);
   const wantsHook = includesAny(signal, ["hook", "kanca", "kapak", "cover", "ilk 3 saniye", "first 3 seconds", "fomo", "kaçır", "kacir", "missing out"]);
   const wantsDemo = includesAny(signal, ["uygulamalı", "uygulamali", "demo", "göster", "goster", "show", "product demo", "nasıl çalış", "nasil calis"]);
+  const presenterChoice = signal.includes("female presenter") || signal.includes("kadın sunucu") ? "Female presenter" :
+    signal.includes("male presenter") || signal.includes("erkek sunucu") ? "Male presenter" :
+    signal.includes("young energetic creator") || signal.includes("genç enerjik") ? "Young energetic creator" :
+    signal.includes("professional business presenter") || signal.includes("profesyonel iş") ? "Professional business presenter" :
+    signal.includes("energetic ugc creator") || signal.includes("enerjik ugc") ? "Energetic UGC creator" :
+    signal.includes("mature trustworthy presenter") || signal.includes("olgun güvenilir") ? "Mature trustworthy presenter" :
+    signal.includes("auto choose best presenter") ? "Auto choose best presenter" : "Auto choose best presenter";
+  const presenterDirection = presenterChoice === "Female presenter" ? "Preferred presenter: female presenter. Use a confident female creator/host; vary from the default avatar when possible." :
+    presenterChoice === "Male presenter" ? "Preferred presenter: male presenter. Use a confident male creator/host; vary from the default avatar when possible." :
+    presenterChoice === "Young energetic creator" ? "Preferred presenter: young energetic creator. Use a youthful, upbeat social-media creator look and delivery." :
+    presenterChoice === "Professional business presenter" ? "Preferred presenter: professional business presenter. Use a polished business presenter with clean, credible SaaS-demo energy." :
+    presenterChoice === "Energetic UGC creator" ? "Preferred presenter: energetic UGC creator. Use a natural TikTok/Reels-style creator, casual, trustworthy, and lively." :
+    presenterChoice === "Mature trustworthy presenter" ? "Preferred presenter: mature trustworthy presenter. Use a calm, credible, experienced presenter suited for product recommendation." :
+    "Preferred presenter: auto choose the best presenter for this topic. Avoid always reusing the same default presenter when multiple suitable options exist.";
 
   const preset = wantsOutdoor || wantsDynamic || wantsHook || wantsDemo
     ? "Outdoor UGC dynamic presenter"
@@ -33,7 +47,8 @@ export function buildPresenterCreativeBrief(input: {
     wantsOutdoor ? "outdoor" : "creator-presenter",
     wantsDynamic ? "dynamic-pacing" : "clean-pacing",
     wantsHook ? "hook-fomo" : "standard-hook",
-    wantsDemo ? "applied-demo" : "benefit-demo"
+    wantsDemo ? "applied-demo" : "benefit-demo",
+    `presenter-${presenterChoice.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
   ];
 
   const userLine = revisionMessage
@@ -42,6 +57,8 @@ export function buildPresenterCreativeBrief(input: {
 
   const creativeBrief = [
     `Preset: ${preset}`,
+    `Presenter choice: ${presenterChoice}`,
+    presenterDirection,
     "Creative director interpretation: Do not treat the user text as a raw note. Convert it into a high-performing social video concept with clear scene direction, hook, movement, proof, and CTA.",
     wantsOutdoor || wantsDynamic
       ? "Direction: build an outdoor / modern city UGC-style presenter video. Use one energetic realistic presenter walking, gesturing naturally, and speaking directly to camera. The video must feel alive, immediate, and attention-grabbing."
