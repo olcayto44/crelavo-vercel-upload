@@ -10,6 +10,7 @@ import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jobs";
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
+import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
 import { mirrorProviderAsset } from "@/lib/providers/storage";
@@ -66,6 +67,38 @@ function urlValue(...values: unknown[]) {
     if (url && isRealVideoUrl(url)) return url;
   }
   return "";
+}
+
+function textValue(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return "";
+}
+
+async function heygenVideoAgentCompletionOverride(output: Record<string, any>, visualStatus: NormalizedProviderStatus | null, outputVisualJobProvider: string): Promise<NormalizedProviderStatus | null> {
+  const proof = output.heygenProviderProof && typeof output.heygenProviderProof === "object" ? output.heygenProviderProof as Record<string, unknown> : {};
+  const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : {};
+  const isHeyGen = String(visualStatus?.provider ?? outputVisualJobProvider ?? proof.provider ?? visualJob.provider ?? "").toLowerCase() === "heygen_video_agent";
+  if (!isHeyGen) return null;
+  const directUrl = urlValue(visualStatus?.outputUrl, output.finalVideoUrl, output.providerFinalUrl, output.latestHeyGenVideoArtifact, output.visualStatus, visualJob.raw);
+  if (directUrl) return { provider: "heygen_video_agent", id: textValue(visualJob.id, proof.sessionId, visualStatus?.id), status: "succeeded", outputUrl: directUrl, raw: { source: "direct_output_bridge", visualStatus, output } };
+  const videoId = textValue(output.heygenLatestVideoResourceId, output.heygenVideoId, proof.videoId, visualJob.videoId, visualJob.raw && typeof visualJob.raw === "object" ? (visualJob.raw as Record<string, unknown>).video_id : "");
+  if (!videoId) return null;
+  try {
+    const video = await getHeyGenV3Video(videoId);
+    const finalUrl = urlValue(video);
+    const record = video && typeof video === "object" ? video as Record<string, unknown> : {};
+    const nested = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+    const status = String(nested.status ?? record.status ?? "").toLowerCase();
+    if (finalUrl && /complete|completed|success|succeeded|ready|done/.test(status)) {
+      return { provider: "heygen_video_agent", id: textValue(visualJob.id, proof.sessionId, visualStatus?.id), status: "succeeded", outputUrl: finalUrl, durationSeconds: Number(nested.duration ?? 0) || visualStatus?.durationSeconds, raw: { source: "v3_video_completion_bridge", video, visualStatus } };
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 async function requireAutomationStatusAccess(request: Request, body: Record<string, unknown>, production: { user_id?: string | null }) {
@@ -653,13 +686,16 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
     const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
+    const heygenCompletionStatus = await heygenVideoAgentCompletionOverride(outputWithRenderJob, normalizedVisualStatus, outputVisualJobProvider);
     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
       ? normalizedRenderStatus
-      : heygenVideoAgentVisualReady
-        ? normalizedVisualStatus
-        : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
+      : heygenCompletionStatus
+        ? heygenCompletionStatus
+        : heygenVideoAgentVisualReady
           ? normalizedVisualStatus
-          : null;
+          : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
+            ? normalizedVisualStatus
+            : null;
     if (visualStatus?.status === "succeeded" && visualStatus.outputUrl && requiresFinalRender && !successfulStatus) {
       const rawVisualPreviewUrl = urlValue(visualStatus.outputUrl, visualLifecycle.outputRegistry, outputWithRenderJob.visualJob, outputWithRenderJob.visualStatus, outputWithRenderJob);
       const fallbackPatch = rawVisualPreviewUrl
