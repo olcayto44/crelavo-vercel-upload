@@ -29,25 +29,33 @@ function ecommerceContextFrom(value: unknown) {
   return context as Record<string, unknown>;
 }
 
+function stripPostgresUnsafeText(value: string) {
+  return value.replace(/\\u0000/gi, "").replace(/\u0000/g, "");
+}
+
 function errorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message.replace(/\u0000/g, "");
+  if (error instanceof Error) return stripPostgresUnsafeText(error.message);
   if (error && typeof error === "object") {
     const record = error as Record<string, unknown>;
     const parts = [record.message, record.details, record.hint, record.code]
       .filter((value): value is string => typeof value === "string" && value.length > 0)
-      .map((value) => value.replace(/\u0000/g, ""));
+      .map((value) => stripPostgresUnsafeText(value));
     if (parts.length > 0) return parts.join(" | ");
   }
   return fallback;
 }
 
 function postgresSafe<T>(value: T): T {
-  if (typeof value === "string") return value.replace(/\u0000/g, "") as T;
+  if (typeof value === "string") return stripPostgresUnsafeText(value) as T;
   if (Array.isArray(value)) return value.map((item) => postgresSafe(item)) as T;
   if (value && typeof value === "object") {
     return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)])) as T;
   }
   return value;
+}
+
+function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
+  return postgresSafe(payload);
 }
 
 function pokeAutomationWorker(request: Request, productionId: string) {
@@ -270,7 +278,7 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
     .single();
 
   return {
-    data: result.data ? { ...result.data, output_json: result.data.output_json ?? {} } : null,
+    data: result.data ? postgresSafe({ ...result.data, output_json: result.data.output_json ?? {} }) : null,
     error: result.error
   };
 }
