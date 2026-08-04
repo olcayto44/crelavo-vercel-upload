@@ -50,6 +50,7 @@ type WorkProductionCard = {
   automation_status?: string;
   preview_url?: string | null;
   delivery_link?: string | null;
+  delivery_zip_url?: string | null;
   output_json?: Record<string, unknown> | null;
 };
 
@@ -1130,6 +1131,31 @@ function productionCardProvider(production: WorkProductionCard | null) {
   return String(visualJob?.provider ?? output.providerStatus ?? "Provider pending");
 }
 
+function firstTextValue(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return "";
+}
+
+function productionProviderProof(production: WorkProductionCard | null) {
+  const output = production?.output_json && typeof production.output_json === "object" ? production.output_json : {};
+  const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : {};
+  const proof = output.heygenProviderProof && typeof output.heygenProviderProof === "object" ? output.heygenProviderProof as Record<string, unknown> : {};
+  const latestArtifact = output.latestHeyGenVideoArtifact && typeof output.latestHeyGenVideoArtifact === "object" ? output.latestHeyGenVideoArtifact as Record<string, unknown> : {};
+  const provider = firstTextValue(proof.provider, visualJob.provider, output.providerStatus);
+  const sessionId = firstTextValue(output.heygenSessionId, proof.sessionId, visualJob.id);
+  const videoId = firstTextValue(output.heygenVideoId, proof.videoId, latestArtifact.providerResourceId);
+  const finalUrl = firstTextValue(production?.delivery_link, production?.preview_url, production?.delivery_zip_url, output.finalVideoUrl, output.providerFinalUrl, output.latestHeyGenVideoUrl, latestArtifact.previewUrl);
+  return { provider, sessionId, videoId, finalUrl };
+}
+
+function compactId(value: string) {
+  if (!value) return "—";
+  return value.length > 34 ? `${value.slice(0, 16)}…${value.slice(-10)}` : value;
+}
+
 function explainProductionFlow(activePlan: StudioPlan | null, language = "tr") {
   const typeLabel = activePlan ? (language === "tr" ? uiText(labelFor(activePlan.production_type)) : labelFor(activePlan.production_type)) : "production";
   const project = activePlan ? isProjectType(activePlan.production_type) : false;
@@ -1371,6 +1397,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftWantsPresenterVideo = Boolean(plan) && !draftNoPeopleMotionIntent && (draftCardsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(draftPromptText));
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
+  const activeProviderProof = productionProviderProof(activeProduction);
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
@@ -1410,6 +1437,18 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 }
 
   async function refreshActiveProduction(productionId: string, userId: string, accessToken: string) {
+    const statusResponse = await fetch("/api/automation/status", {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify({ production_id: productionId, user_id: userId, auto: true })
+    }).catch(() => null);
+    if (statusResponse?.ok) {
+      const statusData = await statusResponse.json().catch(() => ({}));
+      if (statusData.production) {
+        setActiveProduction(statusData.production as WorkProductionCard);
+        return;
+      }
+    }
     const response = await fetch(`/api/productions?user_id=${encodeURIComponent(userId)}`, { headers: authHeaders(accessToken) }).catch(() => null);
     if (!response?.ok) return;
     const data = await response.json().catch(() => ({}));
@@ -1527,6 +1566,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       headers: authHeaders(auth.accessToken),
       body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
     }).catch(() => null);
+    void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     if (automationResponse && !automationResponse.ok) {
       const automationError = await automationResponse.json().catch(() => ({}));
       setStatus(automationError.error ?? statusUx("Production oluşturuldu ama provider başlatılamadı.", "Production was created but the provider could not be started."));
@@ -1752,6 +1792,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                   <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Page")}</strong><a href={`/dashboard/productions/${activeProduction.id}`}>{ux("Open production")}</a></span>
+                </div>
+                <div className="omni-result-grid">
+                  <span><strong>{workUiLanguage === "tr" ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
+                  <span><strong>{workUiLanguage === "tr" ? "HeyGen session/job" : "HeyGen session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
+                  <span><strong>{workUiLanguage === "tr" ? "HeyGen video ID" : "HeyGen video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
+                  <span><strong>{workUiLanguage === "tr" ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
                 </div>
               </div>
             </article>
