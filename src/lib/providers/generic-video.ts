@@ -119,7 +119,7 @@ function voiceoverAdScene(scene: string, index: number) {
 }
 
 function isCrelavoPromoIntent(text: string) {
-  return /crelavo|paste\s*(a|any)?\s*link|get\s*an\s*ad|ready-to-post\s*ad|product\s*link|website\s*link|shopify|amazon|trendyol|woocommerce/i.test(text) && /promo|ad\s*video|video\s*ad|commercial|final\s*mp4|tiktok|reels|shorts/i.test(text);
+  return /crelavo|paste\s*(a|any)?\s*link|get\s*an\s*ad|ready-to-post\s*ad|product\s*link|website\s*link|shopify|amazon|trendyol|woocommerce/i.test(text) && /promo|ad\s*video|video\s*ad|commercial|reklam|tanıtım|tanitim|sosyal\s*medya|final\s*mp4|tiktok|reels|shorts/i.test(text);
 }
 
 function isLinkToAdIntent(text: string) {
@@ -144,16 +144,21 @@ function crelavoProductDemoScenes(durationSeconds: number) {
     "Realistic browser view of https://www.crelavo.com and Crelavo dashboard. Large visible Crelavo wordmark, link input field, headline Paste a link. Get an ad. Full-screen SaaS UI only; no office, no humans, no presenter, no stock footage.",
     "Crelavo dashboard close-up: a product or website URL is pasted into the link input. Show Crelavo navigation, analysis progress, product/page cards and benefit extraction panels. Keep Crelavo brand visible in the UI.",
     "Crelavo AI creates ad script and scene plan inside the dashboard. Show script editor, scene timeline, hook card, CTA card, and vertical ad preview panel. Realistic high-fidelity software interface, no people, no cartoon.",
-    "Crelavo media controls activate: English voice-over waveform, subtitles timeline, background music toggle, and 9:16 MP4 preview. Show Crelavo dashboard repeatedly, not an office environment.",
+    "Crelavo media controls activate: Turkish voice-over waveform, Turkish subtitles timeline, background music toggle, and 9:16 MP4 preview. Show Crelavo dashboard repeatedly, not an office environment. No English captions unless the user explicitly asked English.",
     "Final Crelavo export screen: vertical preview, Final MP4 download button, TikTok/Reels/Shorts/ad export badges, completion state. Premium realistic SaaS product UI, Crelavo brand visible, no humans, no split-screen characters."
   ];
   const shotCount = Math.max(2, Math.ceil(durationSeconds / 5));
   return scenes.slice(0, Math.min(scenes.length, shotCount));
 }
 
-function crelavoPromoNarration(durationSeconds: number) {
-  const concise = "Paste a link into Crelavo. The AI analyzes your product, writes the ad script, builds the scene plan, adds voice-over, subtitles and music, then delivers a ready-to-post MP4 for TikTok, Reels, Shorts and ads.";
-  const extended = "Paste any product or website link into Crelavo. The dashboard analyzes the page, identifies the offer, audience and key benefits, then turns that insight into a focused ad script and scene plan. Crelavo prepares English voice-over, subtitles, background music and a polished vertical MP4 preview, ready to export for TikTok, Instagram Reels, YouTube Shorts and paid ads. Paste a link. Get an ad.";
+function crelavoPromoNarration(durationSeconds: number, language = "English") {
+  const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
+  const concise = isTurkish
+    ? "Crelavo’ya ürününü ya da site fikrini yaz. Yapay zeka reklam planını çıkarır, senaryoyu hazırlar, seslendirme, altyazı ve müzikle paylaşmaya hazır dikey video üretir."
+    : "Paste a link into Crelavo. The AI analyzes your product, writes the ad script, builds the scene plan, adds voice-over, subtitles and music, then delivers a ready-to-post MP4 for TikTok, Reels, Shorts and ads.";
+  const extended = isTurkish
+    ? "Crelavo’ya ürününü, siteni ya da kampanya fikrini yaz. Sistem hedefi analiz eder, güçlü açılış metnini çıkarır, reklam senaryosunu ve sahne planını hazırlar. Türkçe seslendirme, altyazı, hafif enerjik müzik ve dikey sosyal medya formatıyla paylaşmaya hazır bir video üretir. Crelavo ile fikirden reklama çok daha hızlı geç."
+    : "Paste any product or website link into Crelavo. The dashboard analyzes the page, identifies the offer, audience and key benefits, then turns that insight into a focused ad script and scene plan. Crelavo prepares voice-over, subtitles, background music and a polished vertical MP4 preview, ready to export for TikTok, Instagram Reels, YouTube Shorts and paid ads. Paste a link. Get an ad.";
   return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 1), concise);
 }
 
@@ -333,7 +338,7 @@ const baseVisualScenes = isCrelavoPromo
   const combinedGuard = [mediaGuard, noCharacterSpeechGuard, crelavoPromoGuard, linkAdGuard, countGuard].filter(Boolean).join(" ");
   const visualScenes = combinedGuard ? visualScenesBase.map((scene) => `${scene}. ${combinedGuard}`) : visualScenesBase;
 const dialogueSegments = noVoice || isCrelavoPromo || isLinkAd ? [] : dialogueSegmentsFromScenes(requestedScenes, durationSeconds);
-const script = noVoice ? "" : isCrelavoPromo ? crelavoPromoNarration(durationSeconds) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
+const script = noVoice ? "" : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
   const subtitleLines = noSubtitles ? [] : subtitleLinesFromScript(script || turkishNarration(prompt, durationSeconds), durationSeconds);
   return {
     title,

@@ -139,12 +139,14 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
   const promptSignal = `${input.style ?? ""} ${input.scenes.join(" ")}`;
   const isCrelavoUiDemo = /crelavo|paste a link|get an ad|dashboard|link input|ai analysis|page analysis|linked page|product benefits|ad script|scene plan|mp4 preview|export buttons|tiktok|reels|shorts/i.test(promptSignal);
   const isNarrative = !isCrelavoUiDemo && /sahne|scene|animasyon|animation|çizgi film|cizgi film|character|karakter|dialogue|diyalog/i.test(promptSignal);
+  const strictNoPeople = /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|no office|office\s*olmas[ıi]n|ofis\s*olmas[ıi]n/i.test(promptSignal);
   const prompt = [
     isCrelavoUiDemo
       ? "Create a premium high-fidelity realistic SaaS product UI demo video, suitable for 4K delivery. Show only polished software dashboard screens, crisp browser UI, Crelavo brand/interface, cursor-like interface motion, clean product panels, timeline blocks, export controls and brand-safe motion graphics. No office, no people, no presenter, no children, no characters, no split-screen humans, no cartoon, no semi-cartoon, no lip-sync, no talking head, no stock footage, no low-cost test-video look."
       : isNarrative
         ? "Create a coherent narrative animation/video clip for this exact scene. Keep character count, roles, costumes, setting and action consistent with the scene description. Do not turn it into an e-commerce ad or provider test."
         : "Create a polished realistic product ad video with premium composition and high visual fidelity.",
+    strictNoPeople ? "ABSOLUTE NEGATIVE: no office, no workplace, no meeting room, no employees, no humans, no faces, no presenters, no people walking, no people typing, no people talking, no stock business footage. Only Crelavo software UI screens, animated interface panels, motion graphics, text cards, charts, export screens and product dashboard visuals." : "",
     input.style ? `Style: ${input.style}.` : "",
     `Target duration: ${safeDuration} seconds.`,
     `Scenes: ${input.scenes.join(" | ")}`,
