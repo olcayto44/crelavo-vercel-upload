@@ -235,7 +235,15 @@ export async function getHeyGenV3VideoStatus(job: ProviderJob): Promise<Normaliz
   const nested = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const rawStatus = String(nested.status ?? record.status ?? "unknown");
   const normalized = normalizeStatus(rawStatus);
-  const outputUrl = firstRealMediaUrl(nested.captioned_video_url) || firstRealMediaUrl(nested.captionedVideoUrl) || firstRealMediaUrl(nested.video_url) || firstRealMediaUrl(nested.videoUrl) || firstRealMediaUrl(nested.url) || firstRealMediaUrl(nested);
+  const outputUrl = firstRealMediaUrl(nested.captioned_video_url)
+    || firstRealMediaUrl(nested.captionedVideoUrl)
+    || firstRealMediaUrl(nested.video_url)
+    || firstRealMediaUrl(nested.videoUrl)
+    || firstRealMediaUrl(nested.videoUrl?.toString?.())
+    || firstRealMediaUrl(nested.url)
+    || firstRealMediaUrl(record.data)
+    || firstRealMediaUrl(record)
+    || firstRealMediaUrl(nested);
   const error = typeof nested.failure_message === "string" ? nested.failure_message : typeof nested.error === "string" ? nested.error : typeof record.error === "string" ? record.error : normalized === "succeeded" && !outputUrl ? "HeyGen v3 succeeded, but no real video URL was found." : undefined;
   return {
     provider: job.provider,

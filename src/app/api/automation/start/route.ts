@@ -64,6 +64,22 @@ function httpsUrlFrom(value: unknown) {
   return /^https:\/\//i.test(text) ? text : "";
 }
 
+function secondsFromValue(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const seconds = secondsFromValue(item);
+      if (seconds) return seconds;
+    }
+    return null;
+  }
+  const text = String(value).trim();
+  const number = Number(text.match(/\d+/)?.[0] ?? 0);
+  if (!number) return null;
+  return /min|dakika|dk/i.test(text) ? number * 60 : number;
+}
+
 const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
 const DEFAULT_HEYGEN_V2_AVATAR_ID = "Daisy-waist-20220505";
 
@@ -159,7 +175,17 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const scriptFromPrompt = firstPromptMatch(promptText, [/Script:\s*[“\"]?([\s\S]*?)[”\"]?\s*(?:Important rules:|Video requirements:|$)/i]);
   const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? "9:16");
   const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
-  const durationSeconds = Number(selected.durationSeconds ?? selected.duration_seconds ?? selected.targetDurationSeconds ?? selected.duration ?? 30) || 30;
+  const productionSetup = selected.productionSetup && typeof selected.productionSetup === "object" ? selected.productionSetup as Record<string, unknown> : {};
+  const plan = selected.plan && typeof selected.plan === "object" ? selected.plan as Record<string, unknown> : {};
+  const durationSeconds = secondsFromValue(selected.durationSeconds)
+    ?? secondsFromValue(selected.duration_seconds)
+    ?? secondsFromValue(selected.targetDurationSeconds)
+    ?? secondsFromValue(selected.output_duration_seconds)
+    ?? secondsFromValue(selected.outputDurationSeconds)
+    ?? secondsFromValue(productionSetup.duration)
+    ?? secondsFromValue(plan.selected_duration)
+    ?? secondsFromValue(selected.duration)
+    ?? 30;
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_VIDEO_AGENT_AVATAR_ID ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID).trim() || DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID;
   const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || null;
   const styleId = String(selected.heygen_style_id ?? selected.style_id ?? promptStyleId ?? process.env.HEYGEN_VIDEO_AGENT_STYLE_ID ?? "").trim() || null;
