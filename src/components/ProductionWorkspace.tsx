@@ -169,7 +169,8 @@ function productionWaitingRoomCopy(production: ProductionWorkspaceProps["product
       statusHint: "dedicated pipeline required"
     };
   }
-  const estimated = isProject ? "10–20 minutes" : isVideo && (hasVoice || hasSubtitles) ? "5–7 minutes" : isVideo ? "3–5 minutes" : isImage ? "2–4 minutes" : isAudio ? "2–5 minutes" : "a few minutes";
+  const isHeyGenVideoAgent = /heygen_video_agent|heygen video agent/.test(`${outputJson.providerStatus ?? ""} ${outputJson.visualJob?.provider ?? ""} ${outputJson.heygenProviderProof?.provider ?? ""}`.toLowerCase());
+  const estimated = isHeyGenVideoAgent ? "8–10 minutes" : isProject ? "10–20 minutes" : isVideo && (hasVoice || hasSubtitles) ? "5–7 minutes" : isVideo ? "3–5 minutes" : isImage ? "2–4 minutes" : isAudio ? "2–5 minutes" : "a few minutes";
   const headline = isProject ? "Project production room is active" : isImage ? "Creative production room is active" : isAudio ? "Audio production room is active" : "Production room is active";
   const description = isProject
     ? "Your project package is moving through the Crelavo production pipeline. Screens, modules, source delivery and setup materials will appear here when ready."
@@ -511,7 +512,8 @@ const isFailed = production.status === "failed" || production.automation_status 
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady;
-  const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : isProjectProduction ? "Prepare Package" : "Start Production";
+  const hasActiveProviderJob = Boolean(visualJob || visualJobs.length || heygenSessionId || heygenVideoId);
+  const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
     hasVideoProductionCard
@@ -846,11 +848,11 @@ const data = await response.json().catch(() => ({}));
           </div>
           <div>
             <small>HeyGen session</small>
-            <strong title={heygenSessionId || undefined}>{heygenSessionId ? `${heygenSessionId.slice(0, 8)}...${heygenSessionId.slice(-4)}` : "Not attached"}</strong>
+            <strong title={heygenSessionId || undefined}>{heygenSessionId || "Not attached"}</strong>
           </div>
           <div>
             <small>HeyGen video</small>
-            <strong title={heygenVideoId || undefined}>{heygenVideoId ? `${heygenVideoId.slice(0, 8)}...${heygenVideoId.slice(-4)}` : "Not attached"}</strong>
+            <strong title={heygenVideoId || undefined}>{heygenVideoId || "Not attached"}</strong>
           </div>
         </div>
 
@@ -1080,7 +1082,7 @@ const data = await response.json().catch(() => ({}));
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
-              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
           </div>
           {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
@@ -1182,7 +1184,7 @@ const data = await response.json().catch(() => ({}));
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
               {visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
-              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
             {providerTestMode ? <p className="provider-poll-note">Quick provider test: 5 sec / 720p / single output.</p> : null}
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}

@@ -53,8 +53,10 @@ export function buildPresenterCreativeBrief(input: {
       ? "Applied demo: show the presenter explaining the product while app UI overlays demonstrate the flow: paste a product link, website, or idea; Crelavo turns it into a ready-to-use marketing video; subtitles, music, captions, and MP4 delivery are included."
       : "Product proof: use animated UI overlays, benefit cards, result cards, and short captions to make the product value obvious.",
     "Pacing: use quick cuts, kinetic captions, snap zooms, moving backgrounds, product UI overlays, and energetic music. Avoid slow slideshow pacing.",
+    "Presenter voice direction: the presenter must sound bright, awake, confident, and energetic. Avoid sleepy, flat, bored, breathy, low-energy delivery. Speak naturally with clear Turkish diction and upbeat social-ad rhythm.",
+    "Ending rule: end with one short complete CTA sentence, then stop cleanly. Do not rush the final sentence, do not trail off, and do not sound like another sentence is about to start.",
     "Language lock: keep Crelavo user-facing assistant/blueprint language Turkish. Do not switch to another language. Only the generated video dialogue may be English if the user explicitly asks for English dialogue.",
-    "Duration lock: stay close to the selected/requested duration. Do not expand a 10-second request into a 30-45 second video unless the user explicitly approves a longer cut.",
+    "Duration lock: treat the selected/requested duration as a strict target. For a 30-second request, aim for 28-32 seconds and do not expand into a 40+ second video unless the user explicitly approved a longer cut.",
     "Presenter identity lock: use one selected presenter/avatar identity across the whole video. Keep the same face, hair, outfit, body proportions and presenter identity between all scenes; change only background, B-roll, overlays and camera movement.",
     wantsOutdoor
       ? "Background guard: use a clean, controlled outdoor or modern city setting only if requested. No crowds, no looping pedestrians, no distracting background motion."
