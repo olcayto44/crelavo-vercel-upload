@@ -23,18 +23,24 @@ export async function GET(request: Request) {
     const publicTab = String(url.searchParams.get("publicTab") || url.searchParams.get("category") || "").trim().toUpperCase();
     const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50));
     const expanded = url.searchParams.get("expanded") !== "false";
-    const result = expanded ? await listHeyGenAvatarLooksExpanded({ limit }) : await listHeyGenAvatarLooks({
+    const looksRequest = expanded ? listHeyGenAvatarLooksExpanded({ limit }) : listHeyGenAvatarLooks({
       ownership: url.searchParams.get("ownership") as "public" | "private" | null || undefined,
       avatar_type: url.searchParams.get("avatar_type") as "studio_avatar" | "digital_twin" | "photo_avatar" | null || undefined,
       group_id: url.searchParams.get("group_id") || undefined,
       limit,
       token: url.searchParams.get("token") || undefined
     });
+    const [looks, avatars] = await Promise.allSettled([looksRequest, getHeyGenAvatars()]);
     return Response.json({
       action: "avatar_looks",
       publicTab: publicTab || null,
       note: publicTab ? "HeyGen does not expose publicTab as an official API filter; use tags/name/avatar_type from this response for UI-side category filtering." : undefined,
-      result
+      result: {
+        sources: {
+          looks: looks.status === "fulfilled" ? looks.value : { error: looks.reason instanceof Error ? looks.reason.message : "avatar looks failed" },
+          avatars: avatars.status === "fulfilled" ? avatars.value : { error: avatars.reason instanceof Error ? avatars.reason.message : "avatars failed" }
+        }
+      }
     });
   }
     if (action === "sounds" || action === "music") {

@@ -1250,8 +1250,10 @@ function firstUrlFrom(...values: unknown[]): string {
 
 function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
   return collectRecords(payload, 1200).map((item) => {
-    const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? "").trim();
-    const lookId = String(item.look_id ?? item.lookId ?? item.id ?? "").trim();
+    const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? item.id ?? "").trim();
+    const explicitLookId = item.look_id ?? item.lookId;
+    const looksLikeLookRecord = Boolean(explicitLookId) || /look/i.test(String(item.object ?? item.type ?? item.avatar_type ?? item.category ?? ""));
+    const lookId = String(explicitLookId ?? (looksLikeLookRecord ? item.id : "") ?? "").trim();
     const imageUrl = firstUrlFrom(item.preview_image_url, item.previewImageUrl, item.image_url, item.imageUrl, item.thumbnail_url, item.thumbnailUrl, item.photo_url, item.photoUrl, item.avatar?.preview_image_url, item.avatar?.image_url, item.avatar?.thumbnail_url, item.avatar?.preview, item.preview, item.image, item.thumbnail, item.media);
     return {
       id: lookId || avatarId,
@@ -1882,15 +1884,11 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             {galleryLoading ? <div className="omni-gallery-empty"><Loader2 size={16} className="spin" /> {workUiLanguage === "tr" ? "Galeri yükleniyor..." : "Loading gallery..."}</div> : null}
             {galleryError ? <div className="omni-gallery-empty">{galleryError}</div> : null}
             {!galleryLoading && !galleryError && galleryMode === "avatar" ? <div className="omni-gallery-grid">
-              {avatarGallery.length ? avatarGallery.map((avatar) => {
-                const hasProviderAvatarId = Boolean(avatar.avatarId);
-                return <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
-                  {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
-                  <strong>{avatar.name}</strong>
-                  <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
-                  {!hasProviderAvatarId ? <small>{workUiLanguage === "tr" ? "Görsel tercih olarak seçilebilir; provider avatar_id garanti değil." : "Selectable as a visual preference; provider avatar_id is not guaranteed."}</small> : null}
-                </button>;
-              }) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
+              {avatarGallery.length ? avatarGallery.map((avatar) => <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
+                {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
+                <strong>{avatar.name}</strong>
+                <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
+              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
               {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>

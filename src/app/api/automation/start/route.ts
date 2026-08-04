@@ -30,14 +30,24 @@ function ecommerceContextFrom(value: unknown) {
 }
 
 function errorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) return error.message.replace(/\u0000/g, "");
   if (error && typeof error === "object") {
     const record = error as Record<string, unknown>;
     const parts = [record.message, record.details, record.hint, record.code]
-      .filter((value): value is string => typeof value === "string" && value.length > 0);
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .map((value) => value.replace(/\u0000/g, ""));
     if (parts.length > 0) return parts.join(" | ");
   }
   return fallback;
+}
+
+function postgresSafe<T>(value: T): T {
+  if (typeof value === "string") return value.replace(/\u0000/g, "") as T;
+  if (Array.isArray(value)) return value.map((item) => postgresSafe(item)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)])) as T;
+  }
+  return value;
 }
 
 function pokeAutomationWorker(request: Request, productionId: string) {
@@ -288,25 +298,25 @@ export async function POST(request: Request) {
     const access = await requireAutomationAccess(request, body, currentProduction);
     if (!access.ok) return access.response;
 
-    const existingOutput = currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {};
+    const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
     const forceRegenerate = body.force_regenerate === true;
     const forceStart = body.force_start === true;
     const existingCreditResolution = existingOutput.creditResolution && typeof existingOutput.creditResolution === "object" ? existingOutput.creditResolution as Record<string, unknown> : null;
     if (existingCreditResolution?.status === "refunded_reserved") {
       return Response.json({ error: "Reserved credits were already refunded for this failed production. Create a new production before starting another provider job." }, { status: 409 });
     }
-    const requestMetadata = currentProduction.request_metadata && typeof currentProduction.request_metadata === "object"
+    const requestMetadata = postgresSafe(currentProduction.request_metadata && typeof currentProduction.request_metadata === "object"
       ? currentProduction.request_metadata as Record<string, unknown>
       : existingOutput.requestMetadata && typeof existingOutput.requestMetadata === "object"
         ? existingOutput.requestMetadata as Record<string, unknown>
-        : {};
-    const inputJson = currentProduction.input_json && typeof currentProduction.input_json === "object"
+        : {});
+    const inputJson = postgresSafe(currentProduction.input_json && typeof currentProduction.input_json === "object"
       ? currentProduction.input_json as Record<string, unknown>
       : requestMetadata.inputJson && typeof requestMetadata.inputJson === "object"
         ? requestMetadata.inputJson as Record<string, unknown>
         : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
           ? existingOutput.inputJson as Record<string, unknown>
-          : {};
+          : {});
     let productionType = String(currentProduction?.production_type ?? "");
     const packageId = String(currentProduction?.package_id ?? "");
     const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();

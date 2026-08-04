@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { adminRequiredResponse, getAdminEmail, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceDailyProductionBudget, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { createAutomationJobId, ecommerceAdAutomationSteps, ecommerceAdPipeline, initialAutomationSteps } from "@/lib/automation";
@@ -870,11 +871,12 @@ outputPlan,
 
     const shouldAutoStartProvider = !dedicatedProviderBlocked && ["video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video"].includes(productionType);
     if (shouldAutoStartProvider) {
-      fetch(`${appBaseUrl(request)}/api/automation/start`, {
-        method: "POST",
-        headers: forwardAutomationHeaders(request),
-        body: JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true })
-      }).catch((error) => console.error("Auto provider start failed", error));
+      const startUrl = `${appBaseUrl(request)}/api/automation/start`;
+      const startHeaders = forwardAutomationHeaders(request);
+      const startBody = JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true });
+      after(async () => {
+        await fetch(startUrl, { method: "POST", headers: startHeaders, body: startBody }).catch((error) => console.error("Auto provider start failed", error));
+      });
     }
 
     return Response.json({ production: productionWithLegal, automation_job_id: automationJobId, automation_status: shouldAutoStartProvider ? "start_requested" : "queued", provider_start_requested: shouldAutoStartProvider });
