@@ -42,15 +42,15 @@ type PlanResponse = {
   redirect?: string;
 };
 
-type HeyGenAgentArtifact = {
+type WorkProductionCard = {
   id: string;
-  type?: string;
   title?: string;
   status?: string;
-  previewUrl?: string;
-  thumbnailUrl?: string;
-  description?: string;
-  providerResourceId?: string;
+  generation_status?: string;
+  automation_status?: string;
+  preview_url?: string | null;
+  delivery_link?: string | null;
+  output_json?: Record<string, unknown> | null;
 };
 
 const studioChips = ["Video", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
@@ -790,6 +790,40 @@ function isExplainIntent(prompt: string) {
   return /(how|what happens|next step|explain|process|workflow|nasıl|nasil|ne olacak|sonra ne|aşam|asam|süreç|surec|üretim aşaması|uretim asamasi|chat ayar)/i.test(prompt);
 }
 
+function normalizeAssistantText(value: string) {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isProductionRequest(prompt: string) {
+  const normalized = normalizeAssistantText(prompt);
+  const hasLink = /https?:\/\/|www\.|\.com\b|\.net\b|\.org\b|\.io\b|\.co\b/.test(normalized);
+  const productionVerb = /(yap|uret|olustur|hazirla|tasarla|kur|baslat|create|make|generate|produce|build|design|start)/.test(normalized);
+  const productionNoun = /(video|reklam|tanitim|tanıtım|avatar|talking|konusan|konuşan|site|website|landing|app|uygulama|saas|admin|panel|gorsel|görsel|image|logo|poster|kampanya|campaign|seo|paket|production|uretim|üretim)/.test(normalized);
+  const linkProduction = hasLink && /(video|reklam|tanitim|tanıtım|urun|ürün|product|site|website|landing|analiz|ad|promo)/.test(normalized);
+  const questionOnly = /\?$/.test(prompt.trim()) && !productionVerb;
+  return linkProduction || (productionVerb && productionNoun && !questionOnly);
+}
+
+function detectWorkLanguage(prompt: string) {
+  const normalized = normalizeAssistantText(prompt);
+  return /[çğıöşüÇĞİÖŞÜ]/.test(prompt) || /(merhaba|selam|nasil|nedir|neden|ne kadar|yapabilir|istiyorum|uretim|reklam|tanitim)/.test(normalized) ? "tr" : "en";
+}
+
+function productionCardProvider(production: WorkProductionCard | null) {
+  const output = production?.output_json && typeof production.output_json === "object" ? production.output_json : {};
+  const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;
+  return String(visualJob?.provider ?? output.providerStatus ?? "Provider pending");
+}
+
 function explainProductionFlow(activePlan: StudioPlan | null) {
   const typeLabel = activePlan ? labelFor(activePlan.production_type) : "production";
   const project = activePlan ? isProjectType(activePlan.production_type) : false;
@@ -856,8 +890,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState("");
   const [materials, setMaterials] = useState<UserUploadedMaterial[]>([]);
-  const [heygenAgentArtifacts, setHeygenAgentArtifacts] = useState<HeyGenAgentArtifact[]>([]);
-  const [heygenAgentSessionId, setHeygenAgentSessionId] = useState("");
+  const [activeProduction, setActiveProduction] = useState<WorkProductionCard | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -874,6 +907,21 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     }
     writeStoredWorkDraft({ input: "", productionPrompt, plan, selectedProductionCards, productionSetup, messages, status, updatedAt: Date.now() });
   }, [productionPrompt, plan, selectedProductionCards, productionSetup, messages, status]);
+
+  useEffect(() => {
+    if (!activeProduction?.id) return;
+    if (activeProduction.status === "ready" || activeProduction.automation_status === "completed") return;
+    let cancelled = false;
+    const interval = window.setInterval(async () => {
+      const auth = await requireVerifiedBrowserUser();
+      if (!auth.ok || cancelled) return;
+      await refreshActiveProduction(activeProduction.id, auth.user.id, auth.accessToken);
+    }, 8000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activeProduction?.id, activeProduction?.status, activeProduction?.automation_status]);
 
   const setupProfile = plan ? dynamicProfileForPlan(plan, productionPrompt || input) : null;
   const setupItems = useMemo(() => selectedSetupItems(productionSetup), [productionSetup]);
@@ -903,6 +951,122 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       }
       return { ...current, [group.id]: selected.includes(option) ? [] : [option] };
     });
+  }
+
+  async function refreshActiveProduction(productionId: string, userId: string, accessToken: string) {
+    const response = await fetch(`/api/productions?user_id=${encodeURIComponent(userId)}`, { headers: authHeaders(accessToken) }).catch(() => null);
+    if (!response?.ok) return;
+    const data = await response.json().catch(() => ({}));
+    const found = Array.isArray(data.productions) ? data.productions.find((item: WorkProductionCard) => item.id === productionId) : null;
+    if (found) setActiveProduction(found);
+  }
+
+  async function createProductionRecord(activePlanInput: StudioPlan, cleanInput: string, userId: string, userEmail: string, accessToken: string): Promise<WorkProductionCard | null> {
+    const project = isProjectType(activePlanInput.production_type);
+    const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), cleanInput);
+    const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
+    const setupForPayload = { ...productionSetup, voice: sanitizedSetup.voice ?? productionSetup.voice, subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles };
+    const setupFields = setupDerivedFields(activePlanInput.production_type, setupForPayload);
+    const setupItemsForPayload = selectedSetupItems(setupForPayload);
+    const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
+    const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
+    const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
+    const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput);
+    const cardCreditsForPayload = productionCardCredits(productionCards);
+    const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
+    const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(cleanInput)
+      && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(cleanInput);
+    const wantsPresenterVideo = !noPeopleMotionIntent && (selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(cleanInput));
+    const productionTypeForPayload = wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
+    const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
+    const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
+    const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
+    const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "HeyGen talking avatar", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
+    const formats = setupFields.delivery_formats.length
+      ? setupFields.delivery_formats
+      : activePlanInput.delivery_requirements?.formats?.length
+        ? activePlanInput.delivery_requirements.formats
+        : project
+          ? ["source_code", "readme", "dashboard_delivery"]
+          : ["final_mp4", "dashboard_delivery"];
+    const response = await fetch("/api/productions", {
+      method: "POST",
+      headers: authHeaders(accessToken),
+      body: JSON.stringify({
+        user_id: userId,
+        user_email: userEmail,
+        title: `${labelFor(productionTypeForPayload)} production`,
+        prompt: cleanInput,
+        production_type: productionTypeForPayload,
+        package_id: activePlanInput.package_id,
+        quality: setupFields.selected_quality || activePlanInput.selected_quality,
+        selected_quality: setupFields.selected_quality || activePlanInput.selected_quality,
+        output_duration_seconds: Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlanInput.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
+        output_count: outputIntent.outputCount,
+        requested_clip_count: outputIntent.requestedClipCount,
+        requested_alternative_count: outputIntent.requestedAlternativeCount,
+        features: mergedFeatures.join(", "),
+        project_details: [setupFields.selected_style || activePlanInput.selected_style, activePlanInput.selected_modules.join(", "), setupItemsForPayload.length ? `Production setup: ${setupItemsForPayload.join(", ")}` : "", activePlanInput.summary].filter(Boolean).join("\n"),
+        estimated_credits: totalEstimatedCreditsForPayload,
+        delivery_level: project ? "working_source_package" : "production_package",
+        delivery_requirements: { requested: true, status: "pending", formats },
+        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        input_json: { work_prompt: cleanInput, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        uploaded_materials: materials,
+        legal_acceptance: true
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
+      if (isCreditError) {
+        const required = Number(data.required ?? data.requiredCredits ?? totalEstimatedCreditsForPayload) || totalEstimatedCreditsForPayload;
+        const available = Number(data.available ?? 0) || 0;
+        const shortfall = Number(data.shortfall ?? Math.max(0, required - available)) || 0;
+        setStatus(`Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits.`);
+      } else {
+        setStatus(data.error ?? "Production could not be created.");
+      }
+      return null;
+    }
+    return (data.production ?? (data.production_id ? { id: data.production_id } : null)) as WorkProductionCard | null;
+  }
+
+  async function startProductionForPlan(activePlanInput: StudioPlan, cleanInput: string, options?: { stayOnWork?: boolean }) {
+    setPlan(activePlanInput);
+    setProductionPrompt(cleanInput);
+    setStarting(true);
+    setStatus("Gerçek production kaydı oluşturuluyor...");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) {
+      setStarting(false);
+      setStatus(auth.message);
+      if (auth.redirect) window.location.href = auth.redirect;
+      return;
+    }
+    const created = await createProductionRecord(activePlanInput, cleanInput, auth.user.id, auth.user.email ?? "", auth.accessToken);
+    if (!created?.id) {
+      setStarting(false);
+      return;
+    }
+    setActiveProduction(created);
+    setStatus("Production oluşturuldu. Gerçek provider başlatılıyor...");
+    const automationResponse = await fetch("/api/automation/start", {
+      method: "POST",
+      headers: authHeaders(auth.accessToken),
+      body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
+    }).catch(() => null);
+    if (automationResponse && !automationResponse.ok) {
+      const automationError = await automationResponse.json().catch(() => ({}));
+      setStatus(automationError.error ?? "Production oluşturuldu ama provider başlatılamadı.");
+    } else {
+      const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
+      if (automationData.production) setActiveProduction(automationData.production as WorkProductionCard);
+      setStatus("Üretim başladı. Kart gerçek production durumundan güncellenecek.");
+    }
+    await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
+    setStarting(false);
+    if (!options?.stayOnWork) window.location.href = `/dashboard/productions/${created.id}`;
   }
 
   async function askStudio(nextInput = input) {
@@ -940,6 +1104,33 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       return;
     }
 
+    if (!isProductionRequest(clean)) {
+      const chatResponse = await fetch("/api/assistant-chat", {
+        method: "POST",
+        headers: authHeaders(auth.accessToken),
+        body: JSON.stringify({
+          user_id: auth.user.id,
+          user_email: auth.user.email ?? "",
+          message: clean,
+          mode: "quick",
+          language: detectWorkLanguage(clean),
+          conversation_id: conversationId || undefined,
+          messages: messages.slice(-10).map((message) => ({ role: message.role, content: message.content }))
+        })
+      });
+      const chatData = await chatResponse.json().catch(() => ({}));
+      setPlanning(false);
+      if (!chatResponse.ok) {
+        setMessages((current) => [...current, { id: uid(), role: "assistant", content: chatData.error ?? "Cevap oluşturulamadı." }]);
+        setStatus(chatData.error ?? "Assistant chat failed.");
+        return;
+      }
+      setConversationId(chatData.conversation_id ?? conversationId);
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: String(chatData.reply ?? "Buradayım.") }]);
+      setStatus("Cevaplandı.");
+      return;
+    }
+
     const response = await fetch("/api/assistant/plan", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
@@ -948,7 +1139,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         user_email: auth.user.email ?? "",
         idea: clean,
         mode: "quick",
-        language: "en",
+        language: detectWorkLanguage(clean),
         conversation_id: conversationId || undefined,
         messages: messages.slice(-10).map((message) => ({ role: message.role, content: message.content }))
       })
@@ -975,26 +1166,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
     resetSetupFor(normalized, clean);
     setProductionPrompt(clean);
-    const presenterIntentForAgent = normalized.production_type === "video" && /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(clean);
-    if (presenterIntentForAgent) {
-      try {
-        setStatus("HeyGen Video Agent is preparing the session...");
-        const agentResponse = await fetch("/api/heygen-agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userMessage: clean, orientation: "portrait" }) });
-        const agentData = await agentResponse.json().catch(() => ({}));
-        if (agentResponse.ok) {
-          setHeygenAgentSessionId(String(agentData.sessionId ?? ""));
-          setHeygenAgentArtifacts(Array.isArray(agentData.artifacts) ? agentData.artifacts : []);
-          setMessages((current) => [...current, { id: uid(), role: "assistant", content: agentData.reply ? String(agentData.reply) : assistantReply(normalized) }]);
-          setStatus("HeyGen Video Agent session ready. Press Start Production to continue.");
-          return;
-        }
-        setStatus(agentData.error ? `HeyGen Agent fallback: ${agentData.error}` : "HeyGen Agent fallback used. Draft is ready.");
-      } catch {
-        setStatus("HeyGen Agent fallback used. Draft is ready.");
-      }
-    }
-    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized) }]);
-    setStatus("Draft ready. Press Start Production to continue.");
+    const productionReply = `Üretim isteğini aldım. Gerçek production kaydını açıp başlatıyorum: ${labelFor(normalized.production_type)}.`;
+    setMessages((current) => [...current, { id: uid(), role: "assistant", content: productionReply }]);
+    await startProductionForPlan(normalized, clean, { stayOnWork: true });
   }
 
   function submitPrompt(event: FormEvent) {
@@ -1054,104 +1228,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       setStatus("Describe what you want to create first.");
       return;
     }
-    setStarting(true);
-    setStatus("Creating production record...");
-    const auth = await requireVerifiedBrowserUser();
-    if (!auth.ok) {
-      setStarting(false);
-      setStatus(auth.message);
-      if (auth.redirect) window.location.href = auth.redirect;
-      return;
-    }
-
-    const project = isProjectType(activePlan.production_type);
-    const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlan), clean);
-    const sanitizedSetup = defaultSetupFor(activePlan.production_type, clean, activePlan);
-    const setupForPayload = { ...productionSetup, voice: sanitizedSetup.voice ?? productionSetup.voice, subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles };
-const setupFields = setupDerivedFields(activePlan.production_type, setupForPayload);
-const setupItemsForPayload = selectedSetupItems(setupForPayload);
-const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlan.selected_features || [])]));
-const outputIntent = productionOutputIntent(activePlan.production_type, selectedItemsForIntent);
-const sourceHandling = productionSourceHandling(activePlan.production_type, selectedItemsForIntent);
-const setupCreditsForPayload = setupExtraCredits(activePlan.production_type, setupForPayload, activePlan, clean);
-const cardCreditsForPayload = productionCardCredits(productionCards);
-const totalEstimatedCreditsForPayload = baseDraftCredits(activePlan) + setupCreditsForPayload + cardCreditsForPayload;
-const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(clean)
-  && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(clean);
-const wantsPresenterVideo = !noPeopleMotionIntent && (selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(clean));
-const productionTypeForPayload = wantsPresenterVideo && activePlan.production_type === "video" ? "talking_video" : activePlan.production_type;
-const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: clean, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlan.summary }) : null;
-const providerPrompt = presenterCreative?.providerPrompt ?? clean;
-const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
-const mergedFeatures = Array.from(new Set([...(activePlan.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "HeyGen talking avatar", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
-    const formats = setupFields.delivery_formats.length
-      ? setupFields.delivery_formats
-      : activePlan.delivery_requirements?.formats?.length
-        ? activePlan.delivery_requirements.formats
-        : project
-          ? ["source_code", "readme", "dashboard_delivery"]
-          : ["final_mp4", "dashboard_delivery"];
-
-    const response = await fetch("/api/productions", {
-      method: "POST",
-      headers: authHeaders(auth.accessToken),
-      body: JSON.stringify({
-        user_id: auth.user.id,
-        user_email: auth.user.email ?? "",
-        title: `${labelFor(productionTypeForPayload)} production`,
-        prompt: clean,
-        production_type: productionTypeForPayload,
-        package_id: activePlan.package_id,
-        quality: setupFields.selected_quality || activePlan.selected_quality,
-        selected_quality: setupFields.selected_quality || activePlan.selected_quality,
-        output_duration_seconds: Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlan.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
-        output_count: outputIntent.outputCount,
-        requested_clip_count: outputIntent.requestedClipCount,
-        requested_alternative_count: outputIntent.requestedAlternativeCount,
-        features: mergedFeatures.join(", "),
-project_details: [setupFields.selected_style || activePlan.selected_style, activePlan.selected_modules.join(", "), setupItemsForPayload.length ? `Production setup: ${setupItemsForPayload.join(", ")}` : "", activePlan.summary].filter(Boolean).join("\n"),
-  estimated_credits: totalEstimatedCreditsForPayload,
-        delivery_level: project ? "working_source_package" : "production_package",
-        delivery_requirements: { requested: true, status: "pending", formats },
-        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlan, production_type: productionTypeForPayload }, originalPlan: activePlan, routedFromProductionType: activePlan.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, heygenAgentBridge: wantsPresenterVideo ? { mode: "native_session_artifacts", agentEndpoint: "/api/heygen-agent", status: "pending_session_start", artifactField: "heygenAgentArtifacts" } : undefined, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, uniqueOutputsRequired: outputIntent.uniqueOutputsRequired, duplicatePolicy: outputIntent.duplicatePolicy, timestampPolicy: outputIntent.timestampPolicy, draftBaseCredits: baseDraftCredits(activePlan), cardCredits: cardCreditsForPayload, setupExtraCredits: setupCreditsForPayload, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        input_json: { work_prompt: clean, providerPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlan, production_type: productionTypeForPayload }, originalPlan: activePlan, routedFromProductionType: activePlan.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, heygenAgentBridge: wantsPresenterVideo ? { mode: "native_session_artifacts", agentEndpoint: "/api/heygen-agent", status: "pending_session_start", artifactField: "heygenAgentArtifacts" } : undefined, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, outputIntent, sourceHandling, uniqueOutputsRequired: outputIntent.uniqueOutputsRequired, duplicatePolicy: outputIntent.duplicatePolicy, timestampPolicy: outputIntent.timestampPolicy, draftBaseCredits: baseDraftCredits(activePlan), cardCredits: cardCreditsForPayload, setupExtraCredits: setupCreditsForPayload, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        uploaded_materials: materials,
-        legal_acceptance: true
-      })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setStarting(false);
-      const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
-      if (isCreditError) {
-        const required = Number(data.required ?? data.requiredCredits ?? totalEstimatedCreditsForPayload) || totalEstimatedCreditsForPayload;
-        const available = Number(data.available ?? 0) || 0;
-        const shortfall = Number(data.shortfall ?? Math.max(0, required - available)) || 0;
-        setStatus(`Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits. Open Credits when you want to top up; this draft stays here.`);
-        return;
-      }
-      setStatus(data.error ?? "Production could not be created.");
-      return;
-    }
-    const productionId = data.production?.id ?? data.production_id;
-    if (productionId) {
-      setStatus("Production record created. Starting automation...");
-      const automationResponse = await fetch("/api/automation/start", {
-        method: "POST",
-        headers: authHeaders(auth.accessToken),
-        body: JSON.stringify({ production_id: productionId, user_id: auth.user.id, legal_acceptance: true, force_start: true })
-      }).catch(() => null);
-      if (automationResponse && !automationResponse.ok) {
-        const automationError = await automationResponse.json().catch(() => ({}));
-        setStatus(automationError.error ?? "Production record was created, but automation could not start. Open the production page and use Track status or Start Production.");
-      }
-      if (typeof window !== "undefined") window.localStorage.removeItem(workDraftStorageKey);
-      window.location.href = `/dashboard/productions/${productionId}`;
-      return;
-    }
-    setStarting(false);
-    setStatus("Production was created, but the detail page could not be opened.");
+    await startProductionForPlan(activePlan, clean, { stayOnWork: false });
   }
 
   return (
@@ -1190,7 +1267,27 @@ project_details: [setupFields.selected_style || activePlan.selected_style, activ
 
           {planning ? <article className="omni-message assistant"><div className="omni-avatar"><Bot size={16} /></div><div className="omni-bubble"><Loader2 size={16} className="spin" /> Routing request...</div></article> : null}
 
-          {plan ? (
+          {activeProduction ? (
+            <article className="omni-result-card">
+              <div className="omni-result-icon"><Video size={22} /></div>
+              <div className="omni-result-body">
+                <span className="badge">Production running</span>
+                <h3>{activeProduction.title || "Crelavo production"}</h3>
+                <div className="omni-result-grid">
+                  <span><strong>Production ID</strong>{activeProduction.id}</span>
+                  <span><strong>Status</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+                  <span><strong>Provider</strong>{productionCardProvider(activeProduction)}</span>
+                </div>
+                <div className="omni-result-grid">
+                  <span><strong>Preview</strong>{activeProduction.preview_url ? "Ready" : "Waiting"}</span>
+                  <span><strong>Delivery</strong>{activeProduction.delivery_link ? "Ready" : "Waiting"}</span>
+                  <span><strong>Page</strong><a href={`/dashboard/productions/${activeProduction.id}`}>Open production</a></span>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {plan && !activeProduction ? (
             <article className="omni-result-card">
               <div className="omni-result-icon">{isProjectType(plan.production_type) ? <Code2 size={22} /> : plan.production_type === "video" ? <Video size={22} /> : <PackageCheck size={22} />}</div>
               <div className="omni-result-body">

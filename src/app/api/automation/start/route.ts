@@ -7,7 +7,7 @@ import { buildProviderPreflight, detectCharacterDialogueAnimationNeed } from "@/
 import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
-import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenVoices } from "@/lib/providers/heygen";
+import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
@@ -50,23 +50,6 @@ function pokeAutomationWorker(request: Request, productionId: string) {
   });
 }
 
-function firstHeyGenId(payload: unknown, keys: string[]) {
-  const root = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-  const candidates = [root.data, root.avatars, root.voices, root.list, root.items, payload];
-  for (const candidate of candidates) {
-    const arr = Array.isArray(candidate) ? candidate : candidate && typeof candidate === "object" ? Object.values(candidate as Record<string, unknown>).find(Array.isArray) as unknown[] | undefined : undefined;
-    if (!arr) continue;
-    for (const item of arr) {
-      const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
-      for (const key of keys) {
-        const value = String(record[key] ?? "").trim();
-        if (value) return value;
-      }
-    }
-  }
-  return "";
-}
-
 function firstPromptMatch(text: string, patterns: RegExp[]) {
   for (const pattern of patterns) {
     const match = text.match(pattern);
@@ -82,6 +65,7 @@ function httpsUrlFrom(value: unknown) {
 }
 
 const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
+const DEFAULT_HEYGEN_V2_AVATAR_ID = "Daisy-waist-20220505";
 
 function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; providerPrompt?: string }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
@@ -149,31 +133,25 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
   const promptText = String(input.prompt ?? "");
   const promptAvatarId = firstPromptMatch(promptText, [/Preferred HeyGen avatar:\s*([A-Za-z0-9_\-.]+)/i, /heygen_avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /avatar_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
-  const promptVoiceId = firstPromptMatch(promptText, [/voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i, /heygen_voice_id\s*[:=]\s*([A-Za-z0-9_\-.]+)/i]);
-  const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? "").trim() || firstHeyGenId(await getHeyGenAvatars(), ["avatar_id", "id"]);
-  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || firstHeyGenId(await getHeyGenVoices(), ["voice_id", "id"]);
-  if (!avatarId || !voiceId) throw new Error("HeyGen avatar_id or voice_id could not be resolved. Set HEYGEN_DEFAULT_AVATAR_ID / HEYGEN_DEFAULT_VOICE_ID or choose an avatar/voice before starting.");
   const scriptFromPrompt = firstPromptMatch(promptText, [/Script:\s*[“\"]?([\s\S]*?)[”\"]?\s*(?:Important rules:|Video requirements:|$)/i]);
-  const script = String(selected.script ?? scriptFromPrompt ?? input.prompt ?? input.title).trim().slice(0, 1200) || input.title;
-  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? "9:16");
-  const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
-  const qualityText = `${selected.quality ?? ""} ${selected.selected_quality ?? ""} ${promptText}`.toLowerCase();
-  const highRes = /1080|4k|premium/.test(qualityText);
+  const script = String(selected.input_text ?? selected.inputText ?? selected.script ?? scriptFromPrompt ?? input.prompt ?? input.title).trim().slice(0, 1200) || "Merhaba Crelavo dünyasına hoş geldiniz!";
+  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "16:9");
+  const ratio = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical") ? "9:16" : "16:9";
+  const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_V2_AVATAR_ID).trim() || DEFAULT_HEYGEN_V2_AVATAR_ID;
   const payload = {
-    video_inputs: [{
-      character: { type: "avatar", avatar_id: avatarId, avatar_style: "normal" },
-      voice: { type: "text", input_text: script, voice_id: voiceId },
-      background: { type: "color", value: "#0f172a" }
-    }],
-    dimension: portrait ? (highRes ? { width: 1080, height: 1920 } : { width: 720, height: 1280 }) : (highRes ? { width: 1920, height: 1080 } : { width: 1280, height: 720 }),
-    title: input.title
+    video_setting: { ratio, output_format: "mp4" },
+    clips: [{
+      avatar_id: avatarId,
+      input_text: script,
+      avatar_style: String(selected.avatar_style ?? selected.avatarStyle ?? "normal")
+    }]
   };
   const result = await createHeyGenTalkingVideo(payload);
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
-  const videoId = String(data.video_id ?? data.id ?? data.videoId ?? "").trim();
-  if (!videoId) throw new Error(`HeyGen did not return a video id: ${JSON.stringify(result).slice(0, 500)}`);
-  return { provider: "heygen", id: videoId, status: String(data.status ?? "processing"), payload, raw: result };
+  const videoId = String(data.video_id ?? data.videoId ?? data.id ?? "").trim();
+  if (!videoId) throw new Error(`HeyGen v2 generate did not return a video id: ${JSON.stringify(result).slice(0, 500)}`);
+  return { provider: "heygen", id: videoId, status: String(data.status ?? "processing"), videoId, payload, raw: result };
 }
 
 async function requireAutomationAccess(request: Request, body: Record<string, unknown>, production: { user_id?: string | null }) {
@@ -329,12 +307,12 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
     .update({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now })
     .eq("id", productionId);
 
-  const useLegacyHeyGenTalking = /legacy_heygen_v2|heygen_v2|public avatar api/i.test(productionDetectionText);
+  const useHeyGenVideoAgent = /heygen_video_agent|video_agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
   let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
-    heygenJob = useLegacyHeyGenTalking
-      ? await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
-      : await startHeyGenVideoAgentProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
+    heygenJob = useHeyGenVideoAgent
+      ? await startHeyGenVideoAgentProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
+      : await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
   } catch (error) {
   const failureMessage = errorMessage(error, "HeyGen provider job could not be started.");
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
@@ -370,7 +348,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         heygenJob,
         heygenSessionId: heygenJob.provider === "heygen_video_agent" ? heygenJob.id : null,
         heygenVideoId: "videoId" in heygenJob ? heygenJob.videoId : null,
-        heygenProviderProof: heygenJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: heygenJob.id, videoId: "videoId" in heygenJob ? heygenJob.videoId : null, status: heygenJob.status } : null,
+        heygenProviderProof: heygenJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: heygenJob.id, videoId: "videoId" in heygenJob ? heygenJob.videoId : null, status: heygenJob.status } : { provider: "heygen_v2_generate", videoId: heygenJob.id, status: heygenJob.status },
         heygenVideoAgent: heygenJob.provider === "heygen_video_agent" ? heygenJob : null,
         heygenAgentBridge: heygenJob.provider === "heygen_video_agent" ? { mode: "native_session_artifacts", sessionId: heygenJob.id, status: "tracking_session_resources", artifactField: "heygenAgentArtifacts" } : null,
         heygenAgentArtifacts: [],
