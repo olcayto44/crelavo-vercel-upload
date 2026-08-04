@@ -1,18 +1,33 @@
-import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, getHeyGenVoices, listHeyGenAvatarLooks, listHeyGenVideoAgentStyles } from "@/lib/providers/heygen";
+import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, getHeyGenVoices, getHeyGenVoicesV3, listHeyGenAvatarLooks, listHeyGenAvatarLooksExpanded, listHeyGenVideoAgentStyles } from "@/lib/providers/heygen";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const action = url.searchParams.get("action") || "avatars";
 
   try {
-    if (action === "voices") return Response.json({ action, result: await getHeyGenVoices() });
+    if (action === "voices") {
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50));
+      const token = url.searchParams.get("token") || undefined;
+      const [v2, v3] = await Promise.allSettled([getHeyGenVoices(), getHeyGenVoicesV3({ limit, token })]);
+      return Response.json({
+        action,
+        result: {
+          sources: {
+            v2: v2.status === "fulfilled" ? v2.value : { error: v2.reason instanceof Error ? v2.reason.message : "v2 voices failed" },
+            v3: v3.status === "fulfilled" ? v3.value : { error: v3.reason instanceof Error ? v3.reason.message : "v3 voices failed" }
+          }
+        }
+      });
+    }
   if (action === "avatar_looks" || action === "looks") {
     const publicTab = String(url.searchParams.get("publicTab") || url.searchParams.get("category") || "").trim().toUpperCase();
-    const result = await listHeyGenAvatarLooks({
+    const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50));
+    const expanded = url.searchParams.get("expanded") !== "false";
+    const result = expanded ? await listHeyGenAvatarLooksExpanded({ limit }) : await listHeyGenAvatarLooks({
       ownership: url.searchParams.get("ownership") as "public" | "private" | null || undefined,
       avatar_type: url.searchParams.get("avatar_type") as "studio_avatar" | "digital_twin" | "photo_avatar" | null || undefined,
       group_id: url.searchParams.get("group_id") || undefined,
-      limit: Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50)),
+      limit,
       token: url.searchParams.get("token") || undefined
     });
     return Response.json({
@@ -56,6 +71,7 @@ export async function POST(request: Request) {
         prompt: String(body.prompt ?? "Create a short product demo video."),
         mode: "generate",
         avatar_id: body.avatar_id ?? body.heygen_avatar_id ?? undefined,
+        look_id: body.look_id ?? body.heygen_look_id ?? undefined,
         voice_id: body.voice_id ?? body.heygen_voice_id ?? undefined,
         style_id: body.style_id ?? body.heygen_style_id ?? undefined,
         brand_kit_id: body.brand_kit_id ?? body.heygen_brand_kit_id ?? undefined,

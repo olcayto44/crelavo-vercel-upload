@@ -53,6 +53,14 @@ type WorkProductionCard = {
   output_json?: Record<string, unknown> | null;
 };
 
+type HeyGenGalleryAvatarLook = {
+  id: string;
+  lookId?: string;
+  imageUrl?: string;
+  name?: string;
+  style?: string;
+};
+
 type HeyGenGalleryAvatar = {
   id: string;
   avatarId?: string;
@@ -61,6 +69,7 @@ type HeyGenGalleryAvatar = {
   imageUrl?: string;
   gender?: string;
   style?: string;
+  looks?: HeyGenGalleryAvatarLook[];
 };
 
 type HeyGenGalleryVoice = {
@@ -1151,20 +1160,39 @@ function firstUrlFrom(...values: unknown[]): string {
 }
 
 function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
-  return collectRecords(payload).map((item) => {
-    const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? item.id ?? "").trim();
+  const byAvatar = new Map<string, HeyGenGalleryAvatar>();
+  for (const item of collectRecords(payload, 1200)) {
+    const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? "").trim();
     const lookId = String(item.look_id ?? item.lookId ?? item.id ?? "").trim();
+    const id = avatarId || lookId;
+    if (!id) continue;
     const imageUrl = firstUrlFrom(item.preview_image_url, item.previewImageUrl, item.image_url, item.imageUrl, item.thumbnail_url, item.thumbnailUrl, item.photo_url, item.photoUrl, item.avatar?.preview_image_url, item.avatar?.image_url, item.avatar?.thumbnail_url, item.avatar?.preview, item.preview, item.image, item.thumbnail, item.media);
-    return {
-      id: lookId || avatarId,
-      avatarId,
-      lookId,
-      name: String(item.name ?? item.display_name ?? item.avatar_name ?? item.avatar?.name ?? "HeyGen avatar"),
+    const name = String(item.avatar?.name ?? item.avatar_name ?? item.name ?? item.display_name ?? "HeyGen avatar");
+    const style = String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim();
+    const gender = String(item.gender ?? item.avatar?.gender ?? "").trim();
+    const key = avatarId || id;
+    const existing = byAvatar.get(key);
+    const look: HeyGenGalleryAvatarLook = { id: lookId || id, lookId: lookId || undefined, imageUrl, name: String(item.name ?? item.display_name ?? "").trim(), style };
+    if (existing) {
+      if (!existing.imageUrl && imageUrl) existing.imageUrl = imageUrl;
+      if (!existing.gender && gender) existing.gender = gender;
+      if (!existing.style && style) existing.style = style;
+      if (!existing.lookId && lookId) existing.lookId = lookId;
+      if (!existing.looks?.some((candidate) => candidate.id === look.id)) existing.looks = [...(existing.looks ?? []), look];
+      continue;
+    }
+    byAvatar.set(key, {
+      id: key,
+      avatarId: avatarId || undefined,
+      lookId: lookId || undefined,
+      name,
       imageUrl,
-      gender: String(item.gender ?? item.avatar?.gender ?? "").trim(),
-      style: String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim()
-    };
-  }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 48);
+      gender,
+      style,
+      looks: [look]
+    });
+  }
+  return Array.from(byAvatar.values()).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 120);
 }
 
 function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
@@ -1720,6 +1748,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                 {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
                 <strong>{avatar.name}</strong>
                 <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
+                {avatar.looks && avatar.looks.length > 1 ? <small>{workUiLanguage === "tr" ? `${avatar.looks.length} görünüm varyasyonu` : `${avatar.looks.length} look variants`}</small> : null}
               </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">

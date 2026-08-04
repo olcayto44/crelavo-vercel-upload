@@ -41,6 +41,14 @@ export async function getHeyGenVoices() {
   return heygenJson("/v2/voices");
 }
 
+export async function getHeyGenVoicesV3(input?: { limit?: number; token?: string }) {
+  const params = new URLSearchParams();
+  if (input?.limit) params.set("limit", String(input.limit));
+  if (input?.token) params.set("token", input.token);
+  const query = params.toString();
+  return heygenJson(`/v3/voices${query ? `?${query}` : ""}`);
+}
+
 export async function getHeyGenVideoStatus(videoId: string) {
   return heygenJson(`/v1/video_status.get?video_id=${encodeURIComponent(videoId)}`);
 }
@@ -208,4 +216,53 @@ export async function listHeyGenAvatarLooks(input?: { group_id?: string; avatar_
   if (input?.token) params.set("token", input.token);
   const query = params.toString();
   return heygenJson(`/v3/avatars/looks${query ? `?${query}` : ""}`);
+}
+
+function firstPaginationToken(payload: unknown): string {
+  if (!payload || typeof payload !== "object") return "";
+  const record = payload as Record<string, unknown>;
+  const direct = firstString(record, ["next_token", "nextToken", "next_page_token", "nextPageToken", "token"]);
+  if (direct) return direct;
+  for (const key of ["data", "result", "pagination", "page", "meta"]) {
+    const nested = record[key];
+    if (nested && typeof nested === "object") {
+      const found = firstPaginationToken(nested);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+export async function listHeyGenAvatarLooksExpanded(input?: { limit?: number }) {
+  const limit = Math.min(50, Math.max(1, input?.limit ?? 50));
+  const combos: Array<{ ownership?: "public" | "private"; avatar_type?: "studio_avatar" | "digital_twin" | "photo_avatar" }> = [
+    {},
+    { ownership: "public" },
+    { ownership: "private" },
+    { avatar_type: "studio_avatar" },
+    { avatar_type: "digital_twin" },
+    { avatar_type: "photo_avatar" },
+    { ownership: "public", avatar_type: "studio_avatar" },
+    { ownership: "private", avatar_type: "studio_avatar" }
+  ];
+  const fetchCombo = async (combo: { ownership?: "public" | "private"; avatar_type?: "studio_avatar" | "digital_twin" | "photo_avatar" }) => {
+    const pages: unknown[] = [];
+    let token = "";
+    for (let page = 0; page < 2; page += 1) {
+      try {
+        const result = await listHeyGenAvatarLooks({ ...combo, limit, token: token || undefined });
+        pages.push({ query: combo, page, result });
+        const next = firstPaginationToken(result);
+        if (!next || next === token) break;
+        token = next;
+      } catch (error) {
+        pages.push({ query: combo, page, error: error instanceof Error ? error.message : "Avatar look request failed" });
+        break;
+      }
+    }
+    return pages;
+  };
+  const settled = await Promise.allSettled(combos.map(fetchCombo));
+  const responses = settled.flatMap((item, index) => item.status === "fulfilled" ? item.value : [{ query: combos[index], error: item.reason instanceof Error ? item.reason.message : "Avatar look request failed" }]);
+  return { expanded: true, responses };
 }
