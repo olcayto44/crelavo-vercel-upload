@@ -65,9 +65,7 @@ export type CreateHeyGenVideoAgentInput = {
   prompt: string;
   mode?: "generate" | "chat";
   avatar_id?: string | null;
-  look_id?: string | null;
   voice_id?: string | null;
-  music_id?: string | null;
   style_id?: string | null;
   brand_kit_id?: string | null;
   orientation?: "portrait" | "landscape" | null;
