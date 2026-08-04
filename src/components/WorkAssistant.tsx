@@ -1169,9 +1169,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
     resetSetupFor(normalized, clean);
     setProductionPrompt(clean);
-    const productionReply = `Üretim isteğini aldım. Gerçek production kaydını açıp başlatıyorum: ${labelFor(normalized.production_type)}.`;
-    setMessages((current) => [...current, { id: uid(), role: "assistant", content: productionReply }]);
-    await startProductionForPlan(normalized, clean, { stayOnWork: true });
+    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized) }]);
+    setStatus("Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Start Production ile başlat.");
   }
 
   function submitPrompt(event: FormEvent) {
