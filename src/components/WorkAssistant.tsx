@@ -408,6 +408,7 @@ const trUiLabels: Record<string, string> = {
   "Link-to-video ad setup": "Linkten video reklam ayarları",
   "Website/SaaS link ad setup": "Website/SaaS link reklam ayarları",
   "Product link ad setup": "Ürün linki reklam ayarları",
+  "UGC product recommendation setup": "UGC ürün öneri video ayarları",
   "Competitor comparison ad setup": "Rakip karşılaştırma reklam ayarları",
   "Competitor analysis": "Rakip analizi",
   "Competitor comparison": "Rakip karşılaştırması",
@@ -454,6 +455,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const isSaasOrSiteLink = hasLink && /crelavo|saas|website|landing|site|web|dashboard|software|app|tool/.test(signal);
   const isCommerceLink = hasLink && !isCrelavoOrSaas && /shopify|amazon|trendyol|woocommerce|etsy|product|ürün|urun|store|shop|e-?commerce|marketplace|checkout/.test(signal);
   const isCompetitorComparison = hasLink && /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif|rakibe\s+göre|rakibe\s+gore/.test(signal);
+  const isUgcProductRecommendation = hasLink && /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer|doğal\s+öneri|dogal\s+oneri|ürün\s+öneri|urun\s+oneri/.test(signal);
   const explicitClipRequest = /clip\s*(çıkar|cikar|extract|make)|kesit\s*(çıkar|cikar)|highlight\s*(çıkar|cikar|extract)|kırp|kirp|long video|uzun video|best moments|shorts\s*(çıkar|cikar|extract|make)|reels\s*(çıkar|cikar|extract|make)/.test(signal);
   const sourceIsVideoPlatform = /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|vimeo\.com)/.test(signal);
   const isClipLink = hasLink && sourceIsVideoPlatform && explicitClipRequest;
@@ -478,8 +480,8 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
 
   if (plan.production_type === "video" && (isCommerceLink || isSaasOrSiteLink || isSocialLink || hasLink)) {
     return {
-      title: isCompetitorComparison ? "Competitor comparison ad setup" : isCommerceLink ? "Product link ad setup" : isSaasOrSiteLink ? "Website/SaaS link ad setup" : "Link-to-video ad setup",
-      note: isCompetitorComparison ? "Options focus on safe competitor analysis, positioning angle, comparison hook, and an original Crelavo ad." : "Options are generated from the supplied link and the selected ad/video intent.",
+      title: isCompetitorComparison ? "Competitor comparison ad setup" : isUgcProductRecommendation ? "UGC product recommendation setup" : isCommerceLink ? "Product link ad setup" : isSaasOrSiteLink ? "Website/SaaS link ad setup" : "Link-to-video ad setup",
+      note: isCompetitorComparison ? "Options focus on safe competitor analysis, positioning angle, comparison hook, and an original Crelavo ad." : isUgcProductRecommendation ? "Options focus on a native creator-style recommendation using the supplied product link." : "Options are generated from the supplied link and the selected ad/video intent.",
       groups: [
         { id: "videoType", title: "Ad type", options: isCompetitorComparison ? ["Competitor comparison", "Alternative positioning", "Market gap ad", "Website promo", "Explainer video", "Social media short"] : isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
         { id: "source", title: isCompetitorComparison ? "Competitor analysis" : "Link analysis", multi: true, options: isCompetitorComparison ? ["Analyze competitor page", "Extract competitor offer", "Extract benefits", "Find positioning angle", "Create comparison hook", "Create Crelavo CTA", "Safe no-copy guard"] : ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
@@ -632,6 +634,10 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       const wanted = group.options.find((option) => /competitor comparison|alternative positioning|market gap/.test(option.toLowerCase()));
       if (wanted) selected = [wanted];
     }
+    if (group.id === "videoType" && /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text)) {
+      const wanted = group.options.find((option) => /ugc-style product script|social media short|product ad video/.test(option.toLowerCase()));
+      if (wanted) selected = [wanted];
+    }
     if (group.id === "videoStyle") {
       const silent = /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice/.test(text) ? group.options.find((option) => /silent/i.test(option)) : undefined;
       const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !/sunucu\s*olmas[ıi]n|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucusuz|insans[ıi]z/.test(text) ? group.options.find((option) => /presenter/i.test(option)) : undefined;
@@ -643,7 +649,10 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       const wanted = requestedDurationOption(group.options, text);
       if (wanted) selected = [wanted];
     }
-    if (group.id === "visualDirection" && /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text)) {
+    if (group.id === "visualDirection" && /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text)) {
+      const wanted = group.options.find((option) => /ugc-style demo|with presenter/.test(option.toLowerCase()));
+      if (wanted) selected = [wanted];
+    } else if (group.id === "visualDirection" && /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text)) {
       const wanted = group.options.find((option) => /with presenter/.test(option.toLowerCase()));
       if (wanted) selected = [wanted];
     }
@@ -665,17 +674,21 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       }
     }
     if (group.id === "background") {
+      const socialMediaStyle = /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text) ? group.options.find((option) => /social media style/i.test(option)) : undefined;
       const motionGraphics = wantsNoPeopleMotionAd || /motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui|animated\s*text|animasyonlu\s*yaz|text\s*cards|glitch\s*transitions|swipe\s*transitions|hızlı\s*geçiş|hizli\s*gecis/.test(text) ? group.options.find((option) => /motion graphics/i.test(option)) : undefined;
 const city = /dışarıda|disarida|outdoor|sokak|street|şehir|sehir|city/.test(text) ? group.options.find((option) => /city/i.test(option)) : undefined;
 const lifestyle = /lifestyle|creator-style|ugc|outdoor|walking|casual|natural|hareketli|uygulamalı|uygulamali/.test(text) ? group.options.find((option) => /lifestyle|home\/lifestyle/i.test(option)) : undefined;
 const brand = /brand\s*color|marka\s*rengi|crelavo\s*brand/.test(text) ? group.options.find((option) => /brand color/i.test(option)) : undefined;
 const cinematic = /cinematic\s*scene|sinematik/.test(text) ? group.options.find((option) => /cinematic scene/i.test(option)) : undefined;
 const studio = /studio/.test(text) && !/not\s*studio|avoid\s*studio|not\s*corporate\s*studio/.test(text) ? group.options.find((option) => /studio/i.test(option)) : undefined;
-const wanted = motionGraphics || city || lifestyle || brand || cinematic || studio;
+const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand || cinematic || studio;
       if (wanted) selected = [wanted];
     }
     if (group.id === "motion") {
       const motionSelections: string[] = [];
+      if (/ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text)) {
+        motionSelections.push(...group.options.filter((option) => /strong opening hook|final cta|energetic social pacing/i.test(option)));
+      }
       if (/dinamik|dynamic|hareketli|geçiş|gecis|transition/.test(text)) motionSelections.push(...group.options.filter((option) => /dynamic transitions|smooth zooms|swipe transitions/i.test(option)));
       if (/hızlı|hizli|fast|quick|tempo|sosyal medya|social/.test(text)) motionSelections.push(...group.options.filter((option) => /fast cuts|energetic social pacing/i.test(option)));
       if (/açılış|acilis|hook|güçlü|guclu/.test(text)) motionSelections.push(...group.options.filter((option) => /strong opening hook/i.test(option)));
