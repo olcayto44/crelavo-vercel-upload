@@ -112,6 +112,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const lookId = String(selected.heygen_look_id ?? selected.look_id ?? selected.avatar_look_id ?? "").trim() || null;
   const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || null;
   const styleId = String(selected.heygen_style_id ?? selected.style_id ?? promptStyleId ?? process.env.HEYGEN_VIDEO_AGENT_STYLE_ID ?? "").trim() || null;
+  const musicId = String(selected.heygen_music_id ?? selected.music_id ?? "").trim() || null;
   const brandKitId = String(selected.heygen_brand_kit_id ?? selected.brand_kit_id ?? promptBrandKitId ?? process.env.HEYGEN_BRAND_KIT_ID ?? "").trim() || null;
   const screenshotUrl = httpsUrlFrom(selected.websiteScreenshotUrl) || httpsUrlFrom(selected.screenshotUrl) || httpsUrlFrom(selected.website_screenshot_url);
   const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
@@ -122,6 +123,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     avatar_id: avatarId,
     look_id: lookId,
     voice_id: voiceId,
+    music_id: musicId,
     style_id: styleId,
     brand_kit_id: brandKitId,
     orientation: portrait ? "portrait" as const : "landscape" as const,

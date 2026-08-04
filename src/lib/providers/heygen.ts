@@ -67,6 +67,7 @@ export type CreateHeyGenVideoAgentInput = {
   avatar_id?: string | null;
   look_id?: string | null;
   voice_id?: string | null;
+  music_id?: string | null;
   style_id?: string | null;
   brand_kit_id?: string | null;
   orientation?: "portrait" | "landscape" | null;
@@ -196,6 +197,15 @@ export async function getHeyGenVideoAgentSession(sessionId: string) {
 
 export async function getHeyGenV3Video(videoId: string) {
   return heygenJson(`/v3/videos/${encodeURIComponent(videoId)}`);
+}
+
+export async function searchHeyGenSounds(input: { query: string; type?: "music" | "sound_effects"; limit?: number; token?: string }) {
+  const params = new URLSearchParams();
+  params.set("query", input.query || "upbeat electronic");
+  params.set("type", input.type || "music");
+  params.set("limit", String(Math.min(50, Math.max(1, input.limit ?? 20))));
+  if (input.token) params.set("token", input.token);
+  return heygenJson(`/v3/audio/sounds?${params.toString()}`);
 }
 
 export async function listHeyGenVideoAgentStyles(input?: { tag?: string; limit?: number; token?: string }) {

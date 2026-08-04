@@ -1,4 +1,4 @@
-import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, getHeyGenVoices, getHeyGenVoicesV3, listHeyGenAvatarLooks, listHeyGenAvatarLooksExpanded, listHeyGenVideoAgentStyles } from "@/lib/providers/heygen";
+import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, getHeyGenVoices, getHeyGenVoicesV3, listHeyGenAvatarLooks, listHeyGenAvatarLooksExpanded, listHeyGenVideoAgentStyles, searchHeyGenSounds } from "@/lib/providers/heygen";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -37,6 +37,12 @@ export async function GET(request: Request) {
       result
     });
   }
+    if (action === "sounds" || action === "music") {
+      const query = String(url.searchParams.get("query") || "upbeat electronic").trim() || "upbeat electronic";
+      const type = url.searchParams.get("type") === "sound_effects" ? "sound_effects" : "music";
+      const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 20) || 20));
+      return Response.json({ action: "sounds", result: await searchHeyGenSounds({ query, type, limit, token: url.searchParams.get("token") || undefined }) });
+    }
     if (action === "video_agent_styles" || action === "styles") {
       return Response.json({ action: "video_agent_styles", result: await listHeyGenVideoAgentStyles({ tag: url.searchParams.get("tag") || undefined, limit: Number(url.searchParams.get("limit") || 50) || 50, token: url.searchParams.get("token") || undefined }) });
     }
@@ -73,6 +79,7 @@ export async function POST(request: Request) {
         avatar_id: body.avatar_id ?? body.heygen_avatar_id ?? undefined,
         look_id: body.look_id ?? body.heygen_look_id ?? undefined,
         voice_id: body.voice_id ?? body.heygen_voice_id ?? undefined,
+        music_id: body.music_id ?? body.heygen_music_id ?? undefined,
         style_id: body.style_id ?? body.heygen_style_id ?? undefined,
         brand_kit_id: body.brand_kit_id ?? body.heygen_brand_kit_id ?? undefined,
         orientation: body.orientation === "landscape" ? "landscape" : "portrait",
