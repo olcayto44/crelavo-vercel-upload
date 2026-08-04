@@ -1846,10 +1846,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                           <button type="button" onClick={() => openHeyGenGallery("voice")}>{workUiLanguage === "tr" ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
                           {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili avatar" : "Selected avatar"}: {selectedAvatar.name}</small> : null}
                           {selectedVoice ? <small>{workUiLanguage === "tr" ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
+                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Not: HeyGen Video Agent avatar_id destekler; görünüm/look seçimi Crelavo kaydında tutulur, desteklenmeyen look_id provider'a gönderilmez." : "Note: HeyGen Video Agent supports avatar_id; look selection is stored in Crelavo metadata and unsupported look_id is not sent to the provider."}</small> : null}
                         </div> : null}
                         {group.id === "extras" ? <div className="omni-gallery-actions">
                           <button type="button" onClick={() => openHeyGenGallery("music")}>{workUiLanguage === "tr" ? "Müzik galerisinden seç" : "Choose from music gallery"}</button>
                           {selectedSound ? <small>{workUiLanguage === "tr" ? "Seçili müzik" : "Selected music"}: {selectedSound.name}</small> : null}
+                          {selectedSound ? <small>{workUiLanguage === "tr" ? "Not: HeyGen Video Agent music_id kabul etmez; müzik seçimi Crelavo kaydında tutulur ve final post-production aşamasında eklenecek şekilde işaretlenir." : "Note: HeyGen Video Agent does not accept music_id; music selection is stored in Crelavo metadata and marked for final post-production."}</small> : null}
                         </div> : null}
                       </section>
                     ))}
