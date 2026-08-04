@@ -53,14 +53,6 @@ type WorkProductionCard = {
   output_json?: Record<string, unknown> | null;
 };
 
-type HeyGenGalleryAvatarLook = {
-  id: string;
-  lookId?: string;
-  imageUrl?: string;
-  name?: string;
-  style?: string;
-};
-
 type HeyGenGalleryAvatar = {
   id: string;
   avatarId?: string;
@@ -69,7 +61,6 @@ type HeyGenGalleryAvatar = {
   imageUrl?: string;
   gender?: string;
   style?: string;
-  looks?: HeyGenGalleryAvatarLook[];
 };
 
 type HeyGenGalleryVoice = {
@@ -1160,55 +1151,44 @@ function firstUrlFrom(...values: unknown[]): string {
 }
 
 function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
-  const byAvatar = new Map<string, HeyGenGalleryAvatar>();
-  for (const item of collectRecords(payload, 1200)) {
+  return collectRecords(payload, 1200).map((item) => {
     const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? "").trim();
     const lookId = String(item.look_id ?? item.lookId ?? item.id ?? "").trim();
-    const id = avatarId || lookId;
-    if (!id) continue;
     const imageUrl = firstUrlFrom(item.preview_image_url, item.previewImageUrl, item.image_url, item.imageUrl, item.thumbnail_url, item.thumbnailUrl, item.photo_url, item.photoUrl, item.avatar?.preview_image_url, item.avatar?.image_url, item.avatar?.thumbnail_url, item.avatar?.preview, item.preview, item.image, item.thumbnail, item.media);
-    const name = String(item.avatar?.name ?? item.avatar_name ?? item.name ?? item.display_name ?? "HeyGen avatar");
-    const style = String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim();
-    const gender = String(item.gender ?? item.avatar?.gender ?? "").trim();
-    const key = avatarId || id;
-    const existing = byAvatar.get(key);
-    const look: HeyGenGalleryAvatarLook = { id: lookId || id, lookId: lookId || undefined, imageUrl, name: String(item.name ?? item.display_name ?? "").trim(), style };
-    if (existing) {
-      if (!existing.imageUrl && imageUrl) existing.imageUrl = imageUrl;
-      if (!existing.gender && gender) existing.gender = gender;
-      if (!existing.style && style) existing.style = style;
-      if (!existing.lookId && lookId) existing.lookId = lookId;
-      if (!existing.looks?.some((candidate) => candidate.id === look.id)) existing.looks = [...(existing.looks ?? []), look];
-      continue;
-    }
-    byAvatar.set(key, {
-      id: key,
-      avatarId: avatarId || undefined,
-      lookId: lookId || undefined,
-      name,
+    return {
+      id: lookId || avatarId,
+      avatarId,
+      lookId,
+      name: String(item.name ?? item.display_name ?? item.avatar_name ?? item.avatar?.name ?? "HeyGen avatar"),
       imageUrl,
-      gender,
-      style,
-      looks: [look]
-    });
-  }
-  return Array.from(byAvatar.values()).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 120);
+      gender: String(item.gender ?? item.avatar?.gender ?? "").trim(),
+      style: String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim()
+    };
+  }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 160);
 }
 
 function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
-  return collectRecords(payload).map((item) => {
+  const byVoice = new Map<string, HeyGenGalleryVoice>();
+  for (const item of collectRecords(payload, 1200)) {
     const id = String(item.voice_id ?? item.voiceId ?? item.id ?? "").trim();
-    const previewAudioUrl = firstUrlFrom(item.preview_audio_url, item.previewAudioUrl, item.preview_url, item.previewUrl, item.sample_audio_url, item.sampleAudioUrl, item.audio_url, item.audioUrl, item.audio, item.sample, item.preview, item.demo, item.media);
-    return {
-      id,
-      name: String(item.name ?? item.display_name ?? item.voice_name ?? "HeyGen voice"),
-      language: String(item.language ?? item.locale ?? item.languages?.[0] ?? "").trim(),
-      gender: String(item.gender ?? "").trim(),
-      age: String(item.age ?? item.age_group ?? "").trim(),
-      style: String(item.style ?? item.tone ?? item.emotion ?? item.category ?? "").trim(),
-      previewAudioUrl
-    };
-  }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 80);
+    if (!id) continue;
+    const name = String(item.name ?? item.display_name ?? item.voice_name ?? "HeyGen voice").trim();
+    const language = String(item.language ?? item.locale ?? item.languages?.[0] ?? "").trim();
+    const gender = String(item.gender ?? "").trim();
+    const age = String(item.age ?? item.age_group ?? "").trim();
+    const style = String(item.style ?? item.tone ?? item.emotion ?? item.category ?? "").trim();
+    const previewAudioUrl = firstUrlFrom(item.preview_audio_url, item.previewAudioUrl, item.preview_audio, item.previewAudio, item.preview_url, item.previewUrl, item.sample_audio_url, item.sampleAudioUrl, item.sample_url, item.sampleUrl, item.audio_url, item.audioUrl, item.audio, item.sample, item.preview, item.demo, item.media, item.files, item.assets, item.metadata);
+    const key = `${name.toLowerCase()}|${language.toLowerCase()}|${gender.toLowerCase()}`;
+    const existing = byVoice.get(key);
+    if (existing) {
+      if (!existing.previewAudioUrl && previewAudioUrl) existing.previewAudioUrl = previewAudioUrl;
+      if (!existing.age && age) existing.age = age;
+      if (!existing.style && style) existing.style = style;
+      continue;
+    }
+    byVoice.set(key, { id, name, language, gender, age, style, previewAudioUrl });
+  }
+  return Array.from(byVoice.values()).sort((a, b) => a.name.localeCompare(b.name)).slice(0, 160);
 }
 
 export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAssistantProps) {
@@ -1748,14 +1728,13 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                 {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
                 <strong>{avatar.name}</strong>
                 <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
-                {avatar.looks && avatar.looks.length > 1 ? <small>{workUiLanguage === "tr" ? `${avatar.looks.length} görünüm varyasyonu` : `${avatar.looks.length} look variants`}</small> : null}
               </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
               {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                 <strong>{voice.name}</strong>
                 <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "HeyGen voice"}</small>
-                {voice.previewAudioUrl ? <audio controls src={voice.previewAudioUrl} /> : <small>{workUiLanguage === "tr" ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
+                {voice.previewAudioUrl ? <button type="button" onClick={() => { void new Audio(voice.previewAudioUrl).play(); }}>{workUiLanguage === "tr" ? "Oynat" : "Play"}</button> : <small>{workUiLanguage === "tr" ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
                 <button type="button" onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu sesi seç" : "Select this voice"}</button>
               </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
             </div> : null}
