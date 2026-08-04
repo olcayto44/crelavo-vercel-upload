@@ -406,6 +406,11 @@ const previewUrl = isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUr
 const deliveryUrl = isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
   const mediaDownloadUrl = isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
   const playbackUrl = previewUrl || (isMediaProduction ? deliveryUrl : "");
+  const requestedDurationSeconds = Number((production as Record<string, unknown>).output_duration_seconds ?? outputJson.output_duration_seconds ?? outputJson.providerPreflight?.durationSeconds ?? 0) || 0;
+  const actualDurationSeconds = Number(outputJson.durationSeconds ?? outputJson.duration_seconds ?? outputJson.visualStatus?.durationSeconds ?? outputJson.renderStatus?.durationSeconds ?? outputJson.mediaMetadata?.durationSeconds ?? outputJson.providerPreflight?.actualDurationSeconds ?? 0) || 0;
+  const durationDeltaSeconds = requestedDurationSeconds && actualDurationSeconds ? Math.round(actualDurationSeconds - requestedDurationSeconds) : 0;
+  const durationDeltaPercent = requestedDurationSeconds && actualDurationSeconds ? Math.round((Math.abs(durationDeltaSeconds) / requestedDurationSeconds) * 100) : 0;
+
   const sourceUrl = safeAssetUrl(production.source_files_url || outputJson.sourceFilesUrl);
   const readmeUrl = safeAssetUrl(production.readme_url || outputJson.readmeUrl);
   const outputPlan = metadata.outputPlan ?? outputJson.outputPlan ?? {};
@@ -1451,10 +1456,18 @@ const data = await response.json().catch(() => ({}));
         <div className="final-delivery-card">
           <h2>{isProjectProduction ? "Project delivery" : "Final delivery"}</h2>
           <p>{isProjectProduction ? "When the package is ready, preview, source files, README, and revision steps are managed here." : "When production is complete, download, revision, and social sharing steps are managed here."}</p>
+          {!isProjectProduction ? (
+            <div className="workflow-step-grid">
+              {requestedDurationSeconds ? <span><small>Requested duration</small><strong>{requestedDurationSeconds} sec</strong></span> : null}
+              {actualDurationSeconds ? <span><small>Actual duration</small><strong>{actualDurationSeconds} sec</strong></span> : <span><small>Actual duration</small><strong>Waiting</strong></span>}
+              {durationDeltaPercent ? <span><small>Duration difference</small><strong>{durationDeltaSeconds > 0 ? "+" : ""}{durationDeltaSeconds} sec · {durationDeltaPercent}%</strong></span> : null}
+            </div>
+          ) : null}
+          {durationDeltaPercent > 20 ? <p className="workspace-action-note warning">The final video is outside the target duration range. You can request a revision to make it closer to the requested duration.</p> : null}
           <div className="delivery-action-grid">
             {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
             {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
-            <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("The part I want changed in the final output: "); }}><RefreshCcw size={15} /> Revise</button>
+            <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
             {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
             {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
           </div>
