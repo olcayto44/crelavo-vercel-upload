@@ -119,6 +119,7 @@ const setupProfiles: Record<string, SetupProfile> = {
     title: "AI video setup",
     note: "Only video-specific production choices are shown here.",
     groups: [
+      { id: "videoStyle", title: "Video style", options: ["AI presenter", "Voice-over only", "Silent / music only"] },
       { id: "videoType", title: "Video type", options: ["Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Social media short", "Cinematic promo"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
       { id: "duration", title: "Duration", options: sharedVideoDuration, credit: 350 },
@@ -317,6 +318,10 @@ const trUiLabels: Record<string, string> = {
   "Creating...": "Oluşturuluyor...",
   "AI video setup": "Video üretim ayarları",
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
+  "Video style": "Video tarzı",
+  "AI presenter": "AI sunuculu",
+  "Voice-over only": "Sadece seslendirmeli",
+  "Silent / music only": "Sessiz / müzikli",
   "Video type": "Video türü",
   "Quality": "Kalite",
   "Duration": "Süre",
@@ -594,6 +599,13 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       return [group.id, selected];
     }
     let selected = group.options[0] ? [group.options[0]] : [];
+    if (group.id === "videoStyle") {
+      const silent = /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice/.test(text) ? group.options.find((option) => /silent/i.test(option)) : undefined;
+      const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !/sunucu\s*olmas[ıi]n|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucusuz|insans[ıi]z/.test(text) ? group.options.find((option) => /presenter/i.test(option)) : undefined;
+      const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
+      const wanted = silent || presenter || voiceOnly;
+      if (wanted) selected = [wanted];
+    }
     if (group.id === "duration") {
       const wanted = requestedDurationOption(group.options, text);
       if (wanted) selected = [wanted];

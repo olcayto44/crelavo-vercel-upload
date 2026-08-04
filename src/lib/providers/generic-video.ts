@@ -26,6 +26,7 @@ export type GenericVideoPlan = {
   durationSeconds: number;
   aspectRatio: string;
   provider: string;
+  deterministicUiMotion?: boolean;
 };
 
 export type GenericVideoRunResult = {
@@ -310,6 +311,7 @@ export function buildGenericVideoPlan(input: {
   const noVoice = voiceExplicitlyDisabled(intentText);
   const noSubtitles = subtitlesExplicitlyDisabled(intentText);
   const mediaGuard = visualOnlyGuard(noVoice, noSubtitles);
+  const deterministicUiMotion = isCrelavoPromo && /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui/i.test(intentText);
   const requestedScenes = scenePromptsFromRequest(prompt);
   const parts = requestedScenes.length ? requestedScenes : sentenceParts(prompt).filter((part) => !/test|teslim|seslendirme|altyaz|format|480p|saniye|mp4|müzik|muzik/i.test(part));
 const baseVisualScenes = isCrelavoPromo
@@ -349,7 +351,8 @@ const script = noVoice ? "" : isCrelavoPromo ? crelavoPromoNarration(durationSec
     voiceDirection: voiceDirectionGuard(`${selectedVoiceProfile}; ${selectedVoiceLanguage}; natural conversion-focused delivery`),
     durationSeconds,
     aspectRatio,
-    provider
+    provider,
+    deterministicUiMotion
   };
 }
 
@@ -403,7 +406,10 @@ export async function runGenericVideoPipeline(input: {
 
   try {
     const needsMultiShot = plan.durationSeconds > 5;
-    if (needsMultiShot) {
+    if (plan.deterministicUiMotion) {
+      visualJob = { provider: "shotstack_ui_motion", id: `ui-motion-${Date.now()}`, status: "succeeded", raw: { deterministicUiMotion: true, skippedPromptToVideo: true } };
+      visualJobs = [];
+    } else if (needsMultiShot) {
       const shotCount = Math.max(2, Math.ceil(plan.durationSeconds / 5));
       const shots = contextualScenes.slice(0, shotCount);
       while (shots.length < shotCount) shots.push(contextualScenes[shots.length % contextualScenes.length] || plan.title);
@@ -467,7 +473,7 @@ export async function runGenericVideoPipeline(input: {
   const requiredAudioReady = !wantsVoice || Boolean(voiceAudioUrl);
   const requiredSubtitleReady = !wantsSubtitles || Boolean(subtitleUrl);
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
-  if ((readyVisualUrls.length || visualJob?.url) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady && (voiceAudioUrl || subtitleUrl)) {
+  if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady && (voiceAudioUrl || subtitleUrl)) {
     try {
       renderJob = await createShotstackRender({ title: plan.title, videoUrl: readyVisualUrls[0] || visualJob?.url, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
     } catch (error) {

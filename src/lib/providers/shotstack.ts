@@ -227,7 +227,9 @@ export async function createShotstackRender(input: {
             ? { asset: { type: "image", src }, start, length, fit: "contain" }
             : { asset: { type: "video", src, volume: 0 }, start, length, fit: "crop" };
         }).filter((clip) => clip.length > 0)
-      : [{ asset: { type: "html", html: `<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#050816;color:white;font-family:Arial;font-size:48px;text-align:center;padding:60px;\">${escapeHtml(input.title)}</div>`, width: 1080, height: 1920 }, start: 0, length: input.durationSeconds }];
+      : isCrelavoUiDemo(input)
+        ? motionTextCardClips(input.title, input.subtitleLines, input.durationSeconds)
+        : [{ asset: { type: "html", html: `<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#050816;color:white;font-family:Arial;font-size:48px;text-align:center;padding:60px;\">${escapeHtml(input.title)}</div>`, width: 1080, height: 1920 }, start: 0, length: input.durationSeconds }];
   const subtitleClips = subtitleOverlayClips(input.subtitleLines, input.durationSeconds);
   const subtitleTracks = subtitleClips.length ? [{ clips: subtitleClips }] : input.subtitleUrl ? [{ clips: [{ asset: { type: "caption", src: input.subtitleUrl }, start: 0, length: input.durationSeconds }] }] : [];
   const sortedAudioSegments = (input.audioSegments ?? [])
