@@ -67,33 +67,85 @@ function httpsUrlFrom(value: unknown) {
 const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
 const DEFAULT_HEYGEN_V2_AVATAR_ID = "Daisy-waist-20220505";
 
-function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; providerPrompt?: string }) {
+type HeyGenPromptControls = {
+  subtitlesSelected: boolean;
+  largeTextSelected: boolean;
+  noPeopleSelected: boolean;
+  presenterSelected: boolean;
+  voiceDisabled: boolean;
+  isTurkish: boolean;
+};
+
+function textContainsAny(text: string, patterns: RegExp[]) {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+function heygenSpeechBudget(duration: number, isTurkish: boolean) {
+  const wordsPerSecond = isTurkish ? 2.25 : 2.5;
+  const maxWords = Math.max(12, Math.round(duration * wordsPerSecond));
+  const minWords = Math.max(8, Math.round(maxWords * 0.75));
+  return { minWords, maxWords };
+}
+
+function heygenPromptControls(selected: Record<string, unknown>, promptText: string): HeyGenPromptControls {
+  const selectedText = `${JSON.stringify(selected).toLowerCase()} ${promptText.toLowerCase()}`;
+  const subtitlesOff = textContainsAny(selectedText, [/no subtitles?/, /altyaz[ıi]\s*(olmas[ıi]n|yok)/, /subtitles?\s*(off|none)/]);
+  const subtitlesSelected = !subtitlesOff && textContainsAny(selectedText, [/auto subtitles?/, /burned subtitles?/, /large social captions?/, /altyaz[ıi]/, /subtitle/]);
+  const largeTextSelected = textContainsAny(selectedText, [/large social captions?/, /animated text/, /animasyonlu yaz[ıi]lar/, /text overlay/, /kinetic text/, /büyük yaz[ıi]/, /buyuk yaz[ıi]/]);
+  const noPeopleSelected = textContainsAny(selectedText, [/no people/, /insan olmas[ıi]n/, /humanless/, /without people/]);
+  const presenterSelected = textContainsAny(selectedText, [/ai presenter/, /with presenter/, /presenter/, /ai sunuculu/, /sunucu/, /ekranda sunucu/, /konu[şs]sun/, /anlats[ıi]n/]);
+  const voiceDisabled = textContainsAny(selectedText, [/no voice/, /without voice/, /seslendirme olmas[ıi]n/, /sessiz/]);
+  const isTurkish = textContainsAny(selectedText, [/türkçe/, /turkish/, /konu[şs]ma dili türkçe/, /türkçe konu[şs]sun/]);
+  return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
+}
+
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; providerPrompt?: string; controls?: HeyGenPromptControls }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
   const userPrompt = String(input.providerPrompt || input.prompt || input.title).trim();
-  const scriptLine = input.script ? `\nUse this script/voiceover content as the main narration, but keep the edit fast and visual:\n${input.script}` : "";
+  const controls = input.controls ?? heygenPromptControls({}, `${userPrompt} ${input.script ?? ""}`);
+  const speechBudget = heygenSpeechBudget(duration, controls.isTurkish);
+  const scriptLine = input.script
+    ? `Use the user's script/message as source material, but normalize it for ${duration} seconds: keep only the core selling message, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and do not read long prompt instructions aloud. Source script/message:\n${input.script}`
+    : `If narration is needed, write a short spoken script for ${duration} seconds, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and keep it natural.`;
   const visualSourceLine = input.hasVisualFiles
-    ? "Use the provided website/product visual files as optional B-roll references. Do not make the video a slow screen recording; use them only as quick visual proof, overlays, or animated callout moments."
-    : "No real website screenshots are required. If no product visuals are provided, build the video with strong motion graphics, result cards, benefit cards, abstract SaaS/product visuals, animated text, icons, charts, fast transitions, and presenter A-roll.";
+    ? "Use the provided website/product visual files as optional quick B-roll or proof references. Do not make the video a slow screen recording."
+    : "No real website screenshots are required. Use a clean presenter setup, product/interface-inspired background, subtle callouts, and light motion graphics only.";
+  const presenterLine = controls.presenterSelected && !controls.voiceDisabled
+    ? "Presenter policy: use exactly ONE single natural creator-style presenter, the selected avatar only. Keep the same face, outfit style and identity across the video."
+    : "No-presenter policy: if the user selected no voice/no people, do not show a human presenter; use motion graphics and product/interface visuals instead.";
+  const noPeopleConflictLine = controls.presenterSelected && controls.noPeopleSelected
+    ? "Selection conflict resolved: user selections contain both presenter and no-people signals. Because this is an AI presenter video, prioritize the single presenter and ignore the no-people signal. Do not add extra people."
+    : "";
+  const captionLine = controls.subtitlesSelected
+    ? "Subtitle policy: subtitles are allowed because the user selected them. Keep them as lower-third readable captions, short line length, never central paragraphs, never covering the face."
+    : "Subtitle policy: subtitles are OFF. Do not generate burned-in captions.";
+  const largeTextLine = controls.largeTextSelected
+    ? "Large text policy: animated/social text is allowed because the user selected it, but limit it to maximum 3 overlays, 2-4 words each, never central paragraphs, never covering the presenter face."
+    : "Large text policy: do not use large central text, text-card slideshow, or paragraph overlays. At most one small final CTA label is allowed.";
+  const speechLine = controls.voiceDisabled
+    ? "Audio policy: user selected no voice/silent mode, so do not create presenter dialogue. Use music/sound design only if appropriate."
+    : controls.isTurkish
+      ? `Turkish speech policy: presenter must speak natural Turkish only. Use simple short Turkish sentences, target ${speechBudget.minWords}-${speechBudget.maxWords} words for ${duration} seconds, and do not rush, distort, invent words or mispronounce. If the user's text is longer, shorten it.`
+      : `Speech policy: use clear natural presenter speech, target ${speechBudget.minWords}-${speechBudget.maxWords} words for ${duration} seconds. If the user's text is longer, shorten it instead of rushing.`;
+
   return [
     `Create a complete ${duration}-second high-converting vertical product demo / promotional video for Crelavo.`,
     `User request: ${userPrompt}`,
     scriptLine,
     visualSourceLine,
-    "Creative structure: open with a strong spoken hook in the first 2 seconds, then keep the presenter speaking clearly with a few quick product/interface cutaways or small callouts. Finish with one sharp CTA. Do not turn the video into a text-card slideshow.",
+    "Creative structure: open with a strong spoken hook in the first 2 seconds, keep the idea easy to understand, use only a few quick product/interface cutaways or small callouts, and finish with one sharp CTA.",
     /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/i.test(userPrompt)
-      ? "Competitor comparison mode: analyze the competitor page's public offer and benefits, then create an original Crelavo comparison ad. Position Crelavo around faster link-to-ad-video creation. Do not copy competitor wording, visuals, logo, brand assets, claims, UI, or exact layout. Avoid defamatory claims; use fair, high-level positioning only."
+      ? "Competitor comparison mode: analyze the competitor page's public offer and benefits, then create an original Crelavo comparison ad. Do not copy competitor wording, visuals, logo, brand assets, claims, UI, or exact layout. Avoid defamatory claims; use fair, high-level positioning only."
       : "",
-    "Style paragraph: natural AI presenter ad with one creator-led A-roll, clean product/interface background, fast but understandable social media pacing, subtle product/result callouts, light motion graphics, clean tech overlays, smooth transitions, premium but not corporate. Keep on-screen text minimal: only short supporting labels or CTA, never large central paragraphs.",
-    "Presenter direction: use exactly ONE single natural creator-style presenter: the selected avatar only. No second person, no audience, no colleagues, no background people, no group, no meeting room, no office, no panel, no corporate boardroom, no conference room, no classroom, no coworking space unless the user explicitly requested it. The presenter should feel like a real solo social creator explaining a useful product, not a formal studio host.",
-    "Background guard: default to a clean modern tech studio or clean SaaS creator setup. No outdoor street, no background people, no crowd, no looping pedestrians, no distracting background motion unless the user explicitly asks for an outdoor/city UGC setting.",
-    "On-screen text guard: do not add subtitles or large captions unless the user explicitly selected subtitles. If text is used, keep it as very short labels or one final CTA, placed away from the presenter face and away from the screen center.",
-    "Presenter identity lock: keep the exact same selected avatar/presenter identity across every scene. Do not regenerate a different face, hairstyle, outfit, body shape or person per scene. If locations change, only the background, B-roll, camera angle and overlays may change.",
-    "Language and speech lock: if the user request is Turkish, the presenter must speak natural Turkish only. Use simple short Turkish sentences, do not translate product names, do not add extra claims, and follow the user's requested spoken message closely. If a sentence is too long for the target duration, shorten it instead of rushing or inventing words.",
-    `Duration lock: target duration is ${duration} seconds. Treat this as a strict target. For 15 seconds, use roughly 30-38 Turkish words maximum and speak clearly at a natural pace. Do not compress a long script into rushed or broken speech.`,
-    "Audio direction: include confident Turkish presenter dialogue and light background music under the voice. Voice must be clear, bright, awake and natural; avoid robotic, sleepy, distorted, rushed, breathy, low-energy or mispronounced delivery.",
-    "Ending direction: finish with one short complete CTA sentence and stop cleanly. Do not rush the final sentence, do not trail off, and do not make the ending sound like another sentence is coming.",
-    "Caption direction: subtitles are OFF by default. Do not generate burned-in captions unless subtitles were explicitly selected by the user. Use at most one small CTA label near the end.",
-    "Hard avoid: office environment, meeting room, boardroom, multiple people, background people, stock office footage, panel discussion, group conversation, static screenshot zoom loop, slow slideshow, boring corporate explainer pacing, silent video, missing captions. If a human appears, it must be only the selected single avatar/presenter."
+    "Style paragraph: natural AI presenter ad or clean product demo, fast but understandable social media pacing, subtle product/result callouts, light motion graphics, clean tech overlays, smooth transitions, premium but not corporate.",
+    presenterLine,
+    noPeopleConflictLine,
+    "Background guard: default to a clean modern tech studio, clean SaaS creator setup, product interface background, or subtle motion-graphics background. Avoid office meeting rooms and background people unless explicitly requested.",
+    captionLine,
+    largeTextLine,
+    speechLine,
+    "Ending direction: finish with one short complete CTA sentence and stop cleanly. Do not trail off or make the ending sound unfinished.",
+    "Hard avoid: multiple people, background people, meeting room, boardroom, panel discussion, stock office footage, static screenshot zoom loop, slow slideshow, central text paragraphs, unreadable text, rushed speech, wrong language, silent presenter."
   ].filter(Boolean).join("\n\n");
 }
 
@@ -116,8 +168,9 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const screenshotUrl = httpsUrlFrom(selected.websiteScreenshotUrl) || httpsUrlFrom(selected.screenshotUrl) || httpsUrlFrom(selected.website_screenshot_url);
   const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
   const files = [screenshotUrl, productUrl].filter(Boolean).slice(0, 20).map((url) => ({ type: "url" as const, url }));
+  const controls = heygenPromptControls(selected, `${input.prompt} ${selected.providerPrompt ?? ""} ${selected.creativeProviderPrompt ?? ""} ${selected.script ?? scriptFromPrompt ?? ""}`);
   const payload = {
-    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, providerPrompt: String(selected.providerPrompt ?? selected.creativeProviderPrompt ?? "").trim(), script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0 }),
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, providerPrompt: String(selected.providerPrompt ?? selected.creativeProviderPrompt ?? "").trim(), script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0, controls }),
     mode: "generate" as const,
     avatar_id: avatarId,
     voice_id: voiceId,
