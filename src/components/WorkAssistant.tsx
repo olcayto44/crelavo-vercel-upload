@@ -1111,18 +1111,50 @@ function collectRecords(value: unknown, limit = 80): Record<string, any>[] {
     if (Array.isArray(node)) { node.forEach(walk); return; }
     if (typeof node !== "object") return;
     const record = node as Record<string, any>;
-    if (record.id || record.avatar_id || record.look_id || record.voice_id || record.preview_audio_url || record.preview_image_url || record.image_url) out.push(record);
+    if (record.id || record.avatar_id || record.look_id || record.voice_id || record.preview_audio_url || record.preview_image_url || record.image_url || record.preview_url || record.thumbnail_url) out.push(record);
     Object.values(record).forEach(walk);
   };
   walk(value);
   return out;
 }
 
+function firstUrlFrom(...values: unknown[]): string {
+  const seen = new WeakSet<object>();
+  const walk = (value: unknown): string => {
+    if (!value) return "";
+    if (typeof value === "string") {
+      const direct = value.trim();
+      return /^https?:\/\//i.test(direct) ? direct : direct.match(/https?:\/\/[^\s"'<>]+/i)?.[0] ?? "";
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = walk(item);
+        if (found) return found;
+      }
+      return "";
+    }
+    if (typeof value === "object") {
+      if (seen.has(value)) return "";
+      seen.add(value);
+      for (const item of Object.values(value as Record<string, unknown>)) {
+        const found = walk(item);
+        if (found) return found;
+      }
+    }
+    return "";
+  };
+  for (const value of values) {
+    const found = walk(value);
+    if (found) return found;
+  }
+  return "";
+}
+
 function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
   return collectRecords(payload).map((item) => {
     const avatarId = String(item.avatar_id ?? item.avatarId ?? item.avatar?.avatar_id ?? item.avatar?.id ?? item.id ?? "").trim();
     const lookId = String(item.look_id ?? item.lookId ?? item.id ?? "").trim();
-    const imageUrl = String(item.preview_image_url ?? item.previewImageUrl ?? item.image_url ?? item.imageUrl ?? item.thumbnail_url ?? item.thumbnailUrl ?? item.avatar?.preview_image_url ?? "").trim();
+    const imageUrl = firstUrlFrom(item.preview_image_url, item.previewImageUrl, item.image_url, item.imageUrl, item.thumbnail_url, item.thumbnailUrl, item.photo_url, item.photoUrl, item.avatar?.preview_image_url, item.avatar?.image_url, item.avatar?.thumbnail_url, item.avatar?.preview, item.preview, item.image, item.thumbnail, item.media);
     return {
       id: lookId || avatarId,
       avatarId,
@@ -1138,6 +1170,7 @@ function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
 function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
   return collectRecords(payload).map((item) => {
     const id = String(item.voice_id ?? item.voiceId ?? item.id ?? "").trim();
+    const previewAudioUrl = firstUrlFrom(item.preview_audio_url, item.previewAudioUrl, item.preview_url, item.previewUrl, item.sample_audio_url, item.sampleAudioUrl, item.audio_url, item.audioUrl, item.audio, item.sample, item.preview, item.demo, item.media);
     return {
       id,
       name: String(item.name ?? item.display_name ?? item.voice_name ?? "HeyGen voice"),
@@ -1145,7 +1178,7 @@ function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
       gender: String(item.gender ?? "").trim(),
       age: String(item.age ?? item.age_group ?? "").trim(),
       style: String(item.style ?? item.tone ?? item.emotion ?? item.category ?? "").trim(),
-      previewAudioUrl: String(item.preview_audio_url ?? item.previewAudioUrl ?? item.sample_audio_url ?? item.audio_url ?? "").trim()
+      previewAudioUrl
     };
   }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 80);
 }
@@ -1254,7 +1287,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setGalleryLoading(true);
     try {
       const action = mode === "avatar" ? "avatar_looks" : "voices";
-      const response = await fetch(`/api/heygen?action=${action}&limit=60`);
+      const response = await fetch(`/api/heygen?action=${action}&limit=50`);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(data.error ?? "HeyGen gallery could not be loaded."));
       if (mode === "avatar") setAvatarGallery(normalizeAvatarGallery(data.result ?? data));
@@ -1690,11 +1723,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
               </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
-              {voiceGallery.length ? voiceGallery.map((voice) => <button type="button" key={voice.id} className={selectedVoice?.id === voice.id ? "active" : ""} onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>
+              {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                 <strong>{voice.name}</strong>
                 <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "HeyGen voice"}</small>
-                {voice.previewAudioUrl ? <audio controls src={voice.previewAudioUrl} onClick={(event) => event.stopPropagation()} /> : null}
-              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
+                {voice.previewAudioUrl ? <audio controls src={voice.previewAudioUrl} /> : <small>{workUiLanguage === "tr" ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
+                <button type="button" onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu sesi seç" : "Select this voice"}</button>
+              </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
             </div> : null}
           </div>
         </div> : null}

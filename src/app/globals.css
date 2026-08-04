@@ -21,8 +21,10 @@
 .omni-gallery-head p { margin: 4px 0 0; color: var(--muted); }
 .omni-gallery-head button { border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 999px; width: 34px; height: 34px; cursor: pointer; }
 .omni-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.omni-gallery-grid button { text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 18px; padding: 10px; cursor: pointer; display: grid; gap: 8px; }
-.omni-gallery-grid button.active { border-color: var(--cyan); background: rgba(34,211,238,.12); }
+.omni-gallery-grid button, .omni-gallery-voice-card { text-align: left; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 18px; padding: 10px; cursor: pointer; display: grid; gap: 8px; }
+.omni-gallery-grid button.active, .omni-gallery-voice-card.active { border-color: var(--cyan); background: rgba(34,211,238,.12); }
+.omni-gallery-voice-card { cursor: default; }
+.omni-gallery-voice-card button { border-radius: 999px; text-align: center; justify-content: center; }
 .omni-gallery-grid img, .omni-gallery-placeholder { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 14px; background: var(--panel-strong); display: grid; place-items: center; font-size: 40px; }
 .omni-gallery-grid small { color: var(--muted); }
 .omni-gallery-grid.voice { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }

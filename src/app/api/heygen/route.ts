@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       ownership: url.searchParams.get("ownership") as "public" | "private" | null || undefined,
       avatar_type: url.searchParams.get("avatar_type") as "studio_avatar" | "digital_twin" | "photo_avatar" | null || undefined,
       group_id: url.searchParams.get("group_id") || undefined,
-      limit: Number(url.searchParams.get("limit") || 50) || 50,
+      limit: Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50)),
       token: url.searchParams.get("token") || undefined
     });
     return Response.json({
