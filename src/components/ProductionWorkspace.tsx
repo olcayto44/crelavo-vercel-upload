@@ -714,7 +714,7 @@ const data = await response.json().catch(() => ({}));
     const dedicatedI2vTotal = Number(data.imageToVideoPoll?.imageToVideoTotal ?? data.production?.output_json?.imageToVideoPoll?.imageToVideoTotal ?? 0) || 0;
     const dedicatedI2vError = String(data.imageToVideoPoll?.imageToVideoErrorSummary ?? data.production?.output_json?.imageToVideoPoll?.imageToVideoErrorSummary ?? "").trim();
     const dedicatedFinalStatus = String(data.finalAssemblyPoll?.finalAssemblyPollStatus ?? data.production?.output_json?.finalAssemblyPoll?.finalAssemblyPollStatus ?? "");
-    const finalVideoReady = Boolean(data.finalVideoUrl || data.production?.delivery_link) && productionStatus === "ready";
+    const finalVideoReady = Boolean(data.finalVideoUrl || data.production?.preview_url || data.production?.delivery_link || data.production?.output_json?.finalVideoUrl || data.production?.output_json?.providerFinalUrl);
     const rawVisualPreviewUrl = String(data.rawVisualPreviewUrl ?? data.production?.output_json?.rawVisualPreviewUrl ?? "").trim();
     const finalRenderPending = Boolean(data.renderPending || rawVisualPreviewUrl || /final_render_(pending|started|waiting)|character_dialogue_final_render/.test(generationStatus));
 
@@ -750,6 +750,7 @@ const data = await response.json().catch(() => ({}));
     setPollingNote(finalRenderPending
       ? "Visual video is ready. Final voice/subtitle render is still preparing…"
       : `Provider status: ${nextStatus}`);
+    if (!auto && data.production) window.setTimeout(() => window.location.reload(), 900);
   }
 
   useEffect(() => {
