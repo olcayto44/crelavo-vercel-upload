@@ -51,7 +51,12 @@ function postgresSafe<T>(value: T): T {
   if (typeof value === "string") return stripPostgresUnsafeText(value) as T;
   if (Array.isArray(value)) return value.map((item) => postgresSafe(item)) as T;
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)])) as T;
+    const shallowCleaned = Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)]));
+    try {
+      return JSON.parse(stripPostgresUnsafeText(JSON.stringify(shallowCleaned))) as T;
+    } catch {
+      return shallowCleaned as T;
+    }
   }
   return value;
 }
@@ -410,10 +415,11 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
     providerReadiness,
     workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: { ...existingOutput, providerReadiness } })
   };
-  await supabase
+  const { error: startRequestedError } = await supabase
     .from("production_requests")
     .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now }))
     .eq("id", productionId);
+  if (startRequestedError) throw new Error(`heygen_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
   const useHeyGenVideoAgent = /heygen_video_agent|video_agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
   let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
@@ -438,12 +444,13 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
       providerErrors: { heygen: failureMessage },
       currentStep: "HeyGen start failed before provider job id was created"
     };
-    const { data: failedProduction } = await supabase
+    const { data: failedProduction, error: failedUpdateError } = await supabase
       .from("production_requests")
       .update(safeUpdate({ status: "queued", automation_status: "provider_start_failed", generation_status: "heygen_start_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: `HeyGen start failed before job id: ${failureMessage}`, error_message: failureMessage, updated_at: now }))
       .eq("id", productionId)
       .select("*")
       .single();
+    if (failedUpdateError) throw new Error(`heygen_start_failed_update: ${errorMessage(failedUpdateError, "DB update failed")}; original: ${failureMessage}`);
     return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
   }
       const talkingOutput = {
@@ -478,7 +485,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         .eq("id", productionId)
         .select("*")
         .single();
-      if (talkingError) throw talkingError;
+      if (talkingError) throw new Error(`heygen_job_created_update: ${errorMessage(talkingError, "DB update failed")}`);
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
