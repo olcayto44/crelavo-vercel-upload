@@ -9,6 +9,7 @@ import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-co
 
 type HeaderProps = {
   navLinks?: PublicNavLink[];
+  languageOverride?: string;
 };
 
 const canonicalNavLabels: Record<string, string> = {
@@ -46,7 +47,7 @@ function normalizeNavLabel(label: string) {
   return canonicalNavLabels[key] ?? label;
 }
 
-export function Header({ navLinks = defaultPublicNavLinks }: HeaderProps) {
+export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
@@ -60,7 +61,7 @@ export function Header({ navLinks = defaultPublicNavLinks }: HeaderProps) {
       <nav className="nav-links primary-nav-links">
         {activeNavLinks.map((item) => item.label === "Tools" ? (
           <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
-            <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" />
+            <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" languageOverride={languageOverride} />
             <div className="tools-mega-menu">
               {footerGroups.slice(0, 3).map((group) => (
                 <div className="tools-mega-group" key={group.title}>
@@ -70,7 +71,7 @@ export function Header({ navLinks = defaultPublicNavLinks }: HeaderProps) {
               ))}
             </div>
           </div>
-        ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} />)}
+        ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} languageOverride={languageOverride} />)}
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">

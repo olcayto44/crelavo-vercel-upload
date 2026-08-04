@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
+import { defaultPublicNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
-import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 type LocalizedPageProps = { params: Promise<{ locale: string; slug: string }> };
 
@@ -61,14 +61,14 @@ function LocalizedStructuredData({ page }: { page: (typeof localizedEuropePages)
 }
 
 export default async function LocalizedEuropePage({ params }: LocalizedPageProps) {
-  const [{ locale, slug }, siteContent] = await Promise.all([params, getConfiguredSiteContentConfig()]);
+  const { locale, slug } = await params;
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) notFound();
 
   return (
     <>
       <LocalizedStructuredData page={page} />
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={defaultPublicNavLinks} languageOverride={page.locale} />
       <main className="public-funnel-page localized-europe-page">
         <section className="container section clean-feed-section localized-hero">
           <div className="localized-language-switcher" aria-label="Language versions">
@@ -99,8 +99,8 @@ export default async function LocalizedEuropePage({ params }: LocalizedPageProps
         <section className="container section home-section-tight clean-feed-section">
           <div className="sample-video-head">
             <div>
-              <span className="badge">Use cases</span>
-              <h2>{page.locale === "tr" ? "Crelavo ile üretilebilecek işler" : page.locale === "fr" ? "Cas d’usage Crelavo" : "Crelavo use cases"}</h2>
+              <span className="badge">{page.locale === "tr" ? "Kullanım alanları" : page.locale === "fr" ? "Cas d’usage" : "Anwendungsfälle"}</span>
+              <h2>{page.locale === "tr" ? "Crelavo ile üretilebilecek işler" : page.locale === "fr" ? "Cas d’usage Crelavo" : "Crelavo Anwendungsfälle"}</h2>
             </div>
           </div>
           <div className="showcase-pill-row">

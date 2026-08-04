@@ -72,15 +72,8 @@ export const defaultPublicNavLinks: PublicNavLink[] = [
   { label: "Categories", href: "/categories", order: 2, active: true },
   { label: "Tools", href: "/tools", order: 3, active: true },
   { label: "Credits", href: "/pricing", order: 4, active: true },
-  { label: "Live Sales Plans", href: "/live-sales-credits", order: 5, active: true },
-  { label: "Drone Plans", href: "/drone-credits", order: 6, active: true },
-  { label: "Assistant", href: "/dashboard/assistant-workspace", order: 7, active: true },
-  { label: "Growth Intelligence", href: "/growth-intelligence", order: 8, active: true },
-  { label: "Affiliate", href: "/affiliate", order: 9, active: true },
-  { label: "Productions", href: "/dashboard/productions", order: 10, active: true },
-  { label: "Dashboard", href: "/dashboard", order: 11, active: true },
-  { label: "Contact", href: "/contact", order: 12, active: true },
-  { label: "Blog / Content", href: "/blog", order: 13, active: true }
+  { label: "Contact", href: "/contact", order: 5, active: true },
+  { label: "Blog / Content", href: "/blog", order: 6, active: true }
 ];
 
 export const defaultBlogTopics: BlogTopic[] = [
@@ -695,11 +688,7 @@ export function normalizePublicNavLinks(input: unknown): PublicNavLink[] {
     active: Boolean(item.active)
   })).filter((item) => item.label && item.href);
   if (!links.length) return defaultPublicNavLinks;
-  const mergedLinks = [...links];
-  for (const defaultLink of defaultPublicNavLinks.filter((item) => ["/live-sales-credits", "/drone-credits", "/growth-intelligence", "/affiliate"].includes(item.href))) {
-    if (!mergedLinks.some((item) => item.href === defaultLink.href)) mergedLinks.push(defaultLink);
-  }
-  return mergedLinks.sort((a, b) => a.order - b.order);
+  return links.sort((a, b) => a.order - b.order);
 }
 
 export function normalizeBlogTopics(input: unknown): BlogTopic[] {

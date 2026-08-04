@@ -10,7 +10,6 @@ import { PublicSideRail } from "@/components/PublicSideRail";
 import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
-import { localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 import "./globals.css";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
@@ -53,7 +52,6 @@ export const metadata: Metadata = {
     canonical: "/",
     languages: {
       "en-US": "/",
-      ...localizedLanguageAlternates(),
       "x-default": "/"
     }
   },
