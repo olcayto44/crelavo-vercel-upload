@@ -639,17 +639,18 @@ export async function POST(request: Request) {
     const explicitNoVoiceForRender = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(renderSignal);
     const explicitNoSubtitlesForRender = /no\s*subtitle|no\s*subtitles|without\s*subtitle|without\s*subtitles|altyaz[ıi]\s*olmasın|altyaz[ıi]\s*yok/.test(renderSignal);
     const explicitNoMusicForRender = /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok|sessiz/.test(renderSignal);
+const visualJobForUrl = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, any> : {};
+const renderJobForUrl = output.renderJob && typeof output.renderJob === "object" ? output.renderJob as Record<string, any> : {};
+const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
+const isHeyGenVideoAgentProvider = outputVisualJobProvider.toLowerCase() === "heygen_video_agent" || String(visualStatus?.provider ?? "").toLowerCase() === "heygen_video_agent";
     const wantsVoiceRender = !explicitNoVoiceForRender && Boolean(selectedOptions.voiceOver || output.voiceAudioUrl);
     const wantsSubtitleRender = !explicitNoSubtitlesForRender && Boolean(selectedOptions.subtitles || output.subtitleUrl);
     const wantsMusicRender = !explicitNoMusicForRender && Boolean(selectedOptions.music);
-    const requiresFinalRender = Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender)));
-const visualJobForUrl = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, any> : {};
-const renderJobForUrl = output.renderJob && typeof output.renderJob === "object" ? output.renderJob as Record<string, any> : {};
+    const requiresFinalRender = !isHeyGenVideoAgentProvider && Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender)));
 const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url || visualJobForUrl.preview_url || visualJobForUrl.raw?.url || visualJobForUrl.raw?.output || visualJobForUrl.raw?.video || visualJobForUrl.raw?.result || "").trim();
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
-    const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
     const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
@@ -734,7 +735,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       const explicitNoVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(readinessSignal);
       const explicitNoSubtitles = /no\s*subtitle|no\s*subtitles|without\s*subtitle|without\s*subtitles|altyaz[ıi]\s*olmasın|altyaz[ıi]\s*yok/.test(readinessSignal);
       const softPassMissing = new Set(["voice_audio_or_final_render", "subtitle_or_burned_render", "audio_probe_missing", "duration_probe_missing", "media_probe_480p"]);
-      const canSoftPassProviderVideo = Boolean(providerFinalUrl) && explicitNoVoice && explicitNoSubtitles && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
+      const canSoftPassProviderVideo = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || (explicitNoVoice && explicitNoSubtitles)) && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
       if (!readyGate.passed && !canSoftPassProviderVideo) {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, alternatives: polledAlternatives, alternativeStatuses, providerStatus: "quality_gate_blocked", providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate, qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: readyGate.required, missing: readyGate.missing, warnings: readyGate.warnings } });
         const { data } = await supabase
