@@ -1882,11 +1882,15 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             {galleryLoading ? <div className="omni-gallery-empty"><Loader2 size={16} className="spin" /> {workUiLanguage === "tr" ? "Galeri yükleniyor..." : "Loading gallery..."}</div> : null}
             {galleryError ? <div className="omni-gallery-empty">{galleryError}</div> : null}
             {!galleryLoading && !galleryError && galleryMode === "avatar" ? <div className="omni-gallery-grid">
-              {avatarGallery.length ? avatarGallery.map((avatar) => <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
-                {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
-                <strong>{avatar.name}</strong>
-                <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
-              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
+              {avatarGallery.length ? avatarGallery.map((avatar) => {
+                const canUseAvatar = Boolean(avatar.avatarId);
+                return <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} disabled={!canUseAvatar} onClick={() => { if (!canUseAvatar) return; setSelectedAvatar(avatar); setGalleryMode(null); }}>
+                  {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
+                  <strong>{avatar.name}</strong>
+                  <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
+                  {!canUseAvatar ? <small>{workUiLanguage === "tr" ? "Bu kart yalnızca görünüm/look verisi içeriyor; Video Agent için avatar_id yok." : "This card only has look data; no avatar_id is available for Video Agent."}</small> : null}
+                </button>;
+              }) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
               {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>

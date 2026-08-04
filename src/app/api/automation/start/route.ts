@@ -115,7 +115,7 @@ function heygenPromptControls(selected: Record<string, unknown>, promptText: str
   return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
 }
 
-function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; controls?: HeyGenPromptControls }) {
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; controls?: HeyGenPromptControls; presenterPreference?: string }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
   const userPrompt = String(input.prompt || input.title).trim();
   const controls = input.controls ?? heygenPromptControls({}, `${userPrompt} ${input.script ?? ""}`);
@@ -126,8 +126,9 @@ function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; scr
   const visualSourceLine = input.hasVisualFiles
     ? "Use the provided website/product visual files as optional quick B-roll or proof references. Do not make the video a slow screen recording."
     : "No real website screenshots are required. Use a clean presenter setup, product/interface-inspired background, subtle callouts, and light motion graphics only.";
+  const presenterPreference = String(input.presenterPreference ?? "").trim();
   const presenterLine = controls.presenterSelected && !controls.voiceDisabled
-    ? "Presenter policy: use exactly ONE single natural creator-style presenter, the selected avatar only. Keep the same face, outfit style and identity across the video."
+    ? `Presenter policy: use exactly ONE single natural creator-style presenter, the selected avatar only. Keep the same face, outfit style and identity across the video.${presenterPreference ? ` Presenter preference from user setup: ${presenterPreference}. Respect this preference when selecting/generating the presenter.` : ""}`
     : "No-presenter policy: if the user selected no voice/no people, do not show a human presenter; use motion graphics and product/interface visuals instead.";
   const noPeopleConflictLine = controls.presenterSelected && controls.noPeopleSelected
     ? "Selection conflict resolved: user selections contain both presenter and no-people signals. Because this is an AI presenter video, prioritize the single presenter and ignore the no-people signal. Do not add extra people."
@@ -194,9 +195,10 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
   const files = [screenshotUrl, productUrl].filter(Boolean).slice(0, 20).map((url) => ({ type: "url" as const, url }));
   const explicitScript = String(selected.script ?? scriptFromPrompt ?? "").trim();
-  const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript}`);
+  const presenterPreference = Array.isArray(productionSetup.presenterChoice) ? productionSetup.presenterChoice.join(", ") : String(productionSetup.presenterChoice ?? selected.selected_presenter_name ?? selected.presenterChoice ?? "").trim();
+  const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
   const payload = {
-    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls }),
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls, presenterPreference }),
     mode: "generate" as const,
     avatar_id: avatarId,
     voice_id: voiceId,
