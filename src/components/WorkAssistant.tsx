@@ -486,7 +486,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
         { id: "format", title: "Format", options: ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"], credit: 250 },
-        { id: "visualDirection", title: "Visual direction", options: isCommerceLink ? ["Product close-up", "Clean studio background", "Lifestyle scene", "Marketplace ad", "UGC-style demo", "Premium product commercial"] : ["UI dashboard demo", "Website walkthrough", "Product explainer", "No people", "With presenter", "Motion graphics", "Premium SaaS promo"], credit: 400 },
+        { id: "visualDirection", title: "Visual direction", options: isCommerceLink ? ["Product close-up", "With presenter", "Clean studio background", "Lifestyle scene", "Marketplace ad", "UGC-style demo", "Premium product commercial"] : ["UI dashboard demo", "Website walkthrough", "Product explainer", "No people", "With presenter", "Motion graphics", "Premium SaaS promo"], credit: 400 },
         { id: "background", title: "Background", options: isCommerceLink ? ["White studio", "Brand color", "Home/lifestyle", "Luxury surface", "Social media style"] : ["Product UI", "Brand color", "Clean gradient", "Dashboard background", "Motion graphics"], credit: 300 },
         { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
         { id: "voice", title: "Voice-over", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Choose AI voice"], credit: 600 },
@@ -515,7 +515,7 @@ function musicDisabledByPrompt(text: string) {
 }
 
 function voiceRequestedByPrompt(text: string) {
-  return /professional\s*voice-?over|english\s*voice-?over|voice-?over\s*(on|required|yes)|with\s*voice|with\s*voice-?over|voice\s*acting|per-character\s*voice|different\s*voices?|different\s+voice\s+for\s+each|separate\s*voices?|character\s*voices?|turkish\s*voices?|dialogue|diyalog|konuşma|konusma|replik|seslendirme\b[^.!?]{0,60}\b(olsun|istiyorum|ekle|var)|ses\b[^.!?]{0,40}\b(olsun|istiyorum|ekle|var)|dış\s*anlatıcı|dis\s*anlatici|anlatıcı\s*sesi|anlatici\s*sesi/.test(text);
+  return /ai\s*presenter|presenter|host|spokesperson|with\s+presenter|voice-?over|narration|spoken|speak|talking|dialogue|diyalog|replik|seslendirme|anlatıcı|anlatici|konuşsun|konussun|anlatsın|anlatsin|sesli|with\s*voice/.test(text);
 }
 
 function subtitlesRequestedByPrompt(text: string) {
@@ -643,6 +643,10 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       const wanted = requestedDurationOption(group.options, text);
       if (wanted) selected = [wanted];
     }
+    if (group.id === "visualDirection" && /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text)) {
+      const wanted = group.options.find((option) => /with presenter/.test(option.toLowerCase()));
+      if (wanted) selected = [wanted];
+    }
     if (group.id === "quality") {
       const premiumWanted = /1080p\s*premium|premium\s*1080p/.test(text) ? group.options.find((option) => /1080p premium/i.test(option)) : undefined;
       const fourK = /\b4k\b/.test(text) ? group.options.find((option) => /4k/i.test(option)) : undefined;
@@ -680,7 +684,8 @@ const wanted = motionGraphics || city || lifestyle || brand || cinematic || stud
       selected = Array.from(new Set(motionSelections)).slice(0, 5);
     }
     if (group.id === "voice") {
-      if (noVoice) {
+      const explicitPresenterVoice = /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text);
+      if (noVoice && !explicitPresenterVoice) {
         selected = group.options.includes("No voice-over") ? ["No voice-over"] : [];
       } else {
         const needsMultiCharacterAiVoices = wantsVoice && /different\s*voices?|different\s*voice\s*for\s*each|separate\s*voices?|separate\s*voice\s*per\s*person|character\s*voices?|per-character|dialogue|diyalog|replik|turkish\s*voices?|farklı\s*ses|farkli\s*ses|her\s*karakter.*ses|karakter\s*ses/.test(text);
