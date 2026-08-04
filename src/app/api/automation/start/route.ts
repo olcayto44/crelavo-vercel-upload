@@ -30,7 +30,9 @@ function ecommerceContextFrom(value: unknown) {
 }
 
 function stripPostgresUnsafeText(value: string) {
-  return value.replace(/\\u0000/gi, "").replace(/\u0000/g, "");
+  return value
+    .replace(/\\+u0000/gi, "")
+    .replace(/\u0000/g, "");
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -232,7 +234,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const sessionId = String(data.session_id ?? data.sessionId ?? data.id ?? "").trim();
   if (!sessionId) throw new Error(`HeyGen Video Agent did not return a session id: ${JSON.stringify(result).slice(0, 500)}`);
-  return { provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, raw: result };
+  return postgresSafe({ provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
@@ -257,7 +259,7 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const videoId = String(data.video_id ?? data.videoId ?? data.id ?? "").trim();
   if (!videoId) throw new Error(`HeyGen v2 generate did not return a video id: ${JSON.stringify(result).slice(0, 500)}`);
-  return { provider: "heygen", id: videoId, status: String(data.status ?? "processing"), videoId, payload, raw: result };
+  return postgresSafe({ provider: "heygen", id: videoId, status: String(data.status ?? "processing"), videoId, payload, raw: result });
 }
 
 async function requireAutomationAccess(request: Request, body: Record<string, unknown>, production: { user_id?: string | null }) {
@@ -410,7 +412,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
   };
   await supabase
     .from("production_requests")
-    .update({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now })
+    .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now }))
     .eq("id", productionId);
 
   const useHeyGenVideoAgent = /heygen_video_agent|video_agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
@@ -438,7 +440,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
     };
     const { data: failedProduction } = await supabase
       .from("production_requests")
-      .update({ status: "queued", automation_status: "provider_start_failed", generation_status: "heygen_start_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: `HeyGen start failed before job id: ${failureMessage}`, error_message: failureMessage, updated_at: now })
+      .update(safeUpdate({ status: "queued", automation_status: "provider_start_failed", generation_status: "heygen_start_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: `HeyGen start failed before job id: ${failureMessage}`, error_message: failureMessage, updated_at: now }))
       .eq("id", productionId)
       .select("*")
       .single();
@@ -472,7 +474,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
       };
       const { data: talkingProduction, error: talkingError } = await supabase
         .from("production_requests")
-        .update({ status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: talkingOutput, admin_notes: `HeyGen talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now })
+        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: talkingOutput, admin_notes: `HeyGen talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now }))
         .eq("id", productionId)
         .select("*")
         .single();
