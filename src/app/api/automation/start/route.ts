@@ -80,6 +80,9 @@ function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; scr
     scriptLine,
     visualSourceLine,
     "Creative structure: open with a strong hook in the first 2 seconds, then use quick cuts, kinetic text, punchy benefit cards, proof/result moments, dynamic transitions, and finish with either a sharp CTA or a question that makes the viewer think and click.",
+    /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/i.test(userPrompt)
+      ? "Competitor comparison mode: analyze the competitor page's public offer and benefits, then create an original Crelavo comparison ad. Position Crelavo around faster link-to-ad-video creation. Do not copy competitor wording, visuals, logo, brand assets, claims, UI, or exact layout. Avoid defamatory claims; use fair, high-level positioning only."
+      : "",
     "Style paragraph: dynamic UGC SaaS ad, creator-led A-roll, fast social media pacing, energetic background music, kinetic burned-in captions, animated product/result callouts, Hyperframes-style motion graphics, snap zooms, split screens, clean tech overlays, bold short text cards, smooth but fast transitions, premium but not corporate.",
     "Presenter direction: use exactly ONE single natural creator-style presenter: the selected avatar only. No second person, no audience, no colleagues, no background people, no group, no meeting room, no office, no panel, no corporate boardroom, no conference room, no classroom, no coworking space unless the user explicitly requested it. The presenter should feel like a real solo social creator explaining a useful product, not a formal studio host.",
     "Background guard: default to a clean modern tech studio or clean SaaS creator setup. No outdoor street, no background people, no crowd, no looping pedestrians, no distracting background motion unless the user explicitly asks for an outdoor/city UGC setting.",

@@ -405,6 +405,20 @@ const trUiLabels: Record<string, string> = {
   "Visual video": "Görsel video",
   "Music": "Müzik",
   "Revision path": "Revizyon akışı",
+  "Link-to-video ad setup": "Linkten video reklam ayarları",
+  "Website/SaaS link ad setup": "Website/SaaS link reklam ayarları",
+  "Product link ad setup": "Ürün linki reklam ayarları",
+  "Competitor comparison ad setup": "Rakip karşılaştırma reklam ayarları",
+  "Competitor analysis": "Rakip analizi",
+  "Competitor comparison": "Rakip karşılaştırması",
+  "Alternative positioning": "Alternatif konumlandırma",
+  "Market gap ad": "Pazar boşluğu reklamı",
+  "Analyze competitor page": "Rakip sayfasını analiz et",
+  "Extract competitor offer": "Rakip teklifini çıkar",
+  "Find positioning angle": "Konumlandırma açısını bul",
+  "Create comparison hook": "Karşılaştırma hook'u oluştur",
+  "Create Crelavo CTA": "Crelavo CTA oluştur",
+  "Safe no-copy guard": "Güvenli kopyalamama koruması",
   "Base": "Temel",
   "Main jobs": "Ana işler",
   "Setup": "Ayarlar",
@@ -439,6 +453,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const isCrelavoOrSaas = hasLink && /crelavo|crelavo\.com|saas|software|dashboard|website\s+link|website\/saas|landing\s+page/.test(signal);
   const isSaasOrSiteLink = hasLink && /crelavo|saas|website|landing|site|web|dashboard|software|app|tool/.test(signal);
   const isCommerceLink = hasLink && !isCrelavoOrSaas && /shopify|amazon|trendyol|woocommerce|etsy|product|ürün|urun|store|shop|e-?commerce|marketplace|checkout/.test(signal);
+  const isCompetitorComparison = hasLink && /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif|rakibe\s+göre|rakibe\s+gore/.test(signal);
   const explicitClipRequest = /clip\s*(çıkar|cikar|extract|make)|kesit\s*(çıkar|cikar)|highlight\s*(çıkar|cikar|extract)|kırp|kirp|long video|uzun video|best moments|shorts\s*(çıkar|cikar|extract|make)|reels\s*(çıkar|cikar|extract|make)/.test(signal);
   const sourceIsVideoPlatform = /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|vimeo\.com)/.test(signal);
   const isClipLink = hasLink && sourceIsVideoPlatform && explicitClipRequest;
@@ -463,11 +478,11 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
 
   if (plan.production_type === "video" && (isCommerceLink || isSaasOrSiteLink || isSocialLink || hasLink)) {
     return {
-      title: isCommerceLink ? "Product link ad setup" : isSaasOrSiteLink ? "Website/SaaS link ad setup" : "Link-to-video ad setup",
-      note: "Options are generated from the supplied link and the selected ad/video intent.",
+      title: isCompetitorComparison ? "Competitor comparison ad setup" : isCommerceLink ? "Product link ad setup" : isSaasOrSiteLink ? "Website/SaaS link ad setup" : "Link-to-video ad setup",
+      note: isCompetitorComparison ? "Options focus on safe competitor analysis, positioning angle, comparison hook, and an original Crelavo ad." : "Options are generated from the supplied link and the selected ad/video intent.",
       groups: [
-        { id: "videoType", title: "Ad type", options: isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
-        { id: "source", title: "Link analysis", multi: true, options: ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
+        { id: "videoType", title: "Ad type", options: isCompetitorComparison ? ["Competitor comparison", "Alternative positioning", "Market gap ad", "Website promo", "Explainer video", "Social media short"] : isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
+        { id: "source", title: isCompetitorComparison ? "Competitor analysis" : "Link analysis", multi: true, options: isCompetitorComparison ? ["Analyze competitor page", "Extract competitor offer", "Extract benefits", "Find positioning angle", "Create comparison hook", "Create Crelavo CTA", "Safe no-copy guard"] : ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
         { id: "format", title: "Format", options: ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"], credit: 250 },
@@ -595,6 +610,16 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/dashboard/.test(text)) addOption(/dashboard delivery/);
         if (/revision|revizyon/.test(text)) addOption(/revision/);
       }
+      if (group.id === "source") {
+        if (/competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/.test(text)) {
+          addOption(/analyze competitor page/);
+          addOption(/extract competitor offer/);
+          addOption(/find positioning angle/);
+          addOption(/comparison hook/);
+          addOption(/crelavo cta/);
+          addOption(/safe no-copy/);
+        }
+      }
       if (group.id === "extras") {
         if (wantsSubtitles) addOption(/subtitles/);
         if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
@@ -603,6 +628,10 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       return [group.id, selected];
     }
     let selected = group.options[0] ? [group.options[0]] : [];
+    if (group.id === "videoType" && /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/.test(text)) {
+      const wanted = group.options.find((option) => /competitor comparison|alternative positioning|market gap/.test(option.toLowerCase()));
+      if (wanted) selected = [wanted];
+    }
     if (group.id === "videoStyle") {
       const silent = /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice/.test(text) ? group.options.find((option) => /silent/i.test(option)) : undefined;
       const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !/sunucu\s*olmas[ıi]n|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucusuz|insans[ıi]z/.test(text) ? group.options.find((option) => /presenter/i.test(option)) : undefined;
