@@ -38,6 +38,16 @@ export function buildPresenterCreativeBrief(input: {
     presenterChoice === "Energetic UGC creator" ? "Preferred presenter: energetic UGC creator. Use a natural TikTok/Reels-style creator, casual, trustworthy, and lively." :
     presenterChoice === "Mature trustworthy presenter" ? "Preferred presenter: mature trustworthy presenter. Use a calm, credible, experienced presenter suited for product recommendation." :
     "Preferred presenter: auto choose the best presenter for this topic. Avoid always reusing the same default presenter when multiple suitable options exist.";
+  const motionTags = [
+    signal.includes("smile") || signal.includes("gülümse") ? "[smile]" : "",
+    signal.includes("wave") || signal.includes("el salla") ? "[wave]" : "",
+    signal.includes("point at camera") || signal.includes("kamerayı işaret") ? "[point_at_camera]" : "",
+    signal.includes("cta hand gesture") || signal.includes("cta’da el") ? "[point_at_camera]" : "",
+    signal.includes("energetic gestures") || signal.includes("enerjik jest") ? "[smile]" : ""
+  ].filter(Boolean);
+  const motionDirection = motionTags.length
+    ? `Presenter motion prompts: when supported by HeyGen Avatar IV/V, weave these motion cues naturally into the spoken script text at suitable moments: ${Array.from(new Set(motionTags)).join(" ")}. Do not overuse them; avoid making the avatar read the cue names aloud.`
+    : "Presenter motion prompts: natural delivery only; use subtle gestures if the selected HeyGen avatar supports them.";
 
   const preset = wantsOutdoor || wantsDynamic || wantsHook || wantsDemo
     ? "Outdoor UGC dynamic presenter"
@@ -48,6 +58,7 @@ export function buildPresenterCreativeBrief(input: {
     wantsDynamic ? "dynamic-pacing" : "clean-pacing",
     wantsHook ? "hook-fomo" : "standard-hook",
     wantsDemo ? "applied-demo" : "benefit-demo",
+    motionTags.length ? "motion-prompts" : "natural-motion",
     `presenter-${presenterChoice.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
   ];
 
@@ -59,6 +70,7 @@ export function buildPresenterCreativeBrief(input: {
     `Preset: ${preset}`,
     `Presenter choice: ${presenterChoice}`,
     presenterDirection,
+    motionDirection,
     "Creative director interpretation: Do not treat the user text as a raw note. Convert it into a high-performing social video concept with clear scene direction, hook, movement, proof, and CTA.",
     wantsOutdoor || wantsDynamic
       ? "Direction: build an outdoor / modern city UGC-style presenter video. Use one energetic realistic presenter walking, gesturing naturally, and speaking directly to camera. The video must feel alive, immediate, and attention-grabbing."
