@@ -381,7 +381,7 @@ const trUiLabels: Record<string, string> = {
   "Male voice": "Erkek sesi",
   "Female voice": "Kadın sesi",
   "Child voice": "Çocuk sesi",
-  "Senior voice": "Olgun ses",
+  "Senior voice": "Yaşlı / olgun ses",
   "Own voice-over": "Kendi seslendirmem",
   "Choose AI voice": "AI sesi seç",
   "Create AI voice": "AI sesi oluştur",
@@ -610,13 +610,13 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         const presenter = group.options.find((option) => /with presenter/i.test(option));
         if (presenter) selected = [presenter];
       }
-      if (wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|ui-only|screenshot-only/.test(text)) {
+      if (wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz/.test(text)) {
         const noPeople = group.options.find((option) => /no people/i.test(option));
         if (noPeople) selected = [noPeople];
       }
     }
     if (group.id === "background") {
-      const motionGraphics = wantsNoPeopleMotionAd || /motion\s*graphics|kinetic\s*typography|animated\s*text|text\s*cards|glitch\s*transitions|swipe\s*transitions/.test(text) ? group.options.find((option) => /motion graphics/i.test(option)) : undefined;
+      const motionGraphics = wantsNoPeopleMotionAd || /motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui|animated\s*text|animasyonlu\s*yaz|text\s*cards|glitch\s*transitions|swipe\s*transitions|hızlı\s*geçiş|hizli\s*gecis/.test(text) ? group.options.find((option) => /motion graphics/i.test(option)) : undefined;
 const city = /dışarıda|disarida|outdoor|sokak|street|şehir|sehir|city/.test(text) ? group.options.find((option) => /city/i.test(option)) : undefined;
 const lifestyle = /lifestyle|creator-style|ugc|outdoor|walking|casual|natural|hareketli|uygulamalı|uygulamali/.test(text) ? group.options.find((option) => /lifestyle|home\/lifestyle/i.test(option)) : undefined;
 const brand = /brand\s*color|marka\s*rengi|crelavo\s*brand/.test(text) ? group.options.find((option) => /brand color/i.test(option)) : undefined;
@@ -1101,8 +1101,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput);
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
-    const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(cleanInput)
-      && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(cleanInput);
+    const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(cleanInput)
+      && /motion\s+graphics|hareketli\s+grafik|arayüz|arayuz|ui|hızlı\s+geçiş|hizli\s+gecis|dinamik|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(cleanInput);
     const wantsPresenterVideo = !noPeopleMotionIntent && (selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(cleanInput));
     const productionTypeForPayload = wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
     const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
