@@ -1378,10 +1378,10 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const setupItems = useMemo(() => selectedSetupItems(productionSetup), [productionSetup]);
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, productionSetup, plan, productionPrompt || input) : [];
 const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(productionSetup, plan) : { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
-const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
+const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualHeyGenBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
-  ...(selectedAvatar ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen avatar seçimi" : "Manual HeyGen avatar selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
+  ...(selectedAvatar?.avatarId ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen avatar seçimi" : "Manual HeyGen avatar selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
   ...(selectedVoice ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen ses seçimi" : "Manual HeyGen voice selection", credits: HEYGEN_MANUAL_VOICE_CREDITS }] : []),
   ...(selectedSound ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen müzik seçimi" : "Manual HeyGen music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
 ];
@@ -1478,7 +1478,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
     const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
     const heygenTierForPayload = heygenQualityCreditBreakdown(setupForPayload, activePlanInput);
-    const manualHeyGenCreditsForPayload = heygenTierForPayload.credits + (selectedAvatar ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
+    const manualHeyGenCreditsForPayload = heygenTierForPayload.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
     const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput) + manualHeyGenCreditsForPayload;
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
@@ -1846,7 +1846,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                           <button type="button" onClick={() => openHeyGenGallery("voice")}>{workUiLanguage === "tr" ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
                           {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili avatar" : "Selected avatar"}: {selectedAvatar.name}</small> : null}
                           {selectedVoice ? <small>{workUiLanguage === "tr" ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
-                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Not: HeyGen Video Agent avatar_id destekler; görünüm/look seçimi Crelavo kaydında tutulur, desteklenmeyen look_id provider'a gönderilmez." : "Note: HeyGen Video Agent supports avatar_id; look selection is stored in Crelavo metadata and unsupported look_id is not sent to the provider."}</small> : null}
+                          {selectedAvatar ? <small>{selectedAvatar.avatarId ? (workUiLanguage === "tr" ? "Not: HeyGen Video Agent avatar_id destekler; bu seçim provider'a gönderilir." : "Note: HeyGen Video Agent supports avatar_id; this selection is sent to the provider.") : (workUiLanguage === "tr" ? "Not: Bu seçim görsel tercih olarak kaydedilir; HeyGen Video Agent bu kart için avatar_id vermediği için provider'a avatar olarak gönderilmez." : "Note: This selection is saved as a visual preference; HeyGen Video Agent did not provide avatar_id for this card, so it is not sent as a provider avatar.")}</small> : null}
                         </div> : null}
                         {group.id === "extras" ? <div className="omni-gallery-actions">
                           <button type="button" onClick={() => openHeyGenGallery("music")}>{workUiLanguage === "tr" ? "Müzik galerisinden seç" : "Choose from music gallery"}</button>
@@ -1883,12 +1883,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             {galleryError ? <div className="omni-gallery-empty">{galleryError}</div> : null}
             {!galleryLoading && !galleryError && galleryMode === "avatar" ? <div className="omni-gallery-grid">
               {avatarGallery.length ? avatarGallery.map((avatar) => {
-                const canUseAvatar = Boolean(avatar.avatarId);
-                return <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} disabled={!canUseAvatar} onClick={() => { if (!canUseAvatar) return; setSelectedAvatar(avatar); setGalleryMode(null); }}>
+                const hasProviderAvatarId = Boolean(avatar.avatarId);
+                return <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
                   {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
                   <strong>{avatar.name}</strong>
                   <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
-                  {!canUseAvatar ? <small>{workUiLanguage === "tr" ? "Bu kart yalnızca görünüm/look verisi içeriyor; Video Agent için avatar_id yok." : "This card only has look data; no avatar_id is available for Video Agent."}</small> : null}
+                  {!hasProviderAvatarId ? <small>{workUiLanguage === "tr" ? "Görsel tercih olarak seçilebilir; provider avatar_id garanti değil." : "Selectable as a visual preference; provider avatar_id is not guaranteed."}</small> : null}
                 </button>;
               }) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
