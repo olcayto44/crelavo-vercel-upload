@@ -787,7 +787,10 @@ function isStartIntent(prompt: string) {
 }
 
 function isExplainIntent(prompt: string) {
-  return /(how|what happens|next step|explain|process|workflow|nasıl|nasil|ne olacak|sonra ne|aşam|asam|süreç|surec|üretim aşaması|uretim asamasi|chat ayar)/i.test(prompt);
+  const normalized = normalizeAssistantText(prompt);
+  const asksCrelavoFlow = /(crelavo|work|assistant|asistan|uretim|production|kart|status|teslim|dashboard|sayfa|site)/.test(normalized);
+  const asksFlow = /(workflow|process|next step|what happens|sonra ne|ne olacak|asam|surec|uretim asamasi|chat ayar|nasil calisir|nasil isler)/.test(normalized);
+  return asksCrelavoFlow && asksFlow;
 }
 
 function normalizeAssistantText(value: string) {
@@ -828,8 +831,8 @@ function explainProductionFlow(activePlan: StudioPlan | null) {
   const typeLabel = activePlan ? labelFor(activePlan.production_type) : "production";
   const project = activePlan ? isProjectType(activePlan.production_type) : false;
   return project
-    ? `Here is the flow: describe the ${typeLabel}, Crelavo AI prepares the draft, Start Production creates the production record, then the production page opens with Prepare Package. Prepare Package generates the preview, README, source package, and dashboard delivery links.`
-    : `Here is the flow: describe the ${typeLabel}, Crelavo AI prepares the draft, Start Production creates the production record, then the production page opens where the provider/package workflow can be started and tracked.`;
+    ? `${typeLabel} için akış şöyle: isteği yazarsın, Crelavo planı çıkarır, üretim kaydı açılır, production sayfasında paket hazırlanır ve preview/README/source teslim linkleri oluşur.`
+    : `${typeLabel} için akış şöyle: isteği yazarsın, Crelavo gerçek production kaydı açar, provider üretimi başlatır, karttan status takip edilir ve hazır olunca preview/teslim linki görünür.`;
 }
 
 const legacyWorkDraftStorageKeys = ["crelavo.workAssistant.draft.v1"];
