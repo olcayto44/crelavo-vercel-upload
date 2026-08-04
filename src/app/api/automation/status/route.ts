@@ -771,8 +771,10 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       const explicitNoVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(readinessSignal);
       const explicitNoSubtitles = /no\s*subtitle|no\s*subtitles|without\s*subtitle|without\s*subtitles|altyaz[ıi]\s*olmasın|altyaz[ıi]\s*yok/.test(readinessSignal);
       const softPassMissing = new Set(["voice_audio_or_final_render", "subtitle_or_burned_render", "audio_probe_missing", "duration_probe_missing", "media_probe_480p"]);
-      const canSoftPassProviderVideo = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || (explicitNoVoice && explicitNoSubtitles)) && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
-      if (!readyGate.passed && !canSoftPassProviderVideo) {
+      const isHeyGenSuccessfulVideo = String(successfulStatus.provider ?? "").toLowerCase() === "heygen_video_agent";
+      const canSoftPassProviderVideo = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo || (explicitNoVoice && explicitNoSubtitles)) && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
+      const forcePassHeyGenVideoAgent = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo);
+      if (!readyGate.passed && !canSoftPassProviderVideo && !forcePassHeyGenVideoAgent) {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, alternatives: polledAlternatives, alternativeStatuses, providerStatus: "quality_gate_blocked", providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate, qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: readyGate.required, missing: readyGate.missing, warnings: readyGate.warnings } });
         const { data } = await supabase
           .from("production_requests")
@@ -831,7 +833,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
         finalizedReservedCredits = Number(output.finalizedReservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
       }
 
-      const effectiveReadyGate = readyGate.passed ? readyGate : canSoftPassProviderVideo ? { ...readyGate, passed: true, warnings: [...readyGate.warnings, `soft_pass_missing:${readyGate.missing.join(",")}`], missing: [] } : readyGate;
+      const effectiveReadyGate = readyGate.passed ? readyGate : (canSoftPassProviderVideo || forcePassHeyGenVideoAgent) ? { ...readyGate, passed: true, warnings: [...readyGate.warnings, `${forcePassHeyGenVideoAgent ? "heygen_video_agent_completion_bridge" : "soft_pass_missing"}:${readyGate.missing.join(",")}`], missing: [] } : readyGate;
       let finalUrl = providerFinalUrl;
       let finalAssetMirror: Record<string, unknown> = { status: "not_attempted" };
       try {
