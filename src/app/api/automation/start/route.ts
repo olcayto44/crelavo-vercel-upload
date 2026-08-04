@@ -284,9 +284,27 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
     .eq("id", productionId)
     .single();
 
+  if (!result.error) {
+    return {
+      data: result.data ? postgresSafe({ ...result.data, output_json: result.data.output_json ?? {} }) : null,
+      error: result.error
+    };
+  }
+
+  const message = errorMessage(result.error, "Production select failed");
+  if (!/22P05|unicode escape|cannot be converted to text/i.test(message)) {
+    return { data: null, error: result.error };
+  }
+
+  const minimal = await supabase
+    .from("production_requests")
+    .select("id, user_id, status, generation_status, production_type, package_id, reserved_credits")
+    .eq("id", productionId)
+    .single();
+
   return {
-    data: result.data ? postgresSafe({ ...result.data, output_json: result.data.output_json ?? {} }) : null,
-    error: result.error
+    data: minimal.data ? postgresSafe({ ...minimal.data, title: "Production", prompt: "", request_metadata: { preferredProvider: "heygen_video_agent" }, input_json: { preferredProvider: "heygen_video_agent" }, output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: "heygen_video_agent" } }) : null,
+    error: minimal.error
   };
 }
 
