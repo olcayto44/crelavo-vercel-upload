@@ -404,7 +404,11 @@ const trUiLabels: Record<string, string> = {
   "Script / scene plan": "Senaryo / sahne planı",
   "Visual video": "Görsel video",
   "Music": "Müzik",
-  "Revision path": "Revizyon akışı"
+  "Revision path": "Revizyon akışı",
+  "Base": "Temel",
+  "Main jobs": "Ana işler",
+  "Setup": "Ayarlar",
+  "Total": "Toplam"
 };
 
 function uiText(value: string) {
@@ -910,9 +914,14 @@ function normalizePlan(plan: StudioPlan, prompt: string): StudioPlan {
   };
 }
 
-function assistantReply(plan: StudioPlan) {
-  const typeLabel = uiText(labelFor(plan.production_type));
+function assistantReply(plan: StudioPlan, language = "tr") {
+  const typeLabel = language === "tr" ? uiText(labelFor(plan.production_type)) : labelFor(plan.production_type);
   const project = isProjectType(plan.production_type);
+  if (language !== "tr") {
+    return project
+      ? `I prepared the ${typeLabel} production setup. It will include source files, README, preview and dashboard delivery. Press Start Production when you are ready.`
+      : `I prepared the ${typeLabel} production setup. Review duration, quality, voice, subtitles, music and transition options, then press Start Production when you are ready.`;
+  }
   return project
     ? `${typeLabel} için üretim ayarlarını hazırladım. Kaynak kod, kurulum notu, ön izleme ve panel teslimiyle hazırlanacak. Hazırsan Üretimi başlat butonuna bas.`
     : `${typeLabel} için üretim ayarlarını hazırladım. Süre, kalite, ses, altyazı, müzik ve geçiş seçeneklerini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
@@ -963,9 +972,14 @@ function productionCardProvider(production: WorkProductionCard | null) {
   return String(visualJob?.provider ?? output.providerStatus ?? "Provider pending");
 }
 
-function explainProductionFlow(activePlan: StudioPlan | null) {
-  const typeLabel = activePlan ? labelFor(activePlan.production_type) : "production";
+function explainProductionFlow(activePlan: StudioPlan | null, language = "tr") {
+  const typeLabel = activePlan ? (language === "tr" ? uiText(labelFor(activePlan.production_type)) : labelFor(activePlan.production_type)) : "production";
   const project = activePlan ? isProjectType(activePlan.production_type) : false;
+  if (language !== "tr") {
+    return project
+      ? `The ${typeLabel} flow works like this: you write the request, Crelavo prepares the plan, creates the production record, then the production page prepares the package and shows preview, README, and source delivery links.`
+      : `The ${typeLabel} flow works like this: you write the request, Crelavo creates a real production record, starts the provider, updates the card from production status, and shows preview/delivery links when ready.`;
+  }
   return project
     ? `${typeLabel} için akış şöyle: isteği yazarsın, Crelavo planı çıkarır, üretim kaydı açılır, production sayfasında paket hazırlanır ve preview/README/source teslim linkleri oluşur.`
     : `${typeLabel} için akış şöyle: isteği yazarsın, Crelavo gerçek production kaydı açar, provider üretimi başlatır, karttan status takip edilir ve hazır olunca preview/teslim linki görünür.`;
@@ -1014,7 +1028,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     if (storedDraft?.messages?.length) return storedDraft.messages;
     return initialPrompt ? [
       { id: uid(), role: "user", content: initialPrompt },
-      { id: uid(), role: "assistant", content: "I prepared your production draft. Press Start Production when you are ready." }
+      { id: uid(), role: "assistant", content: assistantReply(localPlan(initialPrompt), detectWorkLanguage(initialPrompt)) }
     ] : [];
   });
   const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt) : null));
@@ -1062,6 +1076,9 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     };
   }, [activeProduction?.id, activeProduction?.status, activeProduction?.automation_status]);
 
+  const workUiLanguage = detectWorkLanguage(productionPrompt || input || messages.filter((message) => message.role === "user").at(-1)?.content || "");
+  const ux = (value: string) => workUiLanguage === "tr" ? uiText(value) : value;
+  const statusUx = (tr: string, en: string) => workUiLanguage === "tr" ? tr : en;
   const setupProfile = plan ? dynamicProfileForPlan(plan, productionPrompt || input) : null;
   const setupItems = useMemo(() => selectedSetupItems(productionSetup), [productionSetup]);
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, productionSetup, plan, productionPrompt || input) : [];
@@ -1164,9 +1181,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         const required = Number(data.required ?? data.requiredCredits ?? totalEstimatedCreditsForPayload) || totalEstimatedCreditsForPayload;
         const available = Number(data.available ?? 0) || 0;
         const shortfall = Number(data.shortfall ?? Math.max(0, required - available)) || 0;
-        setStatus(`Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits.`);
+        setStatus(workUiLanguage === "tr" ? `Yetersiz kredi. Gerekli: ${required.toLocaleString()} kredi, mevcut: ${available.toLocaleString()} kredi, eksik: ${shortfall.toLocaleString()} kredi.` : `Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits.`);
       } else {
-        setStatus(data.error ?? "Production could not be created.");
+        setStatus(data.error ?? statusUx("Production oluşturulamadı.", "Production could not be created."));
       }
       return null;
     }
@@ -1177,7 +1194,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setPlan(activePlanInput);
     setProductionPrompt(cleanInput);
     setStarting(true);
-    setStatus("Gerçek production kaydı oluşturuluyor...");
+    setStatus(statusUx("Gerçek production kaydı oluşturuluyor...", "Creating the real production record..."));
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
       setStarting(false);
@@ -1191,7 +1208,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       return;
     }
     setActiveProduction(created);
-    setStatus("Production oluşturuldu. Gerçek provider başlatılıyor...");
+    setStatus(statusUx("Production oluşturuldu. Gerçek provider başlatılıyor...", "Production created. Starting the real provider..."));
     const automationResponse = await fetch("/api/automation/start", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
@@ -1199,11 +1216,11 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     }).catch(() => null);
     if (automationResponse && !automationResponse.ok) {
       const automationError = await automationResponse.json().catch(() => ({}));
-      setStatus(automationError.error ?? "Production oluşturuldu ama provider başlatılamadı.");
+      setStatus(automationError.error ?? statusUx("Production oluşturuldu ama provider başlatılamadı.", "Production was created but the provider could not be started."));
     } else {
       const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
       if (automationData.production) setActiveProduction(automationData.production as WorkProductionCard);
-      setStatus("Üretim başladı. Kart gerçek production durumundan güncellenecek.");
+      setStatus(statusUx("Üretim başladı. Kart gerçek production durumundan güncellenecek.", "Production started. The card will update from the real production status."));
     }
     await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     setStarting(false);
@@ -1217,19 +1234,19 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setMessages((current) => [...current, { id: uid(), role: "user", content: clean }]);
 
     if (plan && isStartIntent(clean)) {
-      setStatus("Starting production from the current draft...");
+      setStatus(statusUx("Mevcut taslaktan üretim başlatılıyor...", "Starting production from the current draft..."));
       await startProduction();
       return;
     }
 
     if (isExplainIntent(clean) && !/create|build|make|generate|produce|hazırla|hazirla|oluştur|olustur|yap/i.test(clean)) {
-      setMessages((current) => [...current, { id: uid(), role: "assistant", content: explainProductionFlow(plan) }]);
-      setStatus(plan ? "Current draft is still ready. Press Start Production when you want to continue." : "Ask Crelavo what to create, then Start Production will open the production page.");
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: explainProductionFlow(plan, detectWorkLanguage(clean)) }]);
+      setStatus(plan ? statusUx("Mevcut taslak hazır. Devam etmek istediğinde Üretimi başlat'a bas.", "Current draft is still ready. Press Start Production when you want to continue.") : statusUx("Crelavo'ya ne üretmek istediğini yaz; ardından Üretimi başlat production sayfasını açacak.", "Ask Crelavo what to create, then Start Production will open the production page."));
       return;
     }
 
     setPlanning(true);
-    setStatus("Routing your request through Crelavo AI...");
+    setStatus(detectWorkLanguage(clean) === "tr" ? "İsteğin Crelavo AI üzerinden yönlendiriliyor..." : "Routing your request through Crelavo AI...");
 
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
@@ -1262,13 +1279,13 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       const chatData = await chatResponse.json().catch(() => ({}));
       setPlanning(false);
       if (!chatResponse.ok) {
-        setMessages((current) => [...current, { id: uid(), role: "assistant", content: chatData.error ?? "Cevap oluşturulamadı." }]);
-        setStatus(chatData.error ?? "Assistant chat failed.");
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: chatData.error ?? (detectWorkLanguage(clean) === "tr" ? "Cevap oluşturulamadı." : "The assistant could not create a reply.") }]);
+      setStatus(chatData.error ?? (detectWorkLanguage(clean) === "tr" ? "Asistan cevabı oluşturulamadı." : "Assistant chat failed."));
         return;
       }
       setConversationId(chatData.conversation_id ?? conversationId);
-      setMessages((current) => [...current, { id: uid(), role: "assistant", content: String(chatData.reply ?? "Buradayım.") }]);
-      setStatus("Cevaplandı.");
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: String(chatData.reply ?? (detectWorkLanguage(clean) === "tr" ? "Buradayım." : "I'm here.")) }]);
+      setStatus(detectWorkLanguage(clean) === "tr" ? "Cevaplandı." : "Answered.");
       return;
     }
 
@@ -1295,8 +1312,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean));
         resetSetupFor(fallback, clean);
       setProductionPrompt(clean);
-      setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(fallback) }]);
-      setStatus(data.error ? `Planner fallback used: ${data.error}` : "Planner fallback used. Draft is ready.");
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(fallback, detectWorkLanguage(clean)) }]);
+      setStatus(data.error ? `Planner fallback used: ${data.error}` : (detectWorkLanguage(clean) === "tr" ? "Planlayıcı yedeği kullanıldı. Taslak hazır." : "Planner fallback used. Draft is ready."));
       if (data.redirect) window.location.href = data.redirect;
       return;
     }
@@ -1307,8 +1324,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
     resetSetupFor(normalized, clean);
     setProductionPrompt(clean);
-    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized) }]);
-    setStatus("Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Start Production ile başlat.");
+    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized, detectWorkLanguage(clean)) }]);
+    setStatus(detectWorkLanguage(clean) === "tr" ? "Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Üretimi başlat ile başlat." : "Production setup is ready. Review the required options, then start with Start Production.");
   }
 
   function submitPrompt(event: FormEvent) {
@@ -1330,14 +1347,14 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             : chip === "SEO Pack" ? "Create an SEO and content growth package."
               : `Create a ${chip.toLowerCase()} production.`;
     setInput(prompt);
-    setStatus(`${chip} prompt loaded. Press Enter or Send.`);
+    setStatus(statusUx(`${chip} promptu yüklendi. Enter'a veya Gönder'e bas.`, `${chip} prompt loaded. Press Enter or Send.`));
   }
 
   async function uploadMaterial(fileList: FileList | null) {
     const file = fileList?.[0];
     if (!file) return;
     setUploading(true);
-    setStatus("Uploading material...");
+    setStatus(statusUx("Materyal yükleniyor...", "Uploading material..."));
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
       setUploading(false);
@@ -1354,18 +1371,18 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
     if (!response.ok || !data.material) {
-      setStatus(data.error ?? "Material upload failed.");
+      setStatus(data.error ?? statusUx("Materyal yüklenemedi.", "Material upload failed."));
       return;
     }
     setMaterials((current) => [...current, data.material as UserUploadedMaterial]);
-    setStatus("Material attached to this production draft.");
+    setStatus(statusUx("Materyal bu üretim taslağına eklendi.", "Material attached to this production draft."));
   }
 
   async function startProduction() {
     const clean = (productionPrompt || input).trim();
     const activePlan = plan ? normalizePlan(plan, clean) : clean ? localPlan(clean) : null;
     if (!clean || !activePlan) {
-      setStatus("Describe what you want to create first.");
+      setStatus(statusUx("Önce ne üretmek istediğini yaz.", "Describe what you want to create first."));
       return;
     }
     await startProductionForPlan(activePlan, clean, { stayOnWork: false });
@@ -1411,17 +1428,17 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             <article className="omni-result-card">
               <div className="omni-result-icon"><Video size={22} /></div>
               <div className="omni-result-body">
-                <span className="badge">{uiText("Production running")}</span>
+                <span className="badge">{ux("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
-                  <span><strong>{uiText("Production ID")}</strong>{activeProduction.id}</span>
-                  <span><strong>{uiText("Status")}</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-                  <span><strong>{uiText("Provider")}</strong>{productionCardProvider(activeProduction)}</span>
+                  <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>
+                  <span><strong>{ux("Status")}</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+                  <span><strong>{ux("Provider")}</strong>{productionCardProvider(activeProduction)}</span>
                 </div>
                 <div className="omni-result-grid">
-                  <span><strong>{uiText("Preview")}</strong>{activeProduction.preview_url ? uiText("Ready") : uiText("Waiting")}</span>
-                  <span><strong>{uiText("Delivery")}</strong>{activeProduction.delivery_link ? uiText("Ready") : uiText("Waiting")}</span>
-                  <span><strong>{uiText("Page")}</strong><a href={`/dashboard/productions/${activeProduction.id}`}>{uiText("Open production")}</a></span>
+                  <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
+                  <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
+                  <span><strong>{ux("Page")}</strong><a href={`/dashboard/productions/${activeProduction.id}`}>{ux("Open production")}</a></span>
                 </div>
               </div>
             </article>
@@ -1431,53 +1448,53 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             <article className="omni-result-card">
               <div className="omni-result-icon">{isProjectType(plan.production_type) ? <Code2 size={22} /> : plan.production_type === "video" ? <Video size={22} /> : <PackageCheck size={22} />}</div>
               <div className="omni-result-body">
-                <span className="badge">{uiText("Production draft")}</span>
-                <h3>{uiText(labelFor(plan.production_type))}</h3>
-                <p>{plan.summary || assistantReply(plan)}</p>
+                <span className="badge">{ux("Production draft")}</span>
+                <h3>{ux(labelFor(plan.production_type))}</h3>
+                <p>{assistantReply(plan, workUiLanguage)}</p>
                 <div className="omni-result-grid">
-                  <span><strong>{uiText("Package")}</strong>{plan.package_id}</span>
-                  <span><strong>{uiText("Delivery")}</strong>{(plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).filter((format) => !(subtitlesDisabledByPrompt((productionPrompt || input).toLowerCase()) && /subtitle|caption|altyaz/i.test(format))).map((format) => uiText(format)).join(", ") || uiText("Dashboard delivery")}</span>
-                  <span><strong>{uiText("Credits")}</strong>{estimatedCredits}</span>
+                  <span><strong>{ux("Package")}</strong>{plan.package_id}</span>
+                  <span><strong>{ux("Delivery")}</strong>{(plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).filter((format) => !(subtitlesDisabledByPrompt((productionPrompt || input).toLowerCase()) && /subtitle|caption|altyaz/i.test(format))).map((format) => ux(format)).join(", ") || ux("Dashboard delivery")}</span>
+                  <span><strong>{ux("Credits")}</strong>{estimatedCredits}</span>
                 </div>
                 <div className="omni-production-cards">
-                  <strong>{uiText("Choose what will be produced")}</strong>
+                  <strong>{ux("Choose what will be produced")}</strong>
                   <div>{filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input).map((item) => {
                     const active = selectedProductionCards.includes(item);
-                    return <button type="button" className={active ? "active" : ""} key={item} onClick={() => setSelectedProductionCards((current) => current.includes(item) ? current.filter((card) => card !== item) : [...current, item])}>{uiText(item)}</button>;
+                    return <button type="button" className={active ? "active" : ""} key={item} onClick={() => setSelectedProductionCards((current) => current.includes(item) ? current.filter((card) => card !== item) : [...current, item])}>{ux(item)}</button>;
                   })}</div>
                 </div>
                 {setupProfile ? (
                   <div className="omni-setup-panel">
                     <div className="omni-setup-head">
-                      <strong>{uiText(setupProfile.title)}</strong>
-                      <small>{uiText(setupProfile.note)}</small>
+                      <strong>{ux(setupProfile.title)}</strong>
+                      <small>{ux(setupProfile.note)}</small>
                     </div>
                     {setupProfile.groups.map((group) => (
                       <section className="omni-setup-group" key={group.id}>
                         <div className="omni-setup-group-title">
-                          <span>{uiText(group.title)}</span>
-                          <small>{group.multi ? uiText("Multiple") : uiText("Single")}{group.credit ? ` · +${group.credit.toLocaleString()} ${uiText("credits each")}` : ""}</small>
+                          <span>{ux(group.title)}</span>
+                          <small>{group.multi ? ux("Multiple") : ux("Single")}{group.credit ? ` · +${group.credit.toLocaleString()} ${ux("credits each")}` : ""}</small>
                         </div>
                         <div className="omni-setup-options">
                           {group.options.map((option) => {
                             const active = (productionSetup[group.id] ?? []).includes(option);
                             const credit = optionCredit(option, group);
-                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{uiText(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
+                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{ux(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
                           })}
                         </div>
                       </section>
                     ))}
                     <div className="omni-setup-summary">
-                      <strong>{uiText("Selected setup")}</strong>
-                      <p>{setupItems.length ? setupItems.map(uiText).join(" · ") : uiText("No extra setup selected yet.")}</p>
-                      <p>{setupBreakdown.filter((item) => item.credits > 0).map((item) => `${uiText(item.title)}: +${item.credits.toLocaleString()}`).join(" · ")}</p>
-                      <span>Temel: {draftBaseCredits.toLocaleString()} · Ana işler: +{cardCredits.toLocaleString()} · Ayarlar: +{setupCredits.toLocaleString()} · Toplam: {estimatedCredits}</span>
+                      <strong>{ux("Selected setup")}</strong>
+                      <p>{setupItems.length ? setupItems.map(ux).join(" · ") : ux("No extra setup selected yet.")}</p>
+                      <p>{setupBreakdown.filter((item) => item.credits > 0).map((item) => `${ux(item.title)}: +${item.credits.toLocaleString()}`).join(" · ")}</p>
+                      <span>{ux("Base")}: {draftBaseCredits.toLocaleString()} · {ux("Main jobs")}: +{cardCredits.toLocaleString()} · {ux("Setup")}: +{setupCredits.toLocaleString()} · {ux("Total")}: {estimatedCredits}</span>
                     </div>
                   </div>
                 ) : null}
                 {materials.length ? <div className="omni-material-list">{materials.map((material) => <span key={material.file_url}>{material.title}</span>)}</div> : null}
               </div>
-              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? uiText("Creating...") : uiText("Start Production")}</button>
+              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? ux("Creating...") : ux("Start Production")}</button>
             </article>
           ) : null}
         </main>

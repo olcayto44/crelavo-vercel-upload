@@ -56,6 +56,10 @@ export function buildPresenterCreativeBrief(input: {
     "Language lock: keep Crelavo user-facing assistant/blueprint language Turkish. Do not switch to another language. Only the generated video dialogue may be English if the user explicitly asks for English dialogue.",
     "Duration lock: stay close to the selected/requested duration. Do not expand a 10-second request into a 30-45 second video unless the user explicitly approves a longer cut.",
     "Presenter identity lock: use one selected presenter/avatar identity across the whole video. Keep the same face, hair, outfit, body proportions and presenter identity between all scenes; change only background, B-roll, overlays and camera movement.",
+    wantsOutdoor
+      ? "Background guard: use a clean, controlled outdoor or modern city setting only if requested. No crowds, no looping pedestrians, no distracting background motion."
+      : "Background guard: use a clean modern tech studio / clean SaaS creator setup. No outdoor street, no crowd, no background people, no looping pedestrians, no distracting background motion.",
+    "Subtitle guard: if captions/subtitles are included, keep them readable inside the mobile-safe lower-third area; do not place subtitle text too close to the bottom edge or outside the 9:16 safe area.",
     "Hard avoid: boring corporate video, static studio host, office meeting, boardroom, panel discussion, group of people, background people, generic stock office footage, slow screen recording, silent video.",
     "Presenter rule: exactly one realistic presenter only. The presenter must be the focus and should feel like a social creator explaining something useful, not a formal corporate speaker.",
     "CTA: end with a short direct call to action that tells the viewer to turn an idea/link/website into a ready-to-use video with Crelavo."
