@@ -18,12 +18,33 @@ import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
+function stripPostgresUnsafeText(value: string) {
+  return value
+    .replace(/\\+u0000/gi, "")
+    .replace(/\u0000/g, "");
+}
+
+function postgresSafe<T>(value: T): T {
+  if (typeof value === "string") return stripPostgresUnsafeText(value) as T;
+  if (Array.isArray(value)) return value.map((item) => postgresSafe(item)) as T;
+  if (value && typeof value === "object") {
+    const shallowCleaned = Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)]));
+    try {
+      return JSON.parse(stripPostgresUnsafeText(JSON.stringify(shallowCleaned))) as T;
+    } catch {
+      return shallowCleaned as T;
+    }
+  }
+  return value;
+}
+
 function errorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) return stripPostgresUnsafeText(error.message);
   if (error && typeof error === "object") {
     const record = error as Record<string, unknown>;
     const parts = [record.message, record.details, record.hint, record.code]
-      .filter((value): value is string => typeof value === "string" && value.length > 0);
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .map((value) => stripPostgresUnsafeText(value));
     if (parts.length > 0) return parts.join(" | ");
   }
   return fallback;
@@ -66,7 +87,7 @@ function missingSchemaColumn(error: unknown) {
 }
 
 async function insertProductionRequestSchemaSafe(supabase: ReturnType<typeof supabaseAdmin>, payload: Record<string, unknown>) {
-  const mutablePayload = { ...payload };
+  const mutablePayload = postgresSafe({ ...payload });
   const removedColumns: string[] = [];
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const result = await supabase.from("production_requests").insert(mutablePayload).select("*").single();
