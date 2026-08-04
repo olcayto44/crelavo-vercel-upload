@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
-import { defaultPublicNavLinks } from "@/lib/site-content-config";
+import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 
 type LocalizedPageProps = { params: Promise<{ locale: string; slug: string }> };
@@ -68,7 +68,7 @@ export default async function LocalizedEuropePage({ params }: LocalizedPageProps
   return (
     <>
       <LocalizedStructuredData page={page} />
-      <Header navLinks={defaultPublicNavLinks} languageOverride={page.locale} />
+      <Header navLinks={localizedSeoNavLinks} languageOverride={page.locale} />
       <main className="public-funnel-page localized-europe-page">
         <section className="container section clean-feed-section localized-hero">
           <div className="localized-language-switcher" aria-label="Language versions">
