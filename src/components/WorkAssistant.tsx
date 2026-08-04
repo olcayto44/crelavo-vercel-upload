@@ -112,6 +112,7 @@ const sharedVideoFormat = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "Yo
 const sharedVideoDuration = ["5 sec", "10 sec", "15 sec", "30 sec", "45 sec", "60 sec", "2 min", "3 min", "5 min"];
 const sharedVoiceOptions = ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Own voice-over", "Choose AI voice", "Create AI voice"];
 const sharedSubtitleOptions = ["No subtitles", "Auto subtitles", "Burned subtitles", "Subtitle file", "Large social captions"];
+const sharedMotionOptions = ["Dynamic transitions", "Fast cuts", "Smooth zooms", "Swipe transitions", "Animated text overlays", "UI overlays", "Strong opening hook", "Final CTA", "Energetic social pacing", "Premium clean pacing"];
 
 const setupProfiles: Record<string, SetupProfile> = {
   video: {
@@ -124,6 +125,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
       { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "Use uploaded material", "Keep original environment", "Replace background", "Blur background", "No people", "With presenter"], credit: 300 },
       { id: "background", title: "Background / environment", options: ["Product UI", "Studio", "Brand color", "Lifestyle", "City", "Nature", "Cinematic scene", "Motion graphics"], credit: 300 },
+      { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
       { id: "voice", title: "Voice-over", options: sharedVoiceOptions, credit: 600 },
       { id: "extras", title: "Extras", multi: true, options: ["Background music", "Subtitles", "Thumbnail", "3 alternatives", "5 alternatives", "Final MP4", ...sharedDeliveryOptions], credit: 450 }
     ]
@@ -292,6 +294,118 @@ function labelFor(type: string) {
   return productionLabels[type] ?? type.replaceAll("_", " ");
 }
 
+const trUiLabels: Record<string, string> = {
+  "AI Video": "Reklam videosu",
+  "Talking Video": "Sunuculu video",
+  "Production draft": "Üretim ayarları",
+  "Production running": "Üretim başladı",
+  "Choose what will be produced": "Üretimde hazırlanacak işler",
+  "Selected setup": "Seçili üretim ayarları",
+  "No extra setup selected yet.": "Henüz ek ayar seçilmedi.",
+  "Package": "Paket",
+  "Delivery": "Teslim",
+  "Credits": "Kredi",
+  "Production ID": "Üretim ID",
+  "Status": "Durum",
+  "Provider": "Sağlayıcı",
+  "Preview": "Ön izleme",
+  "Waiting": "Bekliyor",
+  "Ready": "Hazır",
+  "Page": "Sayfa",
+  "Open production": "Üretimi aç",
+  "Start Production": "Üretimi başlat",
+  "Creating...": "Oluşturuluyor...",
+  "AI video setup": "Video üretim ayarları",
+  "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
+  "Video type": "Video türü",
+  "Quality": "Kalite",
+  "Duration": "Süre",
+  "Format": "Format",
+  "Source / scene handling": "Sahne / kaynak kullanımı",
+  "Background / environment": "Arka plan / ortam",
+  "Pace / transitions": "Tempo / geçişler",
+  "Voice-over": "Seslendirme",
+  "Extras": "Ek özellikler",
+  "Single": "Tek seçim",
+  "Multiple": "Çoklu seçim",
+  "credits each": "kredi",
+  "Prompt-to-video": "Prompt’tan video",
+  "Image-to-video": "Görselden video",
+  "Script-to-video": "Senaryodan video",
+  "Product ad video": "Ürün reklam videosu",
+  "Explainer video": "Anlatım videosu",
+  "Social media short": "Sosyal medya kısa video",
+  "Cinematic promo": "Sinematik tanıtım",
+  "480p preview": "480p ön izleme",
+  "1080p premium": "1080p premium",
+  "Vertical 9:16": "Dikey 9:16",
+  "Horizontal 16:9": "Yatay 16:9",
+  "Square 1:1": "Kare 1:1",
+  "YouTube 16:9": "YouTube 16:9",
+  "5 sec": "5 sn",
+  "10 sec": "10 sn",
+  "15 sec": "15 sn",
+  "30 sec": "30 sn",
+  "45 sec": "45 sn",
+  "60 sec": "60 sn",
+  "2 min": "2 dk",
+  "3 min": "3 dk",
+  "5 min": "5 dk",
+  "Prompt-only": "Sadece prompt",
+  "Use uploaded material": "Yüklenen materyali kullan",
+  "Keep original environment": "Mevcut ortamı koru",
+  "Replace background": "Arka planı değiştir",
+  "Blur background": "Arka planı bulanıklaştır",
+  "No people": "İnsan olmasın",
+  "With presenter": "Ekranda sunucu olsun",
+  "Product UI": "Ürün arayüzü",
+  "Studio": "Stüdyo",
+  "Brand color": "Marka rengi",
+  "Lifestyle": "Günlük yaşam",
+  "City": "Şehir",
+  "Nature": "Doğa",
+  "Cinematic scene": "Sinematik sahne",
+  "Motion graphics": "Hareketli grafikler",
+  "Dynamic transitions": "Dinamik geçişler",
+  "Fast cuts": "Hızlı kesmeler",
+  "Smooth zooms": "Yumuşak zoomlar",
+  "Swipe transitions": "Kaydırmalı geçişler",
+  "Animated text overlays": "Animasyonlu yazılar",
+  "UI overlays": "Arayüz bindirmeleri",
+  "Strong opening hook": "Güçlü açılış cümlesi",
+  "Final CTA": "Final çağrı ekranı",
+  "Energetic social pacing": "Enerjik sosyal medya temposu",
+  "Premium clean pacing": "Premium temiz tempo",
+  "No voice-over": "Seslendirme olmasın",
+  "Adult neutral voice": "Yetişkin nötr ses",
+  "Male voice": "Erkek sesi",
+  "Female voice": "Kadın sesi",
+  "Child voice": "Çocuk sesi",
+  "Senior voice": "Olgun ses",
+  "Own voice-over": "Kendi seslendirmem",
+  "Choose AI voice": "AI sesi seç",
+  "Create AI voice": "AI sesi oluştur",
+  "Background music": "Arka plan müziği",
+  "Subtitles": "Altyazı",
+  "Thumbnail": "Kapak görseli",
+  "Final MP4": "Final MP4",
+  "Dashboard delivery": "Panelde teslim",
+  "Final ZIP": "Final ZIP",
+  "README": "Kurulum notu",
+  "Revision right": "Revizyon hakkı",
+  "3 alternatives": "3 alternatif",
+  "5 alternatives": "5 alternatif",
+  "Production brief": "Üretim özeti",
+  "Script / scene plan": "Senaryo / sahne planı",
+  "Visual video": "Görsel video",
+  "Music": "Müzik",
+  "Revision path": "Revizyon akışı"
+};
+
+function uiText(value: string) {
+  return trUiLabels[value] ?? value;
+}
+
 function isProjectType(type: string) {
   return ["website", "saas", "mobile_app", "admin_project"].includes(type);
 }
@@ -350,6 +464,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
         { id: "format", title: "Format", options: ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"], credit: 250 },
         { id: "visualDirection", title: "Visual direction", options: isCommerceLink ? ["Product close-up", "Clean studio background", "Lifestyle scene", "Marketplace ad", "UGC-style demo", "Premium product commercial"] : ["UI dashboard demo", "Website walkthrough", "Product explainer", "No people", "With presenter", "Motion graphics", "Premium SaaS promo"], credit: 400 },
         { id: "background", title: "Background", options: isCommerceLink ? ["White studio", "Brand color", "Home/lifestyle", "Luxury surface", "Social media style"] : ["Product UI", "Brand color", "Clean gradient", "Dashboard background", "Motion graphics"], credit: 300 },
+        { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
         { id: "voice", title: "Voice-over", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Choose AI voice"], credit: 600 },
         { id: "extras", title: "Ad assets", multi: true, options: ["Background music", "Subtitles", "Thumbnail", "Final MP4", "Revision right", "Export for TikTok/Reels/Shorts"], credit: 450 }
       ]
@@ -509,6 +624,15 @@ const cinematic = /cinematic\s*scene|sinematik/.test(text) ? group.options.find(
 const studio = /studio/.test(text) && !/not\s*studio|avoid\s*studio|not\s*corporate\s*studio/.test(text) ? group.options.find((option) => /studio/i.test(option)) : undefined;
 const wanted = motionGraphics || city || lifestyle || brand || cinematic || studio;
       if (wanted) selected = [wanted];
+    }
+    if (group.id === "motion") {
+      const motionSelections: string[] = [];
+      if (/dinamik|dynamic|hareketli|geçiş|gecis|transition/.test(text)) motionSelections.push(...group.options.filter((option) => /dynamic transitions|smooth zooms|swipe transitions/i.test(option)));
+      if (/hızlı|hizli|fast|quick|tempo|sosyal medya|social/.test(text)) motionSelections.push(...group.options.filter((option) => /fast cuts|energetic social pacing/i.test(option)));
+      if (/açılış|acilis|hook|güçlü|guclu/.test(text)) motionSelections.push(...group.options.filter((option) => /strong opening hook/i.test(option)));
+      if (/cta|çağrı|cagri|final|son ekran/.test(text)) motionSelections.push(...group.options.filter((option) => /final cta/i.test(option)));
+      if (/overlay|arayüz|arayuz|ui|yazı|yazi|text/.test(text)) motionSelections.push(...group.options.filter((option) => /ui overlays|animated text overlays/i.test(option)));
+      selected = Array.from(new Set(motionSelections)).slice(0, 5);
     }
     if (group.id === "voice") {
       if (noVoice) {
@@ -741,8 +865,8 @@ function localPlan(prompt: string): StudioPlan {
     workflow_stage: "ready_to_start_production",
     next_user_action: "Start Production",
     summary: project
-      ? `Ready as a ${labelFor(productionType)} project with source code, README, and dashboard delivery.`
-      : `Ready as a ${labelFor(productionType)} production with dashboard delivery.`
+      ? `${uiText(labelFor(productionType))} projesi kaynak kod, kurulum notu ve panel teslimiyle hazırlanacak.`
+      : `${uiText(labelFor(productionType))} üretimi panel teslimiyle hazırlanacak.`
   };
 }
 
@@ -769,17 +893,17 @@ function normalizePlan(plan: StudioPlan, prompt: string): StudioPlan {
     workflow_stage: "ready_to_start_production",
     next_user_action: "Start Production",
     summary: project
-      ? `Ready as a ${labelFor(productionType)} project with source code, README, and dashboard delivery.`
-      : `Ready as a ${labelFor(productionType)} production with dashboard delivery.`
+      ? `${uiText(labelFor(productionType))} projesi kaynak kod, kurulum notu ve panel teslimiyle hazırlanacak.`
+      : `${uiText(labelFor(productionType))} üretimi panel teslimiyle hazırlanacak.`
   };
 }
 
 function assistantReply(plan: StudioPlan) {
-  const typeLabel = labelFor(plan.production_type);
+  const typeLabel = uiText(labelFor(plan.production_type));
   const project = isProjectType(plan.production_type);
   return project
-    ? `I prepared your ${typeLabel} production draft. It will be delivered as a working source package with preview, README, and dashboard delivery. Press Start Production when you are ready.`
-    : `I prepared your ${typeLabel} production draft. Press Start Production when you are ready.`;
+    ? `${typeLabel} için üretim ayarlarını hazırladım. Kaynak kod, kurulum notu, ön izleme ve panel teslimiyle hazırlanacak. Hazırsan Üretimi başlat butonuna bas.`
+    : `${typeLabel} için üretim ayarlarını hazırladım. Süre, kalite, ses, altyazı, müzik ve geçiş seçeneklerini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
 }
 
 function isStartIntent(prompt: string) {
@@ -1273,17 +1397,17 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             <article className="omni-result-card">
               <div className="omni-result-icon"><Video size={22} /></div>
               <div className="omni-result-body">
-                <span className="badge">Production running</span>
+                <span className="badge">{uiText("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
-                  <span><strong>Production ID</strong>{activeProduction.id}</span>
-                  <span><strong>Status</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-                  <span><strong>Provider</strong>{productionCardProvider(activeProduction)}</span>
+                  <span><strong>{uiText("Production ID")}</strong>{activeProduction.id}</span>
+                  <span><strong>{uiText("Status")}</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+                  <span><strong>{uiText("Provider")}</strong>{productionCardProvider(activeProduction)}</span>
                 </div>
                 <div className="omni-result-grid">
-                  <span><strong>Preview</strong>{activeProduction.preview_url ? "Ready" : "Waiting"}</span>
-                  <span><strong>Delivery</strong>{activeProduction.delivery_link ? "Ready" : "Waiting"}</span>
-                  <span><strong>Page</strong><a href={`/dashboard/productions/${activeProduction.id}`}>Open production</a></span>
+                  <span><strong>{uiText("Preview")}</strong>{activeProduction.preview_url ? uiText("Ready") : uiText("Waiting")}</span>
+                  <span><strong>{uiText("Delivery")}</strong>{activeProduction.delivery_link ? uiText("Ready") : uiText("Waiting")}</span>
+                  <span><strong>{uiText("Page")}</strong><a href={`/dashboard/productions/${activeProduction.id}`}>{uiText("Open production")}</a></span>
                 </div>
               </div>
             </article>
@@ -1293,53 +1417,53 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
             <article className="omni-result-card">
               <div className="omni-result-icon">{isProjectType(plan.production_type) ? <Code2 size={22} /> : plan.production_type === "video" ? <Video size={22} /> : <PackageCheck size={22} />}</div>
               <div className="omni-result-body">
-                <span className="badge">Production draft</span>
-                <h3>{labelFor(plan.production_type)}</h3>
+                <span className="badge">{uiText("Production draft")}</span>
+                <h3>{uiText(labelFor(plan.production_type))}</h3>
                 <p>{plan.summary || assistantReply(plan)}</p>
                 <div className="omni-result-grid">
-                  <span><strong>Package</strong>{plan.package_id}</span>
-                  <span><strong>Delivery</strong>{(plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).filter((format) => !(subtitlesDisabledByPrompt((productionPrompt || input).toLowerCase()) && /subtitle|caption|altyaz/i.test(format))).join(", ") || "dashboard_delivery"}</span>
-                  <span><strong>Credits</strong>{estimatedCredits}</span>
+                  <span><strong>{uiText("Package")}</strong>{plan.package_id}</span>
+                  <span><strong>{uiText("Delivery")}</strong>{(plan.delivery_requirements?.formats ?? ["dashboard_delivery"]).filter((format) => !(subtitlesDisabledByPrompt((productionPrompt || input).toLowerCase()) && /subtitle|caption|altyaz/i.test(format))).map((format) => uiText(format)).join(", ") || uiText("Dashboard delivery")}</span>
+                  <span><strong>{uiText("Credits")}</strong>{estimatedCredits}</span>
                 </div>
                 <div className="omni-production-cards">
-                  <strong>Choose what will be produced</strong>
+                  <strong>{uiText("Choose what will be produced")}</strong>
                   <div>{filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input).map((item) => {
                     const active = selectedProductionCards.includes(item);
-                    return <button type="button" className={active ? "active" : ""} key={item} onClick={() => setSelectedProductionCards((current) => current.includes(item) ? current.filter((card) => card !== item) : [...current, item])}>{item}</button>;
+                    return <button type="button" className={active ? "active" : ""} key={item} onClick={() => setSelectedProductionCards((current) => current.includes(item) ? current.filter((card) => card !== item) : [...current, item])}>{uiText(item)}</button>;
                   })}</div>
                 </div>
                 {setupProfile ? (
                   <div className="omni-setup-panel">
                     <div className="omni-setup-head">
-                      <strong>{setupProfile.title}</strong>
-                      <small>{setupProfile.note}</small>
+                      <strong>{uiText(setupProfile.title)}</strong>
+                      <small>{uiText(setupProfile.note)}</small>
                     </div>
                     {setupProfile.groups.map((group) => (
                       <section className="omni-setup-group" key={group.id}>
                         <div className="omni-setup-group-title">
-                          <span>{group.title}</span>
-                          <small>{group.multi ? "Multiple" : "Single"}{group.credit ? ` · +${group.credit.toLocaleString()} credits each` : ""}</small>
+                          <span>{uiText(group.title)}</span>
+                          <small>{group.multi ? uiText("Multiple") : uiText("Single")}{group.credit ? ` · +${group.credit.toLocaleString()} ${uiText("credits each")}` : ""}</small>
                         </div>
                         <div className="omni-setup-options">
                           {group.options.map((option) => {
                             const active = (productionSetup[group.id] ?? []).includes(option);
                             const credit = optionCredit(option, group);
-                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{option}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
+                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{uiText(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
                           })}
                         </div>
                       </section>
                     ))}
                     <div className="omni-setup-summary">
-                      <strong>Selected setup</strong>
-                      <p>{setupItems.length ? setupItems.join(" · ") : "No extra setup selected yet."}</p>
-                      <p>{setupBreakdown.filter((item) => item.credits > 0).map((item) => `${item.title}: +${item.credits.toLocaleString()}`).join(" · ")}</p>
-                      <span>Base: {draftBaseCredits.toLocaleString()} · Main cards: +{cardCredits.toLocaleString()} · Setup credits: +{setupCredits.toLocaleString()} · Total: {estimatedCredits}</span>
+                      <strong>{uiText("Selected setup")}</strong>
+                      <p>{setupItems.length ? setupItems.map(uiText).join(" · ") : uiText("No extra setup selected yet.")}</p>
+                      <p>{setupBreakdown.filter((item) => item.credits > 0).map((item) => `${uiText(item.title)}: +${item.credits.toLocaleString()}`).join(" · ")}</p>
+                      <span>Temel: {draftBaseCredits.toLocaleString()} · Ana işler: +{cardCredits.toLocaleString()} · Ayarlar: +{setupCredits.toLocaleString()} · Toplam: {estimatedCredits}</span>
                     </div>
                   </div>
                 ) : null}
                 {materials.length ? <div className="omni-material-list">{materials.map((material) => <span key={material.file_url}>{material.title}</span>)}</div> : null}
               </div>
-              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? "Creating..." : "Start Production"}</button>
+              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? uiText("Creating...") : uiText("Start Production")}</button>
             </article>
           ) : null}
         </main>
