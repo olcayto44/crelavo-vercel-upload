@@ -115,9 +115,9 @@ function heygenPromptControls(selected: Record<string, unknown>, promptText: str
   return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
 }
 
-function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; providerPrompt?: string; controls?: HeyGenPromptControls }) {
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; controls?: HeyGenPromptControls }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
-  const userPrompt = String(input.providerPrompt || input.prompt || input.title).trim();
+  const userPrompt = String(input.prompt || input.title).trim();
   const controls = input.controls ?? heygenPromptControls({}, `${userPrompt} ${input.script ?? ""}`);
   const speechBudget = heygenSpeechBudget(duration, controls.isTurkish);
   const scriptLine = input.script
@@ -193,9 +193,10 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const screenshotUrl = httpsUrlFrom(selected.websiteScreenshotUrl) || httpsUrlFrom(selected.screenshotUrl) || httpsUrlFrom(selected.website_screenshot_url);
   const productUrl = httpsUrlFrom(selected.productUrl) || httpsUrlFrom(selected.websiteUrl) || httpsUrlFrom(selected.url);
   const files = [screenshotUrl, productUrl].filter(Boolean).slice(0, 20).map((url) => ({ type: "url" as const, url }));
-  const controls = heygenPromptControls(selected, `${input.prompt} ${selected.providerPrompt ?? ""} ${selected.creativeProviderPrompt ?? ""} ${selected.script ?? scriptFromPrompt ?? ""}`);
+  const explicitScript = String(selected.script ?? scriptFromPrompt ?? "").trim();
+  const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript}`);
   const payload = {
-    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, providerPrompt: String(selected.providerPrompt ?? selected.creativeProviderPrompt ?? "").trim(), script: String(selected.script ?? scriptFromPrompt ?? "").trim(), durationSeconds, aspect, hasVisualFiles: files.length > 0, controls }),
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls }),
     mode: "generate" as const,
     avatar_id: avatarId,
     voice_id: voiceId,
