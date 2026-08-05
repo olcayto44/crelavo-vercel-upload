@@ -686,6 +686,27 @@ const previewKind = isMediaProduction && mediaFinalReady && playbackUrl ? "video
     window.setTimeout(() => window.location.reload(), 900);
   }
 
+  useEffect(() => {
+    const shouldAutoStartDrone = type === "drone_video"
+      && !isReady
+      && !isFailed
+      && !hasActiveProviderJob
+      && !hasPreview
+      && !hasDelivery
+      && !providerStarting
+      && !isDedicatedPipelineRunning;
+    if (!shouldAutoStartDrone) return;
+    const key = `crelavo-drone-autostart-${production.id}`;
+    try {
+      if (window.sessionStorage.getItem(key) === "1") return;
+      window.sessionStorage.setItem(key, "1");
+    } catch {
+      // If sessionStorage is unavailable, still try once for this mounted page.
+    }
+    setProviderStartNote("Drone production opened. Starting the drone pipeline automatically...");
+    void restartProviderJob();
+  }, [production.id, type, isReady, isFailed, hasActiveProviderJob, hasPreview, hasDelivery, providerStarting, isDedicatedPipelineRunning]);
+
   async function refreshProviderStatus(auto = false) {
     if (!visualJob && !hasAlternativeJobs && !dedicatedCharacterDialogueRequired) return;
     setPollingNote(auto ? "Refreshing provider status automatically…" : "Refreshing provider status…");
