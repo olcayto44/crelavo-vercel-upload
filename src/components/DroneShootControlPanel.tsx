@@ -159,7 +159,7 @@ export function DroneShootControlPanel() {
 
   return (
     <div className="drone-shoot-control-stack">
-      <section className="card admin-wide-card">
+      <section id="drone-brief" className="card admin-wide-card">
         <span className="badge">Drone Shoot Start</span>
         <h2>Drone / Satellite Video shoot control</h2>
         <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and create a real Crelavo production request. When production starts, the customer is sent to the production room for preview, delivery and revisions.</p>

@@ -41,18 +41,18 @@ export default async function DroneCreditsPage() {
           </div>
         </section>
 
-        <PageDemoVideoSection
-          sample={droneDemo}
-          badge="Drone demo video"
-          title="Drone / Satellite video example"
-          description="Use this left-side text area to explain the drone route, satellite intro, camera movement and delivery style. The actual demo video will appear on the right after admin adds a video URL."
-          fallbackFeatures={["Map or satellite intro", "Route reveal", "Drone-style flyover", "Camera movement preview", "Admin-managed demo video URL"]}
-          ctaHref="/dashboard/drone-shoot"
-          ctaLabel="Start drone shoot"
-          secondaryHref="/dashboard/assistant-workspace?idea=Drone%20satellite%20route%20video&category=drone_video&mode=media"
-          secondaryLabel="Prepare drone brief"
-          adminHint="Admin setup: open /admin/sample-videos and create or edit a sample with category drone_video or id drone-page-demo. Add Video URL and Thumbnail URL there."
-        />
+          <PageDemoVideoSection
+           sample={droneDemo}
+           badge="Drone demo video"
+           title="Drone / Satellite video example"
+           description="Use this left-side text area to explain the drone route, satellite intro, camera movement and delivery style. The actual demo video will appear on the right after admin adds a video URL."
+           fallbackFeatures={["Map or satellite intro", "Route reveal", "Drone-style flyover", "Camera movement preview", "Admin-managed demo video URL"]}
+           ctaHref="/dashboard/drone-shoot"
+           ctaLabel="Start drone shoot"
+           secondaryHref="/dashboard/drone-shoot"
+           secondaryLabel="Prepare drone brief"
+           adminHint="Admin setup: open /admin/sample-videos and create or edit a sample with category drone_video or id drone-page-demo. Add Video URL and Thumbnail URL there."
+         />
 
         <section style={{ marginTop: 28 }}>
           <div className="sample-video-head">

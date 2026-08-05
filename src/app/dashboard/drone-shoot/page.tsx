@@ -17,7 +17,7 @@ export default function DashboardDroneShootPage() {
           <p>Choose a drone credit pack, confirm location or route, add map/satellite details, then start the production request from this panel.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
             <Link className="btn" href="/drone-credits">Buy drone package</Link>
-            <Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Drone%20satellite%20route%20video&category=drone_video&mode=media">Edit drone brief</Link>
+            <Link className="btn secondary" href="/dashboard/drone-shoot#drone-brief">Edit drone brief</Link>
           </div>
         </div>
       </section>
