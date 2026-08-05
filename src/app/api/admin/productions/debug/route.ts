@@ -3,6 +3,60 @@ import { getProviderStatus } from "@/lib/providers/status";
 import type { ProviderJob } from "@/lib/providers/types";
 import { supabaseAdmin } from "@/lib/supabase";
 
+function safeErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message.replace(/\\+u0000/gi, "").replace(/\u0000/g, "");
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const parts = [record.message, record.details, record.hint, record.code]
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .map((value) => value.replace(/\\+u0000/gi, "").replace(/\u0000/g, ""));
+    if (parts.length > 0) return parts.join(" | ");
+  }
+  return fallback;
+}
+
+function summarizeColumnValue(value: unknown) {
+  if (value == null) return null;
+  if (typeof value === "string") return { type: "string", length: value.length, preview: value.slice(0, 120) };
+  if (Array.isArray(value)) return { type: "array", length: value.length };
+  if (typeof value === "object") return { type: "object", keys: Object.keys(value as Record<string, unknown>).slice(0, 20) };
+  return { type: typeof value, value };
+}
+
+async function diagnoseProductionColumns(supabase: ReturnType<typeof supabaseAdmin>, productionId: string) {
+  const columns = [
+    "id", "user_id", "title", "prompt", "status", "automation_status", "generation_status", "production_type", "package_id",
+    "reserved_credits", "estimated_credits", "request_metadata", "input_json", "output_json", "preview_url", "delivery_link",
+    "delivery_zip_url", "source_files_url", "error_message", "admin_notes", "created_at", "updated_at"
+  ];
+  const results: Array<Record<string, unknown>> = [];
+  for (const column of columns) {
+    const { data, error } = await supabase.from("production_requests").select(column).eq("id", productionId).maybeSingle();
+    const row = data as unknown as Record<string, unknown> | null;
+    results.push({ column, ok: !error, error: error ? safeErrorMessage(error, "Column select failed") : null, sample: row ? summarizeColumnValue(row[column]) : null });
+  }
+  return results;
+}
+
+async function repairCorruptProductionJson(supabase: ReturnType<typeof supabaseAdmin>, productionId: string, reason: string) {
+  const now = new Date().toISOString();
+  return supabase
+    .from("production_requests")
+    .update({
+      request_metadata: { preferredProvider: "heygen_video_agent", repairedAt: now, repairReason: reason },
+      input_json: { preferredProvider: "heygen_video_agent", repairedAt: now },
+      output_json: { preferredProvider: "heygen_video_agent", providerRecovery: { mode: "admin_corrupt_json_repair", reason, repairedAt: now } },
+      automation_status: "queued",
+      generation_status: "admin_corrupt_json_repaired",
+      admin_notes: `Admin repaired corrupt production JSON/text payload. Previous provider start error: ${reason}`,
+      error_message: null,
+      updated_at: now
+    })
+    .eq("id", productionId)
+    .select("id,status,automation_status,generation_status,reserved_credits,updated_at")
+    .maybeSingle();
+}
+
 function pickJob(value: unknown): ProviderJob | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
@@ -54,14 +108,22 @@ export async function POST(request: Request) {
   const productionId = String(body.production_id ?? body.productionId ?? "").trim();
   if (!productionId) return Response.json({ error: "production_id is required." }, { status: 400 });
 
-  const { data: production, error } = await supabaseAdmin()
+  const supabase = supabaseAdmin();
+  if (body.repair_corrupt_json === true || body.repairCorruptJson === true) {
+    const reason = String(body.reason ?? "22P05 corrupt JSON/text payload").trim();
+    const { data, error } = await repairCorruptProductionJson(supabase, productionId, reason);
+    if (error) return Response.json({ error: safeErrorMessage(error, "Repair failed"), diagnostics: await diagnoseProductionColumns(supabase, productionId) }, { status: 500 });
+    return Response.json({ ok: true, repaired: true, production: data, diagnostics: await diagnoseProductionColumns(supabase, productionId) });
+  }
+
+  const { data: production, error } = await supabase
     .from("production_requests")
     .select("*")
     .eq("id", productionId)
     .maybeSingle();
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
+  if (error) return Response.json({ error: safeErrorMessage(error, "Production debug select failed"), diagnostics: await diagnoseProductionColumns(supabase, productionId) }, { status: 500 });
+  if (!production) return Response.json({ error: "Production not found.", diagnostics: await diagnoseProductionColumns(supabase, productionId) }, { status: 404 });
 
   const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
   const visualJob = pickJob(outputJson.visualJob);
