@@ -186,13 +186,18 @@ function droneVideoScenes(prompt: string, durationSeconds: number) {
 
 function droneVideoNarration(durationSeconds: number, language = "English") {
   const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
-  const concise = isTurkish
-    ? "Lokasyonun üzerinden yumuşak bir uçuş yap. Rotayı göster, işaretli alanı vurgula ve temiz bir finalle bitir."
-    : "Fly over the location, reveal the route, highlight the marked area, and finish with a clean aerial pull-away.";
-  const extended = isTurkish
-    ? "Lokasyonun üzerinden yumuşak bir uçuş yap. Rotayı aç, işaretli alanı net biçimde göster, çevredeki önemli noktaları sade bir akışla vurgula ve videoyu temiz, premium bir finalle bitir."
-    : "Fly over the full location, reveal the route, highlight the marked area, and guide the viewer through the key landmarks with smooth aerial movement before ending on a clean premium pull-away.";
-  return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 1), concise);
+  const base = isTurkish
+    ? "Lokasyonun üzerinden yumuşak bir uçuşla başla. Rotayı ekranda adım adım aç, işaretli alanı net biçimde vurgula, çevredeki önemli noktaları sade konum etiketleriyle göster ve videoyu temiz, premium bir final hareketiyle tamamla."
+    : "Start with a smooth aerial opening over the location. Reveal the route step by step on the map, highlight the marked area clearly, guide the viewer through the key landmarks with clean location labels, and finish with a polished premium pull-away.";
+  const pacingPad = isTurkish
+    ? "Anlatım video boyunca sakin tempoda devam etsin; rota, kıyı çizgisi, iskele, çevre yolları ve seçilen alan izleyiciye anlaşılır biçimde bağlansın."
+    : "Keep the narration paced across the whole video; connect the route, coastline, pier, surrounding roads, and selected area so the viewer understands the full location story.";
+  const targetWords = Math.max(22, Math.round(durationSeconds * 2.35));
+  const words = base.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const padWords = pacingPad.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const padded = [...words];
+  while (padded.length < targetWords && padWords.length) padded.push(...padWords.slice(0, Math.min(padWords.length, targetWords - padded.length)));
+  return padded.join(" ");
 }
 
 function looksTurkish(text: string) {
