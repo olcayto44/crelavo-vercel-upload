@@ -280,6 +280,29 @@ async function requireAutomationAccess(request: Request, body: Record<string, un
 }
 
 async function selectProductionForAutomation(supabase: ReturnType<typeof supabaseAdmin>, productionId: string) {
+  // Drone auto-start must not read JSON/JSONB columns before the provider is attached.
+  // A malformed legacy JSON value in request_metadata/input_json/output_json can make
+  // Postgres reject the entire row with 22P05 before the drone pipeline even starts.
+  const scalar = await supabase
+    .from("production_requests")
+    .select("id, user_id, title, prompt, status, generation_status, production_type, package_id, reserved_credits")
+    .eq("id", productionId)
+    .single();
+
+  if (scalar.error || !scalar.data) return { data: scalar.data ?? null, error: scalar.error };
+  const productionType = String(scalar.data.production_type ?? "");
+  if (productionType === "drone_video") {
+    return {
+      data: postgresSafe({
+        ...scalar.data,
+        request_metadata: { productionType: "drone_video", preferredProvider: "auto_drone_video" },
+        input_json: { productionType: "drone_video", preferredProvider: "auto_drone_video" },
+        output_json: {}
+      }),
+      error: null
+    };
+  }
+
   const result = await supabase
     .from("production_requests")
     .select("id, user_id, title, prompt, status, generation_status, production_type, package_id, reserved_credits, request_metadata, input_json, output_json")
@@ -287,28 +310,19 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
     .single();
 
   if (!result.error) {
-    return {
-      data: result.data ? postgresSafe({ ...result.data, output_json: result.data.output_json ?? {} }) : null,
-      error: result.error
-    };
+    return { data: result.data ? postgresSafe({ ...result.data, output_json: result.data.output_json ?? {} }) : null, error: result.error };
   }
 
   const message = errorMessage(result.error, "Production select failed");
-  if (!/22P05|unicode escape|cannot be converted to text/i.test(message)) {
-    return { data: null, error: result.error };
-  }
-
-  const minimal = await supabase
-    .from("production_requests")
-    .select("id, user_id, status, generation_status, production_type, package_id, reserved_credits")
-    .eq("id", productionId)
-    .single();
-
-  const recoveredProductionType = String(minimal.data?.production_type ?? "");
-  const recoveredPreferredProvider = recoveredProductionType === "drone_video" ? "auto_drone_video" : "heygen_video_agent";
+  if (!/22P05|unicode escape|cannot be converted to text/i.test(message)) return { data: null, error: result.error };
   return {
-    data: minimal.data ? postgresSafe({ ...minimal.data, title: recoveredProductionType === "drone_video" ? "Drone / Satellite Production" : "Production", prompt: "", request_metadata: { preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType }, input_json: { preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType }, output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType } }) : null,
-    error: minimal.error
+    data: postgresSafe({
+      ...scalar.data,
+      request_metadata: { preferredProvider: "heygen_video_agent", productionType },
+      input_json: { preferredProvider: "heygen_video_agent", productionType },
+      output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: "heygen_video_agent", productionType }
+    }),
+    error: null
   };
 }
 
