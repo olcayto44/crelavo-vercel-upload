@@ -5,6 +5,7 @@ import { dronePurchasePackages } from "@/lib/data";
 
 type DroneJob = {
   id: string;
+  productionId?: string;
   packageId: string;
   location: string;
   route: string;
@@ -14,7 +15,7 @@ type DroneJob = {
   cameraMovement: string;
   narrationLanguage: string;
   subtitleOption: string;
-  status: "draft" | "brief_ready" | "shoot_started" | "admin_review";
+  status: "draft" | "brief_ready" | "shoot_started" | "admin_review" | "production_created";
   createdAt: string;
 };
 
@@ -57,6 +58,8 @@ function initialState(): DroneState {
 export function DroneShootControlPanel() {
   const [state, setState] = useState<DroneState>(initialState);
   const [loaded, setLoaded] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     try {
@@ -75,23 +78,75 @@ export function DroneShootControlPanel() {
   const activePackage = dronePurchasePackages.find((plan) => plan.id === state.packageId) ?? dronePurchasePackages[0];
   const canStart = Boolean(state.location.trim() && (state.route.trim() || state.markedArea.trim()));
 
-  function startDroneShoot() {
-    if (!canStart) return;
-    const job: DroneJob = {
-      id: `drone-${Date.now()}`,
-      packageId: state.packageId,
-      location: state.location,
-      route: state.route,
-      markedArea: state.markedArea,
+  async function startDroneShoot() {
+    if (!canStart || starting) return;
+    setStarting(true);
+    setError("");
+
+    const droneDetails = {
+      locationAddress: state.location.trim(),
+      routePath: state.route.trim(),
+      markedArea: state.markedArea.trim(),
       shotType: state.shotType,
       mapStyle: state.mapStyle,
       cameraMovement: state.cameraMovement,
+      visualStyle: state.shotType.includes("Property") ? "Cinematic real estate" : state.shotType.includes("Travel") ? "Cinematic travel promo" : "AI drone / satellite cinematic",
       narrationLanguage: state.narrationLanguage,
       subtitleOption: state.subtitleOption,
-      status: "shoot_started",
-      createdAt: new Date().toISOString()
+      musicStyle: "Cinematic ambient music"
     };
-    setState((current) => ({ ...current, jobs: [job, ...current.jobs] }));
+    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
+
+    try {
+      const response = await fetch("/api/productions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Drone / Satellite Video — ${droneDetails.locationAddress.slice(0, 80)}`,
+          prompt,
+          production_type: "drone_video",
+          package_id: state.packageId,
+          legal_acceptance: true,
+          project_details: `${droneDetails.locationAddress}\n${droneDetails.routePath}\n${droneDetails.markedArea}`,
+          features: "Route / camera plan, AI drone video, Location labels, Narration, Subtitles, Background music, Final MP4, Thumbnail, Revision path",
+          quality: "1080p premium",
+          selected_quality: "1080p premium",
+          output_duration_seconds: 60,
+          aspect_ratio: "9:16",
+          target_platform: "Website, Shorts, mobile preview",
+          voice_language: droneDetails.narrationLanguage,
+          music_profile: droneDetails.musicStyle,
+          environment_profile: droneDetails.visualStyle,
+          drone_details: droneDetails,
+          request_metadata: { productionType: "drone_video", droneDetails, preferredProvider: "auto_drone_video" },
+          input_json: { productionType: "drone_video", droneDetails, preferredProvider: "auto_drone_video" }
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(result.error ?? "Drone production could not be created."));
+      const productionId = String(result.production?.id ?? result.id ?? "");
+      const job: DroneJob = {
+        id: `drone-${Date.now()}`,
+        productionId,
+        packageId: state.packageId,
+        location: state.location,
+        route: state.route,
+        markedArea: state.markedArea,
+        shotType: state.shotType,
+        mapStyle: state.mapStyle,
+        cameraMovement: state.cameraMovement,
+        narrationLanguage: state.narrationLanguage,
+        subtitleOption: state.subtitleOption,
+        status: productionId ? "production_created" : "shoot_started",
+        createdAt: new Date().toISOString()
+      };
+      setState((current) => ({ ...current, jobs: [job, ...current.jobs] }));
+      if (productionId) window.location.href = `/dashboard/productions/${productionId}`;
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Drone production could not be created.");
+    } finally {
+      setStarting(false);
+    }
   }
 
   return (
@@ -99,7 +154,7 @@ export function DroneShootControlPanel() {
       <section className="card admin-wide-card">
         <span className="badge">Drone Shoot Start</span>
         <h2>Drone / Satellite Video shoot control</h2>
-        <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and start the drone production request. Drone stays on a separate page, but the purchase adds credits like other credit packs.</p>
+        <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and create a real Crelavo production request. When production starts, the customer is sent to the production room for preview, delivery and revisions.</p>
         <div className="grid" style={{ marginTop: 14 }}>
           <div className="card"><span>Selected package</span><strong>{activePackage?.name}</strong><p>{activePackage?.price}</p></div>
           <div className="card"><span>Credits purchased</span><strong>{activePackage?.credits.toLocaleString()} credits</strong><p>Added like a normal top-up</p></div>
@@ -135,7 +190,8 @@ export function DroneShootControlPanel() {
           <label>Subtitle option<select value={state.subtitleOption} onChange={(event) => setState((current) => ({ ...current, subtitleOption: event.target.value }))}>{subtitleOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
         </div>
         {!canStart ? <p className="workspace-action-note warning">Add at least a location and either a route/path or a marked area before starting the drone shoot.</p> : null}
-        <button className="btn" type="button" style={{ marginTop: 12 }} onClick={startDroneShoot} disabled={!canStart}>Start drone shoot</button>
+        {error ? <p className="workspace-action-note warning">{error}</p> : null}
+        <button className="btn" type="button" style={{ marginTop: 12 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? "Creating production..." : "Start drone shoot"}</button>
       </section>
 
       <section className="card" style={{ marginTop: 18 }}>
@@ -145,6 +201,7 @@ export function DroneShootControlPanel() {
             <strong>{job.location}</strong>
             <p>{job.route || job.markedArea}</p>
             <small>{new Date(job.createdAt).toLocaleString()} · {job.status.replaceAll("_", " ")} · {job.shotType} · {job.mapStyle}</small>
+            {job.productionId ? <p><a className="btn secondary" href={`/dashboard/productions/${job.productionId}`}>Open production room</a></p> : null}
           </div>
         )) : <p style={{ color: "var(--muted)" }}>No drone shoot request started yet.</p>}
       </section>
