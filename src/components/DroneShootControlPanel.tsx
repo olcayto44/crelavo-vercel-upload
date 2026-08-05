@@ -135,7 +135,9 @@ export function DroneShootControlPanel() {
   }, [state, loaded]);
 
   const activePackage = dronePurchasePackages.find((plan) => plan.id === state.packageId) ?? dronePurchasePackages[0];
-  const canStart = Boolean(state.location.trim() && (state.route.trim() || state.markedArea.trim()));
+  const hasLocation = Boolean(state.location.trim());
+  const hasRouteOrMarkedArea = Boolean(state.route.trim() || state.markedArea.trim());
+  const canStart = hasLocation;
 
   async function findCoordinates() {
     const address = state.location.trim();
@@ -206,8 +208,8 @@ export function DroneShootControlPanel() {
 
     const droneDetails = {
       locationAddress: state.location.trim(),
-      routePath: state.route.trim(),
-      markedArea: state.markedArea.trim(),
+      routePath: state.route.trim() || `Local flyover around ${state.location.trim()}`,
+      markedArea: state.markedArea.trim() || `The exact address and immediate surrounding area of ${state.location.trim()}`,
       shotType: state.shotType,
       mapStyle: state.mapStyle,
       cameraMovement: state.cameraMovement,
@@ -388,7 +390,8 @@ export function DroneShootControlPanel() {
             ))}
           </div> : <small>No reference files uploaded yet.</small>}
         </div>
-        {!canStart ? <p className="workspace-action-note warning">Add at least a location and either a route/path or a marked area before starting the drone shoot.</p> : null}
+        {!canStart ? <p className="workspace-action-note warning">Add a location or address before starting the drone shoot.</p> : null}
+        {canStart && !hasRouteOrMarkedArea ? <p className="workspace-action-note">Route/path and marked area are optional. If left empty, Crelavo will use the address and its immediate surroundings as the default drone route.</p> : null}
         {error ? <p className="workspace-action-note warning">{error}</p> : null}
         <button className="btn" type="button" style={{ marginTop: 12, marginBottom: 24 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? "Creating production..." : "Start drone shoot"}</button>
       </section>
