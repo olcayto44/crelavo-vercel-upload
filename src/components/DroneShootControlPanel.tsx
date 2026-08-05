@@ -308,6 +308,15 @@ export function DroneShootControlPanel() {
         <div className="card" style={{ marginTop: 12, padding: 16 }}>
           <strong>Upload reference from your device</strong>
           <p style={{ color: "var(--muted)", marginTop: 6 }}>Use this to attach map screenshots, route images, location photos, drone style references, PDFs or short clips from your phone or computer. You can open the file picker on desktop or mobile and the file will be added to the drone brief.</p>
+          <div className="card" style={{ marginTop: 12, padding: 14, background: "rgba(255,255,255,0.03)" }}>
+    <strong>Recommended reference pack</strong>
+    <p style={{ color: "var(--muted)", marginTop: 6 }}>Optional, but adding these three files usually gives the best result:</p>
+            <ul style={{ marginTop: 8, paddingLeft: 18, color: "var(--muted)" }}>
+              <li><strong>Satellite image</strong> — gives the aerial look and real location shape</li>
+              <li><strong>Route screenshot</strong> — shows the path, road flow and movement direction</li>
+              <li><strong>Location photo</strong> — shows the real on-ground place and visual detail</li>
+            </ul>
+          </div>
           <div className="grid" style={{ marginTop: 12 }}>
             <label>Reference type<select value={state.materialPurpose} onChange={(event) => setState((current) => ({ ...current, materialPurpose: event.target.value }))}>{materialPurposeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
             <label>Reference upload<input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={uploading} onChange={(event) => uploadReferenceFile(event.currentTarget.files)} /></label>
