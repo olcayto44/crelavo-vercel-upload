@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { dronePurchasePackages } from "@/lib/data";
+import { supabaseBrowser } from "@/lib/supabase";
 
 type DroneJob = {
   id: string;
@@ -97,12 +98,19 @@ export function DroneShootControlPanel() {
     };
     const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
 
-    try {
-      const response = await fetch("/api/productions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: `Drone / Satellite Video — ${droneDetails.locationAddress.slice(0, 80)}`,
+  try {
+    const { data: sessionData } = await supabaseBrowser().auth.getSession();
+    const accessToken = sessionData.session?.access_token ?? "";
+    const user = sessionData.session?.user;
+    if (!user?.id || !accessToken) throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapıp drone üretimini yeniden başlatın.");
+
+    const response = await fetch("/api/productions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify({
+        user_id: user.id,
+        user_email: user.email ?? "",
+        title: `Drone / Satellite Video — ${droneDetails.locationAddress.slice(0, 80)}`,
           prompt,
           production_type: "drone_video",
           package_id: state.packageId,
