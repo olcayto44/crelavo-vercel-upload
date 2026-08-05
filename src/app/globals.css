@@ -8957,6 +8957,14 @@ html body .production-detail-shell .customer-preview-theater.preview-mode-shorts
   min-height: min(74vh, 760px) !important;
   height: min(74vh, 760px) !important;
 }
+html body .production-detail-shell .customer-preview-theater.preview-mode-shorts .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-theater.preview-mode-shorts .customer-preview-screen img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+}
 html body .production-detail-shell .delivery-readiness-grid,
 html body .production-detail-shell .customer-preview-actions,
 html body .production-detail-shell .delivery-action-grid {
