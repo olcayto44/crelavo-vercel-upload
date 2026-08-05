@@ -20,6 +20,7 @@ import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function stripPostgresUnsafeText(value: string) {
   return value
+    .replace(/\\u0000/gi, "")
     .replace(/\\+u0000/gi, "")
     .replace(/\u0000/g, "");
 }

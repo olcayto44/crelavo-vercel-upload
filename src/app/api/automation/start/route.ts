@@ -31,6 +31,7 @@ function ecommerceContextFrom(value: unknown) {
 
 function stripPostgresUnsafeText(value: string) {
   return value
+    .replace(/\\u0000/gi, "")
     .replace(/\\+u0000/gi, "")
     .replace(/\u0000/g, "");
 }
@@ -302,8 +303,10 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
     .eq("id", productionId)
     .single();
 
+  const recoveredProductionType = String(minimal.data?.production_type ?? "");
+  const recoveredPreferredProvider = recoveredProductionType === "drone_video" ? "auto_drone_video" : "heygen_video_agent";
   return {
-    data: minimal.data ? postgresSafe({ ...minimal.data, title: "Production", prompt: "", request_metadata: { preferredProvider: "heygen_video_agent" }, input_json: { preferredProvider: "heygen_video_agent" }, output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: "heygen_video_agent" } }) : null,
+    data: minimal.data ? postgresSafe({ ...minimal.data, title: recoveredProductionType === "drone_video" ? "Drone / Satellite Production" : "Production", prompt: "", request_metadata: { preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType }, input_json: { preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType }, output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: recoveredPreferredProvider, productionType: recoveredProductionType } }) : null,
     error: minimal.error
   };
 }
