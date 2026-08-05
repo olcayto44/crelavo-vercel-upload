@@ -483,19 +483,33 @@ export async function runGenericVideoPipeline(input: {
       const shotCount = Math.max(2, Math.ceil(plan.durationSeconds / 5));
       const shots = contextualScenes.slice(0, shotCount);
       while (shots.length < shotCount) shots.push(contextualScenes[shots.length % contextualScenes.length] || plan.title);
-      for (let index = 0; index < shots.length; index += 1) {
-        if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
-        const scene = shots[index];
-        visualJobs.push(await createVisualVideo({
-          scenes: [`Scene ${index + 1}/${shotCount}: ${scene}`],
+      const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
+      if (isDroneMultiShot) {
+        const scene = shots[0];
+        visualJob = await createVisualVideo({
+          scenes: [`Scene 1/${shotCount}: ${scene}`],
           productImageUrls: sourceImageUrls,
           durationSeconds: 5,
-          style: `${clean(input.requestMetadata?.style) || plan.title} · part ${index + 1} of ${shotCount}`,
+          style: `${clean(input.requestMetadata?.style) || plan.title} · first provider shot of ${shotCount}`,
           provider: plan.provider,
           aspectRatio: plan.aspectRatio
-        }));
+        });
+        visualJobs = visualJob ? [visualJob] : [];
+      } else {
+        for (let index = 0; index < shots.length; index += 1) {
+          if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
+          const scene = shots[index];
+          visualJobs.push(await createVisualVideo({
+            scenes: [`Scene ${index + 1}/${shotCount}: ${scene}`],
+            productImageUrls: sourceImageUrls,
+            durationSeconds: 5,
+            style: `${clean(input.requestMetadata?.style) || plan.title} · part ${index + 1} of ${shotCount}`,
+            provider: plan.provider,
+            aspectRatio: plan.aspectRatio
+          }));
+        }
+        visualJob = visualJobs[0] ?? null;
       }
-      visualJob = visualJobs[0] ?? null;
     } else {
       visualJob = await createVisualVideo({
         scenes: contextualScenes,
