@@ -107,8 +107,10 @@ export function DroneShootControlPanel() {
   const [loaded, setLoaded] = useState(false);
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [geocodeMessage, setGeocodeMessage] = useState("");
 
   useEffect(() => {
     try {
@@ -126,6 +128,28 @@ export function DroneShootControlPanel() {
 
   const activePackage = dronePurchasePackages.find((plan) => plan.id === state.packageId) ?? dronePurchasePackages[0];
   const canStart = Boolean(state.location.trim() && (state.route.trim() || state.markedArea.trim()));
+
+  async function findCoordinates() {
+    const address = state.location.trim();
+    if (!address || geocoding) return;
+    setGeocoding(true);
+    setGeocodeMessage("");
+    try {
+      const response = await fetch(`/api/drone/geocode?address=${encodeURIComponent(address)}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(data.error ?? "Coordinates could not be found."));
+      const coordinates = String(data.coordinates ?? "").trim();
+      const formattedAddress = String(data.formattedAddress ?? address).trim();
+      if (!coordinates) throw new Error("Coordinates could not be found.");
+      const nextLocation = `${formattedAddress} — ${coordinates}`;
+      setState((current) => ({ ...current, location: nextLocation }));
+      setGeocodeMessage(`Coordinates found: ${coordinates}`);
+    } catch (caught) {
+      setGeocodeMessage(caught instanceof Error ? caught.message : "Coordinates could not be found.");
+    } finally {
+      setGeocoding(false);
+    }
+  }
 
   async function uploadReferenceFile(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -247,7 +271,9 @@ export function DroneShootControlPanel() {
         status: productionId ? "production_created" : "shoot_started",
         createdAt: new Date().toISOString()
       };
-      setState((current) => ({ ...current, jobs: [job, ...current.jobs] }));
+      const nextState = { ...initialState(), jobs: [job, ...state.jobs] };
+      setState(nextState);
+      localStorage.setItem(storageKey, JSON.stringify(nextState));
       if (productionId) window.location.href = `/dashboard/productions/${productionId}`;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Drone production could not be created.");
@@ -285,7 +311,10 @@ export function DroneShootControlPanel() {
       <section className="card" style={{ marginTop: 18 }}>
         <h3>Drone preparation details</h3>
         <div className="grid" style={{ marginTop: 12 }}>
-          <label>Location / address / coordinates<textarea value={state.location} onChange={(event) => setState((current) => ({ ...current, location: event.target.value }))} placeholder="Example: Istanbul Bosphorus, Ortaköy to Rumeli Hisarı" /></label>
+          <label>Location / address / coordinates<textarea value={state.location} onChange={(event) => { setGeocodeMessage(""); setState((current) => ({ ...current, location: event.target.value })); }} placeholder="Example: Istanbul Bosphorus, Ortaköy to Rumeli Hisarı" />
+            <button className="btn secondary" type="button" style={{ marginTop: 8 }} onClick={findCoordinates} disabled={!state.location.trim() || geocoding}>{geocoding ? "Finding coordinates..." : "Find coordinates"}</button>
+            {geocodeMessage ? <small style={{ display: "block", marginTop: 6, color: "var(--muted)" }}>{geocodeMessage}</small> : null}
+          </label>
           <label>Route / path<textarea value={state.route} onChange={(event) => setState((current) => ({ ...current, route: event.target.value }))} placeholder="Example: Start at bridge, follow coastline, reveal skyline" /></label>
           <label>Marked map/satellite area<textarea value={state.markedArea} onChange={(event) => setState((current) => ({ ...current, markedArea: event.target.value }))} placeholder="Example: Highlight bridge, waterfront and property zone" /></label>
         </div>
