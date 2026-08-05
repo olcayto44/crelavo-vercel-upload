@@ -1059,8 +1059,8 @@ export const dronePurchasePackages = [
     planType: "topup",
     serviceCategory: "drone_video",
     stripePriceEnv: "STRIPE_PRICE_DRONE_LOCATION_VIDEO",
-    description: "One-time Drone / Satellite Video credit pack for a location, property, route or travel spot. It stays on its own drone page, but the purchase adds credits like other credit packs.",
-    usage: ["2,600 credits added after payment confirmation", "One-time purchase", "Does not renew automatically", "Location/address or coordinates", "Route/path plan", "Drone-style aerial scene plan", "Voice-over and subtitle direction", "Dashboard delivery planning"]
+    description: "One-time Drone / Satellite Video credit pack for a location, property, route or travel spot. It stays on its own drone page, but the purchase adds credits like other credit packs. Users can also enter coordinates, camera angle and reference files before production starts.",
+    usage: ["2,600 credits added after payment confirmation", "One-time purchase", "Does not renew automatically", "Location/address or coordinates", "Route/path plan", "Camera angle / view", "Drone-style aerial scene plan", "Voice-over and subtitle direction", "Dashboard delivery planning"]
   },
   {
     id: "drone_satellite_story",
@@ -1074,8 +1074,8 @@ export const dronePurchasePackages = [
     planType: "topup",
     serviceCategory: "drone_video",
     stripePriceEnv: "STRIPE_PRICE_DRONE_SATELLITE_STORY",
-    description: "One-time map/satellite-to-drone credit pack with marked area notes, route reveal, narration planning and final social delivery direction. It adds credits like other credit packs while staying on the separate drone page.",
-    usage: ["6,800 credits added after payment confirmation", "One-time purchase", "Does not renew automatically", "Marked map/satellite area", "Satellite-view intro", "Drone flyover sequence", "Route/landmark reveal", "Final delivery package planning"]
+    description: "One-time map/satellite-to-drone credit pack with marked area notes, route reveal, narration planning and final social delivery direction. It adds credits like other credit packs while staying on the separate drone page. Users can also supply coordinates, camera angle and reference pack files for a tighter brief.",
+    usage: ["6,800 credits added after payment confirmation", "One-time purchase", "Does not renew automatically", "Marked map/satellite area", "Satellite-view intro", "Drone flyover sequence", "Route/landmark reveal", "Camera angle / view", "Final delivery package planning"]
   }
 ];
 

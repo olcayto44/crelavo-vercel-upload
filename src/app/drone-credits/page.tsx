@@ -37,7 +37,7 @@ export default async function DroneCreditsPage() {
           <div className="card selected-billing-card">
             <span className="badge">Drone credit pack</span>
             <h3>What the customer prepares</h3>
-            <p>Location/address, route/path, marked map or satellite area, camera movement, narration language, subtitles, music style and optional map/route/location/style references.</p>
+              <p>Location/address, coordinate lookup, route/path, marked map or satellite area, camera angle, camera movement, narration language, subtitles, music style and optional satellite, route and location reference files.</p>
           </div>
         </section>
 

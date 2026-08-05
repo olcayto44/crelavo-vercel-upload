@@ -9,7 +9,7 @@ export default function DashboardDroneShootPage() {
         <div>
           <span className="badge">Drone production start</span>
           <h1>Drone / Satellite Video shoot panel</h1>
-          <p className="section-lead">Start the purchased drone package, prepare location and route details, and track the latest drone production request.</p>
+          <p className="section-lead">Start the purchased drone package, prepare location and route details, look up coordinates, and track the latest drone production request.</p>
         </div>
         <div className="card selected-billing-card">
           <span className="badge">Drone credit pack</span>

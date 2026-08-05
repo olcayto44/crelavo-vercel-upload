@@ -203,13 +203,13 @@ planetSpaceVideo: {
   packageIds: ["planet_explainer_short", "planet_cinematic_pack"],
   checklist: ["Space topic", "Explainer/cinematic style", "3D visual direction", "Voice/music/subtitle notes", "Final MP4 download"]
 },
-droneVideo: {
-  title: "Drone / Satellite Video Management",
-  badge: "Drone / Satellite Video",
-  description: "Manage map/location, marked-area, route, satellite-view intro and drone-style aerial video requests with narration, subtitles and music.",
-  packageIds: ["drone_location_video", "drone_satellite_story"],
-  checklist: ["Location or route", "Marked map/satellite notes", "Drone flyover sequence", "Voice-over script", "Music/subtitle direction", "Final MP4 package"]
-},
+  droneVideo: {
+    title: "Drone / Satellite Video Management",
+    badge: "Drone / Satellite Video",
+    description: "Manage map/location, marked-area, route, satellite-view intro and drone-style aerial video requests with narration, subtitles, music, coordinates and camera-angle guidance.",
+    packageIds: ["drone_location_video", "drone_satellite_story"],
+    checklist: ["Location or route", "Coordinates or address", "Marked map/satellite notes", "Recommended reference pack", "Camera angle/view", "Drone flyover sequence", "Voice-over script", "Music/subtitle direction", "Final MP4 package"]
+  },
 liveSalesAgent: {
   title: "AI Live Sales Agent Management",
   badge: "AI Live Sales Agent",
