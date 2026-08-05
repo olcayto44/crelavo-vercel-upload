@@ -16,6 +16,12 @@ type DroneJob = {
   cameraMovement: string;
   narrationLanguage: string;
   subtitleOption: string;
+  quality: string;
+  format: string;
+  duration: string;
+  musicStyle: string;
+  referenceNote: string;
+  extraNote: string;
   status: "draft" | "brief_ready" | "shoot_started" | "admin_review" | "production_created";
   createdAt: string;
 };
@@ -30,6 +36,12 @@ type DroneState = {
   cameraMovement: string;
   narrationLanguage: string;
   subtitleOption: string;
+  quality: string;
+  format: string;
+  duration: string;
+  musicStyle: string;
+  referenceNote: string;
+  extraNote: string;
   jobs: DroneJob[];
 };
 
@@ -40,6 +52,10 @@ const mapStyles = ["Satellite map view", "Clean vector map", "Hybrid map + label
 const cameraMovements = ["Smooth flyover route", "Top-down orbit", "Slow push-in", "Coastline tracking", "Landmark reveal", "Fast promo cuts"];
 const narrationOptions = ["English voice-over", "Turkish voice-over", "No voice-over", "Multilingual voice-over", "Custom in prompt"];
 const subtitleOptions = ["Clean bottom subtitles", "No subtitles", "Location labels only", "Bilingual subtitles", "Custom in prompt"];
+const qualityOptions = ["1080p", "1080p premium", "720p preview", "4K"];
+const formatOptions = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1"];
+const durationOptions = ["30 sec", "35 sec", "45 sec", "60 sec"];
+const musicOptions = ["Cinematic ambient music", "Premium cinematic music", "Travel / real estate feel", "No music", "Custom in prompt"];
 
 function initialState(): DroneState {
   return {
@@ -52,6 +68,12 @@ function initialState(): DroneState {
     cameraMovement: cameraMovements[0],
     narrationLanguage: narrationOptions[0],
     subtitleOption: subtitleOptions[0],
+    quality: "1080p",
+    format: "Vertical 9:16",
+    duration: "35 sec",
+    musicStyle: musicOptions[0],
+    referenceNote: "",
+    extraNote: "",
     jobs: []
   };
 }
@@ -94,9 +116,14 @@ export function DroneShootControlPanel() {
       visualStyle: state.shotType.includes("Property") ? "Cinematic real estate" : state.shotType.includes("Travel") ? "Cinematic travel promo" : "AI drone / satellite cinematic",
       narrationLanguage: state.narrationLanguage,
       subtitleOption: state.subtitleOption,
-      musicStyle: "Cinematic ambient music"
+      quality: state.quality,
+      format: state.format,
+      duration: state.duration,
+      musicStyle: state.musicStyle,
+      referenceNote: state.referenceNote.trim(),
+      extraNote: state.extraNote.trim()
     };
-    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
+    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Extra note: ${droneDetails.extraNote || "not provided"}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
@@ -117,11 +144,11 @@ export function DroneShootControlPanel() {
           legal_acceptance: true,
           project_details: `${droneDetails.locationAddress}\n${droneDetails.routePath}\n${droneDetails.markedArea}`,
           features: "Route / camera plan, AI drone video, Location labels, Narration, Subtitles, Background music, Final MP4, Thumbnail, Revision path",
-          quality: "1080p premium",
-          selected_quality: "1080p premium",
-          output_duration_seconds: 60,
-          aspect_ratio: "9:16",
-          target_platform: "Website, Shorts, mobile preview",
+          quality: droneDetails.quality,
+          selected_quality: droneDetails.quality,
+          output_duration_seconds: Number.parseInt(droneDetails.duration, 10) || 35,
+          aspect_ratio: droneDetails.format.includes("16:9") ? "16:9" : droneDetails.format.includes("1:1") ? "1:1" : "9:16",
+          target_platform: droneDetails.format.includes("Vertical") ? "Website, Shorts, mobile preview" : "Website preview",
           voice_language: droneDetails.narrationLanguage,
           music_profile: droneDetails.musicStyle,
           environment_profile: droneDetails.visualStyle,
@@ -145,6 +172,12 @@ export function DroneShootControlPanel() {
         cameraMovement: state.cameraMovement,
         narrationLanguage: state.narrationLanguage,
         subtitleOption: state.subtitleOption,
+        quality: state.quality,
+        format: state.format,
+        duration: state.duration,
+        musicStyle: state.musicStyle,
+        referenceNote: state.referenceNote,
+        extraNote: state.extraNote,
         status: productionId ? "production_created" : "shoot_started",
         createdAt: new Date().toISOString()
       };
@@ -196,6 +229,14 @@ export function DroneShootControlPanel() {
           <label>Camera movement<select value={state.cameraMovement} onChange={(event) => setState((current) => ({ ...current, cameraMovement: event.target.value }))}>{cameraMovements.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Narration language<select value={state.narrationLanguage} onChange={(event) => setState((current) => ({ ...current, narrationLanguage: event.target.value }))}>{narrationOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Subtitle option<select value={state.subtitleOption} onChange={(event) => setState((current) => ({ ...current, subtitleOption: event.target.value }))}>{subtitleOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Quality<select value={state.quality} onChange={(event) => setState((current) => ({ ...current, quality: event.target.value }))}>{qualityOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Format<select value={state.format} onChange={(event) => setState((current) => ({ ...current, format: event.target.value }))}>{formatOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Duration<select value={state.duration} onChange={(event) => setState((current) => ({ ...current, duration: event.target.value }))}>{durationOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Music<select value={state.musicStyle} onChange={(event) => setState((current) => ({ ...current, musicStyle: event.target.value }))}>{musicOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+        </div>
+        <div className="grid" style={{ marginTop: 12 }}>
+          <label>Reference file / visual note<textarea value={state.referenceNote} onChange={(event) => setState((current) => ({ ...current, referenceNote: event.target.value }))} placeholder="Example: Use uploaded property image, map screenshot or drone style reference" /></label>
+          <label>Extra note<textarea value={state.extraNote} onChange={(event) => setState((current) => ({ ...current, extraNote: event.target.value }))} placeholder="Example: Emphasize ocean route, luxury real estate feel, final CTA or brand tone" /></label>
         </div>
         {!canStart ? <p className="workspace-action-note warning">Add at least a location and either a route/path or a marked area before starting the drone shoot.</p> : null}
         {error ? <p className="workspace-action-note warning">{error}</p> : null}
@@ -208,7 +249,7 @@ export function DroneShootControlPanel() {
           <div className="selected-billing-card" key={job.id} style={{ marginTop: 10 }}>
             <strong>{job.location}</strong>
             <p>{job.route || job.markedArea}</p>
-            <small>{new Date(job.createdAt).toLocaleString()} · {job.status.replaceAll("_", " ")} · {job.shotType} · {job.mapStyle}</small>
+            <small>{new Date(job.createdAt).toLocaleString()} · {job.status.replaceAll("_", " ")} · {job.shotType} · {job.mapStyle} · {job.quality} · {job.format} · {job.duration}</small>
             {job.productionId ? <p><a className="btn secondary" href={`/dashboard/productions/${job.productionId}`}>Open production room</a></p> : null}
           </div>
         )) : <p style={{ color: "var(--muted)" }}>No drone shoot request started yet.</p>}
