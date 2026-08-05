@@ -20,9 +20,10 @@ import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function stripPostgresUnsafeText(value: string) {
   return value
-    .replace(/\\u0000/gi, "")
+    .replace(/\\u(?:0000|d[89ab][0-9a-f]{2}|d[c-f][0-9a-f]{2})/gi, "")
+    .replace(/\\u(?![0-9a-f]{4})/gi, "")
     .replace(/\\+u0000/gi, "")
-    .replace(/\u0000/g, "");
+    .replace(/[\u0000\uD800-\uDFFF]/g, "");
 }
 
 function postgresSafe<T>(value: T): T {
