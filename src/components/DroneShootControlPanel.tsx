@@ -28,6 +28,13 @@ type DroneJob = {
   createdAt: string;
 };
 
+type GeocodeCandidate = {
+  originalAddress: string;
+  formattedAddress: string;
+  coordinates: string;
+  placeId: string;
+};
+
 type DroneState = {
   packageId: string;
   location: string;
@@ -111,6 +118,7 @@ export function DroneShootControlPanel() {
   const [error, setError] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [geocodeMessage, setGeocodeMessage] = useState("");
+  const [geocodeCandidate, setGeocodeCandidate] = useState<GeocodeCandidate | null>(null);
 
   useEffect(() => {
     try {
@@ -134,21 +142,29 @@ export function DroneShootControlPanel() {
     if (!address || geocoding) return;
     setGeocoding(true);
     setGeocodeMessage("");
+    setGeocodeCandidate(null);
     try {
       const response = await fetch(`/api/drone/geocode?address=${encodeURIComponent(address)}`);
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(data.error ?? "Coordinates could not be found."));
       const coordinates = String(data.coordinates ?? "").trim();
       const formattedAddress = String(data.formattedAddress ?? address).trim();
+      const placeId = String(data.placeId ?? "").trim();
       if (!coordinates) throw new Error("Coordinates could not be found.");
-      const nextLocation = `${formattedAddress} — ${coordinates}`;
-      setState((current) => ({ ...current, location: nextLocation }));
-      setGeocodeMessage(`Coordinates found: ${coordinates}`);
+      setGeocodeCandidate({ originalAddress: address, formattedAddress, coordinates, placeId });
+      setGeocodeMessage("Coordinates found. Please confirm the found address before using it.");
     } catch (caught) {
       setGeocodeMessage(caught instanceof Error ? caught.message : "Coordinates could not be found.");
     } finally {
       setGeocoding(false);
     }
+  }
+
+  function useGeocodeCandidate() {
+    if (!geocodeCandidate) return;
+    setState((current) => ({ ...current, location: `${geocodeCandidate.originalAddress} — Found address: ${geocodeCandidate.formattedAddress} — Coordinates: ${geocodeCandidate.coordinates}` }));
+    setGeocodeMessage(`Confirmed coordinates: ${geocodeCandidate.coordinates}`);
+    setGeocodeCandidate(null);
   }
 
   async function uploadReferenceFile(fileList: FileList | null) {
@@ -311,9 +327,19 @@ export function DroneShootControlPanel() {
       <section className="card" style={{ marginTop: 18 }}>
         <h3>Drone preparation details</h3>
         <div className="grid" style={{ marginTop: 12 }}>
-          <label>Location / address / coordinates<textarea value={state.location} onChange={(event) => { setGeocodeMessage(""); setState((current) => ({ ...current, location: event.target.value })); }} placeholder="Example: Istanbul Bosphorus, Ortaköy to Rumeli Hisarı" />
+          <label>Location / address / coordinates<textarea value={state.location} onChange={(event) => { setGeocodeMessage(""); setGeocodeCandidate(null); setState((current) => ({ ...current, location: event.target.value })); }} placeholder="Example: Istanbul Bosphorus, Ortaköy to Rumeli Hisarı" />
             <button className="btn secondary" type="button" style={{ marginTop: 8 }} onClick={findCoordinates} disabled={!state.location.trim() || geocoding}>{geocoding ? "Finding coordinates..." : "Find coordinates"}</button>
             {geocodeMessage ? <small style={{ display: "block", marginTop: 6, color: "var(--muted)" }}>{geocodeMessage}</small> : null}
+            {geocodeCandidate ? <div className="selected-billing-card" style={{ marginTop: 10 }}>
+              <strong>Found address</strong>
+              <p>{geocodeCandidate.formattedAddress}</p>
+              <small>Original: {geocodeCandidate.originalAddress}</small>
+              <small style={{ display: "block", marginTop: 4 }}>Coordinates: {geocodeCandidate.coordinates}</small>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                <button className="btn secondary" type="button" onClick={useGeocodeCandidate}>Use this address</button>
+                <button className="btn secondary" type="button" onClick={() => { setGeocodeCandidate(null); setGeocodeMessage("Found address rejected. Edit the address and search again."); }}>Reject</button>
+              </div>
+            </div> : null}
           </label>
           <label>Route / path<textarea value={state.route} onChange={(event) => setState((current) => ({ ...current, route: event.target.value }))} placeholder="Example: Start at bridge, follow coastline, reveal skyline" /></label>
           <label>Marked map/satellite area<textarea value={state.markedArea} onChange={(event) => setState((current) => ({ ...current, markedArea: event.target.value }))} placeholder="Example: Highlight bridge, waterfront and property zone" /></label>
