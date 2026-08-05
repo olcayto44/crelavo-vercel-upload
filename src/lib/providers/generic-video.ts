@@ -68,9 +68,10 @@ function uploadedImageUrlsFrom(...values: unknown[]) {
     if (Array.isArray(record.uploadedMaterials)) visit(record.uploadedMaterials);
     if (record.droneDetails && typeof record.droneDetails === "object") visit((record.droneDetails as Record<string, unknown>).uploadedMaterials);
     const kind = String(record.kind ?? "").toLowerCase();
-    const contentType = String(record.content_type ?? record.contentType ?? "").toLowerCase();
-    const fileUrl = String(record.file_url ?? record.fileUrl ?? record.url ?? "").trim();
-    if (fileUrl && /^https:\/\//i.test(fileUrl) && (kind === "image" || contentType.startsWith("image/"))) urls.push(fileUrl);
+    const contentType = String(record.content_type ?? record.contentType ?? record.mime_type ?? record.mimeType ?? "").toLowerCase();
+    const fileUrl = String(record.file_url ?? record.fileUrl ?? record.download_url ?? record.downloadUrl ?? record.public_url ?? record.publicUrl ?? record.signed_url ?? record.signedUrl ?? record.url ?? "").trim();
+    const filename = String(record.filename ?? record.file_name ?? record.name ?? "").toLowerCase();
+    if (fileUrl && /^https:\/\//i.test(fileUrl) && (kind === "image" || contentType.startsWith("image/") || /\.(png|jpe?g|webp|heic)(\?|$)/i.test(filename) || /\.(png|jpe?g|webp|heic)(\?|$)/i.test(fileUrl))) urls.push(fileUrl);
   };
   values.forEach(visit);
   return Array.from(new Set(urls)).slice(0, 4);
@@ -217,13 +218,13 @@ function droneVideoScenes(prompt: string, durationSeconds: number) {
 
 function droneVideoNarration(durationSeconds: number, language = "English", prompt = "") {
   const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
-  const { location, route, area } = dronePromptDetails(prompt);
+  const { location } = dronePromptDetails(prompt);
   const base = isTurkish
-    ? `${location} çevresine sakin bir drone yaklaşımıyla ilerliyoruz. Görüntü, ${route} üzerinden lokasyona bağlanıyor ve ${area} bölgesini kuşbakışı bir akışla gösteriyor. Bu video, adresin çevresini, ulaşım hissini ve yakın alan düzenini temiz bir drone perspektifiyle sunar.`
-    : `We move toward ${location} with a calm drone-style approach. The view connects the location through ${route} and presents ${area} from an aerial perspective. This video shows the surrounding area, the sense of access, and the nearby location layout in a clean drone-style view.`;
+    ? `${location} çevresini kuşbakışı olarak inceliyoruz. Görüntü, Dumanca Trio Sitesi ve 41. Sokak çevresindeki yerleşim dokusunu, siteye yaklaşan yolları ve yakın çevrenin genel düzenini sade bir anlatımla gösteriyor. Bu çalışma, belirtilen adresin çevresini temiz ve anlaşılır bir hava perspektifiyle sunar.`
+    : `This aerial view examines the surroundings of ${location}. It shows Dumanca Trio Sitesi, the area around 41. Sokak, the nearby approach roads and the general layout around the property in a clear location-focused sequence. The video presents the requested address and its immediate surroundings from a clean aerial perspective.`;
   const pacingPad = isTurkish
-    ? `Anlatım, kamera talimatlarını okumadan yalnızca istenen lokasyonu ve çevresini açıklar; ${location} için rota ve yakın çevre bilgisi izleyiciye sade biçimde aktarılır.`
-    : `The narration describes the requested place and its surroundings only; it does not read camera instructions, production settings, or internal route commands aloud.`;
+    ? `Anlatım yalnızca adresi ve yakın çevreyi açıklar. Kamera ayarları, üretim komutları, rota talimatları ve teknik prompt ifadeleri seslendirilmez.`
+    : `The narration describes only the address and its surroundings. Camera settings, production commands, route instructions and technical prompt text are not spoken aloud.`;
   const targetWords = Math.max(22, Math.round(durationSeconds * 2.35));
   const words = base.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
   const padWords = pacingPad.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
@@ -577,6 +578,6 @@ export async function runGenericVideoPipeline(input: {
     chainStatus: renderJob || voiceAudioUrl || subtitleUrl ? "provider_chain_started" : visualJob ? "visual_job_created" : "waiting_provider_config",
     missingProviders,
     providerErrors,
-    sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls }
+    sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls, droneReferenceRequired: /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")), droneReferenceWarning: uploadedImageUrls.length ? null : "No uploaded satellite/route/location image reference was available. Output may be a generic AI aerial simulation rather than a location-faithful flyover." }
   };
 }
