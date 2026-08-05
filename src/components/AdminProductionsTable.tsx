@@ -286,6 +286,7 @@ export function AdminProductionsTable({ productionTypeFilter }: { productionType
   const [resettingLostOutputId, setResettingLostOutputId] = useState("");
   const [forcingReadyId, setForcingReadyId] = useState("");
   const [debuggingId, setDebuggingId] = useState("");
+  const [repairingCorruptJsonId, setRepairingCorruptJsonId] = useState("");
   const [debugReport, setDebugReport] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
@@ -467,6 +468,32 @@ async function debugProduction(item: ProductionRow) {
   setDebugReport(data);
   const diagnosis = data.diagnosis && typeof data.diagnosis === "object" ? data.diagnosis as Record<string, unknown> : {};
   setMessage(`DEBUG hazır: gerçek video URL ${diagnosis.hasRealVideoUrl ? "VAR" : "YOK"}. Aşağıdaki debug kutusunu kopyalayıp paylaş.`);
+}
+
+async function repairCorruptJson(item: ProductionRow) {
+  if (!window.confirm(`${item.title} için bozuk JSON/text alanları temizlensin mi? Bu işlem request_metadata, input_json ve output_json alanlarını recovery payload ile sıfırlar.`)) return;
+  setRepairingCorruptJsonId(item.id);
+  setMessage("");
+
+  const response = await fetch("/api/admin/productions/debug", {
+    method: "POST",
+    headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
+    body: JSON.stringify(adminApiBody({ production_id: item.id, repair_corrupt_json: true, reason: "22P05 provider start repair from admin UI" }, adminEmail, adminToken))
+  });
+
+  const data = await response.json().catch(() => ({}));
+  setRepairingCorruptJsonId("");
+  setDebugReport(data);
+
+  if (!response.ok) {
+    setMessage(data.error ?? "Bozuk JSON repair başarısız oldu.");
+    return;
+  }
+
+  if (data.production) {
+    setRows((current) => current.map((row) => row.id === item.id ? { ...row, ...data.production } : row));
+  }
+  setMessage("Bozuk production JSON/text alanları temizlendi. Şimdi aynı kartta sağlayıcıyı tekrar başlatabilirsin.");
 }
 
 async function refundReservedCredits(item: ProductionRow) {
@@ -746,6 +773,7 @@ async function refundReservedCredits(item: ProductionRow) {
     <button className="btn" style={{ width: "100%", fontSize: 16, fontWeight: 800 }} type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "PROVIDER DURUMU ÇEKİLİYOR..." : "POLL: PROVIDER DURUMUNU KONTROL ET"}</button>
     <button className="btn" style={{ width: "100%", fontSize: 16, fontWeight: 800 }} type="button" onClick={() => forceReadyDelivery(item)} disabled={forcingReadyId === item.id}>{forcingReadyId === item.id ? "READY YAPILIYOR..." : "READY YAP: PROVIDER VİDEOSUNU YAYINA AL"}</button>
     <button className="btn secondary" style={{ width: "100%", fontSize: 14, fontWeight: 800 }} type="button" onClick={() => debugProduction(item)} disabled={debuggingId === item.id}>{debuggingId === item.id ? "DEBUG ÇEKİLİYOR..." : "DEBUG: ÜRETİM KAYDINI İNCELE"}</button>
+    <button className="btn secondary" style={{ width: "100%", fontSize: 14, fontWeight: 800 }} type="button" onClick={() => repairCorruptJson(item)} disabled={repairingCorruptJsonId === item.id}>{repairingCorruptJsonId === item.id ? "BOZUK JSON TEMİZLENİYOR..." : "REPAIR: BOZUK JSON'U TEMİZLE"}</button>
     <button className="btn secondary" style={{ width: "100%", fontSize: 14, fontWeight: 800 }} type="button" onClick={() => resetLostOutput(item)} disabled={resettingLostOutputId === item.id}>{resettingLostOutputId === item.id ? "RESETLENİYOR..." : "Silinmiş çıktıyı resetle / yeniden üretime hazırla"}</button>
   </div>
             <div className="admin-production-head">
