@@ -359,7 +359,7 @@ export function buildGenericVideoPlan(input: {
               `İki yaramaz çocuk renkli bir bahçede oyuncak arabayı neşeyle kovalıyor`,
               `Oyuncak araba küçük bir çiçek saksısının etrafında dönüyor, çocuklar gülerek peşinden koşuyor`
             ];
-  const visualScenesBase = pipelineType === "voiceover_ad" ? baseVisualScenes.map(voiceoverAdScene) : baseVisualScenes;
+  const visualScenesBase = !isDroneVideo && pipelineType === "voiceover_ad" ? baseVisualScenes.map(voiceoverAdScene) : baseVisualScenes;
   const noCharacterSpeechGuard = /çocuklar\s*konuşmasın|cocuklar\s*konusmasin|karakterler\s*konuşmasın|karakterler\s*konusmasin|diyalog\s*olmasın|no\s*dialogue/i.test(intentText)
     ? "Characters must not talk, present, lip-sync, face camera as speakers, or appear as interview/talking-head presenters. Show only playful action animation."
     : "";
