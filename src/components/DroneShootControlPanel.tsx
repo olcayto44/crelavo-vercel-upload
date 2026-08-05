@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { dronePurchasePackages } from "@/lib/data";
+import { type UserUploadedMaterial } from "@/lib/production-payload";
 import { supabaseBrowser } from "@/lib/supabase";
 
 type DroneJob = {
@@ -22,6 +23,7 @@ type DroneJob = {
   musicStyle: string;
   referenceNote: string;
   extraNote: string;
+  uploadedMaterials?: UserUploadedMaterial[];
   status: "draft" | "brief_ready" | "shoot_started" | "admin_review" | "production_created";
   createdAt: string;
 };
@@ -42,6 +44,8 @@ type DroneState = {
   musicStyle: string;
   referenceNote: string;
   extraNote: string;
+  materialPurpose: string;
+  uploadedMaterials: UserUploadedMaterial[];
   jobs: DroneJob[];
 };
 
@@ -56,6 +60,12 @@ const qualityOptions = ["1080p", "1080p premium", "720p preview", "4K"];
 const formatOptions = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1"];
 const durationOptions = ["30 sec", "35 sec", "45 sec", "60 sec"];
 const musicOptions = ["Cinematic ambient music", "Premium cinematic music", "Travel / real estate feel", "No music", "Custom in prompt"];
+const materialPurposeOptions = [
+  { value: "drone_map_reference", label: "Map / satellite reference" },
+  { value: "drone_route_reference", label: "Route reference" },
+  { value: "drone_location_visual", label: "Location visual" },
+  { value: "drone_style_reference", label: "Drone style reference" }
+];
 
 function initialState(): DroneState {
   return {
@@ -74,6 +84,8 @@ function initialState(): DroneState {
     musicStyle: musicOptions[0],
     referenceNote: "",
     extraNote: "",
+    materialPurpose: materialPurposeOptions[0].value,
+    uploadedMaterials: [],
     jobs: []
   };
 }
@@ -82,12 +94,14 @@ export function DroneShootControlPanel() {
   const [state, setState] = useState<DroneState>(initialState);
   const [loaded, setLoaded] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     try {
       const parsed = JSON.parse(localStorage.getItem(storageKey) || "null") as DroneState | null;
-      if (parsed) setState({ ...initialState(), ...parsed, jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [] });
+      if (parsed) setState({ ...initialState(), ...parsed, uploadedMaterials: Array.isArray(parsed.uploadedMaterials) ? parsed.uploadedMaterials : [], jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [] });
     } catch {
       setState(initialState());
     }
@@ -100,6 +114,38 @@ export function DroneShootControlPanel() {
 
   const activePackage = dronePurchasePackages.find((plan) => plan.id === state.packageId) ?? dronePurchasePackages[0];
   const canStart = Boolean(state.location.trim() && (state.route.trim() || state.markedArea.trim()));
+
+  async function uploadReferenceFile(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file || uploading) return;
+    setUploading(true);
+    setUploadError("");
+    try {
+      const { data: sessionData } = await supabaseBrowser().auth.getSession();
+      const user = sessionData.session?.user;
+      if (!user?.id) throw new Error("Please sign in before uploading drone reference files.");
+
+      const formData = new FormData();
+      formData.set("user_id", user.id);
+      formData.set("purpose", state.materialPurpose);
+      formData.set("file", file);
+
+      const response = await fetch("/api/materials/upload", { method: "POST", body: formData });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(String(data.error ?? "Drone reference file could not be uploaded."));
+      const material = data.material as UserUploadedMaterial | undefined;
+      if (!material?.file_url) throw new Error("Uploaded material response is missing the file URL.");
+      setState((current) => ({ ...current, uploadedMaterials: [material, ...current.uploadedMaterials] }));
+    } catch (caught) {
+      setUploadError(caught instanceof Error ? caught.message : "Drone reference file could not be uploaded.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeUploadedMaterial(fileUrl: string) {
+    setState((current) => ({ ...current, uploadedMaterials: current.uploadedMaterials.filter((item) => item.file_url !== fileUrl) }));
+  }
 
   async function startDroneShoot() {
     if (!canStart || starting) return;
@@ -121,9 +167,13 @@ export function DroneShootControlPanel() {
       duration: state.duration,
       musicStyle: state.musicStyle,
       referenceNote: state.referenceNote.trim(),
-      extraNote: state.extraNote.trim()
+      extraNote: state.extraNote.trim(),
+      uploadedMaterials: state.uploadedMaterials
     };
-    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Extra note: ${droneDetails.extraNote || "not provided"}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
+    const materialSummary = state.uploadedMaterials.length
+      ? state.uploadedMaterials.map((item) => `${item.title} (${item.reference_type}, ${item.kind}): ${item.file_url}`).join(" | ")
+      : "not uploaded";
+    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
@@ -153,8 +203,9 @@ export function DroneShootControlPanel() {
           music_profile: droneDetails.musicStyle,
           environment_profile: droneDetails.visualStyle,
           drone_details: droneDetails,
-          request_metadata: { productionType: "drone_video", droneDetails, preferredProvider: "auto_drone_video" },
-          input_json: { productionType: "drone_video", droneDetails, preferredProvider: "auto_drone_video" }
+          uploaded_materials: state.uploadedMaterials,
+          request_metadata: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" },
+          input_json: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" }
         })
       });
       const result = await response.json().catch(() => ({}));
@@ -178,6 +229,7 @@ export function DroneShootControlPanel() {
         musicStyle: state.musicStyle,
         referenceNote: state.referenceNote,
         extraNote: state.extraNote,
+        uploadedMaterials: state.uploadedMaterials,
         status: productionId ? "production_created" : "shoot_started",
         createdAt: new Date().toISOString()
       };
@@ -195,7 +247,7 @@ export function DroneShootControlPanel() {
       <section id="drone-brief" className="card admin-wide-card">
         <span className="badge">Drone Shoot Start</span>
         <h2>Drone / Satellite Video shoot control</h2>
-        <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and create a real Crelavo production request. When production starts, the customer is sent to the production room for preview, delivery and revisions.</p>
+        <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and create a real Crelavo production request. When production starts, the customer is sent to the production room for preview, delivery and revisions. Reference files can be uploaded here from phone or computer, and the final MP4 or ZIP is downloaded later from the production room.</p>
         <div className="grid" style={{ marginTop: 14 }}>
           <div className="card"><span>Selected package</span><strong>{activePackage?.name}</strong><p>{activePackage?.price}</p></div>
           <div className="card"><span>Credits purchased</span><strong>{activePackage?.credits.toLocaleString()} credits</strong><p>Added like a normal top-up</p></div>
@@ -238,9 +290,28 @@ export function DroneShootControlPanel() {
           <label>Reference file / visual note<textarea value={state.referenceNote} onChange={(event) => setState((current) => ({ ...current, referenceNote: event.target.value }))} placeholder="Example: Use uploaded property image, map screenshot or drone style reference" /></label>
           <label>Extra note<textarea value={state.extraNote} onChange={(event) => setState((current) => ({ ...current, extraNote: event.target.value }))} placeholder="Example: Emphasize ocean route, luxury real estate feel, final CTA or brand tone" /></label>
         </div>
+        <div className="card" style={{ marginTop: 12, padding: 16 }}>
+          <strong>Upload reference from your device</strong>
+          <p style={{ color: "var(--muted)", marginTop: 6 }}>Use this to attach map screenshots, route images, location photos, drone style references, PDFs or short clips from your phone or computer. You can open the file picker on desktop or mobile and the file will be added to the drone brief.</p>
+          <div className="grid" style={{ marginTop: 12 }}>
+            <label>Reference type<select value={state.materialPurpose} onChange={(event) => setState((current) => ({ ...current, materialPurpose: event.target.value }))}>{materialPurposeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+            <label>Reference upload<input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={uploading} onChange={(event) => uploadReferenceFile(event.currentTarget.files)} /></label>
+          </div>
+          {uploadError ? <p className="workspace-action-note warning">{uploadError}</p> : null}
+          {state.uploadedMaterials.length ? <div className="uploaded-material-list" style={{ marginTop: 12 }}>
+            {state.uploadedMaterials.map((material) => (
+              <div className="selected-billing-card" key={material.file_url} style={{ marginTop: 10 }}>
+                <strong>{material.title}</strong>
+                <p>{material.reference_type} · {material.kind} · {Math.ceil(material.size_bytes / 1024).toLocaleString()} KB</p>
+                <small><a href={material.file_url} target="_blank" rel="noreferrer">Open file</a></small>
+                <p style={{ marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => removeUploadedMaterial(material.file_url)}>Remove</button></p>
+              </div>
+            ))}
+          </div> : <small>No reference files uploaded yet.</small>}
+        </div>
         {!canStart ? <p className="workspace-action-note warning">Add at least a location and either a route/path or a marked area before starting the drone shoot.</p> : null}
         {error ? <p className="workspace-action-note warning">{error}</p> : null}
-        <button className="btn" type="button" style={{ marginTop: 12 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? "Creating production..." : "Start drone shoot"}</button>
+        <button className="btn" type="button" style={{ marginTop: 12, marginBottom: 24 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? "Creating production..." : "Start drone shoot"}</button>
       </section>
 
       <section className="card" style={{ marginTop: 18 }}>
