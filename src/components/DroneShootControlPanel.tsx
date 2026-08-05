@@ -42,6 +42,7 @@ type DroneState = {
   format: string;
   duration: string;
   musicStyle: string;
+  cameraAngle: string;
   referenceNote: string;
   extraNote: string;
   materialPurpose: string;
@@ -60,6 +61,16 @@ const qualityOptions = ["1080p", "1080p premium", "720p preview", "4K"];
 const formatOptions = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1"];
 const durationOptions = ["30 sec", "35 sec", "45 sec", "60 sec"];
 const musicOptions = ["Cinematic ambient music", "Premium cinematic music", "Travel / real estate feel", "No music", "Custom in prompt"];
+const cameraAngleOptions = [
+  "Mixed angles",
+  "Top-down bird's-eye view",
+  "45-degree angled aerial view",
+  "Low-altitude close flyover",
+  "Side tracking shot",
+  "Left-to-right flyover",
+  "Right-to-left flyover",
+  "Orbit around location"
+];
 const materialPurposeOptions = [
   { value: "drone_map_reference", label: "Map / satellite reference" },
   { value: "drone_route_reference", label: "Route reference" },
@@ -82,6 +93,7 @@ function initialState(): DroneState {
     format: "Vertical 9:16",
     duration: "35 sec",
     musicStyle: musicOptions[0],
+    cameraAngle: cameraAngleOptions[0],
     referenceNote: "",
     extraNote: "",
     materialPurpose: materialPurposeOptions[0].value,
@@ -166,6 +178,7 @@ export function DroneShootControlPanel() {
       format: state.format,
       duration: state.duration,
       musicStyle: state.musicStyle,
+      cameraAngle: state.cameraAngle,
       referenceNote: state.referenceNote.trim(),
       extraNote: state.extraNote.trim(),
       uploadedMaterials: state.uploadedMaterials
@@ -173,7 +186,7 @@ export function DroneShootControlPanel() {
     const materialSummary = state.uploadedMaterials.length
       ? state.uploadedMaterials.map((item) => `${item.title} (${item.reference_type}, ${item.kind}): ${item.file_url}`).join(" | ")
       : "not uploaded";
-    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
+    const prompt = `Create an AI drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Camera angle / view: ${droneDetails.cameraAngle}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Include route/camera planning, location labels, aerial-style visuals, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
@@ -203,6 +216,7 @@ export function DroneShootControlPanel() {
           music_profile: droneDetails.musicStyle,
           environment_profile: droneDetails.visualStyle,
           drone_details: droneDetails,
+          camera_angle: droneDetails.cameraAngle,
           uploaded_materials: state.uploadedMaterials,
           request_metadata: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" },
           input_json: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" }
@@ -279,6 +293,7 @@ export function DroneShootControlPanel() {
           <label>Shot type<select value={state.shotType} onChange={(event) => setState((current) => ({ ...current, shotType: event.target.value }))}>{shotTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Map / satellite style<select value={state.mapStyle} onChange={(event) => setState((current) => ({ ...current, mapStyle: event.target.value }))}>{mapStyles.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Camera movement<select value={state.cameraMovement} onChange={(event) => setState((current) => ({ ...current, cameraMovement: event.target.value }))}>{cameraMovements.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Camera angle / view<select value={state.cameraAngle} onChange={(event) => setState((current) => ({ ...current, cameraAngle: event.target.value }))}>{cameraAngleOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Narration language<select value={state.narrationLanguage} onChange={(event) => setState((current) => ({ ...current, narrationLanguage: event.target.value }))}>{narrationOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Subtitle option<select value={state.subtitleOption} onChange={(event) => setState((current) => ({ ...current, subtitleOption: event.target.value }))}>{subtitleOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Quality<select value={state.quality} onChange={(event) => setState((current) => ({ ...current, quality: event.target.value }))}>{qualityOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
