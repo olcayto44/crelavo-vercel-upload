@@ -169,6 +169,32 @@ function linkAdNarration(durationSeconds: number) {
   return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 2), concise);
 }
 
+function droneVideoScenes(prompt: string, durationSeconds: number) {
+  const cleanedPrompt = prompt.replace(/Crelavo|final MP4 delivery|final MP4|production request/gi, "");
+  const location = cleanedPrompt.match(/for\s+([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the requested location";
+  const route = cleanedPrompt.match(/Route\/path:\s*([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the route";
+  const area = cleanedPrompt.match(/Marked map\/satellite area:\s*([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the marked area";
+  const scenes = [
+    `Aerial opening over ${location}. Establish the location from above with a clean cinematic drone feel.`,
+    `Route reveal along ${route}. Add readable location labels and a smooth map-to-air transition.`,
+    `Highlight ${area} with a careful flyover and subtle motion graphics. Keep the frame clean and premium.`,
+    `Finish with a wide pull-away over the full location and a polished export-ready ending.`
+  ];
+  const shotCount = Math.max(2, Math.ceil(durationSeconds / 5));
+  return scenes.slice(0, Math.min(scenes.length, shotCount));
+}
+
+function droneVideoNarration(durationSeconds: number, language = "English") {
+  const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
+  const concise = isTurkish
+    ? "Lokasyonun üzerinden yumuşak bir uçuş yap. Rotayı göster, işaretli alanı vurgula ve temiz bir finalle bitir."
+    : "Fly over the location, reveal the route, highlight the marked area, and finish with a clean aerial pull-away.";
+  const extended = isTurkish
+    ? "Lokasyonun üzerinden yumuşak bir uçuş yap. Rotayı aç, işaretli alanı net biçimde göster, çevredeki önemli noktaları sade bir akışla vurgula ve videoyu temiz, premium bir finalle bitir."
+    : "Fly over the full location, reveal the route, highlight the marked area, and guide the viewer through the key landmarks with smooth aerial movement before ending on a clean premium pull-away.";
+  return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 1), concise);
+}
+
 function looksTurkish(text: string) {
   return /[çğıöşüİı]|\b(olsun|seslendirme|altyaz|çocuk|cocuk|dış anlatıcı|dis anlatici|sahne|bahçe|bahcede|koşuyor|kosuyor|neşeli|neseli)\b/i.test(text);
 }
@@ -305,25 +331,29 @@ export function buildGenericVideoPlan(input: {
   const selectedVoiceProfile = clean(requestMetadata.voiceProfile) || clean(inputJson.voiceProfile) || "premium clear narrator";
   const intentText = `${title} ${prompt} ${clean(requestMetadata.productionGoal)} ${clean(inputJson.productionGoal)} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
   const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inputJson.voiceLanguage) || (looksTurkish(intentText) ? "Turkish" : "English");
+  const productionTypeSignal = `${clean(requestMetadata.productionType)} ${clean(inputJson.productionType)} ${clean(requestMetadata.pipelineType)} ${clean(inputJson.pipelineType)}`.toLowerCase();
   const pipelineType = classifyVideoPipeline(intentText);
-  const isCrelavoPromo = isCrelavoPromoIntent(intentText);
-  const isLinkAd = !isCrelavoPromo && isLinkToAdIntent(intentText);
+  const isDroneVideo = /drone_video/.test(productionTypeSignal) || /\bdrone\b|\bsatellite\b|route\s*flyover|map\s*route\s*reveal|aerial\s*location/i.test(intentText);
+  const isCrelavoPromo = !isDroneVideo && isCrelavoPromoIntent(intentText);
+  const isLinkAd = !isDroneVideo && !isCrelavoPromo && isLinkToAdIntent(intentText);
   const noVoice = voiceExplicitlyDisabled(intentText);
   const noSubtitles = subtitlesExplicitlyDisabled(intentText);
   const mediaGuard = visualOnlyGuard(noVoice, noSubtitles);
   const deterministicUiMotion = isCrelavoPromo && /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui/i.test(intentText);
   const requestedScenes = scenePromptsFromRequest(prompt);
   const parts = requestedScenes.length ? requestedScenes : sentenceParts(prompt).filter((part) => !/test|teslim|seslendirme|altyaz|format|480p|saniye|mp4|müzik|muzik/i.test(part));
-const baseVisualScenes = isCrelavoPromo
-  ? crelavoProductDemoScenes(durationSeconds)
-  : isLinkAd
-    ? linkProductDemoScenes(intentText, durationSeconds)
-    : parts.length >= 1
-      ? parts
-      : [
-        `İki yaramaz çocuk renkli bir bahçede oyuncak arabayı neşeyle kovalıyor`,
-        `Oyuncak araba küçük bir çiçek saksısının etrafında dönüyor, çocuklar gülerek peşinden koşuyor`
-      ];
+  const baseVisualScenes = isDroneVideo
+    ? droneVideoScenes(prompt, durationSeconds)
+    : isCrelavoPromo
+      ? crelavoProductDemoScenes(durationSeconds)
+      : isLinkAd
+        ? linkProductDemoScenes(intentText, durationSeconds)
+        : parts.length >= 1
+          ? parts
+          : [
+              `İki yaramaz çocuk renkli bir bahçede oyuncak arabayı neşeyle kovalıyor`,
+              `Oyuncak araba küçük bir çiçek saksısının etrafında dönüyor, çocuklar gülerek peşinden koşuyor`
+            ];
   const visualScenesBase = pipelineType === "voiceover_ad" ? baseVisualScenes.map(voiceoverAdScene) : baseVisualScenes;
   const noCharacterSpeechGuard = /çocuklar\s*konuşmasın|cocuklar\s*konusmasin|karakterler\s*konuşmasın|karakterler\s*konusmasin|diyalog\s*olmasın|no\s*dialogue/i.test(intentText)
     ? "Characters must not talk, present, lip-sync, face camera as speakers, or appear as interview/talking-head presenters. Show only playful action animation."
@@ -340,7 +370,7 @@ const baseVisualScenes = isCrelavoPromo
   const combinedGuard = [mediaGuard, noCharacterSpeechGuard, crelavoPromoGuard, linkAdGuard, countGuard].filter(Boolean).join(" ");
   const visualScenes = combinedGuard ? visualScenesBase.map((scene) => `${scene}. ${combinedGuard}`) : visualScenesBase;
 const dialogueSegments = noVoice || isCrelavoPromo || isLinkAd ? [] : dialogueSegmentsFromScenes(requestedScenes, durationSeconds);
-const script = noVoice ? "" : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
+const script = noVoice ? "" : isDroneVideo ? droneVideoNarration(durationSeconds, selectedVoiceLanguage) : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
   const subtitleLines = noSubtitles ? [] : subtitleLinesFromScript(script || turkishNarration(prompt, durationSeconds), durationSeconds);
   return {
     title,
