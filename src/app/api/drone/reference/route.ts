@@ -30,7 +30,6 @@ export async function GET(request: Request) {
 
   try {
     let coordinates = coordinatesFromQuery(address);
-    let formattedAddress = address;
     if (!coordinates) {
       const result = await geocodeAddress(address);
       const first = result.results[0];
@@ -40,7 +39,6 @@ export async function GET(request: Request) {
         return Response.json({ error: "The map provider returned a different nearby address. Keep the original address or add confirmed coordinates before starting." }, { status: 422 });
       }
       coordinates = { lat: location.lat, lng: location.lng };
-      formattedAddress = first.formatted_address;
     }
 
     const mapUrl = new URL("https://maps.googleapis.com/maps/api/staticmap");
@@ -58,8 +56,7 @@ export async function GET(request: Request) {
     return new Response(await imageResponse.arrayBuffer(), {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
-        "X-Drone-Reference-Address": formattedAddress
+        "Cache-Control": "public, max-age=3600"
       }
     });
   } catch (error) {
