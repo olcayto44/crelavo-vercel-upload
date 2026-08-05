@@ -54,6 +54,8 @@ type DroneState = {
   extraNote: string;
   materialPurpose: string;
   uploadedMaterials: UserUploadedMaterial[];
+  coordinateOverride: string;
+  allowUnverifiedLocation: boolean;
   jobs: DroneJob[];
 };
 
@@ -105,6 +107,8 @@ function initialState(): DroneState {
     extraNote: "",
     materialPurpose: materialPurposeOptions[0].value,
     uploadedMaterials: [],
+    coordinateOverride: "",
+    allowUnverifiedLocation: false,
     jobs: []
   };
 }
@@ -233,13 +237,13 @@ export function DroneShootControlPanel() {
     const prompt = `Create an AI-only drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Camera angle / view: ${droneDetails.cameraAngle}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}; keep the final video close to this target duration. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Drone-only visual lock: no presenter, no host, no avatar, no talking head, no human spokesperson, no Crelavo advertisement, no SaaS demo, no product sales pitch, no office scene. Show only the requested location, route reveal, map/satellite view, aerial property or travel flyover, narration, music and final MP4 delivery. Do not generate embedded text, fake map labels, misspelled labels, UI text, signage, typography or logos inside the video frames; Crelavo will add clean labels in post-production overlays if needed. Narration must describe the address, route and surrounding area; it must not read production settings or camera instructions aloud. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
-    const automaticReferenceUrl = `${window.location.origin}/api/drone/reference?${new URLSearchParams({ address: droneDetails.locationAddress }).toString()}`;
-    const automaticReferenceResponse = await fetch(automaticReferenceUrl, { method: "GET" });
-    if (!automaticReferenceResponse.ok) {
-      const automaticReferenceError = await automaticReferenceResponse.json().catch(() => ({}));
-      throw new Error(String(automaticReferenceError.error ?? "Automatic satellite reference could not be generated. Confirm the coordinates or upload a map reference."));
-    }
-    const productionMaterials: UserUploadedMaterial[] = [
+  const referenceAddress = state.coordinateOverride.trim() || droneDetails.locationAddress;
+  const automaticReferenceUrl = `${window.location.origin}/api/drone/reference?${new URLSearchParams({ address: referenceAddress }).toString()}`;
+  const automaticReferenceResponse = await fetch(automaticReferenceUrl, { method: "GET" });
+  const hasUploadedImageReference = state.uploadedMaterials.some((item) => item.kind === "image" || String(item.content_type ?? "").toLowerCase().startsWith("image/"));
+  let productionMaterials: UserUploadedMaterial[] = state.uploadedMaterials;
+  if (automaticReferenceResponse.ok) {
+    productionMaterials = [
       {
         type: "user_upload",
         reference_type: "automatic_satellite_reference",
@@ -253,6 +257,10 @@ export function DroneShootControlPanel() {
       },
       ...state.uploadedMaterials
     ];
+  } else if (!hasUploadedImageReference && !state.allowUnverifiedLocation) {
+    const automaticReferenceError = await automaticReferenceResponse.json().catch(() => ({}));
+    throw new Error(String(automaticReferenceError.error ?? "Automatic satellite reference could not be generated. Confirm coordinates, upload a map reference, or enable unverified location mode."));
+  }
     const persistedDroneDetails = { ...droneDetails, uploadedMaterials: productionMaterials };
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
     const accessToken = sessionData.session?.access_token ?? "";
@@ -382,6 +390,7 @@ export function DroneShootControlPanel() {
               </div>
             </div> : null}
           </label>
+          <label>Confirmed coordinates (optional)<input value={state.coordinateOverride} onChange={(event) => setState((current) => ({ ...current, coordinateOverride: event.target.value }))} placeholder="Example: 38.394500, 26.965800" /><small style={{ display: "block", marginTop: 4, color: "var(--muted)" }}>Use this when the map provider returns a nearby but incorrect address.</small></label>
           <label>Route / path<textarea value={state.route} onChange={(event) => setState((current) => ({ ...current, route: event.target.value }))} placeholder="Example: Start at bridge, follow coastline, reveal skyline" /></label>
           <label>Marked map/satellite area<textarea value={state.markedArea} onChange={(event) => setState((current) => ({ ...current, markedArea: event.target.value }))} placeholder="Example: Highlight bridge, waterfront and property zone" /></label>
         </div>
@@ -403,16 +412,7 @@ export function DroneShootControlPanel() {
         </div>
         <div className="card" style={{ marginTop: 12, padding: 16 }}>
           <strong>Upload reference from your device</strong>
-          <p style={{ color: "var(--muted)", marginTop: 6 }}>Use this to attach map screenshots, route images, location photos, drone style references, PDFs or short clips from your phone or computer. You can open the file picker on desktop or mobile and the file will be added to the drone brief.</p>
-          <div className="card" style={{ marginTop: 12, padding: 14, background: "rgba(255,255,255,0.03)" }}>
-    <strong>Recommended reference pack</strong>
-    <p style={{ color: "var(--muted)", marginTop: 6 }}>Optional, but adding these three files usually gives the best result:</p>
-            <ul style={{ marginTop: 8, paddingLeft: 18, color: "var(--muted)" }}>
-              <li><strong>Satellite image</strong> — gives the aerial look and real location shape</li>
-              <li><strong>Route screenshot</strong> — shows the path, road flow and movement direction</li>
-              <li><strong>Location photo</strong> — shows the real on-ground place and visual detail</li>
-            </ul>
-          </div>
+          <p style={{ color: "var(--muted)", marginTop: 6 }}>Optional. Crelavo will generate an automatic satellite reference from the address when possible. Upload a map, route or location image only when you want to override it.</p>
           <div className="grid" style={{ marginTop: 12 }}>
             <label>Reference type<select value={state.materialPurpose} onChange={(event) => setState((current) => ({ ...current, materialPurpose: event.target.value }))}>{materialPurposeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
             <label>Reference upload<input type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={uploading} onChange={(event) => uploadReferenceFile(event.currentTarget.files)} /></label>
@@ -427,7 +427,8 @@ export function DroneShootControlPanel() {
                 <p style={{ marginTop: 8 }}><button className="btn secondary" type="button" onClick={() => removeUploadedMaterial(material.file_url)}>Remove</button></p>
               </div>
             ))}
-          </div> : <small>No reference files uploaded yet.</small>}
+          </div> : <small>No reference files uploaded yet. Automatic satellite reference will be attempted from the address.</small>}
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 14 }}><input type="checkbox" checked={state.allowUnverifiedLocation} onChange={(event) => setState((current) => ({ ...current, allowUnverifiedLocation: event.target.checked }))} /><span><strong>Continue without an automatic map reference</strong><small style={{ display: "block", color: "var(--muted)", marginTop: 4 }}>Use only when you accept that an address without confirmed coordinates may produce a generic AI aerial simulation.</small></span></label>
         </div>
         {!canStart ? <p className="workspace-action-note warning">Add a location or address before starting the drone shoot.</p> : null}
         {canStart && !hasRouteOrMarkedArea ? <p className="workspace-action-note">Route/path and marked area are optional. If left empty, Crelavo will use the address and its immediate surroundings as the default drone route.</p> : null}
