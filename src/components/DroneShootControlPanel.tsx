@@ -233,6 +233,27 @@ export function DroneShootControlPanel() {
     const prompt = `Create an AI-only drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Camera angle / view: ${droneDetails.cameraAngle}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}; keep the final video close to this target duration. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Drone-only visual lock: no presenter, no host, no avatar, no talking head, no human spokesperson, no Crelavo advertisement, no SaaS demo, no product sales pitch, no office scene. Show only the requested location, route reveal, map/satellite view, aerial property or travel flyover, narration, music and final MP4 delivery. Do not generate embedded text, fake map labels, misspelled labels, UI text, signage, typography or logos inside the video frames; Crelavo will add clean labels in post-production overlays if needed. Narration must describe the address, route and surrounding area; it must not read production settings or camera instructions aloud. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
+    const automaticReferenceUrl = `${window.location.origin}/api/drone/reference?${new URLSearchParams({ address: droneDetails.locationAddress }).toString()}`;
+    const automaticReferenceResponse = await fetch(automaticReferenceUrl, { method: "GET" });
+    if (!automaticReferenceResponse.ok) {
+      const automaticReferenceError = await automaticReferenceResponse.json().catch(() => ({}));
+      throw new Error(String(automaticReferenceError.error ?? "Automatic satellite reference could not be generated. Confirm the coordinates or upload a map reference."));
+    }
+    const productionMaterials: UserUploadedMaterial[] = [
+      {
+        type: "user_upload",
+        reference_type: "automatic_satellite_reference",
+        title: "Automatic satellite reference",
+        file_url: automaticReferenceUrl,
+        content_type: "image/png",
+        size_bytes: 0,
+        kind: "image",
+        rights_confirmed: true,
+        usage_tags: ["drone", "satellite", "location", "auto-generated"]
+      },
+      ...state.uploadedMaterials
+    ];
+    const persistedDroneDetails = { ...droneDetails, uploadedMaterials: productionMaterials };
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
     const accessToken = sessionData.session?.access_token ?? "";
     const user = sessionData.session?.user;
@@ -259,11 +280,11 @@ export function DroneShootControlPanel() {
           voice_language: droneDetails.narrationLanguage,
           music_profile: droneDetails.musicStyle,
           environment_profile: droneDetails.visualStyle,
-          drone_details: droneDetails,
+          drone_details: persistedDroneDetails,
           camera_angle: droneDetails.cameraAngle,
-          uploaded_materials: state.uploadedMaterials,
-          request_metadata: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" },
-          input_json: { productionType: "drone_video", droneDetails, uploadedMaterials: state.uploadedMaterials, preferredProvider: "auto_drone_video" }
+          uploaded_materials: productionMaterials,
+          request_metadata: { productionType: "drone_video", droneDetails: persistedDroneDetails, uploadedMaterials: productionMaterials, preferredProvider: "auto_drone_video" },
+          input_json: { productionType: "drone_video", droneDetails: persistedDroneDetails, uploadedMaterials: productionMaterials, preferredProvider: "auto_drone_video" }
         })
       });
       const result = await response.json().catch(() => ({}));
@@ -302,7 +323,7 @@ export function DroneShootControlPanel() {
         musicStyle: state.musicStyle,
         referenceNote: state.referenceNote,
         extraNote: state.extraNote,
-        uploadedMaterials: state.uploadedMaterials,
+        uploadedMaterials: productionMaterials,
         status: productionId ? "production_created" : "shoot_started",
         createdAt: new Date().toISOString()
       };
