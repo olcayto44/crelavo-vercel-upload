@@ -866,11 +866,15 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
           ? "This request requires the music-video pipeline: audio/lyrics analysis, timing, visual planning and final edit. It must not be treated as a generic ad voice-over video."
           : genericRun
         ? genericRun.chainStatus === "waiting_provider_config"
-          ? `Generic video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
-          : genericRun.chainStatus === "provider_chain_started"
-            ? "Generic video provider chain started: script plan, visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
-            : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
-        : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
+      ? `Drone video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
+      : genericRun.chainStatus === "provider_chain_started"
+        ? requiredPipeline === "drone_video"
+          ? "Drone video provider chain started: route plan, aerial visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
+          : "Generic video provider chain started: script plan, visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
+        : requiredPipeline === "drone_video"
+          ? "Drone visual provider job created. Voice/subtitle/final render routing is tracked in the drone chain. Poll /api/automation/status to update final output."
+          : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
+    : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
     const outputJson: Record<string, unknown> = {
       ...demoOutput,
       providerTestMode,

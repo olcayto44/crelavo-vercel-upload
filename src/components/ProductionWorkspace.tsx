@@ -665,7 +665,8 @@ const previewKind = isMediaProduction && mediaFinalReady && playbackUrl ? "video
     if (data.waiting_provider_config) {
       setProviderStarting(false);
       const readinessMessage = data.provider_readiness?.userMessage || data.production?.admin_notes || data.production?.output_json?.providerErrors?.visual_generation || "The video provider did not return a real job. Check the provider error and try again after fixing provider routing.";
-      setProviderStartNote(`Could not start: ${readinessMessage}`);
+      const isDroneWaiting = String(data.production?.production_type ?? production.production_type ?? "") === "drone_video" || String(data.production?.output_json?.requiredPipeline ?? "") === "drone_video";
+      setProviderStartNote(isDroneWaiting ? `Drone pipeline waiting: ${readinessMessage}` : `Could not start: ${readinessMessage}`);
       return;
     }
     const message = data.already_ready
