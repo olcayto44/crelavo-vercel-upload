@@ -340,11 +340,26 @@ export function DroneShootControlPanel() {
       localStorage.setItem(storageKey, JSON.stringify(nextState));
       if (productionId) window.location.href = `/dashboard/productions/${productionId}`;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Drone production could not be created.");
+      const message = caught instanceof Error ? caught.message : "Drone production could not be created.";
+      setError(message);
+      if (/Production was created, but the drone pipeline could not auto-start/i.test(message)) {
+        const freshState = initialState();
+        setState((current) => ({ ...freshState, jobs: current.jobs }));
+        localStorage.setItem(storageKey, JSON.stringify({ ...freshState, jobs: state.jobs }));
+      }
     } finally {
       setStarting(false);
       setStartPhase("");
     }
+  }
+
+  function startNewDroneBrief() {
+    const freshState = initialState();
+    setState((current) => ({ ...freshState, jobs: current.jobs }));
+    localStorage.setItem(storageKey, JSON.stringify({ ...freshState, jobs: state.jobs }));
+    setError("");
+    setGeocodeMessage("");
+    setGeocodeCandidate(null);
   }
 
   return (
@@ -352,6 +367,7 @@ export function DroneShootControlPanel() {
       <section id="drone-brief" className="card admin-wide-card">
         <span className="badge">Drone Shoot Start</span>
         <h2>Drone / Satellite Video shoot control</h2>
+        <button className="btn secondary" type="button" onClick={startNewDroneBrief} style={{ marginTop: 8 }}>Start a new drone brief</button>
         <p style={{ color: "var(--muted)" }}>After buying a drone credit pack, the customer can open this page, fill the location/route details and create a real Crelavo production request. When production starts, the customer is sent to the production room for preview, delivery and revisions. Reference files can be uploaded here from phone or computer, and the final MP4 or ZIP is downloaded later from the production room.</p>
         <div className="grid" style={{ marginTop: 14 }}>
           <div className="card"><span>Selected package</span><strong>{activePackage?.name}</strong><p>{activePackage?.price}</p></div>
