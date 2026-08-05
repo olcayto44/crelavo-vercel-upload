@@ -55,6 +55,27 @@ function firstUrlFromText(text: string) {
   return text.match(/https?:\/\/[^\s)\]}"']+/i)?.[0] ?? "";
 }
 
+function uploadedImageUrlsFrom(...values: unknown[]) {
+  const urls: string[] = [];
+  const visit = (value: unknown) => {
+    if (!value) return;
+    if (Array.isArray(value)) {
+      value.forEach(visit);
+      return;
+    }
+    if (typeof value !== "object") return;
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.uploadedMaterials)) visit(record.uploadedMaterials);
+    if (record.droneDetails && typeof record.droneDetails === "object") visit((record.droneDetails as Record<string, unknown>).uploadedMaterials);
+    const kind = String(record.kind ?? "").toLowerCase();
+    const contentType = String(record.content_type ?? record.contentType ?? "").toLowerCase();
+    const fileUrl = String(record.file_url ?? record.fileUrl ?? record.url ?? "").trim();
+    if (fileUrl && /^https:\/\//i.test(fileUrl) && (kind === "image" || contentType.startsWith("image/"))) urls.push(fileUrl);
+  };
+  values.forEach(visit);
+  return Array.from(new Set(urls)).slice(0, 4);
+}
+
 async function sourceContextForPrompt(text: string) {
   const url = firstUrlFromText(text);
   if (!url) return { url: "", contextText: "", imageUrls: [] as string[] };
@@ -169,29 +190,40 @@ function linkAdNarration(durationSeconds: number) {
   return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 2), concise);
 }
 
-function droneVideoScenes(prompt: string, durationSeconds: number) {
+function dronePromptDetails(prompt: string) {
   const cleanedPrompt = prompt.replace(/Crelavo|final MP4 delivery|final MP4|production request/gi, "");
-  const location = cleanedPrompt.match(/for\s+([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the requested location";
-  const route = cleanedPrompt.match(/Route\/path:\s*([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the route";
-  const area = cleanedPrompt.match(/Marked map\/satellite area:\s*([^\.]+?)(?:\.|$)/i)?.[1]?.trim() || "the marked area";
+  const location = cleanedPrompt.match(/for\s+([^\.]+?)(?:\.\s*Route\/path:|\.|$)/i)?.[1]?.trim() || "the requested location";
+  const route = cleanedPrompt.match(/Route\/path:\s*([^\.]+?)(?:\.\s*Marked map\/satellite area:|\.|$)/i)?.[1]?.trim() || "the local approach route";
+  const area = cleanedPrompt.match(/Marked map\/satellite area:\s*([^\.]+?)(?:\.\s*Shot type:|\.|$)/i)?.[1]?.trim() || "the immediate surrounding area";
+  return { location, route, area };
+}
+
+function droneNoTextFrameGuard() {
+  return "Do not generate embedded text, fake map labels, misspelled labels, UI text, signage, typography, logos, people, presenters or talking heads inside the video frames. Keep surfaces clean for Crelavo post-production overlays.";
+}
+
+function droneVideoScenes(prompt: string, durationSeconds: number) {
+  const { location, route, area } = dronePromptDetails(prompt);
+  const textGuard = droneNoTextFrameGuard();
   const scenes = [
-    `Aerial opening over ${location}. Establish the location from above with a clean cinematic drone feel.`,
-    `Route reveal along ${route}. Add readable location labels and a smooth map-to-air transition.`,
-    `Highlight ${area} with a careful flyover and subtle motion graphics. Keep the frame clean and premium.`,
-    `Finish with a wide pull-away over the full location and a polished export-ready ending.`
+    `Aerial opening over ${location}. Establish the requested area from above with a clean cinematic AI drone / satellite feel. ${textGuard}`,
+    `Route reveal along ${route}. Show the path through camera movement and clean overlay-safe composition only; Crelavo will add any route labels in post-production overlays. ${textGuard}`,
+    `Highlight ${area} with a careful flyover and subtle non-text motion graphics. Keep the frame clean, premium and geographically focused. ${textGuard}`,
+    `Finish with a wide pull-away over ${location} and the surrounding area, keeping the location story clear without any generated text inside the frame. ${textGuard}`
   ];
   const shotCount = Math.max(2, Math.ceil(durationSeconds / 5));
   return scenes.slice(0, Math.min(scenes.length, shotCount));
 }
 
-function droneVideoNarration(durationSeconds: number, language = "English") {
+function droneVideoNarration(durationSeconds: number, language = "English", prompt = "") {
   const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
+  const { location, route, area } = dronePromptDetails(prompt);
   const base = isTurkish
-    ? "Lokasyonun üzerinden yumuşak bir uçuşla başla. Rotayı ekranda adım adım aç, işaretli alanı net biçimde vurgula, çevredeki önemli noktaları sade konum etiketleriyle göster ve videoyu temiz, premium bir final hareketiyle tamamla."
-    : "Start with a smooth aerial opening over the location. Reveal the route step by step on the map, highlight the marked area clearly, guide the viewer through the key landmarks with clean location labels, and finish with a polished premium pull-away.";
+    ? `${location} çevresine sakin bir drone yaklaşımıyla ilerliyoruz. Görüntü, ${route} üzerinden lokasyona bağlanıyor ve ${area} bölgesini kuşbakışı bir akışla gösteriyor. Bu video, adresin çevresini, ulaşım hissini ve yakın alan düzenini temiz bir drone perspektifiyle sunar.`
+    : `We move toward ${location} with a calm drone-style approach. The view connects the location through ${route} and presents ${area} from an aerial perspective. This video shows the surrounding area, the sense of access, and the nearby location layout in a clean drone-style view.`;
   const pacingPad = isTurkish
-    ? "Anlatım video boyunca sakin tempoda devam etsin; rota, kıyı çizgisi, iskele, çevre yolları ve seçilen alan izleyiciye anlaşılır biçimde bağlansın."
-    : "Keep the narration paced across the whole video; connect the route, coastline, pier, surrounding roads, and selected area so the viewer understands the full location story.";
+    ? `Anlatım, kamera talimatlarını okumadan yalnızca istenen lokasyonu ve çevresini açıklar; ${location} için rota ve yakın çevre bilgisi izleyiciye sade biçimde aktarılır.`
+    : `The narration describes the requested place and its surroundings only; it does not read camera instructions, production settings, or internal route commands aloud.`;
   const targetWords = Math.max(22, Math.round(durationSeconds * 2.35));
   const words = base.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
   const padWords = pacingPad.replace(/\s+/g, " ").trim().split(/\s+/).filter(Boolean);
@@ -375,7 +407,7 @@ export function buildGenericVideoPlan(input: {
   const combinedGuard = [mediaGuard, noCharacterSpeechGuard, crelavoPromoGuard, linkAdGuard, countGuard].filter(Boolean).join(" ");
   const visualScenes = combinedGuard ? visualScenesBase.map((scene) => `${scene}. ${combinedGuard}`) : visualScenesBase;
 const dialogueSegments = noVoice || isCrelavoPromo || isLinkAd ? [] : dialogueSegmentsFromScenes(requestedScenes, durationSeconds);
-const script = noVoice ? "" : isDroneVideo ? droneVideoNarration(durationSeconds, selectedVoiceLanguage) : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
+const script = noVoice ? "" : isDroneVideo ? droneVideoNarration(durationSeconds, selectedVoiceLanguage, prompt) : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
   const subtitleLines = noSubtitles ? [] : subtitleLinesFromScript(script || turkishNarration(prompt, durationSeconds), durationSeconds);
   return {
     title,
@@ -428,9 +460,12 @@ export async function runGenericVideoPipeline(input: {
       providerErrors.website_screenshot = providerErrorMessage(error);
     }
   }
-  const sourceImageUrls = Array.from(new Set([screenshotUrl, ...sourceContext.imageUrls].filter(Boolean)));
-  const contextualScenes = sourceContext.contextText
-    ? plan.visualScenes.map((scene) => `${scene} SOURCE CONTEXT TO FOLLOW: ${sourceContext.contextText}${screenshotUrl ? ` | WEBSITE SCREENSHOT REFERENCE: ${screenshotUrl}` : ""}`)
+  const uploadedImageUrls = uploadedImageUrlsFrom(input.requestMetadata, input.inputJson);
+  const sourceImageUrls = Array.from(new Set([screenshotUrl, ...sourceContext.imageUrls, ...uploadedImageUrls].filter(Boolean)));
+  const uploadedReferenceContext = uploadedImageUrls.length ? `UPLOADED DRONE IMAGE REFERENCES: ${uploadedImageUrls.join(", ")}. Use these as the strongest visual/map/location references when creating drone-style shots.` : "";
+  const contextText = [sourceContext.contextText, uploadedReferenceContext].filter(Boolean).join(" | ");
+  const contextualScenes = contextText
+    ? plan.visualScenes.map((scene) => `${scene} SOURCE CONTEXT TO FOLLOW: ${contextText}${screenshotUrl ? ` | WEBSITE SCREENSHOT REFERENCE: ${screenshotUrl}` : ""}`)
     : plan.visualScenes;
   let visualJob: ProviderJob | null = null;
   let visualJobs: ProviderJob[] = [];
@@ -528,6 +563,6 @@ export async function runGenericVideoPipeline(input: {
     chainStatus: renderJob || voiceAudioUrl || subtitleUrl ? "provider_chain_started" : visualJob ? "visual_job_created" : "waiting_provider_config",
     missingProviders,
     providerErrors,
-    sourceContext: { url: sourceContext.url, contextText: sourceContext.contextText, imageUrls: sourceImageUrls, screenshotUrl }
+    sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls }
   };
 }

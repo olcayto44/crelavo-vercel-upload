@@ -113,6 +113,7 @@ export function DroneShootControlPanel() {
   const [state, setState] = useState<DroneState>(initialState);
   const [loaded, setLoaded] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [startPhase, setStartPhase] = useState("");
   const [uploading, setUploading] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState("");
@@ -204,6 +205,7 @@ export function DroneShootControlPanel() {
   async function startDroneShoot() {
     if (!canStart || starting) return;
     setStarting(true);
+    setStartPhase("Creating production...");
     setError("");
 
     const droneDetails = {
@@ -228,7 +230,7 @@ export function DroneShootControlPanel() {
     const materialSummary = state.uploadedMaterials.length
       ? state.uploadedMaterials.map((item) => `${item.title} (${item.reference_type}, ${item.kind}): ${item.file_url}`).join(" | ")
       : "not uploaded";
-    const prompt = `Create an AI-only drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Camera angle / view: ${droneDetails.cameraAngle}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}; keep the final video close to this target duration. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Drone-only visual lock: no presenter, no host, no avatar, no talking head, no human spokesperson, no Crelavo advertisement, no SaaS demo, no product sales pitch, no office scene. Show only the requested location, route reveal, map/satellite view, aerial property or travel flyover, readable location labels, narration, music and final MP4 delivery. This is AI-only drone-style production, not a real physical drone shoot.`;
+    const prompt = `Create an AI-only drone / satellite-style location video for ${droneDetails.locationAddress}. Route/path: ${droneDetails.routePath || "not provided"}. Marked map/satellite area: ${droneDetails.markedArea || "not provided"}. Shot type: ${droneDetails.shotType}. Map/satellite style: ${droneDetails.mapStyle}. Camera movement: ${droneDetails.cameraMovement}. Camera angle / view: ${droneDetails.cameraAngle}. Quality: ${droneDetails.quality}. Format: ${droneDetails.format}. Duration target: ${droneDetails.duration}; keep the final video close to this target duration. Use ${droneDetails.narrationLanguage} and ${droneDetails.subtitleOption}. Music direction: ${droneDetails.musicStyle}. Reference note: ${droneDetails.referenceNote || "not provided"}. Uploaded drone reference files: ${materialSummary}. Extra note: ${droneDetails.extraNote || "not provided"}. Drone-only visual lock: no presenter, no host, no avatar, no talking head, no human spokesperson, no Crelavo advertisement, no SaaS demo, no product sales pitch, no office scene. Show only the requested location, route reveal, map/satellite view, aerial property or travel flyover, narration, music and final MP4 delivery. Do not generate embedded text, fake map labels, misspelled labels, UI text, signage, typography or logos inside the video frames; Crelavo will add clean labels in post-production overlays if needed. Narration must describe the address, route and surrounding area; it must not read production settings or camera instructions aloud. This is AI-only drone-style production, not a real physical drone shoot.`;
 
   try {
     const { data: sessionData } = await supabaseBrowser().auth.getSession();
@@ -267,6 +269,21 @@ export function DroneShootControlPanel() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(String(result.error ?? "Drone production could not be created."));
       const productionId = String(result.production?.id ?? result.id ?? "");
+      if (productionId) {
+        setStartPhase("Starting drone pipeline...");
+        const automationResponse = await fetch("/api/automation/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({
+            production_id: productionId,
+            user_id: user.id,
+            legal_acceptance: true,
+            force_start: true
+          })
+        });
+        const automationResult = await automationResponse.json().catch(() => ({}));
+        if (!automationResponse.ok) throw new Error(`Production was created, but the drone pipeline could not auto-start: ${String(automationResult.error ?? "Unknown automation error")}. Production ID: ${productionId}`);
+      }
       const job: DroneJob = {
         id: `drone-${Date.now()}`,
         productionId,
@@ -297,6 +314,7 @@ export function DroneShootControlPanel() {
       setError(caught instanceof Error ? caught.message : "Drone production could not be created.");
     } finally {
       setStarting(false);
+      setStartPhase("");
     }
   }
 
@@ -393,7 +411,7 @@ export function DroneShootControlPanel() {
         {!canStart ? <p className="workspace-action-note warning">Add a location or address before starting the drone shoot.</p> : null}
         {canStart && !hasRouteOrMarkedArea ? <p className="workspace-action-note">Route/path and marked area are optional. If left empty, Crelavo will use the address and its immediate surroundings as the default drone route.</p> : null}
         {error ? <p className="workspace-action-note warning">{error}</p> : null}
-        <button className="btn" type="button" style={{ marginTop: 12, marginBottom: 24 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? "Creating production..." : "Start drone shoot"}</button>
+        <button className="btn" type="button" style={{ marginTop: 12, marginBottom: 24 }} onClick={startDroneShoot} disabled={!canStart || starting}>{starting ? startPhase || "Starting drone pipeline..." : "Start drone shoot"}</button>
       </section>
 
       <section className="card" style={{ marginTop: 18 }}>
