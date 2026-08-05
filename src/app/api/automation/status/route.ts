@@ -17,12 +17,37 @@ import { mirrorProviderAsset } from "@/lib/providers/storage";
 import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/types";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
+function stripPostgresUnsafeText(value: string) {
+  return value
+    .replace(/\\+u0000/gi, "")
+    .replace(/\u0000/g, "");
+}
+
+function postgresSafe<T>(value: T): T {
+  if (typeof value === "string") return stripPostgresUnsafeText(value) as T;
+  if (Array.isArray(value)) return value.map((item) => postgresSafe(item)) as T;
+  if (value && typeof value === "object") {
+    const shallowCleaned = Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, postgresSafe(item)]));
+    try {
+      return JSON.parse(stripPostgresUnsafeText(JSON.stringify(shallowCleaned))) as T;
+    } catch {
+      return shallowCleaned as T;
+    }
+  }
+  return value;
+}
+
+function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
+  return postgresSafe(payload);
+}
+
 function errorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) return stripPostgresUnsafeText(error.message);
   if (error && typeof error === "object") {
     const record = error as Record<string, unknown>;
     const parts = [record.message, record.details, record.hint, record.code]
-      .filter((value): value is string => typeof value === "string" && value.length > 0);
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .map((value) => stripPostgresUnsafeText(value));
     if (parts.length > 0) return parts.join(" | ");
   }
   return fallback;
@@ -149,11 +174,11 @@ function updatedSteps(steps: unknown, finalStatus: NormalizedProviderStatus) {
 }
 
 function outputWithWorkflow(production: Record<string, unknown>, output: Record<string, unknown>, patch: Record<string, unknown>) {
-  const nextOutput = { ...output, ...patch };
-  return {
+  const nextOutput = postgresSafe({ ...output, ...patch });
+  return postgresSafe({
     ...nextOutput,
-    workflowState: buildProductionWorkflowState({ ...production, output_json: nextOutput })
-  };
+    workflowState: buildProductionWorkflowState({ ...postgresSafe(production), output_json: nextOutput })
+  });
 }
 
 function heygenV3Metadata(status: NormalizedProviderStatus | null) {
@@ -298,7 +323,7 @@ export async function POST(request: Request) {
       characterDialogueJobs = repairedPlan.providerJobs as unknown as Array<Record<string, unknown>>;
       await supabase
         .from("production_requests")
-        .update({ output_json: outputWithRenderJob, generation_status: "character_dialogue_plan_repaired", admin_notes: "Dedicated character-dialogue plan repaired from prompt because scene/I2V/voice jobs were missing.", updated_at: new Date().toISOString() })
+        .update(safeUpdate({ output_json: outputWithRenderJob, generation_status: "character_dialogue_plan_repaired", admin_notes: "Dedicated character-dialogue plan repaired from prompt because scene/I2V/voice jobs were missing.", updated_at: new Date().toISOString() }))
         .eq("id", productionId);
     }
     const dedicatedPlanCreated = characterDialoguePlan && (String(outputWithRenderJob.providerStatus ?? "") === "character_dialogue_plan_created" || String(outputWithRenderJob.providerStatus ?? "") === "character_dialogue_plan_repaired" || String((characterDialoguePlan as Record<string, unknown>).status ?? "") === "character_dialogue_plan_created" || String(production.generation_status ?? "") === "character_dialogue_i2v_started" || String(production.generation_status ?? "") === "character_dialogue_plan_repaired");
@@ -318,14 +343,14 @@ export async function POST(request: Request) {
       }, { stage: "provider_started", activeProviderJob: null });
       await supabase
         .from("production_requests")
-        .update({
+        .update(safeUpdate({
           status: "in_production",
           automation_status: "running",
           generation_status: "character_dialogue_initial_stages_running",
           output_json: starterOutput,
           admin_notes: "Dedicated character-dialogue initial stages triggered by automation/status.",
           updated_at: new Date().toISOString()
-        })
+        }))
         .eq("id", productionId);
       output = starterOutput;
       Object.assign(outputWithRenderJob, starterOutput);
@@ -518,7 +543,7 @@ export async function POST(request: Request) {
         });
         const { data } = await supabase
           .from("production_requests")
-          .update({
+          .update(safeUpdate({
             status: "ready",
             automation_status: "completed",
             generation_status: "final_video_ready",
@@ -530,7 +555,7 @@ export async function POST(request: Request) {
             completed_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             admin_notes: "Dedicated character-dialogue animation final render is ready. Customer can preview and download."
-          })
+          }))
           .eq("id", productionId)
           .select("*")
           .single();
@@ -555,7 +580,7 @@ export async function POST(request: Request) {
         if (data?.id) {
           await supabase
             .from("production_requests")
-            .update({ output_json: { ...(data.output_json ?? {}), completionEmailResult } })
+            .update(safeUpdate({ output_json: { ...(data.output_json ?? {}), completionEmailResult } }))
             .eq("id", data.id);
         }
         return Response.json({ production: data ? { ...data, output_json: { ...(data.output_json ?? {}), completionEmailResult } } : data, imageToVideoPoll: i2vPoll, finalAssemblyPoll, finalVideoUrl: finalUrl, completionEmailResult });
@@ -575,7 +600,7 @@ export async function POST(request: Request) {
         });
         const { data } = await supabase
           .from("production_requests")
-          .update({
+          .update(safeUpdate({
             status: "failed",
             automation_status: "failed",
             generation_status: "character_dialogue_final_render_failed",
@@ -583,7 +608,7 @@ export async function POST(request: Request) {
             output_json: dedicatedFailedOutput,
             admin_notes: `Dedicated final Shotstack render failed: ${failureMessage}`,
             updated_at: new Date().toISOString()
-          })
+          }))
           .eq("id", productionId)
           .select("*")
           .single();
@@ -612,11 +637,11 @@ export async function POST(request: Request) {
       });
       const { data } = await supabase
         .from("production_requests")
-        .update({
+        .update(safeUpdate({
           generation_status: dedicatedProviderStatus,
           output_json: dedicatedOutput,
           updated_at: new Date().toISOString()
-        })
+        }))
         .eq("id", productionId)
         .select("*")
         .single();
@@ -627,11 +652,11 @@ export async function POST(request: Request) {
       if (alternativeStatuses.length > 0) {
         const { data } = await supabase
           .from("production_requests")
-          .update({
+          .update(safeUpdate({
             generation_status: "alternative_provider_polling",
             output_json: outputWithWorkflow(production, outputWithRenderJob, { alternatives: polledAlternatives, alternativeStatuses, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
             updated_at: new Date().toISOString()
-          })
+          }))
           .eq("id", productionId)
           .select("*")
           .single();
@@ -650,7 +675,7 @@ export async function POST(request: Request) {
       };
       const { data } = await supabase
         .from("production_requests")
-        .update({
+        .update(safeUpdate({
           status: "failed",
           automation_status: "failed",
           generation_status: `${terminalStatus.provider}_failed`,
@@ -659,7 +684,7 @@ export async function POST(request: Request) {
           automation_steps: updatedSteps(production.automation_steps, terminalStatus),
           admin_notes: `Provider failed: ${failureMessage}. Credit resolution requires admin review; no automatic refund was applied.`,
           updated_at: new Date().toISOString()
-        })
+        }))
         .eq("id", productionId)
         .select("*")
         .single();
@@ -712,12 +737,12 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
           };
       const { data } = await supabase
         .from("production_requests")
-        .update({
+        .update(safeUpdate({
           generation_status: renderBridge.renderError ? "final_render_waiting_provider_config" : renderBridge.renderStarted ? "final_render_started" : "final_render_pending",
           output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: renderBridge.renderError ? "final_render_waiting_provider_config" : "visual_ready_final_render_pending", rawVisualPreviewUrl: rawVisualPreviewUrl || null, previewFallback: rawVisualPreviewUrl ? { status: "raw_visual_available", reason: "Final voice/subtitle render is not ready yet; showing raw provider video as preview only.", url: rawVisualPreviewUrl, updatedAt: new Date().toISOString() } : null, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
           updated_at: new Date().toISOString(),
           ...fallbackPatch
-        })
+        }))
         .eq("id", productionId)
         .select("*")
         .single();
@@ -746,14 +771,14 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
         });
         const { data } = await supabase
           .from("production_requests")
-          .update({
+          .update(safeUpdate({
             status: "in_production",
             automation_status: "quality_blocked",
             generation_status: "quality_gate_blocked",
             output_json: blockedOutput,
             admin_notes: "Generic provider video was rejected because this production requires the dedicated character-consistent dialogue animation pipeline.",
             updated_at: new Date().toISOString()
-          })
+          }))
           .eq("id", productionId)
           .select("*")
           .single();
@@ -778,14 +803,14 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, alternatives: polledAlternatives, alternativeStatuses, providerStatus: "quality_gate_blocked", providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate, qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: readyGate.required, missing: readyGate.missing, warnings: readyGate.warnings } });
         const { data } = await supabase
           .from("production_requests")
-          .update({
+          .update(safeUpdate({
             status: "in_production",
             automation_status: "quality_blocked",
             generation_status: "quality_gate_blocked",
             output_json: blockedOutput,
             admin_notes: `Provider output exists but customer-ready gate blocked delivery. Missing: ${readyGate.missing.join(", ")}`,
             updated_at: new Date().toISOString()
-          })
+          }))
           .eq("id", productionId)
           .select("*")
           .single();
@@ -864,7 +889,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       };
       const { data } = await supabase
         .from("production_requests")
-        .update({
+        .update(safeUpdate({
           status: "ready",
           automation_status: "completed",
           generation_status: "final_video_ready",
@@ -877,7 +902,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           admin_notes: "Final ad video is ready. Customer can preview, download or export."
-        })
+        }))
         .eq("id", productionId)
         .select("*")
         .single();
@@ -903,7 +928,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       if (data?.id) {
         await supabase
           .from("production_requests")
-          .update({ output_json: { ...(data.output_json ?? {}), completionEmailResult } })
+          .update(safeUpdate({ output_json: { ...(data.output_json ?? {}), completionEmailResult } }))
           .eq("id", data.id);
       }
 
@@ -912,12 +937,12 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
 
     const { data } = await supabase
       .from("production_requests")
-      .update({
+      .update(safeUpdate({
         generation_status: renderStatus ? `shotstack_${renderStatus.status}` : visualStatus ? `${visualStatus.provider}_${visualStatus.status}` : "provider_polling",
         output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry }),
         automation_steps: updatedSteps(production.automation_steps, terminalStatus),
         updated_at: new Date().toISOString()
-      })
+      }))
       .eq("id", productionId)
       .select("*")
       .single();
