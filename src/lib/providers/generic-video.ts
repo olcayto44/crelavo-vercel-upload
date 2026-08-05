@@ -5,7 +5,7 @@ import { scrapeProduct } from "./scraper";
 import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
-import { createVisualVideo } from "./visuals";
+import { createImageToVideoClip, createVisualVideo } from "./visuals";
 import { captureWebsiteScreenshot } from "./website-screenshot";
 
 export type DialogueSegment = {
@@ -366,12 +366,13 @@ export function buildGenericVideoPlan(input: {
   const durationSeconds = Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15;
   const aspectRatio = clean(providerPreflight.aspectRatio) || clean(requestMetadata.aspectRatio) || "9:16";
   const provider = clean(providerPreflight.provider) || clean(optionalEnv("VIDEO_PROVIDER")) || "replicate";
-  const selectedVoiceProfile = clean(requestMetadata.voiceProfile) || clean(inputJson.voiceProfile) || "premium clear narrator";
-  const intentText = `${title} ${prompt} ${clean(requestMetadata.productionGoal)} ${clean(inputJson.productionGoal)} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
-  const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inputJson.voiceLanguage) || (looksTurkish(intentText) ? "Turkish" : "English");
-  const productionTypeSignal = `${clean(requestMetadata.productionType)} ${clean(inputJson.productionType)} ${clean(requestMetadata.pipelineType)} ${clean(inputJson.pipelineType)}`.toLowerCase();
-  const pipelineType = classifyVideoPipeline(intentText);
-  const isDroneVideo = /drone_video/.test(productionTypeSignal) || /\bdrone\b|\bsatellite\b|route\s*flyover|map\s*route\s*reveal|aerial\s*location/i.test(intentText);
+const selectedVoiceProfile = clean(requestMetadata.voiceProfile) || clean(inputJson.voiceProfile) || "premium clear narrator";
+const intentText = `${title} ${prompt} ${clean(requestMetadata.productionGoal)} ${clean(inputJson.productionGoal)} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
+const productionTypeSignal = `${clean(requestMetadata.productionType)} ${clean(inputJson.productionType)} ${clean(requestMetadata.pipelineType)} ${clean(inputJson.pipelineType)}`.toLowerCase();
+const pipelineType = classifyVideoPipeline(intentText);
+const isDroneVideo = /drone_video/.test(productionTypeSignal) || /\bdrone\b|\bsatellite\b|route\s*flyover|map\s*route\s*reveal|aerial\s*location/i.test(intentText);
+const droneDetails = requestMetadata.droneDetails && typeof requestMetadata.droneDetails === "object" ? requestMetadata.droneDetails as Record<string, unknown> : inputJson.droneDetails && typeof inputJson.droneDetails === "object" ? inputJson.droneDetails as Record<string, unknown> : {};
+const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inputJson.voiceLanguage) || clean(droneDetails.narrationLanguage) || (isDroneVideo ? "English" : looksTurkish(intentText) ? "Turkish" : "English");
   const isCrelavoPromo = !isDroneVideo && isCrelavoPromoIntent(intentText);
   const isLinkAd = !isDroneVideo && !isCrelavoPromo && isLinkToAdIntent(intentText);
   const noVoice = voiceExplicitlyDisabled(intentText);
@@ -487,14 +488,22 @@ export async function runGenericVideoPipeline(input: {
       const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
       if (isDroneMultiShot) {
         const scene = shots[0];
-        visualJob = await createVisualVideo({
-          scenes: [`Scene 1/${shotCount}: ${scene}`],
-          productImageUrls: sourceImageUrls,
-          durationSeconds: 5,
-          style: `${clean(input.requestMetadata?.style) || plan.title} · first provider shot of ${shotCount}`,
-          provider: plan.provider,
-          aspectRatio: plan.aspectRatio
-        });
+        visualJob = sourceImageUrls[0]
+          ? await createImageToVideoClip({
+            imageUrl: sourceImageUrls[0],
+            prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${scene}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
+            durationSeconds: 5,
+            provider: "runway_first",
+            aspectRatio: plan.aspectRatio
+          })
+          : await createVisualVideo({
+            scenes: [`Scene 1/${shotCount}: ${scene}`],
+            productImageUrls: sourceImageUrls,
+            durationSeconds: 5,
+            style: `${clean(input.requestMetadata?.style) || plan.title} · first provider shot of ${shotCount}`,
+            provider: plan.provider,
+            aspectRatio: plan.aspectRatio
+          });
         visualJobs = visualJob ? [visualJob] : [];
       } else {
         for (let index = 0; index < shots.length; index += 1) {
@@ -512,14 +521,23 @@ export async function runGenericVideoPipeline(input: {
         visualJob = visualJobs[0] ?? null;
       }
     } else {
-      visualJob = await createVisualVideo({
-        scenes: contextualScenes,
-        productImageUrls: sourceImageUrls,
-        durationSeconds: plan.durationSeconds,
-        style: clean(input.requestMetadata?.style) || plan.title,
-        provider: plan.provider,
-        aspectRatio: plan.aspectRatio
-      });
+      const isDroneSingleShot = /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")) || /drone|satellite|flyover|aerial/i.test(plan.title);
+      visualJob = isDroneSingleShot && sourceImageUrls[0]
+        ? await createImageToVideoClip({
+          imageUrl: sourceImageUrls[0],
+          prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${contextualScenes.join(" | ")}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
+          durationSeconds: plan.durationSeconds,
+          provider: "runway_first",
+          aspectRatio: plan.aspectRatio
+        })
+        : await createVisualVideo({
+          scenes: contextualScenes,
+          productImageUrls: sourceImageUrls,
+          durationSeconds: plan.durationSeconds,
+          style: clean(input.requestMetadata?.style) || plan.title,
+          provider: plan.provider,
+          aspectRatio: plan.aspectRatio
+        });
       visualJobs = visualJob ? [visualJob] : [];
     }
 } catch (error) {
