@@ -150,8 +150,8 @@ function heygenPromptControls(selected: Record<string, unknown>, promptText: str
   const subtitlesOff = textContainsAny(selectedText, [/no subtitles?/, /altyaz[ıi]\s*(olmas[ıi]n|yok)/, /subtitles?\s*(off|none)/]);
   const subtitlesSelected = !subtitlesOff && textContainsAny(selectedText, [/auto subtitles?/, /burned subtitles?/, /large social captions?/, /altyaz[ıi]/, /subtitle/]);
   const largeTextSelected = textContainsAny(selectedText, [/large social captions?/, /animated text/, /animasyonlu yaz[ıi]lar/, /text overlay/, /kinetic text/, /büyük yaz[ıi]/, /buyuk yaz[ıi]/]);
-  const noPeopleSelected = textContainsAny(selectedText, [/no people/, /insan olmas[ıi]n/, /humanless/, /without people/]);
-  const presenterSelected = textContainsAny(selectedText, [/ai presenter/, /with presenter/, /presenter/, /ai sunuculu/, /sunucu/, /ekranda sunucu/, /konu[şs]sun/, /anlats[ıi]n/]);
+  const noPeopleSelected = textContainsAny(selectedText, [/no people/, /no presenter/, /no avatar/, /b-?roll only/, /heygennopresentermode/, /insan olmas[ıi]n/, /sunucu olmas[ıi]n/, /sunucusuz/, /humanless/, /without people/, /without presenter/]);
+  const presenterSelected = !noPeopleSelected && textContainsAny(selectedText, [/ai presenter/, /with presenter/, /presenter/, /ai sunuculu/, /sunucu/, /ekranda sunucu/, /konu[şs]sun/, /anlats[ıi]n/]);
   const voiceDisabled = textContainsAny(selectedText, [/no voice/, /without voice/, /seslendirme olmas[ıi]n/, /sessiz/]);
   const isTurkish = textContainsAny(selectedText, [/türkçe/, /turkish/, /konu[şs]ma dili türkçe/, /türkçe konu[şs]sun/]);
   return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
@@ -239,17 +239,23 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const explicitScript = String(selected.script ?? scriptFromPrompt ?? "").trim();
   const presenterPreference = Array.isArray(productionSetup.presenterChoice) ? productionSetup.presenterChoice.join(", ") : String(productionSetup.presenterChoice ?? selected.selected_presenter_name ?? selected.presenterChoice ?? "").trim();
   const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
+  const noPresenterMode = controls.noPeopleSelected || /no presenter|b-roll only|sunucusuz|voice-over only/i.test(`${input.prompt} ${explicitScript} ${presenterPreference}`);
   const payload = {
     prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls, presenterPreference }),
     mode: "generate" as const,
-    avatar_id: avatarId,
+    avatar_id: noPresenterMode ? null : avatarId,
     voice_id: voiceId,
     style_id: styleId,
     brand_kit_id: brandKitId,
     orientation: portrait ? "portrait" as const : "landscape" as const,
     files: files.length ? files : null,
     callback_id: String(selected.callback_id ?? selected.callbackId ?? "").trim() || null,
-    incognito_mode: true
+    incognito_mode: true,
+    include_narrator: !noPresenterMode,
+    include_voice: !controls.voiceDisabled,
+    scene_type: noPresenterMode ? "b_roll" : "a_roll",
+    clips: noPresenterMode ? (explicitScript ? [{ input_text: explicitScript, image: screenshotUrl || productUrl || undefined }] : files.length ? files.map((file) => ({ input_text: input.prompt, image: file.type === "url" ? file.url : undefined })) : null) : null,
+    blueprint: noPresenterMode ? { include_narrator: false, include_voice: true, scene_type: "b_roll", clips: files.length ? files : null } : null
   };
   const result = await createHeyGenVideoAgentSession(payload);
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};

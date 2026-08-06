@@ -73,6 +73,11 @@ export type CreateHeyGenVideoAgentInput = {
   callback_url?: string | null;
   callback_id?: string | null;
   incognito_mode?: boolean;
+  include_narrator?: boolean;
+  include_voice?: boolean;
+  scene_type?: "b_roll" | "a_roll" | string;
+  clips?: Record<string, unknown>[] | null;
+  blueprint?: Record<string, unknown> | null;
 };
 
 export type HeyGenAgentArtifact = {
