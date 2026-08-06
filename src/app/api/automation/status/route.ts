@@ -704,7 +704,8 @@ const isHeyGenVideoAgentProvider = outputVisualJobProvider.toLowerCase() === "he
     const wantsVoiceRender = !explicitNoVoiceForRender && Boolean(selectedOptions.voiceOver || output.voiceAudioUrl);
     const wantsSubtitleRender = !explicitNoSubtitlesForRender && Boolean(selectedOptions.subtitles || output.subtitleUrl);
     const wantsMusicRender = !explicitNoMusicForRender && Boolean(selectedOptions.music);
-    const requiresFinalRender = !isHeyGenVideoAgentProvider && Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender)));
+    const isDroneProduction = String(production.production_type ?? "") === "drone_video";
+    const requiresFinalRender = !isHeyGenVideoAgentProvider && (isDroneProduction || Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender))));
 const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url || visualJobForUrl.preview_url || visualJobForUrl.raw?.url || visualJobForUrl.raw?.output || visualJobForUrl.raw?.video || visualJobForUrl.raw?.result || "").trim();
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
