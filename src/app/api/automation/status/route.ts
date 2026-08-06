@@ -220,7 +220,7 @@ async function maybeCreateVoiceoverAsset(productionId: string, output: Record<st
   return { ...output, voiceAudioUrl, voiceRetry: { status: "created", provider: "elevenlabs", createdAt: new Date().toISOString() } };
 }
 
-async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>, visualStatus: NormalizedProviderStatus | null, visualStatuses: NormalizedProviderStatus[] = []): Promise<{ renderJob: ProviderJob | null; renderStarted: boolean; renderError?: string }> {
+async function maybeCreateRenderAfterVisualReady(productionId: string, output: Record<string, unknown>, visualStatus: NormalizedProviderStatus | null, visualStatuses: NormalizedProviderStatus[] = []): Promise<{ renderJob: ProviderJob | null; renderStarted: boolean; renderError?: string; mirroredVisualUrls?: string[] }> {
   const currentRenderJob = existingRenderJob(output);
   if (currentRenderJob) return { renderJob: currentRenderJob, renderStarted: false };
   const readyVisualUrls = visualStatuses.length ? visualStatuses.filter((status) => status.status === "succeeded" && status.outputUrl).map((status) => String(status.outputUrl)) : [];
@@ -248,17 +248,24 @@ async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>
   try {
     const genericPlan = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
     const subtitleLines = Array.isArray(genericPlan.subtitleLines) ? genericPlan.subtitleLines.map(String) : [];
+    const sourceVisualUrls = readyVisualUrls.length ? readyVisualUrls : visualStatus?.outputUrl ? [String(visualStatus.outputUrl)] : [];
+    const mirroredVisualUrls: string[] = [];
+    for (let index = 0; index < sourceVisualUrls.length; index += 1) {
+      const sourceUrl = sourceVisualUrls[index];
+      if (/supabase|provider-assets/i.test(sourceUrl)) mirroredVisualUrls.push(sourceUrl);
+      else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
+    }
     const renderJob = await createShotstackRender({
       title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
-      videoUrl: readyVisualUrls[0] || visualStatus?.outputUrl,
-      videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined,
+      videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
+      videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
       audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl,
       audioSegments: voiceAudioSegments,
       subtitleUrl,
       subtitleLines,
       durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
     });
-    return { renderJob, renderStarted: true };
+    return { renderJob, renderStarted: true, mirroredVisualUrls };
   } catch (error) {
     return { renderJob: null, renderStarted: false, renderError: errorMessage(error, "Render job could not be started after visual output became ready.") };
   }
@@ -299,12 +306,12 @@ export async function POST(request: Request) {
     const visualStatus = visualLifecycle.normalizedStatus;
     const visualJobs = Array.isArray(output.visualJobs) ? output.visualJobs : [];
     const visualStatuses = (await Promise.all(visualJobs.map((job) => runProviderJobLifecycle(production, job)))).map((life) => life.normalizedStatus).filter(Boolean) as NonNullable<typeof visualStatus>[];
-    const renderBridge = await maybeCreateRenderAfterVisualReady(output, visualStatus, visualStatuses);
-    let outputWithRenderJob = renderBridge.renderJob
-      ? { ...output, renderJob: renderBridge.renderJob, renderStatus: renderBridge.renderStarted ? "render_job_created" : output.renderStatus, renderError: null }
-      : renderBridge.renderError
-        ? { ...output, renderStatus: "render_start_failed", renderError: renderBridge.renderError }
-        : output;
+    const renderBridge = await maybeCreateRenderAfterVisualReady(productionId, output, visualStatus, visualStatuses);
+let outputWithRenderJob = renderBridge.renderJob
+  ? { ...output, renderJob: renderBridge.renderJob, renderStatus: renderBridge.renderStarted ? "render_job_created" : output.renderStatus, renderError: null, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? output.mirroredVisualUrls }
+  : renderBridge.renderError
+    ? { ...output, renderStatus: "render_start_failed", renderError: renderBridge.renderError, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? output.mirroredVisualUrls }
+    : output;
     const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
     const renderStatus = renderLifecycle.normalizedStatus;
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
