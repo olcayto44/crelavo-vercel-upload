@@ -231,7 +231,9 @@ async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>
   if (pipelineType !== "ecommerce_product_ad_video" && !hasGenericVideoPlan) return { renderJob: null, renderStarted: false };
 
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
-  const wantsVoice = Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
+  const genericPlanForRender = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
+  const isDroneRender = /drone|satellite|flyover|aerial/i.test(`${String(genericPlanForRender.title ?? "")} ${String(output.pipelineType ?? "")} ${String(output.providerPreflight && typeof output.providerPreflight === "object" ? (output.providerPreflight as Record<string, unknown>).productionType ?? "" : "")}`);
+  const wantsVoice = !isDroneRender && Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles);
   const voiceAudioUrl = String(output.voiceAudioUrl ?? "").trim();
   const voiceAudioSegments = Array.isArray(output.voiceAudioSegments) ? output.voiceAudioSegments as Array<{ audioUrl: string; start: number; length: number }> : [];
@@ -239,7 +241,7 @@ async function maybeCreateRenderAfterVisualReady(output: Record<string, unknown>
   const subtitleUrl = String(output.subtitleUrl ?? "").trim();
   if (wantsVoice && !hasVoiceAudio) return { renderJob: null, renderStarted: false, renderError: "Voice-over was selected but no voice audio was created; final render is blocked to avoid silent delivery." };
   if (wantsSubtitles && !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Subtitles were selected but no subtitle file was created; final render is blocked." };
-  if (!hasVoiceAudio && !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Voice/subtitle asset is missing; render cannot start." };
+  if (!isDroneRender && !hasVoiceAudio && !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Voice/subtitle asset is missing; render cannot start." };
 
   const brain = output.brain && typeof output.brain === "object" ? output.brain as Record<string, unknown> : {};
   const requestedDurationSeconds = Number(output.requestedDurationSeconds ?? output.targetDurationSeconds ?? 30) || 30;
