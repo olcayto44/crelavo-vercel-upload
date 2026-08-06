@@ -546,7 +546,8 @@ function buildSubtitlesTemplate() {
 
 function buildThumbnailBrief(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# Thumbnail Brief\n\nProduction: ${manifest.title}\n\nCreate or upload a thumbnail matching the final output, platform and campaign goal.\n`;
+  const coverPrompt = `Cinematic vertical 9:16 cover image for ${manifest.title}. One strong focal subject, high contrast lighting, dark background, glowing red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, no text, no logos, no extra people, no clutter, clean composition.`;
+  return `# Thumbnail Brief\n\nProduction: ${manifest.title}\n\nCreate or upload a thumbnail matching the final output, platform and campaign goal.\n\n## Thumbnail prompt\n${coverPrompt}\n`;
 }
 
 function buildDocumentSource(production: ProductionLike) {
