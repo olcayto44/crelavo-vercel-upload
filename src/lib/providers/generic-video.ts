@@ -206,14 +206,18 @@ function droneNoTextFrameGuard() {
 function droneVideoScenes(prompt: string, durationSeconds: number) {
   const { location, route, area } = dronePromptDetails(prompt);
   const textGuard = droneNoTextFrameGuard();
-  const scenes = [
-    `Aerial opening over ${location}. Establish the requested area from above with a clean cinematic AI drone / satellite feel. ${textGuard}`,
-    `Route reveal along ${route}. Show the path through camera movement and clean overlay-safe composition only; Crelavo will add any route labels in post-production overlays. ${textGuard}`,
-    `Highlight ${area} with a careful flyover and subtle non-text motion graphics. Keep the frame clean, premium and geographically focused. ${textGuard}`,
-    `Finish with a wide pull-away over ${location} and the surrounding area, keeping the location story clear without any generated text inside the frame. ${textGuard}`
-  ];
   const shotCount = Math.max(2, Math.ceil(durationSeconds / 5));
-  return scenes.slice(0, Math.min(scenes.length, shotCount));
+  const variants = [
+    `High aerial opening over ${location}. Establish the full area from above with a clean AI drone / satellite feel. ${textGuard}`,
+    `Forward glide along ${route}. Keep the motion smooth, geographic and distinct from the opening frame. ${textGuard}`,
+    `Orbit pass around ${area}. Reveal the surroundings from a different angle without repeating the same zoom movement. ${textGuard}`,
+    `Low descent toward ${location}. Move closer to the ground plan while staying aerial and location-faithful. ${textGuard}`,
+    `Cross-route sweep across ${route} and the adjacent streets. Vary the direction so it feels like a new segment, not a loop. ${textGuard}`,
+    `Wide reveal of ${area}. Hold the layout long enough to register the place before moving on. ${textGuard}`,
+    `Final pull-away from ${location} to the surrounding district. End with a clear map-like sense of place. ${textGuard}`,
+    `Last drift over ${area} and the approach roads. Keep the frame clean for any post-production overlays. ${textGuard}`
+  ];
+  return Array.from({ length: shotCount }, (_, index) => variants[index % variants.length]);
 }
 
 function droneVideoNarration(durationSeconds: number, language = "English", prompt = "") {
@@ -487,24 +491,28 @@ export async function runGenericVideoPipeline(input: {
       while (shots.length < shotCount) shots.push(contextualScenes[shots.length % contextualScenes.length] || plan.title);
       const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
       if (isDroneMultiShot) {
-        const scene = shots[0];
-        visualJob = sourceImageUrls[0]
-          ? await createImageToVideoClip({
-            imageUrl: sourceImageUrls[0],
-            prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${scene}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
-            durationSeconds: 5,
-            provider: "runway_first",
-            aspectRatio: plan.aspectRatio
-          })
-          : await createVisualVideo({
-            scenes: [`Scene 1/${shotCount}: ${scene}`],
-            productImageUrls: sourceImageUrls,
-            durationSeconds: 5,
-            style: `${clean(input.requestMetadata?.style) || plan.title} · first provider shot of ${shotCount}`,
-            provider: plan.provider,
-            aspectRatio: plan.aspectRatio
-          });
-        visualJobs = visualJob ? [visualJob] : [];
+        for (let index = 0; index < shots.length; index += 1) {
+          if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
+          const scene = shots[index];
+          const shotPrompt = `Scene ${index + 1}/${shotCount}: Use this uploaded satellite/route/location reference as the source anchor for a clean AI drone-style flyover. Create a distinct segment, not a zoom loop or repeated movement. ${scene}. Vary the aerial motion across segments while staying location-faithful. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`;
+          visualJobs.push(sourceImageUrls[0]
+            ? await createImageToVideoClip({
+              imageUrl: sourceImageUrls[0],
+              prompt: shotPrompt,
+              durationSeconds: 5,
+              provider: "runway_first",
+              aspectRatio: plan.aspectRatio
+            })
+            : await createVisualVideo({
+              scenes: [shotPrompt],
+              productImageUrls: sourceImageUrls,
+              durationSeconds: 5,
+              style: `${clean(input.requestMetadata?.style) || plan.title} · drone segment ${index + 1} of ${shotCount}`,
+              provider: plan.provider,
+              aspectRatio: plan.aspectRatio
+            }));
+        }
+        visualJob = visualJobs[0] ?? null;
       } else {
         for (let index = 0; index < shots.length; index += 1) {
           if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
@@ -546,9 +554,10 @@ export async function runGenericVideoPipeline(input: {
     providerErrors.visual_generation = providerErrorMessage(error);
   }
 
-  const wantsVoice = Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
+  const isDroneRun = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
+  const wantsVoice = isDroneRun || Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles);
-  const wantsFinalAssembly = Boolean(selectedOptions.finalRender ?? selectedOptions.voiceOver ?? selectedOptions.voiceConsistency ?? selectedOptions.subtitles);
+  const wantsFinalAssembly = isDroneRun || Boolean(selectedOptions.finalRender ?? selectedOptions.voiceOver ?? selectedOptions.voiceConsistency ?? selectedOptions.subtitles);
 
   if (wantsVoice) {
     try {

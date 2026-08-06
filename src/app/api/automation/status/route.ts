@@ -206,9 +206,10 @@ function existingRenderJob(output: Record<string, unknown>) {
 
 async function maybeCreateVoiceoverAsset(productionId: string, output: Record<string, unknown>) {
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
-  const wantsVoice = Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
-  if (!wantsVoice || String(output.voiceAudioUrl ?? "").trim()) return output;
   const genericPlan = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
+  const isDroneRender = /drone|satellite|flyover|aerial/i.test(`${String(genericPlan.title ?? "") } ${String(output.pipelineType ?? "") } ${String(output.providerPreflight && typeof output.providerPreflight === "object" ? (output.providerPreflight as Record<string, unknown>).productionType ?? "" : "")}`);
+  const wantsVoice = isDroneRender || Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
+  if (!wantsVoice || String(output.voiceAudioUrl ?? "").trim()) return output;
   const script = String(genericPlan.script ?? output.script ?? "Crelavo helps brands turn ideas into premium short videos faster. Ready to create your next campaign with Crelavo.");
   const voiceDirection = String(genericPlan.voiceDirection ?? "Premium ad voice, clear and confident");
   const dialogueSegments = Array.isArray(genericPlan.dialogueSegments) ? genericPlan.dialogueSegments as Array<{ speaker: string; text: string; start: number; length: number }> : [];
@@ -233,7 +234,7 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
   const genericPlanForRender = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
   const isDroneRender = /drone|satellite|flyover|aerial/i.test(`${String(genericPlanForRender.title ?? "")} ${String(output.pipelineType ?? "")} ${String(output.providerPreflight && typeof output.providerPreflight === "object" ? (output.providerPreflight as Record<string, unknown>).productionType ?? "" : "")}`);
-  const wantsVoice = !isDroneRender && Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
+  const wantsVoice = Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles);
   const voiceAudioUrl = String(output.voiceAudioUrl ?? "").trim();
   const voiceAudioSegments = Array.isArray(output.voiceAudioSegments) ? output.voiceAudioSegments as Array<{ audioUrl: string; start: number; length: number }> : [];
