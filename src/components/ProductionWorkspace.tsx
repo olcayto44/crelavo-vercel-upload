@@ -401,10 +401,12 @@ const [notice, setNotice] = useState("");
     || rawPreviewUrl
   );
 const mediaReadySignal = `${production.automation_status ?? ""} ${production.generation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalVideoUrl ?? "")} ${String(outputJson.providerFinalUrl ?? "")} ${String(outputJson.releaseSource ?? "")}`;
+const droneRenderSignal = `${String(outputJson.renderStatus?.provider ?? "")} ${String(outputJson.renderJob?.provider ?? "")} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalAssetMirror?.providerUrl ?? "")}`.toLowerCase();
+const isDroneRawPreviewOnly = production.production_type === "drone_video" && !droneRenderSignal.includes("shotstack");
 const hasPlayableMediaUrl = Boolean(rawPreviewUrl || rawDeliveryUrl);
-const mediaOutputReleased = hasPlayableMediaUrl || /final_video_ready|provider_succeeded|completed|admin_force_ready/i.test(mediaReadySignal);
-const previewUrl = isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUrl;
-const deliveryUrl = isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
+const mediaOutputReleased = !isDroneRawPreviewOnly && (hasPlayableMediaUrl || /final_video_ready|provider_succeeded|completed|admin_force_ready/i.test(mediaReadySignal));
+const previewUrl = isDroneRawPreviewOnly ? rawPreviewUrl : isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUrl;
+const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
   const mediaDownloadUrl = isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
   const playbackUrl = previewUrl || (isMediaProduction ? deliveryUrl : "");
   const requestedDurationSeconds = Number((production as Record<string, unknown>).output_duration_seconds ?? outputJson.output_duration_seconds ?? outputJson.providerPreflight?.durationSeconds ?? 0) || 0;
