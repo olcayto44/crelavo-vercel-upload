@@ -495,14 +495,22 @@ export async function runGenericVideoPipeline(input: {
           if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
           const scene = shots[index];
           const shotPrompt = `Scene ${index + 1}/${shotCount}: Use this uploaded satellite/route/location reference as the source anchor for a clean AI drone-style flyover. Create a distinct segment, not a zoom loop or repeated movement. ${scene}. Vary the aerial motion across segments while staying location-faithful. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`;
-          visualJobs.push(await createVisualVideo({
-            scenes: [shotPrompt],
-            productImageUrls: sourceImageUrls,
-            durationSeconds: 5,
-            style: `${clean(input.requestMetadata?.style) || plan.title} · drone segment ${index + 1} of ${shotCount}`,
-            provider: plan.provider,
-            aspectRatio: plan.aspectRatio
-          }));
+          visualJobs.push(sourceImageUrls[0]
+            ? await createImageToVideoClip({
+              imageUrl: sourceImageUrls[0],
+              prompt: shotPrompt,
+              durationSeconds: 5,
+              provider: "runway_first",
+              aspectRatio: plan.aspectRatio
+            })
+            : await createVisualVideo({
+              scenes: [shotPrompt],
+              productImageUrls: sourceImageUrls,
+              durationSeconds: 5,
+              style: `${clean(input.requestMetadata?.style) || plan.title} · drone segment ${index + 1} of ${shotCount}`,
+              provider: plan.provider,
+              aspectRatio: plan.aspectRatio
+            }));
         }
         visualJob = visualJobs[0] ?? null;
       } else {
@@ -522,14 +530,22 @@ export async function runGenericVideoPipeline(input: {
       }
     } else {
       const isDroneSingleShot = /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")) || /drone|satellite|flyover|aerial/i.test(plan.title);
-      visualJob = await createVisualVideo({
-        scenes: contextualScenes,
-        productImageUrls: sourceImageUrls,
-        durationSeconds: plan.durationSeconds,
-        style: clean(input.requestMetadata?.style) || plan.title,
-        provider: plan.provider,
-        aspectRatio: plan.aspectRatio
-      });
+      visualJob = isDroneSingleShot && sourceImageUrls[0]
+        ? await createImageToVideoClip({
+          imageUrl: sourceImageUrls[0],
+          prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${contextualScenes.join(" | ")}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
+          durationSeconds: plan.durationSeconds,
+          provider: "runway_first",
+          aspectRatio: plan.aspectRatio
+        })
+        : await createVisualVideo({
+          scenes: contextualScenes,
+          productImageUrls: sourceImageUrls,
+          durationSeconds: plan.durationSeconds,
+          style: clean(input.requestMetadata?.style) || plan.title,
+          provider: plan.provider,
+          aspectRatio: plan.aspectRatio
+        });
       visualJobs = visualJob ? [visualJob] : [];
     }
 } catch (error) {
