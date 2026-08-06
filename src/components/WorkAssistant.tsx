@@ -1341,6 +1341,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [selectedAvatar, setSelectedAvatar] = useState<HeyGenGalleryAvatar | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<HeyGenGalleryVoice | null>(null);
   const [selectedSound, setSelectedSound] = useState<HeyGenGallerySound | null>(null);
+  const [customThumbnailPrompt, setCustomThumbnailPrompt] = useState("");
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -1378,6 +1379,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const statusUx = (tr: string, en: string) => workUiLanguage === "tr" ? tr : en;
   const setupProfile = plan ? dynamicProfileForPlan(plan, productionPrompt || input) : null;
   const setupItems = useMemo(() => selectedSetupItems(productionSetup), [productionSetup]);
+  const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || selectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, productionSetup, plan, productionPrompt || input) : [];
 const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(productionSetup, plan) : { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
 const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
@@ -1485,7 +1487,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const setupItemsForPayload = selectedSetupItems(setupForPayload);
     const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
     const thumbnailPrompt = selectedItemsForIntent.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)))
-      ? "Cinematic vertical 9:16 cover image for Crelavo. One strong focal subject, high contrast dark tech background, glowing neon red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, AI video creation energy, no text, no logos, no extra people, no clutter, clean composition, scroll-stopping thumbnail."
+      ? customThumbnailPrompt.trim() || "Cinematic vertical 9:16 cover image for Crelavo. One strong focal subject, high contrast dark tech background, glowing neon red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, AI video creation energy, no text, no logos, no extra people, no clutter, clean composition, scroll-stopping thumbnail."
       : undefined;
     const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
     const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
@@ -1869,6 +1871,13 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                         </div> : null}
                       </section>
                     ))}
+                    {draftWantsThumbnail ? <div className="omni-setup-group">
+                      <div className="omni-setup-group-title">
+                        <span>{workUiLanguage === "tr" ? "Thumbnail / kapak promptu" : "Thumbnail / cover prompt"}</span>
+                        <small>{workUiLanguage === "tr" ? "Boş kalırsa Crelavo otomatik FOMO prompt oluşturur." : "If empty, Crelavo creates an automatic FOMO prompt."}</small>
+                      </div>
+                      <textarea value={customThumbnailPrompt} onChange={(event) => setCustomThumbnailPrompt(event.target.value)} placeholder={workUiLanguage === "tr" ? "Kapak için özel prompt yaz..." : "Write a custom cover prompt..."} rows={4} />
+                    </div> : null}
                     <div className="omni-setup-summary">
                       <strong>{ux("Selected setup")}</strong>
                       <p>{setupItems.length ? setupItems.map(ux).join(" · ") : ux("No extra setup selected yet.")}</p>
