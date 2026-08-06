@@ -82,7 +82,7 @@ type HeyGenGallerySound = {
   audioUrl?: string;
 };
 
-const studioChips = ["Video", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
+const studioChips = ["Video", "Video Clipping", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
 
 const productionLabels: Record<string, string> = {
   video: "AI Video",
@@ -1713,8 +1713,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       : chip === "Mobile App" ? "Create a mobile app with screens, source package, and setup guide."
         : chip === "SaaS" ? "Create a SaaS web app with auth, dashboard, billing-ready structure, and source delivery."
           : chip === "Admin Panel" ? "Create an admin panel with role-based dashboard, user management, and source delivery."
-            : chip === "SEO Pack" ? "Create an SEO and content growth package."
-              : `Create a ${chip.toLowerCase()} production.`;
+          : chip === "SEO Pack" ? "Create an SEO and content growth package."
+          : chip === "Video Clipping" ? "Create a video clipping production. Extract the best hooks and highlights from the uploaded long video or link, keep the strongest moments, and prepare final social-ready clips with captions if needed."
+          : `Create a ${chip.toLowerCase()} production.`;
     setInput(prompt);
     setStatus(statusUx(`${chip} promptu yüklendi. Enter'a veya Gönder'e bas.`, `${chip} prompt loaded. Press Enter or Send.`));
   }
