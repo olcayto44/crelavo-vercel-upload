@@ -250,12 +250,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     orientation: portrait ? "portrait" as const : "landscape" as const,
     files: files.length ? files : null,
     callback_id: String(selected.callback_id ?? selected.callbackId ?? "").trim() || null,
-    incognito_mode: true,
-    include_narrator: !noPresenterMode,
-    include_voice: !controls.voiceDisabled,
-    scene_type: noPresenterMode ? "b_roll" : "a_roll",
-    clips: noPresenterMode ? (explicitScript ? [{ input_text: explicitScript, image: screenshotUrl || productUrl || undefined }] : files.length ? files.map((file) => ({ input_text: input.prompt, image: file.type === "url" ? file.url : undefined })) : null) : null,
-    blueprint: noPresenterMode ? { include_narrator: false, include_voice: true, scene_type: "b_roll", clips: files.length ? files : null } : null
+    incognito_mode: true
   };
   const result = await createHeyGenVideoAgentSession(payload);
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
