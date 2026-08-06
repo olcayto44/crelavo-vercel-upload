@@ -751,6 +751,38 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     }
     if (successfulStatus) {
       const providerFinalUrl = heygenAgentBridge.latestVideoUrl || (successfulStatus.outputUrl ?? "");
+      const isDroneProductionForReady = String(production.production_type ?? "") === "drone_video";
+      const successfulProviderName = String(successfulStatus.provider ?? "").toLowerCase();
+      if (isDroneProductionForReady && successfulProviderName !== "shotstack") {
+        const rawVisualPreviewUrl = urlValue(providerFinalUrl, visualLifecycle.outputRegistry, outputWithRenderJob.visualJob, outputWithRenderJob.visualStatus, outputWithRenderJob);
+        const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
+          visualStatus,
+          renderStatus,
+          providerStatus: "raw_drone_visual_ready_final_render_required",
+          rawVisualPreviewUrl: rawVisualPreviewUrl || providerFinalUrl || null,
+          previewFallback: rawVisualPreviewUrl || providerFinalUrl ? { status: "raw_visual_available", reason: "Drone raw provider clip is available, but final 35-second render is still required before delivery.", url: rawVisualPreviewUrl || providerFinalUrl, updatedAt: new Date().toISOString() } : null,
+          providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+          outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry,
+          qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: ["shotstack_final_render"], missing: ["shotstack_final_render"], warnings: ["raw_replicate_drone_clip_not_customer_delivery"] }
+        });
+        const { data } = await supabase
+          .from("production_requests")
+          .update(safeUpdate({
+            status: "in_production",
+            automation_status: "running",
+            generation_status: "final_render_pending",
+            preview_url: rawVisualPreviewUrl || providerFinalUrl || production.preview_url || null,
+            delivery_link: null,
+            delivery_zip_url: null,
+            output_json: blockedOutput,
+            admin_notes: "Drone raw visual clip is available, but final Shotstack render is required before customer delivery.",
+            updated_at: new Date().toISOString()
+          }))
+          .eq("id", productionId)
+          .select("*")
+          .single();
+        return Response.json({ production: data, visualStatus, renderStatus, renderPending: true, rawVisualPreviewUrl: rawVisualPreviewUrl || providerFinalUrl || null, quality_blocked: true, reason: "raw_drone_visual_not_final_delivery" });
+      }
       const heygenMeta = heygenV3Metadata(successfulStatus);
       const dedicatedRequired = String(outputWithRenderJob.requiredPipeline ?? "") === "character_consistent_dialogue_animation" || Boolean(outputWithRenderJob.characterDialoguePlan);
       const dedicatedShotstackReady = String(successfulStatus.provider ?? "") === "shotstack" && String(outputWithRenderJob.providerStatus ?? "").includes("shotstack");
