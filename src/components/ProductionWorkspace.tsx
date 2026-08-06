@@ -531,6 +531,7 @@ const isFailed = production.status === "failed" || production.automation_status 
   const creditLabel = projectPackageReady ? "Package credits" : production.reserved_credits ? "Reserved" : production.estimated_credits ? "Estimate" : "Credits";
 const previewUrlLower = playbackUrl.toLowerCase();
 const previewKind = isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
+const openVideoLabel = isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
   const nextLiveStep = hasAutomationWarning
     ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
     : isDedicatedPipelineRunning
@@ -1101,7 +1102,7 @@ const data = await response.json().catch(() => ({}));
               ))}
             </div>
             <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
-              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {isProjectProduction ? "Open preview" : "Open final video"}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
+              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
               {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> ZIP</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
@@ -1201,7 +1202,7 @@ const data = await response.json().catch(() => ({}));
               </div>
             </div>
             <div className="customer-preview-actions delivery-action-grid">
-              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={15} /> {isProjectProduction ? "Open preview" : "Open final video"}</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
+              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={15} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
               {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Final ZIP waiting</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
