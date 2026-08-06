@@ -744,8 +744,9 @@ const data = await response.json().catch(() => ({}));
     const finalRenderPending = Boolean(data.renderPending || rawVisualPreviewUrl || /final_render_(pending|started|waiting)|character_dialogue_final_render/.test(generationStatus));
 
     if (finalVideoReady) {
-      setPollingNote("Final video is ready, refreshing page...");
-      window.setTimeout(() => window.location.reload(), 800);
+      const isDroneVideoProduction = production.production_type === "drone_video";
+      setPollingNote(isDroneVideoProduction ? "Final video is ready. Playback will stay open without auto-refresh." : "Final video is ready, refreshing page...");
+      if (!isDroneVideoProduction) window.setTimeout(() => window.location.reload(), 800);
       return;
     }
 
