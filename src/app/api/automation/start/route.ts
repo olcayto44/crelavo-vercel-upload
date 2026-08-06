@@ -91,6 +91,21 @@ function httpsUrlFrom(value: unknown) {
   return /^https:\/\//i.test(text) ? text : "";
 }
 
+function durationSecondsFromPrompt(text: string) {
+  const match = text.match(/Duration target:\s*(\d{1,3})\s*(?:sec|second|seconds|saniye|sn)/i) || text.match(/(\d{1,3})\s*(?:sec|second|seconds|saniye|sn)/i);
+  const value = Number(match?.[1] ?? 35) || 35;
+  return Math.min(60, Math.max(5, value));
+}
+
+function voiceLanguageFromPrompt(text: string) {
+  const match = text.match(/Use\s+([^\.]+?)\s+and\s+[^\.]+?\./i);
+  return String(match?.[1] ?? "English").trim() || "English";
+}
+
+function subtitleSelectedFromPrompt(text: string) {
+  return !/no\s+subtitles|without\s+subtitles|altyaz[ıi]\s*yok|altyaz[ıi]\s*olmas[ıi]n/i.test(text);
+}
+
 function secondsFromValue(value: unknown): number | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
@@ -292,11 +307,23 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
   if (scalar.error || !scalar.data) return { data: scalar.data ?? null, error: scalar.error };
   const productionType = String(scalar.data.production_type ?? "");
   if (productionType === "drone_video") {
+    const promptText = String(scalar.data.prompt ?? "");
+    const durationSeconds = durationSecondsFromPrompt(promptText);
+    const voiceLanguage = voiceLanguageFromPrompt(promptText);
+    const subtitles = subtitleSelectedFromPrompt(promptText);
+    const safeDroneMetadata = {
+      productionType: "drone_video",
+      preferredProvider: "auto_drone_video",
+      outputDurationSeconds: durationSeconds,
+      voiceLanguage,
+      selectedOptions: { voiceOver: true, finalRender: true, subtitles },
+      droneDetails: { duration: `${durationSeconds} sec`, narrationLanguage: voiceLanguage, subtitleOption: subtitles ? "Subtitles" : "No subtitles" }
+    };
     return {
       data: postgresSafe({
         ...scalar.data,
-        request_metadata: { productionType: "drone_video", preferredProvider: "auto_drone_video" },
-        input_json: { productionType: "drone_video", preferredProvider: "auto_drone_video" },
+        request_metadata: safeDroneMetadata,
+        input_json: safeDroneMetadata,
         output_json: {}
       }),
       error: null
