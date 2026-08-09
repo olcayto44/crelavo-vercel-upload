@@ -174,7 +174,7 @@ const paidGrowthFunnelCards = [
   {
     badge: "Business free trial",
     title: "Try Business free for the first 24 hours",
-    description: "Start the Whop-hosted Business trial for 24 hours, then continue at $79/month only if you do not cancel before the trial ends.",
+    description: "Start the Whop-hosted Business trial for 24 hours, then continue with 12,000 credits/month at $79 only if you do not cancel before the trial ends.",
     href: "/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=business-free-24h-trial",
     cta: "Start free 24-hour trial"
   }
@@ -242,7 +242,7 @@ export default async function HomePage() {
       <HardReloadLink className="trial-top-strip" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=top-strip-business-free-trial">
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
         <strong>$0 today</strong>
-        <span className="trial-top-strip-copy">Try Crelavo Business free for 24 hours before the $79/mo plan starts. Cancel in Whop before time runs out.</span>
+        <span className="trial-top-strip-copy">Try Crelavo Business free for 24 hours — then get 12,000 credits/month on the $79 plan unless cancelled in Whop.</span>
         <span className="trial-top-strip-cta">Claim now</span>
       </HardReloadLink>
       <main className="public-funnel-page public-home-page">
@@ -252,14 +252,14 @@ export default async function HomePage() {
               <span className="trial-fomo-flash">FLASH</span>
               <span className="trial-fomo-eyebrow">1-day Whop trial</span>
               <strong>$0 today</strong>
-              <span className="trial-fomo-price">Then Business $79/mo</span>
-              <span className="trial-fomo-copy">Most tools charge first. Crelavo gives you the first 24 hours free.</span>
+              <span className="trial-fomo-price">12,000 credits/month after trial</span>
+              <span className="trial-fomo-copy">Most tools charge first. Crelavo gives you 24 hours free before the 12,000-credit Business plan starts.</span>
               <span className="trial-fomo-countdown">24h window · cancel before it ends</span>
               <span className="trial-fomo-cta">Claim trial</span>
             </HardReloadLink>
           </aside>
           <HardReloadLink className="trial-mobile-fomo" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=mobile-business-free-trial">
-            <span>FLASH: 24h free Business trial</span>
+            <span>FLASH: 24h free Business trial · 12,000 credits/month</span>
             <strong>$0 today</strong>
             <em>Claim now</em>
           </HardReloadLink>
@@ -267,12 +267,16 @@ export default async function HomePage() {
             <div className="trial-fomo-hero-copy">
               <span className="trial-fomo-hero-badge">FLASH LAUNCH OFFER · FIRST 24 HOURS FREE</span>
               <h2>Try Crelavo Business for $0 today — before the $79/month plan starts.</h2>
-              <p>Most AI platforms ask you to pay before you trust the workflow. This Whop trial gives you the first 24 hours free so you can test the dashboard, preview direction and decide before the paid Business subscription begins.</p>
+              <p>Most AI platforms ask you to pay before you trust the workflow. This Whop trial gives you the first 24 hours free; if you continue, the Business plan includes 12,000 credits every month.</p>
             </div>
             <div className="trial-fomo-hero-deal">
               <span className="trial-deal-label">Today</span>
               <strong>$0</strong>
               <small>24-hour free trial</small>
+              <div className="trial-credit-upgrade" aria-label="Business credit upgrade from 9,000 to 12,000 credits">
+                <span>9,000 credits</span>
+                <strong>12,000 credits/month</strong>
+              </div>
               <div className="trial-deal-divider" />
               <span className="trial-deal-after">After trial: $79/mo unless cancelled in Whop</span>
               <HardReloadLink className="btn trial-fomo-hero-cta" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-business-free-trial">Claim the 24h free trial</HardReloadLink>

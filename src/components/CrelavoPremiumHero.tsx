@@ -97,7 +97,7 @@ export function CrelavoPremiumHero() {
           <Link className="hero-trial-fomo-card" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-panel-business-free-trial" aria-label="Claim the Crelavo Business 24-hour free trial">
             <span>FLASH TRIAL</span>
             <strong>$0 for the first 24 hours</strong>
-            <small>Then Business is $79/mo unless cancelled in Whop.</small>
+            <small>Then 12,000 credits/month at $79 unless cancelled in Whop.</small>
           </Link>
           <div className="hero-interface-main">
             <div className="hero-preview-window">

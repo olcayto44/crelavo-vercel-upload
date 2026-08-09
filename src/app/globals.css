@@ -1835,11 +1835,13 @@ body.admin-route > .site-footer {
   position: sticky;
   top: 0;
   z-index: 90;
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
   align-items: center;
-  padding: 12px 18px;
+  padding: 12px max(18px, env(safe-area-inset-left)) 12px max(18px, env(safe-area-inset-right));
+  text-align: center;
   color: #fff;
   text-decoration: none;
   background: linear-gradient(90deg, #b91c1c, #ef4444 38%, #111827 100%);
@@ -1866,9 +1868,13 @@ body.admin-route > .site-footer {
 }
 
 .trial-top-strip-copy {
+  flex: 1 1 520px;
+  max-width: 760px;
+  min-width: min(260px, 100%);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
+  text-align: center;
 }
 
 .trial-top-strip-cta {
@@ -2029,6 +2035,12 @@ body.admin-route > .site-footer {
   animation: trialGradientRun 2.2s linear infinite;
 }
 
+.trial-fomo-hero-copy {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
 .trial-fomo-hero-badge {
   display: inline-flex;
   width: fit-content;
@@ -2090,6 +2102,46 @@ body.admin-route > .site-footer {
 .trial-fomo-hero-deal small {
   font-size: 16px;
   font-weight: 900;
+}
+
+.trial-credit-upgrade {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: rgba(17,24,39,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34);
+}
+
+.trial-credit-upgrade span {
+  position: relative;
+  color: rgba(17,24,39,.58);
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.trial-credit-upgrade span::after {
+  content: "";
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  top: 50%;
+  height: 3px;
+  border-radius: 999px;
+  background: #dc2626;
+  transform: rotate(-5deg);
+}
+
+.trial-credit-upgrade strong {
+  color: #111827;
+  font-size: clamp(26px, 3vw, 42px) !important;
+  line-height: .92 !important;
+  letter-spacing: -.055em !important;
+  text-shadow: 0 8px 24px rgba(255,255,255,.32);
 }
 
 .trial-deal-divider {
@@ -6311,8 +6363,7 @@ html body .pricing-page .page-demo-video-section .showcase-video-overlay {
   }
 
   .trial-top-strip {
-    grid-template-columns: 1fr auto;
-    gap: 6px 10px;
+    gap: 8px 10px;
     padding: 10px 12px;
   }
 
