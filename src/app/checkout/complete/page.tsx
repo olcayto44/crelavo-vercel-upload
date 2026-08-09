@@ -22,7 +22,7 @@ export default function CheckoutCompletePage() {
           Your checkout was completed. Crelavo now verifies the payment details, matches them to the same account email and applies eligible credits or service access automatically.
         </p>
         <p style={{ color: "var(--muted)" }}>
-          One-time credit packs are added after payment verification. Subscription setup/preview payments start Crelavo&apos;s 24-hour preview workflow with a non-refundable setup fee and downloads closed during preview. If you do not cancel within 24 hours, Whop automatically charges the selected plan; full recurring credits are added after the main subscription payment is confirmed.
+          One-time credit packs are added after payment verification. Subscription previews can be paid setup previews or the Business 24-hour free Whop trial. Downloads stay controlled during preview/trial. If you do not cancel within 24 hours, Whop automatically charges the selected plan; full recurring credits are added after the main subscription payment is confirmed.
         </p>
         <Suspense fallback={null}>
           <WhopPaymentReconcileStatus />

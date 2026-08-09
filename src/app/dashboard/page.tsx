@@ -8,7 +8,7 @@ import { dashboardNextBestActions } from "@/lib/retention-growth";
 const dashboardConversionShortcuts = [
   {
     title: "I need the cheapest safe test",
-    text: "Use the free ad score first, then start the $10 Business preview if the hook is strong enough.",
+    text: "Use the free ad score first, then start the free 24-hour Business trial if the hook is strong enough.",
     href: "/free-tools/ad-performance-score-checker",
     cta: "Score ad free"
   },
@@ -183,10 +183,10 @@ const workflowStarters = [
   },
   {
     badge: "Provider test",
-    title: "Low-Cost Test",
-    text: "Run a small 5-second / 720p provider test before committing to full production or higher-cost settings.",
+    title: "Provider Smoke Test",
+    text: "Run a controlled 10-second / 1080p provider smoke test before committing to a full production.",
     href: "/dashboard/assistant-workspace?providerTest=1",
-    cta: "Run low-cost test"
+    cta: "Run smoke test"
   }
 ];
 
@@ -269,7 +269,7 @@ export default function DashboardPage() {
           <div>
             <span className="badge">AI builder launchpad</span>
             <h2>Choose the AI builder you want to open</h2>
-            <p className="section-lead">Website, app, ecommerce, video, social media, brand kit, bulk content, dubbing and low-cost test flows all open their own ready-start path.</p>
+            <p className="section-lead">Website, app, ecommerce, video, social media, brand kit, bulk content, dubbing and provider smoke-test flows all open their own ready-start path.</p>
           </div>
           <Link className="btn secondary" href="/dashboard/productions">View productions</Link>
         </div>

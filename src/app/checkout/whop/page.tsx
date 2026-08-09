@@ -46,14 +46,16 @@ export default async function WhopCheckoutPage({ searchParams }: { searchParams?
         <p style={{ color: "var(--muted)" }}>
           {product && mappedPlan
             ? isSubscription
-              ? `This ${product.name} plan starts with a ${formatUsd(previewSummary.setupFeeUsd)} non-refundable 24-hour preview/setup charge. Downloads stay closed during preview. If not cancelled within 24 hours, Whop automatically charges the selected ${previewSummary.billingInterval} plan and renews it until cancelled.`
+              ? previewSummary.freeTrial
+                ? `This ${product.name} plan starts with a free 24-hour Whop trial. Downloads stay controlled during trial. If not cancelled within 24 hours, Whop automatically charges the selected ${previewSummary.billingInterval} plan and renews it until cancelled.`
+                : `This ${product.name} plan starts with a ${formatUsd(previewSummary.setupFeeUsd)} non-refundable 24-hour preview/setup charge. Downloads stay closed during preview. If not cancelled within 24 hours, Whop automatically charges the selected ${previewSummary.billingInterval} plan and renews it until cancelled.`
               : `This ${product.name} purchase is a one-time payment and does not renew automatically.`
             : "This checkout starts with the configured non-refundable 24-hour preview/setup charge for subscription products. Downloads stay closed during preview; if not cancelled within 24 hours, Whop automatically charges the selected plan and renews it until cancelled."}
         </p>
         {product ? (
           <div className="workspace-action-note" style={{ marginTop: 12 }}>
             <strong>{product.name}</strong>
-            <small>{isSubscription ? `Preview/setup fee today: ${formatUsd(previewSummary.setupFeeUsd)} — non-refundable.` : "One-time purchase; no automatic renewal."}</small>
+            <small>{isSubscription ? previewSummary.freeTrial ? "Trial today: $0 for the first 24 hours through Whop." : `Preview/setup fee today: ${formatUsd(previewSummary.setupFeeUsd)} — non-refundable.` : "One-time purchase; no automatic renewal."}</small>
             {isSubscription ? <small>{previewNotice}</small> : null}
             {partnerCode || campaign ? <small>Affiliate attribution: {partnerCode || "no partner code"}{campaign ? ` · campaign=${campaign}` : ""}</small> : null}
           </div>

@@ -340,12 +340,14 @@ function shouldAddCredits(product: Product, billing: string, payment: WhopObject
 
   if (product.planType !== "subscription") return { add: false, reason: "service_subscription_no_credit_balance" };
 
-  const setupFeeUsd = "setupFeeUsd" in product ? product.setupFeeUsd : undefined;
-  const previewPayment = reason === "subscription_create" || status === "trialing" || amountMatchesUsd(amount, setupFeeUsd);
-  if (previewPayment) return { add: false, reason: "preview_setup_payment_no_full_credits" };
-
+  const setupFeeUsd = "setupFeeUsd" in product && typeof product.setupFeeUsd === "number" ? product.setupFeeUsd : undefined;
   const expectedRenewalUsd = billing === "yearly" ? product.priceUsd * 10 : product.priceUsd;
-  const renewalPayment = ["subscription_cycle", "subscription"].includes(reason) || amountMatchesUsd(amount, expectedRenewalUsd);
+  const renewalSizedPayment = amountMatchesUsd(amount, expectedRenewalUsd);
+  const setupFeePayment = typeof setupFeeUsd === "number" && setupFeeUsd > 0 && amountMatchesUsd(amount, setupFeeUsd);
+  const previewPayment = status === "trialing" || setupFeePayment || (reason === "subscription_create" && !renewalSizedPayment);
+  if (previewPayment) return { add: false, reason: setupFeeUsd === 0 ? "free_trial_started_no_full_credits" : "preview_setup_payment_no_full_credits" };
+
+  const renewalPayment = ["subscription_cycle", "subscription", "subscription_create"].includes(reason) || renewalSizedPayment;
   if (renewalPayment) return { add: true, reason: "subscription_renewal_credits" };
 
   return { add: false, reason: "subscription_payment_not_eligible_for_full_credits" };

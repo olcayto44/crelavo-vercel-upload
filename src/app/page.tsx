@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Clapperboard, Grid3X3, Plane, Sparkles, Wand2 } from "lucide-react";
+import { Clapperboard, Grid3X3, Plane, Smartphone, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
 import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
-import { DailyStreakCapture } from "@/components/DailyStreakCapture";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
@@ -69,19 +68,99 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
   { title: "Workspace", kicker: "Live tracking", description: "Track live productions, revisions, outputs and final delivery packages.", href: "/showcase/live-workspace", tone: "amber", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192247858193551-1783192247854.png" }
 ];
 
+const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
+  {
+    title: "Crelavo Wow Reel",
+    kicker: "Viral visual",
+    description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
+    href: "/showcase/videos/crelavo-wow-reel",
+    tone: "purple",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4"
+  },
+  {
+    title: "Crelavo Energy System",
+    kicker: "Premium motion",
+    description: "A cinematic chain-and-cube sequence showing Crelavo as an energetic creative engine.",
+    href: "/showcase/videos/crelavo-energy-system",
+    tone: "cyan",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148834458072949-1786148834448.mp4"
+  },
+  {
+    title: "Crelavo Product Story",
+    kicker: "Presenter demo",
+    description: "A direct product explanation for visitors who want to understand the platform quickly.",
+    href: "/showcase/videos/crelavo-product-story",
+    tone: "blue",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148847561742266-1786148847522.mp4"
+  },
+  {
+    title: "Phoenix Awakening",
+    kicker: "3D animation",
+    description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",
+    href: "/showcase/videos/phoenix-awakening",
+    tone: "amber",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-23/video/1786203250578603803-1786203250560.mp4"
+  },
+  {
+    title: "Origami Dragon Meteor",
+    kicker: "Anime short film",
+    description: "A fast neon anime teaser with a paper crane transforming into a luminous dragon.",
+    href: "/showcase/videos/origami-dragon-meteor",
+    tone: "pink",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-01/video/1786209159798605867-1786209159793.mp4"
+  },
+  {
+    title: "Turkish Avatar Hook",
+    kicker: "Avatar speaker",
+    description: "A Turkish-speaking avatar ad with a direct FOMO hook for Crelavo showcase and social use.",
+    href: "/showcase/videos/turkish-avatar-hook",
+    tone: "blue",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/video/1786219244367608234-1786219244348.mp4"
+  },
+  {
+    title: "Luxury Serum Demo",
+    kicker: "Product demo",
+    description: "A luxury skincare product demo with cinematic macro beauty shots and a premium hook.",
+    href: "/showcase/videos/luxury-serum-demo",
+    tone: "cyan",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/image/1786222106538364280-1786222106536.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/video/1786222067850341317-1786222067841.mp4"
+  },
+  {
+    title: "Great Mishaps",
+    kicker: "3D animation",
+    description: "A Pixar-style superhero comedy with five lovable misfit heroes and golden-hour cinematic chaos.",
+    href: "/showcase/videos/great-mishaps",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-05/image/1786224521060209859-1786224521053.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-05/video/1786224496725549080-1786224496690.mp4"
+  }
+];
+
 const featuredTools = [
   { title: "Product Video Workflow", href: "/ai-product-video-generator", icon: Clapperboard },
   { title: "Free Ad Scorer", href: "/free-tools/ad-performance-score-checker", icon: Sparkles },
   { title: "Localization Brief", href: "/ai-cultural-localization", icon: Plane },
   { title: "Website / App Assets", href: "/ai-website-builder", icon: Wand2 },
+  { title: "Mobile App Production", href: "/dashboard/create?category=mobile_app&mode=project", icon: Smartphone },
   { title: "Full Tools Catalog", href: "/tools", icon: Grid3X3 }
+];
+
+const homepageExampleGallery = [
+  { title: "Product Ad Video", tag: "E-commerce", format: "9:16 social", href: "/dashboard/create?category=ecommerce_product_ad", prompt: "Turn a product link into a ready ad video", tone: "cyan" },
+  { title: "UGC Creator Clip", tag: "Social Ads", format: "TikTok / Reels", href: "/dashboard/create?category=video_clipping", prompt: "Create hooks, captions and short ad cuts", tone: "purple" },
+  { title: "Website Launch Pack", tag: "Web", format: "Landing + assets", href: "/dashboard/create?category=website&mode=project", prompt: "Generate web copy, sections and launch visuals", tone: "green" },
+  { title: "Mobile App Starter", tag: "App", format: "Expo + screens", href: "/dashboard/create?category=mobile_app&mode=project", prompt: "Plan app screens, navigation and source package", tone: "blue" },
+  { title: "Brand Visual Pack", tag: "Images", format: "Poster / banner", href: "/dashboard/create?category=image", prompt: "Create campaign visuals and clean exports", tone: "pink" },
+  { title: "Localization Campaign", tag: "Global", format: "Market-ready", href: "/ai-cultural-localization", prompt: "Adapt hooks and proof for another country", tone: "amber" },
+  { title: "Voice + Dubbing", tag: "Audio", format: "Voice workflow", href: "/dashboard/create?category=dubbing", prompt: "Prepare narration, dubbing or localization audio", tone: "blue" }
 ];
 
 const paidGrowthFunnelCards = [
   {
     badge: "Free tool entry",
     title: "Score your ad before buying production credits",
-    description: "Use the free AI Ad Scorer to find weak hooks, CTA gaps and proof problems before moving into the $10 Business preview or $20 Team preview.",
+    description: "Use the free AI Ad Scorer to find weak hooks, CTA gaps and proof problems before moving into the free 24-hour Business trial or Team preview.",
     href: "/free-tools/ad-performance-score-checker",
     cta: "Run the free ad score"
   },
@@ -93,11 +172,11 @@ const paidGrowthFunnelCards = [
     cta: "Start $20 team preview"
   },
   {
-    badge: "Business launch offer",
-    title: "$79 Business now includes 12,000 credits",
-    description: "A lower-risk monthly path for small brands that want to generate product ad drafts, social variations and campaign assets before scaling up.",
-    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
-    cta: "Start $10 business preview"
+    badge: "Business free trial",
+    title: "Try Business free for the first 24 hours",
+    description: "Start the Whop-hosted Business trial for 24 hours, then continue at $79/month only if you do not cancel before the trial ends.",
+    href: "/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=business-free-24h-trial",
+    cta: "Start free 24-hour trial"
   }
 ];
 
@@ -160,10 +239,70 @@ export default async function HomePage() {
       <SiteStructuredData />
       <SplashAd />
       <Header navLinks={siteContent.navLinks} />
+      <HardReloadLink className="trial-top-strip" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=top-strip-business-free-trial">
+        <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
+        <strong>$0 today</strong>
+        <span className="trial-top-strip-copy">Try Crelavo Business free for 24 hours before the $79/mo plan starts. Cancel in Whop before time runs out.</span>
+        <span className="trial-top-strip-cta">Claim now</span>
+      </HardReloadLink>
       <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
-          <aside className="ad-rail ad-rail-right"><AdSlot slotId="right-rail" /></aside>
+          <aside className="ad-rail ad-rail-right trial-fomo-rail">
+            <HardReloadLink className="trial-fomo-poster" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=right-rail-business-free-trial" aria-label="Start the Business 24-hour free trial">
+              <span className="trial-fomo-flash">FLASH</span>
+              <span className="trial-fomo-eyebrow">1-day Whop trial</span>
+              <strong>$0 today</strong>
+              <span className="trial-fomo-price">Then Business $79/mo</span>
+              <span className="trial-fomo-copy">Most tools charge first. Crelavo gives you the first 24 hours free.</span>
+              <span className="trial-fomo-countdown">24h window · cancel before it ends</span>
+              <span className="trial-fomo-cta">Claim trial</span>
+            </HardReloadLink>
+          </aside>
+          <HardReloadLink className="trial-mobile-fomo" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=mobile-business-free-trial">
+            <span>FLASH: 24h free Business trial</span>
+            <strong>$0 today</strong>
+            <em>Claim now</em>
+          </HardReloadLink>
+          <section className="container trial-fomo-hero" aria-label="Business 24-hour free trial offer">
+            <div className="trial-fomo-hero-copy">
+              <span className="trial-fomo-hero-badge">FLASH LAUNCH OFFER · FIRST 24 HOURS FREE</span>
+              <h2>Try Crelavo Business for $0 today — before the $79/month plan starts.</h2>
+              <p>Most AI platforms ask you to pay before you trust the workflow. This Whop trial gives you the first 24 hours free so you can test the dashboard, preview direction and decide before the paid Business subscription begins.</p>
+            </div>
+            <div className="trial-fomo-hero-deal">
+              <span className="trial-deal-label">Today</span>
+              <strong>$0</strong>
+              <small>24-hour free trial</small>
+              <div className="trial-deal-divider" />
+              <span className="trial-deal-after">After trial: $79/mo unless cancelled in Whop</span>
+              <HardReloadLink className="btn trial-fomo-hero-cta" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-business-free-trial">Claim the 24h free trial</HardReloadLink>
+            </div>
+          </section>
           <CrelavoPremiumHero />
+
+          <section className="container section home-section-tight home-example-gallery-section" aria-labelledby="home-example-gallery-heading">
+            <div className="sample-video-head">
+              <div>
+                <span className="badge"><Sparkles size={15} /> Examples you can start from</span>
+                <h2 id="home-example-gallery-heading">Pick a proven production format, then let Crelavo route the workflow</h2>
+                <p className="section-lead">A faster visual entry point for visitors who want to see what Crelavo can create before opening the full workspace.</p>
+              </div>
+              <HardReloadLink className="btn secondary" href="/categories">Browse all categories</HardReloadLink>
+            </div>
+            <div className="home-example-gallery-grid">
+              {homepageExampleGallery.map((item) => (
+                <HardReloadLink className={`home-example-card home-example-tone-${item.tone}`} href={item.href} key={item.title}>
+                  <div className="home-example-preview">
+                    <span>{item.tag}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.format}</small>
+                  </div>
+                  <p>{item.prompt}</p>
+                  <span className="home-example-cta">Try this workflow</span>
+                </HardReloadLink>
+              ))}
+            </div>
+          </section>
 
           <section className="container section home-section-tight clean-feed-section home-goal-wizard" aria-labelledby="home-goal-wizard-heading">
             <div className="sample-video-head home-goal-wizard-head">
@@ -229,7 +368,12 @@ export default async function HomePage() {
           </section>
 
           <TruthfulLiveActivity />
-          <DailyStreakCapture />
+
+          <HomeShowcaseSlider
+            title="Crelavo video showcase"
+            subtitle="Real Crelavo video examples: viral visual concepts, premium motion, presenter demos and localization-ready creative."
+            slides={featuredCrelavoVideoSlides}
+          />
 
           <HomeShowcaseSlider title="Explore Crelavo" subtitle="A light moving showcase for samples, assets, Omni Assistant, generation and workspace tracking." slides={appLauncherSlides} />
 

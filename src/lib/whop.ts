@@ -2,7 +2,12 @@ import type { BillingMode } from "@/lib/payment-provider";
 
 export const whopReturnPath = "/checkout/complete";
 
+export const whopFreeTrialProductId = "business_24h_free_trial";
+export const whopFreeTrialProductSlug = "crelavo-24-hour-trial-subscription";
+export const whopFreeTrialProductIdExternal = "prod_zwJDDxNzPytX2";
+
 export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> = {
+  business_24h_free_trial: { monthly: "plan_twCf4uEpgALAS" },
   growth_intelligence_enterprise: { monthly: "plan_ZnbxWuOwrrFwh" },
   growth_intelligence_growth: { monthly: "plan_BCGKWVCrRakWc" },
   growth_intelligence_starter: { monthly: "plan_FlOEa6urAuKEx", yearly: "plan_5l0pLPgYyV1Zu" },

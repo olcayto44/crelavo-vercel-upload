@@ -2,9 +2,9 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/DashboardShell";
 import { rolloverPolicyText } from "@/lib/credit-rollover";
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
-import { allCreditProducts, dronePurchasePackages, findPaymentProduct, growthIntelligencePlans, liveSalesServicePlans, packages } from "@/lib/data";
+import { allCreditProducts, dronePurchasePackages, findPaymentProduct, growthIntelligencePlans, liveSalesServicePlans, packages, whopTrialProducts } from "@/lib/data";
 import { billingTermsText } from "@/lib/legal";
-import { whopPreviewNotice } from "@/lib/whop-preview-policy";
+import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
 
 type BillingMode = "monthly" | "yearly" | "one_time";
 
@@ -75,7 +75,8 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
   const displayPrice = planPrice(selectedPackage, billing);
   const displayCredits = planCredits(selectedPackage, billing);
   const isSubscription = selectedPackage.planType === "subscription" || isServicePlan;
-  const packageFamily = isServicePlan ? isGrowthService ? growthIntelligencePlans : liveSalesServicePlans : isProductionPackage ? dronePurchasePackages : allCreditProducts;
+  const packageFamily = isServicePlan ? isGrowthService ? growthIntelligencePlans : liveSalesServicePlans : isProductionPackage ? dronePurchasePackages : [...whopTrialProducts, ...allCreditProducts];
+  const previewSummary = whopPreviewSummary(selectedPackage, billing);
   const previewNotice = whopPreviewNotice(selectedPackage, billing);
   const rolloverNotice = rolloverPolicyText(selectedPackage, billing);
   const vipAgencyHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
@@ -93,7 +94,9 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
               : isProductionPackage
                 ? "This is a one-time managed Drone / Satellite Video production package. It is separate from normal credit top-ups."
                 : isSubscription
-                    ? "Monthly and yearly subscriptions start with a paid 24-hour preview. Downloads are closed during preview; if not cancelled within 24 hours, Whop automatically charges the selected plan and keeps renewing it until cancelled."
+                    ? previewSummary.freeTrial
+                      ? "This plan starts with a free 24-hour Whop trial. Downloads stay controlled during trial; if not cancelled within 24 hours, Whop automatically starts the $79 monthly Business subscription."
+                      : "Monthly and yearly subscriptions start with a paid 24-hour preview. Downloads are closed during preview; if not cancelled within 24 hours, Whop automatically charges the selected plan and keeps renewing it until cancelled."
                   : "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly whenever you need extra credits. Use the same email as your Crelavo account at checkout."}
           </p>
 
@@ -175,10 +178,10 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
 
         <section className="card payment-checkout-card">
           <span className="badge">Secure checkout</span>
-          <h3>{isServicePlan ? isGrowthService ? `Authorize ${billing} intelligence plan` : `Authorize ${billing} live-agent plan` : isSubscription ? "Authorize 24-hour preview and automatic renewal" : "Complete one-time payment"}</h3>
+          <h3>{isServicePlan ? isGrowthService ? `Authorize ${billing} intelligence plan` : `Authorize ${billing} live-agent plan` : isSubscription ? previewSummary.freeTrial ? "Authorize free 24-hour Whop trial" : "Authorize 24-hour preview and automatic renewal" : "Complete one-time payment"}</h3>
           <p style={{ color: "var(--muted)" }}>{billingTermsText}</p>
           <PaymentCheckoutButton productId={selectedPackage.id} billing={billing}>
-            {isServicePlan ? isGrowthService ? "Start intelligence preview checkout" : "Start live-agent preview checkout" : isProductionPackage ? "Continue to drone package checkout" : isSubscription ? "Start 24-hour preview checkout" : "Continue to payment checkout"}
+            {isServicePlan ? isGrowthService ? "Start intelligence preview checkout" : "Start live-agent preview checkout" : isProductionPackage ? "Continue to drone package checkout" : isSubscription ? previewSummary.freeTrial ? "Start free 24-hour Whop trial" : "Start 24-hour preview checkout" : "Continue to payment checkout"}
           </PaymentCheckoutButton>
           {isSubscription ? (
             <div className="workspace-action-note" style={{ marginTop: 12 }}>

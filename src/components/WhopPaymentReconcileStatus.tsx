@@ -41,6 +41,11 @@ export function WhopPaymentReconcileStatus() {
           setMessage("Payment verified. Credits for this payment were already applied to your account.");
           return;
         }
+        if (payload.reason === "free_trial_started_no_full_credits") {
+          setState("info");
+          setMessage("Your free 24-hour Whop trial is active. Downloads stay controlled during trial; if you do not cancel within 24 hours, Whop automatically starts the monthly subscription, and full Business credits are added after the paid subscription payment is confirmed.");
+          return;
+        }
         if (payload.reason === "preview_setup_payment_no_full_credits") {
           setState("info");
           setMessage("Payment verified. This is a non-refundable 24-hour preview/setup payment. Downloads stay closed during preview; if you do not cancel within 24 hours, Whop automatically charges the selected plan, and full subscription credits are added after the main subscription payment is confirmed.");

@@ -4,6 +4,15 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
+const heroModels = ["Video", "Product Ads", "Website", "App", "Brand Kit", "Voice", "Campaign"];
+
+const livePreviewCards = [
+  { label: "Product ad", meta: "9:16 social video", value: "Ready for preview" },
+  { label: "Landing page", meta: "Web package", value: "Source handoff" },
+  { label: "Campaign pack", meta: "Hooks + captions", value: "Client-ready" },
+  { label: "Brand visual", meta: "Poster / banner", value: "Clean export" }
+];
+
 const heroScenes = [
   {
     kicker: "Product link to video",
@@ -71,7 +80,7 @@ export function CrelavoPremiumHero() {
             <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
-            {["Product videos", "Campaign briefs", "Website/app assets", "Localization", "Dashboard delivery"].map((item) => <span key={item}>{item}</span>)}
+            {heroModels.map((item) => <span key={item}>{item}</span>)}
           </div>
           <div className="crelavo-hero-dots" aria-label="Hero scenes">
             {heroScenes.map((scene, index) => (
@@ -79,8 +88,44 @@ export function CrelavoPremiumHero() {
             ))}
           </div>
         </div>
-      </div>
 
+        <div className="crelavo-hero-interface" aria-label="Live Crelavo production preview">
+          <div className="hero-interface-top">
+            <span>Live production studio</span>
+            <small>{activeScene.kicker}</small>
+          </div>
+          <Link className="hero-trial-fomo-card" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-panel-business-free-trial" aria-label="Claim the Crelavo Business 24-hour free trial">
+            <span>FLASH TRIAL</span>
+            <strong>$0 for the first 24 hours</strong>
+            <small>Then Business is $79/mo unless cancelled in Whop.</small>
+          </Link>
+          <div className="hero-interface-main">
+            <div className="hero-preview-window">
+              <Sparkles />
+              <strong>{activeScene.cta}</strong>
+              <span>{activeScene.title}</span>
+            </div>
+            <div className="hero-stack">
+              {activeScene.tags.map((tag) => <span key={tag}>{tag}</span>)}
+            </div>
+          </div>
+          <div className="crelavo-live-output-grid">
+            {livePreviewCards.map((card) => (
+              <Link href="/dashboard/create" className="crelavo-live-output-card" key={card.label}>
+                <small>{card.meta}</small>
+                <strong>{card.label}</strong>
+                <span>{card.value}</span>
+              </Link>
+            ))}
+          </div>
+          <div className="hero-timeline" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

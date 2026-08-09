@@ -114,7 +114,7 @@ export const styles = [
   "Bold / Viral"
 ];
 
-export const qualityOptions = ["480p", "720p", "1080p"];
+export const qualityOptions = ["1080p", "1080p premium", "4K"];
 
 export const addOns = [
   "Voice-over",
@@ -813,14 +813,14 @@ export const packages = [
     planType: "subscription",
     monthlyStripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_PRO_YEARLY",
-    description: "Entry plan for first campaigns, short videos, product-ad tests and lightweight visual/source-file requests.",
-    estimatedOutput: "15-20 short 480p/720p drafts, or 4-6 social clips, or 1 lightweight product-ad draft.",
-    videoSpec: "480p/720p drafts, 5-15 sec recommended, 1080p costs extra credits.",
+    description: "Entry plan for first campaigns, premium short videos, controlled product-ad tests and visual/source-file requests.",
+    estimatedOutput: "Several controlled 1080p short tests, or 4-6 social clips, or 1 focused product-ad production.",
+    videoSpec: "1080p baseline, 10-15 sec recommended for controlled tests; premium/cinematic quality uses more credits.",
     mediaIncluded: "Basic voice-over, basic subtitles, image generation, campaign copy and dashboard delivery.",
     modelAccess: ["Standard video models", "Standard image models", "Basic editing tools"],
     automationAccess: ["Social/e-commerce export preparation", "Product link brief analysis", "Manual approval before publish"],
     concurrentTasks: 2,
-    relaxMode: "Standard render queue for low-priority drafts when provider capacity allows.",
+    relaxMode: "Standard render queue for controlled 1080p tests when provider capacity allows.",
     renderQueue: "Priority render queue",
     teamFeatures: ["Single user workspace"],
     usage: ["Priority render queue", "Unused credits roll over while subscription remains active, up to 7,500 credits", "Direct final request without mandatory trailer step", "Good for first product-link ad tests", "Covers lightweight visuals, subtitles and previews", "Best for solo creators validating the workflow"]
@@ -837,16 +837,16 @@ export const packages = [
     monthlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_YEARLY",
     description: "Main automation plan for recurring product ads, AI video requests, music clips, localization and brand content.",
-    estimatedOutput: "1 full product-ad video, or 30-50 lightweight drafts, or 2-3 social campaign variations.",
-    videoSpec: "720p included, 1080p supported, 15-30 sec recommended for product/social ads.",
+    estimatedOutput: "1 full product-ad video, or multiple controlled 1080p tests, or 2-3 social campaign variations.",
+    videoSpec: "1080p baseline, premium/cinematic quality supported, 15-30 sec recommended for product/social ads.",
     mediaIncluded: "Voice-over, styled subtitles, product URL scraping, social captions, store/social delivery targets.",
     modelAccess: ["All standard video models", "All image and editing models", "Premium model access with higher credit cost"],
     automationAccess: ["Social/e-commerce publishing workflow", "ROAS hook regeneration", "API and automation support"],
     concurrentTasks: 4,
-    relaxMode: "Fastest shared render queue for lower-priority drafts while credits cover premium outputs.",
+    relaxMode: "Fastest shared render queue for lower-priority 1080p variations while credits cover premium outputs.",
     renderQueue: "Fastest render queue",
     teamFeatures: ["Brand kit memory", "Reusable campaign templates"],
-    usage: ["Fastest render queue", "Unused credits roll over while subscription remains active, up to 36,000 credits", "Direct final production or optional draft preview", "Enough for regular campaign and MV experiments", "Supports premium video or several standard jobs", "Best for creators and small brands"]
+    usage: ["Fastest render queue", "Unused credits roll over while subscription remains active, up to 36,000 credits", "Direct final production or optional controlled preview", "Enough for regular campaign and MV experiments", "Supports premium video or several standard jobs", "Best for creators and small brands"]
   },
   {
     id: "ultra",
@@ -866,7 +866,7 @@ export const packages = [
     modelAccess: ["Priority access to video models", "Premium image and editing models", "Advanced video edit and motion-control workflows"],
     automationAccess: ["Bulk product campaigns", "Connected social/store publishing", "API and provider monitoring support"],
     concurrentTasks: 8,
-    relaxMode: "Fastest render queue for draft generations and lower-priority variations.",
+    relaxMode: "Fastest render queue for controlled 1080p generations and lower-priority variations.",
     renderQueue: "Fastest render queue",
     teamFeatures: ["Shared asset library", "Brand kit governance", "Client delivery workspace"],
     usage: ["Fastest render queue", "Unused credits roll over while subscription remains active, up to 75,000 credits", "Final-output first workflow, no forced trailer gate", "Built for bulk product campaigns and client work", "Supports cinematic video, app/site/source-file jobs", "Best for agencies and e-commerce teams"]
@@ -880,22 +880,48 @@ export const packages = [
     setupFeeUsd: 20,
     credits: 12000,
     yearlyCredits: 174000,
-    yearlyEstimatedOutput: "174,000 total annual credits for 300+ AI ad drafts, premium product video variations, bulk social campaigns or client-ready delivery workflows — actual output depends on video length, quality and model choice.",
+    yearlyEstimatedOutput: "174,000 total annual credits for 300+ AI ad concepts, premium product video variations, bulk social campaigns or client-ready delivery workflows — actual output depends on video length, quality and model choice.",
     yearlyDealLabel: "FLASH DEAL: Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added.",
     planType: "subscription",
     monthlyStripePriceEnv: "STRIPE_PRICE_TEAM_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_TEAM_YEARLY",
     description: "Team workspace for agencies and e-commerce teams that need shared assets, approvals and usage controls.",
-    estimatedOutput: "Monthly seats support recurring product-ad and social content batches; Team Annual unlocks 174,000 yearly credits for 300+ AI ad drafts, premium variations and client-ready bulk delivery workflows.",
+    estimatedOutput: "Monthly seats support recurring product-ad and social content batches; Team Annual unlocks 174,000 yearly credits for 300+ AI ad concepts, premium variations and client-ready bulk delivery workflows.",
     videoSpec: "1080p standard jobs, 30-45 sec recommended, team usage controls for premium outputs.",
     mediaIncluded: "Shared brand kit, shared asset library, voice/subtitle/publishing workflows and client-ready delivery links.",
     modelAccess: ["Team-wide access to standard and premium models", "Priority video/image/editing workflows", "Shared provider configuration"],
     automationAccess: ["Team publishing workflow", "API and automation support", "Fast invoice and client delivery support"],
     concurrentTasks: 12,
-    relaxMode: "Dedicated production priority for lower-priority drafts across the workspace.",
+    relaxMode: "Dedicated production priority for lower-priority 1080p variations across the workspace.",
     renderQueue: "Dedicated production priority",
     teamFeatures: ["Seat management", "Credit usage controls", "Project permissions", "Shared board and brand kit", "Real-time review workflow"],
     usage: ["Dedicated production priority", "Monthly credits roll over while active up to 36,000 credits; Team Annual credits stay available across the active 12-month period", "Team can submit final production directly", "Built for teams", "Controls credits by member/project", "Best for agencies managing client outputs"]
+  }
+];
+
+export const whopTrialProducts = [
+  {
+    id: "business_24h_free_trial",
+    name: "Business 24-Hour Free Trial",
+    billing: "Monthly",
+    price: "$79/mo after 1-day free trial",
+    priceUsd: 79,
+    setupFeeUsd: 0,
+    credits: 12000,
+    planType: "subscription",
+    monthlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_MONTHLY",
+    yearlyStripePriceEnv: "STRIPE_PRICE_BUSINESS_YEARLY",
+    description: "Whop-hosted 1-day free trial for the Business monthly plan. The first 24 hours are free; if not cancelled in Whop before the trial ends, the $79 monthly Business subscription starts.",
+    estimatedOutput: "Use the first 24 hours to review the Crelavo workflow, dashboard, brief direction and preview access before the Business subscription starts.",
+    videoSpec: "Trial access is for workflow review and controlled previews; clean final export and recurring credits follow the confirmed Business subscription payment.",
+    mediaIncluded: "Business workflow preview, dashboard access and controlled production direction during the 24-hour trial.",
+    modelAccess: ["Business workflow preview", "Standard video/image/editing access after paid subscription starts"],
+    automationAccess: ["Trial-to-Business checkout", "Whop cancellation before trial end", "Payment verification before credits"],
+    concurrentTasks: 4,
+    relaxMode: "Trial access follows the same controlled production queue rules; recurring credits are activated only after paid subscription confirmation.",
+    renderQueue: "Business queue after subscription starts",
+    teamFeatures: ["Single brand Business workflow preview"],
+    usage: ["First 24 hours free through Whop", "Cancel in Whop before the trial ends to stop the monthly subscription", "$79/month starts after the free trial if not cancelled", "No full recurring credits are added until the paid subscription payment is confirmed", "Downloads and clean exports remain controlled during trial"]
   }
 ];
 
@@ -909,7 +935,7 @@ export const topUpPackages = [
     credits: 800,
     planType: "topup",
     stripePriceEnv: "STRIPE_PRICE_TOPUP_STARTER",
-    description: "Small one-time credit refill for quick tests, small edits, subtitles or short draft support.",
+    description: "Small one-time credit refill for controlled 1080p tests, small edits, subtitles or short production support.",
     usage: ["One-time purchase", "Does not renew automatically", "Can be bought repeatedly", "Credits are added after payment confirmation"]
   },
   {
@@ -1081,7 +1107,7 @@ export const dronePurchasePackages = [
 
 export const allCreditProducts = [...packages, ...topUpPackages, ...dronePurchasePackages];
 export const specialPurchaseProducts = [...liveSalesServicePlans, ...growthIntelligencePlans];
-export const allPaymentProducts = [...allCreditProducts, ...specialPurchaseProducts];
+export const allPaymentProducts = [...allCreditProducts, ...specialPurchaseProducts, ...whopTrialProducts];
 
 export function findCreditProduct(productIdOrName: string) {
   const normalized = productIdOrName.trim().toLowerCase();
