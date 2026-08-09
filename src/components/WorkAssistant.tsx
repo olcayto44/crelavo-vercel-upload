@@ -82,7 +82,7 @@ type HeyGenGallerySound = {
   audioUrl?: string;
 };
 
-const studioChips = ["Video", "Video Clipping", "Website", "Mobile App", "SaaS", "Admin Panel", "Image", "Voice", "SEO Pack", "Campaign"];
+const studioChips = ["Video", "Video Clipping", "Product Link to Video", "Ad Creative Angles", "UGC Style Ad", "Lower Ad Costs", "Website", "Mobile App", "Animation", "Anime Short Film", "Studio / Series-Film", "Stickman Animation", "Brand Kit", "Image / Banner / Poster", "Voice", "Campaign"];
 
 const productionLabels: Record<string, string> = {
   video: "AI Video",
@@ -136,9 +136,10 @@ type SetupProfile = {
 type ProductionSetupState = Record<string, string[]>;
 
 const sharedDeliveryOptions = ["Dashboard delivery", "Final ZIP", "README", "Revision right"];
-const sharedVideoQuality = ["480p preview", "720p", "1080p", "1080p premium", "4K"];
+const sharedVideoQuality = ["1080p", "1080p premium", "4K"];
 const sharedVideoFormat = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"];
-const sharedVideoDuration = ["5 sec", "10 sec", "15 sec", "30 sec", "45 sec", "60 sec", "2 min", "3 min", "5 min"];
+const sharedVideoDuration = ["15 sec", "30 sec", "45 sec", "60 sec", "5 sec", "10 sec", "2 min", "3 min", "5 min"];
+const heygenVideoDuration = ["Auto", "15sec", "30sec", "1min", "2min", "3min"];
 const sharedVoiceOptions = ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Own voice-over", "Choose AI voice", "Create AI voice"];
 const sharedSubtitleOptions = ["No subtitles", "Auto subtitles", "Burned subtitles", "Subtitle file", "Large social captions"];
 const sharedMotionOptions = ["Dynamic transitions", "Fast cuts", "Smooth zooms", "Swipe transitions", "Animated text overlays", "UI overlays", "Strong opening hook", "Final CTA", "Energetic social pacing", "Premium clean pacing"];
@@ -146,9 +147,8 @@ const HEYGEN_MANUAL_AVATAR_CREDITS = 900;
 const HEYGEN_MANUAL_VOICE_CREDITS = 1500;
 const HEYGEN_MOTION_PROMPT_CREDITS = 700;
 const HEYGEN_MANUAL_MUSIC_CREDITS = 900;
-const HEYGEN_AVATAR3_CREDITS_PER_MINUTE = 450;
 const HEYGEN_PREMIUM_CREDITS_PER_MINUTE = 3000;
-const heygenQualityOptions = ["Economy Avatar III", "Premium Avatar IV/V", "Video Agent auto edit"];
+const heygenQualityOptions = ["Video Agent auto edit", "Premium Avatar IV/V"];
 const heygenMotionPromptOptions = ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"];
 const heygenMusicVibes = [
   { label: "Enerjik reklam", query: "upbeat electronic ad music" },
@@ -169,7 +169,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
       { id: "videoType", title: "Video type", options: ["Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Social media short", "Cinematic promo"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-      { id: "duration", title: "Duration", options: sharedVideoDuration, credit: 350 },
+        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
       { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "Use uploaded material", "Keep original environment", "Replace background", "Blur background", "No people", "With presenter"], credit: 300 },
       { id: "background", title: "Background / environment", options: ["Product UI", "Studio", "Brand color", "Lifestyle", "City", "Nature", "Cinematic scene", "Motion graphics"], credit: 300 },
@@ -184,7 +184,7 @@ const setupProfiles: Record<string, SetupProfile> = {
     groups: [
       { id: "animationStyle", title: "Animation style", options: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-      { id: "duration", title: "Duration", options: sharedVideoDuration, credit: 350 },
+        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
       { id: "character", title: "Character", multi: true, options: ["Create AI characters", "Choose from character library", "Use uploaded character photos", "Keep same characters", "Multiple characters"], credit: 700 },
       { id: "environment", title: "Environment", options: ["Same environment", "New background", "City", "Fantasy world", "School", "Forest", "Space", "Cyberpunk"], credit: 350 },
@@ -202,7 +202,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "environment", title: "Anime environment", options: ["Same environment", "New background", "School", "City", "Fantasy world", "Forest", "Space", "Cyberpunk"], credit: 350 },
       { id: "peopleHandling", title: "Character handling", options: ["Keep same characters", "Create new characters", "Main character only", "Remove extra characters", "Multiple characters"], credit: 350 },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-      { id: "duration", title: "Duration", options: sharedVideoDuration, credit: 350 },
+        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
       { id: "voice", title: "Voice", options: sharedVoiceOptions, credit: 600 },
       { id: "extras", title: "Extras", multi: true, options: ["Anime music", "Subtitles", "User materials", "Final MP4", ...sharedDeliveryOptions], credit: 450 }
     ]
@@ -221,15 +221,24 @@ const setupProfiles: Record<string, SetupProfile> = {
   },
   video_clipping: {
     title: "Video clipping setup",
-    note: "Source video, clip count, captions, audio cleanup and export choices.",
+    note: "Source video, clip count, quality, cinematic style, presenter/avatar, captions, music, thumbnail and social export choices.",
     groups: [
-      { id: "source", title: "Source", options: ["Upload video", "Long podcast", "Long film/episode", "Webinar/lesson", "Product video"] },
-      { id: "clipType", title: "Clip type", multi: true, options: ["Hook extraction", "Exciting moments", "Funny scenes", "Educational shorts", "Product highlights"], credit: 450 },
-      { id: "clipCount", title: "Clip count", options: ["3 clips", "5 clips", "10 clips"], credit: 700 },
-      { id: "format", title: "Format", options: ["TikTok 9:16", "Instagram Reels 9:16", "YouTube Shorts", "YouTube 16:9", "Square 1:1"], credit: 250 },
+      { id: "source", title: "Source", options: ["Upload video", "Use product/platform footage", "Long podcast", "Long film/episode", "Webinar/lesson", "Product video", "Crelavo category showcase"] },
+      { id: "clipType", title: "Clip type", multi: true, options: ["Hook extraction", "Fast dynamic promo clip", "Crelavo platform showcase", "Exciting moments", "Funny scenes", "Educational shorts", "Product highlights", "Ad cutdowns"], credit: 450 },
+      { id: "videoStyle", title: "Video style", options: ["No presenter / B-roll only", "Voice-over only", "AI presenter", "Avatar / talking host", "Silent / music only", "UI-only motion graphics"] },
+      { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
+      { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
+      { id: "visualStyle", title: "Visual style", options: ["Cinematic", "Premium ad", "Neon tech", "SaaS modern", "Motion graphics", "Product demo", "Realistic UGC", "Viral TikTok", "Corporate", "Luxury product"], credit: 350 },
+      { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec", "2 min"], credit: 350 },
+      { id: "clipCount", title: "Clip count", options: ["1 social promo clip", "3 clips", "5 clips", "10 clips"], credit: 700 },
+      { id: "format", title: "Format", options: ["TikTok 9:16", "Instagram Reels 9:16", "YouTube Shorts", "LinkedIn 1:1", "YouTube 16:9", "Square 1:1"], credit: 250 },
+      { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
+      { id: "sourceHandling", title: "Source / scene handling", options: ["Reframe to vertical", "Keep original environment", "Replace background", "Blur background", "No people", "With presenter", "UI/dashboard scenes", "Neon motion graphics"], credit: 300 },
+      { id: "voice", title: "Voice-over", options: sharedVoiceOptions, credit: 600 },
       { id: "captions", title: "Captions", options: sharedSubtitleOptions, credit: 300 },
-      { id: "audio", title: "Audio", multi: true, options: ["Keep original audio", "Clean voice", "Remove background noise", "Add music", "Duck music under speech"], credit: 450 },
-      { id: "delivery", title: "Delivery", multi: true, options: ["Final clips", "Caption files", "ZIP", "Revision right"], credit: 350 }
+      { id: "audio", title: "Audio / music", multi: true, options: ["Keep original audio", "Clean voice", "Remove background noise", "Add music", "Beat-synced music", "Duck music under speech", "AI generated music", "No music"], credit: 450 },
+      { id: "extras", title: "Extras", multi: true, options: ["Background music", "Subtitles", "Thumbnail", "Cover visual", "Social media caption", "Hashtag set", "Final MP4", "Export for TikTok/Reels/Shorts", ...sharedDeliveryOptions], credit: 450 },
+      { id: "delivery", title: "Delivery", multi: true, options: ["Final clips", "Final MP4", "Caption files", "Social export pack", "ZIP", "Revision right"], credit: 350 }
     ]
   },
   talking_video: {
@@ -367,7 +376,6 @@ const trUiLabels: Record<string, string> = {
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
   "Video style": "Video tarzı",
   "HeyGen quality level": "HeyGen kalite seviyesi",
-  "Economy Avatar III": "Ekonomik Avatar III",
   "Premium Avatar IV/V": "Premium Avatar IV/V",
   "Video Agent auto edit": "Video Agent otomatik kurgu",
   "Presenter choice": "Sunucu seçimi",
@@ -407,7 +415,6 @@ const trUiLabels: Record<string, string> = {
   "Explainer video": "Anlatım videosu",
   "Social media short": "Sosyal medya kısa video",
   "Cinematic promo": "Sinematik tanıtım",
-  "480p preview": "480p ön izleme",
   "1080p premium": "1080p premium",
   "Vertical 9:16": "Dikey 9:16",
   "Horizontal 16:9": "Yatay 16:9",
@@ -533,13 +540,22 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       title: "Link/video clipping setup",
       note: "Options are based on the supplied video/social link.",
       groups: [
-        { id: "source", title: "Source analysis", options: ["Analyze link", "Long video", "Podcast/webinar", "Social video", "Product video"] },
-        { id: "clipType", title: "Clip goal", multi: true, options: ["Best hooks", "Product highlights", "Educational shorts", "Funny moments", "Viral moments", "Ad cutdowns"], credit: 450 },
-        { id: "clipCount", title: "Clip count", options: ["3 clips", "5 clips", "10 clips"], credit: 700 },
-        { id: "format", title: "Format", options: ["TikTok 9:16", "Instagram Reels 9:16", "YouTube Shorts", "YouTube 16:9", "Square 1:1"], credit: 250 },
-        { id: "sourceHandling", title: "Source handling", options: ["Keep original environment", "Reframe to vertical", "Blur background", "Replace background", "Keep main speaker only", "Remove background people"], credit: 300 },
+        { id: "source", title: "Source analysis", options: ["Analyze link", "Long video", "Podcast/webinar", "Social video", "Product video", "Crelavo category showcase"] },
+        { id: "clipType", title: "Clip goal", multi: true, options: ["Best hooks", "Fast dynamic promo clip", "Crelavo platform showcase", "Product highlights", "Educational shorts", "Funny moments", "Viral moments", "Ad cutdowns"], credit: 450 },
+        { id: "videoStyle", title: "Video style", options: ["No presenter / B-roll only", "Voice-over only", "AI presenter", "Avatar / talking host", "Silent / music only", "UI-only motion graphics"] },
+        { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
+        { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
+        { id: "visualStyle", title: "Visual style", options: ["Cinematic", "Premium ad", "Neon tech", "SaaS modern", "Motion graphics", "Product demo", "Realistic UGC", "Viral TikTok", "Corporate", "Luxury product"], credit: 350 },
+        { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec", "2 min"], credit: 350 },
+        { id: "clipCount", title: "Clip count", options: ["1 social promo clip", "3 clips", "5 clips", "10 clips"], credit: 700 },
+        { id: "format", title: "Format", options: ["TikTok 9:16", "Instagram Reels 9:16", "YouTube Shorts", "LinkedIn 1:1", "YouTube 16:9", "Square 1:1"], credit: 250 },
+        { id: "sourceHandling", title: "Source handling", options: ["Keep original environment", "Reframe to vertical", "Blur background", "Replace background", "Keep main speaker only", "Remove background people", "No people", "UI/dashboard scenes", "Neon motion graphics"], credit: 300 },
+        { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
+        { id: "voice", title: "Voice-over", options: sharedVoiceOptions, credit: 600 },
         { id: "captions", title: "Captions", options: sharedSubtitleOptions, credit: 300 },
-        { id: "delivery", title: "Delivery", multi: true, options: ["Final clips", "Caption files", "ZIP", "Revision right"], credit: 350 }
+        { id: "audio", title: "Audio / music", multi: true, options: ["Keep original audio", "Clean voice", "Remove background noise", "Add music", "Beat-synced music", "Duck music under speech", "AI generated music", "No music"], credit: 450 },
+        { id: "extras", title: "Extras", multi: true, options: ["Background music", "Subtitles", "Thumbnail", "Cover visual", "Social media caption", "Hashtag set", "Final MP4", "Export for TikTok/Reels/Shorts", ...sharedDeliveryOptions], credit: 450 },
+        { id: "delivery", title: "Delivery", multi: true, options: ["Final clips", "Final MP4", "Caption files", "Social export pack", "ZIP", "Revision right"], credit: 350 }
       ]
     };
   }
@@ -661,8 +677,10 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const wantsSubtitles = !noSubtitles && subtitlesRequestedByPrompt(text);
   const wantsNoPeopleMotionAd = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatarlar\s*olmasın|insan\s*olmasın|avatars?/.test(text)
     && /motion\s+graphics|kinetic|typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/.test(text);
+  const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(text);
   const wantsHeyGenStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
+    && !wantsNoPresenterIntent
     && !/no\s*people|no\s*presenter|ui-only|screenshot-only/.test(text);
   return Object.fromEntries(profile.groups.map((group) => {
     if (group.multi) {
@@ -702,12 +720,13 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/selam|welcome|hoş geld|hos geld|wave/.test(text)) addOption(/wave/);
         if (/cta|çağrı|cagri|hemen|başla|basla|try|start/.test(text)) addOption(/cta hand gesture|point at camera/);
       }
-      if (group.id === "heygenQuality") {
-        selected.length = 0;
-        if (/ekonomik|economic|budget|ucuz|cheap|bulk|toplu|eğitim|egitim|education|training/.test(text)) selected.push("Economy Avatar III");
-        else if (/premium|sinematik|cinematic|ultra realistic|avatar iv|avatar v|vay canına|wow/.test(text)) selected.push("Premium Avatar IV/V");
-        else selected.push("Video Agent auto edit");
-      }
+    if (group.id === "heygenQuality") {
+      selected.length = 0;
+      if (wantsNoPresenterIntent || wantsNoPeopleMotionAd) selected.push("Video Agent auto edit");
+      else if (/premium|sinematik|cinematic|ultra realistic|avatar iv|avatar v|vay canına|wow/.test(text)) selected.push("Premium Avatar IV/V");
+      else selected.push("Video Agent auto edit");
+    }
+
       return [group.id, selected];
     }
     let selected = group.options[0] ? [group.options[0]] : [];
@@ -720,13 +739,18 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       if (wanted) selected = [wanted];
     }
     if (group.id === "presenterChoice") {
-      const female = /female\s*(presenter|creator|host|avatar)|woman\s*(presenter|creator|host|avatar)|kad[ıi]n\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /female presenter/i.test(option)) : undefined;
-      const male = /male\s*(presenter|creator|host|avatar)|man\s*(presenter|creator|host|avatar)|erkek\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /male presenter/i.test(option)) : undefined;
-      const ugc = /ugc|koc|creator|tiktok|reels|influencer|social\s+media\s+creator|energetic|enerjik/.test(text) ? group.options.find((option) => /energetic ugc creator|young energetic creator/i.test(option)) : undefined;
-      const professional = /saas|business|professional|demo|explainer|kurumsal|profesyonel/.test(text) ? group.options.find((option) => /professional business presenter/i.test(option)) : undefined;
-      const trustworthy = /product\s+ad|e-?commerce|ecommerce|trustworthy|güvenilir|guvenilir|mature|olgun/.test(text) ? group.options.find((option) => /mature trustworthy presenter/i.test(option)) : undefined;
-      const wanted = female || male || ugc || professional || trustworthy;
-      if (wanted) selected = [wanted];
+      if (wantsNoPresenterIntent) {
+        const noPresenter = group.options.find((option) => /no presenter\/ b-roll only/i.test(option));
+        if (noPresenter) selected = [noPresenter];
+      } else {
+        const female = /female\s*(presenter|creator|host|avatar)|woman\s*(presenter|creator|host|avatar)|kad[ıi]n\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /female presenter/i.test(option)) : undefined;
+        const male = /male\s*(presenter|creator|host|avatar)|man\s*(presenter|creator|host|avatar)|erkek\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /male presenter/i.test(option)) : undefined;
+        const ugc = /ugc|koc|creator|tiktok|reels|influencer|social\s+media\s+creator|energetic|enerjik/.test(text) ? group.options.find((option) => /energetic ugc creator|young energetic creator/i.test(option)) : undefined;
+        const professional = /saas|business|professional|demo|explainer|kurumsal|profesyonel/.test(text) ? group.options.find((option) => /professional business presenter/i.test(option)) : undefined;
+        const trustworthy = /product\s+ad|e-?commerce|ecommerce|trustworthy|güvenilir|guvenilir|mature|olgun/.test(text) ? group.options.find((option) => /mature trustworthy presenter/i.test(option)) : undefined;
+        const wanted = female || male || ugc || professional || trustworthy;
+        if (wanted) selected = [wanted];
+      }
     }
     if (group.id === "videoStyle") {
       const silent = /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice/.test(text) ? group.options.find((option) => /silent/i.test(option)) : undefined;
@@ -864,8 +888,8 @@ function optionCredit(option: string, group: SetupGroup) {
   if (/10 clips|5 alternatives|custom|\$2499/.test(item)) return Math.round(base * 4);
   if (/60 sec|60 saniye|2 min|2 dakika|multiple characters|separate voice|own voice|ai voice|lip-sync|background music|subtitles|subtitle|thumbnail/.test(item)) return Math.round(base * 2.5);
   if (/1080p|30 sec|30 saniye|45 sec|45 saniye|5 clips|source code|expo source|final zip|readme|deployment guide/.test(item)) return Math.round(base * 1.6);
-  if (/720p|10 sec|10 saniye|15 sec|15 saniye|3 clips|png\/jpg/.test(item)) return Math.round(base * 1.05);
-  if (/480p|5 sec|5 saniye|1 visual|dashboard delivery/.test(item)) return Math.round(base * 0.55);
+  if (/10 sec|10 saniye|15 sec|15 saniye|3 clips|png\/jpg/.test(item)) return Math.round(base * 1.05);
+  if (/5 sec|5 saniye|1 visual|dashboard delivery/.test(item)) return Math.round(base * 0.55);
   return group.multi ? Math.round(base * 1.3) : Math.round(base * 1.1);
 }
 
@@ -879,8 +903,10 @@ function setupCreditBreakdown(type: string, setup: ProductionSetupState, plan?: 
 }
 
 function selectedDurationSeconds(setup: ProductionSetupState, plan?: StudioPlan | null) {
-  const duration = String((setup.duration ?? [])[0] ?? plan?.selected_duration ?? "30 sec");
+  const type = String(plan?.production_type ?? "").toLowerCase();
+  const duration = String((setup.duration ?? [])[0] ?? plan?.selected_duration ?? (/^(animation|anime_short_film|stickman_animation|video|cinematic_video|music_video|drone_video)$/i.test(type) ? "Auto" : "30 sec"));
   if (/project/i.test(duration)) return 0;
+  if (/^auto$/i.test(duration)) return 15;
   const number = Number(duration.match(/\d+/)?.[0] ?? 30) || 30;
   if (/min|dakika|dk/i.test(duration)) return number * 60;
   return number;
@@ -890,7 +916,7 @@ function heygenQualityCreditBreakdown(setup: ProductionSetupState, plan?: Studio
   const selected = String((setup.heygenQuality ?? [])[0] ?? "Video Agent auto edit");
   const seconds = selectedDurationSeconds(setup, plan);
   if (!seconds) return { title: "HeyGen provider tier", selected, credits: 0, seconds, creditsPerMinute: 0 };
-  const creditsPerMinute = /economy|avatar iii/i.test(selected) ? HEYGEN_AVATAR3_CREDITS_PER_MINUTE : HEYGEN_PREMIUM_CREDITS_PER_MINUTE;
+  const creditsPerMinute = HEYGEN_PREMIUM_CREDITS_PER_MINUTE;
   return {
     title: selected,
     selected,
@@ -927,13 +953,13 @@ function baseDraftCredits(plan: StudioPlan | null) {
 
 function setupDerivedFields(type: string, setup: ProductionSetupState) {
   const items = selectedSetupItems(setup);
-  const quality = items.find((item) => /480p|720p|1080p|2K|4K|premium/i.test(item));
+  const quality = items.find((item) => /1080p|2K|4K|premium/i.test(item));
   const duration = items.find((item) => /sec|min|Episode|Project based/i.test(item));
   const style = items.find((item) => /animation|cinematic|realistic|minimal|corporate|luxury|UGC|product demo|stickman|whiteboard|motion/i.test(item));
   const formats = items.filter((item) => /MP4|PNG|JPG|ZIP|README|PDF|CSV|source|dashboard|caption|subtitle|Expo/i.test(item));
   return {
     selected_quality: quality || (isProjectType(type) ? "Project based" : "1080p"),
-    selected_duration: duration || (isProjectType(type) ? "Project based" : "30 sec"),
+    selected_duration: duration || (isProjectType(type) ? "Project based" : (/^(animation|anime_short_film|stickman_animation|video|cinematic_video|music_video|drone_video)$/i.test(type) ? "Auto" : "30 sec")),
     selected_style: style || (isProjectType(type) ? "Premium modern interface" : "Crelavo production style"),
     selected_features: items.length ? items : ["Production package", "Dashboard delivery"],
     delivery_formats: formats.length ? formats.map((format) => format.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")) : (isProjectType(type) ? ["source_code", "readme", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"])
@@ -984,15 +1010,33 @@ function isCharacterDialogueAnimationPrompt(prompt: string) {
   return wantsAnimation && wantsSpeech && hasCharacterContinuity && sceneCount >= 2 && quotedDialogueCount >= 2;
 }
 
+function animationStylePackId(prompt: string, productionType: string) {
+  const text = `${prompt} ${productionType}`.toLocaleLowerCase("tr-TR");
+  if (/stickman|çöp adam|cop adam|cöp adam|whiteboard/.test(text)) return "stickman_clean";
+  if (/anime|japanese animation|ghibli|shinkai/.test(text)) return "anime_modern";
+  if (/pixar|3d cartoon|3d animated|3d animation|animated film|cartoon film|character animation|çizgi film|cizgi film/.test(text)) return "pixar_3d";
+  if (/sci-?fi|science fiction|futuristic|photoreal|hyperreal|unreal engine|ue5/.test(text)) return "photoreal_sci_fi";
+  if (/fantasy|fantastik|magic|magical|epic fantasy|mythic/.test(text)) return "epic_fantasy";
+  if (["animation", "anime_short_film", "stickman_animation", "cinematic_video"].includes(productionType)) return "cinematic_animation";
+  return undefined;
+}
+
 function normalizeProductionType(prompt: string, currentType: string) {
-  const raw = prompt.toLowerCase();
-  const text = `${prompt} ${currentType}`.toLowerCase();
+  const raw = prompt.toLocaleLowerCase("tr-TR");
+  const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b/.test(raw);
+  const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(raw);
+  const liveActionRealisticVideoIntent = /(live[-\s]*action|canlı\s*aksiyon|canli\s*aksiyon|ultra\s*realistic|ultra\s*gerçekçi|ultra\s*gercekci|photorealistic|foto\s*gerçekçi|fotogerçekçi|gerçekçi\s*cilt|gercekci\s*cilt|realistic\s*skin|practical\s*lighting|physical(?:ly)?\s*real|gerçek\s*görün|gercek\s*gorun)/.test(raw);
+  if (imageDesignIntent && !explicitVideoIntent) return "image";
+  if (currentType === "video" && liveActionRealisticVideoIntent) return "video";
   if (isCharacterDialogueAnimationPrompt(prompt)) return "animation";
+  if (/stickman|çöp adam|cop adam|cöp adam|whiteboard/.test(raw)) return "stickman_animation";
+  if (/anime|japanese animation|ghibli|shinkai/.test(raw)) return "anime_short_film";
+  if (/pixar|3d cartoon|3d animated|3d animation|animated film|cartoon film|character animation|animasyon|animation|çizgi film|cizgi film|cartoon/.test(raw)) return "animation";
+  if (/sci-?fi|science fiction|futuristic|photoreal|hyperreal|unreal engine|ue5|fantasy|fantastik|magic|magical|epic fantasy|mythic/.test(raw)) return "cinematic_video";
   if (/saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw)) return "video";
   if (/clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|kırp|kirp|hook extraction|best moments/.test(raw)) return "video_clipping";
   if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(raw)) return "drone_video";
-  if (/anime/.test(raw)) return "anime_short_film";
-  if (/animasyon|animation|çizgi film|cizgi film|cartoon/.test(raw)) return "animation";
   if (/müzik video|music video|mv|lyric|klip/.test(raw)) return "music_video";
   if (/canlı satış|canli satis|live sales|satış asistanı|satis asistani/.test(raw)) return "live_sales_agent";
   if (/talking video|talking head|avatar|lip sync|lip-sync|dudak/.test(raw)) return "talking_video";
@@ -1013,17 +1057,37 @@ function normalizeProductionType(prompt: string, currentType: string) {
 }
 
 
-function localPlan(prompt: string): StudioPlan {
-  const productionType = normalizeProductionType(prompt, "video");
+function productionTypeFromCategory(category: string) {
+  const normalized = normalizeAssistantText(category);
+  if (!normalized) return "";
+  if (/^video$|ai video|video production/.test(normalized)) return "video";
+  if (/video clipping|clip/.test(normalized)) return "video_clipping";
+  if (/mobile app|app builder/.test(normalized)) return "mobile_app";
+  if (/website|web site/.test(normalized)) return "website";
+  if (/anime/.test(normalized)) return "anime_short_film";
+  if (/stickman/.test(normalized)) return "stickman_animation";
+  if (/animation/.test(normalized)) return "animation";
+  if (/brand kit/.test(normalized)) return "brand_kit";
+  if (/image|banner|poster/.test(normalized)) return "image";
+  if (/voice/.test(normalized)) return "talking_video";
+  if (/campaign|reklam/.test(normalized)) return "campaign";
+  return "";
+}
+
+function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
+  const productionType = forcedProductionType || normalizeProductionType(prompt, "video");
   const project = isProjectType(productionType);
-  const formats = project ? ["source_code", "readme", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
+  const visualProject = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType);
+  const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["final_image", "png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
   const commerceIntent = /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|cart|checkout|store|ürün|urun|sepet/.test(prompt.toLowerCase());
   const packageId = productionType === "website" ? (commerceIntent ? "website_ecommerce_admin" : "website_business")
     : productionType === "saas" ? "saas_admin_billing"
       : productionType === "mobile_app" ? "mobile_expo"
         : productionType === "admin_project" ? "admin_dashboard"
           : productionType === "document_pack" ? "seo_growth_pack"
-            : "video_premium";
+            : productionType === "image" ? "image_single"
+              : productionType === "brand_kit" ? "brand_full"
+                : "video_premium";
 
   return {
     production_type: productionType,
@@ -1045,10 +1109,10 @@ function localPlan(prompt: string): StudioPlan {
   };
 }
 
-function normalizePlan(plan: StudioPlan, prompt: string): StudioPlan {
-  const productionType = normalizeProductionType(prompt, plan.production_type);
+function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = ""): StudioPlan {
+  const productionType = forcedProductionType || normalizeProductionType(prompt, plan.production_type);
   const project = isProjectType(productionType);
-  const fallback = localPlan(prompt);
+  const fallback = localPlan(prompt, forcedProductionType);
   const raw = prompt.toLowerCase();
   const isPromoVideo = productionType === "video" && /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw);
   return {
@@ -1073,7 +1137,7 @@ function normalizePlan(plan: StudioPlan, prompt: string): StudioPlan {
   };
 }
 
-function assistantReply(plan: StudioPlan, language = "tr") {
+function assistantReply(plan: StudioPlan, language = "auto") {
   const typeLabel = language === "tr" ? uiText(labelFor(plan.production_type)) : labelFor(plan.production_type);
   const project = isProjectType(plan.production_type);
   if (language !== "tr") {
@@ -1121,8 +1185,15 @@ function isProductionRequest(prompt: string) {
 }
 
 function detectWorkLanguage(prompt: string) {
-  const normalized = normalizeAssistantText(prompt);
-  return /[çğıöşüÇĞİÖŞÜ]/.test(prompt) || /(merhaba|selam|nasil|nedir|neden|ne kadar|yapabilir|istiyorum|uretim|reklam|tanitim)/.test(normalized) ? "tr" : "en";
+  const raw = String(prompt || "").trim();
+  const normalized = normalizeAssistantText(raw);
+  if (!raw) return "en";
+  const englishSignals = (normalized.match(/\b(create|generate|make|video|campaign|product|website|mobile|app|brand|showcase|premium|cinematic|voice|subtitles|thumbnail|delivery|quality|duration|format|avoid|prompt|social|media|animation|live action|realistic|speaker|presenter)\b/g) ?? []).length;
+  const turkishSignals = (normalized.match(/\b(merhaba|selam|nasil|nedir|neden|ne kadar|yapabilir|istiyorum|uretim|reklam|tanitim|video yap|olustur|hazirla|seslendirme|altyazi|kapak|gorsel|sure|kalite|teslim|baslat)\b/g) ?? []).length;
+  const hasTurkishChars = /[ğĞıİşŞçÇöÖüÜ]/.test(raw);
+  if (englishSignals >= Math.max(2, turkishSignals + 1)) return "en";
+  if (hasTurkishChars || turkishSignals > englishSignals) return "tr";
+  return "en";
 }
 
 function productionCardProvider(production: WorkProductionCard | null) {
@@ -1306,6 +1377,7 @@ function normalizeSoundGallery(payload: unknown): HeyGenGallerySound[] {
 }
 
 export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAssistantProps) {
+  const forcedProductionType = productionTypeFromCategory(initialCategory);
   const storedDraft = readStoredWorkDraft();
   const restoredDraftPrompt = storedDraft?.productionPrompt || "";
   const initialPrompt = initialIdea || initialCategory || restoredDraftPrompt;
@@ -1315,13 +1387,13 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     if (storedDraft?.messages?.length) return storedDraft.messages;
     return initialPrompt ? [
       { id: uid(), role: "user", content: initialPrompt },
-      { id: uid(), role: "assistant", content: assistantReply(localPlan(initialPrompt), detectWorkLanguage(initialPrompt)) }
+      { id: uid(), role: "assistant", content: assistantReply(localPlan(initialPrompt, forcedProductionType), detectWorkLanguage(initialPrompt)) }
     ] : [];
   });
-  const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt) : null));
-  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => storedDraft?.selectedProductionCards ?? filterCardsForPrompt(productionCardsFor(storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt) : null)), initialPrompt ?? ""));
+  const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null));
+  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => storedDraft?.selectedProductionCards ?? filterCardsForPrompt(productionCardsFor(storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null)), initialPrompt ?? ""));
   const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
-    const initialPlanForSetup = storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt) : null);
+    const initialPlanForSetup = storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null);
     return storedDraft?.productionSetup ?? (initialPlanForSetup ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : {});
   });
   const [conversationId, setConversationId] = useState("");
@@ -1342,6 +1414,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [selectedVoice, setSelectedVoice] = useState<HeyGenGalleryVoice | null>(null);
   const [selectedSound, setSelectedSound] = useState<HeyGenGallerySound | null>(null);
   const [customThumbnailPrompt, setCustomThumbnailPrompt] = useState("");
+  const [customAvoidPrompt, setCustomAvoidPrompt] = useState("");
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -1374,7 +1447,8 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     };
   }, [activeProduction?.id, activeProduction?.status, activeProduction?.automation_status]);
 
-  const workUiLanguage = detectWorkLanguage(productionPrompt || input || messages.filter((message) => message.role === "user").at(-1)?.content || "");
+  const workLanguageSource = `${productionPrompt || ""} ${input || ""}`.trim();
+  const workUiLanguage = detectWorkLanguage(workLanguageSource);
   const ux = (value: string) => workUiLanguage === "tr" ? uiText(value) : value;
   const statusUx = (tr: string, en: string) => workUiLanguage === "tr" ? tr : en;
   const setupProfile = plan ? dynamicProfileForPlan(plan, productionPrompt || input) : null;
@@ -1489,6 +1563,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const thumbnailPrompt = selectedItemsForIntent.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)))
       ? customThumbnailPrompt.trim() || "Cinematic vertical 9:16 cover image for Crelavo. One strong focal subject, high contrast dark tech background, glowing neon red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, AI video creation energy, no text, no logos, no extra people, no clutter, clean composition, scroll-stopping thumbnail."
       : undefined;
+    const avoidPrompt = customAvoidPrompt.trim() || undefined;
     const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
     const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
     const heygenTierForPayload = heygenQualityCreditBreakdown(setupForPayload, activePlanInput);
@@ -1497,15 +1572,19 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
     const noPresenterStyle = selectedItemsForIntent.some((item) => /voice-over only|silent\s*\/\s*music only|sadece seslendirmeli|sessiz|no presenter|b-roll only|no presenter motions/i.test(String(item)));
+    const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(cleanInput);
     const noPeopleMotionIntent = noPresenterStyle || (/no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(cleanInput)
       && /motion\s+graphics|hareketli\s+grafik|arayüz|arayuz|ui|hızlı\s+geçiş|hizli\s+gecis|dinamik|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional|b-?roll/i.test(cleanInput));
     const selectedHeyGenVideoAgentAutoEdit = selectedItemsForIntent.some((item) => /video agent auto edit/i.test(String(item)));
-    const wantsHeyGenBrollVideoAgent = noPeopleMotionIntent && selectedHeyGenVideoAgentAutoEdit;
-    const heygenCategoryIntent = !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|kısa\s*film|kisa\s*film|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(cleanInput + " " + selectedItemsForIntent.join(" "));
-    const wantsPresenterVideo = !noPeopleMotionIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(cleanInput));
+    const animationProductionIntent = ["animation", "anime_short_film", "stickman_animation", "cinematic_video"].includes(activePlanInput.production_type) || /animasyon|animation|çizgi film|cizgi film|cartoon|3d animated|3d animation|animated film|animation film|character animation|animated teaser/i.test(cleanInput + " " + selectedItemsForIntent.join(" "));
+    const wantsHeyGenBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedHeyGenVideoAgentAutoEdit;
+    const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(cleanInput + " " + selectedItemsForIntent.join(" "));
+    const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(cleanInput));
     const productionTypeForPayload = wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
     const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
     const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
+    const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
+    const preferredProviderForPayload = animationProductionIntent ? "heygen_video_agent" : wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : noPeopleMotionIntent ? "heygen_video_agent" : undefined;
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "HeyGen talking avatar", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
     const formats = setupFields.delivery_formats.length
@@ -1536,8 +1615,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         estimated_credits: totalEstimatedCreditsForPayload,
         delivery_level: project ? "working_source_package" : "production_package",
         delivery_requirements: { requested: true, status: "pending", formats },
-        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: wantsHeyGenBrollVideoAgent ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: wantsHeyGenBrollVideoAgent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: wantsHeyGenBrollVideoAgent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        input_json: { work_prompt: cleanInput, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : noPeopleMotionIntent ? "motion_graphics_video" : undefined, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: wantsHeyGenBrollVideoAgent ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: wantsHeyGenBrollVideoAgent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: wantsHeyGenBrollVideoAgent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        input_json: { work_prompt: cleanInput, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
         uploaded_materials: materials,
         legal_acceptance: true
       })
@@ -1619,7 +1698,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
-      const fallback = localPlan(clean);
+      const fallback = localPlan(clean, forcedProductionType);
         setPlan(fallback);
         setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean));
         resetSetupFor(fallback, clean);
@@ -1676,7 +1755,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setPlanning(false);
 
     if (!response.ok || !data.plan) {
-      const fallback = localPlan(clean);
+      const fallback = localPlan(clean, forcedProductionType);
         setPlan(fallback);
         setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean));
         resetSetupFor(fallback, clean);
@@ -1687,7 +1766,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       return;
     }
 
-    const normalized = normalizePlan(data.plan, clean);
+    const normalized = normalizePlan(data.plan, clean, forcedProductionType);
     setConversationId(data.conversation_id ?? conversationId);
     setPlan(normalized);
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
@@ -1711,11 +1790,20 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   function useChip(chip: string) {
     const prompt = chip === "Website" ? "Create a modern website with dashboard delivery and source code."
       : chip === "Mobile App" ? "Create a mobile app with screens, source package, and setup guide."
-        : chip === "SaaS" ? "Create a SaaS web app with auth, dashboard, billing-ready structure, and source delivery."
-          : chip === "Admin Panel" ? "Create an admin panel with role-based dashboard, user management, and source delivery."
-          : chip === "SEO Pack" ? "Create an SEO and content growth package."
-          : chip === "Video Clipping" ? "Create a video clipping production. Extract the best hooks and highlights from the uploaded long video or link, keep the strongest moments, and prepare final social-ready clips with captions if needed."
-          : `Create a ${chip.toLowerCase()} production.`;
+      : chip === "Animation" ? "Create an animation production with motion graphics, character animation, or explainer-style visual storytelling."
+      : chip === "Anime Short Film" ? "Create an anime short film with cinematic scenes, characters, dialogue, and final delivery."
+      : chip === "Studio / Series-Film" ? "Create a studio / series-film production with script, scene plan, characters, trailer or episode structure."
+      : chip === "Stickman Animation" ? "Create a stickman animation with fast educational or storytelling motion graphics."
+      : chip === "Brand Kit" ? "Create a brand kit with logo concepts, color palette, typography, social kit, and usage rules."
+      : chip === "Image / Banner / Poster" ? "Create a banner / poster / thumbnail visual set with clean marketing graphics and brand-ready layout."
+      : chip === "Voice" ? "Create a voice-over or voice clone production with narration, dubbing, or localized voice delivery."
+      : chip === "Campaign" ? "Create a campaign production with hooks, captions, ad angles, visuals, and launch assets together."
+      : chip === "Product Link to Video" ? "Create an ecommerce product ad video from a Shopify, Amazon, Trendyol, WooCommerce, or product page link. Turn the product link into a TikTok / Instagram Reels style ad video with hook, product proof, offer, captions, and final social-ready delivery."
+      : chip === "Ad Creative Angles" ? "Create fresh ecommerce ad creative angles for this product or offer. Generate multiple selling angles such as fear/problem, discount, benefit, before-after, social proof, urgency, and problem-solution so the brand can fight creative fatigue."
+      : chip === "UGC Style Ad" ? "Create a natural UGC-style product ad that feels like a real customer or creator tried the product. Make it casual, believable, non-robotic, social-first, and ready for TikTok, Instagram Reels, or Facebook ads."
+      : chip === "Lower Ad Costs" ? "Create a lower-ad-cost creative plan for Facebook, Instagram, and TikTok ads. Focus on stronger hooks, clearer product proof, better CTA, higher ROI, lower CPC, and more conversion-focused video/image angles."
+      : chip === "Video Clipping" ? "Create a video clipping production. Extract the best hooks and highlights from the uploaded long video or link, keep the strongest moments, and prepare final social-ready clips with captions if needed."
+      : `Create a ${chip.toLowerCase()} production.`;
     setInput(prompt);
     setStatus(statusUx(`${chip} promptu yüklendi. Enter'a veya Gönder'e bas.`, `${chip} prompt loaded. Press Enter or Send.`));
   }
@@ -1725,32 +1813,36 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     if (!file) return;
     setUploading(true);
     setStatus(statusUx("Materyal yükleniyor...", "Uploading material..."));
-    const auth = await requireVerifiedBrowserUser();
-    if (!auth.ok) {
+    try {
+      const auth = await requireVerifiedBrowserUser();
+      if (!auth.ok) {
+        setStatus(auth.message);
+        if (auth.redirect) window.location.href = auth.redirect;
+        return;
+      }
+      const formData = new FormData();
+      formData.append("user_id", auth.user.id);
+      formData.append("purpose", "omnichannel_studio_material");
+      formData.append("file", file);
+      const response = await fetch("/api/materials/upload", { method: "POST", body: formData });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.material) {
+        setStatus(data.error ?? statusUx("Materyal yüklenemedi.", "Material upload failed."));
+        return;
+      }
+      setMaterials((current) => [...current, data.material as UserUploadedMaterial]);
+      setStatus(statusUx("Materyal yüklendi ve bu üretim taslağına eklendi.", "Material uploaded and attached to this production draft."));
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : statusUx("Materyal yüklenemedi.", "Material upload failed."));
+    } finally {
       setUploading(false);
-      setStatus(auth.message);
-      if (auth.redirect) window.location.href = auth.redirect;
-      return;
+      if (fileRef.current) fileRef.current.value = "";
     }
-    const formData = new FormData();
-    formData.append("user_id", auth.user.id);
-    formData.append("purpose", "omnichannel_studio_material");
-    formData.append("file", file);
-    const response = await fetch("/api/materials/upload", { method: "POST", body: formData });
-    const data = await response.json().catch(() => ({}));
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
-    if (!response.ok || !data.material) {
-      setStatus(data.error ?? statusUx("Materyal yüklenemedi.", "Material upload failed."));
-      return;
-    }
-    setMaterials((current) => [...current, data.material as UserUploadedMaterial]);
-    setStatus(statusUx("Materyal bu üretim taslağına eklendi.", "Material attached to this production draft."));
   }
 
   async function startProduction() {
     const clean = (productionPrompt || input).trim();
-    const activePlan = plan ? normalizePlan(plan, clean) : clean ? localPlan(clean) : null;
+    const activePlan = plan ? normalizePlan(plan, clean, forcedProductionType) : clean ? localPlan(clean, forcedProductionType) : null;
     if (!clean || !activePlan) {
       setStatus(statusUx("Önce ne üretmek istediğini yaz.", "Describe what you want to create first."));
       return;
@@ -1879,6 +1971,13 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                       </div>
                       <textarea value={customThumbnailPrompt} onChange={(event) => setCustomThumbnailPrompt(event.target.value)} placeholder={workUiLanguage === "tr" ? "Kapak için özel prompt yaz..." : "Write a custom cover prompt..."} rows={4} />
                     </div> : null}
+                    <div className="omni-setup-group">
+                      <div className="omni-setup-group-title">
+                        <span>{workUiLanguage === "tr" ? "Avoid / istenmeyenler" : "Avoid / exclusions"}</span>
+                        <small>{workUiLanguage === "tr" ? "Videoda istemediğin şeyleri yaz. Provider promptuna koruma olarak eklenir." : "Write what should be avoided. This is added as provider prompt guardrails."}</small>
+                      </div>
+                      <textarea value={customAvoidPrompt} onChange={(event) => setCustomAvoidPrompt(event.target.value)} placeholder={workUiLanguage === "tr" ? "Örn: presenter yok, UI yok, siyah placeholder yok, altyazı yok..." : "e.g. no presenter, no UI, no black placeholder, no subtitles..."} rows={3} />
+                    </div>
                     <div className="omni-setup-summary">
                       <strong>{ux("Selected setup")}</strong>
                       <p>{setupItems.length ? setupItems.map(ux).join(" · ") : ux("No extra setup selected yet.")}</p>
@@ -1887,7 +1986,6 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                     </div>
                   </div>
                 ) : null}
-                {materials.length ? <div className="omni-material-list">{materials.map((material) => <span key={material.file_url}>{material.title}</span>)}</div> : null}
               </div>
               <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? ux("Creating...") : ux("Start Production")}</button>
             </article>
@@ -1943,6 +2041,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         </div>
 
         {status ? <p className="omni-status-line">{status}</p> : null}
+        {materials.length ? (
+          <div className="omni-material-list omni-material-list-floating" aria-live="polite">
+            <strong>{workUiLanguage === "tr" ? "Ekli materyaller" : "Attached materials"}</strong>
+            {materials.map((material) => <span key={material.file_url} title={material.title}>{material.title}</span>)}
+          </div>
+        ) : null}
 
         <form className="omni-input-bar" onSubmit={submitPrompt}>
           <input ref={fileRef} type="file" accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" hidden onChange={(event) => uploadMaterial(event.currentTarget.files)} />
