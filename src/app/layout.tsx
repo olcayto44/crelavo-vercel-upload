@@ -12,7 +12,17 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
 import "./globals.css";
 
-const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
+function safeSiteUrl(value?: string | null) {
+  const fallback = "https://www.crelavo.com";
+  const candidate = (value ?? fallback).trim().replace(/\/$/, "");
+  try {
+    return new URL(candidate).origin;
+  } catch {
+    return fallback;
+  }
+}
+
+const siteUrl = safeSiteUrl(process.env.NEXT_PUBLIC_APP_URL);
 const siteName = "Crelavo";
 const title = "AI Production Studio for Websites, Apps & E-Commerce | Crelavo";
 const description = "Turn Shopify, Amazon, and Trendyol links into AI videos, mobile apps, and websites. Launch complete marketing campaigns in minutes with Crelavo AI Studio.";
