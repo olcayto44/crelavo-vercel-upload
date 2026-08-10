@@ -254,6 +254,7 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
 const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 const [notice, setNotice] = useState("");
 const [autoPosterUrl, setAutoPosterUrl] = useState("");
+const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle" | "generating" | "ready" | "failed">("idle");
 
   function captureAutoPoster(event: SyntheticEvent<HTMLVideoElement>) {
     if (posterUrl || autoPosterUrl) return;
@@ -457,6 +458,33 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
     || primaryAlternative?.coverUrl
     || primaryAlternative?.cover_url
   );
+  useEffect(() => {
+    if (!isMediaProduction || !playbackUrl || posterUrl || thumbnailGenerationStatus !== "idle") return;
+    let cancelled = false;
+    setThumbnailGenerationStatus("generating");
+    requireVerifiedBrowserUser()
+      .then((auth) => {
+        if (!auth.ok) throw new Error(auth.message);
+        return fetch(`/api/productions/${production.id}/thumbnail`, {
+          method: "POST",
+          headers: { ...authHeaders(auth.user.id), "Content-Type": "application/json" },
+          body: JSON.stringify({ videoUrl: playbackUrl, timestampSeconds: 2.5 })
+        });
+      })
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(String(payload.error ?? "Thumbnail generation failed."));
+        if (!cancelled && payload.thumbnailUrl) {
+          setAutoPosterUrl(String(payload.thumbnailUrl));
+          setThumbnailGenerationStatus("ready");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setThumbnailGenerationStatus("failed");
+      });
+    return () => { cancelled = true; };
+  }, [isMediaProduction, playbackUrl, posterUrl, production.id, thumbnailGenerationStatus]);
+
   const requestedDurationSeconds = Number((production as Record<string, unknown>).output_duration_seconds ?? outputJson.output_duration_seconds ?? outputJson.providerPreflight?.durationSeconds ?? 0) || 0;
   const actualDurationSeconds = Number(outputJson.durationSeconds ?? outputJson.duration_seconds ?? outputJson.visualStatus?.durationSeconds ?? outputJson.renderStatus?.durationSeconds ?? outputJson.mediaMetadata?.durationSeconds ?? outputJson.providerPreflight?.actualDurationSeconds ?? 0) || 0;
   const durationDeltaSeconds = requestedDurationSeconds && actualDurationSeconds ? Math.round(actualDurationSeconds - requestedDurationSeconds) : 0;
