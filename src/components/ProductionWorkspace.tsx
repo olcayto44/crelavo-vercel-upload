@@ -409,6 +409,20 @@ const previewUrl = isDroneRawPreviewOnly ? rawPreviewUrl : isMediaProduction && 
 const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
   const mediaDownloadUrl = isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
   const playbackUrl = previewUrl || (isMediaProduction ? deliveryUrl : "");
+  const posterUrl = safeAssetUrl(
+    outputJson.thumbnailUrl
+    || outputJson.thumbnail_url
+    || outputJson.coverUrl
+    || outputJson.cover_url
+    || outputJson.posterUrl
+    || outputJson.poster_url
+    || outputJson.thumbnailImageUrl
+    || outputJson.thumbnail_image_url
+    || primaryAlternative?.thumbnailUrl
+    || primaryAlternative?.thumbnail_url
+    || primaryAlternative?.coverUrl
+    || primaryAlternative?.cover_url
+  );
   const requestedDurationSeconds = Number((production as Record<string, unknown>).output_duration_seconds ?? outputJson.output_duration_seconds ?? outputJson.providerPreflight?.durationSeconds ?? 0) || 0;
   const actualDurationSeconds = Number(outputJson.durationSeconds ?? outputJson.duration_seconds ?? outputJson.visualStatus?.durationSeconds ?? outputJson.renderStatus?.durationSeconds ?? outputJson.mediaMetadata?.durationSeconds ?? outputJson.providerPreflight?.actualDurationSeconds ?? 0) || 0;
   const durationDeltaSeconds = requestedDurationSeconds && actualDurationSeconds ? Math.round(actualDurationSeconds - requestedDurationSeconds) : 0;
@@ -1116,7 +1130,7 @@ const data = await response.json().catch(() => ({}));
           {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
           <div className="customer-preview-screen">
             {previewKind === "video" ? (
-              <video src={playbackUrl} controls playsInline poster="" />
+              <video src={playbackUrl} controls playsInline poster={posterUrl || undefined} />
             ) : previewKind === "image" ? (
               <img src={previewUrl} alt={isProjectProduction ? "Crelavo customer project preview image" : "Crelavo generated production preview image"} />
             ) : previewKind === "web" && isProjectProduction ? (
