@@ -6,17 +6,18 @@ import { packages, topUpPackages } from "@/lib/data";
 export default function CreditsPage() {
   return (
     <DashboardShell>
-      <div className="card">
-        <span className="badge">Credits</span>
-        <h2>Choose your Crelavo credit package</h2>
-        <p style={{ color: "var(--muted)" }}>
-          Start with a monthly or yearly credit package first. Extra top-up credits stay below the main plans so the page stays simple.
-        </p>
-      </div>
-
-      <section style={{ marginTop: 18 }}>
-        <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" />
+      <section className="card credit-page-hero">
+        <div>
+          <span className="badge">Credits</span>
+          <h2>Credit packages are first</h2>
+          <p style={{ color: "var(--muted)" }}>
+            Choose a subscription package at the top of the page. Top-ups and support notes stay underneath.
+          </p>
+        </div>
+        <Link className="btn secondary" href="/dashboard/assistant-workspace">Open Work</Link>
       </section>
+
+      <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" compact />
 
       <section className="card admin-wide-card" style={{ marginTop: 24 }}>
         <span className="badge">Need extra credits?</span>

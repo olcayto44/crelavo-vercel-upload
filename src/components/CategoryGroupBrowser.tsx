@@ -169,7 +169,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 }
 
 export function CategoryGroupBrowser() {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>("marketing");
   const [packageCatalog, setPackageCatalog] = useState<ProductionPackage[]>(productionPackages);
   const selectedGroup = categoryGroups.find((group) => group.id === selectedGroupId);
 
@@ -204,7 +204,7 @@ export function CategoryGroupBrowser() {
         <div className="category-empty-state">
           <span className="badge">Choose a production group</span>
           <h2>Select a heading above to view its categories</h2>
-          <p>The page starts simple: choose the closest production group, then only the matching categories appear below.</p>
+          <p>The page stays simple: choose one production group, then only that set of categories appears below.</p>
         </div>
       ) : (
         <section className="category-group-section">
@@ -213,22 +213,11 @@ export function CategoryGroupBrowser() {
             <h2>{selectedGroup.title}</h2>
             <p>{selectedGroup.description}</p>
           </div>
-          <div className="production-pricing-grid">
+          <div className="production-pricing-grid compact-category-grid">
             {selectedGroup.typeIds.map((typeId) => renderCategoryCard(typeId, packageCatalog))}
           </div>
         </section>
       )}
-
-      <section className="category-group-section all-category-section">
-        <div className="category-group-head">
-          <span className="badge">General catalog</span>
-          <h2>All Production Categories</h2>
-          <p>Browse every Crelavo production category in one place, including campaigns, video, avatars, websites, visuals, documents and admin projects.</p>
-        </div>
-        <div className="production-pricing-grid">
-          {productionTypes.map((type) => renderCategoryCard(type.id, packageCatalog))}
-        </div>
-      </section>
     </section>
   );
 }

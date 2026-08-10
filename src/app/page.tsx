@@ -164,15 +164,6 @@ const featuredTools = [
   { title: "Full Tools Catalog", href: "/tools", icon: Grid3X3 }
 ];
 
-const homepageExampleGallery = [
-  { title: "Product Ad Video", tag: "E-commerce", format: "9:16 social", href: "/dashboard/create?category=ecommerce_product_ad", prompt: "Turn a product link into a ready ad video", tone: "cyan" },
-  { title: "UGC Creator Clip", tag: "Social Ads", format: "TikTok / Reels", href: "/dashboard/create?category=video_clipping", prompt: "Create hooks, captions and short ad cuts", tone: "purple" },
-  { title: "Website Launch Pack", tag: "Web", format: "Landing + assets", href: "/dashboard/create?category=website&mode=project", prompt: "Generate web copy, sections and launch visuals", tone: "green" },
-  { title: "Mobile App Starter", tag: "App", format: "Expo + screens", href: "/dashboard/create?category=mobile_app&mode=project", prompt: "Plan app screens, navigation and source package", tone: "blue" },
-  { title: "Brand Visual Pack", tag: "Images", format: "Poster / banner", href: "/dashboard/create?category=image", prompt: "Create campaign visuals and clean exports", tone: "pink" },
-  { title: "Localization Campaign", tag: "Global", format: "Market-ready", href: "/ai-cultural-localization", prompt: "Adapt hooks and proof for another country", tone: "amber" },
-  { title: "Voice + Dubbing", tag: "Audio", format: "Voice workflow", href: "/dashboard/create?category=dubbing", prompt: "Prepare narration, dubbing or localization audio", tone: "blue" }
-];
 
 const paidGrowthFunnelCards = [
   {
@@ -302,29 +293,6 @@ export default async function HomePage() {
           </section>
           <CrelavoPremiumHero />
 
-          <section className="container section home-section-tight home-example-gallery-section" aria-labelledby="home-example-gallery-heading">
-            <div className="sample-video-head">
-              <div>
-                <span className="badge"><Sparkles size={15} /> Examples you can start from</span>
-                <h2 id="home-example-gallery-heading">Pick a proven production format, then let Crelavo route the workflow</h2>
-                <p className="section-lead">A faster visual entry point for visitors who want to see what Crelavo can create before opening the full workspace.</p>
-              </div>
-              <HardReloadLink className="btn secondary" href="/categories">Browse all categories</HardReloadLink>
-            </div>
-            <div className="home-example-gallery-grid">
-              {homepageExampleGallery.map((item) => (
-                <HardReloadLink className={`home-example-card home-example-tone-${item.tone}`} href={item.href} key={item.title}>
-                  <div className="home-example-preview">
-                    <span>{item.tag}</span>
-                    <strong>{item.title}</strong>
-                    <small>{item.format}</small>
-                  </div>
-                  <p>{item.prompt}</p>
-                  <span className="home-example-cta">Try this workflow</span>
-                </HardReloadLink>
-              ))}
-            </div>
-          </section>
 
           <section className="container section home-section-tight clean-feed-section home-goal-wizard" aria-labelledby="home-goal-wizard-heading">
             <div className="sample-video-head home-goal-wizard-head">

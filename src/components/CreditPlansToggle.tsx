@@ -43,12 +43,36 @@ function planCredits(plan: CreditPlan, billingMode: "monthly" | "yearly") {
   return billingMode === "monthly" ? plan.credits : plan.yearlyCredits ?? plan.credits * 12;
 }
 
-export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plans: CreditPlan[]; ctaLabel?: string }) {
+function compactCount(value: number) {
+  return Math.max(1, Math.floor(value)).toLocaleString("en-US");
+}
+
+function estimatedVideoOutput(credits: number) {
+  return [
+    { label: "Standard 10s videos", value: compactCount(credits / 200) },
+    { label: "Premium 10s videos", value: compactCount(credits / 550) },
+    { label: "Premium 60s videos", value: compactCount(credits / 3300) }
+  ];
+}
+
+function planPositioning(plan: CreditPlan, billingMode: "monthly" | "yearly") {
+  const name = plan.name.toLowerCase();
+  if (plan.planType === "topup") return "One-time credit refill";
+  if (name === "business" && billingMode === "yearly") return "Best credit value";
+  if (name === "business") return "Best for one brand";
+  if (name === "team" && billingMode === "yearly") return "Best for agencies";
+  if (name === "team") return "Team workspace";
+  if (name === "ultra") return "High-volume production";
+  if (name === "pro") return "Quick start";
+  return "Production plan";
+}
+
+export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact = false }: { plans: CreditPlan[]; ctaLabel?: string; compact?: boolean }) {
   const [billingMode, setBillingMode] = useState<"monthly" | "yearly">("monthly");
   const isTopUpList = plans.every((plan) => plan.planType === "topup");
 
   return (
-    <section className="credit-plan-section">
+    <section className={`credit-plan-section${compact ? " compact-credit-plans" : ""}`}>
       <div className="credit-plan-head">
         <div>
           <span className="badge"><CreditCard size={14} /> {isTopUpList ? "One-time credit purchases" : "Recurring credit subscriptions"}</span>
@@ -79,33 +103,51 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package" }: { plan
           const previewNotice = whopPreviewNotice(plan, effectiveBilling);
           const yearlyDealLabel = billingMode === "yearly" && plan.yearlyDealLabel ? plan.yearlyDealLabel : "";
           const estimatedOutput = billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput;
+          const videoOutput = estimatedVideoOutput(credits);
+          const positioning = planPositioning(plan, billingMode);
           return (
             <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : billingMode === "monthly" ? "24-hour preview + monthly" : "24-hour preview + yearly - 2 months free"}</span>
               <h3>{plan.name}</h3>
+              <p className="plan-savings-line"><b>{positioning}</b></p>
               <strong>{price}</strong>
               <p className="plan-credit-line"><b>{credits.toLocaleString()} credits</b> are added to the account.</p>
+              {!isTopUpList && !compact ? (
+                <div className="admin-info-grid" style={{ marginTop: 12 }}>
+                  {videoOutput.map((item) => (
+                    <div key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                      <small>Estimated output</small>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {previewNotice ? <p className="plan-savings-line">{previewNotice}</p> : null}
               {yearlyDealLabel ? <p className="plan-savings-line flash-deal-line">{yearlyDealLabel}</p> : null}
-              {plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
-              <div className="plan-value-stack compact">
-                {estimatedOutput ? <div><span>Estimated output</span><b>{estimatedOutput}</b></div> : null}
-                {plan.videoSpec ? <div><span>Video quality/duration</span><b>{plan.videoSpec}</b></div> : null}
-                {plan.mediaIncluded ? <div><span>Material + audio</span><b>{plan.mediaIncluded}</b></div> : null}
-                {typeof plan.concurrentTasks === "number" ? <div><span>Concurrent task</span><b>{plan.concurrentTasks} simultaneous jobs</b></div> : null}
-              </div>
-              <p>{plan.description}</p>
-              <div className="plan-feature-groups">
-                {plan.modelAccess?.length ? <div><b>Model access</b>{plan.modelAccess.map((item) => <small key={item}>{item}</small>)}</div> : null}
-                {plan.automationAccess?.length ? <div><b>Automation</b>{plan.automationAccess.map((item) => <small key={item}>{item}</small>)}</div> : null}
-                {plan.relaxMode ? <div><b>Relax mode</b><small>{plan.relaxMode}</small></div> : null}
-                {plan.teamFeatures?.length ? <div><b>Team / workspace</b>{plan.teamFeatures.map((item) => <small key={item}>{item}</small>)}</div> : null}
-              </div>
-              <div className="workspace-action-note" style={{ marginTop: 12 }}>
-                <small>Secure checkout processed by the active payment provider.</small>
-                <small>Dashboard access and credit activation after payment confirmation.</small>
-                <small>Cancel preview/subscription clearly from Whop or Billing profile.</small>
-              </div>
+              {!compact && plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
+              {!compact ? (
+                <>
+                  <div className="plan-value-stack compact">
+                    {estimatedOutput ? <div><span>Estimated output</span><b>{estimatedOutput}</b></div> : null}
+                    {plan.videoSpec ? <div><span>Video quality/duration</span><b>{plan.videoSpec}</b></div> : null}
+                    {plan.mediaIncluded ? <div><span>Material + audio</span><b>{plan.mediaIncluded}</b></div> : null}
+                    {typeof plan.concurrentTasks === "number" ? <div><span>Concurrent task</span><b>{plan.concurrentTasks} simultaneous jobs</b></div> : null}
+                  </div>
+                  <p>{plan.description}</p>
+                  <div className="plan-feature-groups">
+                    {plan.modelAccess?.length ? <div><b>Model access</b>{plan.modelAccess.map((item) => <small key={item}>{item}</small>)}</div> : null}
+                    {plan.automationAccess?.length ? <div><b>Automation</b>{plan.automationAccess.map((item) => <small key={item}>{item}</small>)}</div> : null}
+                    {plan.relaxMode ? <div><b>Relax mode</b><small>{plan.relaxMode}</small></div> : null}
+                    {plan.teamFeatures?.length ? <div><b>Team / workspace</b>{plan.teamFeatures.map((item) => <small key={item}>{item}</small>)}</div> : null}
+                  </div>
+                  <div className="workspace-action-note" style={{ marginTop: 12 }}>
+                    <small>Secure checkout processed by the active payment provider.</small>
+                    <small>Dashboard access and credit activation after payment confirmation.</small>
+                    <small>Cancel preview/subscription clearly from Whop or Billing profile.</small>
+                  </div>
+                </>
+              ) : null}
               <span className="btn">{ctaLabel}</span>
             </Link>
           );
