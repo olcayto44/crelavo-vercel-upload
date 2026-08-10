@@ -163,16 +163,16 @@ const setupProfiles: Record<string, SetupProfile> = {
     title: "AI video setup",
     note: "Only video-specific production choices are shown here.",
     groups: [
-      { id: "videoStyle", title: "Video style", options: ["AI presenter", "Voice-over only", "Silent / music only"] },
+      { id: "videoStyle", title: "Video style", options: ["Silent / music only", "No presenter / B-roll only", "Voice-over only", "AI presenter"] },
       { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
       { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
-      { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
-      { id: "videoType", title: "Video type", options: ["Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Social media short", "Cinematic promo"] },
+      { id: "presenterMotion", title: "Presenter motions", multi: true, options: ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"], credit: HEYGEN_MOTION_PROMPT_CREDITS },
+      { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
-      { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "Use uploaded material", "Keep original environment", "Replace background", "Blur background", "No people", "With presenter"], credit: 300 },
-      { id: "background", title: "Background / environment", options: ["Product UI", "Studio", "Brand color", "Lifestyle", "City", "Nature", "Cinematic scene", "Motion graphics"], credit: 300 },
+      { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "No people", "Use uploaded material", "Keep original environment", "Replace background", "Blur background", "With presenter"], credit: 300 },
+      { id: "background", title: "Background / environment", options: ["Cinematic scene", "Motion graphics", "City", "Nature", "Studio", "Brand color", "Lifestyle", "Product UI"], credit: 300 },
       { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
       { id: "voice", title: "Voice-over", options: sharedVoiceOptions, credit: 600 },
       { id: "extras", title: "Extras", multi: true, options: ["Background music", "Subtitles", "Thumbnail", "3 alternatives", "5 alternatives", "Final MP4", ...sharedDeliveryOptions], credit: 450 }
@@ -534,6 +534,27 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const isClipLink = hasLink && sourceIsVideoPlatform && explicitClipRequest;
   const isSocialLink = hasLink && !isClipLink && /instagram|tiktok|youtube|reels|shorts|social|sosyal|post|creator|influencer/.test(signal);
   const isFilmAnimation = /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
+  const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
+
+  if (plan.production_type === "video" && isCinematicAction) {
+    return {
+      title: "Cinematic action video setup",
+      note: "Only cinematic video choices are shown here. Presenter/avatar controls are hidden for this no-presenter action scene.",
+      groups: [
+        { id: "videoStyle", title: "Video style", options: ["Silent / music only", "Voice-over only"] },
+        { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
+        { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Script-to-video"] },
+        { id: "quality", title: "Quality", options: ["1080p premium", "1080p", "4K"], credit: 900 },
+        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
+        { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
+        { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "No people", "Use uploaded material", "Keep original environment"], credit: 300 },
+        { id: "background", title: "Background / environment", options: ["Cinematic scene", "City", "Nature", "Studio", "Motion graphics"], credit: 300 },
+        { id: "motion", title: "Pace / transitions", multi: true, options: ["Strong opening hook", "Fast cuts", "Dynamic transitions", "Smooth zooms", "Final CTA", "Premium clean pacing"], credit: 350 },
+        { id: "voice", title: "Voice-over", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice"], credit: 600 },
+        { id: "extras", title: "Extras", multi: true, options: ["Background music", "Thumbnail", "Final MP4", "Dashboard delivery", "Revision right", "Final ZIP"], credit: 450 }
+      ]
+    };
+  }
 
   if (plan.production_type === "video_clipping" || isClipLink) {
     return {
@@ -678,9 +699,11 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const wantsNoPeopleMotionAd = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatarlar\s*olmasın|insan\s*olmasın|avatars?/.test(text)
     && /motion\s+graphics|kinetic|typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/.test(text);
   const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(text);
+  const isCinematicActionHint = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(text);
   const wantsHeyGenStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
     && !wantsNoPresenterIntent
+    && !isCinematicActionHint
     && !/no\s*people|no\s*presenter|ui-only|screenshot-only/.test(text);
   return Object.fromEntries(profile.groups.map((group) => {
     if (group.multi) {
@@ -713,6 +736,9 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (wantsSubtitles) addOption(/subtitles/);
         if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
         if (!musicDisabledByPrompt(text) && /music|müzik|muzik|background music|fon müzik|fon muzik/.test(text)) addOption(/music/);
+        if (/thumbnail|cover|kapak|vitrin|showcase|social|sosyal|fomo|hook|kan[ıi]ca|kanca/.test(text)) addOption(/thumbnail/);
+        if (/dashboard|panel/.test(text)) addOption(/dashboard delivery/);
+        if (/revision|revizyon/.test(text)) addOption(/revision/);
       }
       if (group.id === "presenterMotion") {
         if (/enerjik|energetic|dynamic|dinamik|heyecanlı|heyecanli|ugc|creator|social/.test(text)) addOption(/energetic gestures/);
@@ -808,7 +834,8 @@ const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand 
       if (/açılış|acilis|hook|güçlü|guclu/.test(text)) motionSelections.push(...group.options.filter((option) => /strong opening hook/i.test(option)));
       if (/cta|çağrı|cagri|final|son ekran/.test(text)) motionSelections.push(...group.options.filter((option) => /final cta/i.test(option)));
       if (/overlay|arayüz|arayuz|ui|yazı|yazi|text/.test(text)) motionSelections.push(...group.options.filter((option) => /ui overlays|animated text overlays/i.test(option)));
-      selected = Array.from(new Set(motionSelections)).slice(0, 5);
+      if (isCinematicActionHint) motionSelections.push(...group.options.filter((option) => /strong opening hook|fast cuts|dynamic transitions|smooth zooms|final cta|premium clean pacing/i.test(option)));
+      selected = Array.from(new Set(motionSelections)).slice(0, 6);
     }
     if (group.id === "voice") {
       const explicitPresenterVoice = /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text);
@@ -1681,9 +1708,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setInput("");
     setMessages((current) => [...current, { id: uid(), role: "user", content: clean }]);
 
-    if (plan && isStartIntent(clean)) {
-      setStatus(statusUx("Mevcut taslaktan üretim başlatılıyor...", "Starting production from the current draft..."));
-      await startProduction();
+    if (isStartIntent(clean) && (plan || productionPrompt.trim())) {
+      const activeDraft = plan ?? localPlan(productionPrompt.trim(), forcedProductionType);
+      setPlan(activeDraft);
+      setProductionSetup(defaultSetupFor(activeDraft.production_type, productionPrompt.trim(), activeDraft));
+      setStatus(statusUx("Mevcut taslak hazır. Üretimi başlat ile production kaydını oluştur.", "Draft is ready. Use Start Production to create the production record."));
+      setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(activeDraft, detectWorkLanguage(productionPrompt.trim() || clean)) }]);
       return;
     }
 
