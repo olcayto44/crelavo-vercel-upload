@@ -94,6 +94,39 @@ function urlValue(...values: unknown[]) {
   return "";
 }
 
+function isRealImageUrl(url: string) {
+  if (!/^https?:\/\//i.test(url)) return false;
+  if (/manifest|readme|preview\.html|placeholder|generated_on_download/i.test(url)) return false;
+  return /\.(png|jpe?g|webp|avif)(\?|$)|heygen\.ai|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url);
+}
+
+function imageUrlValue(...values: unknown[]): string {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const url = value.trim();
+      if (isRealImageUrl(url)) return url;
+      continue;
+    }
+    if (Array.isArray(value)) {
+      const found = imageUrlValue(...value);
+      if (found) return found;
+      continue;
+    }
+    if (value && typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      for (const key of ["thumbnailUrl", "thumbnail_url", "coverUrl", "cover_url", "posterUrl", "poster_url", "thumbnailImageUrl", "thumbnail_image_url", "previewImageUrl", "preview_image_url", "imageUrl", "image_url", "cover", "poster", "thumbnail", "preview_image", "image"]) {
+        const found = imageUrlValue(record[key]);
+        if (found) return found;
+      }
+      for (const nested of Object.values(record)) {
+        const found = imageUrlValue(nested);
+        if (found) return found;
+      }
+    }
+  }
+  return "";
+}
+
 function textValue(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -107,7 +140,10 @@ async function heygenVideoAgentCompletionOverride(output: Record<string, any>, v
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : {};
   const isHeyGen = String(visualStatus?.provider ?? outputVisualJobProvider ?? proof.provider ?? visualJob.provider ?? "").toLowerCase() === "heygen_video_agent";
   if (!isHeyGen) return null;
-  const directUrl = urlValue(visualStatus?.outputUrl, output.finalVideoUrl, output.providerFinalUrl, output.latestHeyGenVideoArtifact, output.visualStatus, visualJob.raw);
+  const latestArtifact = output.latestHeyGenVideoArtifact && typeof output.latestHeyGenVideoArtifact === "object" ? output.latestHeyGenVideoArtifact as Record<string, unknown> : {};
+  const latestResourceId = textValue(output.heygenLatestVideoResourceId, latestArtifact.providerResourceId, latestArtifact.id);
+  const unresolvedNewResource = /^video_/i.test(latestResourceId) && !urlValue(visualStatus?.outputUrl, latestArtifact.previewUrl);
+  const directUrl = unresolvedNewResource ? "" : urlValue(visualStatus?.outputUrl, output.finalVideoUrl, output.providerFinalUrl, output.latestHeyGenVideoArtifact, output.visualStatus, visualJob.raw);
   if (directUrl) return { provider: "heygen_video_agent", id: textValue(visualJob.id, proof.sessionId, visualStatus?.id), status: "succeeded", outputUrl: directUrl, raw: { source: "direct_output_bridge", visualStatus, output } };
   const videoId = textValue(output.heygenLatestVideoResourceId, output.heygenVideoId, proof.videoId, visualJob.videoId, visualJob.raw && typeof visualJob.raw === "object" ? (visualJob.raw as Record<string, unknown>).video_id : "");
   if (!videoId) return null;
@@ -188,7 +224,8 @@ function heygenV3Metadata(status: NormalizedProviderStatus | null) {
   const captionedVideoUrl = String(data.captioned_video_url ?? data.captionedVideoUrl ?? "").trim();
   const subtitleUrl = String(data.subtitle_url ?? data.subtitleUrl ?? "").trim();
   const videoPageUrl = String(data.video_page_url ?? data.videoPageUrl ?? "").trim();
-  return { captionedVideoUrl, subtitleUrl, videoPageUrl };
+  const thumbnailUrl = imageUrlValue(data, videoEnvelope, raw);
+  return { captionedVideoUrl, subtitleUrl, videoPageUrl, thumbnailUrl };
 }
 
 function heygenAgentArtifactsFromStatus(status: NormalizedProviderStatus | null) {
@@ -197,7 +234,8 @@ function heygenAgentArtifactsFromStatus(status: NormalizedProviderStatus | null)
   const latestVideoArtifact = raw.latestVideoArtifact && typeof raw.latestVideoArtifact === "object" ? raw.latestVideoArtifact as Record<string, unknown> : null;
   const latestVideoUrl = String(latestVideoArtifact?.previewUrl ?? status?.outputUrl ?? "").trim();
   const latestVideoResourceId = String(latestVideoArtifact?.providerResourceId ?? "").trim();
-  return { artifacts, latestVideoArtifact, latestVideoUrl, latestVideoResourceId };
+  const thumbnailUrl = imageUrlValue(latestVideoArtifact, artifacts, raw);
+  return { artifacts, latestVideoArtifact, latestVideoUrl, latestVideoResourceId, thumbnailUrl };
 }
 
 function existingRenderJob(output: Record<string, unknown>) {
@@ -719,7 +757,36 @@ const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url 
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
-    const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "" };
+    const isShotstackUiMotion = String(outputVisualJobProvider || visualJobForUrl.provider || visualStatus?.provider || "").toLowerCase() === "shotstack_ui_motion";
+    const missingUiMotionRender = isShotstackUiMotion && !renderJobForUrl.id && !renderJobForUrl.url && !production.preview_url && !production.delivery_link;
+    if (missingUiMotionRender) {
+      const repairRenderJob = await createShotstackRender({
+        title: String(production.title || production.prompt || "Crelavo motion graphics video"),
+        subtitleLines: Array.isArray(output.subtitleLines) ? output.subtitleLines.map(String) : undefined,
+        durationSeconds: Number((output.plan && typeof output.plan === "object" ? (output.plan as Record<string, unknown>).durationSeconds : undefined) ?? output.durationSeconds ?? 45) || 45
+      });
+      const repairedOutput = outputWithWorkflow(production, outputWithRenderJob, {
+        visualStatus,
+        renderJob: repairRenderJob,
+        providerStatus: "final_render_started",
+        providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }
+      });
+      const { data } = await supabase
+        .from("production_requests")
+        .update(safeUpdate({
+          status: "in_production",
+          automation_status: "running",
+          generation_status: "final_render_started",
+          output_json: repairedOutput,
+          admin_notes: "Repaired stuck shotstack_ui_motion production by starting final Shotstack render.",
+          updated_at: new Date().toISOString()
+        }))
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      return Response.json({ production: data, visualStatus, renderStatus, renderPending: true, repairStarted: true });
+    }
+    const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "", thumbnailUrl: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
     const heygenCompletionStatus = await heygenVideoAgentCompletionOverride(outputWithRenderJob, normalizedVisualStatus, outputVisualJobProvider);
     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
@@ -832,7 +899,7 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
   creativeActivityItem("b-roll", "B-roll / UI overlays", "completed", "Supporting overlays, captions and motion elements are ready.", successfulStatus.provider),
   creativeActivityItem("final-video", "Final video", "ready", "Final provider video is ready for preview and delivery.", successfulStatus.provider)
 ]);
-const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, alternatives: polledAlternatives, alternativeStatuses };
+const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, thumbnailUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.thumbnailUrl || undefined, posterUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.posterUrl || undefined, coverUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.coverUrl || undefined, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, alternatives: polledAlternatives, alternativeStatuses };
       const readyGate = productionReadyGate({ ...production, preview_url: providerFinalUrl, delivery_link: providerFinalUrl, delivery_zip_url: providerFinalUrl, output_json: qualityOutputCandidate }, qualityOutputCandidate);
       const readinessSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
       const explicitNoVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(readinessSignal);
@@ -939,7 +1006,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
           delivery_link: finalUrl,
           delivery_zip_url: finalUrl,
           reserved_credits: 0,
-          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
+          output_json: outputWithWorkflow(finalProductionState, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: finalUrl, providerFinalUrl, thumbnailUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.thumbnailUrl || undefined, posterUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.posterUrl || undefined, coverUrl: heygenMeta.thumbnailUrl || heygenAgentBridge.thumbnailUrl || outputWithRenderJob.coverUrl || undefined, captionedVideoUrl: heygenMeta.captionedVideoUrl || undefined, subtitleUrl: heygenMeta.subtitleUrl || outputWithRenderJob.subtitleUrl, heygenVideoPageUrl: heygenMeta.videoPageUrl || undefined, heygenAgentArtifacts: heygenAgentBridge.artifacts, latestHeyGenVideoArtifact: heygenAgentBridge.latestVideoArtifact, heygenLatestVideoResourceId: heygenAgentBridge.latestVideoResourceId || outputWithRenderJob.heygenVideoId, finalAssetMirror, alternatives: updatedAlternatives, alternativeStatuses, providerStatus: `${successfulStatus.provider}_succeeded`, creativeActivityLog: completedCreativeActivityLog, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate: effectiveReadyGate, qualityGate: { status: "passed", checkedAt: new Date().toISOString(), required: effectiveReadyGate.required, missing: [], warnings: effectiveReadyGate.warnings }, creditResolution, finalizedReservedCredits }),
           automation_steps: updatedSteps(production.automation_steps, successfulStatus),
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
