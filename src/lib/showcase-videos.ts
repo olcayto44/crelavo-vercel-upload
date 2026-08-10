@@ -29,6 +29,22 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Product link to video", "Ecommerce ads", "Shopify/Amazon sellers", "Homepage visual proof"]
   },
   {
+    id: "ad-creative-angles-showcase",
+    title: "Ad Creative Angles",
+    kicker: "Fresh ad strategy",
+    description: "A Crelavo showcase showing how tired ecommerce ads become fresh creative angles.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/image/1786373810525943745-1786373810523.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/video/1786373837513726362-1786373837508.mp4",
+    duration: "PT12S",
+    uploadDate: "2026-08-10T22:00:00.000Z",
+    details: [
+      "A Crelavo ecommerce creative strategy showcase focused on fighting creative fatigue.",
+      "Shows how one product can turn into multiple ad angles such as pain point, social proof and urgency.",
+      "Built for homepage proof and short social media distribution."
+    ],
+    bestFor: ["Ad creative angles", "Creative fatigue", "Ecommerce campaigns", "Social ad planning"]
+  },
+  {
     id: "crelavo-wow-reel",
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",

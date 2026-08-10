@@ -79,6 +79,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-21/video/1786368316104444782-1786368316088.mp4"
   },
   {
+    title: "Ad Creative Angles",
+    kicker: "Fresh ad strategy",
+    description: "A Crelavo showcase showing how tired ads become fresh creative angles for ecommerce campaigns.",
+    href: "/showcase/videos/ad-creative-angles-showcase",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/image/1786373810525943745-1786373810523.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/video/1786373837513726362-1786373837508.mp4"
+  },
+  {
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
     description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
