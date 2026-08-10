@@ -70,6 +70,15 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
 
 const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
   {
+    title: "Product Link to Video",
+    kicker: "Ecommerce ad workflow",
+    description: "A Crelavo showcase showing how a product link becomes a ready social ad video.",
+    href: "/showcase/videos/product-link-to-video-showcase",
+    tone: "green",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-21/image/1786368284679743170-1786368284668.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-21/video/1786368316104444782-1786368316088.mp4"
+  },
+  {
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
     description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
