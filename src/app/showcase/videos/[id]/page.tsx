@@ -85,13 +85,13 @@ export default async function ShowcaseVideoPage({ params }: { params: Promise<{ 
           <h1>{video.title}</h1>
           <p>{video.description}</p>
         </div>
-        <div className="showcase-detail-video-row" style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "flex-start" }}>
-          <div className="showcase-detail-video-wrap" style={{ width: "fit-content", maxWidth: "min(760px, 100%)", marginLeft: "auto", marginRight: "auto" }}>
-            <video className="showcase-detail-video" style={{ width: "auto", maxWidth: "100%", height: "auto", maxHeight: "min(48vh, 420px)", display: "block" }} controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
+        <section className={`video-showcase-player-section ${video.orientation === "portrait" ? "portrait" : "landscape"}`}>
+          <div className="video-showcase-player-frame">
+            <video className="video-showcase-player-media" controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
               <source src={video.videoUrl} type="video/mp4" />
             </video>
           </div>
-        </div>
+        </section>
         <div className="showcase-detail-grid">
           <section className="showcase-detail-card">
             <h2>Why this video matters</h2>

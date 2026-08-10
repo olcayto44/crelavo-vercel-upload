@@ -10,6 +10,7 @@ export type ShowcaseVideo = {
   details: string[];
   bestFor: string[];
   productionDetails?: { title: string; text: string }[];
+  orientation?: "portrait" | "landscape";
 };
 
 export const showcaseVideos: ShowcaseVideo[] = [
@@ -21,6 +22,7 @@ export const showcaseVideos: ShowcaseVideo[] = [
     imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-21/image/1786368284679743170-1786368284668.png",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-21/video/1786368316104444782-1786368316088.mp4",
     duration: "PT14S",
+    orientation: "portrait",
     uploadDate: "2026-08-10T21:00:00.000Z",
     details: [
       "A product-link-to-video showcase built for Crelavo's ecommerce production workflow.",
@@ -42,6 +44,7 @@ export const showcaseVideos: ShowcaseVideo[] = [
     imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/image/1786373810525943745-1786373810523.png",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/video/1786373837513726362-1786373837508.mp4",
     duration: "PT12S",
+    orientation: "landscape",
     uploadDate: "2026-08-10T22:00:00.000Z",
     details: [
       "A Crelavo ecommerce creative strategy showcase focused on fighting creative fatigue.",
