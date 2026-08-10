@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
-import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
-import { categoryShowcaseItems } from "@/lib/showcase-items";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
@@ -25,15 +23,6 @@ export const metadata: Metadata = {
     images: [defaultSearchThumbnail.path]
   }
 };
-
-type CategoryShowcaseSlide = HomeShowcaseSlide & { section?: "launcher" | "features" | "categories"; order?: number; active?: boolean };
-
-function categorySlides(slides: CategoryShowcaseSlide[]) {
-  const configured = slides
-    .filter((slide) => slide.section === "categories" && slide.active)
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  return configured.length ? configured : categoryShowcaseItems;
-}
 
 export default async function CategoriesPage() {
   const siteContent = await getConfiguredSiteContentConfig();
@@ -64,8 +53,6 @@ export default async function CategoriesPage() {
             <Link className="btn" href="/dashboard/assistant-workspace">Open Work</Link>
           </div>
         </section>
-
-        <HomeShowcaseSlider title="Crelavo production categories" subtitle="Start from the category that matches what you want to create." slides={categorySlides(siteContent.showcaseSlides)} />
 
         <CategoryGroupBrowser />
 

@@ -9,6 +9,7 @@ export type ShowcaseVideo = {
   uploadDate: string;
   details: string[];
   bestFor: string[];
+  productionDetails?: { title: string; text: string }[];
 };
 
 export const showcaseVideos: ShowcaseVideo[] = [
@@ -26,7 +27,12 @@ export const showcaseVideos: ShowcaseVideo[] = [
       "Shows how sellers can move from product page or store link to a polished social ad video direction.",
       "Designed for homepage proof, showcase pages and social media campaign examples."
     ],
-    bestFor: ["Product link to video", "Ecommerce ads", "Shopify/Amazon sellers", "Homepage visual proof"]
+    bestFor: ["Product link to video", "Ecommerce ads", "Shopify/Amazon sellers", "Homepage visual proof"],
+    productionDetails: [
+      { title: "What this video shows", text: "A store or product link can become a structured ad direction with hook, product proof, visual rhythm and a final social-ready video asset." },
+      { title: "Best use case", text: "Use this format when a seller has a product page but does not yet have a polished TikTok, Reels, Shorts or homepage proof video." },
+      { title: "Crelavo workflow", text: "Crelavo reads the product context, turns the offer into a video brief, routes the request through the right production category and prepares a reusable video output." }
+    ]
   },
   {
     id: "ad-creative-angles-showcase",
@@ -42,7 +48,12 @@ export const showcaseVideos: ShowcaseVideo[] = [
       "Shows how one product can turn into multiple ad angles such as pain point, social proof and urgency.",
       "Built for homepage proof and short social media distribution."
     ],
-    bestFor: ["Ad creative angles", "Creative fatigue", "Ecommerce campaigns", "Social ad planning"]
+    bestFor: ["Ad creative angles", "Creative fatigue", "Ecommerce campaigns", "Social ad planning"],
+    productionDetails: [
+      { title: "What this video shows", text: "One product does not need to rely on one tired ad idea. The same product can be reframed through pain points, social proof, urgency, comparison and benefit-led hooks." },
+      { title: "Best use case", text: "Use this format when ads are repeating the same message and the brand needs fresh creative angles before launching new paid social tests." },
+      { title: "Crelavo workflow", text: "Crelavo turns the product or landing page into multiple angle directions, then packages the winning direction into a showcase-ready video concept." }
+    ]
   },
   {
     id: "crelavo-wow-reel",

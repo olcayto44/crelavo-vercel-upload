@@ -88,16 +88,16 @@ const categoryOptions: Record<string, string[]> = {
 
 const categoryGroups = [
   {
-    id: "new-feature-tools",
-    title: "New Feature Tools",
-    description: "Ad scoring, virtual models, cultural localization, campaign calendar, Academy and showcase request paths.",
-    typeIds: ["ad_score_checker", "virtual_model_studio", "cultural_localization", "campaign_calendar", "crelavo_academy", "community_showcase"]
+    id: "learning-proof",
+    title: "Learning & Proof",
+    description: "Academy lessons, virtual model previews, community examples and reusable showcase request paths.",
+    typeIds: ["crelavo_academy", "community_showcase", "virtual_model_studio"]
   },
   {
     id: "marketing",
     title: "Marketing & Commerce",
     description: "Product links, campaigns, localization and AI agents for growth workflows.",
-    typeIds: ["campaign", "ai_agent", "localization"]
+    typeIds: ["campaign", "ad_score_checker", "cultural_localization", "campaign_calendar", "ai_agent", "localization"]
   },
   {
     id: "video-motion",
@@ -187,11 +187,16 @@ export function CategoryGroupBrowser() {
 
   return (
     <section className="category-browser">
+      <div className="category-group-head main-category-head">
+        <span className="badge">Main categories</span>
+        <h2>Choose one main Crelavo category</h2>
+        <p>These groups are built from the production types in the codebase, so users see the real main paths without the old full-page category dump.</p>
+      </div>
       <div className="category-tab-grid">
         {categoryGroups.map((group) => {
           const isActive = selectedGroupId === group.id;
           return (
-            <button className={`category-tab-card category-tone-${group.id}${isActive ? " active" : ""}`} key={group.id} type="button" onClick={() => setSelectedGroupId(isActive ? null : group.id)}>
+            <button className={`category-tab-card category-tone-${group.id}${isActive ? " active" : ""}`} key={group.id} type="button" onClick={() => setSelectedGroupId(group.id)}>
               <span>{group.typeIds.length} categories</span>
               <strong>{group.title}</strong>
               <small>{group.description}</small>

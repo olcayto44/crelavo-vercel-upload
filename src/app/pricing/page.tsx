@@ -4,11 +4,7 @@ import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
-import { productionPackageHref } from "@/lib/assistant-links";
-import { creditRolloverSummaryRows, topupRolloverSummaryRows, rolloverPolicyText } from "@/lib/credit-rollover";
-import { dronePurchasePackages, growthIntelligencePlans, liveSalesServicePlans, packages, topUpPackages } from "@/lib/data";
-import { creditCalculatorExamples, productionCreditGuide, quickCreditMath } from "@/lib/pricing";
-import { productionPackages, productionTypes } from "@/lib/production";
+import { packages, topUpPackages } from "@/lib/data";
 import { PricingStructuredData } from "@/components/PricingStructuredData";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 
@@ -100,84 +96,6 @@ const pricingDecisionCards = [
   }
 ];
 
-type PublicPricingRow = {
-  name: string;
-  price: string;
-  billing: string;
-  credits: string;
-  setupFee?: string;
-  notes: string;
-};
-
-const cleanExportUpsellCards = [
-  {
-    title: "Preview mode",
-    badge: "Watermarked sample",
-    text: "The 24-hour preview is for checking access and direction. Preview outputs can stay watermarked and downloads remain controlled before the main plan starts."
-  },
-  {
-    title: "Business clean export",
-    badge: "Best first upgrade",
-    text: "Business is the clean-export path for one store or one brand: remove the Crelavo watermark after the subscription starts and production is confirmed."
-  },
-  {
-    title: "Team agency export",
-    badge: "Client-ready handoff",
-    text: "Team Annual is positioned for agencies and power sellers that need clean client delivery, bulk workflows, source handoff and high credit capacity."
-  }
-];
-
-const publicPricingRows: PublicPricingRow[] = [
-  ...packages.map((plan) => ({
-    name: plan.name,
-    price: `$${plan.priceUsd}/mo · $${plan.priceUsd * 10}/yr`,
-    billing: "Monthly plan or yearly plan with 2 months free",
-    credits: `${plan.credits.toLocaleString()} credits monthly · ${("yearlyCredits" in plan && typeof plan.yearlyCredits === "number" ? plan.yearlyCredits : plan.credits * 12).toLocaleString()} credits yearly`,
-    setupFee: `$${plan.setupFeeUsd} 24-hour preview setup fee`,
-    notes: `Preview includes one 10-second watermarked video. Downloads are closed during preview and open only after the selected subscription starts. ${rolloverPolicyText(plan, "monthly")}`
-  })),
-  ...topUpPackages.map((plan) => ({
-    name: plan.name,
-    price: `$${plan.priceUsd}`,
-    billing: "One-time purchase",
-    credits: `${plan.credits.toLocaleString()} credits`,
-    notes: rolloverPolicyText(plan, "one_time")
-  })),
-  ...liveSalesServicePlans.map((plan) => ({
-    name: plan.name,
-    price: `$${plan.priceUsd}/mo`,
-    billing: "Monthly service plan",
-    credits: "No included credits",
-    setupFee: `$${plan.setupFeeUsd} setup fee`,
-    notes: `${plan.fairUseHours} fair-use live hours. Extra live-operation usage is pay-as-you-go after cost analysis.`
-  })),
-  ...growthIntelligencePlans.map((plan) => ({
-    name: plan.name,
-    price: `$${plan.priceUsd}/mo`,
-    billing: "Monthly intelligence plan",
-    credits: "No included credits",
-    setupFee: `$${plan.setupFeeUsd} setup fee`,
-    notes: `${plan.competitorLimit}; ${plan.monitoringFrequency}. Dashboard report delivery.`
-  })),
-  ...dronePurchasePackages.map((plan) => ({
-    name: plan.name,
-    price: `$${plan.priceUsd}`,
-    billing: "One-time drone credit purchase",
-    credits: `${plan.credits.toLocaleString()} credits`,
-    setupFee: `$${plan.setupFeeUsd} setup fee`,
-    notes: "Does not renew automatically. Adds credits after payment confirmation."
-  }))
-];
-
-function planStoreFit(planName: string) {
-  const clean = planName.toLowerCase();
-  if (clean.includes("pro")) return { label: "Best for Shopify beginners", range: "Built for stores under $5k/mo" };
-  if (clean.includes("business")) return { label: "Best for growing stores", range: "Built for stores doing $5k-$20k/mo" };
-  if (clean.includes("ultra")) return { label: "Best for scaling brands", range: "Built for brands doing $20k-$50k/mo" };
-  if (clean.includes("team")) return { label: "Best for agencies & power sellers", range: "Built for 6-7 figure operators" };
-  return { label: "Flexible credit path", range: "Use when you need extra production capacity" };
-}
-
 export default async function PricingPage() {
   const siteContent = await getConfiguredSiteContentConfig();
 
@@ -195,18 +113,40 @@ export default async function PricingPage() {
         <section className="promo-top-layout">
           <div>
             <span className="badge">Pricing & credits</span>
-            <h1>Credit packages for normal AI production</h1>
+            <h1>Choose your Crelavo production plan</h1>
             <p className="section-lead">
-              Normal credits are used for standard production requests through monthly or yearly subscription plans with a paid 24-hour preview. Avatar live sales plans have separate service pricing; Drone / Satellite Video uses normal credit logic but stays on its own purchase page.
+              Compare monthly and yearly credits, see estimated video output instantly, start with a paid 24-hour preview, then unlock clean export, campaign delivery, source files and client-ready handoff when the plan starts.
             </p>
           </div>
           <div className="promo-corner-slot pricing-promo-slot"><CampaignPromoSlot /></div>
         </section>
 
+        <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" compact />
+
+        <section className="card admin-wide-card" style={{ marginTop: 24 }}>
+          <span className="badge">Need extra credits?</span>
+          <h2>Add top-up credits</h2>
+          <p className="section-lead">Top-ups stay below the main subscriptions so the first thing visitors see is the core credit package grid.</p>
+          <div style={{ marginTop: 16 }}>
+            <CreditPlansToggle plans={topUpPackages} ctaLabel="Add top-up credits" compact />
+          </div>
+        </section>
+
+        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+          <span className="badge">24-hour paid preview</span>
+          <h2>Test the workflow before the full plan starts</h2>
+          <p className="section-lead">Preview payments keep the first step low-risk: check direction, see a watermarked sample or review notes, then unlock clean downloads and full credits only after the selected subscription starts.</p>
+          <div className="admin-info-grid" style={{ marginTop: 16 }}>
+            <div><span>Step 1</span><strong>Pay preview setup</strong><small>$5 Pro, $10 Business, $15 Ultra or $20 Team preview path.</small></div>
+            <div><span>Step 2</span><strong>Review direction</strong><small>Preview can stay watermarked and downloads remain controlled before full access.</small></div>
+            <div><span>Step 3</span><strong>Unlock clean export</strong><small>Full credits, final files and delivery options open after the subscription starts.</small></div>
+          </div>
+        </section>
+
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
           <span className="badge">Choose faster</span>
           <h2>Pick the safest next step for your situation</h2>
-          <p className="section-lead">This block removes the main pricing hesitation: start free if the creative angle is not ready, use Business for one brand, or use Team Annual when the goal is agency-scale production.</p>
+          <p className="section-lead">Use Business for one brand, Team Annual for agency-scale production, or the free ad scorer if the creative angle is not ready yet.</p>
           <div className="admin-category-grid" style={{ marginTop: 18 }}>
             {pricingDecisionCards.map((item) => (
               <Link className="card admin-category-card" href={item.href} key={item.title}>
@@ -220,94 +160,12 @@ export default async function PricingPage() {
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Buyer confidence</span>
-          <h2>What you get before, during and after production</h2>
-          <p className="section-lead">Pricing is tied to a dashboard workflow, not a blind one-click generation promise. You can estimate scope, review delivery expectations and keep revisions connected to the same production record.</p>
-          <div className="admin-category-grid" style={{ marginTop: 18 }}>
-            {pricingTrustPoints.map((item) => (
-              <div className="card admin-category-card" key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/create?idea=Help%20me%20choose%20the%20right%20Crelavo%20package">Help me choose a package</Link>
-            <Link className="btn secondary" href="/dashboard/productions">View delivery workspace</Link>
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Watermark and clean export path</span>
-          <h2>Preview safely, then upgrade when you need clean files</h2>
-          <p className="section-lead">The preview should reduce risk without giving away the full delivery package. Buyers can test direction first, then move to Business or Team when they need clean, client-ready exports.</p>
-          <div className="admin-category-grid" style={{ marginTop: 18 }}>
-            {cleanExportUpsellCards.map((item) => (
-              <div className="card admin-category-card" key={item.title}>
-                <span className="badge">{item.badge}</span>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/payment?package=business&billing=monthly&campaign=clean-export-business">Remove watermark with Business</Link>
-            <Link className="btn secondary" href="/dashboard/payment?package=team&billing=yearly&campaign=agency-clean-export">Agency clean export path</Link>
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Unused credits rollover</span>
-          <h2>No monthly credit waste while your subscription stays active</h2>
-          <p className="section-lead">Monthly plan credits roll over to the next billing cycle when renewal succeeds, capped at 3x the monthly credit allowance. Annual credits stay available during the active 12-month subscription period, and top-up credits stay separate for 12 months.</p>
-          <div className="admin-category-grid" style={{ marginTop: 18 }}>
-            {creditRolloverSummaryRows().map((item) => (
-              <div className="card admin-category-card" key={item.packageId}>
-                <span className="badge">{item.packageName}</span>
-                <h3>{item.monthlyCap.toLocaleString()} max monthly rollover cap</h3>
-                <p>{item.monthlyText}</p>
-                <p>{item.yearlyText}</p>
-              </div>
-            ))}
-            {topupRolloverSummaryRows().map((item) => (
-              <div className="card admin-category-card" key={item.packageId}>
-                <span className="badge">Top-up</span>
-                <h3>{item.packageName}</h3>
-                <p>{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Credit calculator</span>
-          <h2>Estimate credits before starting production</h2>
-          <p className="section-lead">
-            Use these simple examples to understand the usual credit range before opening a production request. Final reserved credits can still change when a project needs extra scenes, source delivery, voice, subtitles, revisions or premium quality.
-          </p>
-          <div className="admin-info-grid">
-            {quickCreditMath.map((item) => (
-              <div key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.result}</strong>
-                <small>{item.math} credits/sec estimate</small>
-              </div>
-            ))}
-          </div>
-          <div className="admin-category-grid" style={{ marginTop: 18 }}>
-            {creditCalculatorExamples.map((item) => (
-              <Link className="card admin-category-card" href={item.href} key={item.title}>
-                <span className="badge">Estimated usage</span>
-                <h3>{item.title}</h3>
-                <p><strong>{item.estimate}</strong></p>
-                <p>{item.bestFor}</p>
-                <small>{item.nextStep}</small>
-              </Link>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/create?idea=Estimate%20my%20credits%20before%20production">Estimate my project</Link>
-            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Start with free ad score</Link>
+          <span className="badge">Credit safety</span>
+          <h2>Simple rules before production starts</h2>
+          <div className="admin-info-grid" style={{ marginTop: 16 }}>
+            <div><span>Estimate first</span><strong>No surprise reserve</strong><small>Credits are estimated before the user confirms production.</small></div>
+            <div><span>Rollover</span><strong>Unused credits stay useful</strong><small>Monthly rollover works while subscription renewal succeeds; top-ups stay separate.</small></div>
+            <div><span>Preview</span><strong>Review before final delivery</strong><small>Preview, review notes or watermarked samples can appear before final handoff.</small></div>
           </div>
         </section>
 
@@ -375,100 +233,12 @@ export default async function PricingPage() {
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Public USD pricing</span>
-          <h2>Clear plans, credits and preview fees</h2>
-          <p className="section-lead">Choose a subscription or one-time credit pack. Prices are shown in USD, yearly plans include 2 months free, and paid previews include one 10-second watermarked video with downloads closed before full access starts.</p>
-          <div className="public-pricing-card-grid">
-            {publicPricingRows.map((row) => {
-              const fit = planStoreFit(row.name);
-              return (
-              <article className="public-pricing-card" key={`${row.name}-${row.price}`}>
-                <div className="public-pricing-card-head">
-                  <h3>{row.name}</h3>
-                  <strong>{row.price}</strong>
-                </div>
-                <div className="workspace-action-note" style={{ margin: "10px 0 12px" }}>
-                  <span className="badge">{fit.label}</span>
-                  <p style={{ margin: "8px 0 0" }}>{fit.range}</p>
-                </div>
-                <dl>
-                  <div>
-                    <dt>Billing</dt>
-                    <dd>{row.billing}</dd>
-                  </div>
-                  <div>
-                    <dt>Credits / access</dt>
-                    <dd>{row.credits}</dd>
-                  </div>
-                  <div>
-                    <dt>Setup / preview</dt>
-                    <dd>{row.setupFee ?? "No setup fee"}</dd>
-                  </div>
-                  <div>
-                    <dt>Notes</dt>
-                    <dd>{row.notes}</dd>
-                  </div>
-                </dl>
-              </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" />
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
           <span className="badge">Partner Program</span>
           <h2>Are you an AI or no-code creator?</h2>
           <p style={{ color: "var(--muted)" }}>Apply for early partner access now. Referral links, creator assets and commission terms are prepared around manual review, 30-day hold and finance approval.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
             <Link className="btn" href="/affiliate">Join the partner program</Link>
             <Link className="btn secondary" href="/dashboard/growth">View referral rewards</Link>
-          </div>
-        </section>
-
-        <div style={{ marginTop: 28 }}>
-          <CreditPlansToggle plans={topUpPackages} ctaLabel="Add top-up credits" />
-        </div>
-
-        <section className="credit-guide-section" style={{ marginTop: 28 }}>
-          <h2>Production credit guide</h2>
-          <div className="grid credit-guide-grid" style={{ marginTop: 14 }}>
-            {productionCreditGuide.map((item, index) => (
-              <div className={`card credit-guide-card credit-guide-tone-${index % 5}`} key={item.name}>
-                <span className="badge">{item.rate}</span>
-                <h3>{item.name}</h3>
-                <strong>{item.sixtySeconds}</strong>
-                <p>{item.note}</p>
-                <Link className="btn" href="/dashboard/credits">Choose credits for this</Link>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section style={{ marginTop: 28 }}>
-          <h2>Campaign, agent, localization and file delivery packages</h2>
-          <p className="section-lead">
-            These are the fixed starting packages used by Assistant Workspace, including website, mobile app, SaaS, e-commerce, series/film studio and long film/series clipping packs. Extra AI visuals, source delivery, scene planning, voice, subtitles and revision buffer can increase the final reserved credits.
-          </p>
-          <div className="production-pricing-grid">
-            {productionTypes.filter((type) => !standalonePurchaseTypeIds.has(type.id)).map((type) => (
-              <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-                <span className="badge">{type.startingCredits > 0 ? `Starts from ${type.startingCredits.toLocaleString()} credits` : "Service plan pricing"}</span>
-                <h3>{type.label}</h3>
-                <p>{type.description}</p>
-                <div className="production-package-list">
-                  {productionPackages.filter((item) => item.productionType === type.id).map((item) => (
-                    <div key={item.id}>
-                      <strong>{item.name}</strong>
-                      <span>{item.credits > 0 ? `${item.credits.toLocaleString()} credits` : "No included credits"}</span>
-                      <Link href={productionPackageHref(item.id)}>Start with this package</Link>
-                    </div>
-                  ))}
-                </div>
-                <Link className="btn" href="/dashboard/create">Start request</Link>
-              </div>
-            ))}
           </div>
         </section>
       </main>

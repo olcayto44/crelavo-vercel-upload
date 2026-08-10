@@ -101,7 +101,7 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
                     </button>
                   ) : null}
                   <HardReloadLink className="showcase-slide-link" href={slide.href}>
-                    Open showcase
+                    Open category
                   </HardReloadLink>
                 </div>
               </div>

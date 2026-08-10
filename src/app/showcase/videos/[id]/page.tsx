@@ -103,6 +103,18 @@ export default async function ShowcaseVideoPage({ params }: { params: Promise<{ 
             <Link className="btn" href={`/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`}><PlayCircle size={16} /> Create a similar video</Link>
           </section>
         </div>
+        <section className="showcase-detail-card showcase-video-info-card">
+          <span className="badge">Video details</span>
+          <h2>What this example is about</h2>
+          <div className="showcase-video-info-grid">
+            {(video.productionDetails ?? video.details.map((detail, index) => ({ title: index === 0 ? "Production context" : index === 1 ? "Use case" : "Delivery purpose", text: detail }))).map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
   );
