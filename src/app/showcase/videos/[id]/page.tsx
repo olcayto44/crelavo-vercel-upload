@@ -80,16 +80,22 @@ export default async function ShowcaseVideoPage({ params }: { params: Promise<{ 
       <Header />
       <section className="showcase-detail-shell">
         <Link className="btn secondary" href="/#video-showcase"><ArrowLeft size={16} /> Back to homepage videos</Link>
-        <div className="showcase-detail-hero">
-          <span className="badge">{video.kicker}</span>
-          <h1>{video.title}</h1>
-          <p>{video.description}</p>
-        </div>
-        <section className={`video-showcase-player-section ${video.orientation === "portrait" ? "portrait" : "landscape"}`}>
-          <div className="video-showcase-player-frame">
-            <video className="video-showcase-player-media" controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
-              <source src={video.videoUrl} type="video/mp4" />
-            </video>
+        <section className="video-showcase-hero-layout">
+          <div className="showcase-detail-hero">
+            <span className="badge">{video.kicker}</span>
+            <h1>{video.title}</h1>
+            <p>{video.description}</p>
+            <div className="social-chip-row video-showcase-hero-chips">
+              {video.bestFor.slice(0, 3).map((tag) => <span key={tag}><CheckCircle2 size={14} /> {tag}</span>)}
+            </div>
+            <Link className="btn" href={`/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`}><PlayCircle size={16} /> Create a similar video</Link>
+          </div>
+          <div className={`video-showcase-player-section ${video.orientation === "portrait" ? "portrait" : "landscape"}`}>
+            <div className="video-showcase-player-frame">
+              <video className="video-showcase-player-media" controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
+                <source src={video.videoUrl} type="video/mp4" />
+              </video>
+            </div>
           </div>
         </section>
         <div className="showcase-detail-grid">
@@ -102,7 +108,6 @@ export default async function ShowcaseVideoPage({ params }: { params: Promise<{ 
             <div className="social-chip-row">
               {video.bestFor.map((tag) => <span key={tag}><CheckCircle2 size={14} /> {tag}</span>)}
             </div>
-            <Link className="btn" href={`/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`}><PlayCircle size={16} /> Create a similar video</Link>
           </section>
         </div>
         <section className="showcase-detail-card showcase-video-info-card">
