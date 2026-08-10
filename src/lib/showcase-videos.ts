@@ -59,6 +59,28 @@ export const showcaseVideos: ShowcaseVideo[] = [
     ]
   },
   {
+    id: "ugc-style-ad-showcase",
+    title: "UGC Style Ad",
+    kicker: "Creator-style ecommerce ad",
+    description: "A Crelavo showcase showing how ecommerce products can become natural creator-style UGC ads.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/image/1786392552674876040-1786392552671.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786392561011143749-1786392561003.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-11T04:00:00.000Z",
+    details: [
+      "A Crelavo UGC-style ecommerce ad showcase built around creator trust and fast social pacing.",
+      "Shows how sellers can move from generic product ads to natural creator-led product storytelling.",
+      "Designed for TikTok, Reels, Shorts, homepage proof and social campaign examples."
+    ],
+    bestFor: ["UGC style ads", "Creator-led product videos", "Ecommerce trust", "TikTok/Reels/Shorts"],
+    productionDetails: [
+      { title: "What this video shows", text: "A product can be presented through a real-feeling creator format instead of a generic product slideshow, making the message feel more authentic and social-native." },
+      { title: "Best use case", text: "Use this format when an ecommerce seller needs a natural product ad for TikTok, Instagram Reels, YouTube Shorts or a storefront showcase." },
+      { title: "Crelavo workflow", text: "Crelavo turns a product idea or link into a creator-style video direction with hook, product visibility, benefit moments and a final CTA." }
+    ]
+  },
+  {
     id: "crelavo-wow-reel",
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
