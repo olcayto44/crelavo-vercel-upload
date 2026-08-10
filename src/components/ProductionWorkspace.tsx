@@ -1127,6 +1127,20 @@ const data = await response.json().catch(() => ({}));
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
           </div>
+          {!isProjectProduction ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
+            <h2>Share to social accounts</h2>
+            <p>Prepare platform-ready posts, captions, tags and export notes for the final video. When the final MP4 is ready, attach it to the selected social channel.</p>
+            <div className="social-platform-grid">
+              {[
+                { label: "Instagram", icon: "IG", tone: "instagram" },
+                { label: "TikTok", icon: "TK", tone: "tiktok" },
+                { label: "YouTube Shorts", icon: "YT", tone: "youtube" },
+                { label: "LinkedIn", icon: "IN", tone: "linkedin" },
+                { label: "Facebook", icon: "FB", tone: "facebook" },
+                { label: "X", icon: "X", tone: "x" }
+              ].map((platform) => <a className={`social-platform-card ${platform.tone}`} href={`/dashboard/social-export?platform=${encodeURIComponent(platform.label)}&production=${encodeURIComponent(production.id)}`} key={`top-${platform.label}`}><span className="social-platform-icon">{platform.icon}</span><strong>{platform.label}</strong><small>Prepare post</small></a>)}
+            </div>
+          </div> : null}
           {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
           <div className="customer-preview-screen">
             {previewKind === "video" ? (
@@ -1468,20 +1482,6 @@ const data = await response.json().catch(() => ({}));
           <p>{hasDelivery ? "Final files are ready for customer handoff." : hasPreview ? "Preview is ready; final delivery is still being prepared." : "Production is active or waiting for provider output."}</p>
         </div>
 
-        {!isProjectProduction ? <div className="social-share-card priority-social-share" id="social-share-panel-top">
-          <h2>Social media sharing</h2>
-          <p>Prepare platform-ready posts, captions, tags and export notes for the final video.</p>
-          <div className="social-platform-grid">
-            {[
-              { label: "Instagram", icon: "IG", tone: "instagram" },
-              { label: "TikTok", icon: "TK", tone: "tiktok" },
-              { label: "YouTube Shorts", icon: "YT", tone: "youtube" },
-              { label: "LinkedIn", icon: "IN", tone: "linkedin" },
-              { label: "Facebook", icon: "FB", tone: "facebook" },
-              { label: "X", icon: "X", tone: "x" }
-            ].map((platform) => <a className={`social-platform-card ${platform.tone}`} href={`/dashboard/social-export?platform=${encodeURIComponent(platform.label)}&production=${encodeURIComponent(production.id)}`} key={platform.label}><span className="social-platform-icon">{platform.icon}</span><strong>{platform.label}</strong><small>Prepare post</small></a>)}
-          </div>
-        </div> : null}
 
         <div className="revision-history-card">
           <form className="revision-inline-form" onSubmit={submitRevision}>
