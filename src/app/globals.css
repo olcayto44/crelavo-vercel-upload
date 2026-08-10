@@ -1194,6 +1194,43 @@ main.auth-screen .auth-card {
   font-size: clamp(26px, 4vw, 40px);
 }
 
+.compact-plan-description {
+  color: var(--muted);
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.compact-plan-highlights {
+  gap: 6px;
+  margin: 8px 0;
+  padding-left: 18px;
+  display: grid;
+}
+
+.compact-plan-highlights li {
+  color: #dbeafe;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.compact-plan-usage,
+.compact-plan-feature-line {
+  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.compact-plan-usage small,
+.compact-plan-feature-line small {
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #c7d2fe;
+  background: rgba(255, 255, 255, .05);
+  font-size: 11px;
+}
+
 .compact-credit-plans .btn {
   margin-top: auto;
 }
@@ -7402,7 +7439,8 @@ html body .sample-detail-page .sample-detail-player-video {
 }
 
 .showcase-detail-video-wrap {
-  max-width: 860px;
+  width: fit-content;
+  max-width: min(760px, 100%);
   margin: 18px auto 24px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, .22);
@@ -7412,9 +7450,10 @@ html body .sample-detail-page .sample-detail-player-video {
 }
 
 .showcase-detail-video-wrap .showcase-detail-video {
-  width: 100%;
-  max-height: min(58vh, 520px);
-  aspect-ratio: 16 / 9;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(48vh, 420px);
   object-fit: contain;
   display: block;
   background: #000;
@@ -7462,8 +7501,12 @@ html body .sample-detail-page .sample-detail-player-video {
 }
 
 @media (max-width: 720px) {
+  .showcase-detail-video-wrap {
+    max-width: min(360px, 100%);
+  }
+
   .showcase-detail-video-wrap .showcase-detail-video {
-    max-height: 320px;
+    max-height: 300px;
   }
 }
 

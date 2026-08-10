@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CreditCard } from "lucide-react";
-import { whopPreviewNotice } from "@/lib/whop-preview-policy";
+import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
 
 type CreditPlan = {
   name: string;
@@ -67,6 +67,21 @@ function planPositioning(plan: CreditPlan, billingMode: "monthly" | "yearly") {
   return "Production plan";
 }
 
+function compactPlanHighlights(plan: CreditPlan, billingMode: "monthly" | "yearly", credits: number) {
+  const summary = whopPreviewSummary(plan, billingMode);
+  const mainCharge = summary.mainChargeUsd ? `$${summary.mainChargeUsd.toLocaleString("en-US")}` : plan.price;
+  const previewLine = plan.planType === "topup"
+    ? "One-time purchase; credits are added after payment confirmation."
+    : `${summary.setupFeeUsd <= 0 ? "Free" : `$${summary.setupFeeUsd}`} 24-hour preview, then ${mainCharge} ${summary.billingInterval} if not cancelled.`;
+  return [
+    plan.estimatedOutput ? `Output: ${billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput}` : `Credits: ${credits.toLocaleString("en-US")} total credits`,
+    plan.videoSpec ? `Video: ${plan.videoSpec}` : null,
+    plan.mediaIncluded ? `Included: ${plan.mediaIncluded}` : null,
+    typeof plan.concurrentTasks === "number" ? `Concurrency: ${plan.concurrentTasks} simultaneous jobs` : null,
+    previewLine
+  ].filter(Boolean) as string[];
+}
+
 export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact = false }: { plans: CreditPlan[]; ctaLabel?: string; compact?: boolean }) {
   const [billingMode, setBillingMode] = useState<"monthly" | "yearly">("monthly");
   const isTopUpList = plans.every((plan) => plan.planType === "topup");
@@ -105,6 +120,7 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
           const estimatedOutput = billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput;
           const videoOutput = estimatedVideoOutput(credits);
           const positioning = planPositioning(plan, billingMode);
+          const compactHighlights = compactPlanHighlights(plan, billingMode, credits);
           return (
             <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : billingMode === "monthly" ? "24-hour preview + monthly" : "24-hour preview + yearly - 2 months free"}</span>
@@ -123,7 +139,25 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
                   ))}
                 </div>
               ) : null}
-              {previewNotice ? <p className="plan-savings-line">{previewNotice}</p> : null}
+              {compact ? <p className="compact-plan-description">{plan.description}</p> : null}
+              {compact ? (
+                <ul className="compact-plan-highlights">
+                  {compactHighlights.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              ) : null}
+              {compact && plan.usage?.length ? (
+                <div className="compact-plan-usage">
+                  {plan.usage.slice(0, 4).map((item) => <small key={item}>{item}</small>)}
+                </div>
+              ) : null}
+              {compact && (plan.modelAccess?.length || plan.automationAccess?.length || plan.teamFeatures?.length) ? (
+                <div className="compact-plan-feature-line">
+                  {plan.modelAccess?.slice(0, 2).map((item) => <small key={item}>{item}</small>)}
+                  {plan.automationAccess?.slice(0, 2).map((item) => <small key={item}>{item}</small>)}
+                  {plan.teamFeatures?.slice(0, 2).map((item) => <small key={item}>{item}</small>)}
+                </div>
+              ) : null}
+              {!compact && previewNotice ? <p className="plan-savings-line">{previewNotice}</p> : null}
               {yearlyDealLabel ? <p className="plan-savings-line flash-deal-line">{yearlyDealLabel}</p> : null}
               {!compact && plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
               {!compact ? (
