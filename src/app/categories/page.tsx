@@ -1,31 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BadgeCheck, PackageCheck, Send } from "lucide-react";
-import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
-import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { categoryShowcaseItems } from "@/lib/showcase-items";
-import { getConfiguredCategoryPages } from "@/lib/category-pages-loader";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const metadata: Metadata = {
   title: "AI Production Categories for Video, Website, App and Ecommerce | Crelavo",
-  description: "Browse Crelavo AI production categories for AI video generator workflows, AI website builder pages, ecommerce campaigns, product videos, apps, brand kits and social media assets.",
-  keywords: [
-    "AI production categories",
-    "AI video generator workflows",
-    "AI website builder categories",
-    "AI app builder categories",
-    "AI ecommerce campaign categories",
-    "brand kit category page"
-  ],
+  description: "Choose Crelavo AI production categories for video, websites, apps, ecommerce campaigns, product ads, brand kits and social media assets.",
   alternates: { canonical: "/categories" },
   openGraph: {
     title: "AI Production Categories | Crelavo",
-    description: "Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets.",
+    description: "Choose the Crelavo production path for video, websites, apps, ecommerce campaigns and brand assets.",
     url: "/categories",
     type: "website",
     images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: "Crelavo AI production categories dashboard preview" }]
@@ -33,7 +21,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "AI Production Categories | Crelavo",
-    description: "Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets.",
+    description: "Choose the Crelavo production path for video, websites, apps, ecommerce campaigns and brand assets.",
     images: [defaultSearchThumbnail.path]
   }
 };
@@ -47,33 +35,15 @@ function categorySlides(slides: CategoryShowcaseSlide[]) {
   return configured.length ? configured : categoryShowcaseItems;
 }
 
-const deliverySteps = [
-  {
-    icon: PackageCheck,
-    title: "1. Choose a category",
-    text: "Choose campaign, AI agent, localization, video, website, mobile app, brand kit, document, visual or admin panel production."
-  },
-  {
-    icon: Send,
-    title: "2. Submit the request",
-    text: "Write the platform, style, features, pages, screens, files and delivery expectations."
-  },
-  {
-    icon: BadgeCheck,
-    title: "3. Receive the files",
-    text: "Admin adds previews, ZIP packages, source files, README and delivery notes to the user dashboard."
-  }
-];
-
 export default async function CategoriesPage() {
-  const [siteContent, categoryPages] = await Promise.all([getConfiguredSiteContentConfig(), getConfiguredCategoryPages()]);
+  const siteContent = await getConfiguredSiteContentConfig();
 
   return (
     <>
       <PageThumbnailStructuredData
         pagePath="/categories"
         pageTitle="AI Production Categories | Crelavo"
-        pageDescription="Browse Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets."
+        pageDescription="Choose Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets."
         imageAlt="Crelavo AI production categories dashboard preview"
         pageType="CollectionPage"
       />
@@ -82,143 +52,32 @@ export default async function CategoriesPage() {
         <section className="promo-top-layout">
           <div>
             <span className="badge">Production categories</span>
-            <h1>AI production categories for video, websites, apps, ecommerce campaigns and brand assets</h1>
+            <h1>Choose what you want Crelavo to produce</h1>
             <p className="section-lead">
-              Crelavo is now a broader AI production platform: AI video generator workflows, AI website builder pages, AI app production, Shopify/Amazon/Trendyol ecommerce campaigns, Text-to-Campaign, AI Agents, Global Localization, visuals, brand kits, document packs and admin-panel projects can all start from one AI + Human Quality Assurance request.
+              Pick the production path first: video, product-link ads, UGC-style ads, creative angles, lower-cost ad planning, websites, apps, brand kits, images, voice and campaign assets.
             </p>
           </div>
-          <div className="promo-corner-slot categories-promo-slot"><CampaignPromoSlot /></div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section category-delivery-template">
-          <span className="badge">Category-based delivery template</span>
-          <h2>Choose the production type first, then track delivery files from the panel</h2>
-          <p>
-            Every category follows the same core flow: the user creates a request, credits are reserved, admin manages production and delivery links are added to the dashboard.
-          </p>
-          <div className="delivery-step-grid">
-            {deliverySteps.map((step) => {
-              const Icon = step.icon;
-              return (
-                <div className="delivery-step-card" key={step.title}>
-                  <Icon color="var(--cyan)" />
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </div>
-              );
-            })}
+          <div className="production-hero-card clean-feed-section">
+            <span className="badge">Simple flow</span>
+            <h2>Category → brief → production</h2>
+            <p>Choose a category, describe what you need, and continue inside the Crelavo workspace.</p>
+            <Link className="btn" href="/dashboard/assistant-workspace">Open Work</Link>
           </div>
         </section>
 
-        <HomeShowcaseSlider title="Crelavo production categories" subtitle="A moving showcase for Crelavo production categories: video, web, apps, avatars, brand files and e-commerce." slides={categorySlides(siteContent.showcaseSlides)} />
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Programmatic SEO category pages</span>
-          <h2>Search pages that can be edited from admin</h2>
-          <p>
-            These public category pages can be added, hidden and updated from the admin panel. Each page has its own SEO summary, sections, FAQs and redirect links.
-          </p>
-          <div className="delivery-step-grid">
-            {categoryPages.slice(0, 3).map((page) => (
-              <div className="delivery-step-card" key={page.slug}>
-                <h3>{page.title}</h3>
-                <p>{page.summary}</p>
-                <Link className="btn secondary" href={`/categories/${page.slug}`}>Open {page.keyword} category page</Link>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="category-group-section" style={{ marginTop: 24 }}>
-          <div className="category-group-head">
-            <span className="badge">New feature categories</span>
-            <h2>New Crelavo feature categories that use the existing credit packages</h2>
-            <p>
-              These new paths are visible like category cards, but they still use the current Crelavo credit packages. Users can review the feature page, then create a package from the existing credit system and receive delivery from the dashboard.
-            </p>
-          </div>
-          <div className="production-pricing-grid">
-            {phaseOneFeaturePages.slice(0, 6).map((page) => (
-              <div className={`card production-pricing-card production-tone-${page.slug}`} key={page.slug}>
-                <Link className={`feature-card-visual feature-visual-${page.slug}`} href={`/${page.slug}`} aria-label={`Open ${page.title} visual SEO page`}>
-                  <div className="feature-visual-frame feature-visual-frame-large">
-                    <span>{page.badge}</span>
-                    <strong>{page.title}</strong>
-                  </div>
-                  <div className="feature-visual-metrics" aria-hidden="true">
-                    {page.keywords.slice(0, 3).map((keyword) => <small key={`${page.slug}-visual-${keyword}`}>{keyword}</small>)}
-                  </div>
-                </Link>
-                <span className="badge">Uses existing credit packages</span>
-                <h3>{page.title}</h3>
-                <p>{page.summary}</p>
-                <div className="category-option-row">
-                  {page.keywords.slice(0, 5).map((keyword) => <small key={`${page.slug}-${keyword}`}>{keyword}</small>)}
-                </div>
-                <div className="production-package-list">
-                  {page.creditModel.slice(0, 3).map((creditLine) => (
-                    <div key={`${page.slug}-${creditLine}`}>
-                      <strong>{creditLine.split(":")[0]}</strong>
-                      <span>{creditLine.includes(":") ? creditLine.split(":").slice(1).join(":").trim() : "Existing credits"}</span>
-                    </div>
-                  ))}
-                </div>
-                <Link className="btn" href="/dashboard/credits">Create package</Link>
-                <Link className="btn secondary" href={`/${page.slug}`}>View {page.primaryKeyword} guide</Link>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Alternative SEO pages</span>
-          <h2>Compare Crelavo with AI video, design, website and campaign tools</h2>
-          <p>
-            The alternatives hub supports comparison searches like Canva alternative, Runway alternative, Synthesia alternative, AI product video generator alternative and Shopify video app alternative, then routes visitors into Crelavo categories and production workflows.
-          </p>
-          <Link className="btn secondary" href="/alternatives">Open AI tool alternatives</Link>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Launch distribution SEO</span>
-          <h2>AI tool launch plan, SaaS distribution and organic traffic paths</h2>
-          <p>
-            The launch distribution page connects production categories to AI directory submission, SaaS launch distribution, Product Hunt launch timing, founder launch posts, community traffic and UTM tracking.
-          </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open launch distribution plan</Link>
-            <Link className="btn secondary" href="/ai-social-media-launch-plan">Open social media launch plan</Link>
-            <Link className="btn secondary" href="/pinterest-youtube-visual-distribution-plan">Open Pinterest + YouTube plan</Link>
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">SEO category coverage</span>
-          <h2>High-intent production categories and search paths</h2>
-          <p>
-            This page supports visitors who search for AI video generator categories, AI website builder categories, AI app builder workflows, ecommerce campaign paths, brand kits and social media production options.
-          </p>
-          <div className="delivery-step-grid">
-            <div className="delivery-step-card">
-              <h3>AI video and motion</h3>
-              <p>Product videos, social clips, shorts, ads, avatar video and motion workflows.</p>
-            </div>
-            <div className="delivery-step-card">
-              <h3>Web and app production</h3>
-              <p>Landing pages, SaaS websites, mobile apps, dashboards and admin panels.</p>
-            </div>
-            <div className="delivery-step-card">
-              <h3>Ecommerce and brand assets</h3>
-              <p>Shopify, Amazon, Trendyol, product pages, brand kits and reusable campaign material.</p>
-            </div>
-          </div>
-        </section>
+        <HomeShowcaseSlider title="Crelavo production categories" subtitle="Start from the category that matches what you want to create." slides={categorySlides(siteContent.showcaseSlides)} />
 
         <CategoryGroupBrowser />
 
-        <div style={{ marginTop: 24 }}>
-          <Link className="btn" href="/dashboard/credits">Open credits</Link>
-        </div>
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Ready to create?</span>
+          <h2>Use one of the categories above or open Work directly</h2>
+          <p>The category page stays focused on choosing the production type. Credit packages and checkout stay on the credits page.</p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link className="btn" href="/dashboard/assistant-workspace">Open Work</Link>
+            <Link className="btn secondary" href="/dashboard/credits">Open credits</Link>
+          </div>
+        </section>
       </main>
     </>
   );
