@@ -88,6 +88,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-10-22/video/1786373837513726362-1786373837508.mp4"
   },
   {
+    title: "UGC Style Ad",
+    kicker: "Creator-style ecommerce ad",
+    description: "A Crelavo showcase showing how ecommerce products can become natural creator-style UGC ads.",
+    href: "/showcase/videos/ugc-style-ad-showcase",
+    tone: "pink",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/image/1786392552674876040-1786392552671.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786392561011143749-1786392561003.mp4"
+  },
+  {
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
     description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
