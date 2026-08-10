@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { Bot, CheckCircle2, Download, ExternalLink, Film, Globe2, ImageIcon, LibraryBig, Mic2, Music2, Pencil, PlayCircle, RefreshCcw, Share2, Subtitles, UploadCloud } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { ConnectedAccountsPanel } from "@/components/ConnectedAccountsPanel";
@@ -253,6 +253,40 @@ export function ProductionWorkspace({ production }: ProductionWorkspaceProps) {
   const [action, setAction] = useState("Request revision");
 const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 const [notice, setNotice] = useState("");
+const [autoPosterUrl, setAutoPosterUrl] = useState("");
+
+  function captureAutoPoster(event: SyntheticEvent<HTMLVideoElement>) {
+    if (posterUrl || autoPosterUrl) return;
+    const video = event.currentTarget;
+    if (!video.videoWidth || !video.videoHeight) return;
+    const capture = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
+        if (dataUrl && dataUrl.startsWith("data:image/")) setAutoPosterUrl(dataUrl);
+      } catch {
+        // Cross-origin videos may block canvas extraction. In that case the player simply uses the first playable frame.
+      }
+    };
+    if (video.duration && video.duration > 2.5 && Math.abs(video.currentTime - 2.5) > 0.2) {
+      const previousMuted = video.muted;
+      video.muted = true;
+      const onSeeked = () => {
+        video.removeEventListener("seeked", onSeeked);
+        capture();
+        video.muted = previousMuted;
+      };
+      video.addEventListener("seeked", onSeeked, { once: true });
+      video.currentTime = 2.5;
+      return;
+    }
+    capture();
+  }
 
   async function prepareSocialSharing() {
     setTargetPart("Social media sharing");
@@ -1144,7 +1178,7 @@ const data = await response.json().catch(() => ({}));
           {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
           <div className="customer-preview-screen">
             {previewKind === "video" ? (
-              <video src={playbackUrl} controls playsInline poster={posterUrl || undefined} />
+              <video src={playbackUrl} controls playsInline crossOrigin="anonymous" poster={posterUrl || autoPosterUrl || undefined} onLoadedData={captureAutoPoster} />
             ) : previewKind === "image" ? (
               <img src={previewUrl} alt={isProjectProduction ? "Crelavo customer project preview image" : "Crelavo generated production preview image"} />
             ) : previewKind === "web" && isProjectProduction ? (
