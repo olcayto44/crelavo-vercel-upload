@@ -1547,20 +1547,20 @@ const data = await response.json().catch(() => ({}));
 
         <div className="revision-history-card">
           <form className="revision-inline-form" onSubmit={submitRevision}>
-            <h2>Revizyon isteği yaz</h2>
-            <p>Bu kutu her zaman görünür. Videoda ne değişsin istiyorsan buraya yaz.</p>
+            <h2>Write a revision request</h2>
+            <p>This box is always visible. Write what should change in the video here.</p>
             <div className="revision-target-grid">
-              <label className="revision-field"><span>Hedef bölüm</span><input aria-label="Hedef bölüm" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} /></label>
-              <label className="revision-field"><span>İşlem başlığı</span><input aria-label="İşlem başlığı" placeholder="Sesi düzelt ve ofis insanlarını kaldır" value={action} onChange={(event) => setAction(event.target.value)} /></label>
+              <label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} /></label>
+              <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} /></label>
             </div>
             <label className="revision-message-field">
-              <span>Revizyon isteği</span>
-              <textarea aria-label="Revizyon isteği" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Revizyon isteğini buraya yaz..." />
+              <span>Revision request</span>
+              <textarea aria-label="Revision request" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write the revision request here..." />
             </label>
-            <button className="btn" disabled={status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Kaydediliyor..." : "Revizyon isteğini gönder"}</button>
+            <button className="btn" disabled={status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : "Send revision request"}</button>
             {notice ? <p className={`workspace-action-note ${status === "error" ? "error" : ""}`}>{notice}</p> : null}
           </form>
-          <h2>{isReady || hasPreview ? "Revizyon geçmişi" : "Üretim aktivitesi"}</h2>
+          <h2>{isReady || hasPreview ? "Revision history" : "Production activity"}</h2>
           {revisions.length > 0 ? (
             <div className="revision-history-list">
               {revisions.slice(-5).reverse().map((revision, index) => (

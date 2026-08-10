@@ -81,6 +81,28 @@ export const showcaseVideos: ShowcaseVideo[] = [
     ]
   },
   {
+    id: "lower-ad-costs-showcase",
+    title: "Lower Ad Costs",
+    kicker: "Performance ecommerce creative",
+    description: "A Crelavo showcase showing how stronger ecommerce creative can reduce wasted ad spend.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/image/1786394209451949015-1786394209448.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786394216207214393-1786394216197.mp4",
+    duration: "PT18S",
+    orientation: "portrait",
+    uploadDate: "2026-08-11T04:20:00.000Z",
+    details: [
+      "A Crelavo ecommerce performance showcase focused on high ad costs and weak creative.",
+      "Shows how better hooks, clearer angles and stronger videos can reduce wasted campaign spend.",
+      "Designed for ecommerce founders, Shopify sellers, Amazon sellers and performance marketers."
+    ],
+    bestFor: ["Lower ad costs", "Performance creative", "Ecommerce campaigns", "Creative fatigue"],
+    productionDetails: [
+      { title: "What this video shows", text: "High ad costs are often connected to weak hooks, unclear offers and creative fatigue. This example shows how sharper creative can make campaigns more efficient." },
+      { title: "Best use case", text: "Use this format when an ecommerce seller is spending on ads but needs stronger video creative before scaling campaigns." },
+      { title: "Crelavo workflow", text: "Crelavo helps turn product ideas, links and campaign goals into clearer hooks, better creative angles and stronger ecommerce video ads." }
+    ]
+  },
+  {
     id: "crelavo-wow-reel",
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",

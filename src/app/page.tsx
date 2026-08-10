@@ -97,6 +97,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786392561011143749-1786392561003.mp4"
   },
   {
+    title: "Lower Ad Costs",
+    kicker: "Performance ecommerce creative",
+    description: "A Crelavo showcase showing how stronger ecommerce creative can reduce wasted ad spend.",
+    href: "/showcase/videos/lower-ad-costs-showcase",
+    tone: "blue",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/image/1786394209451949015-1786394209448.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786394216207214393-1786394216197.mp4"
+  },
+  {
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
     description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
