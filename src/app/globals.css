@@ -7438,6 +7438,13 @@ html body .sample-detail-page .sample-detail-player-video {
   font-size: clamp(16px, 2vw, 20px);
 }
 
+.showcase-detail-video-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
 .showcase-detail-video-wrap {
   width: fit-content;
   max-width: min(760px, 100%);
@@ -7447,6 +7454,11 @@ html body .sample-detail-page .sample-detail-player-video {
   border-radius: 24px;
   background: #020617;
   box-shadow: 0 28px 70px rgba(2, 6, 23, .38);
+}
+
+.showcase-detail-hero .showcase-detail-video-wrap {
+  justify-self: center;
+  align-self: start;
 }
 
 .showcase-detail-video-wrap .showcase-detail-video {

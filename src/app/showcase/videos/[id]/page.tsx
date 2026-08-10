@@ -85,10 +85,12 @@ export default async function ShowcaseVideoPage({ params }: { params: Promise<{ 
           <h1>{video.title}</h1>
           <p>{video.description}</p>
         </div>
-        <div className="showcase-detail-video-wrap">
-          <video className="showcase-detail-video" controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
-            <source src={video.videoUrl} type="video/mp4" />
-          </video>
+        <div className="showcase-detail-video-row">
+          <div className="showcase-detail-video-wrap">
+            <video className="showcase-detail-video" controls playsInline preload="metadata" poster={imageUrl} aria-label={`${video.title} Crelavo AI video showcase`}>
+              <source src={video.videoUrl} type="video/mp4" />
+            </video>
+          </div>
         </div>
         <div className="showcase-detail-grid">
           <section className="showcase-detail-card">
