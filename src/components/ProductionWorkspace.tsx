@@ -262,7 +262,7 @@ const [notice, setNotice] = useState("");
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
       setNotice(auth.message);
-      window.setTimeout(() => document.getElementById("social-share-panel")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+      window.setTimeout(() => document.getElementById("social-share-panel-top")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
       return;
     }
     const response = await fetch(`/api/productions/${production.id}/delivery-preferences`, {
@@ -272,7 +272,7 @@ const [notice, setNotice] = useState("");
     });
     const data = await response.json().catch(() => ({}));
     setNotice(response.ok ? "Social/store delivery preferences saved into the export-ready pack. Review it and send from the assistant intervention area." : (data.error ?? "Delivery preferences could not be saved."));
-    window.setTimeout(() => document.getElementById("social-share-panel")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    window.setTimeout(() => document.getElementById("social-share-panel-top")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   }
   const [localRevisions, setLocalRevisions] = useState<RevisionRequest[]>([]);
   const [pollingNote, setPollingNote] = useState("");
@@ -1108,6 +1108,7 @@ const data = await response.json().catch(() => ({}));
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
+              {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Share to social accounts</button> : null}
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
@@ -1452,6 +1453,21 @@ const data = await response.json().catch(() => ({}));
           </div>
           <p>{hasDelivery ? "Final files are ready for customer handoff." : hasPreview ? "Preview is ready; final delivery is still being prepared." : "Production is active or waiting for provider output."}</p>
         </div>
+
+        {!isProjectProduction ? <div className="social-share-card priority-social-share" id="social-share-panel-top">
+          <h2>Social media sharing</h2>
+          <p>Prepare platform-ready posts, captions, tags and export notes for the final video.</p>
+          <div className="social-platform-grid">
+            {[
+              { label: "Instagram", icon: "IG", tone: "instagram" },
+              { label: "TikTok", icon: "TK", tone: "tiktok" },
+              { label: "YouTube Shorts", icon: "YT", tone: "youtube" },
+              { label: "LinkedIn", icon: "IN", tone: "linkedin" },
+              { label: "Facebook", icon: "FB", tone: "facebook" },
+              { label: "X", icon: "X", tone: "x" }
+            ].map((platform) => <a className={`social-platform-card ${platform.tone}`} href={`/dashboard/social-export?platform=${encodeURIComponent(platform.label)}&production=${encodeURIComponent(production.id)}`} key={platform.label}><span className="social-platform-icon">{platform.icon}</span><strong>{platform.label}</strong><small>Prepare post</small></a>)}
+          </div>
+        </div> : null}
 
         <div className="revision-history-card">
           <form className="revision-inline-form" onSubmit={submitRevision}>
