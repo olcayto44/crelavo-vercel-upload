@@ -103,6 +103,28 @@ export const showcaseVideos: ShowcaseVideo[] = [
     ]
   },
   {
+    id: "cinematic-battle-concept-showcase",
+    title: "Cinematic Battle Concept",
+    kicker: "Action trailer concept",
+    description: "A Crelavo cinematic action concept trailer with futuristic battle equipment and dramatic FOMO title cards.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-06/image/1786400804362105136-1786400804359.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-06/video/1786400816244375139-1786400816217.mp4",
+    duration: "PT35S",
+    orientation: "portrait",
+    uploadDate: "2026-08-11T06:00:00.000Z",
+    details: [
+      "A Crelavo cinematic action concept trailer focused on futuristic battle atmosphere and dramatic poster-style tension.",
+      "Shows special battle equipment, energy weapons, tactical armor, sparks and smoky battlefield visuals.",
+      "Useful as a showcase example for cinematic concept trailers, action mood reels and social visual hooks."
+    ],
+    bestFor: ["Cinematic concept trailers", "Action mood reels", "Futuristic battle visuals", "Social video hooks"],
+    productionDetails: [
+      { title: "What this video shows", text: "A fictional battle concept can be shaped into a 35-second vertical trailer with dramatic title cards, futuristic equipment and high-intensity atmosphere." },
+      { title: "Best use case", text: "Use this style for cinematic concept reels, game-like pitch visuals, action moodboards or social teaser content where atmosphere matters more than product explanation." },
+      { title: "Crelavo workflow", text: "Crelavo can turn an abstract action idea into a structured cinematic concept video with cover frame, mood, pacing and showcase-ready delivery." }
+    ]
+  },
+  {
     id: "crelavo-wow-reel",
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",

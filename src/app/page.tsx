@@ -106,6 +106,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-04/video/1786394216207214393-1786394216197.mp4"
   },
   {
+    title: "Cinematic Battle Concept",
+    kicker: "Action trailer concept",
+    description: "A Crelavo cinematic action concept trailer with futuristic battle equipment and dramatic FOMO title cards.",
+    href: "/showcase/videos/cinematic-battle-concept-showcase",
+    tone: "purple",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-06/image/1786400804362105136-1786400804359.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-11-06/video/1786400816244375139-1786400816217.mp4"
+  },
+  {
     title: "Crelavo Wow Reel",
     kicker: "Viral visual",
     description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
