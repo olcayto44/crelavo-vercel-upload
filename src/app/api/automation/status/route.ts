@@ -857,8 +857,12 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
       }
       const heygenMeta = heygenV3Metadata(successfulStatus);
       const presenterRouteSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.title ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
-      const expectsHeyGenPresenterProvider = /talking_video|avatar|lip_sync|live_sales_agent|heygen|heygen_video_agent|video\s*agent|ai\s*presenter|with\s*presenter|talking\s*avatar|talking\s*head|ugc|koc|creator|product\s*demo|social\s*media\s*ad/.test(presenterRouteSignal)
-        && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice/.test(presenterRouteSignal);
+      const sanitizedPresenterRouteSignal = presenterRouteSignal
+        .replace(/avoid\s*\/\s*exclusions?:[\s\S]*$/i, "")
+        .replace(/thumbnail\s*\/\s*cover\s*prompt:[\s\S]*?(?=(avoid\s*\/\s*exclusions?:|selected setup|$))/gi, "")
+        .replace(/\b(avoid|exclude|without|no|not|do not|don't)\s+[^.。\n,;]*?(presenter|b-?roll|silent|voice|replicate|generic|cinematic|action|horizontal\s+16:?9)[^.。\n,;]*/gi, " ");
+      const expectsHeyGenPresenterProvider = /talking_video|avatar|lip_sync|live_sales_agent|heygen|heygen_video_agent|video\s*agent|ai\s*presenter|with\s*presenter|talking\s*avatar|talking\s*head|ugc|koc|creator|product\s*demo|social\s*media\s*ad/.test(sanitizedPresenterRouteSignal)
+        && !/\b(no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice)\b/.test(sanitizedPresenterRouteSignal);
       if (expectsHeyGenPresenterProvider && successfulProviderName !== "heygen_video_agent" && successfulProviderName !== "heygen_v2_generate" && successfulProviderName !== "heygen") {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
           visualStatus,
