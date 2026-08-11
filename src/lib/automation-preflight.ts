@@ -1,3 +1,5 @@
+import { hasProviderEnv } from "./providers/env.ts";
+
 export type AutomationPreflightInput = {
   productionType: string;
   requestMetadata?: Record<string, unknown>;
@@ -152,8 +154,12 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   const requestedDuration = explicitDuration || (providerTestMode ? 5 : 8);
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service);
   const selectedVideoProvider = selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
-  const typePreferredProvider = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "video"].includes(input.productionType) ? "runway" : "";
-  const videoProvider = selectedVideoProvider || typePreferredProvider || input.videoProvider || "replicate";
+  const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "video"].includes(input.productionType);
+  const configuredVideoProvider = hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";
+  const typePreferredProvider = productionNeedsRealVideo ? configuredVideoProvider : "";
+  const envVideoProvider = String(input.videoProvider || "").trim().toLowerCase();
+  const safeEnvVideoProvider = envVideoProvider === "kling" && selectedVideoProvider !== "kling" ? "" : envVideoProvider;
+  const videoProvider = selectedVideoProvider || typePreferredProvider || safeEnvVideoProvider || "replicate";
   const aspectRatio = selectedAspectRatio(requestMetadata, inputJson);
   const featureFlags = selectedFeatureFlags(requestMetadata, inputJson);
   const characterDialogueAnimation = detectCharacterDialogueAnimationNeed(textFrom(input.productionType, JSON.stringify(requestMetadata), JSON.stringify(inputJson)));
