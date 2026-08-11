@@ -924,6 +924,9 @@ if (talkingProviderType) {
     }
 
     const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
+    if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText)) {
+      throw new Error("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.");
+    }
     const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
     const providerTestMode = Boolean(providerPreflight.testMode);
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};

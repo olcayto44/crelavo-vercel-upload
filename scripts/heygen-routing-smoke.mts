@@ -43,6 +43,9 @@ for (const [label, source] of [["automation/start", startRoute], ["automation/st
 if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealProvider")) {
   throw new Error("talking_video must not wait for providerReadiness before attempting HeyGen start");
 }
+if (!startRoute.includes("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen")) {
+  throw new Error("automation/start must block generic video providers for presenter/UGC/talking jobs");
+}
 if (!statusRoute.includes("quality_gate_blocked_wrong_presenter_provider")) {
   throw new Error("status route must block generic providers for presenter videos");
 }
