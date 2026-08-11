@@ -856,6 +856,40 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
         return Response.json({ production: data, visualStatus, renderStatus, renderPending: true, rawVisualPreviewUrl: rawVisualPreviewUrl || providerFinalUrl || null, quality_blocked: true, reason: "raw_drone_visual_not_final_delivery" });
       }
       const heygenMeta = heygenV3Metadata(successfulStatus);
+      const presenterRouteSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.title ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
+      const expectsHeyGenPresenterProvider = /talking_video|avatar|lip_sync|live_sales_agent|heygen|heygen_video_agent|video\s*agent|ai\s*presenter|with\s*presenter|talking\s*avatar|talking\s*head|ugc|koc|creator|product\s*demo|social\s*media\s*ad/.test(presenterRouteSignal)
+        && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice/.test(presenterRouteSignal);
+      if (expectsHeyGenPresenterProvider && successfulProviderName !== "heygen_video_agent" && successfulProviderName !== "heygen_v2_generate" && successfulProviderName !== "heygen") {
+        const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
+          visualStatus,
+          renderStatus,
+          rawGenericProviderUrl: providerFinalUrl,
+          providerStatus: "quality_gate_blocked_wrong_presenter_provider",
+          qualityGate: {
+            status: "blocked",
+            checkedAt: new Date().toISOString(),
+            required: ["heygen_presenter_provider"],
+            missing: ["heygen_presenter_provider"],
+            warnings: [`wrong_provider_for_presenter:${successfulProviderName || "unknown"}`]
+          },
+          providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+          outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry
+        });
+        const { data } = await supabase
+          .from("production_requests")
+          .update(safeUpdate({
+            status: "in_production",
+            automation_status: "quality_blocked",
+            generation_status: "quality_gate_blocked",
+            output_json: blockedOutput,
+            admin_notes: `Generic provider output rejected: presenter/UGC/talking video requires HeyGen, but ${successfulProviderName || "unknown"} returned the clip.`,
+            updated_at: new Date().toISOString()
+          }))
+          .eq("id", productionId)
+          .select("*")
+          .single();
+        return Response.json({ production: data, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, quality_blocked: true, reason: "wrong_provider_for_presenter_video" });
+      }
       const dedicatedRequired = String(outputWithRenderJob.requiredPipeline ?? "") === "character_consistent_dialogue_animation" || Boolean(outputWithRenderJob.characterDialoguePlan);
       const dedicatedShotstackReady = String(successfulStatus.provider ?? "") === "shotstack" && String(outputWithRenderJob.providerStatus ?? "").includes("shotstack");
       if (dedicatedRequired && !dedicatedShotstackReady) {
