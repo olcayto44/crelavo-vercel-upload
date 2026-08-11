@@ -11,6 +11,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
+import { isAllowedHeyGenPresenterProvider, shouldForceHeyGenPresenterProvider } from "@/lib/heygen-routing";
 import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
 import { mirrorProviderAsset } from "@/lib/providers/storage";
@@ -857,13 +858,8 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
       }
       const heygenMeta = heygenV3Metadata(successfulStatus);
       const presenterRouteSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.title ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
-      const sanitizedPresenterRouteSignal = presenterRouteSignal
-        .replace(/avoid\s*\/\s*exclusions?:[\s\S]*$/i, "")
-        .replace(/thumbnail\s*\/\s*cover\s*prompt:[\s\S]*?(?=(avoid\s*\/\s*exclusions?:|selected setup|$))/gi, "")
-        .replace(/\b(avoid|exclude|without|no|not|do not|don't)\s+[^.。\n,;]*?(presenter|b-?roll|silent|voice|replicate|generic|cinematic|action|horizontal\s+16:?9)[^.。\n,;]*/gi, " ");
-      const expectsHeyGenPresenterProvider = /talking_video|avatar|lip_sync|live_sales_agent|heygen|heygen_video_agent|video\s*agent|ai\s*presenter|with\s*presenter|talking\s*avatar|talking\s*head|ugc|koc|creator|product\s*demo|social\s*media\s*ad/.test(sanitizedPresenterRouteSignal)
-        && !/\b(no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice)\b/.test(sanitizedPresenterRouteSignal);
-      if (expectsHeyGenPresenterProvider && successfulProviderName !== "heygen_video_agent" && successfulProviderName !== "heygen_v2_generate" && successfulProviderName !== "heygen") {
+      const expectsHeyGenPresenterProvider = shouldForceHeyGenPresenterProvider({ productionType: String(production.production_type ?? ""), routeSignal: presenterRouteSignal });
+      if (expectsHeyGenPresenterProvider && !isAllowedHeyGenPresenterProvider(successfulProviderName)) {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
           visualStatus,
           renderStatus,

@@ -36,6 +36,7 @@
     "smoke:delivery-package": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/delivery-package-smoke.mts",
     "smoke:automatic-delivery-builder": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/automatic-delivery-builder-smoke.mts",
     "smoke:automation-preflight": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/automation-preflight-smoke.mts",
+    "smoke:heygen-routing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/heygen-routing-smoke.mts",
     "smoke:demo-output": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/demo-output-smoke.mts",
     "smoke:credit-resolution": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/credit-resolution-smoke.mts",
     "smoke:api-cost-abuse": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/api-cost-abuse-smoke.mts",

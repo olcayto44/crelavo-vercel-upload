@@ -8,6 +8,7 @@ import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
+import { hasCinematicActionIntent, hasHeyGenPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
@@ -465,11 +466,7 @@ export async function POST(request: Request) {
     let productionType = String(currentProduction?.production_type ?? "");
     const packageId = String(currentProduction?.package_id ?? "");
   const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
-  const routeDetectionText = productionDetectionText
-    .replace(/avoid\s*\/\s*exclusions?:[\s\S]*$/i, "")
-    .replace(/thumbnail\s*\/\s*cover\s*prompt:[\s\S]*?(?=(avoid\s*\/\s*exclusions?:|selected setup|$))/gi, "")
-    .replace(/\b(avoid|exclude|without|no|not|do not|don't)\s+[^.。\n,;]*?(cinematic\s+action|action|battle|battlefield|war|sci-fi|motion\s+graphics|no-?presenter|b-?roll|silent|horizontal\s+16:?9|replicate)[^.。\n,;]*/gi, " ");
-  const isCinematicActionProduction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(routeDetectionText);
+  const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
   if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
     productionType = "animation";
   }
@@ -492,7 +489,7 @@ export async function POST(request: Request) {
     replicateModel: process.env.REPLICATE_MODEL
   });
 const isDroneProduction = productionType === "drone_video";
-const heygenSetupPresenterIntent = /ai\s+presenter|with\s+presenter|auto\s+choose\s+best\s+presenter|female\s+presenter|male\s+presenter|young\s+energetic\s+creator|energetic\s+ugc\s+creator|video\s+agent\s+auto\s+edit|adult\s+neutral\s+voice|ugc-style\s+product\s+script|heygen_video_agent/i.test(routeDetectionText);
+const heygenSetupPresenterIntent = hasHeyGenPresenterIntent(productionDetectionText);
 const heygenForcedByMetadata = !isDroneProduction && !isCinematicActionProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
 const talkingProviderType = !isDroneProduction && !isCinematicActionProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
