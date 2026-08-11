@@ -13,7 +13,7 @@ import { estimateProductionProfit } from "@/lib/production-profit";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
-import { hasCinematicActionIntent, hasHeyGenPresenterIntent } from "@/lib/heygen-routing";
+import { hasCinematicActionIntent, hasHeyGenPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
 import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -337,8 +337,9 @@ export async function POST(request: Request) {
   const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
   const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
-  const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(serverRouteText)
-    && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(serverRouteText);
+  const sanitizedServerRouteText = sanitizeProviderRouteSignal(serverRouteText);
+  const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(sanitizedServerRouteText)
+    && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(sanitizedServerRouteText);
   const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
  const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasHeyGenPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
 
