@@ -118,6 +118,21 @@ function visualOnlyGuard(noVoice: boolean, noSubtitles: boolean) {
   return rules.join(" ");
 }
 
+function crelavoPremiumQualityFloor(intentText = "") {
+  const lower = intentText.toLowerCase();
+  const wantsShowcase = /homepage\s+showcase|showcase\s+loop|wow\s+video|cinematic\s+promo|sinematik|film\s+trailer|premium|high-end|kling|dikkat\s+çek|dikkat\s+cek|kaliteli/.test(lower);
+  const base = [
+    "CRELAVO PREMIUM QUALITY FLOOR: never deliver a cheap, generic, flat, low-energy or stock-looking video.",
+    "Minimum visual standard must feel like a premium paid creative platform: cinematic lighting, sharp composition, strong first-second hook, polished motion, high contrast, clean color grading, premium camera movement and modern effects.",
+    "If the user prompt is simple, upgrade it into a stronger premium production concept while preserving the user's core subject and intent.",
+    "Avoid weak dashboard-only demos, boring corporate presenter energy, dull studio shots, random filler, messy typography, low-quality AI artifacts and amateur slideshow pacing."
+  ];
+  if (wantsShowcase) {
+    base.push("SHOWCASE BENCHMARK: output must be visually striking enough to stand next to high-end AI video platform examples; it should make the viewer stop scrolling in the first second.");
+  }
+  return base.join(" ");
+}
+
 function classifyVideoPipeline(text: string) {
   const lower = text.toLowerCase();
   const explicitNoCharacterSpeech = /çocuklar\s*konuşmasın|cocuklar\s*konusmasin|karakterler\s*konuşmasın|karakterler\s*konusmasin|diyalog\s*olmasın|dialogue\s*olmasın|no\s*dialogue|no\s*character\s*speech/.test(lower);
@@ -164,24 +179,25 @@ function linkProductDemoScenes(text: string, durationSeconds: number) {
 
 function crelavoProductDemoScenes(durationSeconds: number) {
   const scenes = [
-    "Realistic browser view of https://www.crelavo.com and Crelavo dashboard. Large visible Crelavo wordmark, link input field, headline Paste a link. Get an ad. Full-screen SaaS UI only; no office, no humans, no presenter, no stock footage.",
-    "Crelavo dashboard close-up: a product or website URL is pasted into the link input. Show Crelavo navigation, analysis progress, product/page cards and benefit extraction panels. Keep Crelavo brand visible in the UI.",
-    "Crelavo AI creates ad script and scene plan inside the dashboard. Show script editor, scene timeline, hook card, CTA card, and vertical ad preview panel. Realistic high-fidelity software interface, no people, no cartoon.",
-    "Crelavo media controls activate: Turkish voice-over waveform, Turkish subtitles timeline, background music toggle, and 9:16 MP4 preview. Show Crelavo dashboard repeatedly, not an office environment. No English captions unless the user explicitly asked English.",
-    "Final Crelavo export screen: vertical preview, Final MP4 download button, TikTok/Reels/Shorts/ad export badges, completion state. Premium realistic SaaS product UI, Crelavo brand visible, no humans, no split-screen characters."
+    "CREATE IT: Crelavo logo bursts onto a dark neon tech background with blue, purple, cyan and magenta light streaks. Floating UI panels show AI video generation, fast timeline blocks and social media preview cards. No people, no presenter, no avatar.",
+    "AI VIDEO + PRODUCT ADS: rapid category flashes show product ad videos, e-commerce campaigns, product pages turning into vertical ad previews, motion graphics and conversion cards. Neon dashboard UI, fast cuts, beat-synced transitions.",
+    "WEBSITES + APPS + SAAS: browser mockups, mobile app screens and SaaS dashboards appear as glowing panels. Show landing pages, billing, admin dashboards, customer portals and clean product interfaces inside a futuristic Crelavo workspace.",
+    "CREATIVE MEDIA STACK: music video/MV, image visual packs, brand kits, talking avatar tools, lip-sync, dubbing and localization appear as animated module cards. Keep it premium, energetic and neon-lit, not corporate stock footage.",
+    "SOCIAL EXPORT: TikTok, Reels, YouTube Shorts, LinkedIn and X export cards slide into place. Show connected accounts, final MP4, thumbnail, captions and hashtag pack ready for publishing.",
+    "LAUNCH IT: final CTA with bold kinetic typography: CREATE IT. LAUNCH IT. SCALE IT. CRELAVO. Bright neon logo lockup, fast glitch transition, premium startup launch energy."
   ];
-  const shotCount = Math.max(2, Math.ceil(durationSeconds / 5));
+  const shotCount = Math.max(3, Math.ceil(durationSeconds / 5));
   return scenes.slice(0, Math.min(scenes.length, shotCount));
 }
 
 function crelavoPromoNarration(durationSeconds: number, language = "English") {
   const isTurkish = /turkish|türkçe|turkce|tr\b/i.test(language);
   const concise = isTurkish
-    ? "Crelavo’ya ürününü ya da site fikrini yaz. Yapay zeka reklam planını çıkarır, senaryoyu hazırlar, seslendirme, altyazı ve müzikle paylaşmaya hazır dikey video üretir."
-    : "Paste a link into Crelavo. The AI analyzes your product, writes the ad script, builds the scene plan, adds voice-over, subtitles and music, then delivers a ready-to-post MP4 for TikTok, Reels, Shorts and ads.";
+    ? "Crelavo fikirleri videolara, web sitelerine, uygulamalara, kampanyalara ve yayına hazır içeriklere dönüştürür. Oluştur. Yayına al. Büyüt."
+    : "Crelavo turns ideas into videos, websites, apps, campaigns and launch-ready content. Create it. Launch it. Scale it.";
   const extended = isTurkish
-    ? "Crelavo’ya ürününü, siteni ya da kampanya fikrini yaz. Sistem hedefi analiz eder, güçlü açılış metnini çıkarır, reklam senaryosunu ve sahne planını hazırlar. Türkçe seslendirme, altyazı, hafif enerjik müzik ve dikey sosyal medya formatıyla paylaşmaya hazır bir video üretir. Crelavo ile fikirden reklama çok daha hızlı geç."
-    : "Paste any product or website link into Crelavo. The dashboard analyzes the page, identifies the offer, audience and key benefits, then turns that insight into a focused ad script and scene plan. Crelavo prepares voice-over, subtitles, background music and a polished vertical MP4 preview, ready to export for TikTok, Instagram Reels, YouTube Shorts and paid ads. Paste a link. Get an ad.";
+    ? "Crelavo ile tek bir fikirden hızlıca üretime geç. AI video, ürün reklamı, müzik klibi, web sitesi, mobil uygulama, SaaS dashboard, marka kiti, görsel paket, dubbing, localization ve sosyal medya export akışı tek yerde birleşir. Oluştur. Yayına al. Büyüt."
+    : "Crelavo turns ideas into production-ready videos, websites, apps and campaigns. Build AI videos, product ads, music videos, websites, mobile apps, SaaS dashboards, brand kits, visual packs, dubbing, localization and social export flows in one place. Create it. Launch it. Scale it.";
   return fitScriptToDuration(durationSeconds >= 30 ? extended : concise, Math.max(5, durationSeconds - 1), concise);
 }
 
@@ -378,7 +394,8 @@ const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inpu
   const noVoice = voiceExplicitlyDisabled(intentText);
   const noSubtitles = subtitlesExplicitlyDisabled(intentText);
   const mediaGuard = visualOnlyGuard(noVoice, noSubtitles);
-  const deterministicUiMotion = isCrelavoPromo && /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui/i.test(intentText);
+  const cinematicActionIntent = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(intentText.toLowerCase());
+  const deterministicUiMotion = !cinematicActionIntent && isCrelavoPromo && /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|motion\s*graphics|hareketli\s*grafik|arayüz|arayuz|ui/i.test(intentText);
   const requestedScenes = scenePromptsFromRequest(prompt);
   const parts = requestedScenes.length ? requestedScenes : sentenceParts(prompt).filter((part) => !/test|teslim|seslendirme|altyaz|format|480p|saniye|mp4|müzik|muzik/i.test(part));
   const baseVisualScenes = isDroneVideo
@@ -406,11 +423,20 @@ const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inpu
   const countGuard = /\b(dört|4)\s+çocuk|\b(dort|4)\s+cocuk/i.test(intentText)
     ? "Exactly four children only. No extra children, no crowd, no additional people. Keep the same four children visible across the scene."
     : "";
-  const combinedGuard = [mediaGuard, noCharacterSpeechGuard, crelavoPromoGuard, linkAdGuard, countGuard].filter(Boolean).join(" ");
+  const qualityFloorGuard = crelavoPremiumQualityFloor(intentText);
+  const combinedGuard = [qualityFloorGuard, mediaGuard, noCharacterSpeechGuard, crelavoPromoGuard, linkAdGuard, countGuard].filter(Boolean).join(" ");
   const visualScenes = combinedGuard ? visualScenesBase.map((scene) => `${scene}. ${combinedGuard}`) : visualScenesBase;
 const dialogueSegments = noVoice || isCrelavoPromo || isLinkAd ? [] : dialogueSegmentsFromScenes(requestedScenes, durationSeconds);
 const script = noVoice ? "" : isDroneVideo ? droneVideoNarration(durationSeconds, selectedVoiceLanguage, prompt) : isCrelavoPromo ? crelavoPromoNarration(durationSeconds, selectedVoiceLanguage) : isLinkAd ? linkAdNarration(durationSeconds) : narrationScript(title, prompt, selectedVoiceLanguage, pipelineType, durationSeconds);
-  const subtitleLines = noSubtitles ? [] : subtitleLinesFromScript(script || turkishNarration(prompt, durationSeconds), durationSeconds);
+  const crelavoShowcaseLines = [
+    "CREATE IT: Ideas become videos, websites, apps and campaigns.",
+    "AI VIDEO + PRODUCT ADS: Fast social clips, product demos and e-commerce campaigns.",
+    "WEBSITES + APPS + SAAS: Landing pages, mobile apps, dashboards and billing flows.",
+    "CREATIVE MEDIA STACK: Music videos, brand kits, image packs, lip-sync and localization.",
+    "SOCIAL EXPORT: Final MP4, thumbnail, captions, hashtags and connected accounts.",
+    "LAUNCH IT. SCALE IT. CRELAVO."
+  ];
+  const subtitleLines = noSubtitles ? [] : isCrelavoPromo ? crelavoShowcaseLines : subtitleLinesFromScript(script || turkishNarration(prompt, durationSeconds), durationSeconds);
   return {
     title,
     script,
@@ -479,8 +505,8 @@ export async function runGenericVideoPipeline(input: {
   try {
     const needsMultiShot = plan.durationSeconds > 5;
     if (plan.deterministicUiMotion) {
-      visualJob = { provider: "shotstack_ui_motion", id: `ui-motion-${Date.now()}`, status: "succeeded", raw: { deterministicUiMotion: true, skippedPromptToVideo: true } };
-      visualJobs = [];
+      missingProviders.push("visual_generation");
+      providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
     } else if (needsMultiShot) {
       const shotCount = Math.max(2, Math.ceil(plan.durationSeconds / 5));
       const shots = contextualScenes.slice(0, shotCount);
@@ -548,7 +574,7 @@ export async function runGenericVideoPipeline(input: {
 
   const wantsVoice = Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles);
-  const wantsFinalAssembly = Boolean(selectedOptions.finalRender ?? selectedOptions.voiceOver ?? selectedOptions.voiceConsistency ?? selectedOptions.subtitles);
+  const wantsFinalAssembly = Boolean(plan.deterministicUiMotion || selectedOptions.finalRender || selectedOptions.voiceOver || selectedOptions.voiceConsistency || selectedOptions.subtitles || selectedOptions.music);
 
   if (wantsVoice) {
     try {
@@ -576,7 +602,7 @@ export async function runGenericVideoPipeline(input: {
   const requiredAudioReady = !wantsVoice || Boolean(voiceAudioUrl);
   const requiredSubtitleReady = !wantsSubtitles || Boolean(subtitleUrl);
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
-  if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady && (voiceAudioUrl || subtitleUrl)) {
+  if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady) {
     try {
       renderJob = await createShotstackRender({ title: plan.title, videoUrl: readyVisualUrls[0] || visualJob?.url, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
     } catch (error) {

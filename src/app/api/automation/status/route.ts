@@ -759,33 +759,28 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
     const isShotstackUiMotion = String(outputVisualJobProvider || visualJobForUrl.provider || visualStatus?.provider || "").toLowerCase() === "shotstack_ui_motion";
-    const missingUiMotionRender = isShotstackUiMotion && !renderJobForUrl.id && !renderJobForUrl.url && !production.preview_url && !production.delivery_link;
-    if (missingUiMotionRender) {
-      const repairRenderJob = await createShotstackRender({
-        title: String(production.title || production.prompt || "Crelavo motion graphics video"),
-        subtitleLines: Array.isArray(output.subtitleLines) ? output.subtitleLines.map(String) : undefined,
-        durationSeconds: Number((output.plan && typeof output.plan === "object" ? (output.plan as Record<string, unknown>).durationSeconds : undefined) ?? output.durationSeconds ?? 45) || 45
-      });
-      const repairedOutput = outputWithWorkflow(production, outputWithRenderJob, {
+    if (isShotstackUiMotion) {
+      const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
         visualStatus,
-        renderJob: repairRenderJob,
-        providerStatus: "final_render_started",
+        renderStatus,
+        providerStatus: "waiting_real_video_provider",
+        providerErrors: { ...(output.providerErrors && typeof output.providerErrors === "object" ? output.providerErrors as Record<string, unknown> : {}), visual_generation: "shotstack_ui_motion fallback is disabled. A real video provider job is required." },
         providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }
       });
       const { data } = await supabase
         .from("production_requests")
         .update(safeUpdate({
-          status: "in_production",
-          automation_status: "running",
-          generation_status: "final_render_started",
-          output_json: repairedOutput,
-          admin_notes: "Repaired stuck shotstack_ui_motion production by starting final Shotstack render.",
+          status: "queued",
+          automation_status: "waiting_provider_config",
+          generation_status: "waiting_real_video_provider",
+          output_json: blockedOutput,
+          admin_notes: "shotstack_ui_motion fallback blocked; waiting for a real video provider job.",
           updated_at: new Date().toISOString()
         }))
         .eq("id", productionId)
         .select("*")
         .single();
-      return Response.json({ production: data, visualStatus, renderStatus, renderPending: true, repairStarted: true });
+      return Response.json({ production: data, visualStatus, renderStatus, waiting_provider_config: true, blockedProvider: "shotstack_ui_motion" });
     }
     const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "", thumbnailUrl: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
