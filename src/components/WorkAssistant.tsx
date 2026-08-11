@@ -538,6 +538,28 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const isFilmAnimation = !isPresenterUgcLock && /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
   const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
 
+  if (plan.production_type === "video" && isPresenterUgcLock) {
+    return {
+      title: "AI presenter / UGC video setup",
+      note: "Presenter, voice, product-demo and HeyGen options are prioritized for this UGC-style ad.",
+      groups: [
+        { id: "videoStyle", title: "Video style", options: ["AI presenter", "Avatar / talking host", "Voice-over only", "No presenter / B-roll only"] },
+        { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
+        { id: "presenterChoice", title: "Presenter choice", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
+        { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
+        { id: "videoType", title: "Ad type", options: ["UGC-style product script", "Product ad video", "Social media short", "Product demo"] },
+        { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
+        { id: "duration", title: "Target duration (approx.)", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
+        { id: "format", title: "Format", options: ["Vertical 9:16", "Instagram Reels 9:16", "TikTok 9:16", "YouTube Shorts", "Square 1:1"], credit: 250 },
+        { id: "visualDirection", title: "Visual direction", options: ["With presenter", "UGC-style demo", "Product close-up", "Lifestyle scene", "Clean studio background"], credit: 400 },
+        { id: "background", title: "Background", options: ["Social media style", "Home/lifestyle", "White studio", "Brand color", "City"], credit: 300 },
+        { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
+        { id: "voice", title: "Voice-over", options: ["Adult neutral voice", "Female voice", "Male voice", "Choose AI voice", "No voice-over"], credit: 600 },
+        { id: "extras", title: "Ad assets", multi: true, options: ["Background music", "Thumbnail", "Final MP4", "Dashboard delivery", "Revision right", "Export for TikTok/Reels/Shorts"], credit: 450 }
+      ]
+    };
+  }
+
     if (plan.production_type === "video" && isCinematicAction) {
     return {
       title: "Cinematic action video setup",
@@ -1416,22 +1438,24 @@ function normalizeSoundGallery(payload: unknown): HeyGenGallerySound[] {
 
 export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAssistantProps) {
   const forcedProductionType = productionTypeFromCategory(initialCategory);
-  const storedDraft = readStoredWorkDraft();
+  const explicitInitialIntent = Boolean(initialIdea || initialCategory);
+  const storedDraft = explicitInitialIntent ? null : readStoredWorkDraft();
   const restoredDraftPrompt = storedDraft?.productionPrompt || "";
   const initialPrompt = initialIdea || initialCategory || restoredDraftPrompt;
+  const initialPlan = initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null;
   const [input, setInput] = useState(initialIdea || initialCategory || "");
   const [productionPrompt, setProductionPrompt] = useState(initialPrompt);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (storedDraft?.messages?.length) return storedDraft.messages;
-    return initialPrompt ? [
+    if (!explicitInitialIntent && storedDraft?.messages?.length) return storedDraft.messages;
+    return initialPrompt && initialPlan ? [
       { id: uid(), role: "user", content: initialPrompt },
-      { id: uid(), role: "assistant", content: assistantReply(localPlan(initialPrompt, forcedProductionType), detectWorkLanguage(initialPrompt)) }
+      { id: uid(), role: "assistant", content: assistantReply(initialPlan, detectWorkLanguage(initialPrompt)) }
     ] : [];
   });
-  const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null));
-  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => storedDraft?.selectedProductionCards ?? filterCardsForPrompt(productionCardsFor(storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null)), initialPrompt ?? ""));
+  const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? initialPlan);
+  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => storedDraft?.selectedProductionCards ?? filterCardsForPrompt(productionCardsFor(storedDraft?.plan ?? initialPlan), initialPrompt ?? ""));
   const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
-    const initialPlanForSetup = storedDraft?.plan ?? (initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null);
+    const initialPlanForSetup = storedDraft?.plan ?? initialPlan;
     return storedDraft?.productionSetup ?? (initialPlanForSetup ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : {});
   });
   const [conversationId, setConversationId] = useState("");
