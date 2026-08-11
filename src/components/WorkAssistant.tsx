@@ -1085,6 +1085,9 @@ function normalizeProductionType(prompt: string, currentType: string) {
 
 
 function productionTypeFromCategory(category: string) {
+  if (category === "UGC Style Ad") return "video";
+  if (category === "Ad Creative Angles") return "video";
+  if (category === "Lower Ad Costs") return "video";
   const normalized = normalizeAssistantText(category);
   if (!normalized) return "";
   if (/^video$|ai video|video production/.test(normalized)) return "video";
