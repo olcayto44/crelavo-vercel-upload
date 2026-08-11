@@ -2,6 +2,14 @@ import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv } from "./provide
 
 export type ProviderReadinessStatus = "ready" | "missing" | "optional";
 
+function hasHeyGenEnv() {
+  return hasProviderEnv("heygen") || hasAnyConfiguredEnv(["HEYGEN_API_KEY", "HEYGEN_KEY"]);
+}
+
+function hasStorageEnv() {
+  return hasAnyConfiguredEnv(["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY", "NEXT_PUBLIC_SUPABASE_URL"]);
+}
+
 export type ProviderRequirement = {
   key: string;
   label: string;
@@ -45,7 +53,14 @@ export function providerRequirementsForProduction(productionType: string, packag
   }
 
   if (["avatar", "talking_video", "lip_sync", "live_sales_agent"].includes(type)) {
-    requirements.push(requirement("avatar_provider", "HeyGen avatar/talking-head provider", ["HEYGEN_API_KEY"], ["avatar presenter", "talking-head video", "speaker/avatar render"], "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery. Avatar jobs also need a speaker/avatar reference and voice direction before provider rendering.", type === "live_sales_agent"));
+    requirements.push({
+      key: "avatar_provider",
+      label: "HeyGen avatar/talking-head provider",
+      requiredEnv: ["HEYGEN_API_KEY"],
+      affects: ["avatar presenter", "talking-head video", "speaker/avatar render"],
+      note: "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery. Avatar jobs also need a speaker/avatar reference and voice direction before provider rendering.",
+      status: hasHeyGenEnv() ? "ready" : type === "live_sales_agent" ? "optional" : "missing"
+    });
   }
 
   if (needsEcommerceAdPipeline) {
@@ -68,7 +83,14 @@ export function providerRequirementsForProduction(productionType: string, packag
     requirements.push(requirement("source_packager", "Source/package builder", ["OPENAI_API_KEY"], ["source code", "admin panel", "README", "deployment guide"], "Needed for live generated source/project package content."));
   }
 
-  requirements.push(requirement("storage", "Supabase storage", ["SUPABASE_SERVICE_ROLE_KEY"], ["materials", "provider assets", "delivery files"], "Server storage access is needed for uploads and final delivery links."));
+  requirements.push({
+    key: "storage",
+    label: "Supabase storage",
+    requiredEnv: ["SUPABASE_SERVICE_ROLE_KEY"],
+    affects: ["materials", "provider assets", "delivery files"],
+    note: "Server storage access is needed for uploads and final delivery links.",
+    status: hasStorageEnv() ? "ready" : "missing"
+  });
   requirements.push(requirement("email", "Resend email", ["RESEND_API_KEY"], ["completion email", "receipt/follow-up", "support"], "Optional before launch, required for automatic completion emails.", true));
 
   return requirements;
