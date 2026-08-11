@@ -167,8 +167,9 @@ function heygenPromptControls(selected: Record<string, unknown>, promptText: str
   const subtitlesOff = textContainsAny(selectedText, [/no subtitles?/, /altyaz[ıi]\s*(olmas[ıi]n|yok)/, /subtitles?\s*(off|none)/]);
   const subtitlesSelected = !subtitlesOff && textContainsAny(selectedText, [/auto subtitles?/, /burned subtitles?/, /large social captions?/, /altyaz[ıi]/, /subtitle/]);
   const largeTextSelected = textContainsAny(selectedText, [/large social captions?/, /animated text/, /animasyonlu yaz[ıi]lar/, /text overlay/, /kinetic text/, /büyük yaz[ıi]/, /buyuk yaz[ıi]/]);
-  const noPeopleSelected = textContainsAny(selectedText, [/no people/, /no presenter/, /no avatar/, /b-?roll only/, /heygennopresentermode/, /insan olmas[ıi]n/, /sunucu olmas[ıi]n/, /sunucusuz/, /humanless/, /without people/, /without presenter/]);
-  const presenterSelected = !noPeopleSelected && textContainsAny(selectedText, [/ai presenter/, /with presenter/, /presenter/, /ai sunuculu/, /sunucu/, /ekranda sunucu/, /konu[şs]sun/, /anlats[ıi]n/]);
+  const noPeopleSelected = textContainsAny(selectedText, [/no people/, /humanless/, /without people/, /insan olmas[ıi]n/, /insans[ıi]z/]);
+  const noPresenterSelected = textContainsAny(selectedText, [/no presenter/, /no avatar/, /b-?roll only/, /heygennopresentermode/, /sunucu olmas[ıi]n/, /sunucusuz/, /without presenter/]);
+  const presenterSelected = !noPeopleSelected && !noPresenterSelected && textContainsAny(selectedText, [/ai presenter/, /with presenter/, /presenter/, /ai sunuculu/, /sunucu/, /ekranda sunucu/, /konu[şs]sun/, /anlats[ıi]n/]);
   const voiceDisabled = textContainsAny(selectedText, [/no voice/, /without voice/, /seslendirme olmas[ıi]n/, /sessiz/]);
   const isTurkish = textContainsAny(selectedText, [/türkçe/, /turkish/, /konu[şs]ma dili türkçe/, /türkçe konu[şs]sun/]);
   return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
@@ -284,6 +285,9 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const explicitScript = String(selected.script ?? scriptFromPrompt ?? "").trim();
   const presenterPreference = Array.isArray(productionSetup.presenterChoice) ? productionSetup.presenterChoice.join(", ") : String(productionSetup.presenterChoice ?? selected.selected_presenter_name ?? selected.presenterChoice ?? "").trim();
   const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
+  if (!controls.voiceDisabled && !voiceId) {
+    throw new Error("HeyGen voice_id is required for voiced Video Agent jobs. Set HEYGEN_VIDEO_AGENT_VOICE_ID / HEYGEN_DEFAULT_VOICE_ID or pass heygen_voice_id from the setup.");
+  }
   const styleGuide = heygenCategoryStyleGuide(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
   const outputQuality = heygenOutputQualityRequirement(selected, aspect);
   const avoidPrompt = String(selected.providerAvoidPrompt ?? selected.avoidPrompt ?? selected.negativePrompt ?? "").trim();
@@ -299,7 +303,8 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: avoidPrompt ? `${input.prompt}\n\nAvoid / exclusions:\n${avoidPrompt}` : input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls, presenterPreference, outputQualityLine: outputQuality.promptLine, styleGuide, thumbnailPrompt: String(input.requestMetadata.thumbnailPrompt ?? input.inputJson.thumbnailPrompt ?? input.requestMetadata.thumbnail_image_description ?? input.inputJson.thumbnail_image_description ?? "") }),
     mode: "generate" as const,
     avatar_id: noPresenterMode ? null : avatarId,
-    voice_id: voiceId,
+    voice_id: controls.voiceDisabled ? null : voiceId,
+    include_voice: !controls.voiceDisabled,
     style_id: styleId,
     brand_kit_id: brandKitId,
     orientation: portrait ? "portrait" as const : "landscape" as const,
@@ -324,10 +329,15 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "16:9");
   const ratio = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical") ? "9:16" : "16:9";
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_V2_AVATAR_ID).trim() || DEFAULT_HEYGEN_V2_AVATAR_ID;
+  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? process.env.HEYGEN_TALKING_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim();
+  if (!voiceId) {
+    throw new Error("HeyGen voice_id is required for controlled talking video jobs. Set HEYGEN_TALKING_VOICE_ID / HEYGEN_DEFAULT_VOICE_ID or pass heygen_voice_id from setup.");
+  }
   const payload = {
     video_setting: { ratio, output_format: "mp4" },
     clips: [{
       avatar_id: avatarId,
+      voice_id: voiceId,
       input_text: script,
       avatar_style: String(selected.avatar_style ?? selected.avatarStyle ?? "normal")
     }]

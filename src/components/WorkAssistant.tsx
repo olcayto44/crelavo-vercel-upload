@@ -169,7 +169,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "presenterMotion", title: "Presenter motions", multi: true, options: ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"], credit: HEYGEN_MOTION_PROMPT_CREDITS },
       { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
+        { id: "duration", title: "Target duration (approx.)", options: heygenVideoDuration, credit: 350 },
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
       { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "No people", "Use uploaded material", "Keep original environment", "Replace background", "Blur background", "With presenter"], credit: 300 },
       { id: "background", title: "Background / environment", options: ["Cinematic scene", "Motion graphics", "City", "Nature", "Studio", "Brand color", "Lifestyle", "Product UI"], credit: 300 },
@@ -184,7 +184,7 @@ const setupProfiles: Record<string, SetupProfile> = {
     groups: [
       { id: "animationStyle", title: "Animation style", options: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
+        { id: "duration", title: "Target duration (approx.)", options: heygenVideoDuration, credit: 350 },
       { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
       { id: "character", title: "Character", multi: true, options: ["Create AI characters", "Choose from character library", "Use uploaded character photos", "Keep same characters", "Multiple characters"], credit: 700 },
       { id: "environment", title: "Environment", options: ["Same environment", "New background", "City", "Fantasy world", "School", "Forest", "Space", "Cyberpunk"], credit: 350 },
@@ -202,7 +202,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "environment", title: "Anime environment", options: ["Same environment", "New background", "School", "City", "Fantasy world", "Forest", "Space", "Cyberpunk"], credit: 350 },
       { id: "peopleHandling", title: "Character handling", options: ["Keep same characters", "Create new characters", "Main character only", "Remove extra characters", "Multiple characters"], credit: 350 },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
-        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
+        { id: "duration", title: "Target duration (approx.)", options: heygenVideoDuration, credit: 350 },
       { id: "voice", title: "Voice", options: sharedVoiceOptions, credit: 600 },
       { id: "extras", title: "Extras", multi: true, options: ["Anime music", "Subtitles", "User materials", "Final MP4", ...sharedDeliveryOptions], credit: 450 }
     ]
@@ -544,7 +544,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
         { id: "videoStyle", title: "Video style", options: ["Silent / music only", "Voice-over only"] },
         { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Script-to-video"] },
         { id: "quality", title: "Quality", options: ["1080p premium", "1080p", "4K"], credit: 900 },
-        { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
+        { id: "duration", title: "Target duration (approx.)", options: heygenVideoDuration, credit: 350 },
         { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
         { id: "sourceHandling", title: "Source / scene handling", options: ["Prompt-only", "No people", "Use uploaded material", "Keep original environment"], credit: 300 },
         { id: "background", title: "Background / environment", options: ["Cinematic scene", "City", "Nature", "Studio", "Motion graphics"], credit: 300 },
