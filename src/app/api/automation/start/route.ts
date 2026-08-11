@@ -488,8 +488,9 @@ export async function POST(request: Request) {
     replicateModel: process.env.REPLICATE_MODEL
   });
 const isDroneProduction = productionType === "drone_video";
+const heygenSetupPresenterIntent = /ai\s+presenter|with\s+presenter|auto\s+choose\s+best\s+presenter|female\s+presenter|male\s+presenter|video\s+agent\s+auto\s+edit|adult\s+neutral\s+voice|heygen_video_agent/i.test(productionDetectionText);
 const heygenForcedByMetadata = !isDroneProduction && !isCinematicActionProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
-const talkingProviderType = !isDroneProduction && !isCinematicActionProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata);
+const talkingProviderType = !isDroneProduction && !isCinematicActionProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
@@ -554,7 +555,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
     .eq("id", productionId);
   if (startRequestedError) throw new Error(`heygen_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
-  const useHeyGenVideoAgent = /heygen_video_agent|video_agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
+  const useHeyGenVideoAgent = /heygen_video_agent|video_agent|video\s+agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
   let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
     heygenJob = useHeyGenVideoAgent

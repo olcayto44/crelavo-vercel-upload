@@ -344,7 +344,7 @@ const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinema
   || Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)
   || /presenter|avatar|talking\s*head/.test(String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()));
 
-  if (serverHeyGenPresenterIntent && productionType === "video") productionType = "talking_video";
+  if (serverHeyGenPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
   const requestedOutputCount = Number(body.output_count ?? body.requested_clip_count ?? body.requested_alternative_count ?? 1);
