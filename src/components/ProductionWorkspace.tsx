@@ -398,6 +398,7 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
   const safePlayableMediaUrl = (value: unknown) => {
     const url = safeAssetUrl(value);
     if (!url) return "";
+    if (/\/api\/productions\/.*\/delivery\?file=(video|mp4)\b/i.test(url)) return url;
     if (/\/api\/productions\/.*\/delivery\?file=/i.test(url)) return "";
     if (/preview\.html|manifest|readme|placeholder|generated_on_download/i.test(url)) return "";
     return /\.mp4(\?|$)|\.mov(\?|$)|\.webm(\?|$)|replicate\.delivery|fal\.media|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url) ? url : "";
