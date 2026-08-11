@@ -338,11 +338,12 @@ export async function POST(request: Request) {
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(serverRouteText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(serverRouteText);
-  const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter|outdoor ugc dynamic presenter|creator-style saas presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir/.test(serverRouteText)
-    || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase())
-    || Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)
-    || Boolean(initialRequestMetadata.providerPrompt ?? initialInputJson.providerPrompt)
-    || /presenter|ugc/.test(String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()));
+  const serverCinematicActionIntent = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(serverRouteText);
+const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinematicActionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter|outdoor ugc dynamic presenter|creator-style saas presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|spokesperson|avatar\s+host/.test(serverRouteText)
+  || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase())
+  || Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)
+  || /presenter|avatar|talking\s*head/.test(String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()));
+
   if (serverHeyGenPresenterIntent && productionType === "video") productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
@@ -441,7 +442,9 @@ export async function POST(request: Request) {
     ...userReferenceMaterials
   ];
   const materialBytes = materials.reduce((total, material) => total + (Number("size_bytes" in material ? material.size_bytes : 0) || 0), 0);
-  const providerTestMode = Boolean(body.provider_test_mode);
+  const incomingQuality = String(body.quality ?? body.selected_quality ?? "").trim();
+  const safeProductionQuality = /480p|720p|draft|quick\s*test|fast\s*draft|low[-_\s]?cost/i.test(incomingQuality) ? "1080p" : incomingQuality || "1080p";
+  const providerTestMode = false;
   const deliveryLevel = String(body.delivery_level ?? "").trim() || (String(body.features ?? "").toLowerCase().includes("working source") ? "working_source_package" : "production_package");
   const deliveryRequirements = body.delivery_requirements && typeof body.delivery_requirements === "object" ? body.delivery_requirements : {
     requested: false,
@@ -468,7 +471,7 @@ export async function POST(request: Request) {
     needsImages,
     revisionBuffer,
     outputCount,
-    quality: String(body.quality ?? body.selected_quality ?? ""),
+    quality: safeProductionQuality,
     durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
     features: String(body.features ?? ""),
     productionType,
@@ -486,7 +489,7 @@ export async function POST(request: Request) {
     reservedCredits: estimatedCredits,
     outputCount,
     durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
-    quality: String(body.quality ?? body.selected_quality ?? ""),
+    quality: safeProductionQuality,
     features: String(body.features ?? ""),
     materialCount: materials.length,
     materialBytes,
@@ -548,8 +551,8 @@ const costGuardConfig = apiCostGuardConfig();
     ...clientOutputIntent,
     outputCount,
     durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
-    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
-    quality: String(body.quality ?? body.selected_quality ?? ""),
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? ""),
+    quality: safeProductionQuality,
     singleOutputCredits,
     totalReservedCredits: estimatedCredits,
     packageCredits: costEstimate.packageCredits,
@@ -602,9 +605,9 @@ const costGuardConfig = apiCostGuardConfig();
 
   const manualOptionSummary = {
     provider: String(body.provider_service ?? body.service_network ?? "Auto provider").trim() || "Auto provider",
-    quality: String(body.quality ?? body.selected_quality ?? "").trim(),
+    quality: safeProductionQuality.trim(),
     durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
-    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? "").trim(),
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? "").trim(),
     voiceProfile: String(body.voice_profile ?? "").trim(),
     voiceLanguage: String(body.voice_language ?? "").trim(),
     musicProfile: String(body.music_profile ?? "").trim(),
@@ -631,7 +634,7 @@ const costGuardConfig = apiCostGuardConfig();
     workflowMode,
     deliveryLevel,
     style: body.style ?? "",
-    quality: body.quality ?? body.selected_quality ?? "",
+    quality: safeProductionQuality,
     targetPlatform: body.target_platform ?? "",
     features: body.features ?? "",
     serviceNetwork: body.service_network ?? "",
@@ -643,7 +646,7 @@ const costGuardConfig = apiCostGuardConfig();
     environmentProfile: body.environment_profile ?? "",
     deliveryHandoff: body.delivery_handoff ?? "",
     outputDurationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
-    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? ""),
     projectDetails: body.project_details ?? "",
     ecommerceContext,
     socialWorkflow,
@@ -682,7 +685,7 @@ outputPlan,
     providerTestMode,
     preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.preferredProvider ?? clientInputJson.preferredProvider ?? undefined,
     presenterMode: serverHeyGenPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
-    providerTestTarget: providerTestMode ? "low_cost_5s_720p_single_output" : null
+    providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null
   };
   const inputJson = {
     ...clientInputJson,
@@ -694,7 +697,7 @@ outputPlan,
     projectDetails: body.project_details ?? "",
     targetPlatform: body.target_platform ?? "",
     style: body.style ?? "",
-    quality: body.quality ?? body.selected_quality ?? "",
+    quality: safeProductionQuality,
     features: body.features ?? "",
     serviceNetwork: body.service_network ?? "",
     selectedProviderService: body.provider_service ?? "",
@@ -705,7 +708,7 @@ outputPlan,
     environmentProfile: body.environment_profile ?? "",
     deliveryHandoff: body.delivery_handoff ?? "",
     outputDurationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
-    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? body.quality ?? ""),
+    aspectRatio: String(body.aspect_ratio ?? body.aspectRatio ?? ""),
     adminPanel: body.admin_panel ?? false,
     workflowMode,
     ecommerceContext,
@@ -722,7 +725,7 @@ outputPlan,
     providerTestMode,
     preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientInputJson.preferredProvider ?? clientRequestMetadata.preferredProvider ?? undefined,
     presenterMode: serverHeyGenPresenterIntent || Boolean(clientInputJson.presenterMode ?? clientRequestMetadata.presenterMode),
-    providerTestTarget: providerTestMode ? "low_cost_5s_720p_single_output" : null,
+    providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null,
     automationPipeline: pipeline,
     outputPlan,
     outputIntent: outputPlan,

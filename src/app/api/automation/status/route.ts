@@ -266,7 +266,8 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
   if (!visualStatuses.length && (!visualStatus || visualStatus.status !== "succeeded" || !visualStatus.outputUrl)) return { renderJob: null, renderStarted: false };
   const pipelineType = String(output.pipelineType ?? "");
   const hasGenericVideoPlan = Boolean(output.genericVideoPlan && typeof output.genericVideoPlan === "object");
-  if (pipelineType !== "ecommerce_product_ad_video" && !hasGenericVideoPlan) return { renderJob: null, renderStarted: false };
+  const hasVideoClippingRun = Boolean(output.videoClippingRun && typeof output.videoClippingRun === "object");
+  if (pipelineType !== "ecommerce_product_ad_video" && !hasGenericVideoPlan && !hasVideoClippingRun) return { renderJob: null, renderStarted: false };
 
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
   const genericPlanForRender = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};

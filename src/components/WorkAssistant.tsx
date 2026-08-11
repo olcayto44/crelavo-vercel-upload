@@ -536,13 +536,12 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const isFilmAnimation = /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
   const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
 
-  if (plan.production_type === "video" && isCinematicAction) {
+    if (plan.production_type === "video" && isCinematicAction) {
     return {
       title: "Cinematic action video setup",
       note: "Only cinematic video choices are shown here. Presenter/avatar controls are hidden for this no-presenter action scene.",
       groups: [
         { id: "videoStyle", title: "Video style", options: ["Silent / music only", "Voice-over only"] },
-        { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
         { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Script-to-video"] },
         { id: "quality", title: "Quality", options: ["1080p premium", "1080p", "4K"], credit: 900 },
         { id: "duration", title: "Duration", options: heygenVideoDuration, credit: 350 },
@@ -555,6 +554,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       ]
     };
   }
+
 
   if (plan.production_type === "video_clipping" || isClipLink) {
     return {
@@ -1611,7 +1611,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
     const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
-    const preferredProviderForPayload = animationProductionIntent ? "heygen_video_agent" : wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : noPeopleMotionIntent ? "heygen_video_agent" : undefined;
+    const preferredProviderForPayload = animationProductionIntent ? "runway_first" : wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : undefined;
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "HeyGen talking avatar", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
     const formats = setupFields.delivery_formats.length

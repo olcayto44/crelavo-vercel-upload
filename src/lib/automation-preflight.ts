@@ -152,7 +152,8 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   const requestedDuration = explicitDuration || (providerTestMode ? 5 : 8);
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service);
   const selectedVideoProvider = selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
-  const videoProvider = selectedVideoProvider || input.videoProvider || "replicate";
+  const typePreferredProvider = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "video"].includes(input.productionType) ? "runway" : "";
+  const videoProvider = selectedVideoProvider || typePreferredProvider || input.videoProvider || "replicate";
   const aspectRatio = selectedAspectRatio(requestMetadata, inputJson);
   const featureFlags = selectedFeatureFlags(requestMetadata, inputJson);
   const characterDialogueAnimation = detectCharacterDialogueAnimationNeed(textFrom(input.productionType, JSON.stringify(requestMetadata), JSON.stringify(inputJson)));

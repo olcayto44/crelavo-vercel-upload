@@ -11,6 +11,7 @@ import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/p
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
+import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
 
 import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { buildOutputRegistry } from "@/lib/output-registry";
@@ -122,6 +123,22 @@ function secondsFromValue(value: unknown): number | null {
   return /min|dakika|dk/i.test(text) ? number * 60 : number;
 }
 
+function heygenOutputQualityRequirement(selected: Record<string, unknown>, aspect: string) {
+  const quality = String(selected.quality ?? selected.selectedQuality ?? selected.selected_quality ?? selected.qualityLevel ?? "1080p").trim() || "1080p";
+  const signal = `${quality} ${JSON.stringify(selected)}`.toLowerCase();
+  const portrait = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical");
+  const resolution = /4k|ultra/.test(signal)
+    ? portrait ? "2160x3840" : "3840x2160"
+    : portrait ? "1080x1920" : "1920x1080";
+  const rejectResolution = portrait ? "720x1280" : "1280x720";
+  return {
+    quality,
+    resolution,
+    rejectResolution,
+    promptLine: `Output quality requirement: user selected ${quality}. Render and export the final MP4 as true ${resolution} or higher. Do not return ${rejectResolution} / 720p as the final output. Preserve premium sharpness, clean edges, crisp UI and high-bitrate cinematic quality.`
+  };
+}
+
 const DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID = "Jin_expressive_2024112501";
 const DEFAULT_HEYGEN_V2_AVATAR_ID = "Daisy-waist-20220505";
 
@@ -157,21 +174,43 @@ function heygenPromptControls(selected: Record<string, unknown>, promptText: str
   return { subtitlesSelected, largeTextSelected, noPeopleSelected, presenterSelected, voiceDisabled, isTurkish };
 }
 
-function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; controls?: HeyGenPromptControls; presenterPreference?: string }) {
+function heygenCategoryStyleGuide(selected: Record<string, unknown>, promptText: string) {
+  const plan = selected.plan && typeof selected.plan === "object" ? selected.plan as Record<string, unknown> : {};
+  const productionType = String(selected.productionType ?? selected.production_type ?? plan.production_type ?? "").toLowerCase();
+  const stylePackId = String(selected.stylePackId ?? selected.style_pack_id ?? "").toLowerCase();
+  const text = `${productionType} ${stylePackId} ${promptText}`.toLowerCase();
+  if (/stickman|çöp adam|cop adam|cöp adam|whiteboard|stickman_clean/.test(text)) return "HeyGen style route: create a minimalist 2D stickman animation. Use clean line art, fast readable motion, simple backgrounds, strong comedic or explainer timing. Do not create a presenter, avatar, office scene, SaaS dashboard or stock footage.";
+  if (/anime|anime_modern|ghibli|shinkai|japanese animation/.test(text)) return "HeyGen style route: create a premium modern anime video. Use cel-shaded characters, expressive eyes, clean dynamic line art, vivid skies, emotional lighting and cinematic anime motion. Do not create a presenter, avatar, office scene, SaaS dashboard or corporate promo.";
+  if (/pixar|pixar_3d|3d cartoon|3d animated|3d animation|cartoon|animated film|çizgi film|cizgi film/.test(text)) return "HeyGen style route: create a premium 3D animated cartoon film scene. Use expressive non-human or stylized characters, vivid colors, rich fantasy environments, cinematic camera movement, soft high-end 3D lighting and real animated-film storytelling. Do not create motion graphics, abstract portal-only visuals, a presenter, talking head, office scene, SaaS UI or corporate promo.";
+  if (/photoreal_sci_fi|sci-?fi|science fiction|futuristic|photoreal|hyperreal|ue5|unreal engine/.test(text)) return "HeyGen style route: create a photorealistic cinematic sci-fi video. Use realistic future environments, metallic textures, volumetric lighting, dramatic camera movement, high-contrast film lighting and believable physical detail. Do not create presenter-led video unless explicitly requested.";
+  if (/epic_fantasy|fantasy|fantastik|magic|magical|mythic/.test(text)) return "HeyGen style route: create an epic fantasy cinematic video. Use magical environments, glowing particles, dramatic landscapes, rich atmosphere, heroic scale, emotional trailer pacing and premium film lighting. Do not create presenter-led video unless explicitly requested.";
+  if (/ugc|koc|influencer|creator|product demo|ecommerce|e-commerce/.test(text)) return "HeyGen style route: create a natural UGC/product demo video with a believable creator/presenter only if selected; otherwise use product-focused visuals and social ad pacing.";
+  return "HeyGen style route: follow the user's selected category and prompt exactly. Avoid generic placeholder/demo visuals; create a real finished video in the requested style.";
+}
+
+function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; script?: string; durationSeconds?: number; aspect?: string; hasVisualFiles?: boolean; controls?: HeyGenPromptControls; presenterPreference?: string; outputQualityLine?: string; styleGuide?: string; thumbnailPrompt?: string }) {
   const duration = Math.min(120, Math.max(5, Number(input.durationSeconds ?? 30) || 30));
   const userPrompt = String(input.prompt || input.title).trim();
   const controls = input.controls ?? heygenPromptControls({}, `${userPrompt} ${input.script ?? ""}`);
   const speechBudget = heygenSpeechBudget(duration, controls.isTurkish);
-  const scriptLine = input.script
-    ? `Use the user's script/message as source material, but normalize it for ${duration} seconds: keep only the core selling message, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and do not read long prompt instructions aloud. Source script/message:\n${input.script}`
-    : `If narration is needed, write a short spoken script for ${duration} seconds, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and keep it natural.`;
+  const scriptLine = controls.voiceDisabled
+    ? "No spoken script is needed. Do not create narration, presenter speech, dialogue, or voice-over; use music and sound design only."
+    : input.script
+      ? `Use the user's script/message as source material, but normalize it for ${duration} seconds: keep only the core selling message, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and do not read long prompt instructions aloud. Source script/message:\n${input.script}`
+      : `If narration is needed, write a short spoken script for ${duration} seconds, target ${speechBudget.minWords}-${speechBudget.maxWords} spoken words, and keep it natural.`;
   const visualSourceLine = input.hasVisualFiles
-    ? "Use the provided website/product visual files as optional quick B-roll or proof references. Do not make the video a slow screen recording."
-    : "No real website screenshots are required. Use a clean presenter setup, product/interface-inspired background, subtle callouts, and light motion graphics only.";
+    ? "Use the provided files as optional references only. Do not make the video a slow screen recording."
+    : input.styleGuide
+      ? "No real website screenshots are required. Generate original full-scene visuals in the requested category/style. Do not fall back to generic SaaS panels, dashboard UI, black placeholder cards, or motion graphics unless the user explicitly requested that style."
+      : controls.noPeopleSelected || controls.voiceDisabled
+        ? "No real website screenshots are required. Use premium motion graphics, product/interface-inspired visuals, glossy SaaS panels, dynamic ad-preview cards and cinematic tech backgrounds only."
+        : "No real website screenshots are required. Use a clean presenter setup, product/interface-inspired background, subtle callouts, and light motion graphics only.";
   const presenterPreference = String(input.presenterPreference ?? "").trim();
   const presenterLine = controls.presenterSelected && !controls.voiceDisabled
     ? `Presenter policy: use exactly ONE single natural creator-style presenter, the selected avatar only. Keep the same face, outfit style and identity across the video.${presenterPreference ? ` Presenter preference from user setup: ${presenterPreference}. Respect this preference when selecting/generating the presenter.` : ""}`
-    : "No-presenter policy: if the user selected no voice/no people, do not show a human presenter; use motion graphics and product/interface visuals instead.";
+    : input.styleGuide
+      ? "No-presenter policy: do not show a real human presenter or talking head. Create full-scene visual storytelling in the requested category/style instead."
+      : "No-presenter policy: if the user selected no voice/no people, do not show a human presenter; use motion graphics and product/interface visuals instead.";
   const noPeopleConflictLine = controls.presenterSelected && controls.noPeopleSelected
     ? "Selection conflict resolved: user selections contain both presenter and no-people signals. Because this is an AI presenter video, prioritize the single presenter and ignore the no-people signal. Do not add extra people."
     : "";
@@ -186,23 +225,29 @@ function buildHeyGenVideoAgentPrompt(input: { title: string; prompt: string; scr
     : controls.isTurkish
       ? `Turkish speech policy: presenter must speak natural Turkish only. Use simple short Turkish sentences, target ${speechBudget.minWords}-${speechBudget.maxWords} words for ${duration} seconds, and do not rush, distort, invent words or mispronounce. If the user's text is longer, shorten it.`
       : `Speech policy: use clear natural presenter speech, target ${speechBudget.minWords}-${speechBudget.maxWords} words for ${duration} seconds. If the user's text is longer, shorten it instead of rushing.`;
+  const thumbnailLine = input.thumbnailPrompt
+    ? `Cover/thumbnail requirement: also prepare a strong vertical 9:16 poster frame for this video. Use this cover direction: ${input.thumbnailPrompt}`
+    : "Cover/thumbnail requirement: make sure the first frame can work as a strong vertical 9:16 poster image with a clear hero subject, premium lighting, high contrast, no tiny unreadable text, and no black/blank opening frame.";
 
   return [
-    `Create a complete ${duration}-second high-converting vertical product demo / promotional video for Crelavo.`,
+    input.styleGuide ? `Create a complete ${duration}-second HeyGen Video Agent production for Crelavo in the requested category/style.` : `Create a complete ${duration}-second high-converting vertical product demo / promotional video for Crelavo.`,
     `User request: ${userPrompt}`,
+    input.styleGuide ?? "",
+    input.outputQualityLine ?? "",
     scriptLine,
     visualSourceLine,
-    "Creative structure: open with a strong spoken hook in the first 2 seconds, keep the idea easy to understand, use only a few quick product/interface cutaways or small callouts, and finish with one sharp CTA.",
+    input.styleGuide ? "Creative structure: open with the strongest visual hook in the first 2-3 seconds, then show a clear scene progression, energetic cinematic motion, and a memorable final hero frame. Do not use placeholder title cards." : "Creative structure: open with a strong spoken hook in the first 2 seconds, keep the idea easy to understand, use only a few quick product/interface cutaways or small callouts, and finish with one sharp CTA.",
     /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/i.test(userPrompt)
       ? "Competitor comparison mode: analyze the competitor page's public offer and benefits, then create an original Crelavo comparison ad. Do not copy competitor wording, visuals, logo, brand assets, claims, UI, or exact layout. Avoid defamatory claims; use fair, high-level positioning only."
       : "",
-    "Style paragraph: natural AI presenter ad or clean product demo, fast but understandable social media pacing, subtle product/result callouts, light motion graphics, clean tech overlays, smooth transitions, premium but not corporate.",
+    input.styleGuide ? "Style paragraph: premium category-specific visual production, vivid cinematic scenes, strong motion, polished lighting, no black placeholder screens, no generic text-card slideshow, no SaaS dashboard fallback, no corporate promo look unless explicitly requested." : "Style paragraph: natural AI presenter ad or clean product demo, fast but understandable social media pacing, subtle product/result callouts, light motion graphics, clean tech overlays, smooth transitions, premium but not corporate.",
     presenterLine,
     noPeopleConflictLine,
-    "Background guard: default to a clean modern tech studio, clean SaaS creator setup, product interface background, or subtle motion-graphics background. Avoid office meeting rooms and background people unless explicitly requested.",
+    input.styleGuide ? "Background guard: use the environment requested by the user/category, such as fantasy workshop, sci-fi world, anime setting, stickman stage, product scene, or cinematic landscape. Do not default to office, tech studio, SaaS dashboard, or meeting room unless explicitly requested." : "Background guard: default to a clean modern tech studio, clean SaaS creator setup, product interface background, or subtle motion-graphics background. Avoid office meeting rooms and background people unless explicitly requested.",
     captionLine,
     largeTextLine,
     speechLine,
+    thumbnailLine,
     "Ending direction: finish with one short complete CTA sentence and stop cleanly. Do not trail off or make the ending sound unfinished.",
     "Hard avoid: multiple people, background people, meeting room, boardroom, panel discussion, stock office footage, static screenshot zoom loop, slow slideshow, central text paragraphs, unreadable text, rushed speech, wrong language, silent presenter."
   ].filter(Boolean).join("\n\n");
@@ -239,9 +284,19 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const explicitScript = String(selected.script ?? scriptFromPrompt ?? "").trim();
   const presenterPreference = Array.isArray(productionSetup.presenterChoice) ? productionSetup.presenterChoice.join(", ") : String(productionSetup.presenterChoice ?? selected.selected_presenter_name ?? selected.presenterChoice ?? "").trim();
   const controls = heygenPromptControls(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
+  const styleGuide = heygenCategoryStyleGuide(selected, `${input.prompt} ${explicitScript} ${presenterPreference}`);
+  const outputQuality = heygenOutputQualityRequirement(selected, aspect);
+  const avoidPrompt = String(selected.providerAvoidPrompt ?? selected.avoidPrompt ?? selected.negativePrompt ?? "").trim();
   const noPresenterMode = controls.noPeopleSelected || /no presenter|b-roll only|sunucusuz|voice-over only/i.test(`${input.prompt} ${explicitScript} ${presenterPreference}`);
+  const internalBlueprint = {
+    output_quality: outputQuality.quality,
+    target_resolution: outputQuality.resolution,
+    rejected_final_resolution: outputQuality.rejectResolution,
+    aspect_ratio: aspect,
+    duration_seconds: durationSeconds
+  };
   const payload = {
-    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls, presenterPreference }),
+    prompt: buildHeyGenVideoAgentPrompt({ title: input.title, prompt: avoidPrompt ? `${input.prompt}\n\nAvoid / exclusions:\n${avoidPrompt}` : input.prompt, script: explicitScript, durationSeconds, aspect, hasVisualFiles: files.length > 0, controls, presenterPreference, outputQualityLine: outputQuality.promptLine, styleGuide, thumbnailPrompt: String(input.requestMetadata.thumbnailPrompt ?? input.inputJson.thumbnailPrompt ?? input.requestMetadata.thumbnail_image_description ?? input.inputJson.thumbnail_image_description ?? "") }),
     mode: "generate" as const,
     avatar_id: noPresenterMode ? null : avatarId,
     voice_id: voiceId,
@@ -257,7 +312,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const sessionId = String(data.session_id ?? data.sessionId ?? data.id ?? "").trim();
   if (!sessionId) throw new Error(`HeyGen Video Agent did not return a session id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, raw: result });
+  return postgresSafe({ provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, internalBlueprint, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
@@ -343,12 +398,13 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
 
   const message = errorMessage(result.error, "Production select failed");
   if (!/22P05|unicode escape|cannot be converted to text/i.test(message)) return { data: null, error: result.error };
+  const recoveryPreferredProvider = "heygen_video_agent";
   return {
     data: postgresSafe({
       ...scalar.data,
-      request_metadata: { preferredProvider: "heygen_video_agent", productionType },
-      input_json: { preferredProvider: "heygen_video_agent", productionType },
-      output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: "heygen_video_agent", productionType }
+      request_metadata: { preferredProvider: recoveryPreferredProvider, productionType },
+      input_json: { preferredProvider: recoveryPreferredProvider, productionType },
+      output_json: { providerRecovery: { reason: message, mode: "json_payload_repair" }, preferredProvider: recoveryPreferredProvider, productionType }
     }),
     error: null
   };
@@ -398,32 +454,34 @@ export async function POST(request: Request) {
           : {});
     let productionType = String(currentProduction?.production_type ?? "");
     const packageId = String(currentProduction?.package_id ?? "");
-    const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
-    if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
-      productionType = "animation";
-    }
-    const renderQueuePolicy = renderQueuePolicyForPackage(packageId);
-    const capacityPolicy = launchCapacityPolicy();
-    const deliveryLinks = automaticDeliveryLinks(productionId);
-    const outputRegistryBase = {
-      ...currentProduction,
-      delivery_link: deliveryLinks.deliveryLink,
-      delivery_zip_url: deliveryLinks.deliveryZipUrl,
-      source_files_url: deliveryLinks.sourceFilesUrl,
-      readme_url: deliveryLinks.readmeUrl,
-      preview_url: deliveryLinks.previewUrl
-    };
-    const providerPreflight = buildProviderPreflight({
-      productionType,
-      requestMetadata,
-      inputJson,
-      videoProvider: process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate",
-      replicateModel: process.env.REPLICATE_MODEL
-    });
+  const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
+  const isCinematicActionProduction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(productionDetectionText);
+  if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
+    productionType = "animation";
+  }
+  const renderQueuePolicy = renderQueuePolicyForPackage(packageId);
+  const capacityPolicy = launchCapacityPolicy();
+  const deliveryLinks = automaticDeliveryLinks(productionId);
+  const outputRegistryBase = {
+    ...currentProduction,
+    delivery_link: deliveryLinks.deliveryLink,
+    delivery_zip_url: deliveryLinks.deliveryZipUrl,
+    source_files_url: deliveryLinks.sourceFilesUrl,
+    readme_url: deliveryLinks.readmeUrl,
+    preview_url: deliveryLinks.previewUrl
+  };
+  const providerPreflight = buildProviderPreflight({
+    productionType,
+    requestMetadata,
+    inputJson,
+    videoProvider: process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate",
+    replicateModel: process.env.REPLICATE_MODEL
+  });
 const isDroneProduction = productionType === "drone_video";
-const heygenForcedByMetadata = !isDroneProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
-const talkingProviderType = !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata);
+const heygenForcedByMetadata = !isDroneProduction && !isCinematicActionProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
+const talkingProviderType = !isDroneProduction && !isCinematicActionProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
+
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
 if (characterDialogueNeed.required) {
   const characterDialoguePlan = buildCharacterDialogueAnimationPlan(String(currentProduction.prompt ?? productionDetectionText), Number(providerPreflight.durationSeconds ?? 30) || 30);
@@ -555,10 +613,9 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
     }
 
     if (!providerReadiness.canStartRealProvider) {
-      const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
       const waitingLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: existingOutput }, {});
       const waitingOutput = {
-        ...demoOutput,
+        ...existingOutput,
         providerPreflight,
         providerReadiness,
         providerStatus: "waiting_provider_config",
@@ -567,7 +624,7 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         outputRegistry: waitingLifecycle.outputRegistry,
         currentStep: "Waiting for provider/API configuration",
         userMessage: providerReadiness.userMessage,
-        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_provider_config", output_json: { ...demoOutput, providerReadiness } })
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_provider_config", output_json: { ...existingOutput, providerReadiness } })
       };
         const { data: waitingProduction, error: waitingError } = await supabase
           .from("production_requests")
@@ -881,11 +938,24 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
       talking_video: "talking_lip_sync",
       live_sales_agent: "talking_lip_sync"
     };
-    const requiredPipeline = pipelineMap[productionType] ?? "manual_or_demo";
-    const requiresSpecialPipeline = ["talking_lip_sync", "video_clipping", "music_video", "drone_video", "studio_story_video", "animation_video", "documentary_video", "video_tools", "localization_video"].includes(requiredPipeline);
-    const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video"].includes(requiredPipeline);
-    const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization"].includes(productionType);
-    const genericRun = isGenericVideoType
+const requiredPipeline = pipelineMap[productionType] ?? "manual_or_demo";
+const requiresSpecialPipeline = ["talking_lip_sync", "video_clipping", "music_video", "drone_video", "studio_story_video", "animation_video", "documentary_video", "video_tools", "localization_video"].includes(requiredPipeline);
+const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video"].includes(requiredPipeline);
+const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization"].includes(productionType);
+const requestedClipCount = Number(requestMetadata.requestedClipCount ?? inputJson.requestedClipCount ?? 3) || 3;
+const clippingRun = requiredPipeline === "video_clipping"
+
+      ? await runVideoClippingPipeline({
+        productionId,
+        title: currentProduction.title,
+        prompt: currentProduction.prompt,
+        requestMetadata,
+        inputJson,
+        requestedClipCount,
+        targetDurationSeconds: Number(providerPreflight.durationSeconds ?? requestedDuration) || requestedDuration
+      })
+      : null;
+    const genericRun = !clippingRun && isGenericVideoType
       ? await runGenericVideoPipeline({
         productionId,
         title: currentProduction.title,
@@ -896,15 +966,22 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
         selectedOptions
       })
       : null;
-    const visualJob = genericRun?.visualJob ?? null;
-    const renderJob = genericRun?.renderJob ?? null;
-    const aiVideoProviderChain = genericRun
-      ? genericVideoProviderChain({ selectedOptions, provider: genericRun.plan.provider, visualJob, voiceAudioUrl: genericRun.voiceAudioUrl, subtitleUrl: genericRun.subtitleUrl, renderJob })
-      : genericVideoProviderChain({ selectedOptions, provider: String(providerPreflight.provider ?? "") });
+    const visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
+    const renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
+    const aiVideoProviderChain = clippingRun
+      ? [
+          { step: "source_video_analysis", provider: "ffmpeg_probe", status: "done", required: true },
+          { step: "highlight_selection", provider: "crelavo_highlight_picker", status: "done", required: true },
+          { step: "clip_extraction", provider: "ffmpeg_extract", status: clippingRun.clipUrls.length ? "asset_created" : "waiting_provider_config", required: true },
+          { step: "subtitles", provider: "subtitle_renderer", status: clippingRun.subtitleUrl ? "asset_created" : "waiting_provider_config", required: true },
+          { step: "final_render", provider: "shotstack", status: clippingRun.renderJob ? "job_created" : "waiting_for_visual_or_provider_config", required: true }
+        ]
+      : genericRun
+        ? genericVideoProviderChain({ selectedOptions, provider: genericRun.plan.provider, visualJob, voiceAudioUrl: genericRun.voiceAudioUrl, subtitleUrl: genericRun.subtitleUrl, renderJob })
+        : genericVideoProviderChain({ selectedOptions, provider: String(providerPreflight.provider ?? "") });
     const preflightOutputIntent = (providerPreflight as Record<string, unknown>).outputIntent;
     const outputIntentRecord = preflightOutputIntent && typeof preflightOutputIntent === "object" ? preflightOutputIntent as Record<string, unknown> : {};
-    const requestedClipCount = Number(outputIntentRecord.requestedClipCount ?? outputIntentRecord.outputCount ?? 3) || 3;
-    const providerNote = requiredPipeline === "talking_lip_sync"
+const providerNote = requiredPipeline === "talking_lip_sync"
       ? "This request requires the talking/lip-sync pipeline. It must not be delivered through the generic voice-over video pipeline because speaking faces need synchronized audio/video generation. Configure a talking-video/lip-sync provider before final delivery."
       : requiredPipeline === "video_clipping"
         ? `This request requires the video clipping pipeline: source video analysis, highlight extraction, reframing, subtitles and final clip delivery. Requested clips: ${requestedClipCount}. Each clip must use a different source moment/timestamp; duplicate clips are not acceptable. It must not start new prompt-to-video generation.`
@@ -926,26 +1003,37 @@ if (talkingProviderType && providerReadiness.canStartRealProvider) {
       providerTestMode,
       providerPreflight,
       aiVideoProviderChain,
+      videoClippingRun: clippingRun ? {
+        sourceVideoUrl: clippingRun.sourceVideoUrl,
+        sourceDurationSeconds: clippingRun.sourceDurationSeconds,
+        requestedClipCount: clippingRun.requestedClipCount,
+        sceneCandidates: clippingRun.sceneCandidates,
+        selectedHighlights: clippingRun.selectedHighlights,
+        clipUrls: clippingRun.clipUrls,
+        clipDurations: clippingRun.clipDurations,
+        subtitleUrl: clippingRun.subtitleUrl,
+        renderJob: clippingRun.renderJob
+      } : null,
       genericVideoPlan: genericRun?.plan ?? null,
       sourceContext: genericRun?.sourceContext ?? null,
       websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
       voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,
       voiceAudioSegments: genericRun?.voiceAudioSegments ?? [],
-      subtitleUrl: genericRun?.subtitleUrl ?? null,
+      subtitleUrl: clippingRun?.subtitleUrl ?? genericRun?.subtitleUrl ?? null,
       renderJob,
       visualJob,
-      visualJobs: genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
-      providerStatus: !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
-      providerErrors: !genericRun && requiresSpecialPipeline ? { [requiredPipeline]: `${requiredPipeline} requires its dedicated production pipeline and cannot be auto-delivered by the generic prompt-to-video pipeline.` } : genericRun?.providerErrors ?? {},
+      visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
+      providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
+      providerErrors: clippingRun ? {} : !genericRun && requiresSpecialPipeline ? { [requiredPipeline]: `${requiredPipeline} requires its dedicated production pipeline and cannot be auto-delivered by the generic prompt-to-video pipeline.` } : genericRun?.providerErrors ?? {},
       requiredPipeline,
       outputIntent: (providerPreflight as Record<string, unknown>).outputIntent ?? null,
       sourceHandling: (providerPreflight as Record<string, unknown>).sourceHandling ?? null,
       requestedDurationSeconds: requestedDuration,
       automaticDeliveryLinks: deliveryLinks,
-      finalVideoUrl: visualJob || renderJob ? null : demoOutput.finalVideoUrl,
-      delivery_url: visualJob || renderJob ? null : demoOutput.delivery_url,
-      deliveryZipUrl: visualJob || renderJob ? null : demoOutput.deliveryZipUrl,
-      readmeUrl: visualJob || renderJob ? null : demoOutput.readmeUrl
+      finalVideoUrl: null,
+      delivery_url: null,
+      deliveryZipUrl: visualJob || renderJob ? null : null,
+      readmeUrl: visualJob || renderJob ? null : null
     };
     const providerLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: outputJson }, { visualJob, renderJob });
     outputJson.providerLifecycle = { visual: providerLifecycle.visual, render: providerLifecycle.render };
