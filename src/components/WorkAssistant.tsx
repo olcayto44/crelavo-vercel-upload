@@ -1833,12 +1833,19 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       : chip === "Campaign" ? "Create a campaign production with hooks, captions, ad angles, visuals, and launch assets together."
       : chip === "Product Link to Video" ? "Create an ecommerce product ad video from a Shopify, Amazon, Trendyol, WooCommerce, or product page link. Turn the product link into a TikTok / Instagram Reels style ad video with hook, product proof, offer, captions, and final social-ready delivery."
       : chip === "Ad Creative Angles" ? "Create fresh ecommerce ad creative angles for this product or offer. Generate multiple selling angles such as fear/problem, discount, benefit, before-after, social proof, urgency, and problem-solution so the brand can fight creative fatigue."
-      : chip === "UGC Style Ad" ? "Create a natural UGC-style product ad that feels like a real customer or creator tried the product. Make it casual, believable, non-robotic, social-first, and ready for TikTok, Instagram Reels, or Facebook ads."
+      : chip === "UGC Style Ad" ? "Create a natural UGC-style product ad with one AI presenter / creator speaking to camera. Use HeyGen Video Agent auto edit, a friendly presenter, Turkish narration, vertical 9:16, product demo style, social-first pacing, thumbnail, final MP4, dashboard delivery, and revision right."
       : chip === "Lower Ad Costs" ? "Create a lower-ad-cost creative plan for Facebook, Instagram, and TikTok ads. Focus on stronger hooks, clearer product proof, better CTA, higher ROI, lower CPC, and more conversion-focused video/image angles."
       : chip === "Video Clipping" ? "Create a video clipping production. Extract the best hooks and highlights from the uploaded long video or link, keep the strongest moments, and prepare final social-ready clips with captions if needed."
       : `Create a ${chip.toLowerCase()} production.`;
+    const forcedType = productionTypeFromCategory(chip);
+    const chipPlan = localPlan(prompt, forcedType);
+    const chipSetup = defaultSetupFor(chipPlan.production_type, prompt, chipPlan);
     setInput(prompt);
-    setStatus(statusUx(`${chip} promptu yüklendi. Enter'a veya Gönder'e bas.`, `${chip} prompt loaded. Press Enter or Send.`));
+    setPlan(chipPlan);
+    setProductionSetup(chipSetup);
+    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(chipPlan), prompt));
+    if (typeof window !== "undefined") [workDraftStorageKey, ...legacyWorkDraftStorageKeys].forEach((key) => window.localStorage.removeItem(key));
+    setStatus(statusUx(`${chip} promptu ve kurulum taslağı yüklendi. Kontrol edip üretimi başlatabilirsin.`, `${chip} prompt and setup draft loaded. Review it and start production.`));
   }
 
   async function uploadMaterial(fileList: FileList | null) {
