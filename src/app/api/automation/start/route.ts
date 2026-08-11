@@ -537,7 +537,7 @@ if (characterDialogueNeed.required) {
       });
     }
 
-if (talkingProviderType && providerReadiness.canStartRealProvider) {
+if (talkingProviderType) {
   const startRequestedOutput = {
     ...existingOutput,
     automationMode: "fully_automatic",
