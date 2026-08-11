@@ -923,11 +923,44 @@ if (talkingProviderType) {
       }
     }
 
-    const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
-    if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText)) {
-      throw new Error("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.");
+const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
+if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText)) {
+  const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.";
+  const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
+  if (reservedCredits > 0) {
+    const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
+    if (balanceRow) {
+      await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: now }, { onConflict: "user_id" });
+      await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because generic provider was blocked for presenter job: ${blockMessage}` });
     }
-    const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
+  }
+  const blockedOutput = {
+    ...existingOutput,
+    ...demoOutput,
+    automationStatus: "provider_start_failed",
+    providerStatus: "generic_provider_blocked_for_presenter",
+    providerErrors: { generic_video: blockMessage },
+    currentStep: "Generic provider blocked before job creation",
+    providerReadiness,
+    routeGuard: {
+      status: "blocked",
+      blockedAt: now,
+      requiredProvider: "heygen_video_agent",
+      blockedProviders: ["replicate", "fal", "runway", "generic_video"],
+      reason: blockMessage
+    },
+    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "provider_start_failed", generation_status: "generic_provider_blocked_for_presenter", output_json: { ...existingOutput, providerReadiness } })
+  };
+  const { data: blockedProduction, error: blockedUpdateError } = await supabase
+    .from("production_requests")
+    .update(safeUpdate({ status: "queued", automation_status: "provider_start_failed", generation_status: "generic_provider_blocked_for_presenter", reserved_credits: 0, output_json: blockedOutput, admin_notes: blockMessage, error_message: blockMessage, updated_at: now }))
+    .eq("id", productionId)
+    .select("*")
+    .single();
+  if (blockedUpdateError) throw new Error(`generic_provider_block_update: ${errorMessage(blockedUpdateError, "DB update failed")}`);
+  return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
+}
+const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
     const providerTestMode = Boolean(providerPreflight.testMode);
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
     const pipelineMap: Record<string, string> = {

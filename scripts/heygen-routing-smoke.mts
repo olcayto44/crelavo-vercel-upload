@@ -46,6 +46,12 @@ if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealPr
 if (!startRoute.includes("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen")) {
   throw new Error("automation/start must block generic video providers for presenter/UGC/talking jobs");
 }
+if (!startRoute.includes('provider_blocked: true')) {
+  throw new Error("automation/start must return provider_blocked for generic presenter blocks");
+}
+if (!startRoute.includes('generic_provider_blocked_for_presenter')) {
+  throw new Error("automation/start must stamp blocked generation status for presenter blocks");
+}
 if (!statusRoute.includes("quality_gate_blocked_wrong_presenter_provider")) {
   throw new Error("status route must block generic providers for presenter videos");
 }
