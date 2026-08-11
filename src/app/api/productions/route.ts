@@ -538,7 +538,7 @@ const agentAction = body.agent_action && typeof body.agent_action === "object"
   ? body.agent_action as Record<string, unknown>
   : null;
 const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, productionType, packageId);
-const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !agentProviderRoutePlan.canStartRealProvider;
+const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !serverHeyGenPresenterIntent && !agentProviderRoutePlan.canStartRealProvider;
 const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits;
 
 const costGuardConfig = apiCostGuardConfig();

@@ -49,5 +49,11 @@ if (!statusRoute.includes("quality_gate_blocked_wrong_presenter_provider")) {
 if (!productionsRoute.includes('provider_route: serverHeyGenPresenterIntent ? "heygen_video_agent"')) {
   throw new Error("production create route must stamp HeyGen provider_route for presenter videos");
 }
+if (productionsRoute.includes('["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !agentProviderRoutePlan.canStartRealProvider')) {
+  throw new Error("production create route must not block HeyGen presenter jobs before automation/start");
+}
+if (!productionsRoute.includes('!serverHeyGenPresenterIntent && !agentProviderRoutePlan.canStartRealProvider')) {
+  throw new Error("production create route must bypass readiness block for HeyGen presenter intent");
+}
 
 console.log("HeyGen routing smoke passed");
