@@ -1052,14 +1052,17 @@ function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
   const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b/.test(raw);
-  const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(raw);
+  const routeText = raw
+    .replace(/\b(no|not|without|avoid|exclude|do not use|don't use|do not create|don't create)\s+(anime|cartoon|stickman|animation|animated|çizgi film|cizgi film|çöp adam|cop adam|cöp adam|whiteboard)\b/g, " ")
+    .replace(/\b(no|not|without|avoid|exclude|do not create|don't create)\s+(cinematic battle|sci-fi|war scene|drone footage|action trailer)\b/g, " ");
+  const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
   const liveActionRealisticVideoIntent = /(live[-\s]*action|canlı\s*aksiyon|canli\s*aksiyon|ultra\s*realistic|ultra\s*gerçekçi|ultra\s*gercekci|photorealistic|foto\s*gerçekçi|fotogerçekçi|gerçekçi\s*cilt|gercekci\s*cilt|realistic\s*skin|practical\s*lighting|physical(?:ly)?\s*real|gerçek\s*görün|gercek\s*gorun)/.test(raw);
   if (imageDesignIntent && !explicitVideoIntent) return "image";
   if (currentType === "video" && liveActionRealisticVideoIntent) return "video";
   if (isCharacterDialogueAnimationPrompt(prompt)) return "animation";
-  if (/stickman|çöp adam|cop adam|cöp adam|whiteboard/.test(raw)) return "stickman_animation";
-  if (/anime|japanese animation|ghibli|shinkai/.test(raw)) return "anime_short_film";
-  if (/pixar|3d cartoon|3d animated|3d animation|animated film|cartoon film|character animation|animasyon|animation|çizgi film|cizgi film|cartoon/.test(raw)) return "animation";
+  if (/stickman|çöp adam|cop adam|cöp adam|whiteboard/.test(routeText)) return "stickman_animation";
+  if (/anime|japanese animation|ghibli|shinkai/.test(routeText)) return "anime_short_film";
+  if (/pixar|3d cartoon|3d animated|3d animation|animated film|cartoon film|character animation|animasyon|animation|çizgi film|cizgi film|cartoon/.test(routeText)) return "animation";
   if (/sci-?fi|science fiction|futuristic|photoreal|hyperreal|unreal engine|ue5|fantasy|fantastik|magic|magical|epic fantasy|mythic/.test(raw)) return "cinematic_video";
   if (/saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw)) return "video";
   if (/clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|kırp|kirp|hook extraction|best moments/.test(raw)) return "video_clipping";
