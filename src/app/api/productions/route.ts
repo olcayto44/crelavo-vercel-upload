@@ -13,6 +13,7 @@ import { estimateProductionProfit } from "@/lib/production-profit";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
+import { hasCinematicActionIntent, hasHeyGenPresenterIntent } from "@/lib/heygen-routing";
 import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -338,11 +339,9 @@ export async function POST(request: Request) {
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(serverRouteText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(serverRouteText);
-  const serverCinematicActionIntent = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(serverRouteText);
-const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinematicActionIntent && (/with presenter|ai presenter|talking avatar|talking head|realistic human presenter|single presenter|creator-style presenter|outdoor ugc dynamic presenter|creator-style saas presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|spokesperson|avatar\s+host/.test(serverRouteText)
-  || /heygen|heygen_video_agent|video_agent/.test(String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase())
-  || Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)
-  || /presenter|avatar|talking\s*head/.test(String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()));
+  const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
+ const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasHeyGenPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
+
 
   if (serverHeyGenPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
@@ -684,6 +683,7 @@ outputPlan,
     automationMode: "fully_automatic",
     providerTestMode,
     preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.preferredProvider ?? clientInputJson.preferredProvider ?? undefined,
+    provider_route: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.provider_route ?? clientInputJson.provider_route ?? undefined,
     presenterMode: serverHeyGenPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
     providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null
   };

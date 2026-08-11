@@ -36,7 +36,8 @@ assertEqual(hasHeyGenPresenterIntent(realCinematicAction), false, "real no-prese
 
 const startRoute = readFileSync("src/app/api/automation/start/route.ts", "utf8");
 const statusRoute = readFileSync("src/app/api/automation/status/route.ts", "utf8");
-for (const [label, source] of [["automation/start", startRoute], ["automation/status", statusRoute]] as const) {
+const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
+for (const [label, source] of [["automation/start", startRoute], ["automation/status", statusRoute], ["productions", productionsRoute]] as const) {
   if (!source.includes("@/lib/heygen-routing")) throw new Error(`${label} must import shared HeyGen routing helper`);
 }
 if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealProvider")) {
@@ -44,6 +45,9 @@ if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealPr
 }
 if (!statusRoute.includes("quality_gate_blocked_wrong_presenter_provider")) {
   throw new Error("status route must block generic providers for presenter videos");
+}
+if (!productionsRoute.includes('provider_route: serverHeyGenPresenterIntent ? "heygen_video_agent"')) {
+  throw new Error("production create route must stamp HeyGen provider_route for presenter videos");
 }
 
 console.log("HeyGen routing smoke passed");
