@@ -533,7 +533,9 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const sourceIsVideoPlatform = /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|vimeo\.com)/.test(signal);
   const isClipLink = hasLink && sourceIsVideoPlatform && explicitClipRequest;
   const isSocialLink = hasLink && !isClipLink && /instagram|tiktok|youtube|reels|shorts|social|sosyal|post|creator|influencer/.test(signal);
-  const isFilmAnimation = /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
+  const isPresenterUgcLock = /ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|video\s*agent|talking\s*avatar|product\s*demo|social\s*media\s*ad/.test(signal)
+    && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice/.test(signal);
+  const isFilmAnimation = !isPresenterUgcLock && /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
   const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
 
     if (plan.production_type === "video" && isCinematicAction) {
@@ -1055,6 +1057,9 @@ function normalizeProductionType(prompt: string, currentType: string) {
   const routeText = raw
     .replace(/\b(no|not|without|avoid|exclude|do not use|don't use|do not create|don't create)\s+(anime|cartoon|stickman|animation|animated|çizgi film|cizgi film|çöp adam|cop adam|cöp adam|whiteboard)\b/g, " ")
     .replace(/\b(no|not|without|avoid|exclude|do not create|don't create)\s+(cinematic battle|sci-fi|war scene|drone footage|action trailer)\b/g, " ");
+  const presenterVideoLock = /\b(ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|video\s*agent|talking\s*avatar|product\s*demo|social\s*media\s*ad)\b/.test(routeText)
+    && !/\b(no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice)\b/.test(routeText);
+  if (presenterVideoLock) return "video";
   const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
   const liveActionRealisticVideoIntent = /(live[-\s]*action|canlı\s*aksiyon|canli\s*aksiyon|ultra\s*realistic|ultra\s*gerçekçi|ultra\s*gercekci|photorealistic|foto\s*gerçekçi|fotogerçekçi|gerçekçi\s*cilt|gercekci\s*cilt|realistic\s*skin|practical\s*lighting|physical(?:ly)?\s*real|gerçek\s*görün|gercek\s*gorun)/.test(raw);
   if (imageDesignIntent && !explicitVideoIntent) return "image";
