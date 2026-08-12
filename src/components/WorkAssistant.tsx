@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEven
 import { Bot, Code2, Loader2, PackageCheck, Paperclip, Send, Sparkles, Video } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { buildPresenterCreativeBrief, initialPresenterActivityLog } from "@/lib/creative-director";
+import { sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
 import { type UserUploadedMaterial } from "@/lib/production-payload";
 
 type WorkAssistantProps = {
@@ -1598,8 +1599,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   async function createProductionRecord(activePlanInput: StudioPlan, cleanInput: string, userId: string, userEmail: string, accessToken: string): Promise<WorkProductionCard | null> {
     const project = isProjectType(activePlanInput.production_type);
-  const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), cleanInput);
-  const presenterlessSetupRequested = Object.values(productionSetup).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only|no presenter motions/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(cleanInput);
+  const routeSafeInput = sanitizeProviderRouteSignal(cleanInput);
+  const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput);
+  const presenterlessSetupRequested = Object.values(productionSetup).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
   const activeSelectedAvatar = presenterlessSetupRequested ? null : selectedAvatar;
   const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
   const setupForPayload = {
@@ -1633,15 +1635,15 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput) + manualHeyGenCreditsForPayload;
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
-    const noPresenterStyle = selectedItemsForIntent.some((item) => /voice-over only|silent\s*\/\s*music only|sadece seslendirmeli|sessiz|no presenter|b-roll only|no presenter motions/i.test(String(item)));
-    const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(cleanInput);
-    const noPeopleMotionIntent = noPresenterStyle || (/no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(cleanInput)
-      && /motion\s+graphics|hareketli\s+grafik|arayüz|arayuz|ui|hızlı\s+geçiş|hizli\s+gecis|dinamik|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional|b-?roll/i.test(cleanInput));
+    const noPresenterStyle = selectedItemsForIntent.some((item) => /voice-over only|silent\s*\/\s*music only|sadece seslendirmeli|sessiz|no presenter|b-roll only/i.test(String(item)));
+    const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(routeSafeInput);
+    const noPeopleMotionIntent = noPresenterStyle || (/no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(routeSafeInput)
+      && /motion\s+graphics|hareketli\s+grafik|arayüz|arayuz|ui|hızlı\s+geçiş|hizli\s+gecis|dinamik|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional|b-?roll/i.test(routeSafeInput));
     const selectedHeyGenVideoAgentAutoEdit = selectedItemsForIntent.some((item) => /video agent auto edit/i.test(String(item)));
-    const animationProductionIntent = ["animation", "anime_short_film", "stickman_animation", "cinematic_video"].includes(activePlanInput.production_type) || /animasyon|animation|çizgi film|cizgi film|cartoon|3d animated|3d animation|animated film|animation film|character animation|animated teaser/i.test(cleanInput + " " + selectedItemsForIntent.join(" "));
+    const animationProductionIntent = ["animation", "anime_short_film", "stickman_animation", "cinematic_video"].includes(activePlanInput.production_type) || /animasyon|animation|çizgi film|cizgi film|cartoon|3d animated|3d animation|animated film|animation film|character animation|animated teaser/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsHeyGenBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedHeyGenVideoAgentAutoEdit;
-    const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(cleanInput + " " + selectedItemsForIntent.join(" "));
-    const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(cleanInput));
+    const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
+    const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(routeSafeInput));
     const productionTypeForPayload = wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
     const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
     const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;

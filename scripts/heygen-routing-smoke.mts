@@ -37,7 +37,8 @@ assertEqual(hasHeyGenPresenterIntent(realCinematicAction), false, "real no-prese
 const startRoute = readFileSync("src/app/api/automation/start/route.ts", "utf8");
 const statusRoute = readFileSync("src/app/api/automation/status/route.ts", "utf8");
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
-for (const [label, source] of [["automation/start", startRoute], ["automation/status", statusRoute], ["productions", productionsRoute]] as const) {
+const workAssistant = readFileSync("src/components/WorkAssistant.tsx", "utf8");
+for (const [label, source] of [["automation/start", startRoute], ["automation/status", statusRoute], ["productions", productionsRoute], ["WorkAssistant", workAssistant]] as const) {
   if (!source.includes("@/lib/heygen-routing")) throw new Error(`${label} must import shared HeyGen routing helper`);
 }
 if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealProvider")) {
@@ -60,6 +61,12 @@ if (!productionsRoute.includes('provider_route: serverHeyGenPresenterIntent ? "h
 }
 if (!productionsRoute.includes("sanitizeProviderRouteSignal(serverRouteText)")) {
   throw new Error("production create route must sanitize route text before no-presenter/motion checks");
+}
+if (!workAssistant.includes("const routeSafeInput = sanitizeProviderRouteSignal(cleanInput)")) {
+  throw new Error("WorkAssistant must sanitize user prompt before presenter/no-presenter routing");
+}
+if (workAssistant.includes("no presenter motions/i")) {
+  throw new Error("WorkAssistant must not treat 'No presenter motions' as no-presenter mode");
 }
 if (productionsRoute.includes('["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !agentProviderRoutePlan.canStartRealProvider')) {
   throw new Error("production create route must not block HeyGen presenter jobs before automation/start");
