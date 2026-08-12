@@ -44,6 +44,12 @@ for (const [label, source] of [["automation/start", startRoute], ["automation/st
 if (startRoute.includes("talkingProviderType && providerReadiness.canStartRealProvider")) {
   throw new Error("talking_video must not wait for providerReadiness before attempting HeyGen start");
 }
+if (startRoute.includes("const talkingProviderType = !isDroneProduction && !isCinematicActionProduction")) {
+  throw new Error("explicit HeyGen/presenter starts must not be suppressed by cinematic/action text");
+}
+if (!startRoute.includes("requestMetadata.provider_route")) {
+  throw new Error("automation/start must read provider_route metadata for HeyGen forcing");
+}
 if (!startRoute.includes("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen")) {
   throw new Error("automation/start must block generic video providers for presenter/UGC/talking jobs");
 }

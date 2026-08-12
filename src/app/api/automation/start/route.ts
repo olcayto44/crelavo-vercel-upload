@@ -490,8 +490,9 @@ export async function POST(request: Request) {
   });
 const isDroneProduction = productionType === "drone_video";
 const heygenSetupPresenterIntent = hasHeyGenPresenterIntent(productionDetectionText);
-const heygenForcedByMetadata = !isDroneProduction && !isCinematicActionProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? ""));
-const talkingProviderType = !isDroneProduction && !isCinematicActionProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
+const explicitHeyGenProviderSignal = /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
+const heygenForcedByMetadata = !isDroneProduction && explicitHeyGenProviderSignal;
+const talkingProviderType = !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
