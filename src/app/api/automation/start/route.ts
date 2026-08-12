@@ -277,7 +277,7 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     ?? secondsFromValue(selected.duration)
     ?? 30;
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_VIDEO_AGENT_AVATAR_ID ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID).trim() || DEFAULT_HEYGEN_VIDEO_AGENT_AVATAR_ID;
-  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim() || null;
+  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? promptVoiceId ?? process.env.HEYGEN_VIDEO_AGENT_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "kq4igj7j00F2ttmWgN92").trim() || "kq4igj7j00F2ttmWgN92";
   const styleId = String(selected.heygen_style_id ?? selected.style_id ?? promptStyleId ?? process.env.HEYGEN_VIDEO_AGENT_STYLE_ID ?? "").trim() || null;
   const brandKitId = String(selected.heygen_brand_kit_id ?? selected.brand_kit_id ?? promptBrandKitId ?? process.env.HEYGEN_BRAND_KIT_ID ?? "").trim() || null;
   const screenshotUrl = httpsUrlFrom(selected.websiteScreenshotUrl) || httpsUrlFrom(selected.screenshotUrl) || httpsUrlFrom(selected.website_screenshot_url);
@@ -330,10 +330,7 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "16:9");
   const ratio = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical") ? "9:16" : "16:9";
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_V2_AVATAR_ID).trim() || DEFAULT_HEYGEN_V2_AVATAR_ID;
-  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? process.env.HEYGEN_TALKING_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "").trim();
-  if (!voiceId) {
-    throw new Error("HeyGen voice_id is required for controlled talking video jobs. Set HEYGEN_TALKING_VOICE_ID / HEYGEN_DEFAULT_VOICE_ID or pass heygen_voice_id from setup.");
-  }
+  const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? process.env.HEYGEN_TALKING_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "kq4igj7j00F2ttmWgN92").trim() || "kq4igj7j00F2ttmWgN92";
   const payload = {
     video_setting: { ratio, output_format: "mp4" },
     clips: [{
