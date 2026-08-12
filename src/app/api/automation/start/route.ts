@@ -305,7 +305,6 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
     mode: "generate" as const,
     avatar_id: noPresenterMode ? null : avatarId,
     voice_id: controls.voiceDisabled ? null : voiceId,
-    include_voice: !controls.voiceDisabled,
     style_id: styleId,
     brand_kit_id: brandKitId,
     orientation: portrait ? "portrait" as const : "landscape" as const,

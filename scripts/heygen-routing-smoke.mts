@@ -53,6 +53,9 @@ if (!startRoute.includes("requestMetadata.provider_route")) {
 if (!startRoute.includes("Generic video provider blocked: presenter/UGC/talking video must start through HeyGen")) {
   throw new Error("automation/start must block generic video providers for presenter/UGC/talking jobs");
 }
+if (startRoute.includes("include_voice")) {
+  throw new Error("automation/start must not send unsupported HeyGen Video Agent include_voice parameter");
+}
 if (!startRoute.includes('provider_blocked: true')) {
   throw new Error("automation/start must return provider_blocked for generic presenter blocks");
 }
