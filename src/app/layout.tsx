@@ -5,7 +5,7 @@ import { ExitIntentLeadCapture } from "@/components/ExitIntentLeadCapture";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
 import { OAuthWelcomeCreditClient } from "@/components/OAuthWelcomeCreditClient";
 import { PartnerReferralTracker } from "@/components/PartnerReferralTracker";
-import { PreviewSupportBox } from "@/components/PreviewSupportBox";
+import { PreviewSupportBoxRouteGate } from "@/components/PreviewSupportBoxRouteGate";
 import { PublicSideRail } from "@/components/PublicSideRail";
 import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -117,7 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><OAuthWelcomeCreditClient /></Suspense>
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PublicSideRail /></Suspense>
-        <Suspense fallback={null}><PreviewSupportBox /></Suspense>
+        <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
         {children}
         <RouteAwareFooter><SiteFooter /></RouteAwareFooter>
       </body>
