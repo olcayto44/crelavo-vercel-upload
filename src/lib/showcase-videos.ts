@@ -218,6 +218,23 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Road film", "Action teaser", "Homepage visual proof", "Social teaser"]
   },
   {
+    id: "crelavo-action-film-final",
+    title: "Crelavo Action Film Finale",
+    kicker: "Action film",
+    description: "A high-budget 30-second police-vs-hostile-crew action film built as a tense cinematic showdown.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-03/image/1787168209900215628-1787168209891.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-03/video/1787168057354200695-1787168057200.mp4",
+    duration: "PT30S",
+    orientation: "landscape",
+    uploadDate: "2026-08-20T03:00:00.000Z",
+    details: [
+      "This action film finale combines tactical police movement, hostile crew tension and a cinematic desert showdown.",
+      "The first half establishes the threat, while the second half carries the confrontation into a more film-like chaotic beat.",
+      "Best for homepage proof, social distribution and a high-end action showcase example with strong thumbnail value."
+    ],
+    bestFor: ["Action film", "Police chase", "Homepage visual proof", "Social teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",

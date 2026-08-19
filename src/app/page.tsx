@@ -184,6 +184,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787163493000000000/output.mp4"
   },
   {
+    title: "Crelavo Action Film Finale",
+    kicker: "Action film",
+    description: "A high-budget 30-second police-vs-hostile-crew action film built as a tense cinematic showdown.",
+    href: "/showcase/videos/crelavo-action-film-final",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-03/image/1787168209900215628-1787168209891.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-03/video/1787168057354200695-1787168057200.mp4"
+  },
+  {
     title: "Phoenix Awakening",
     kicker: "3D animation",
     description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",
