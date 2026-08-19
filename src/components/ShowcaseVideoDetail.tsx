@@ -39,7 +39,7 @@ function VideoJsonLd({ video }: { video: ShowcaseVideoDetailVideo }) {
 export function ShowcaseVideoDetail({
   video,
   backHref = "/#video-showcase",
-  backLabel = "Back to homepage videos",
+  backLabel = "Back to showcase videos",
   actionHref = `/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`,
   actionLabel = "Create a similar video"
 }: {
