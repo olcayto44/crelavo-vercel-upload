@@ -266,7 +266,9 @@ export function getShowcaseVideo(id: string) {
   return showcaseVideos.find((video) => video.id === id);
 }
 
-export function absoluteShowcaseVideoImage(video: ShowcaseVideo, siteUrl: string) {
+type ShowcaseVideoImageSource = Pick<ShowcaseVideo, "id" | "title" | "kicker" | "description" | "videoUrl" | "details" | "bestFor" | "imageUrl" | "duration" | "orientation" | "productionDetails"> & { uploadDate?: string };
+
+export function absoluteShowcaseVideoImage(video: ShowcaseVideoImageSource, siteUrl: string) {
   const fallback = `${siteUrl}/showcase/ai-production-studio.webp`;
   const image = video.imageUrl || fallback;
   return /^https?:\/\//i.test(image) ? image : `${siteUrl}${image.startsWith("/") ? image : `/${image}`}`;

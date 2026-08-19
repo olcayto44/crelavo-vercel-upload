@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
+import { ShowcaseVideoDetail } from "@/components/ShowcaseVideoDetail";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getShowcaseItem, showcaseItems } from "@/lib/showcase-items";
 
@@ -237,12 +238,12 @@ export default async function ShowcaseDetailPage({ params, searchParams }: Showc
   const item = getShowcaseItem(id);
   if (!item) notFound();
   const selectedHomepageVideo = id === "explore-samples" ? crelavoHomepageVideos.find((video) => video.id === query.video) : undefined;
-  const keywords = buildShowcaseKeywords(item);
-  const relatedItems = showcaseItems.filter((entry) => entry.group === item.group && entry.id !== item.id).slice(0, 3);
   if (selectedHomepageVideo) {
-    redirect(`/showcase/videos/${selectedHomepageVideo.id}`);
+    return <ShowcaseVideoDetail video={selectedHomepageVideo} backHref="/showcase/explore-samples" backLabel="Back to samples" actionHref={`/dashboard/create?category=video&sample=${encodeURIComponent(selectedHomepageVideo.id)}`} actionLabel="Create a similar video" />;
   }
 
+  const keywords = buildShowcaseKeywords(item);
+  const relatedItems = showcaseItems.filter((entry) => entry.group === item.group && entry.id !== item.id).slice(0, 3);
   const showcaseVideoUrl = item.videoUrl || fallbackShowcaseVideoUrl;
   const showcaseWebmUrl = item.webmUrl;
   const heroTitle = item.title;
