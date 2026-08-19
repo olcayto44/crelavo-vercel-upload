@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
@@ -14,6 +14,115 @@ export function generateStaticParams() {
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 const fallbackShowcaseVideoUrl = "https://cdn.hailuoai.video/moss/prod/2026-07-05-05/video/1783200506566226583-1783200506537.mp4";
 const fallbackShowcaseThumbnailUrl = `${siteUrl}/showcase/ai-production-studio.webp`;
+
+const crelavoHomepageVideos = [
+  {
+    id: "crelavo-wow-reel",
+    title: "Crelavo Wow Reel",
+    kicker: "Viral visual",
+    description: "A high-impact creature-led Crelavo concept built to stop the scroll.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4",
+    details: [
+      "This example is built as a viral visual hook: it uses an unexpected creature-led scene to catch attention fast before the visitor reads any long explanation.",
+      "It shows how Crelavo can turn a brand idea into a scroll-stopping social video concept rather than a plain product demo.",
+      "Best for awareness ads, social media openers, high-impact landing page sections and campaign visuals that need instant curiosity."
+    ],
+    bestFor: ["Viral hooks", "Top-of-funnel ads", "Social media attention", "Brand awareness"]
+  },
+  {
+    id: "crelavo-energy-system",
+    title: "Crelavo Energy System",
+    kicker: "Premium motion",
+    description: "A cinematic chain-and-cube sequence showing Crelavo as an energetic creative engine.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148834458072949-1786148834448.mp4",
+    details: [
+      "This example presents Crelavo as a premium creative system: connected motion, glowing cube energy and cinematic pacing make the brand feel more advanced.",
+      "It is useful when the goal is not only to explain a tool, but to make the platform feel powerful, technical and valuable.",
+      "Best for brand pages, product launch sections, premium motion identities and ads that need a polished technology feel."
+    ],
+    bestFor: ["Premium brand motion", "Technology positioning", "Product launch visuals", "High-value landing pages"]
+  },
+  {
+    id: "crelavo-product-story",
+    title: "Crelavo Product Story",
+    kicker: "Presenter demo",
+    description: "A direct product explanation for visitors who want to understand the platform quickly.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148847561742266-1786148847522.mp4",
+    details: [
+      "This example is the clearest product-story format: it explains what Crelavo does in a direct, presenter-style way for visitors who need fast understanding.",
+      "It works as a practical trust-building video because it supports the landing page copy with a human-style explanation instead of only abstract visuals.",
+      "Best for homepage explanation blocks, onboarding pages, product education, retargeting and visitors who already have buying intent."
+    ],
+    bestFor: ["Product explanation", "Homepage education", "Retargeting", "Conversion support"]
+  },
+  {
+    id: "phoenix-awakening",
+    title: "Phoenix Awakening",
+    kicker: "3D animation",
+    description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-23/video/1786203250578603803-1786203250560.mp4",
+    details: [
+      "This example tests a premium 3D animated showcase direction: a mechanical phoenix awakens inside a crystal city, using rich light, motion and fantasy-sci-fi atmosphere instead of product explanation.",
+      "It is designed for homepage proof and social media use, where the visual quality, cinematic sound and final Crelavo mark communicate capability without a traditional explainer.",
+      "The strongest elements are the crystal heart opening, the phoenix reveal, the golden-blue motion trail and the final branded hero beat."
+    ],
+    bestFor: ["3D animation showcase", "Social teaser", "Homepage visual proof", "Cinematic brand mood"]
+  },
+  {
+    id: "origami-dragon-meteor",
+    title: "Origami Dragon Meteor",
+    kicker: "Anime short film",
+    description: "A fast neon anime teaser with a paper crane transforming into a luminous dragon.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-01/video/1786209159798605867-1786209159793.mp4",
+    details: [
+      "This short anime-film test opens with a neon meteor impact and a glowing paper crane before revealing the origami dragon transformation.",
+      "The compact 9:16 cut is designed as a social-first teaser: fast visual escalation, anime energy and a memorable fantasy reveal without presenter footage or product explanation.",
+      "It is the shorter available version of the anime production and is included as a direct Crelavo visual showcase while the longer HeyGen resource remains unavailable for download."
+    ],
+    bestFor: ["Anime short film", "Vertical social teaser", "Fantasy visual test", "Homepage visual proof"]
+  },
+  {
+    id: "turkish-avatar-hook",
+    title: "Turkish Avatar Hook",
+    kicker: "Avatar speaker",
+    description: "A Turkish-speaking avatar ad with a direct FOMO hook for Crelavo showcase and social use.",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/video/1786219244367608234-1786219244348.mp4",
+    details: [
+      "This avatar speaker test uses a Turkish voice-over and a direct FOMO opening line to show Crelavo's talking-video production capability.",
+      "The 9:16 vertical format is built for homepage proof, Reels, TikTok, Shorts and paid social placements where the first seconds need to establish urgency.",
+      "The strongest elements are the clear Turkish delivery, professional avatar presence, clean premium background and short social-ready runtime."
+    ],
+    bestFor: ["Avatar speaker", "Turkish social ad", "Homepage visual proof", "A-roll showcase"]
+  },
+  {
+    id: "luxury-serum-demo",
+    title: "Luxury Serum Demo",
+    kicker: "Product demo",
+    description: "A luxury skincare product demo with cinematic macro beauty shots and a premium hook.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/image/1786222106538364280-1786222106536.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/video/1786222067850341317-1786222067841.mp4",
+    details: [
+      "This product demo uses macro beauty shots, slow product motion and a premium lighting setup to show how Crelavo can present a real physical item.",
+      "The format is built for homepage showcase and social media use, with a clean product hero frame and tactile commercial pacing.",
+      "The visual language focuses on luxury skincare presentation, making the result suitable for ecommerce, ad campaigns and launch pages."
+    ],
+    bestFor: ["Product demo", "Beauty ad", "Ecommerce showcase", "Homepage visual proof"]
+  },
+  {
+    id: "great-mishaps",
+    title: "Great Mishaps",
+    kicker: "3D animation",
+    description: "A Pixar-style superhero comedy with five lovable misfit heroes and golden-hour cinematic chaos.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-05/image/1786224521060209859-1786224521053.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-05/video/1786224496725549080-1786224496690.mp4",
+    details: [
+      "This animated short introduces five clumsy heroes in a golden-hour cinematic world, using expressive Pixar-style staging and slapstick timing.",
+      "The five-character ensemble is designed to show Crelavo's ability to handle full animated storytelling with character consistency and feature-film polish.",
+      "The result works as a showcase for premium 3D animation, family-friendly comedy, and animated brand storytelling." 
+    ],
+    bestFor: ["3D animation", "Character comedy", "Hero team scene", "Homepage visual proof"]
+  }
+];
 
 function absoluteUrl(value?: string) {
   if (!value) return fallbackShowcaseThumbnailUrl;
@@ -100,6 +209,7 @@ function buildShowcaseKeywords(item: { title: string; description: string; longD
 
  type ShowcasePageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ video?: string }>;
 };
 
 export async function generateMetadata({ params }: ShowcasePageProps): Promise<Metadata> {
@@ -121,14 +231,23 @@ export async function generateMetadata({ params }: ShowcasePageProps): Promise<M
   };
 }
 
-export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) {
+export default async function ShowcaseDetailPage({ params, searchParams }: ShowcasePageProps) {
   const [{ id }, siteContent] = await Promise.all([params, getConfiguredSiteContentConfig()]);
+  const query = searchParams ? await searchParams : {};
   const item = getShowcaseItem(id);
   if (!item) notFound();
+  const selectedHomepageVideo = id === "explore-samples" ? crelavoHomepageVideos.find((video) => video.id === query.video) : undefined;
   const keywords = buildShowcaseKeywords(item);
   const relatedItems = showcaseItems.filter((entry) => entry.group === item.group && entry.id !== item.id).slice(0, 3);
+  if (selectedHomepageVideo) {
+    redirect(`/showcase/videos/${selectedHomepageVideo.id}`);
+  }
+
   const showcaseVideoUrl = item.videoUrl || fallbackShowcaseVideoUrl;
   const showcaseWebmUrl = item.webmUrl;
+  const heroTitle = item.title;
+  const heroEyebrow = item.eyebrow;
+  const heroDescription = item.longDescription;
 
   return (
     <>
@@ -141,9 +260,9 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
             <Link className="showcase-back-link" href="/">
               <ArrowLeft size={16} /> Back to homepage
             </Link>
-            <span className="badge"><Sparkles size={15} /> {item.eyebrow}</span>
-            <h1>{item.title}</h1>
-            <p>{item.longDescription}</p>
+            <span className="badge"><Sparkles size={15} /> {heroEyebrow}</span>
+            <h1>{heroTitle}</h1>
+            <p>{heroDescription}</p>
             <p className="section-lead">Search-friendly keywords: {keywords.slice(0, 4).join(", ")}. This showcase helps visitors move from inspiration into the right Crelavo category or production workflow.</p>
             <div className="showcase-detail-actions">
               <Link className="btn" href={item.primaryCtaHref}>{item.primaryCtaLabel}</Link>
@@ -157,6 +276,7 @@ export default async function ShowcaseDetailPage({ params }: ShowcasePageProps) 
             </video>
           </div>
         </section>
+
 
         <section className="container showcase-detail-keywords-section">
           <div className="showcase-info-card showcase-wide-card">
