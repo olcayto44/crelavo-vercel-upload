@@ -2,6 +2,7 @@ import { cloudflareWafFinalChecks, providerLiveVerificationChecks } from "@/lib/
 import { buildProviderPlan, providerRouteMap } from "@/lib/provider-plan";
 import { buildProductionProviderRoutingCheck } from "@/lib/production-provider-routing-check";
 import { hasProviderEnv, providerEnvNames } from "@/lib/providers/env";
+import { minimaxReadiness } from "@/lib/providers/minimax";
 import { platformVoices } from "@/lib/voice-library";
 
 function hasEnv(name: string) {
@@ -137,6 +138,11 @@ export async function GET() {
       ready: heygenReady,
       required: providerEnvNames("heygen"),
       optional: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"]
+    },
+    minimax: {
+      ...minimaxReadiness(),
+      required: [...providerEnvNames("minimax"), ...providerEnvNames("minimaxGroupId")],
+      optional: ["MINIMAX_BASE_URL"]
     },
     stability: {
       provider: "stability-ai",
