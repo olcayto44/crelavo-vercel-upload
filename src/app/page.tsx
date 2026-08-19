@@ -175,6 +175,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787155138005712557-1787155137974.mp4"
   },
   {
+    title: "Crelavo Shot Montage Road",
+    kicker: "Road film",
+    description: "A shot-based 16:9 desert highway teaser built as a premium trailer montage with a motorcycle and Cadillac chase.",
+    href: "/showcase/videos/crelavo-shot-montage-road",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-02/image/1787163936581082817-1787163936563.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787163493000000000/output.mp4"
+  },
+  {
     title: "Phoenix Awakening",
     kicker: "3D animation",
     description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",

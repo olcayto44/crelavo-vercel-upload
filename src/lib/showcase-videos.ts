@@ -201,6 +201,23 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["3D brand film", "FOMO hook", "Homepage visual proof", "Social teaser"]
   },
   {
+    id: "crelavo-shot-montage-road",
+    title: "Crelavo Shot Montage Road",
+    kicker: "Road film",
+    description: "A shot-based 16:9 desert highway teaser built as a premium trailer montage with a motorcycle and Cadillac chase.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-02/image/1787163936581082817-1787163936563.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787163493000000000/output.mp4",
+    duration: "PT15S",
+    orientation: "landscape",
+    uploadDate: "2026-08-20T02:00:00.000Z",
+    details: [
+      "This trailer-style montage uses distinct cinematic shots instead of one continuous chase so the action reads more clearly.",
+      "The motorcycle leads while the Cadillac stays behind, keeping the tension logical and visually easy to follow.",
+      "Best for action teaser proof, homepage showcase and social media clips that want a premium road-film look."
+    ],
+    bestFor: ["Road film", "Action teaser", "Homepage visual proof", "Social teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",
