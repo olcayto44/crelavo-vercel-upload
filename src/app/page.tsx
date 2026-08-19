@@ -70,6 +70,24 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
 
 const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
   {
+    title: "Crelavo Brand Face",
+    kicker: "HeyGen avatar showcase",
+    description: "A premium Crelavo brand-face avatar example for website, ecommerce and sales-assistant presentation.",
+    href: "/showcase/explore-samples",
+    tone: "purple",
+    posterUrl: "https://dynamic.heygen.ai/video_translate/0ac58b9212444a4b872811361a5664a7-en/original/thumbnail.jpeg",
+    videoUrl: "https://resource2.heygen.ai/video_translate/0ac58b9212444a4b872811361a5664a7-en/original.mp4?response-content-disposition=attachment%3B+filename%2A%3DUTF-8%27%27Crelavo%2520translate%2520video-English.mp4%3B"
+  },
+  {
+    title: "Crelavo Digital Solution Expert",
+    kicker: "Nova Assistant demo",
+    description: "A HeyGen avatar showcase showing how a polished digital expert can introduce Crelavo solutions on a site.",
+    href: "/showcase/explore-samples",
+    tone: "cyan",
+    posterUrl: "https://dynamic.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/vafd3bf0ec22940918168ce95d99f3359/3a786e5759264f3d88e3352f7e55de0b.jpeg",
+    videoUrl: "https://files2.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/vafd3bf0ec22940918168ce95d99f3359/3a786e5759264f3d88e3352f7e55de0b.mp4?response-content-disposition=attachment%3B+filename%2A%3DUTF-8%27%27Crelavo%253A%2520Phoenix%2520Awakening%2520Cinematic%2520Teaser.mp4%3B&x-s=vp&Expires=1787370466&Signature=18fsaUh~iqjAuypasbEH24sUR0ILKdDuef5UWAaFOxakDdEKEaxq8lyWSlJPR0AWDR9x6C6R28vFJ3hTwaeresQJjlaVOcSHKFb8hZs99P-FQeODm06pRLVojnW6~uvUiy~kmhXMw9lpLh7PpJ5RRrUhMVyWOvMpPV8r1kOvr8xh5jC8NiGiOEY0sMvV3DMOSOHKqfx5sN9sEeMsm~oh7o4-6btuqqIc9prrGhoWgnH8o6~kwS4O3Tl1hXLINcP7pXLZ~UCqpjHik-6w~wA0VyRshDc60fvSnZJ7ehwj2JeD32hU9KdnyfugTC928A4cI7ETDKQWP7j5caw1cjJSd1__&Key-Pair-Id=K38HBHX5LX3X2H"
+  },
+  {
     title: "Product Link to Video",
     kicker: "Ecommerce ad workflow",
     description: "A Crelavo showcase showing how a product link becomes a ready social ad video.",
@@ -137,6 +155,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     href: "/showcase/videos/crelavo-product-story",
     tone: "blue",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148847561742266-1786148847522.mp4"
+  },
+  {
+    title: "Crelavo Midnight FOMO Reel",
+    kicker: "Ecommerce ad",
+    description: "A 30-second hook-to-solution video showing late-night buying intent and Crelavo's AI sales response.",
+    href: "/showcase/videos/crelavo-midnight-fomo-reel",
+    tone: "purple",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-20/image/1787142231853762473-1787142231849.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-20/video/1787142230751849181-1787142230737.mp4"
   },
   {
     title: "Phoenix Awakening",

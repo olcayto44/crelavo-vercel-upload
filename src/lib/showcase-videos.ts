@@ -167,6 +167,23 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Product explanation", "Homepage education", "Retargeting", "Conversion support"]
   },
   {
+    id: "crelavo-midnight-fomo-reel",
+    title: "Crelavo Midnight FOMO Reel",
+    kicker: "Ecommerce ad",
+    description: "A 30-second hook-to-solution video showing late-night buying intent and Crelavo's AI sales response.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-20/image/1787142231853762473-1787142231849.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-20/video/1787142230751849181-1787142230737.mp4",
+    duration: "PT30S",
+    orientation: "portrait",
+    uploadDate: "2026-08-19T20:00:00.000Z",
+    details: [
+      "This reel combines a late-night buyer hook with a premium AI sales response so the viewer feels the missed opportunity before seeing the solution.",
+      "The first half focuses on FOMO and silent store behavior; the second half reveals Crelavo as the always-on ecommerce sales system.",
+      "Best for homepage proof, social media distribution and a flagship Crelavo showcase example that feels like a real ad rather than a demo clip."
+    ],
+    bestFor: ["FOMO hook", "Ecommerce sellers", "Homepage visual proof", "Social ad teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",
