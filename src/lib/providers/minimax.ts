@@ -57,6 +57,45 @@ export function minimaxReadiness(): MiniMaxReadiness {
   };
 }
 
+export type MiniMaxVideoContentItem =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string }; role?: "first_frame" | "last_frame" | "reference_image" }
+  | { type: "video_url"; video_url: { url: string }; role?: "reference_video" }
+  | { type: "audio_url"; audio_url: { url: string }; role?: "reference_audio" };
+
+export type MiniMaxH3CreateInput = {
+  model?: "MiniMax-H3";
+  content: MiniMaxVideoContentItem[];
+  resolution?: "768P" | "2K";
+  duration?: 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  ratio?: "adaptive" | "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
+  callback_url?: string;
+};
+
+export type MiniMaxH3CreateResponse = {
+  task_id?: string;
+  error?: unknown;
+  request_id?: string;
+};
+
+export type MiniMaxH3TaskResponse = {
+  task?: {
+    id?: string;
+    model?: string;
+    status?: "queued" | "running" | "succeeded" | "failed" | "cancelled" | string;
+    error?: { code?: string; message?: string };
+    created_at?: number;
+    updated_at?: number;
+    content?: { url?: string; prompt?: string };
+    resolution?: string;
+    duration?: number;
+    usage?: Record<string, unknown>;
+    ratio?: string;
+    task_type?: string;
+    modality?: string;
+  };
+};
+
 export async function minimaxJson<T>(path: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
@@ -83,4 +122,30 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
+  return minimaxJson<MiniMaxH3CreateResponse>("/v2/video_generation", {
+    method: "POST",
+    body: JSON.stringify({
+      model: "MiniMax-H3",
+      resolution: "768P",
+      duration: 4,
+      ratio: "9:16",
+      ...input
+    })
+  });
+}
+
+export async function queryMiniMaxH3VideoTask(taskId: string) {
+  return minimaxJson<MiniMaxH3TaskResponse>(`/v2/query/video_generation/${encodeURIComponent(taskId)}`);
+}
+
+export async function listMiniMaxH3VideoTasks(input?: { pageNum?: number; pageSize?: number; status?: string }) {
+  const params = new URLSearchParams();
+  params.set("page_num", String(input?.pageNum ?? 1));
+  params.set("page_size", String(input?.pageSize ?? 10));
+  if (input?.status) params.set("filter.status", input.status);
+  params.set("filter.model", "MiniMax-H3");
+  return minimaxJson<{ items?: MiniMaxH3TaskResponse["task"][]; total?: number }>(`/v2/query/video_generation?${params.toString()}`);
 }
