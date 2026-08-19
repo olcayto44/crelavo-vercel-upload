@@ -1,4 +1,4 @@
-import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, minimaxReadiness, queryMiniMaxH3VideoTask } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, minimaxReadiness, queryMiniMaxH3VideoTask, type MiniMaxH3CreateInput } from "@/lib/providers/minimax";
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
@@ -59,23 +59,31 @@ export async function POST(request: Request) {
     if (action !== "create_h3_test" && action !== "create_video") return Response.json({ error: `Unsupported MiniMax action: ${action}` }, { status: 400 });
 
     const body = await request.json().catch(() => ({}));
-    const prompt = clean(body.prompt) || "Create a polished 4-second vertical ecommerce product teaser for Crelavo: a modern product display rotates gently on a clean studio background, with premium lighting and smooth camera motion.";
-    const duration = clampMiniMaxDuration(body.duration);
-    const ratio = safeRatio(body.ratio);
-    const resolution = clean(body.resolution) === "2K" ? "2K" : "768P";
+    const prompt = clean(body.prompt || searchParams.get("prompt")) || "Create a polished 6-second vertical ecommerce product teaser for Crelavo: a modern product display rotates gently on a clean studio background, with premium lighting and smooth camera motion.";
+    const duration = clampMiniMaxDuration(body.duration || searchParams.get("duration") || 6);
+    const ratio = safeRatio(body.ratio || searchParams.get("ratio"));
+    const resolution = clean(body.resolution || searchParams.get("resolution")) === "2K" ? "2K" : "768P";
 
-    const result = await createMiniMaxH3VideoTask({
+    const requestPayload: MiniMaxH3CreateInput = {
       content: [{ type: "text", text: prompt }],
       resolution,
       duration,
       ratio
-    });
+    };
+
+    const result = await createMiniMaxH3VideoTask(requestPayload);
 
     return Response.json({
       provider: "minimax",
       action,
       model: "MiniMax-H3",
       submitted: true,
+      submitted_parameters: {
+        duration,
+        ratio,
+        resolution,
+        prompt
+      },
       task_id: result.task_id,
       request_id: result.request_id,
       next: result.task_id ? `/api/minimax?action=query&task_id=${encodeURIComponent(result.task_id)}` : null,

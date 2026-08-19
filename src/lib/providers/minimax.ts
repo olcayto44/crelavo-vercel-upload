@@ -130,7 +130,7 @@ export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
     body: JSON.stringify({
       model: "MiniMax-H3",
       resolution: "768P",
-      duration: 4,
+      duration: 6,
       ratio: "9:16",
       ...input
     })
