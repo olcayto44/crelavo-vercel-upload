@@ -166,6 +166,15 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-20/video/1787142230751849181-1787142230737.mp4"
   },
   {
+    title: "Crelavo 3D FOMO Finale",
+    kicker: "3D brand film",
+    description: "A premium 30-second character-led 3D showcase that turns silence into answers and finishes with a strong Crelavo lockup.",
+    href: "/showcase/videos/crelavo-3d-fomo-final",
+    tone: "cyan",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-00/image/1787155537457175005-1787155537453.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787155138005712557-1787155137974.mp4"
+  },
+  {
     title: "Phoenix Awakening",
     kicker: "3D animation",
     description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",

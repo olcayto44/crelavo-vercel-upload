@@ -184,6 +184,23 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["FOMO hook", "Ecommerce sellers", "Homepage visual proof", "Social ad teaser"]
   },
   {
+    id: "crelavo-3d-fomo-final",
+    title: "Crelavo 3D FOMO Finale",
+    kicker: "3D brand film",
+    description: "A premium 30-second character-led 3D showcase that turns silence into answers and finishes with a strong Crelavo lockup.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-00/image/1787155537457175005-1787155537453.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-19-23/video/1787155138005712557-1787155137974.mp4",
+    duration: "PT30S",
+    orientation: "portrait",
+    uploadDate: "2026-08-20T00:00:00.000Z",
+    details: [
+      "This 3D finale combines multiple customer types, a premium futuristic ecommerce city and a clean FOMO-to-solution arc.",
+      "The first half focuses on unanswered questions and tension, while the second half reveals Crelavo as the always-on sales engine.",
+      "Best for homepage proof, social distribution and a high-end showcase example that demonstrates more advanced 3D branding capability."
+    ],
+    bestFor: ["3D brand film", "FOMO hook", "Homepage visual proof", "Social teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",
