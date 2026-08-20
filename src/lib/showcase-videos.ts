@@ -235,6 +235,74 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Action film", "Police chase", "Homepage visual proof", "Social teaser"]
   },
   {
+    id: "crelavo-luxury-coastal-fashion",
+    title: "Crelavo Luxury Coastal Fashion",
+    kicker: "Luxury fashion",
+    description: "A premium Mediterranean fashion film with a convertible, silk scarf and elegant coastal styling.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253979061732592-1787253979051.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/4893e8de-028e-4e4f-bc25-b785e874b241/output.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T03:00:00.000Z",
+    details: [
+      "This fashion film uses a sunlit coastal road, luxury styling and polished vacation energy for a premium ad feel.",
+      "The video works as a lifestyle showcase with elegant motion, editorial composition and a clean ending frame.",
+      "Best for homepage visual proof, luxury branding and social media presentation."
+    ],
+    bestFor: ["Luxury fashion", "Coastal ad", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-giant-couture-city",
+    title: "Crelavo Giant Couture City",
+    kicker: "Fashion surreal",
+    description: "A surreal couture city film with a giant runway model moving through a premium Manhattan street scene.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253977282494233-1787253977253.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/45a50e49-cb96-43db-915f-115e4fa01b3e/output.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T03:00:00.000Z",
+    details: [
+      "This surreal fashion film turns Manhattan into a giant editorial runway with luxury styling and oversized scale.",
+      "The sequence is playful, polished and high-fashion, with clear visual drama and strong concept identity.",
+      "Best for creative branding, social teaser use and homepage visual proof."
+    ],
+    bestFor: ["Fashion surreal", "City runway", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-ramen-hyper-motion",
+    title: "Crelavo Ramen Hyper Motion",
+    kicker: "Food commercial",
+    description: "A high-energy ramen commercial with macro shots, steam bursts and fast product motion.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253981845463000-1787253981825.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/0ddf1a60-3c72-477c-bea2-2faf16f3e996/output.mp4",
+    duration: "PT8S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T03:00:00.000Z",
+    details: [
+      "This food spot uses macro packaging detail, steam, noodle lift shots and a polished food-commercial rhythm.",
+      "The visuals are bright, energetic and product-centered, making the ramen feel premium and craveable.",
+      "Best for snackable social formats and food showcase use."
+    ],
+    bestFor: ["Food commercial", "Macro product ad", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-pet-fashion-campaign",
+    title: "Crelavo Pet Fashion Campaign",
+    kicker: "Pet fashion",
+    description: "A colorful premium pet-fashion showcase with four dogs in editorial sweater looks.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253978745637351-1787253978729.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T03:00:00.000Z",
+    details: [
+      "This pet-fashion film cycles through four adorable dogs in themed sweater looks with clean editorial staging.",
+      "The pacing is bright, cute and polished, with clear product visibility and premium campaign styling.",
+      "Best for social distribution, lifestyle branding and pet-fashion showcase use."
+    ],
+    bestFor: ["Pet fashion", "Lifestyle ad", "Homepage visual proof", "Social teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",
