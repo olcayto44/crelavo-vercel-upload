@@ -229,15 +229,43 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4"
   },
   {
-    title: "Phoenix Awakening",
-    kicker: "3D animation",
-    description: "A vivid mechanical phoenix teaser built for cinematic social-first storytelling.",
-    href: "/showcase/videos/phoenix-awakening",
-    tone: "amber",
-    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-08-23/video/1786203250578603803-1786203250560.mp4"
+    title: "Crelavo Luxury Coastal Fashion",
+    kicker: "Luxury fashion",
+    description: "A premium Mediterranean fashion film with a convertible, silk scarf and elegant coastal styling.",
+    href: "/showcase/videos/crelavo-luxury-coastal-fashion",
+    tone: "cyan",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253979061732592-1787253979051.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/4893e8de-028e-4e4f-bc25-b785e874b241/output.mp4"
   },
   {
-    title: "Origami Dragon Meteor",
+    title: "Crelavo Giant Couture City",
+    kicker: "Fashion surreal",
+    description: "A surreal couture city film with a giant runway model moving through a premium Manhattan street scene.",
+    href: "/showcase/videos/crelavo-giant-couture-city",
+    tone: "purple",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253977282494233-1787253977253.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/45a50e49-cb96-43db-915f-115e4fa01b3e/output.mp4"
+  },
+  {
+    title: "Crelavo Ramen Hyper Motion",
+    kicker: "Food commercial",
+    description: "A high-energy ramen commercial with macro shots, steam bursts and fast product motion.",
+    href: "/showcase/videos/crelavo-ramen-hyper-motion",
+    tone: "pink",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253981845463000-1787253981825.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/0ddf1a60-3c72-477c-bea2-2faf16f3e996/output.mp4"
+  },
+  {
+    title: "Crelavo Pet Fashion Campaign",
+    kicker: "Pet fashion",
+    description: "A colorful premium pet-fashion showcase with four dogs in editorial sweater looks.",
+    href: "/showcase/videos/crelavo-pet-fashion-campaign",
+    tone: "green",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253978745637351-1787253978729.png",
+    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4"
+  },
+  {
+    title: "Phoenix Awakening",
     kicker: "Anime short film",
     description: "A fast neon anime teaser with a paper crane transforming into a luminous dragon.",
     href: "/showcase/videos/origami-dragon-meteor",
