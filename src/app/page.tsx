@@ -238,20 +238,103 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258261420071662-1787258261329.mp4"
   },
   {
-    title: "Phoenix Awakening",
-    kicker: "Anime short film",
-    description: "A fast neon anime teaser with a paper crane transforming into a luminous dragon.",
-    href: "/showcase/videos/origami-dragon-meteor",
-    tone: "pink",
-    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-01/video/1786209159798605867-1786209159793.mp4"
+    title: "Crelavo Dog Dental Care",
+    kicker: "Pet wellness ad",
+    description: "A playful dog dental care showcase with a golden retriever brushing its teeth in a modern bathroom.",
+    href: "/showcase/videos/crelavo-dog-dental-care",
+    tone: "green",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266916684260663-1787266916668.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266928389502609-1787266928367.mp4"
   },
   {
-    title: "Turkish Avatar Hook",
-    kicker: "Avatar speaker",
-    description: "A Turkish-speaking avatar ad with a direct FOMO hook for Crelavo showcase and social use.",
-    href: "/showcase/videos/turkish-avatar-hook",
-    tone: "blue",
-    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/video/1786219244367608234-1786219244348.mp4"
+    title: "Crelavo Relationship Cards",
+    kicker: "Couple UGC",
+    description: "A cozy couple card game video that turns date night conversation into a playful Crelavo experience.",
+    href: "/showcase/videos/crelavo-relationship-cards",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266917107224497-1787266917091.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266954242392122-1787266954162.mp4"
+  },
+  {
+    title: "Crelavo Summer Face Mist",
+    kicker: "Travel beauty",
+    description: "A hot-weather face mist ad showing a traveler cooling off on a sunny southern European street.",
+    href: "/showcase/videos/crelavo-summer-face-mist",
+    tone: "cyan",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266920302906085-1787266920284.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266951793570956-1787266951727.mp4"
+  },
+  {
+    title: "Crelavo Emerald Satin Dress",
+    kicker: "Fashion try-on",
+    description: "A fashion unboxing and try-on featuring an emerald satin dress in a clean modern bedroom setup.",
+    href: "/showcase/videos/crelavo-emerald-satin-dress",
+    tone: "green",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266904692353667-1787266904686.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266964022747698-1787266963954.mp4"
+  },
+  {
+    title: "Crelavo Holiday Skincare Set",
+    kicker: "Holiday gift set",
+    description: "A festive skincare unboxing with a limited-edition Crelavo holiday gift set and a strong FOMO beat.",
+    href: "/showcase/videos/crelavo-holiday-skincare-set",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266914074902920-1787266914060.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266943087113873-1787266943066.mp4"
+  },
+  {
+    title: "Crelavo Leopard Chain Bag",
+    kicker: "Fashion product",
+    description: "A fashion showcase for a leopard-print plush chain bag with editorial styling and a Crelavo end card.",
+    href: "/showcase/videos/crelavo-leopard-chain-bag",
+    tone: "purple",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266915208416909-1787266915187.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266949234140310-1787266949179.mp4"
+  },
+  {
+    title: "Crelavo Kung Fu Action Trailer",
+    kicker: "Action trailer",
+    description: "A cinematic kung fu and ninja action teaser with a bold CRELAVO brand reveal at the end.",
+    href: "/showcase/videos/crelavo-kungfu-action-trailer",
+    tone: "pink",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266923584815849-1787266923573.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266956981101989-1787266956836.mp4"
+  },
+  {
+    title: "Crelavo Giant Fashion City",
+    kicker: "Luxury fashion CGI",
+    description: "A giant high-fashion model walks through New York streets in a surreal Crelavo luxury fashion showcase.",
+    href: "/showcase/videos/crelavo-giant-fashion-city",
+    tone: "purple",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787267710185648721-1787267710174.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787267730249802518-1787267730205.mp4"
+  },
+  {
+    title: "Crelavo Ramen Flavor Ad",
+    kicker: "Food commercial",
+    description: "A fast ramen product commercial with package reveals, steam, toppings and bold food-ad energy.",
+    href: "/showcase/videos/crelavo-ramen-flavor-ad",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787267702638085704-1787267702630.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787267720593168612-1787267720571.mp4"
+  },
+  {
+    title: "Crelavo Dog Sweater Fashion",
+    kicker: "Pet fashion",
+    description: "A colorful pet fashion video featuring a playful dog sweater in a bright studio scene.",
+    href: "/showcase/videos/crelavo-dog-sweater-fashion",
+    tone: "green",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787267708940606422-1787267708921.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787267738304294054-1787267738256.mp4"
+  },
+  {
+    title: "Crelavo Coastal Bag Escape",
+    kicker: "Luxury lifestyle",
+    description: "A Mediterranean luxury lifestyle ad with a classic convertible, coastal sunset and white handbag hero moment.",
+    href: "/showcase/videos/crelavo-coastal-bag-escape",
+    tone: "cyan",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787267707134596833-1787267707123.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787267718420940492-1787267718386.mp4"
   },
   {
     title: "Luxury Serum Demo",
