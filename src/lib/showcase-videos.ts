@@ -235,72 +235,89 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Action film", "Police chase", "Homepage visual proof", "Social teaser"]
   },
   {
-    id: "crelavo-luxury-coastal-fashion",
-    title: "Crelavo Luxury Coastal Fashion",
-    kicker: "Luxury fashion",
-    description: "A premium Mediterranean fashion film with a convertible, silk scarf and elegant coastal styling.",
-    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253979061732592-1787253979051.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/4893e8de-028e-4e4f-bc25-b785e874b241/output.mp4",
+    id: "crelavo-fruit-market-clash",
+    title: "Crelavo Fruit Market Clash",
+    kicker: "3D animation",
+    description: "A playful 3D fruit market showdown between anthropomorphic fruit characters, ending with a Crelavo logo beat.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258230695181931-1787258230674.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258253377667830-1787258253312.mp4",
     duration: "PT15S",
     orientation: "portrait",
-    uploadDate: "2026-08-21T03:00:00.000Z",
+    uploadDate: "2026-08-21T04:00:00.000Z",
     details: [
-      "This fashion film uses a sunlit coastal road, luxury styling and polished vacation energy for a premium ad feel.",
-      "The video works as a lifestyle showcase with elegant motion, editorial composition and a clean ending frame.",
-      "Best for homepage visual proof, luxury branding and social media presentation."
+      "A 3D animated fruit market scene with a heated face-off between anthropomorphic fruit characters.",
+      "The sequence plays like a fun social teaser with clear character staging and an ending Crelavo brand moment.",
+      "Best for homepage visual proof, playful animation showcases and social teaser use."
     ],
-    bestFor: ["Luxury fashion", "Coastal ad", "Homepage visual proof", "Social teaser"]
+    bestFor: ["3D animation", "Character comedy", "Homepage visual proof", "Social teaser"]
   },
   {
-    id: "crelavo-giant-couture-city",
-    title: "Crelavo Giant Couture City",
-    kicker: "Fashion surreal",
-    description: "A surreal couture city film with a giant runway model moving through a premium Manhattan street scene.",
-    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253977282494233-1787253977253.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/45a50e49-cb96-43db-915f-115e4fa01b3e/output.mp4",
+    id: "crelavo-sunset-soda-spot",
+    title: "Crelavo Sunset Soda Spot",
+    kicker: "Drink ad",
+    description: "A premium drink spot with a young model, sunset interiors and a fresh bottled beverage reveal.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258220675781756-1787258220594.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258250308448564-1787258250278.mp4",
     duration: "PT15S",
     orientation: "portrait",
-    uploadDate: "2026-08-21T03:00:00.000Z",
+    uploadDate: "2026-08-21T04:00:00.000Z",
     details: [
-      "This surreal fashion film turns Manhattan into a giant editorial runway with luxury styling and oversized scale.",
-      "The sequence is playful, polished and high-fashion, with clear visual drama and strong concept identity.",
-      "Best for creative branding, social teaser use and homepage visual proof."
+      "A beverage commercial with a polished lifestyle setting and a product-first reveal.",
+      "The clip works as a clean premium ad example with a relaxed but aspirational mood.",
+      "Best for homepage visual proof, beverage branding and social teaser use."
     ],
-    bestFor: ["Fashion surreal", "City runway", "Homepage visual proof", "Social teaser"]
+    bestFor: ["Drink ad", "Lifestyle commercial", "Homepage visual proof", "Social teaser"]
   },
   {
-    id: "crelavo-ramen-hyper-motion",
-    title: "Crelavo Ramen Hyper Motion",
-    kicker: "Food commercial",
-    description: "A high-energy ramen commercial with macro shots, steam bursts and fast product motion.",
-    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253981845463000-1787253981825.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/0ddf1a60-3c72-477c-bea2-2faf16f3e996/output.mp4",
-    duration: "PT8S",
-    orientation: "portrait",
-    uploadDate: "2026-08-21T03:00:00.000Z",
-    details: [
-      "This food spot uses macro packaging detail, steam, noodle lift shots and a polished food-commercial rhythm.",
-      "The visuals are bright, energetic and product-centered, making the ramen feel premium and craveable.",
-      "Best for snackable social formats and food showcase use."
-    ],
-    bestFor: ["Food commercial", "Macro product ad", "Homepage visual proof", "Social teaser"]
-  },
-  {
-    id: "crelavo-pet-fashion-campaign",
-    title: "Crelavo Pet Fashion Campaign",
-    kicker: "Pet fashion",
-    description: "A colorful premium pet-fashion showcase with four dogs in editorial sweater looks.",
-    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253978745637351-1787253978729.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4",
+    id: "crelavo-lip-balm-glow",
+    title: "Crelavo Lip Balm Glow",
+    kicker: "Beauty demo",
+    description: "A close-up beauty clip showing lip balm application in a clean, soft-lit home setting.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258222564153770-1787258222557.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258257702490335-1787258257588.mp4",
     duration: "PT15S",
     orientation: "portrait",
-    uploadDate: "2026-08-21T03:00:00.000Z",
+    uploadDate: "2026-08-21T04:00:00.000Z",
     details: [
-      "This pet-fashion film cycles through four adorable dogs in themed sweater looks with clean editorial staging.",
-      "The pacing is bright, cute and polished, with clear product visibility and premium campaign styling.",
-      "Best for social distribution, lifestyle branding and pet-fashion showcase use."
+      "A soft beauty demo centered on lip balm application and product visibility.",
+      "The staging feels clean, intimate and natural, making it fit beauty and skincare showcase use.",
+      "Best for homepage visual proof, beauty branding and social teaser use."
     ],
-    bestFor: ["Pet fashion", "Lifestyle ad", "Homepage visual proof", "Social teaser"]
+    bestFor: ["Beauty demo", "Lip care ad", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-leopard-chain-bag",
+    title: "Crelavo Leopard Chain Bag",
+    kicker: "Fashion product",
+    description: "A fashion showcase for a leopard-print plush chain bag with editorial styling and a Crelavo end card.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258214693526486-1787258214677.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258254311441935-1787258254277.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:00:00.000Z",
+    details: [
+      "A fashion product spotlight built around a leopard-print bag with strong editorial styling.",
+      "The clip feels premium and retail-friendly, with clear product focus and a branded ending beat.",
+      "Best for homepage visual proof, fashion commerce and social teaser use."
+    ],
+    bestFor: ["Fashion product", "Bag showcase", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-headphone-escape",
+    title: "Crelavo Headphone Escape",
+    kicker: "Audio lifestyle",
+    description: "A modern headphone spot showing a young woman tuning out the world and settling into music and calm.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258223407955531-1787258223393.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258261420071662-1787258261329.mp4",
+    duration: "PT15S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:00:00.000Z",
+    details: [
+      "A calm headphone lifestyle clip that moves from distraction to focus and quiet enjoyment.",
+      "The edit supports a premium audio-product mood with a clear emotional payoff and brand ending.",
+      "Best for homepage visual proof, audio branding and social teaser use."
+    ],
+    bestFor: ["Audio lifestyle", "Headphone ad", "Homepage visual proof", "Social teaser"]
   },
   {
     id: "phoenix-awakening",

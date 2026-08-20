@@ -193,76 +193,49 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-20-03/video/1787168057354200695-1787168057200.mp4"
   },
   {
-    title: "Crelavo Luxury Coastal Fashion",
-    kicker: "Luxury fashion",
-    description: "A premium Mediterranean fashion film with a convertible, silk scarf and elegant coastal styling.",
-    href: "/showcase/videos/crelavo-luxury-coastal-fashion",
+    title: "Crelavo Fruit Market Clash",
+    kicker: "3D animation",
+    description: "A playful 3D fruit market showdown between anthropomorphic fruit characters, ending with a Crelavo logo beat.",
+    href: "/showcase/videos/crelavo-fruit-market-clash",
+    tone: "amber",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258230695181931-1787258230674.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258253377667830-1787258253312.mp4"
+  },
+  {
+    title: "Crelavo Sunset Soda Spot",
+    kicker: "Drink ad",
+    description: "A premium drink spot with a young model, sunset interiors and a fresh bottled beverage reveal.",
+    href: "/showcase/videos/crelavo-sunset-soda-spot",
     tone: "cyan",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253979061732592-1787253979051.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/4893e8de-028e-4e4f-bc25-b785e874b241/output.mp4"
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258220675781756-1787258220594.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258250308448564-1787258250278.mp4"
   },
   {
-    title: "Crelavo Giant Couture City",
-    kicker: "Fashion surreal",
-    description: "A surreal couture city film with a giant runway model moving through a premium Manhattan street scene.",
-    href: "/showcase/videos/crelavo-giant-couture-city",
-    tone: "purple",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253977282494233-1787253977253.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/45a50e49-cb96-43db-915f-115e4fa01b3e/output.mp4"
-  },
-  {
-    title: "Crelavo Ramen Hyper Motion",
-    kicker: "Food commercial",
-    description: "A high-energy ramen commercial with macro shots, steam bursts and fast product motion.",
-    href: "/showcase/videos/crelavo-ramen-hyper-motion",
+    title: "Crelavo Lip Balm Glow",
+    kicker: "Beauty demo",
+    description: "A close-up beauty clip showing lip balm application in a clean, soft-lit home setting.",
+    href: "/showcase/videos/crelavo-lip-balm-glow",
     tone: "pink",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253981845463000-1787253981825.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/0ddf1a60-3c72-477c-bea2-2faf16f3e996/output.mp4"
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258222564153770-1787258222557.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258257702490335-1787258257588.mp4"
   },
   {
-    title: "Crelavo Pet Fashion Campaign",
-    kicker: "Pet fashion",
-    description: "A colorful premium pet-fashion showcase with four dogs in editorial sweater looks.",
-    href: "/showcase/videos/crelavo-pet-fashion-campaign",
-    tone: "green",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253978745637351-1787253978729.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4"
-  },
-  {
-    title: "Crelavo Luxury Coastal Fashion",
-    kicker: "Luxury fashion",
-    description: "A premium Mediterranean fashion film with a convertible, silk scarf and elegant coastal styling.",
-    href: "/showcase/videos/crelavo-luxury-coastal-fashion",
-    tone: "cyan",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253979061732592-1787253979051.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/4893e8de-028e-4e4f-bc25-b785e874b241/output.mp4"
-  },
-  {
-    title: "Crelavo Giant Couture City",
-    kicker: "Fashion surreal",
-    description: "A surreal couture city film with a giant runway model moving through a premium Manhattan street scene.",
-    href: "/showcase/videos/crelavo-giant-couture-city",
+    title: "Crelavo Leopard Chain Bag",
+    kicker: "Fashion product",
+    description: "A fashion showcase for a leopard-print plush chain bag with editorial styling and a Crelavo end card.",
+    href: "/showcase/videos/crelavo-leopard-chain-bag",
     tone: "purple",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253977282494233-1787253977253.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/45a50e49-cb96-43db-915f-115e4fa01b3e/output.mp4"
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258214693526486-1787258214677.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258254311441935-1787258254277.mp4"
   },
   {
-    title: "Crelavo Ramen Hyper Motion",
-    kicker: "Food commercial",
-    description: "A high-energy ramen commercial with macro shots, steam bursts and fast product motion.",
-    href: "/showcase/videos/crelavo-ramen-hyper-motion",
-    tone: "pink",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253981845463000-1787253981825.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/0ddf1a60-3c72-477c-bea2-2faf16f3e996/output.mp4"
-  },
-  {
-    title: "Crelavo Pet Fashion Campaign",
-    kicker: "Pet fashion",
-    description: "A colorful premium pet-fashion showcase with four dogs in editorial sweater looks.",
-    href: "/showcase/videos/crelavo-pet-fashion-campaign",
-    tone: "green",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-03/image/1787253978745637351-1787253978729.png",
-    videoUrl: "https://video-product.cdn.minimax.io/inference_output/rollout/2026-08-19/942bad2c-f8aa-4376-b666-1cb076f1afdd/output.mp4"
+    title: "Crelavo Headphone Escape",
+    kicker: "Audio lifestyle",
+    description: "A modern headphone spot showing a young woman tuning out the world and settling into music and calm.",
+    href: "/showcase/videos/crelavo-headphone-escape",
+    tone: "blue",
+    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258223407955531-1787258223393.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258261420071662-1787258261329.mp4"
   },
   {
     title: "Phoenix Awakening",
