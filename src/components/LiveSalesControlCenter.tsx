@@ -80,9 +80,7 @@ const avatarPreviewEndpoint = "/api/live-sales-agents/avatar-preview";
 
 
 const starterMessages: ChatMessage[] = [
-  { id: "m1", role: "assistant", text: "Hi, I can help you present products and answer customer questions." },
-  { id: "m2", role: "user", text: "How fast can it ship?" },
-  { id: "m3", role: "assistant", text: "Share the destination and I can answer with the right shipping estimate." }
+  { id: "m1", role: "assistant", text: "Hi, I can help with product questions, shipping, price, order support, or embed code." }
 ];
 
 function initialState(): WorkspaceState {
@@ -488,7 +486,7 @@ async function sendMessage() {
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
                     )}
                     <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
-                      <strong>{avatarPreview.provider || "provider"}</strong>
+                      <strong>MiniMax</strong>
                       <span>{avatarPreview.status || "preview"}</span>
                     </div>
                   </div>
