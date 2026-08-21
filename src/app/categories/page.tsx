@@ -66,7 +66,6 @@ export default async function CategoriesPage() {
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
             <Link className="btn" href="/live-sales-credits">Open live sales category</Link>
-            <Link className="btn secondary" href="/dashboard/live-sales-agent">Open avatar workspace</Link>
           </div>
         </section>
 

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LiveSalesControlCenter } from "@/components/LiveSalesControlCenter";
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 import { liveSalesServicePlans } from "@/lib/data";
 
@@ -30,26 +30,19 @@ const buyerBenefits = [
   "Monthly fair-use live hours are included; extra provider/API usage is billed separately when needed."
 ];
 
-const customerExamples = [
-  "A shoe store answering size, material and shipping questions.",
-  "A watch brand explaining product features and checkout concerns.",
-  "A cosmetics brand turning campaign traffic into warm leads.",
-  "Any store or website that wants a live sales assistant in their own account."
-];
-
 export default function LiveSalesCreditsPage() {
   return (
     <main className="container section pricing-page">
       <section className="promo-top-layout">
         <div>
           <span className="badge">Live commerce service</span>
-          <h1>Live sales plans for the customer’s own brand accounts</h1>
-          <p className="section-lead">This service is for buyers who want to use a live sales avatar on their own social media, ecommerce store or website. They pay for the service, connect their brand and let the avatar sell, explain and support their customers.</p>
+          <h1>Build the live sales avatar on this page, then choose the plan below</h1>
+          <p className="section-lead">This page is the full Crelavo live sales category. The visitor can read the explanation, configure the avatar here, and then choose the monthly plan for their own social media, ecommerce store or website.</p>
         </div>
         <div className="card selected-billing-card">
-          <span className="badge">How it works</span>
-          <h3>Choose plan → checkout → use on your own account</h3>
-          <p>Plans are monthly service subscriptions with fair-use live hours and pay-as-you-go provider/API usage when required.</p>
+          <span className="badge">One page flow</span>
+          <h3>No workspace hopping</h3>
+          <p>Configure the avatar here, choose a plan here, and continue with the same service page.</p>
         </div>
       </section>
 
@@ -77,14 +70,10 @@ export default function LiveSalesCreditsPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <h2>Good for sellers who need to talk about</h2>
-        <div className="grid" style={{ marginTop: 12 }}>
-          {customerExamples.map((item) => (
-            <div className="selected-billing-card" key={item}>
-              <p style={{ margin: 0 }}>{item}</p>
-            </div>
-          ))}
-        </div>
+        <span className="badge">Avatar creation</span>
+        <h2>Create the live sales avatar here</h2>
+        <p className="section-lead">Choose the platform, avatar type, voice, language, tone, product info, shipping rules and order support flow on the same page before checkout.</p>
+        <LiveSalesControlCenter />
       </section>
 
       <section style={{ marginTop: 28 }}>
@@ -108,7 +97,6 @@ export default function LiveSalesCreditsPage() {
               </ul>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
                 <PaymentCheckoutButton productId={plan.id} billing="monthly">Checkout</PaymentCheckoutButton>
-                <Link className="btn secondary" href="/dashboard/live-sales-agent">Open avatar workspace</Link>
               </div>
             </div>
           ))}
@@ -119,10 +107,6 @@ export default function LiveSalesCreditsPage() {
         <span className="badge">Recommended route</span>
         <h2>Use this page when you want a live sales assistant in your own brand environment</h2>
         <p className="section-lead">If you only need a one-off video, go to the video products. If you want a recurring sales assistant service with monthly live hours for your own channels, this is the right entry point.</p>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-          <Link className="btn" href="/dashboard/live-sales-agent">Open live sales workspace</Link>
-          <Link className="btn secondary" href="/pricing">Back to pricing overview</Link>
-        </div>
       </section>
     </main>
   );
