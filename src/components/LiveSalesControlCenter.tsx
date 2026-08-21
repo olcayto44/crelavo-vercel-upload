@@ -60,7 +60,7 @@ type LiveSalesAgentRecord = {
 const storageKey = "clipora-live-sales-avatar-v3";
 
 const voiceOptions = ["Natural Female", "Natural Male", "Brand Voice", "Own voice upload"];
-const languageOptions = ["English", "Turkish", "German", "French", "Dutch", "Chinese", "Japanese", "Arabic", "Bilingual", "Multilingual"];
+const languageOptions = ["English", "German", "French", "Dutch", "Chinese", "Japanese", "Arabic", "Bilingual", "Multilingual"];
 const toneOptions = ["Warm", "Professional", "Sales-driven", "Friendly", "Luxury", "Expert"];
 const roleOptions = ["All-in-one host", "Sales assistant", "Product presenter", "Customer support", "Appointment assistant", "Course advisor", "Lead qualification", "Service consultant"];
 const avatarSourceOptions = ["Ready avatar", "Create AI avatar", "Upload my photo", "Upload brand character", "Use real person video"];
@@ -142,36 +142,23 @@ function embedCode(platform: string, currentAgentId = agentId) {
 
 function assistantReply(message: string) {
   const text = message.toLowerCase();
-  const looksTurkish = /[ğüşöçıİ]/i.test(message) || ["kargo", "sipariş", "satış", "tanıtım", "ürün", "lazım", "iade"].some((word) => text.includes(word));
 
   if (["all", "hepsi", "tamamı", "tanıtım", "satış", "sipariş", "kargo"].filter((word) => text.includes(word)).length >= 2) {
-    return looksTurkish
-      ? "Yes, the best role is All-in-one host. One avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect product category, sales channel, and shipping/order data."
-      : "Yes, the best role is All-in-one host. One avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect product catalog, sales channel, and shipping/order data.";
+    return "Yes, the best role is All-in-one host. One avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect product catalog, sales channel, and shipping/order data.";
   }
   if (text.includes("kargo") || text.includes("ship") || text.includes("delivery") || text.includes("cargo")) {
-    return looksTurkish
-      ? "Kargo entegrasyonu bağlandığında avatar takip numarası, kargo firması ve tahmini teslimat bilgisini müşteriye açıklayabilir."
-      : "Once shipping is connected, the avatar can explain carrier, tracking number, and estimated delivery timing.";
+    return "Once shipping is connected, the avatar can explain carrier, tracking number, and estimated delivery timing.";
   }
   if (text.includes("sipariş") || text.includes("order")) {
-    return looksTurkish
-      ? "Sipariş sistemi bağlandığında avatar sipariş numarası, e-posta veya telefon doğrulamasıyla sipariş durumunu cevaplayabilir."
-      : "Once order data is connected, the avatar can answer order status using order number, email, or phone verification.";
+    return "Once order data is connected, the avatar can answer order status using order number, email, or phone verification.";
   }
   if (text.includes("satış") || text.includes("price") || text.includes("cost") || text.includes("discount") || text.includes("sales")) {
-    return looksTurkish
-      ? "The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout."
-      : "The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout.";
+    return "The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout.";
   }
   if (text.includes("tanıtım") || text.includes("ürün") || text.includes("product") || text.includes("feature") || text.includes("promotion")) {
-    return looksTurkish
-      ? "The avatar can present your product, explain key benefits, and deliver the offer in your brand tone."
-      : "The avatar can present your product, explain key benefits, and deliver the offer in your brand tone.";
+    return "The avatar can present your product, explain key benefits, and deliver the offer in your brand tone.";
   }
-  return looksTurkish
-    ? "I can help set up a live avatar for product promotion, sales, order support, and shipping questions. Tell me what you want it to do."
-    : "I can help set up a live avatar for product promotion, sales, order support, and shipping questions. Tell me what you want it to do.";
+  return "I can help set up a live avatar for product promotion, sales, order support, and shipping questions. Tell me what you want it to do.";
 }
 
 export function LiveSalesControlCenter() {
@@ -192,19 +179,11 @@ export function LiveSalesControlCenter() {
     try {
       const parsed = JSON.parse(localStorage.getItem(storageKey) || "null") as Partial<WorkspaceState> | null;
       if (parsed) {
-        const normalizedMessages = Array.isArray(parsed.chatMessages) && parsed.chatMessages.length
-          ? parsed.chatMessages.map((message) => ({
-              id: String(message.id || `message-${Date.now()}`),
-              role: message.role === "user" ? "user" as const : "assistant" as const,
-              text: String(message.text || "")
-            })).filter((message) => message.text.trim())
-          : starterMessages;
-
         setState((current) => ({
           ...current,
           ...parsed,
-          draftMessage: parsed.draftMessage || "",
-          chatMessages: normalizedMessages
+          draftMessage: "",
+          chatMessages: starterMessages
         }));
       }
     } catch {
@@ -309,9 +288,8 @@ function liveSalesContextPrompt() {
   return `Live Sales Avatar setup:\nPlatform: ${state.platform}\nIndustry / use case: ${state.industry}\nAvatar source: ${state.avatarSource}\nAvatar role: ${state.role}\nLanguage: ${state.language}\nVoice: ${state.voice}\nTone: ${state.tone}\nProduct/business info: ${state.productInfo}\nShipping/delivery policy: ${state.shippingInfo}\nOrder support flow: ${state.orderInfo}\nThe assistant should answer like a live sales avatar for the seller's customers. It should use product, shipping, delivery, order and return context when available. It should not invent real tracking numbers or order statuses; if order data is missing, ask for order number and verification or explain that integration is needed.`;
 }
 
-function detectLanguage(message: string) {
-  const text = message.toLowerCase();
-  return /[ğüşöçıİ]/i.test(message) || ["kargo", "sipariş", "satış", "tanıtım", "ürün", "lazım", "iade"].some((word) => text.includes(word)) ? "tr" : "en";
+function detectLanguage() {
+  return "en";
 }
 
 async function saveAvatarSetup() {
@@ -434,7 +412,7 @@ async function refreshAvatarPreviewStatus() {
     if (!response.ok) throw new Error(String(data.error || "Could not refresh avatar preview status."));
     const nextPreview = data.avatar_preview as AvatarPreviewRecord;
     setAvatarPreview(nextPreview);
-    setPreviewMessage(nextPreview.previewUrl ? "Avatar preview hazır. Link açılabilir." : `Avatar preview status: ${nextPreview.status || "generating"}.`);
+    setPreviewMessage(nextPreview.previewUrl ? "Avatar preview is ready. The link can be opened." : `Avatar preview status: ${nextPreview.status || "generating"}.`);
   } catch (error) {
     setPreviewMessage(error instanceof Error ? error.message : "Could not refresh avatar preview status.");
   } finally {
@@ -451,8 +429,9 @@ async function sendMessage() {
   setState((current) => ({ ...current, draftMessage: "", chatMessages: [...current.chatMessages, nextUserMessage] }));
   setSending(true);
 
-  const language = detectLanguage(message);
-  const localFallback = assistantReply(message);
+      const language = detectLanguage();
+      const localFallback = assistantReply(message);
+
 
   try {
     const auth = await requireVerifiedBrowserUser();

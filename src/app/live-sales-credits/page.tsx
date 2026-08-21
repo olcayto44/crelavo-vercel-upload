@@ -33,7 +33,7 @@ const buyerBenefits = [
 
 export default function LiveSalesCreditsPage() {
   return (
-    <main className="container section pricing-page">
+    <main className="container section pricing-page live-sales-page">
       <section className="promo-top-layout">
         <div>
           <span className="badge">Live commerce service</span>

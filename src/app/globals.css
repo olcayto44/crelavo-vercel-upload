@@ -641,6 +641,20 @@ img, video {
   box-shadow: 0 24px 80px #0000002e;
 }
 
+.live-sales-page .card,
+.live-sales-page .selected-billing-card,
+.live-sales-page .payment-checkout-card,
+.live-sales-page .payment-summary-card {
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 18px 52px rgba(0,0,0,.18);
+}
+
+.live-sales-page .clickable-credit-card,
+.live-sales-page .credit-sale-card {
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 18px 50px rgba(0,0,0,.16);
+}
+
 .card h2, .card h3, .production-hero-card h1, .production-hero-card h2, .production-hero-card h3 {
   margin-top: 10px;
   margin-bottom: 8px;
@@ -3145,6 +3159,223 @@ body.admin-route > .site-footer {
 
 .button-nav {
   overflow-x: auto;
+}
+
+.live-sales-avatar-layout {
+  grid-template-columns: minmax(0, 1.45fr) minmax(360px, .92fr);
+  align-items: stretch;
+  gap: 18px;
+  display: grid;
+}
+
+.live-sales-avatar-stage,
+.live-sales-assistant-rail {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.live-sales-avatar-stage {
+  padding: 16px 18px 18px;
+}
+
+.live-sales-avatar-frame {
+  grid-template-columns: minmax(380px, 1.28fr) minmax(0, .72fr);
+  align-items: start;
+  gap: 18px;
+  display: grid;
+  margin-top: 0;
+}
+
+.live-sales-avatar-copy {
+  padding-top: 0;
+}
+
+.live-sales-avatar-plan-inline {
+  width: 100%;
+}
+
+.live-sales-avatar-visual {
+  position: relative;
+  min-height: 680px;
+  border-radius: 30px;
+  background: radial-gradient(circle at 50% 20%, rgba(34,211,238,.34), transparent 35%), radial-gradient(circle at 50% 55%, rgba(124,92,255,.32), transparent 46%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(9,14,28,.92));
+  border: 1px solid rgba(125,211,252,.22);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 24px 70px rgba(0,0,0,.32);
+  display: grid;
+  place-items: center;
+}
+
+.live-sales-avatar-live-pill {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(239,68,68,.18);
+  color: #fecaca;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.live-sales-avatar-face {
+  width: min(78%, 420px);
+  aspect-ratio: 4 / 5;
+  border-radius: 36px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 52px;
+  letter-spacing: -.06em;
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 20px 60px rgba(0,0,0,.28);
+}
+
+.live-sales-avatar-copy {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.live-sales-plan-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 0;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(125,211,252,.18);
+  background: rgba(255,255,255,.055);
+}
+
+.live-sales-plan-strip.compact {
+  margin-top: 0;
+  padding: 10px 12px;
+}
+
+.live-sales-plan-strip span {
+  color: #dbeafe;
+  font-size: 13px;
+}
+
+.live-sales-preferences-card {
+  margin-top: 2px;
+}
+
+.live-sales-accordion-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.live-sales-accordion-item {
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.025);
+}
+
+.live-sales-accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  color: #e5eefc;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.live-sales-accordion-head span {
+  font-size: 13px;
+  color: #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.live-sales-accordion-head strong {
+  color: #fff;
+  font-size: 13px;
+  text-align: right;
+}
+
+.live-sales-option-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.live-sales-option-chip {
+  border: 1px solid rgba(125,211,252,.12);
+  border-radius: 999px;
+  padding: 8px 11px;
+  color: #dbeafe;
+  background: rgba(255,255,255,.04);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.live-sales-option-chip.active {
+  color: #08111f;
+  background: linear-gradient(135deg, #67e8f9, #a78bfa);
+  border-color: transparent;
+  font-weight: 800;
+}
+
+.live-sales-code-block {
+  width: 100%;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  border-radius: 16px;
+  border: 1px solid rgba(125,211,252,.16);
+  background: rgba(2,6,23,.62);
+  color: #dbeafe;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.live-sales-assistant-rail {
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.live-sales-chat-window {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-height: 260px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 24px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  overscroll-behavior: contain;
+}
+
+.live-sales-chat-window .chat-bubble.user {
+  margin-left: auto;
+  background: rgba(34,211,238,.14);
+}
+
+@media (max-width: 1100px) {
+  .live-sales-avatar-layout,
+  .live-sales-avatar-frame {
+    grid-template-columns: 1fr;
+  }
+
+  .live-sales-avatar-visual {
+    min-height: 460px;
+  }
 }
 
 .footer {
@@ -12209,9 +12440,45 @@ html body .production-detail-shell .final-delivery-card .delivery-action-grid a 
   text-align: center !important;
   line-height: 1.25 !important;
 }
-html body .production-detail-shell .project-package-note {
+html body .production-detail-shell .distribution-launch-grid {
   display: grid !important;
-  gap: 8px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin-top: 8px !important;
+}
+html body .production-detail-shell .distribution-launch-card {
+  display: grid !important;
+  gap: 10px !important;
+  padding: 16px !important;
+  border: 1px solid rgba(148,163,184,.18) !important;
+  border-radius: 18px !important;
+  background: rgba(15,23,42,.56) !important;
+  box-shadow: 0 18px 45px rgba(2,6,23,.18) !important;
+}
+html body .production-detail-shell .distribution-launch-card h3 {
+  margin: 0 !important;
+  color: #f8fbff !important;
+  line-height: 1.25 !important;
+}
+html body .production-detail-shell .distribution-launch-card p {
+  margin: 0 !important;
+  color: #cbd5e1 !important;
+  line-height: 1.55 !important;
+}
+html body .production-detail-shell .distribution-launch-card .production-part-actions {
+  grid-template-columns: 1fr !important;
+}
+html body .production-detail-shell .distribution-launch-card .social-chip-row {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+}
+html body .production-detail-shell .distribution-launch-card .social-chip-row span {
+  background: rgba(14,165,233,.12) !important;
+  color: #dbeafe !important;
+  border-color: rgba(14,165,233,.22) !important;
+}
+html body .production-detail-shell .project-package-note + .customer-preview-actions,
+html body .production-detail-shell .customer-preview-actions {
   width: min(920px, 100%) !important;
   box-sizing: border-box !important;
   margin: 18px auto 18px !important;

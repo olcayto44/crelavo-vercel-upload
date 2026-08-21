@@ -16,7 +16,7 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
   const livePlan = isLiveSalesService ? liveSalesServicePlans.find((plan) => plan.id === selectedPackage.id) ?? liveSalesServicePlans[0] : null;
 
   return (
-    <main className="container section payment-page payment-dashboard-shell">
+    <main className="container section payment-page payment-dashboard-shell live-sales-page">
       <section className="promo-top-layout compact-production-hero">
         <div>
           <span className="badge">Checkout</span>
