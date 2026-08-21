@@ -7,8 +7,6 @@ import { usePathname } from "next/navigation";
 const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout", "/dashboard/assistant-workspace"];
 const defaultAgentId = process.env.NEXT_PUBLIC_LIVE_SALES_AGENT_ID || "agent_demo_live_sales_001";
 const publicAgentEndpoint = "/api/live-sales-agents";
-const heygenBrandAvatarPosterUrl = "https://dynamic.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/v05da9514522743039a8c4e8b76c19522/b0578cda37b142c3bcc882bb97efec8d.jpeg";
-const heygenBrandAvatarVideoUrl = "/api/heygen?action=brand_avatar_proxy";
 
 type ChatMessage = {
   role: "assistant" | "user";
@@ -19,6 +17,17 @@ type PublicAgent = {
   agent_id?: string;
   availability?: string | null;
   metadata?: { avatarPreview?: { previewUrl?: string | null } } | null;
+};
+
+type AvatarVideo = {
+  provider?: string | null;
+  model?: string | null;
+  status?: string | null;
+  task_id?: string | null;
+  request_id?: string | null;
+  next?: string | null;
+  error?: string | null;
+  prompt?: string | null;
 };
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
@@ -56,10 +65,6 @@ function canShow(pathname: string | null) {
   return !hiddenPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
-function isDirectPreviewUrl(url?: string | null) {
-  return Boolean(url && (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url) || url.includes("action=brand_avatar_proxy") || url.includes("action=brand_avatar_video")));
-}
-
 function browserSpeechLang() {
   if (typeof navigator === "undefined") return "en-US";
   return navigator.languages?.[0] || navigator.language || "en-US";
@@ -69,7 +74,6 @@ export function PreviewSupportBox() {
   const pathname = usePathname();
   const allowed = useMemo(() => canShow(pathname), [pathname]);
   const [open, setOpen] = useState(true);
-  const [videoSoundOn, setVideoSoundOn] = useState(false);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("LIVE · always active");
   const [loading, setLoading] = useState(false);
@@ -82,12 +86,15 @@ export function PreviewSupportBox() {
   const [chatOpen, setChatOpen] = useState(false);
   const [avatarVideoFailed, setAvatarVideoFailed] = useState(false);
   const [listening, setListening] = useState(false);
+  const [avatarVideo, setAvatarVideo] = useState<AvatarVideo | null>(null);
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState("");
+  const [avatarVideoLoading, setAvatarVideoLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const avatarVideoRef = useRef<HTMLVideoElement | null>(null);
+  const avatarPollRef = useRef<number | null>(null);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const sessionIdRef = useRef<string>("");
   const agentId = defaultAgentId;
-  const activeAvatarUrl = heygenBrandAvatarVideoUrl;
 
   useEffect(() => {
     if (!chatRef.current) return;
@@ -125,12 +132,13 @@ export function PreviewSupportBox() {
 
   useEffect(() => {
     setAvatarVideoFailed(false);
-  }, [activeAvatarUrl]);
+  }, [avatarVideoUrl]);
 
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
       window.speechSynthesis?.cancel();
+      if (avatarPollRef.current) window.clearInterval(avatarPollRef.current);
     };
   }, []);
 
@@ -141,6 +149,41 @@ export function PreviewSupportBox() {
     return sessionIdRef.current;
   }
 
+  function clearAvatarPolling() {
+    if (avatarPollRef.current) {
+      window.clearInterval(avatarPollRef.current);
+      avatarPollRef.current = null;
+    }
+  }
+
+function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
+  setAvatarVideo(next);
+  setAvatarVideoUrl(nextUrl);
+}
+
+  async function pollAvatarTask(taskUrl: string) {
+    try {
+      const response = await fetch(taskUrl, { cache: "no-store" });
+      const data = await response.json().catch(() => ({}));
+      const result = data?.result ?? data;
+      const task = result?.task ?? result?.data?.task ?? result?.data ?? result;
+      const statusValue = String(task?.status || task?.state || data?.status || "").toLowerCase();
+      const videoUrl = String(task?.content?.url || task?.video_url || task?.videoUrl || task?.url || task?.result?.url || "").trim();
+      if (videoUrl) {
+        clearAvatarPolling();
+        setAvatarState({ ...avatarVideo, status: statusValue || "succeeded" }, videoUrl);
+        setStatus("LIVE · avatar speaking");
+        return;
+      }
+      if (/failed|cancelled|canceled/.test(statusValue)) {
+        clearAvatarPolling();
+        setStatus("LIVE · avatar generation failed");
+      }
+    } catch {
+      // keep polling if the task endpoint is temporarily unavailable
+    }
+  }
+
   async function sendMessage(rawInput?: string) {
     const message = String(rawInput ?? input).trim();
     if (!message || loading) return;
@@ -149,6 +192,9 @@ export function PreviewSupportBox() {
     setChatOpen(true);
     setMessages((current) => [...current, { role: "user", content: message }]);
     setLoading(true);
+    setAvatarVideoLoading(true);
+    setAvatarVideoUrl("");
+    clearAvatarPolling();
     setStatus("LIVE · thinking");
 
     const fallback = "The Crelavo live sales avatar is ready. Ask in any language about categories, credits, campaigns, production, websites, apps, video, or general AI questions.";
@@ -160,16 +206,31 @@ export function PreviewSupportBox() {
         body: JSON.stringify({
           agent_id: agentId,
           message,
-          session_id: ensureSessionId()
+          session_id: ensureSessionId(),
+          avatar_video: true
         })
       });
       const data = await response.json().catch(() => ({}));
       const reply = String(data.reply || data.error || fallback).trim() || fallback;
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
       setStatus(String(data.agent?.availability ? `LIVE · ${data.agent.availability}` : "LIVE · always active"));
+
+      const avatarVideoResult = data.avatar_video as AvatarVideo | null | undefined;
+      if (avatarVideoResult?.status === "submitted" && avatarVideoResult.next) {
+        setAvatarState(avatarVideoResult, "");
+        clearAvatarPolling();
+        avatarPollRef.current = window.setInterval(() => {
+          void pollAvatarTask(avatarVideoResult.next as string);
+        }, 3500);
+        void pollAvatarTask(avatarVideoResult.next);
+        setAvatarVideoLoading(true);
+      } else {
+        setAvatarVideoLoading(false);
+      }
     } catch {
       setMessages((current) => [...current, { role: "assistant", content: fallback }]);
       setStatus("LIVE · offline fallback");
+      setAvatarVideoLoading(false);
     } finally {
       setLoading(false);
     }
@@ -269,28 +330,41 @@ export function PreviewSupportBox() {
         <div style={{ marginTop: 12, borderRadius: 22, padding: 14, background: "linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.96))", border: "1px solid rgba(125,211,252,.14)", overflowY: "auto", minHeight: 0 }}>
           <div style={{ borderRadius: 24, overflow: "hidden", background: "linear-gradient(180deg, rgba(8,15,28,.98), rgba(2,6,23,.98))", border: "1px solid rgba(125,211,252,.12)", marginBottom: 12 }}>
             <div style={{ position: "relative", aspectRatio: "4 / 5", width: "100%", minHeight: 210, background: "radial-gradient(circle at 50% 18%, rgba(56,189,248,.18), transparent 28%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(2,6,23,.98))" }}>
-              {!avatarVideoFailed && activeAvatarUrl ? (
+              {avatarVideoUrl && !avatarVideoFailed ? (
                 <video
                   ref={avatarVideoRef}
-                  src={activeAvatarUrl}
-                  poster={heygenBrandAvatarPosterUrl}
+                  key={avatarVideoUrl}
+                  src={avatarVideoUrl}
                   autoPlay
-                  muted={!videoSoundOn}
-                  loop
+                  muted={false}
+                  loop={false}
                   playsInline
                   preload="auto"
                   controlsList="nodownload noplaybackrate nofullscreen"
                   disablePictureInPicture
                   disableRemotePlayback
                   onContextMenu={(event) => event.preventDefault()}
-                  onLoadedData={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
-                  onCanPlay={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
-                  onError={() => setAvatarVideoFailed(true)}
+          onLoadedData={() => { setAvatarVideoLoading(false); void avatarVideoRef.current?.play().catch(() => undefined); }}
+          onCanPlay={() => { setAvatarVideoLoading(false); void avatarVideoRef.current?.play().catch(() => undefined); }}
+          onEnded={() => {
+            setAvatarVideoLoading(false);
+            setAvatarVideoUrl("");
+            clearAvatarPolling();
+          }}
+          onError={() => { setAvatarVideoLoading(false); setAvatarVideoFailed(true); }}
                   style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
                 />
               ) : (
-                <div style={{ width: "100%", height: "100%", position: "relative", backgroundImage: `url(${heygenBrandAvatarPosterUrl})`, backgroundSize: "cover", backgroundPosition: "center top", animation: "avatarFloat 4.5s ease-in-out infinite", transformOrigin: "center bottom" }}>
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(2,6,23,.04), rgba(2,6,23,.26))" }} />
+                <div style={{ width: "100%", height: "100%", position: "relative", background: "radial-gradient(circle at 50% 18%, rgba(56,189,248,.24), transparent 26%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(2,6,23,.98))", animation: avatarVideoLoading ? "avatarFloat 2.8s ease-in-out infinite" : "none", transformOrigin: "center bottom", display: "grid", placeItems: "center" }}>
+                  <div style={{ display: "grid", justifyItems: "center", gap: 10, textAlign: "center", padding: 18 }}>
+                    <div style={{ width: 84, height: 84, borderRadius: 28, background: "radial-gradient(circle at 30% 30%, rgba(34,211,238,.84), rgba(124,58,237,.72) 52%, rgba(15,23,42,.98) 100%)", border: "1px solid rgba(255,255,255,.18)", display: "grid", placeItems: "center", boxShadow: "0 18px 38px rgba(0,0,0,.28)", animation: "avatarPulse 2.2s ease-in-out infinite" }}>
+                      <Sparkles size={28} />
+                    </div>
+                    <div style={{ display: "grid", gap: 4 }}>
+                      <strong style={{ fontSize: 18 }}>{avatarVideoLoading ? "MiniMax avatar preparing" : "Live avatar ready"}</strong>
+                      <p style={{ margin: 0, color: "rgba(226,232,240,.76)", fontSize: 13, lineHeight: 1.45 }}>{avatarVideoLoading ? "The avatar is generating a spoken response video now." : "Ask a question and the avatar will speak the answer with motion."}</p>
+                    </div>
+                  </div>
                 </div>
               )}
               <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(circle at 50% 9%, rgba(125,211,252,.24), transparent 34%), linear-gradient(180deg, transparent 58%, rgba(2,6,23,.52))", animation: "avatarGlow 2.8s ease-in-out infinite" }} />
@@ -298,26 +372,6 @@ export function PreviewSupportBox() {
                 <span style={{ width: 8, height: 8, borderRadius: 999, background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 6px rgba(34,197,94,.14)", animation: "liveDot 1.4s ease-in-out infinite" }} />
                 Live avatar
               </div>
-              {isDirectPreviewUrl(activeAvatarUrl) ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextSoundState = !videoSoundOn;
-                    setVideoSoundOn(nextSoundState);
-                    window.setTimeout(() => {
-                      if (!avatarVideoRef.current) return;
-                      avatarVideoRef.current.muted = !nextSoundState;
-                      if (nextSoundState) {
-                        avatarVideoRef.current.currentTime = 0;
-                        void avatarVideoRef.current.play().catch(() => undefined);
-                      }
-                    }, 0);
-                  }}
-                  style={{ position: "absolute", right: 14, bottom: 14, borderRadius: 999, border: "1px solid rgba(255,255,255,.2)", background: videoSoundOn ? "rgba(34,197,94,.32)" : "rgba(0,0,0,.48)", color: "#fff", padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 900, backdropFilter: "blur(10px)" }}
-                >
-                  {videoSoundOn ? "Sound on" : "Sound"}
-                </button>
-              ) : null}
             </div>
           </div>
 

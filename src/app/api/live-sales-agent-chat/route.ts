@@ -1,5 +1,6 @@
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { buildAssistantKnowledgePrompt } from "@/lib/assistant-knowledge";
+import { createMiniMaxH3VideoTask, hasMiniMaxConfig } from "@/lib/providers/minimax";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function clean(value: unknown) {
@@ -35,6 +36,58 @@ function detectLanguage(message: string) {
   if (turkishSignals && !englishSignals) return "tr";
   if (englishSignals && !turkishSignals) return "en";
   return "auto";
+}
+
+function speakingDuration(text: string): 8 | 10 | 12 | 15 {
+  const words = text.split(/\s+/).filter(Boolean).length;
+  if (words <= 22) return 8;
+  if (words <= 40) return 10;
+  if (words <= 58) return 12;
+  return 15;
+}
+
+function spokenSnippet(text: string) {
+  return text.replace(/\s+/g, " ").trim().slice(0, 520);
+}
+
+function minimaxSpeakingAvatarPrompt(reply: string, userMessage: string) {
+  const language = detectLanguage(userMessage);
+  const languageInstruction = language === "tr" ? "Turkish" : language === "en" ? "English" : "the same language as the visitor";
+  const dialogue = spokenSnippet(reply);
+  return [
+    "Create a vertical 9:16 talking live sales avatar response video for the Crelavo website widget.",
+    "A premium AI sales avatar appears waist-up in a modern dark-blue Crelavo digital studio, facing the camera.",
+    "The avatar must look alive: natural head motion, eye blinks, facial expression changes, subtle hand gestures, and realistic lip sync.",
+    `The avatar speaks in ${languageInstruction}.`,
+    "Use natural voice audio if the model supports audio. The mouth movement must match the spoken answer.",
+    "No subtitles, no captions, no large on-screen text, no logos except a very subtle Crelavo brand feeling in the background.",
+    "Keep the framing clean for a small website chat widget: centered face, full head visible, no cropped forehead, no fast camera motion.",
+    `Spoken answer, verbatim: \"${dialogue}\"`,
+    "End with the avatar looking attentive, ready for the visitor's next question."
+  ].join("\n");
+}
+
+async function submitMiniMaxSpeakingAvatar(reply: string, userMessage: string) {
+  if (!hasMiniMaxConfig()) return null;
+  const prompt = minimaxSpeakingAvatarPrompt(reply, userMessage);
+  const duration = speakingDuration(reply);
+  const result = await createMiniMaxH3VideoTask({
+    content: [{ type: "text", text: prompt }],
+    resolution: "768P",
+    duration,
+    ratio: "9:16"
+  });
+  return {
+    provider: "minimax",
+    model: "MiniMax-H3",
+    status: "submitted",
+    task_id: result.task_id || "",
+    request_id: result.request_id || "",
+    duration,
+    ratio: "9:16",
+    prompt,
+    next: result.task_id ? `/api/minimax?action=query&task_id=${encodeURIComponent(result.task_id)}` : null
+  };
 }
 
 function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
@@ -201,6 +254,15 @@ export async function POST(request: Request) {
 
     const aiReply = await aiLiveAvatarReply(message, agent).catch(() => "");
     const reply = aiReply || publicReply(message, agent);
+    const wantsAvatarVideo = body.avatar_video !== false;
+    const avatarVideo = wantsAvatarVideo
+      ? await submitMiniMaxSpeakingAvatar(reply, message).catch((error) => ({
+        provider: "minimax",
+        model: "MiniMax-H3",
+        status: "failed_to_submit",
+        error: errorMessage(error, "MiniMax speaking avatar task could not be submitted.")
+      }))
+      : null;
 
     return corsJson({
       status: "success",
@@ -215,7 +277,8 @@ export async function POST(request: Request) {
         tone: agent.tone,
         availability: agent.availability
       },
-      reply
+      reply,
+      avatar_video: avatarVideo
     });
   } catch (error) {
     return corsJson({ error: errorMessage(error, "Could not answer live sales chat.") }, { status: 500 });
