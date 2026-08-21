@@ -54,6 +54,22 @@ export default async function CategoriesPage() {
           </div>
         </section>
 
+        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
+          <span className="badge">Featured category</span>
+          <h2>AI Live Sales Agent</h2>
+          <p>
+            This is the Crelavo category for buyers who want a live sales avatar in their own social media, ecommerce or website channels.
+            They can use it to show product examples, explain offers, answer sales questions and share shipping or delivery information.
+          </p>
+          <p>
+            First the visitor sees the category inside Crelavo, then they can open the service page, choose a plan and later use the avatar on their own brand account.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link className="btn" href="/live-sales-credits">Open live sales category</Link>
+            <Link className="btn secondary" href="/dashboard/live-sales-agent">Open avatar workspace</Link>
+          </div>
+        </section>
+
         <CategoryGroupBrowser />
 
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
