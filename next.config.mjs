@@ -20,7 +20,6 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/categories-Categories", destination: "/categories", permanent: true },
-      { source: "/live-sales-credits-v2", destination: "/live-sales-credits", permanent: true },
       { source: "/alternatives/crelavo-vs-creatify", destination: "/alternatives/creatify-alternative", permanent: true }
     ];
   },
