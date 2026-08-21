@@ -1,6 +1,8 @@
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 import { findPaymentProduct, liveSalesServicePlans, packages } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
+
 function normalizeBilling(value?: string) {
   return value === "yearly" ? "yearly" : "monthly";
 }

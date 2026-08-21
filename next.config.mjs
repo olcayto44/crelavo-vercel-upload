@@ -39,6 +39,14 @@ const nextConfig = {
         headers: privateRouteHeaders
       },
       {
+        source: "/live-sales-credits",
+        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" }]
+      },
+      {
+        source: "/dashboard/payment",
+        headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" }]
+      },
+      {
         source: "/api/:path*",
         headers: privateRouteHeaders
       },

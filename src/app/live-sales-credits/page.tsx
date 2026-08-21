@@ -2,6 +2,7 @@ import { LiveSalesControlCenter } from "@/components/LiveSalesControlCenter";
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 import { liveSalesServicePlans } from "@/lib/data";
 
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Live Sales Agent Plans for Social, Ecommerce and Websites | Crelavo",
   description: "Choose Crelavo live sales agent service plans for your own social media accounts, ecommerce store and website. Plans include fair-use live hours, multilingual avatar direction and pay-as-you-go provider usage.",
