@@ -416,6 +416,7 @@ async function sendMessage() {
   try {
     const auth = await requireVerifiedBrowserUser().catch(() => null);
     const requestBody: Record<string, unknown> = {
+      agent_id: agentIdValue || agentId,
       message: `${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
       mode: "quick",
       language,
