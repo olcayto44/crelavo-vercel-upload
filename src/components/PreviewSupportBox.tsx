@@ -64,22 +64,27 @@ function browserSpeechLang() {
   return navigator.languages?.[0] || navigator.language || "en-US";
 }
 
-function detectLanguage(text: string) {
-  const cleaned = text.toLowerCase();
-  if (/[ğüşöçıİ]/i.test(text) || /(merhaba|selam|kredi|paket|fiyat|ücret|ucret|ödeme|odeme|kampanya|sipariş|siparis|kargo|ürün|urun|nasıl|nasil|nedir|yardım|yardim|evet|tamam|lütfen|lutfen)/.test(cleaned)) return "tr";
-  if (/(hello|hi|price|pricing|package|credit|campaign|order|shipping|product|how|what|support|help|yes|please|thanks)/.test(cleaned)) return "en";
-  return "en";
-}
-
-function speakText(text: string) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = detectLanguage(text) === "tr" ? "tr-TR" : "en-US";
-  utterance.rate = 0.96;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
+function firstHttpsUrl(value: unknown): string {
+  if (typeof value === "string") {
+    const direct = value.trim();
+    if (/^https?:\/\//i.test(direct)) return direct;
+    return direct.match(/https?:\/\/[^\s"'<>]+/i)?.[0] ?? "";
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = firstHttpsUrl(item);
+      if (found) return found;
+    }
+    return "";
+  }
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["captioned_video_url", "captionedVideoUrl", "video_url", "videoUrl", "download_url", "downloadUrl", "preview_url", "previewUrl", "url", "src", "file", "files", "output", "result", "data", "thumbnail_url", "thumbnailUrl"]) {
+      const found = firstHttpsUrl(record[key]);
+      if (found) return found;
+    }
+  }
+  return "";
 }
 
 export function PreviewSupportBox() {
@@ -180,7 +185,7 @@ function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
       const result = data?.result ?? data;
       const task = result?.task ?? result?.data?.task ?? result?.data ?? result;
       const statusValue = String(task?.status || task?.state || data?.status || "").toLowerCase();
-      const videoUrl = String(task?.content?.url || task?.video_url || task?.videoUrl || task?.url || task?.result?.url || "").trim();
+      const videoUrl = firstHttpsUrl(task) || firstHttpsUrl(result) || firstHttpsUrl(data);
       if (videoUrl) {
         clearAvatarPolling();
         setAvatarState({ ...avatarVideo, status: statusValue || "succeeded" }, videoUrl);
@@ -225,7 +230,6 @@ function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
       const data = await response.json().catch(() => ({}));
       const reply = String(data.reply || data.error || fallback).trim() || fallback;
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
-      speakText(reply);
       setStatus(String(data.agent?.availability ? `LIVE · ${data.agent.availability}` : "LIVE · always active"));
 
       const avatarVideoResult = data.avatar_video as AvatarVideo | null | undefined;

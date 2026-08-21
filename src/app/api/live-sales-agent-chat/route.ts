@@ -47,7 +47,7 @@ function speakingDuration(text: string): 8 | 10 | 12 | 15 {
 }
 
 function spokenSnippet(text: string) {
-  return text.replace(/\s+/g, " ").trim().slice(0, 520);
+  return text.replace(/\s+/g, " ").trim().slice(0, 360);
 }
 
 function minimaxSpeakingAvatarPrompt(reply: string, userMessage: string) {
@@ -59,6 +59,8 @@ function minimaxSpeakingAvatarPrompt(reply: string, userMessage: string) {
     "A premium AI sales avatar appears waist-up in a modern dark-blue Crelavo digital studio, facing the camera.",
     "The avatar must look alive: natural head motion, eye blinks, facial expression changes, subtle hand gestures, and realistic lip sync.",
     `The avatar speaks in ${languageInstruction}.`,
+    "The voice should be a clear adult female voice: warm, friendly, confident, natural, and easy to understand.",
+    "Avoid male voice, robotic delivery, garbled pronunciation, or overly fast speech.",
     "Use natural voice audio if the model supports audio. The mouth movement must match the spoken answer.",
     "No subtitles, no captions, no large on-screen text, no logos except a very subtle Crelavo brand feeling in the background.",
     "Keep the framing clean for a small website chat widget: centered face, full head visible, no cropped forehead, no fast camera motion.",
