@@ -486,7 +486,7 @@ async function sendMessage() {
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
                     )}
                     <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
-                      <strong>MiniMax</strong>
+                      <strong className="live-sales-avatar-provider-badge">MiniMax H3 · Live</strong>
                       <span>{avatarPreview.status || "preview"}</span>
                     </div>
                   </div>

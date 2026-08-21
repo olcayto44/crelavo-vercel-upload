@@ -3226,6 +3226,18 @@ body.admin-route > .site-footer {
   letter-spacing: .08em;
 }
 
+.live-sales-avatar-provider-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(34,211,238,.95), rgba(167,139,250,.95));
+  color: #08111f;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-shadow: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset, 0 0 18px rgba(103,232,249,.38), 0 0 28px rgba(167,139,250,.22);
+  animation: liveSalesBadgePulse 2.4s ease-in-out infinite;
+}
+
 .live-sales-avatar-face {
   width: min(78%, 420px);
   aspect-ratio: 4 / 5;
@@ -3374,6 +3386,17 @@ body.admin-route > .site-footer {
 .live-sales-chat-window .chat-bubble.user {
   margin-left: auto;
   background: rgba(34,211,238,.14);
+}
+
+@keyframes liveSalesBadgePulse {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset, 0 0 18px rgba(103,232,249,.38), 0 0 28px rgba(167,139,250,.22);
+  }
+  50% {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.22) inset, 0 0 24px rgba(103,232,249,.52), 0 0 36px rgba(167,139,250,.3);
+  }
 }
 
 @media (max-width: 1100px) {

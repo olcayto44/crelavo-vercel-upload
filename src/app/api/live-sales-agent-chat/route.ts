@@ -131,6 +131,12 @@ function publicReply(message: string, agent: Record<string, unknown>) {
       : `Crelavo is an AI production platform for websites, apps, e-commerce videos, ads, social media assets, live avatars, and brand workflows. I’m showing this as a live avatar example on the site.`;
   }
 
+  if (/(embed|integrat|website|site|shopify|woocommerce|wordpress|wix|webflow|platform|where to use)/.test(text)) {
+    return turkish
+      ? `Bu avatarı ${platform} üzerinde yayınlamak için embed kodunu kullanabilirsiniz. Rol: ${role}. ${product || "Ürün bilgisi eklendiğinde"} müşteriyi teklif sayfasına yönlendirebilir.`
+      : `To publish this avatar on ${platform}, use the embed code. Role: ${role}. ${product || "Once product details are added,"} it can guide customers toward the right offer page.`;
+  }
+
   if (/(kargo|ship|delivery|teslim)/.test(text)) {
     return turkish
       ? `Ben ${role} rolünde yardımcı oluyorum. ${shipping || "Kargo ve teslimat bilgisi henüz eklenmemiş. Teslim süresi, kargo firması ve iade politikasını bağlayınca net yanıt verebilirim."}`
@@ -143,15 +149,19 @@ function publicReply(message: string, agent: Record<string, unknown>) {
       : `I need an order number and verification to answer order status. ${order || "Order support flow is not added yet."}`;
   }
 
-  if (/(ürün|product|feature|özellik|price|fiyat|kampanya|offer)/.test(text)) {
+  if (/(iade|refund|return|değişim|degisim)/.test(text)) {
+    return turkish
+      ? `İade ve değişim için politikayı bağlamamız gerekir. ${shipping || "İade politikası henüz eklenmedi."}`
+      : `I need the return policy connected to answer refunds and exchanges. ${shipping || "Return policy is not added yet."}`;
+  }
+
+  if (/(ürün|product|feature|özellik|price|fiyat|kampanya|offer|discount|sales)/.test(text)) {
     return turkish
       ? `${product || "Ürün bilgisi henüz tanımlanmadı."} Bu avatar ${role} olarak ${industry} akışında satış konuşması yapabilir ve müşteriyi doğru teklif sayfasına yönlendirebilir.`
       : `${product || "Product details are not defined yet."} This avatar can act as an ${role} for ${platform} and guide customers toward the right offer.`;
   }
 
-  return turkish
-    ? `Canlı satış avatarı hazır. Rol: ${role}. Web sitesi, e-ticaret ve destek akışına göre müşteriye yardımcı olabilirim.`
-    : `The live sales avatar is ready. Role: ${role}. I can help customers based on the website, e-commerce, and support flow.`;
+  return "";
 }
 
 async function loadAgent(agentId: string) {
@@ -254,8 +264,11 @@ export async function POST(request: Request) {
     const agent = await loadAgent(agentId);
     if (!agent) return corsJson({ error: "Live sales agent not found." }, { status: 404 });
 
-    const aiReply = await aiLiveAvatarReply(message, agent).catch(() => "");
-    const reply = aiReply || publicReply(message, agent);
+    const directReply = publicReply(message, agent);
+    const aiReply = directReply ? "" : await aiLiveAvatarReply(message, agent).catch(() => "");
+    const reply = directReply || aiReply || (detectLanguage(message) === "tr"
+      ? `Canlı satış avatarı hazır. Rol: ${clean(agent.avatar_role) || "All-in-one host"}. Web sitesi, e-ticaret ve destek akışına göre yardımcı olabilirim.`
+      : `The live sales avatar is ready. Role: ${clean(agent.avatar_role) || "All-in-one host"}. I can help based on the website, e-commerce, and support flow.`);
     const wantsAvatarVideo = body.avatar_video !== false;
     const avatarVideo = wantsAvatarVideo
       ? await submitMiniMaxSpeakingAvatar(reply, message).catch((error) => ({
