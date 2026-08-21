@@ -414,24 +414,24 @@ async function sendMessage() {
   const localFallback = `I couldn’t reach the live assistant just now. Please try again in a moment.`;
 
   try {
-    const auth = await requireVerifiedBrowserUser();
-    if (!auth.ok) {
-      setState((current) => ({ ...current, chatMessages: [...current.chatMessages, { id: `assistant-${timestamp + 1}`, role: "assistant", text: localFallback }] }));
-      return;
+    const auth = await requireVerifiedBrowserUser().catch(() => null);
+    const requestBody: Record<string, unknown> = {
+      message: `${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
+      mode: "quick",
+      language,
+      conversation_id: conversationId || undefined,
+      messages: state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
+    };
+
+    if (auth?.ok) {
+      requestBody.user_id = auth.user.id;
+      requestBody.user_email = auth.user.email ?? "";
     }
 
     const response = await fetch(publicChatEndpoint, {
       method: "POST",
-      headers: authHeaders(auth.accessToken),
-      body: JSON.stringify({
-        user_id: auth.user.id,
-        user_email: auth.user.email ?? "",
-        message: `${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
-        mode: "quick",
-        language,
-        conversation_id: conversationId || undefined,
-        messages: state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
-      })
+      headers: auth?.ok ? authHeaders(auth.accessToken) : { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody)
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(String(data.error || "Assistant chat failed"));
