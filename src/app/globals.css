@@ -3190,6 +3190,15 @@ body.admin-route > .site-footer {
   padding-top: 0;
 }
 
+.live-sales-avatar-media-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.live-sales-avatar-targets-card {
+  margin-top: 0;
+}
+
 .live-sales-avatar-plan-inline {
   width: 100%;
 }

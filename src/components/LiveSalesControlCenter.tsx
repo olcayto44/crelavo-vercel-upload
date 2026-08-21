@@ -140,26 +140,35 @@ function embedCode(platform: string, currentAgentId = agentId) {
   return `<script\n  src="https://www.crelavo.com/embed/live-sales-avatar.js"\n  data-agent-id="${currentAgentId}"\n  data-platform="${safePlatform}"\n  data-position="bottom-right"\n  data-theme="dark">\n</script>`;
 }
 
-function assistantReply(message: string) {
+function assistantReply(message: string, state: WorkspaceState) {
   const text = message.toLowerCase();
+  const platformLabel = state.platform || "your channel";
+  const roleLabel = state.role || "All-in-one host";
+  const productLabel = state.productInfo.trim() || "your offer";
+  const shippingLabel = state.shippingInfo.trim() || "shipping and delivery details";
+  const orderLabel = state.orderInfo.trim() || "order support flow";
 
   if (["all", "hepsi", "tamamı", "tanıtım", "satış", "sipariş", "kargo"].filter((word) => text.includes(word)).length >= 2) {
-    return "Yes, the best role is All-in-one host. One avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect product catalog, sales channel, and shipping/order data.";
+    return `Yes, the best role is ${roleLabel}. This avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect the product catalog, sales channel, and ${shippingLabel}.`;
   }
   if (text.includes("kargo") || text.includes("ship") || text.includes("delivery") || text.includes("cargo")) {
-    return "Once shipping is connected, the avatar can explain carrier, tracking number, and estimated delivery timing.";
+    return `Once shipping is connected, the avatar can explain carrier, tracking number, estimated delivery timing, and return policy for ${platformLabel}.`;
   }
   if (text.includes("sipariş") || text.includes("order")) {
-    return "Once order data is connected, the avatar can answer order status using order number, email, or phone verification.";
+    return `Once order data is connected, the avatar can answer order status using order number, email, or phone verification. ${orderLabel}`;
   }
   if (text.includes("satış") || text.includes("price") || text.includes("cost") || text.includes("discount") || text.includes("sales")) {
-    return "The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout.";
+    return `The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout for ${productLabel}.`;
   }
   if (text.includes("tanıtım") || text.includes("ürün") || text.includes("product") || text.includes("feature") || text.includes("promotion")) {
-    return "The avatar can present your product, explain key benefits, and deliver the offer in your brand tone.";
+    return `The avatar can present ${productLabel}, explain key benefits, and deliver the offer in your brand tone on ${platformLabel}.`;
   }
-  return "I can help set up a live avatar for product promotion, sales, order support, and shipping questions. Tell me what you want it to do.";
+  if (text.includes("embed") || text.includes("integrat") || text.includes("platform") || text.includes("site") || text.includes("website")) {
+    return `For ${platformLabel}, the next step is to save the avatar setup, copy the embed code, and connect the live flow when you are ready. This works best with ${roleLabel} and ${productLabel}.`;
+  }
+  return `I can help set up a live avatar for ${platformLabel}. Ask about product, sales, orders, shipping, or embed code, and I’ll answer using the current setup.`;
 }
+
 
 export function LiveSalesControlCenter() {
   const [state, setState] = useState<WorkspaceState>(initialState);
@@ -429,9 +438,8 @@ async function sendMessage() {
   setState((current) => ({ ...current, draftMessage: "", chatMessages: [...current.chatMessages, nextUserMessage] }));
   setSending(true);
 
-      const language = detectLanguage();
-      const localFallback = assistantReply(message);
-
+  const language = detectLanguage();
+  const localFallback = assistantReply(message, state);
 
   try {
     const auth = await requireVerifiedBrowserUser();
@@ -469,29 +477,32 @@ async function sendMessage() {
     <div className="live-sales-control-stack live-sales-avatar-layout">
       <section className="card live-sales-avatar-stage">
         <div className="live-sales-avatar-frame">
-            <div className="live-sales-avatar-visual">
-              <div className="live-sales-avatar-live-pill">LIVE</div>
-              {avatarPreview?.previewUrl ? (
-                <div style={{ position: "absolute", inset: 0, borderRadius: 28, overflow: "hidden", background: "#050505" }}>
-                  {isDirectVideoUrl(avatarPreview.previewUrl) ? (
-                    <video src={avatarPreview.previewUrl} controls preload="metadata" playsInline style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }} />
-                  ) : (
-                    <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
-                  )}
-                  <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
-                    <strong>{avatarPreview.provider || "provider"}</strong>
-                    <span>{avatarPreview.status || "preview"}</span>
+            <div className="live-sales-avatar-media-stack">
+              <div className="live-sales-avatar-visual">
+                <div className="live-sales-avatar-live-pill">LIVE</div>
+                {avatarPreview?.previewUrl ? (
+                  <div style={{ position: "absolute", inset: 0, borderRadius: 28, overflow: "hidden", background: "#050505" }}>
+                    {isDirectVideoUrl(avatarPreview.previewUrl) ? (
+                      <video src={avatarPreview.previewUrl} controls preload="metadata" playsInline style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }} />
+                    ) : (
+                      <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
+                    )}
+                    <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
+                      <strong>{avatarPreview.provider || "provider"}</strong>
+                      <span>{avatarPreview.status || "preview"}</span>
+                    </div>
                   </div>
+                ) : (
+                  <div className="live-sales-avatar-face">Avatar</div>
+                )}
+                <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
+                  <strong>{activePlan?.name}</strong>
+                  <span>{activePlan?.price}</span>
+                  <span>{formatMinutes(remainingMinutes)} remaining</span>
                 </div>
-              ) : (
-                <div className="live-sales-avatar-face">Avatar</div>
-              )}
-              <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
-                <strong>{activePlan?.name}</strong>
-                <span>{activePlan?.price}</span>
-                <span>{formatMinutes(remainingMinutes)} remaining</span>
               </div>
-              <div className="card selected-billing-card live-sales-preferences-card" style={{ marginTop: 14 }}>
+
+              <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
                 <span className="badge">Where to use</span>
                 <h3 style={{ margin: "6px 0 0" }}>Avatar video targets</h3>
                 <p style={{ color: "var(--muted)", margin: 0 }}>Add the avatar video or widget to websites, stores, marketplaces, or B2B lead pages. Alibaba / B2B works best for catalog presentation, inquiry capture, quote collection, and company profile leads.</p>
