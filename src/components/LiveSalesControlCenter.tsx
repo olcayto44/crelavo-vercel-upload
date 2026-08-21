@@ -80,7 +80,7 @@ const avatarPreviewEndpoint = "/api/live-sales-agents/avatar-preview";
 
 
 const starterMessages: ChatMessage[] = [
-  { id: "m1", role: "assistant", text: "Hi, I can help with product questions, shipping, price, order support, or embed code." }
+  { id: "m1", role: "assistant", text: "Hi, ask me how to connect this avatar to your website, store, or social channel, what it can do, or how many hours it can run." }
 ];
 
 function initialState(): WorkspaceState {
@@ -116,10 +116,10 @@ function isDirectVideoUrl(url: string) {
 
 function platformGuide(platform: string) {
   if (["Own website", "Custom embed", "WordPress", "Wix", "Webflow"].includes(platform)) {
-    return "Add the script to your site custom code area. The avatar appears as a floating assistant widget.";
+    return "Add the script to your site custom code area. The avatar appears as a floating assistant widget and can answer product, order, shipping, pricing and CTA questions.";
   }
   if (["Shopify", "WooCommerce", "Magento", "BigCommerce"].includes(platform)) {
-    return "Use the embed code now. Product, order and shipping API connection can be enabled as the next integration step.";
+    return "Use the embed code now. Product, order and shipping API connection can be enabled as the next integration step, so the avatar can guide buyers on product pages, carts or thank-you pages.";
   }
   if (["Amazon promotion", "Trendyol", "Hepsiburada", "N11", "eBay", "Etsy", "AliExpress"].includes(platform)) {
     return "Most marketplace product pages do not allow custom live widgets. Use avatar ads, hosted landing pages and product videos that send traffic to your listing.";
@@ -128,10 +128,11 @@ function platformGuide(platform: string) {
     return "Use the avatar for B2B catalog presentation, inquiry response, quote collection and company profile lead generation.";
   }
   if (["TikTok Shop", "Instagram / YouTube", "LinkedIn", "X", "WhatsApp Business"].includes(platform)) {
-    return "Use the avatar for live-selling scripts, short videos, customer responses and social selling flows. LinkedIn works well for B2B outreach and X works well for fast campaign updates, product launches and customer engagement. Direct API/live integration requires setup.";
+    return "Use the avatar for live-selling scripts, short videos, customer responses and social selling flows. LinkedIn works well for B2B outreach and X works well for fast campaign updates, product launches and customer engagement. Direct API/live integration requires setup and can run on business hours or a custom schedule.";
   }
   return "Use the generated agent ID and connect it with the correct Crelavo publish method for this channel.";
 }
+
 
 function embedCode(platform: string, currentAgentId = agentId) {
   const safePlatform = platform.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

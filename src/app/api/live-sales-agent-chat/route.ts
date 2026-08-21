@@ -102,7 +102,7 @@ function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
     voice: "premium live avatar voice",
     tone: "helpful, sales-aware, practical and natural",
     availability: "24/7",
-    product_info: "Crelavo helps users create AI videos, UGC ads, ecommerce campaigns, product videos, websites, apps, SaaS/admin projects, live sales avatars, Growth Intelligence reports, voice-over, dubbing, brand assets and delivery packages. It can explain categories, credits, packages, campaigns, production steps, revisions and dashboard delivery.",
+    product_info: "Crelavo helps users create AI videos, UGC ads, ecommerce campaigns, product videos, websites, apps, SaaS/admin projects, live sales avatars, Growth Intelligence reports, voice-over, dubbing, brand assets and delivery packages. The avatar can explain what it does, how to connect it to a website, store, marketplace or social channel, what hours it can run, how to save the setup, how to copy and paste the embed code, and what to connect next for product, order and shipping data. It can also explain categories, credits, packages, campaigns, production steps, revisions and dashboard delivery.",
     shipping_info: "Crelavo services are digital. Users receive previews, revisions and final files through the dashboard production/delivery flow.",
     order_info: "Users can track productions in the dashboard after a production record is created and approved."
   };
@@ -131,10 +131,16 @@ function publicReply(message: string, agent: Record<string, unknown>) {
       : `Crelavo is an AI production platform for websites, apps, e-commerce videos, ads, social media assets, live avatars, and brand workflows. I’m showing this as a live avatar example on the site.`;
   }
 
-  if (/(embed|integrat|website|site|shopify|woocommerce|wordpress|wix|webflow|platform|where to use)/.test(text)) {
+  if (/(embed|integrat|website|site|shopify|woocommerce|wordpress|wix|webflow|platform|where to use|nasıl eklerim|nasil eklerim|how do i add|how to add|entegrasyon|integrasyon)/.test(text)) {
     return turkish
-      ? `Bu avatarı ${platform} üzerinde yayınlamak için embed kodunu kullanabilirsiniz. Rol: ${role}. ${product || "Ürün bilgisi eklendiğinde"} müşteriyi teklif sayfasına yönlendirebilir.`
-      : `To publish this avatar on ${platform}, use the embed code. Role: ${role}. ${product || "Once product details are added,"} it can guide customers toward the right offer page.`;
+      ? `Bu avatarı ${platform} üzerinde kullanmak için önce setup'ı kaydedersin, sonra embed kodunu sitene eklersin. Eğer mağaza ya da sosyal kanal ise, avataryı ürün sayfası, landing page, link-in-bio veya destek akışına bağlarsın. Rol: ${role}. ${product || "Ürün bilgisi eklendiğinde"} müşteriyi teklif sayfasına yönlendirebilir.`
+      : `To use this avatar on ${platform}, first save the setup and then paste the embed code into your site. If it is for a store or social channel, connect it to a product page, landing page, link-in-bio page, or support flow. Role: ${role}. ${product || "Once product details are added,"} it can guide customers toward the right offer page.`;
+  }
+
+  if (/(hours|hour|kaç saat|kac saat|saat|working hours|available|availability|biz hours|business hours)/.test(text)) {
+    return turkish
+      ? `Bu avatar ${clean(agent.availability) || "7/24"} çalışacak şekilde ayarlanabilir. Business hours, custom schedule ya da manuel start/stop seçebilirsin. Canlı hizmet süresi planına göre de ayrıca sınırlandırılabilir.`
+      : `This avatar can be set to ${clean(agent.availability) || "24/7"}. You can choose business hours, a custom schedule, or manual start/stop. Live service hours can also be limited by the plan.`;
   }
 
   if (/(kargo|ship|delivery|teslim)/.test(text)) {
@@ -214,6 +220,8 @@ Hard rules:
 - Do not claim a production, payment, delivery or live stream has started unless the user is on the real confirmation/production flow.
 - For pricing/credits, explain that exact cost depends on duration, quality, provider/API usage and package. Route to pricing/credits pages when useful.
 - For live sales avatar: explain 24/7 website/live commerce assistant, product FAQ, categories, offers, campaigns, credit/package guidance, lead capture, human fallback and dashboard control.
+- When asked how to use the avatar, explain the practical steps: save the setup, copy the embed code, paste it into a website or store, use a hosted landing page for social channels or marketplaces that do not allow widgets, and connect product/order/shipping data if available.
+- When asked about hours, explain business hours, custom schedule, manual start/stop, and any plan-based fair-use/live-hour limits in plain language.
 
 Agent context:
 ${agentContext}
