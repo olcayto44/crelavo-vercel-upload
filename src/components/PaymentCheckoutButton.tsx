@@ -72,15 +72,15 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
   return (
     <div className="checkout-button-stack">
       <label className="workspace-action-note" style={{ display: "grid", gap: 8 }}>
-        <span>Checkout email for receipt/recovery</span>
+        <span>Email for receipt and follow-up</span>
         <input value={checkoutEmail} onChange={(event) => setCheckoutEmail(event.target.value)} placeholder="you@example.com" type="email" />
       </label>
       <label className="workspace-action-note" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <input checked={consentRecovery} onChange={(event) => setConsentRecovery(event.target.checked)} type="checkbox" style={{ marginTop: 3 }} />
-        <span>Send me a safe reminder if I leave checkout unfinished or my 24-hour preview is close to ending.</span>
+        <span>Send me a reminder if I leave checkout unfinished or my 24-hour preview is close to ending.</span>
       </label>
       <button className="btn" type="button" onClick={startCheckout} disabled={state === "loading"}>
-        {state === "loading" ? "Starting secure checkout..." : children}
+        {state === "loading" ? "Opening secure checkout..." : children}
       </button>
       {message ? <p className="workspace-action-note error">{message}</p> : null}
     </div>
