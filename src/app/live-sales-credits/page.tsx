@@ -69,13 +69,6 @@ export default function LiveSalesCreditsPage() {
         </div>
       </section>
 
-      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <span className="badge">Avatar creation</span>
-        <h2>Create the live sales avatar here</h2>
-        <p className="section-lead">Choose the platform, avatar type, voice, language, tone, product info, shipping rules and order support flow on the same page before checkout.</p>
-        <LiveSalesControlCenter />
-      </section>
-
       <section style={{ marginTop: 28 }}>
         <div className="sample-video-head">
           <div>
@@ -101,6 +94,13 @@ export default function LiveSalesCreditsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
+        <span className="badge">Avatar creation</span>
+        <h2>Create the live sales avatar here</h2>
+        <p className="section-lead">Choose the platform, avatar type, voice, language, tone, product info, shipping rules and order support flow on the same page after you review the plans above.</p>
+        <LiveSalesControlCenter />
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 28 }}>
