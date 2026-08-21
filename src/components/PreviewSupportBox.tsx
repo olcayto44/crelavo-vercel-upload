@@ -1,91 +1,55 @@
 "use client";
 
 import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Send, Sparkles, Volume2 } from "lucide-react";
+import { Bot, Mic, Send, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout", "/dashboard/assistant-workspace"];
 const defaultAgentId = process.env.NEXT_PUBLIC_LIVE_SALES_AGENT_ID || "agent_demo_live_sales_001";
 const publicAgentEndpoint = "/api/live-sales-agents";
-const heygenBrandAvatarEmbedUrl = "https://app.heygen.com/embeds/b0578cda37b142c3bcc882bb97efec8d";
 const heygenBrandAvatarPosterUrl = "https://dynamic.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/v05da9514522743039a8c4e8b76c19522/b0578cda37b142c3bcc882bb97efec8d.jpeg";
 const heygenBrandAvatarVideoUrl = "/api/heygen?action=brand_avatar_proxy";
-
-type Lang = "tr" | "en";
 
 type ChatMessage = {
   role: "assistant" | "user";
   content: string;
 };
 
-type AvatarPreview = {
-  provider?: string | null;
-  status?: string | null;
-  sessionId?: string | null;
-  previewUrl?: string | null;
-  route?: string | null;
-  message?: string | null;
-  checkedAt?: string | null;
-};
-
 type PublicAgent = {
   agent_id?: string;
-  avatar_role?: string | null;
-  platform?: string | null;
-  industry?: string | null;
   availability?: string | null;
-  metadata?: { avatarPreview?: AvatarPreview } | null;
+  metadata?: { avatarPreview?: { previewUrl?: string | null } } | null;
 };
 
-const quickPromptsByLang: Record<Lang, string[]> = {
-  tr: [
-    "Crelavo kategorileri neler?",
-    "Kredi ve paketler nasıl çalışır?",
-    "7/24 canlı satış avatarı ne yapar?"
-  ],
-  en: [
-    "What Crelavo categories are available?",
-    "How do credits and plans work?",
-    "What can the 24/7 live sales avatar do?"
-  ]
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+type SpeechRecognitionInstance = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
 };
 
-const useCaseDetails = {
-  website: {
-    label: "Web sitesi",
-    title: "Web sitene böyle gömülür",
-    description: "Ziyaretçiyi karşılayan, ürün sorusuna cevap veren ve lead toplayan canlı bir avatar katmanı gibi çalışır.",
-    bullets: ["Sabit sağ alt widget", "Canlı konuşan avatar görünümü", "Hızlı ürün ve destek soruları"]
-  },
-  ecommerce: {
-    label: "E-ticaret",
-    title: "E-ticaret satış vitrini",
-    description: "Ürün faydasını anlatır, sipariş öncesi itirazları cevaplar ve kullanıcıyı satın almaya yönlendirir.",
-    bullets: ["Ürün açıklama demo'su", "Satış odaklı yanıt akışı", "Sipariş / kargo desteği"]
-  },
-  social: {
-    label: "Sosyal medya",
-    title: "Sosyal medya anlatım modeli",
-    description: "Reels, short video veya landing page demosu için markayı konuşan bir yüz gibi sunar.",
-    bullets: ["Kısa ve hızlı cevaplar", "Marka tonu ile konuşma", "Dikkat çekici ilk izlenim"]
-  },
-  support: {
-    label: "Destek",
-    title: "Destek asistanı",
-    description: "Kullanıcıyı yönlendirir, sık sorulan soruları yanıtlar ve gerektiğinde doğru sayfaya yollar.",
-    bullets: ["Sık sorulan sorular", "Doğru sayfa yönlendirme", "İnsan desteğine geçiş"]
+type SpeechRecognitionEventLike = {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+};
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
-} as const;
-
-function normalize(text: string) {
-  return text.toLowerCase().replace(/[ıİ]/g, "i").replace(/[ğĞ]/g, "g").replace(/[üÜ]/g, "u").replace(/[şŞ]/g, "s").replace(/[öÖ]/g, "o").replace(/[çÇ]/g, "c");
 }
 
-function detectLanguage(text: string, fallback: Lang = "en"): Lang {
-  const clean = normalize(text);
-  if (/[ğüşöçıİ]/i.test(text) || /\b(nedir|iptal|kredi|paket|fiyat|ucret|ödeme|odeme|yardim|yardım|evet|tamam|yonlendir|yönlendir)\b/.test(clean)) return "tr";
-  return fallback;
-}
+const quickPrompts = [
+  "What Crelavo categories are available?",
+  "How do credits and packages work?",
+  "Can the avatar answer in my language?"
+];
 
 function canShow(pathname: string | null) {
   const path = pathname || "/";
@@ -96,65 +60,39 @@ function isDirectPreviewUrl(url?: string | null) {
   return Boolean(url && (/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(url) || url.includes("action=brand_avatar_proxy") || url.includes("action=brand_avatar_video")));
 }
 
-function pickPreferredVoice(lang: Lang) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
-  const voices = window.speechSynthesis.getVoices?.() || [];
-  if (!voices.length) return null;
-  const wantsTurkish = lang === "tr";
-  const preferredNames = wantsTurkish
-    ? ["emel", "zira", "female", "woman", "han", "sibel", "elif", "ayse"]
-    : ["samantha", "zira", "female", "woman", "ava", "nicky", "olivia", "maria", "karen"];
-  const filtered = voices.filter((voice) => {
-    const name = voice.name.toLowerCase();
-    const langOk = wantsTurkish ? voice.lang.toLowerCase().startsWith("tr") : voice.lang.toLowerCase().startsWith("en") || voice.lang.toLowerCase().startsWith("en-");
-    return langOk && preferredNames.some((token) => name.includes(token));
-  });
-  return filtered[0] || voices.find((voice) => wantsTurkish ? voice.lang.toLowerCase().startsWith("tr") : voice.lang.toLowerCase().startsWith("en")) || voices[0] || null;
-}
-
-function safeSpeech(text: string, voiceOn: boolean) {
-  if (!voiceOn || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  const lang = detectLanguage(text);
-  utterance.lang = lang === "tr" ? "tr-TR" : "en-US";
-  const preferredVoice = pickPreferredVoice(lang);
-  if (preferredVoice) utterance.voice = preferredVoice;
-  utterance.rate = 0.96;
-  utterance.pitch = 1.02;
-  utterance.volume = 1;
-  window.speechSynthesis.speak(utterance);
+function browserSpeechLang() {
+  if (typeof navigator === "undefined") return "en-US";
+  return navigator.languages?.[0] || navigator.language || "en-US";
 }
 
 export function PreviewSupportBox() {
   const pathname = usePathname();
   const allowed = useMemo(() => canShow(pathname), [pathname]);
   const [open, setOpen] = useState(true);
-  const [voiceOn, setVoiceOn] = useState(false);
   const [videoSoundOn, setVideoSoundOn] = useState(false);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("LIVE · 7/24 satış avatarı hazır");
+  const [status, setStatus] = useState("LIVE · always active");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Merhaba, ben Crelavo’nun 7/24 canlı satış avatarıyım. Kategoriler, krediler, kampanyalar, fiyat mantığı, üretim akışları, web sitesi, uygulama, video, e-ticaret ve genel sorularınız için canlı yardımcı olabilirim."
+      content: "Hi, I’m Crelavo’s 24/7 live sales avatar. Ask about categories, credits, campaigns, pricing logic, production flows, websites, apps, video, ecommerce, or any general AI question. I’ll reply in the same language you use."
     }
   ]);
-  const [avatarPreview, setAvatarPreview] = useState<AvatarPreview | null>(null);
-  const [publicAgent, setPublicAgent] = useState<PublicAgent | null>(null);
-  const [useCase, setUseCase] = useState<keyof typeof useCaseDetails>("website");
   const [chatOpen, setChatOpen] = useState(false);
   const [avatarVideoFailed, setAvatarVideoFailed] = useState(false);
+  const [listening, setListening] = useState(false);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const avatarVideoRef = useRef<HTMLVideoElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const sessionIdRef = useRef<string>("");
   const agentId = defaultAgentId;
+  const activeAvatarUrl = heygenBrandAvatarVideoUrl;
 
   useEffect(() => {
     if (!chatRef.current) return;
     chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [messages, open]);
+  }, [messages, open, chatOpen]);
 
   useEffect(() => {
     if (!allowed) return;
@@ -168,11 +106,9 @@ export function PreviewSupportBox() {
         const data = await response.json().catch(() => ({}));
         const agent = data.agent as PublicAgent | null | undefined;
         if (cancelled || !agent) return;
-        setPublicAgent(agent);
-        const nextPreview = agent.metadata?.avatarPreview ?? null;
-        setAvatarPreview(nextPreview);
+        setStatus(agent.availability ? `LIVE · ${agent.availability}` : "LIVE · always active");
       } catch {
-        // Keep the local avatar demo visible even if public loading fails.
+        setStatus("LIVE · always active");
       }
     }
 
@@ -187,13 +123,19 @@ export function PreviewSupportBox() {
     };
   }, [allowed, agentId]);
 
-  if (!allowed) return null;
-
-  const activeAvatarUrl = heygenBrandAvatarVideoUrl;
-
   useEffect(() => {
     setAvatarVideoFailed(false);
   }, [activeAvatarUrl]);
+
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
+  if (!allowed) return null;
+
   function ensureSessionId() {
     if (!sessionIdRef.current) sessionIdRef.current = crypto.randomUUID();
     return sessionIdRef.current;
@@ -209,9 +151,7 @@ export function PreviewSupportBox() {
     setLoading(true);
     setStatus("LIVE · thinking");
 
-    const fallback = detectLanguage(message) === "tr"
-      ? "Crelavo canlı satış avatarı hazır. Kategori, kredi, kampanya, üretim, web sitesi, uygulama, video veya genel bir soru yazabilirsiniz."
-      : "The Crelavo live sales avatar is ready. Ask about categories, credits, campaigns, production, websites, apps, video, or general questions.";
+    const fallback = "The Crelavo live sales avatar is ready. Ask in any language about categories, credits, campaigns, production, websites, apps, video, or general AI questions.";
 
     try {
       const response = await fetch("/api/live-sales-agent-chat", {
@@ -226,17 +166,51 @@ export function PreviewSupportBox() {
       const data = await response.json().catch(() => ({}));
       const reply = String(data.reply || data.error || fallback).trim() || fallback;
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
-      setStatus(String(data.agent?.availability ? `LIVE · ${data.agent.availability}` : "LIVE · 7/24 satış avatarı hazır"));
-      // Tarayıcı TTS kalitesi tutarsız olduğu için chat cevabı yazılı kalır; ses gerçek avatar videosundan gelir.
+      setStatus(String(data.agent?.availability ? `LIVE · ${data.agent.availability}` : "LIVE · always active"));
     } catch {
       setMessages((current) => [...current, { role: "assistant", content: fallback }]);
       setStatus("LIVE · offline fallback");
-      // Tarayıcı TTS kalitesi tutarsız olduğu için chat cevabı yazılı kalır; ses gerçek avatar videosundan gelir.
     } finally {
       setLoading(false);
     }
   }
 
+  function toggleSpeechInput() {
+    if (typeof window === "undefined") return;
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) {
+      setInput((current) => current || "Voice input is not supported in this browser. Please type your message.");
+      setChatOpen(true);
+      return;
+    }
+
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = browserSpeechLang();
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0]?.transcript || "")
+        .join(" ")
+        .trim();
+      if (transcript) {
+        setInput(transcript);
+        void sendMessage(transcript);
+      }
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    setChatOpen(true);
+    setListening(true);
+    recognition.start();
+  }
 
   if (!open) {
     return (
@@ -270,16 +244,16 @@ export function PreviewSupportBox() {
   }
 
   return (
-  <div style={{ position: "fixed", right: 12, bottom: 12, zIndex: 2147483647, width: "min(360px, calc(100vw - 24px))", maxHeight: "min(620px, calc(100vh - 28px))" }}>
-    <div className="card" style={{ border: "1px solid rgba(255,255,255,.18)", boxShadow: "0 24px 60px rgba(0,0,0,.34)", background: "rgba(10, 14, 28, .96)", overflow: "hidden", padding: 12, color: "#fff", maxHeight: "min(620px, calc(100vh - 28px))", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", right: 12, bottom: 12, zIndex: 2147483647, width: "min(360px, calc(100vw - 24px))", maxHeight: "min(620px, calc(100vh - 28px))" }}>
+      <div className="card" style={{ border: "1px solid rgba(255,255,255,.18)", boxShadow: "0 24px 60px rgba(0,0,0,.34)", background: "rgba(10, 14, 28, .96)", overflow: "hidden", padding: 12, color: "#fff", maxHeight: "min(620px, calc(100vh - 28px))", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
             <div style={{ width: 52, height: 52, borderRadius: 18, background: "radial-gradient(circle at 35% 35%, rgba(125,211,252,.72), transparent 38%), radial-gradient(circle at 65% 70%, rgba(167,139,250,.58), transparent 42%), linear-gradient(135deg, #0f172a, #1e293b)", border: "1px solid rgba(125,211,252,.22)", display: "grid", placeItems: "center", flex: "0 0 auto", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.03)" }}>
               <Bot size={22} />
             </div>
             <div style={{ minWidth: 0 }}>
-                <h3 style={{ margin: "0 0 4px", fontSize: 16, lineHeight: 1.1 }}>7/24 Crelavo Live Sales Avatar</h3>
-                <p style={{ margin: 0, color: "rgba(226,232,240,.76)", fontSize: 12, lineHeight: 1.45 }}>Kategoriler, krediler, kampanyalar ve Crelavo üretim akışları için canlı satış asistanı.</p>
+              <h3 style={{ margin: "0 0 4px", fontSize: 16, lineHeight: 1.1 }}>24/7 Crelavo Live Sales Avatar</h3>
+              <p style={{ margin: 0, color: "rgba(226,232,240,.76)", fontSize: 12, lineHeight: 1.45 }}>Ask about categories, credits, campaigns, production flows, or general AI questions.</p>
             </div>
           </div>
           <button
@@ -294,106 +268,76 @@ export function PreviewSupportBox() {
 
         <div style={{ marginTop: 12, borderRadius: 22, padding: 14, background: "linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.96))", border: "1px solid rgba(125,211,252,.14)", overflowY: "auto", minHeight: 0 }}>
           <div style={{ borderRadius: 24, overflow: "hidden", background: "linear-gradient(180deg, rgba(8,15,28,.98), rgba(2,6,23,.98))", border: "1px solid rgba(125,211,252,.12)", marginBottom: 12 }}>
-            {activeAvatarUrl ? (
-              <div style={{ position: "relative", aspectRatio: "4 / 5", width: "100%", minHeight: 210 }}>
-                {!avatarVideoFailed ? (
-                  <video
-                    ref={avatarVideoRef}
-                    src={activeAvatarUrl}
-                    poster={heygenBrandAvatarPosterUrl}
-                    autoPlay
-                    muted={!videoSoundOn}
-                    loop
-                    playsInline
-                    preload="auto"
-                    controlsList="nodownload noplaybackrate nofullscreen"
-                    disablePictureInPicture
-                    disableRemotePlayback
-                    onContextMenu={(event) => event.preventDefault()}
-                    onLoadedData={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
-                    onCanPlay={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
-                    onError={() => setAvatarVideoFailed(true)}
-                    style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
-                  />
-                ) : (
-                  <div style={{ width: "100%", height: "100%", position: "relative", backgroundImage: `url(${heygenBrandAvatarPosterUrl})`, backgroundSize: "cover", backgroundPosition: "center top" }}>
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(2,6,23,.08), rgba(2,6,23,.28))" }} />
-                  </div>
-                )}
-                {isDirectPreviewUrl(activeAvatarUrl) ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextSoundState = !videoSoundOn;
-                      setVideoSoundOn(nextSoundState);
-                      window.setTimeout(() => {
-                        if (!avatarVideoRef.current) return;
-                        avatarVideoRef.current.muted = !nextSoundState;
-                        if (nextSoundState) {
-                          avatarVideoRef.current.currentTime = 0;
-                          void avatarVideoRef.current.play().catch(() => undefined);
-                        }
-                      }, 0);
-                    }}
-                    style={{ position: "absolute", right: 14, bottom: 14, borderRadius: 999, border: "1px solid rgba(255,255,255,.2)", background: videoSoundOn ? "rgba(34,197,94,.32)" : "rgba(0,0,0,.48)", color: "#fff", padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 900, backdropFilter: "blur(10px)" }}
-                  >
-                    {videoSoundOn ? "Ses açık" : "Ses aç"}
-                  </button>
-                ) : null}
-              </div>
-            ) : (
-                <div style={{ minHeight: 220, padding: 16, display: "grid", gap: 10, alignContent: "space-between", background: "radial-gradient(circle at 30% 18%, rgba(34,211,238,.18), transparent 28%), radial-gradient(circle at 78% 20%, rgba(167,139,250,.16), transparent 24%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(2,6,23,.96))" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                    <span className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: 999, background: "#22c55e", display: "inline-block" }} />
-                      Canlı demo
-                    </span>
-                    <span style={{ borderRadius: 999, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.76)", padding: "8px 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                      <Volume2 size={14} />
-                      <span style={{ fontSize: 12, fontWeight: 700 }}>Video sesi</span>
-                    </span>
-                  </div>
-                  <div style={{ display: "grid", placeItems: "center", minHeight: 130, textAlign: "center", gap: 8 }}>
-                    <div style={{ width: 78, height: 78, borderRadius: 28, background: "radial-gradient(circle at 30% 30%, rgba(34,211,238,.84), rgba(124,58,237,.72) 52%, rgba(15,23,42,.98) 100%)", border: "1px solid rgba(255,255,255,.18)", display: "grid", placeItems: "center", boxShadow: "0 18px 38px rgba(0,0,0,.28)", animation: "pulse 2.2s ease-in-out infinite" }}>
-                      <Sparkles size={28} />
-                    </div>
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <strong style={{ fontSize: 18 }}>7/24 Canlı Satış Avatarı</strong>
-                      <p style={{ margin: 0, color: "rgba(226,232,240,.76)", fontSize: 13, lineHeight: 1.45 }}>Crelavo hakkında konuşan, ürün ve hizmet sorularını cevaplayan canlı avatar demo görünümü.</p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", color: "#cbd5e1", fontSize: 12 }}>
-                    <span>Kategoriler</span>
-                    <span>Krediler</span>
-                    <span>Kampanyalar</span>
-                  </div>
+            <div style={{ position: "relative", aspectRatio: "4 / 5", width: "100%", minHeight: 210, background: "radial-gradient(circle at 50% 18%, rgba(56,189,248,.18), transparent 28%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(2,6,23,.98))" }}>
+              {!avatarVideoFailed && activeAvatarUrl ? (
+                <video
+                  ref={avatarVideoRef}
+                  src={activeAvatarUrl}
+                  poster={heygenBrandAvatarPosterUrl}
+                  autoPlay
+                  muted={!videoSoundOn}
+                  loop
+                  playsInline
+                  preload="auto"
+                  controlsList="nodownload noplaybackrate nofullscreen"
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  onContextMenu={(event) => event.preventDefault()}
+                  onLoadedData={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
+                  onCanPlay={() => { void avatarVideoRef.current?.play().catch(() => undefined); }}
+                  onError={() => setAvatarVideoFailed(true)}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+                />
+              ) : (
+                <div style={{ width: "100%", height: "100%", position: "relative", backgroundImage: `url(${heygenBrandAvatarPosterUrl})`, backgroundSize: "cover", backgroundPosition: "center top", animation: "avatarFloat 4.5s ease-in-out infinite", transformOrigin: "center bottom" }}>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(2,6,23,.04), rgba(2,6,23,.26))" }} />
                 </div>
-            )}
+              )}
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(circle at 50% 9%, rgba(125,211,252,.24), transparent 34%), linear-gradient(180deg, transparent 58%, rgba(2,6,23,.52))", animation: "avatarGlow 2.8s ease-in-out infinite" }} />
+              <div style={{ position: "absolute", left: 14, bottom: 14, display: "inline-flex", alignItems: "center", gap: 7, borderRadius: 999, border: "1px solid rgba(34,197,94,.32)", background: "rgba(2,6,23,.54)", color: "#dcfce7", padding: "8px 11px", fontSize: 12, fontWeight: 900, backdropFilter: "blur(10px)" }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 6px rgba(34,197,94,.14)", animation: "liveDot 1.4s ease-in-out infinite" }} />
+                Live avatar
+              </div>
+              {isDirectPreviewUrl(activeAvatarUrl) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextSoundState = !videoSoundOn;
+                    setVideoSoundOn(nextSoundState);
+                    window.setTimeout(() => {
+                      if (!avatarVideoRef.current) return;
+                      avatarVideoRef.current.muted = !nextSoundState;
+                      if (nextSoundState) {
+                        avatarVideoRef.current.currentTime = 0;
+                        void avatarVideoRef.current.play().catch(() => undefined);
+                      }
+                    }, 0);
+                  }}
+                  style={{ position: "absolute", right: 14, bottom: 14, borderRadius: 999, border: "1px solid rgba(255,255,255,.2)", background: videoSoundOn ? "rgba(34,197,94,.32)" : "rgba(0,0,0,.48)", color: "#fff", padding: "8px 12px", cursor: "pointer", fontSize: 12, fontWeight: 900, backdropFilter: "blur(10px)" }}
+                >
+                  {videoSoundOn ? "Sound on" : "Sound"}
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 50, height: 50, borderRadius: 999, background: "radial-gradient(circle at 30% 30%, rgba(34,211,238,.84), rgba(124,58,237,.72) 52%, rgba(15,23,42,.98) 100%)", border: "1px solid rgba(255,255,255,.18)", display: "grid", placeItems: "center" }}>
+              <div style={{ width: 50, height: 50, borderRadius: 999, background: "radial-gradient(circle at 30% 30%, rgba(34,211,238,.84), rgba(124,58,237,.72) 52%, rgba(15,23,42,.98) 100%)", border: "1px solid rgba(255,255,255,.18)", display: "grid", placeItems: "center", animation: "avatarPulse 2.4s ease-in-out infinite" }}>
                 <Sparkles size={20} />
               </div>
               <div>
-                <strong style={{ display: "block", fontSize: 14 }}>Canlı avatar sohbeti</strong>
+                <strong style={{ display: "block", fontSize: 14 }}>Live avatar chat</strong>
                 <small style={{ color: "#bae6fd", fontSize: 11, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase" }}>{status}</small>
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <button
-                type="button"
-                onClick={() => setChatOpen((current) => !current)}
-                style={{ borderRadius: 999, border: "1px solid rgba(125,211,252,.34)", background: chatOpen ? "rgba(59,130,246,.22)" : "rgba(125,211,252,.12)", color: "#fff", padding: "10px 14px", cursor: "pointer", fontSize: 13, fontWeight: 900, boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}
-              >
-                {chatOpen ? "Sohbeti gizle" : "Canlı avatara sor"}
-              </button>
-              <span style={{ borderRadius: 999, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.76)", padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800 }}>
-                <Volume2 size={14} />
-                AI cevap
-              </span>
-            </div>
+            <button
+              type="button"
+              onClick={() => setChatOpen((current) => !current)}
+              style={{ borderRadius: 999, border: "1px solid rgba(125,211,252,.34)", background: chatOpen ? "rgba(59,130,246,.22)" : "rgba(125,211,252,.12)", color: "#fff", padding: "10px 14px", cursor: "pointer", fontSize: 13, fontWeight: 900, boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}
+            >
+              {chatOpen ? "Hide chat" : "Ask avatar"}
+            </button>
           </div>
 
           {chatOpen ? <div ref={chatRef} style={{ maxHeight: 150, overflow: "auto", display: "grid", gap: 10, paddingRight: 2 }}>
@@ -415,14 +359,14 @@ export function PreviewSupportBox() {
                 {message.content}
               </div>
             ))}
-              {loading ? (
-                <div style={{ maxWidth: "88%", borderRadius: 16, padding: "10px 12px", background: "rgba(255,255,255,.08)", color: "#fff", lineHeight: 1.45, fontSize: 13 }}>
-                  Avatar is thinking...
-                </div>
-              ) : null}
-            </div> : null}
+            {loading ? (
+              <div style={{ maxWidth: "88%", borderRadius: 16, padding: "10px 12px", background: "rgba(255,255,255,.08)", color: "#fff", lineHeight: 1.45, fontSize: 13 }}>
+                Avatar is thinking...
+              </div>
+            ) : null}
+          </div> : null}
 
-            <form
+          <form
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
               event.preventDefault();
               void sendMessage();
@@ -438,11 +382,19 @@ export function PreviewSupportBox() {
                   void sendMessage();
                 }
               }}
-              placeholder="Kategori, kredi, kampanya, fiyat, üretim veya genel sorunuzu yazın..."
+              placeholder="Type or speak in any language..."
               rows={3}
               style={{ width: "100%", resize: "none", borderRadius: 14, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.05)", color: "#fff", padding: "10px 12px", outline: "none" }}
             />
             <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={toggleSpeechInput}
+                style={{ width: 48, borderRadius: 14, border: listening ? "1px solid rgba(34,197,94,.55)" : "1px solid rgba(255,255,255,.14)", background: listening ? "rgba(34,197,94,.2)" : "rgba(255,255,255,.08)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" }}
+                aria-label={listening ? "Stop voice input" : "Start voice input"}
+              >
+                <Mic size={17} />
+              </button>
               <button
                 className="primary-button"
                 type="submit"
@@ -450,14 +402,43 @@ export function PreviewSupportBox() {
                 disabled={loading}
               >
                 <Send size={16} />
-                {loading ? "Gönderiliyor..." : "Avatarla konuş"}
+                {loading ? "Sending..." : "Send"}
               </button>
             </div>
           </form>
 
-
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+            {quickPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => { void sendMessage(prompt); }}
+                style={{ borderRadius: 999, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.82)", padding: "7px 9px", cursor: "pointer", fontSize: 11 }}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes avatarGlow {
+          0%, 100% { opacity: .64; }
+          50% { opacity: 1; }
+        }
+        @keyframes avatarFloat {
+          0%, 100% { transform: scale(1.015) translateY(0); }
+          50% { transform: scale(1.045) translateY(-4px); }
+        }
+        @keyframes avatarPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,.18); }
+          50% { box-shadow: 0 0 0 10px rgba(34,211,238,0); }
+        }
+        @keyframes liveDot {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(.72); opacity: .58; }
+        }
+      `}</style>
     </div>
   );
 }

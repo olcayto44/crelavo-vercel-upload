@@ -28,8 +28,13 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function normalizeText(value: string) {
-  return value.toLowerCase().trim();
+function detectLanguage(message: string) {
+  const text = message.toLowerCase();
+  const turkishSignals = /[ğüşöçıİ]/i.test(message) || /(merhaba|selam|kredi|paket|fiyat|ücret|ucret|ödeme|odeme|kampanya|sipariş|siparis|kargo|ürün|urun|nasıl|nasil|nedir|yardım|yardim|evet|tamam|lütfen|lutfen)/.test(text);
+  const englishSignals = /(hello|hi|price|pricing|package|credit|campaign|order|shipping|product|how|what|support|help|yes|please|thanks)/.test(text);
+  if (turkishSignals && !englishSignals) return "tr";
+  if (englishSignals && !turkishSignals) return "en";
+  return "auto";
 }
 
 function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
@@ -38,7 +43,7 @@ function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
     platform: "Crelavo website",
     industry: "AI production studio, ecommerce, video, websites, apps, SaaS, campaigns and live sales",
     avatar_role: "24/7 Crelavo live sales avatar",
-    language: "Turkish and English",
+    language: "auto",
     voice: "premium live avatar voice",
     tone: "helpful, sales-aware, practical and natural",
     availability: "24/7",
@@ -49,25 +54,23 @@ function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
 }
 
 function publicReply(message: string, agent: Record<string, unknown>) {
-  const text = normalizeText(message);
-  const customerText = text.replace(/^crelavo live avatar context:.*customer message:\s*/i, "").trim();
+  const text = message.toLowerCase().trim();
   const shipping = clean(agent.shipping_info);
   const order = clean(agent.order_info);
   const product = clean(agent.product_info);
   const role = clean(agent.avatar_role) || "All-in-one host";
-  const language = clean(agent.language) || "English";
+  const language = clean(agent.language) || "auto";
   const platform = clean(agent.platform) || "website";
   const industry = clean(agent.industry) || "e-commerce";
+  const turkish = language === "tr" || detectLanguage(message) === "tr";
 
-  const turkish = /[ğüşöçıİ]/i.test(message) || /(kargo|sipariş|ürün|iade|teslim|fiyat|kampanya|satış|ödeme|stok|nedir|nasıl|nasil)/.test(customerText) || language.toLowerCase().includes("turk");
-
-  if (/^(selam|merhaba|mrb|sa|slm)\b/.test(customerText)) {
+  if (/^(selam|merhaba|mrb|sa|slm)\b/.test(text)) {
     return turkish
       ? `Merhaba, hoş geldiniz. Crelavo’nun canlı avatarıyım; web sitesi, e-ticaret, sosyal medya ve üretim akışları hakkında yardımcı olabilirim. Ne öğrenmek istersiniz?`
       : `Hello, welcome. I’m Crelavo’s live avatar; I can help with websites, e-commerce, social media, and production workflows. What would you like to know?`;
   }
 
-  if (/(crelavo|neler yapıyorsun|neler yapıyorsunuz|what can you do|what do you do|who are you|you do|ne yaparsın|ne yapıyorsunuz|nedir|nasıl çalışır|nasil calisir)/.test(customerText)) {
+  if (/(crelavo|neler yapıyorsun|neler yapıyorsunuz|what can you do|what do you do|who are you|you do|ne yaparsın|ne yapıyorsunuz|nedir|nasıl çalışır|nasil calisir)/.test(text)) {
     return turkish
       ? `Crelavo; web sitesi, uygulama, e-ticaret video/reklam üretimi, sosyal medya içerikleri, canlı avatar ve marka üretim akışlarını tek merkezden hazırlayan AI production platformudur. Ben de bunu sitede canlı avatar örneği olarak gösteriyorum.`
       : `Crelavo is an AI production platform for websites, apps, e-commerce videos, ads, social media assets, live avatars, and brand workflows. I’m showing this as a live avatar example on the site.`;
@@ -106,22 +109,17 @@ async function loadAgent(agentId: string) {
   return data || (agentId === "agent_demo_live_sales_001" ? demoCrelavoAgent(agentId) : null);
 }
 
-function languageName(message: string, agent: Record<string, unknown>) {
-  const configured = clean(agent.language).toLowerCase();
-  if (/[ğüşöçıİ]/i.test(message) || configured.includes("turk")) return "Turkish";
-  return "English";
-}
-
 async function aiLiveAvatarReply(message: string, agent: Record<string, unknown>) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return "";
 
+  const language = detectLanguage(message);
   const agentContext = [
     `agent_id: ${clean(agent.agent_id)}`,
     `platform: ${clean(agent.platform) || "Crelavo website"}`,
     `industry: ${clean(agent.industry) || "AI production, ecommerce, websites, apps, video, campaigns and live sales"}`,
     `role: ${clean(agent.avatar_role) || "24/7 Crelavo live sales avatar"}`,
-    `language: ${clean(agent.language) || "auto"}`,
+    `language: ${language}`,
     `voice: ${clean(agent.voice) || "brand live avatar voice"}`,
     `tone: ${clean(agent.tone) || "helpful, sales-aware, concise and practical"}`,
     `availability: ${clean(agent.availability) || "24/7"}`,
@@ -141,7 +139,21 @@ async function aiLiveAvatarReply(message: string, agent: Record<string, unknown>
       messages: [
         {
           role: "system",
-          content: `You are the 24/7 live Crelavo sales avatar embedded on crelavo.com. You are not a narrow FAQ bot. You answer like a real-time AI sales consultant and general AI assistant. Use ${languageName(message, agent)} only.\n\nHard rules:\n- Answer the user's actual question directly.\n- Know Crelavo categories, credits, campaigns, pricing logic, dashboard flows, production delivery, live sales avatar plans, Growth Intelligence, video/ad production, websites, apps, SaaS/admin panels, voice/avatar/dubbing and support routes.\n- You may also answer safe general knowledge questions like a normal AI assistant, then connect back to Crelavo only when useful.\n- Be concise, practical and human.\n- Do not claim a production, payment, delivery or live stream has started unless the user is on the real confirmation/production flow.\n- For pricing/credits, explain that exact cost depends on duration, quality, provider/API usage and package. Route to pricing/credits pages when useful.\n- For live sales avatar: explain 24/7 website/live commerce assistant, product FAQ, categories, offers, campaigns, credit/package guidance, lead capture, human fallback and dashboard control.\n\nAgent context:\n${agentContext}\n\n${buildAssistantKnowledgePrompt()}`
+          content: `You are the 24/7 live Crelavo sales avatar embedded on crelavo.com. You are not a narrow FAQ bot. You answer like a real-time AI sales consultant and general AI assistant. Use the user's language exactly: if the user writes Turkish, answer Turkish; if English, answer English; if another language, answer in that same language as closely as possible.
+
+Hard rules:
+- Answer the user's actual question directly.
+- Know Crelavo categories, credits, campaigns, pricing logic, dashboard flows, production delivery, live sales avatar plans, Growth Intelligence, video/ad production, websites, apps, SaaS/admin panels, voice/avatar/dubbing and support routes.
+- You may also answer safe general knowledge questions like a normal AI assistant, then connect back to Crelavo only when useful.
+- Be concise, practical and human.
+- Do not claim a production, payment, delivery or live stream has started unless the user is on the real confirmation/production flow.
+- For pricing/credits, explain that exact cost depends on duration, quality, provider/API usage and package. Route to pricing/credits pages when useful.
+- For live sales avatar: explain 24/7 website/live commerce assistant, product FAQ, categories, offers, campaigns, credit/package guidance, lead capture, human fallback and dashboard control.
+
+Agent context:
+${agentContext}
+
+${buildAssistantKnowledgePrompt()}`
         },
         { role: "user", content: message }
       ],

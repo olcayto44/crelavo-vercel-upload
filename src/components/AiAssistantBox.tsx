@@ -142,7 +142,7 @@ export function AiAssistantBox() {
   const [activityItems, setActivityItems] = useState<string[]>([
     "Assistant ready. Waiting for a prompt or voice request."
   ]);
-  const [selectedQuality, setSelectedQuality] = useState("720p");
+  const [selectedQuality, setSelectedQuality] = useState("1080p");
   const [selectedDuration, setSelectedDuration] = useState(fallbackSuggestion.duration);
   const [selectedStyle, setSelectedStyle] = useState(fallbackSuggestion.style);
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
@@ -254,7 +254,7 @@ export function AiAssistantBox() {
       setSuggestion(nextSuggestion);
       setSelectedStyle(nextSuggestion.style || "Cinematic");
       setSelectedDuration(nextSuggestion.duration || "30 seconds");
-      setSelectedQuality(nextSuggestion.quality || "720p");
+      setSelectedQuality(/480p|720p|draft|quick\s*test/i.test(String(nextSuggestion.quality ?? "")) ? "1080p" : nextSuggestion.quality || "1080p");
       setSelectedMaterialType(nextSuggestion.premiumMaterialType || "No premium material");
       setSelectedMaterialOption(nextSuggestion.premiumMaterialOption || "None");
       setChargedCredits(data.chargedCredits ?? null);
@@ -375,7 +375,7 @@ async function startVoiceCommand() {
       const recognition = new Recognition();
       recognition.lang = activeLanguage === "tr" ? "tr-TR" : activeLanguage === "de" ? "de-DE" : activeLanguage === "es" ? "es-ES" : activeLanguage === "fr" ? "fr-FR" : activeLanguage === "ar" ? "ar-SA" : "en-US";
       recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      (recognition as any).maxAlternatives = 1;
       voiceTranscriptReceivedRef.current = false;
       clearAssistantVoiceTimeout();
       (recognition as any).onstart = () => {
