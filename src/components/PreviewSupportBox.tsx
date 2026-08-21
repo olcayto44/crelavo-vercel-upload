@@ -54,12 +54,6 @@ declare global {
   }
 }
 
-const quickPrompts = [
-  "What Crelavo categories are available?",
-  "How do credits and packages work?",
-  "Can the avatar answer in my language?"
-];
-
 function canShow(pathname: string | null) {
   const path = pathname || "/";
   return !hiddenPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
@@ -68,6 +62,24 @@ function canShow(pathname: string | null) {
 function browserSpeechLang() {
   if (typeof navigator === "undefined") return "en-US";
   return navigator.languages?.[0] || navigator.language || "en-US";
+}
+
+function detectLanguage(text: string) {
+  const cleaned = text.toLowerCase();
+  if (/[ğüşöçıİ]/i.test(text) || /(merhaba|selam|kredi|paket|fiyat|ücret|ucret|ödeme|odeme|kampanya|sipariş|siparis|kargo|ürün|urun|nasıl|nasil|nedir|yardım|yardim|evet|tamam|lütfen|lutfen)/.test(cleaned)) return "tr";
+  if (/(hello|hi|price|pricing|package|credit|campaign|order|shipping|product|how|what|support|help|yes|please|thanks)/.test(cleaned)) return "en";
+  return "en";
+}
+
+function speakText(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = detectLanguage(text) === "tr" ? "tr-TR" : "en-US";
+  utterance.rate = 0.96;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  window.speechSynthesis.speak(utterance);
 }
 
 export function PreviewSupportBox() {
@@ -213,6 +225,7 @@ function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
       const data = await response.json().catch(() => ({}));
       const reply = String(data.reply || data.error || fallback).trim() || fallback;
       setMessages((current) => [...current, { role: "assistant", content: reply }]);
+      speakText(reply);
       setStatus(String(data.agent?.availability ? `LIVE · ${data.agent.availability}` : "LIVE · always active"));
 
       const avatarVideoResult = data.avatar_video as AvatarVideo | null | undefined;
@@ -375,26 +388,17 @@ function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 50, height: 50, borderRadius: 999, background: "radial-gradient(circle at 30% 30%, rgba(34,211,238,.84), rgba(124,58,237,.72) 52%, rgba(15,23,42,.98) 100%)", border: "1px solid rgba(255,255,255,.18)", display: "grid", placeItems: "center", animation: "avatarPulse 2.4s ease-in-out infinite" }}>
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <strong style={{ display: "block", fontSize: 14 }}>Live avatar chat</strong>
-                <small style={{ color: "#bae6fd", fontSize: 11, fontWeight: 800, letterSpacing: ".05em", textTransform: "uppercase" }}>{status}</small>
-              </div>
-            </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <button
               type="button"
               onClick={() => setChatOpen((current) => !current)}
-              style={{ borderRadius: 999, border: "1px solid rgba(125,211,252,.34)", background: chatOpen ? "rgba(59,130,246,.22)" : "rgba(125,211,252,.12)", color: "#fff", padding: "10px 14px", cursor: "pointer", fontSize: 13, fontWeight: 900, boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}
+              style={{ borderRadius: 999, border: "1px solid rgba(125,211,252,.34)", background: chatOpen ? "rgba(59,130,246,.22)" : "rgba(125,211,252,.12)", color: "#fff", padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 900 }}
             >
-              {chatOpen ? "Hide chat" : "Ask avatar"}
+              {chatOpen ? "Hide chat" : "Chat"}
             </button>
           </div>
 
-          {chatOpen ? <div ref={chatRef} style={{ maxHeight: 150, overflow: "auto", display: "grid", gap: 10, paddingRight: 2 }}>
+          {chatOpen ? <div ref={chatRef} style={{ maxHeight: 150, overflow: "auto", display: "grid", gap: 10, paddingRight: 2, marginBottom: 10 }}>
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
@@ -461,18 +465,7 @@ function setAvatarState(next: AvatarVideo | null, nextUrl = "") {
             </div>
           </form>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
-            {quickPrompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => { void sendMessage(prompt); }}
-                style={{ borderRadius: 999, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.82)", padding: "7px 9px", cursor: "pointer", fontSize: 11 }}
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
+
         </div>
       </div>
       <style jsx>{`
