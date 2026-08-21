@@ -139,34 +139,7 @@ function embedCode(platform: string, currentAgentId = agentId) {
   return `<script\n  src="https://www.crelavo.com/embed/live-sales-avatar.js"\n  data-agent-id="${currentAgentId}"\n  data-platform="${safePlatform}"\n  data-position="bottom-right"\n  data-theme="dark">\n</script>`;
 }
 
-function assistantReply(message: string, state: WorkspaceState) {
-  const text = message.toLowerCase();
-  const platformLabel = state.platform || "your channel";
-  const roleLabel = state.role || "All-in-one host";
-  const productLabel = state.productInfo.trim() || "your offer";
-  const shippingLabel = state.shippingInfo.trim() || "shipping and delivery details";
-  const orderLabel = state.orderInfo.trim() || "order support flow";
 
-  if (["all", "hepsi", "tamamı", "tanıtım", "satış", "sipariş", "kargo"].filter((word) => text.includes(word)).length >= 2) {
-    return `Yes, the best role is ${roleLabel}. This avatar can present products, guide sales, answer order questions, and explain shipping. Next we should connect the product catalog, sales channel, and ${shippingLabel}.`;
-  }
-  if (text.includes("kargo") || text.includes("ship") || text.includes("delivery") || text.includes("cargo")) {
-    return `Once shipping is connected, the avatar can explain carrier, tracking number, estimated delivery timing, and return policy for ${platformLabel}.`;
-  }
-  if (text.includes("sipariş") || text.includes("order")) {
-    return `Once order data is connected, the avatar can answer order status using order number, email, or phone verification. ${orderLabel}`;
-  }
-  if (text.includes("satış") || text.includes("price") || text.includes("cost") || text.includes("discount") || text.includes("sales")) {
-    return `The avatar can deliver a sales pitch, handle objections, and guide the buyer toward checkout for ${productLabel}.`;
-  }
-  if (text.includes("tanıtım") || text.includes("ürün") || text.includes("product") || text.includes("feature") || text.includes("promotion")) {
-    return `The avatar can present ${productLabel}, explain key benefits, and deliver the offer in your brand tone on ${platformLabel}.`;
-  }
-  if (text.includes("embed") || text.includes("integrat") || text.includes("platform") || text.includes("site") || text.includes("website")) {
-    return `For ${platformLabel}, the next step is to save the avatar setup, copy the embed code, and connect the live flow when you are ready. This works best with ${roleLabel} and ${productLabel}.`;
-  }
-  return `I can help set up a live avatar for ${platformLabel}. Ask about product, sales, orders, shipping, or embed code, and I’ll answer using the current setup.`;
-}
 
 
 export function LiveSalesControlCenter() {
@@ -438,7 +411,7 @@ async function sendMessage() {
   setSending(true);
 
   const language = detectLanguage();
-  const localFallback = assistantReply(message, state);
+  const localFallback = `I couldn’t reach the live assistant just now. Please try again in a moment.`;
 
   try {
     const auth = await requireVerifiedBrowserUser();

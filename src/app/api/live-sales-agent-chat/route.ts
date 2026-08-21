@@ -109,65 +109,17 @@ function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
 }
 
 function publicReply(message: string, agent: Record<string, unknown>) {
-  const text = message.toLowerCase().trim();
-  const shipping = clean(agent.shipping_info);
-  const order = clean(agent.order_info);
-  const product = clean(agent.product_info);
-  const role = clean(agent.avatar_role) || "All-in-one host";
   const language = clean(agent.language) || "auto";
   const platform = clean(agent.platform) || "website";
-  const industry = clean(agent.industry) || "e-commerce";
+  const role = clean(agent.avatar_role) || "All-in-one host";
+  const product = clean(agent.product_info);
+  const shipping = clean(agent.shipping_info);
+  const order = clean(agent.order_info);
   const turkish = language === "tr" || detectLanguage(message) === "tr";
 
-  if (/^(selam|merhaba|mrb|sa|slm)\b/.test(text)) {
-    return turkish
-      ? `Merhaba, hoş geldiniz. Crelavo’nun canlı avatarıyım; web sitesi, e-ticaret, sosyal medya ve üretim akışları hakkında yardımcı olabilirim. Ne öğrenmek istersiniz?`
-      : `Hello, welcome. I’m Crelavo’s live avatar; I can help with websites, e-commerce, social media, and production workflows. What would you like to know?`;
-  }
-
-  if (/(crelavo|neler yapıyorsun|neler yapıyorsunuz|what can you do|what do you do|who are you|you do|ne yaparsın|ne yapıyorsunuz|nedir|nasıl çalışır|nasil calisir)/.test(text)) {
-    return turkish
-      ? `Crelavo; web sitesi, uygulama, e-ticaret video/reklam üretimi, sosyal medya içerikleri, canlı avatar ve marka üretim akışlarını tek merkezden hazırlayan AI production platformudur. Ben de bunu sitede canlı avatar örneği olarak gösteriyorum.`
-      : `Crelavo is an AI production platform for websites, apps, e-commerce videos, ads, social media assets, live avatars, and brand workflows. I’m showing this as a live avatar example on the site.`;
-  }
-
-  if (/(embed|integrat|website|site|shopify|woocommerce|wordpress|wix|webflow|platform|where to use|nasıl eklerim|nasil eklerim|how do i add|how to add|entegrasyon|integrasyon)/.test(text)) {
-    return turkish
-      ? `Bu avatarı ${platform} üzerinde kullanmak için önce setup'ı kaydedersin, sonra embed kodunu sitene eklersin. Eğer mağaza ya da sosyal kanal ise, avataryı ürün sayfası, landing page, link-in-bio veya destek akışına bağlarsın. Rol: ${role}. ${product || "Ürün bilgisi eklendiğinde"} müşteriyi teklif sayfasına yönlendirebilir.`
-      : `To use this avatar on ${platform}, first save the setup and then paste the embed code into your site. If it is for a store or social channel, connect it to a product page, landing page, link-in-bio page, or support flow. Role: ${role}. ${product || "Once product details are added,"} it can guide customers toward the right offer page.`;
-  }
-
-  if (/(hours|hour|kaç saat|kac saat|saat|working hours|available|availability|biz hours|business hours)/.test(text)) {
-    return turkish
-      ? `Bu avatar ${clean(agent.availability) || "7/24"} çalışacak şekilde ayarlanabilir. Business hours, custom schedule ya da manuel start/stop seçebilirsin. Canlı hizmet süresi planına göre de ayrıca sınırlandırılabilir.`
-      : `This avatar can be set to ${clean(agent.availability) || "24/7"}. You can choose business hours, a custom schedule, or manual start/stop. Live service hours can also be limited by the plan.`;
-  }
-
-  if (/(kargo|ship|delivery|teslim)/.test(text)) {
-    return turkish
-      ? `Ben ${role} rolünde yardımcı oluyorum. ${shipping || "Kargo ve teslimat bilgisi henüz eklenmemiş. Teslim süresi, kargo firması ve iade politikasını bağlayınca net yanıt verebilirim."}`
-      : `I am helping as an ${role}. ${shipping || "Shipping and delivery details are not added yet. Once you connect carrier, delivery time, and return policy, I can answer precisely."}`;
-  }
-
-  if (/(sipariş|order|tracking|status)/.test(text)) {
-    return turkish
-      ? `Sipariş durumunu yanıtlayabilmem için sipariş numarası ve doğrulama gerekir. ${order || "Sipariş destek akışı henüz eklenmedi."}`
-      : `I need an order number and verification to answer order status. ${order || "Order support flow is not added yet."}`;
-  }
-
-  if (/(iade|refund|return|değişim|degisim)/.test(text)) {
-    return turkish
-      ? `İade ve değişim için politikayı bağlamamız gerekir. ${shipping || "İade politikası henüz eklenmedi."}`
-      : `I need the return policy connected to answer refunds and exchanges. ${shipping || "Return policy is not added yet."}`;
-  }
-
-  if (/(ürün|product|feature|özellik|price|fiyat|kampanya|offer|discount|sales)/.test(text)) {
-    return turkish
-      ? `${product || "Ürün bilgisi henüz tanımlanmadı."} Bu avatar ${role} olarak ${industry} akışında satış konuşması yapabilir ve müşteriyi doğru teklif sayfasına yönlendirebilir.`
-      : `${product || "Product details are not defined yet."} This avatar can act as an ${role} for ${platform} and guide customers toward the right offer.`;
-  }
-
-  return "";
+  return turkish
+    ? `Bu canlı satış avatarı ${platform} için ürün, kargo, sipariş, entegrasyon ve çalışma saatleri hakkında yardımcı olabilir. Setup'ı kaydedip embed kodunu ekleyerek kullanabilir, ürün / sipariş / kargo verilerini bağladıkça daha akıllı hale getirebilirsiniz. Rol: ${role}. ${product || "Ürün bilgisi hazır olduğunda"} müşteriyi doğru teklif sayfasına yönlendirebilir. ${shipping || "Teslimat bilgisi"} ve ${order || "sipariş akışı"} bağlanınca daha net cevap verir.`
+    : `This live sales avatar can help with product, shipping, order, integration, and hours for ${platform}. Save the setup, paste the embed code, and connect product, order, and shipping data to make it smarter. Role: ${role}. ${product || "Once product details are ready"} it can guide customers toward the right offer page. It becomes more precise when ${shipping || "delivery info"} and ${order || "order flow"} are connected.`;
 }
 
 async function loadAgent(agentId: string) {
@@ -272,11 +224,8 @@ export async function POST(request: Request) {
     const agent = await loadAgent(agentId);
     if (!agent) return corsJson({ error: "Live sales agent not found." }, { status: 404 });
 
-    const directReply = publicReply(message, agent);
-    const aiReply = directReply ? "" : await aiLiveAvatarReply(message, agent).catch(() => "");
-    const reply = directReply || aiReply || (detectLanguage(message) === "tr"
-      ? `Canlı satış avatarı hazır. Rol: ${clean(agent.avatar_role) || "All-in-one host"}. Web sitesi, e-ticaret ve destek akışına göre yardımcı olabilirim.`
-      : `The live sales avatar is ready. Role: ${clean(agent.avatar_role) || "All-in-one host"}. I can help based on the website, e-commerce, and support flow.`);
+    const aiReply = await aiLiveAvatarReply(message, agent).catch(() => "");
+    const reply = aiReply || publicReply(message, agent);
     const wantsAvatarVideo = body.avatar_video !== false;
     const avatarVideo = wantsAvatarVideo
       ? await submitMiniMaxSpeakingAvatar(reply, message).catch((error) => ({
