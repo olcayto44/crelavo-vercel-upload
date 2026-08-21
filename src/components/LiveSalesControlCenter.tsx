@@ -487,7 +487,11 @@ async function sendMessage() {
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
                     )}
                     <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
-                      <strong className="live-sales-avatar-provider-badge">MiniMax H3 · Live</strong>
+                      <div className="live-sales-avatar-provider-badge">
+                        <span className="live-sales-avatar-provider-chip">AI LIVE</span>
+                        <span className="live-sales-avatar-provider-name">MiniMax H3</span>
+                        <span className="live-sales-avatar-provider-subline">Studio stream</span>
+                      </div>
                       <span>{avatarPreview.status || "preview"}</span>
                     </div>
                   </div>
@@ -660,10 +664,22 @@ async function sendMessage() {
               {message.text}
             </div>
           ))}
+          {sending ? (
+            <div className="chat-bubble typing-indicator" aria-live="polite">
+              <span className="typing-label">MiniMax H3 is thinking</span>
+              <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
+            </div>
+          ) : null}
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {["Ask about shipping", "Ask about price", "Ask about returns", "Ask about features"].map((label) => (
+          {[
+            "How do I connect this?",
+            "What can it do?",
+            "How many hours can it run?",
+            "How do I use it on Shopify?",
+            "How do I use it on social media?"
+          ].map((label) => (
             <button
               key={label}
               type="button"
