@@ -377,20 +377,28 @@ async function retryProviderJob(item: ProductionRow) {
   const response = await fetch("/api/automation/start", {
     method: "POST",
     headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify(adminApiBody({ production_id: item.id }, adminEmail, adminToken))
+    body: JSON.stringify(adminApiBody({ production_id: item.id, force_start: true }, adminEmail, adminToken))
   });
 
-  const data = await response.json().catch(() => ({}));
+  const responseText = await response.text();
+  let data: Record<string, unknown> = {};
+  try {
+    data = responseText ? JSON.parse(responseText) as Record<string, unknown> : {};
+  } catch {
+    data = { error: responseText };
+  }
   setRefreshingId("");
 
   if (!response.ok) {
-    setMessage(data.error ?? "Provider retry could not be started.");
+    const details = response.statusText ? `${response.status} ${response.statusText}` : String(response.status);
+    setMessage(String(data.error ?? data.message ?? data.detail ?? responseText ?? `Provider retry could not be started (${details}).`));
     return;
   }
 
-  if (data.production) {
-    setRows((current) => current.map((row) => row.id === item.id ? data.production : row));
-    setMessage(data.already_running ? "An active provider job already exists; no new job was opened." : "Provider retry started for this production.");
+  const production = data.production as ProductionRow | undefined;
+  if (production) {
+    setRows((current) => current.map((row) => row.id === item.id ? production : row));
+    setMessage(Boolean(data.already_running) ? "An active provider job already exists; no new job was opened." : "Provider retry started for this production.");
   }
 }
 
