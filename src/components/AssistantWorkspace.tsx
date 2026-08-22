@@ -3465,9 +3465,9 @@ async function startRawMicrophoneFallback() {
       <section className="assistant-live-stage ai-dashboard-shell">
         <aside className="ai-dashboard-sidebar" aria-label="Crelavo production navigation">
           <div className="ai-dashboard-brand">
-            <span className="badge"><Sparkles size={14} /> Crelavo Studio</span>
-            <h1>AI Production</h1>
-            <p>Chat, brief, quality, credits and real production status in one workspace.</p>
+            <span className="badge"><Sparkles size={14} /> Work Brain</span>
+            <h1>Crelavo Work</h1>
+            <p>Assistant, studio and deploy flow live together in one visible control surface.</p>
           </div>
           <div className="ai-dashboard-nav">
             {studioQuickPaths.map((path) => (
@@ -3487,9 +3487,9 @@ async function startRawMicrophoneFallback() {
         <section className="assistant-inline-chat ai-dashboard-chat" aria-label="Assistant chat flow">
           <div className="assistant-inline-chat-head">
             <div>
-              <span className="badge"><Bot size={14} /> Single chat</span>
-              <h2>Crelavo Assistant</h2>
-              <p>Write what you want here. General questions are answered; production requests become a brief and action automatically.</p>
+              <span className="badge"><Bot size={14} /> Assistant panel</span>
+              <h2>Work Chat</h2>
+              <p>Write one request here. The assistant turns it into a brief, action plan and production route without leaving Work.</p>
             </div>
             <button className="btn secondary compact-chat-clear" type="button" onClick={clearProductionChat}>Clear</button>
           </div>
@@ -3510,9 +3510,9 @@ async function startRawMicrophoneFallback() {
         <main className="ai-dashboard-canvas" aria-label="Production overview">
           <section className="studio-preview-plan ai-preview-hero">
             <div>
-              <span className="badge">Production preview · HeyGen Bridge Online</span>
+              <span className="badge">Studio stage</span>
               <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-              <p>{productionBrief || "Henüz üretim brief'i yok. Soldaki tek sohbet alanına isteğini yazınca burada üretim planı, teslimatlar, action ve kredi tahmini görünür."}</p>
+              <p>{productionBrief || "Henüz brief yok. Soldaki Work Chat’e yazınca burada üretim planı, çıktı önizlemesi, action ve kredi tahmini görünür."}</p>
               <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status secondary">
                 <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
                 <span><Bot size={13} /><strong>Video Agent native artifacts aktif</strong></span>
@@ -3576,9 +3576,9 @@ async function startRawMicrophoneFallback() {
 
           <section className="assistant-production-console ai-delivery-console">
             <section className="assistant-console-main">
-              <span className="badge">Live production route</span>
+              <span className="badge">Deploy hub</span>
               <h2>{selectedProduction?.label ?? selectedProductionType}</h2>
-              <p>{selectedProduction?.description ?? "Production type, delivery format and credit reserve are prepared from the chat."}</p>
+              <p>{selectedProduction?.description ?? "Delivery format, embed-ready outputs and credit reserve are prepared from the chat."}</p>
               <div className="assistant-console-metrics">
                 <div><small>Estimated reserve</small><strong>{costEstimate.totalCredits.toLocaleString()} credits</strong></div>
                 <div><small>Output count</small><strong>{costEstimate.outputCount}</strong></div>
