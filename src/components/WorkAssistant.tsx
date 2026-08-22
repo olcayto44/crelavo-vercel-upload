@@ -378,7 +378,6 @@ const trUiLabels: Record<string, string> = {
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
   "Video style": "Video tarzı",
   "Minimax H3": "Minimax H3",
-  "Minimax H3 provider tier": "Minimax H3 provider tier",
   "Presenter choice": "Sunucu seçimi",
   "Presenter motions": "Sunucu hareketleri",
   "Natural delivery": "Doğal anlatım",
@@ -1046,10 +1045,10 @@ function selectedDurationSeconds(setup: ProductionSetupState, plan?: StudioPlan 
 }
 
 function heygenQualityCreditBreakdown(setup: ProductionSetupState, plan?: StudioPlan | null) {
-  if (isImageProductionType(String(plan?.production_type ?? ""))) return { title: "Minimax H3 provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
+  if (isImageProductionType(String(plan?.production_type ?? ""))) return { title: "Minimax H3", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
   const selected = String((setup.heygenQuality ?? [])[0] ?? "Minimax H3");
   const seconds = selectedDurationSeconds(setup, plan);
-  if (!seconds) return { title: "Minimax H3 provider tier", selected, credits: 0, seconds, creditsPerMinute: 0 };
+  if (!seconds) return { title: "Minimax H3", selected, credits: 0, seconds, creditsPerMinute: 0 };
   const creditsPerMinute = HEYGEN_PREMIUM_CREDITS_PER_MINUTE;
   return {
     title: selected,
@@ -1640,7 +1639,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const setupItems = useMemo(() => selectedSetupItems(activeProductionSetup, plan?.production_type ?? ""), [activeProductionSetup, plan]);
   const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || activeSelectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, activeProductionSetup, plan, productionPrompt || input) : [];
-const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProductionSetup, plan) : { title: "Minimax H3 provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
+const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProductionSetup, plan) : { title: "Minimax H3", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
 const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualHeyGenBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
