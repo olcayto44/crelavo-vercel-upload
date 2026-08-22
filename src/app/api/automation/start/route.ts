@@ -564,7 +564,8 @@ if (talkingProviderType) {
     .eq("id", productionId);
   if (startRequestedError) throw new Error(`minimax_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
-  const useHeyGenVideoAgent = /heygen_video_agent|video_agent|video\s+agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
+  const explicitVideoAgentProvider = String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? requestMetadata.selectedProviderService ?? inputJson.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.provider_service ?? "").toLowerCase();
+  const useHeyGenVideoAgent = explicitVideoAgentProvider === "heygen_video_agent";
   let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
     heygenJob = useHeyGenVideoAgent

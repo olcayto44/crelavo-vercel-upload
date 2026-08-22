@@ -59,6 +59,8 @@ function firstUrlFromText(value: unknown) {
 }
 
 function appBaseUrl(request: Request) {
+  const requestOrigin = new URL(request.url).origin;
+  if (requestOrigin) return requestOrigin.replace(/\/$/, "");
   const origin = request.headers.get("origin") || request.headers.get("x-forwarded-host");
   if (origin?.startsWith("http")) return origin.replace(/\/$/, "");
   if (origin) return `https://${origin.replace(/\/$/, "")}`;
