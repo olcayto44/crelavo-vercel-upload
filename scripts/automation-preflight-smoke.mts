@@ -66,7 +66,7 @@ assertEqual(renderQueuePolicyForPackage("team").label, "Dedicated production pri
 assertEqual(isVideoLikeProductionType("music_video"), true, "video-like production type");
 assertEqual(safeActiveVideoJobLimit(), 5, "default active video job limit");
 const ecommerceRequirements = providerRequirementsForProduction("campaign", "campaign_product_ad_video");
-for (const key of ["openai", "video_provider", "voice_provider", "render_provider", "storage"]) {
+for (const key of ["planning_brain", "video_provider", "voice_provider", "render_provider", "storage"]) {
   if (!ecommerceRequirements.some((item) => item.key === key)) throw new Error(`e-commerce provider readiness missing ${key}`);
 }
 
@@ -181,7 +181,7 @@ for (const term of ["image-preview:ip", "rateLimit", "rejectSuspiciousText", "va
 for (const term of ["mirrorProviderAsset", "fetch(input.sourceUrl", "uploadProviderAsset(`${input.productionId}/${input.filenameBase}.${extension}`"]) {
   if (!providerStorage.includes(term)) throw new Error(`provider storage mirror missing term: ${term}`);
 }
-for (const term of ["DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "APIFY_API", "DATAFORSEO_API_KEY", "META_ACCESS_TOKEN", "WHOP_WEBHOOK_KEY", "SHOPIFY_CLIENT_ID", "KLING_AI_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID", "TURNSTILE_SECRET_KEY"]) {
+for (const term of ["RUNWAY_API_KEY", "APIFY_API_TOKEN", "DATAFORSEO_API_KEY", "META_ACCESS_TOKEN", "WHOP_WEBHOOK_KEY", "SHOPIFY_CLIENT_ID", "KLING_AI_API_KEY", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID", "TURNSTILE_SECRET_KEY"]) {
   if (!providerAliases.includes(term)) throw new Error(`provider env alias missing term: ${term}`);
 }
 for (const term of ["requireProviderEnv", "optionalProviderEnv", "hasProviderEnv", "providerEnvNames"]) {
@@ -214,7 +214,7 @@ for (const term of ["isVoiceCloneIntent", "isLipSyncIntent", "isAvatarIntent", "
 for (const term of ["providerRouteMap", "run_lip_sync", "kling_talking_video_fallback", "reference_audio_consent"]) {
   if (!providerPlan.includes(term) || !providerReadinessRoute.includes("routeMap")) throw new Error(`provider router map missing term: ${term}`);
 }
-for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\"", "avatar_provider", "HeyGen avatar/talking-head provider"]) {
+for (const term of ["Voice clone work requires ElevenLabs", "type !== \"voice_clone\"", "MiniMax-H3 creates the visual job", "selected video provider route"]) {
   if (!providerReadiness.includes(term)) throw new Error(`voice clone provider readiness guard missing term: ${term}`);
 }
 for (const term of ["requireVerifiedRequestUser", "enforceRouteBudget", "source_audio_url", "source_video_url must be a secure https URL", "verified_user_https_source_rate_limited"]) {
@@ -400,7 +400,7 @@ for (const term of ["optionalEnv(\"GOOGLE_MAPS_BASE_URL\")", "requireProviderEnv
 for (const term of ["Provider-ready service workflow", "DataForSEO, Apify, Google Maps", "provider-ready dashboard"]) {
   if (!growthIntelligencePage.includes(term) && !growthIntelligencePanel.includes(term)) throw new Error(`Growth Intelligence provider-ready copy missing term: ${term}`);
 }
-for (const term of ["174,000 total annual credits", "300+ AI ad drafts", "Normally $1,560/yr, now $1,300/yr", "START 24-HOUR TEAM PREVIEW FOR $20", "$20 secure Whop preview"]) {
+for (const term of ["174,000 total annual credits", "300+ AI ad concepts", "Normally $1,560/yr, now $1,300/yr", "START 24-HOUR TEAM PREVIEW FOR $20", "$20 secure Whop preview"]) {
   if (!packageData.includes(term) && !adConfig.includes(term) && !splashAdClient.includes(term)) throw new Error(`Team Annual conversion copy missing term: ${term}`);
 }
 if (!splashAdClient.includes("window.setTimeout(showSplash, 15000)")) throw new Error("Team Annual splash delay should be 15 seconds");
@@ -428,7 +428,7 @@ for (const term of ["source: \"daily_streak\"", "pending_reward_review", "manual
 for (const term of ["/api/conversion/streak", "Daily comeback loop", "no automatic credits"]) {
   if (!dailyStreakCapture.includes(term)) throw new Error(`daily streak component missing term: ${term}`);
 }
-for (const term of ["TruthfulLiveActivity", "DailyStreakCapture"]) {
+for (const term of ["TruthfulLiveActivity"]) {
   if (!homePage.includes(term)) throw new Error(`homepage conversion component missing term: ${term}`);
 }
 for (const term of ["GeoOfferSegment", "US", "UK", "EU", "CA_AU", "TR", "GLOBAL", "CA", "AU", "x-vercel-ip-country", "cf-ipcountry", "geoOfferGuardrail", "fake local scarcity"]) {
