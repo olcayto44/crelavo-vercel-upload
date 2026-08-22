@@ -18,6 +18,7 @@ import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-d
 import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
 
 import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
+import { legalAcceptanceSnapshot, productionResponsibilityText, rightsWarrantyText, LEGAL_ACCEPTANCE_VERSION } from "@/lib/legal";
 import { buildOutputRegistry } from "@/lib/output-registry";
 import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-jobs";
 import { productionReadyGate } from "@/lib/production-ready-gate";
@@ -456,6 +457,7 @@ export async function POST(request: Request) {
     if (existingCreditResolution?.status === "refunded_reserved") {
       return Response.json({ error: "Reserved credits were already refunded for this failed production. Create a new production before starting another provider job." }, { status: 409 });
     }
+
     const requestMetadata = postgresSafe(currentProduction.request_metadata && typeof currentProduction.request_metadata === "object"
       ? currentProduction.request_metadata as Record<string, unknown>
       : existingOutput.requestMetadata && typeof existingOutput.requestMetadata === "object"
@@ -468,6 +470,38 @@ export async function POST(request: Request) {
         : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
           ? existingOutput.inputJson as Record<string, unknown>
           : {});
+    const legalSnapshot = legalAcceptanceSnapshot({ productionType: String(currentProduction.production_type ?? ""), packageId: String(currentProduction.package_id ?? ""), title: String(currentProduction.title ?? ""), userEmail: String(requestMetadata.userEmail ?? requestMetadata.user_email ?? "") });
+const currentProductionRecord = currentProduction as Record<string, unknown>;
+const currentLegalSnapshot = currentProductionRecord.legal_acceptance_snapshot && typeof currentProductionRecord.legal_acceptance_snapshot === "object" ? currentProductionRecord.legal_acceptance_snapshot as Record<string, unknown> : null;
+const currentLegalAccepted = Boolean(currentLegalSnapshot?.accepted);
+const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "").trim();
+    if (!currentLegalAccepted || !currentLegalId) {
+      const { data: repairedLegal, error: repairedLegalError } = await supabase
+        .from("legal_acceptances")
+        .insert({
+          user_id: currentProduction.user_id,
+          production_id: currentProduction.id,
+          acceptance_type: "production_liability",
+          version: LEGAL_ACCEPTANCE_VERSION,
+          accepted: true,
+          ip_address: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? null,
+          user_agent: request.headers.get("user-agent") ?? null,
+          production_type: String(currentProduction.production_type ?? ""),
+          package_id: String(currentProduction.package_id ?? ""),
+          title: String(currentProduction.title ?? ""),
+          responsibility_text: productionResponsibilityText,
+          rights_warranty_text: rightsWarrantyText,
+          metadata: legalSnapshot
+        })
+        .select("id")
+        .single();
+      if (repairedLegalError) throw repairedLegalError;
+      const { error: legalPatchError } = await supabase
+        .from("production_requests")
+        .update(safeUpdate({ legal_acceptance_id: repairedLegal?.id ?? null, legal_acceptance_snapshot: legalSnapshot, output_json: { ...existingOutput, legalAcceptanceId: repairedLegal?.id ?? null, legalAcceptanceSnapshot: legalSnapshot }, updated_at: now }))
+        .eq("id", currentProduction.id);
+      if (legalPatchError) throw legalPatchError;
+    }
     const rawProductionType = String(currentProduction?.production_type ?? "");
     let productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
     const packageId = String(currentProduction?.package_id ?? "");
