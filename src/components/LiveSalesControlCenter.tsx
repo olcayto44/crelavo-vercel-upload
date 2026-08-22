@@ -462,7 +462,6 @@ async function sendMessage() {
         <div className="live-sales-avatar-frame">
             <div className="live-sales-avatar-media-stack">
               <div className="live-sales-avatar-visual">
-                <div className="live-sales-avatar-live-pill">LIVE</div>
                 {avatarPreview?.previewUrl ? (
                   <div className="live-sales-avatar-video-frame">
                     {isDirectVideoUrl(avatarPreview.previewUrl) ? (

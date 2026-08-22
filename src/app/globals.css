@@ -3205,8 +3205,8 @@ body.admin-route > .site-footer {
 
 .live-sales-avatar-visual {
   position: relative;
-  min-height: 480px;
-  padding: 12px;
+  min-height: 500px;
+  padding: 10px;
   border-radius: 30px;
   background: radial-gradient(circle at 50% 20%, rgba(34,211,238,.34), transparent 35%), radial-gradient(circle at 50% 55%, rgba(124,92,255,.32), transparent 46%), linear-gradient(180deg, rgba(15,23,42,.98), rgba(9,14,28,.92));
   border: 1px solid rgba(125,211,252,.22);
@@ -3216,20 +3216,12 @@ body.admin-route > .site-footer {
 }
 
 .live-sales-avatar-live-pill {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  background: rgba(239,68,68,.18);
-  color: #fecaca;
-  font-weight: 700;
-  letter-spacing: .08em;
+  display: none;
 }
 
 .live-sales-avatar-video-frame {
-  width: min(100%, 360px);
-  aspect-ratio: 3 / 4;
+  width: min(100%, 330px);
+  aspect-ratio: 9 / 16;
   margin: 0 auto;
   border-radius: 24px;
   overflow: hidden;
@@ -3244,8 +3236,8 @@ body.admin-route > .site-footer {
   border: 0;
   display: block;
   object-fit: cover;
-  object-position: center 38%;
-  transform: scale(1.01);
+  object-position: center top;
+  transform: none;
 }
 
 .live-sales-avatar-brand-panel {
