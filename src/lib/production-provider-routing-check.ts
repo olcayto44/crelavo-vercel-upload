@@ -1,7 +1,7 @@
 import { buildMusicProviderRoute } from "@/lib/music-provider-routing";
 import { buildProviderPlan, providerRouteMap } from "@/lib/provider-plan";
 
-const criticalProviders = ["video-fal", "video-kling", "avatar-heygen", "voice-elevenlabs", "music-stable-audio", "payment-whop"];
+const criticalProviders = ["video-minimax", "video-fal", "video-kling", "voice-elevenlabs", "music-stable-audio", "payment-whop"];
 
 export function buildProductionProviderRoutingCheck() {
   const plan = buildProviderPlan();

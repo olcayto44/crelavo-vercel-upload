@@ -44,24 +44,16 @@ export function providerRequirementsForProduction(productionType: string, packag
     }
   ];
 
-  const heygenOnlyVideoTypes = ["avatar", "talking_video", "lip_sync", "live_sales_agent"];
-  const needsVideoProvider = !heygenOnlyVideoTypes.includes(type) && (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization"].includes(type) || packageId.includes("video"));
+  const minimaxBackedTalkingTypes = ["avatar", "talking_video", "lip_sync", "live_sales_agent"];
+  const needsVideoProvider = (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", ...minimaxBackedTalkingTypes].includes(type) || packageId.includes("video"));
   const needsEcommerceAdPipeline = type === "campaign" || packageId === "campaign_product_ad_video";
 
   if (needsVideoProvider) {
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN", "MINIMAX_API_KEY", "MINIMAX_GROUP_ID"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output. Minimax, Replicate, FAL, Runway or Kling can satisfy the route depending on provider selection."));
   }
 
-  if (["avatar", "talking_video", "lip_sync", "live_sales_agent"].includes(type)) {
-    requirements.push({
-      key: "avatar_provider",
-      label: "HeyGen avatar/talking-head provider",
-      requiredEnv: ["HEYGEN_API_KEY"],
-      affects: ["avatar presenter", "talking-head video", "speaker/avatar render"],
-      note: "Required for real avatar or talking-head provider jobs; otherwise keep the job as script, voice and manual avatar delivery. Avatar jobs also need a speaker/avatar reference and voice direction before provider rendering.",
-      status: hasHeyGenEnv() ? "ready" : type === "live_sales_agent" ? "optional" : "missing"
-    });
-  }
+  // Talking/avatar/lip-sync/live-sales categories now use the selected video provider route.
+  // In the current Minimax setup this means MiniMax-H3 creates the visual job instead of blocking on HeyGen.
 
   if (needsEcommerceAdPipeline) {
     requirements.push(requirement("voice_provider", "ElevenLabs voice-over provider", ["ELEVENLABS_API_KEY"], ["ad voice-over", "voice audio asset"], "Required for the real e-commerce ad pipeline voice-over."));

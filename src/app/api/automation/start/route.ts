@@ -491,7 +491,8 @@ const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_
 const heygenSetupPresenterIntent = !isImageProduction && hasHeyGenPresenterIntent(productionDetectionText);
 const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
 const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
-const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
+const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? "").toLowerCase() === "minimax";
+const talkingProviderType = !minimaxVideoRouteSelected && !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
@@ -996,7 +997,7 @@ if (isImageProduction) {
     return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
   }
 }
-if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText)) {
+if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText) && String(providerPreflight.provider ?? "").toLowerCase() !== "minimax") {
   const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.";
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
   if (reservedCredits > 0) {
@@ -1060,8 +1061,8 @@ const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
     };
 const requiredPipeline = pipelineMap[productionType] ?? "manual_or_demo";
 const requiresSpecialPipeline = ["talking_lip_sync", "video_clipping", "music_video", "drone_video", "studio_story_video", "animation_video", "documentary_video", "video_tools", "localization_video"].includes(requiredPipeline);
-const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video"].includes(requiredPipeline);
-const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization"].includes(productionType);
+const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video", "talking_lip_sync", "video_tools"].includes(requiredPipeline);
+const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization", "talking_video", "avatar", "lip_sync", "live_sales_agent", "video_tools"].includes(productionType);
 const requestedClipCount = Number(requestMetadata.requestedClipCount ?? inputJson.requestedClipCount ?? 3) || 3;
 const clippingRun = requiredPipeline === "video_clipping"
 
@@ -1101,8 +1102,10 @@ const clippingRun = requiredPipeline === "video_clipping"
         : genericVideoProviderChain({ selectedOptions, provider: String(providerPreflight.provider ?? "") });
     const preflightOutputIntent = (providerPreflight as Record<string, unknown>).outputIntent;
     const outputIntentRecord = preflightOutputIntent && typeof preflightOutputIntent === "object" ? preflightOutputIntent as Record<string, unknown> : {};
-const providerNote = requiredPipeline === "talking_lip_sync"
-      ? "This request requires the talking/lip-sync pipeline. It must not be delivered through the generic voice-over video pipeline because speaking faces need synchronized audio/video generation. Configure a talking-video/lip-sync provider before final delivery."
+const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
+      ? "Minimax talking/video provider chain started: visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."
+      : requiredPipeline === "talking_lip_sync"
+      ? "This request requires the Minimax-backed talking/video pipeline, but no visual provider job was attached yet. Check Minimax API configuration and start the provider job again."
       : requiredPipeline === "video_clipping"
         ? `This request requires the video clipping pipeline: source video analysis, highlight extraction, reframing, subtitles and final clip delivery. Requested clips: ${requestedClipCount}. Each clip must use a different source moment/timestamp; duplicate clips are not acceptable. It must not start new prompt-to-video generation.`
         : requiredPipeline === "music_video"

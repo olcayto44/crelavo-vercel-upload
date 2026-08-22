@@ -81,7 +81,7 @@ function videoPlan(): ProviderPlanItem {
       provider: "MiniMax",
       primaryModel: "MiniMax-H3",
       fallbackModels: ["Runway", "Kling", "FAL", "Replicate"],
-      intendedUse: "Animation, cinematic clips, music videos, video clipping, drone videos and AI video production through the Minimax route.",
+      intendedUse: "Animation, cinematic clips, music videos, talking video, lip sync, live sales video, video clipping, drone videos and AI video production through the Minimax route.",
       requiredEnv: ["MINIMAX_API_KEY", "MINIMAX_GROUP_ID"],
       optionalEnv: ["VIDEO_PROVIDER", "MINIMAX_BASE_URL"],
       status: hasProviderEnv("minimax") && hasConfiguredEnv("MINIMAX_GROUP_ID") ? "ready" : "missing",
@@ -247,7 +247,7 @@ export function providerRouteMap() {
   return {
     create_ai_video: { primary: selectedVideoProvider(), required: ["video", "storage"], fallback: ["manual_delivery", "demo_plan"] },
     generate_image: { primary: "image_provider", required: ["image", "storage"], fallback: ["manual_visual_brief"] },
-    run_lip_sync: { primary: "heygen", required: ["avatar", "voice", "storage"], fallback: ["elevenlabs_voice_plus_manual_avatar", "kling_talking_video_fallback"] },
+    run_lip_sync: { primary: selectedVideoProvider() === "minimax" ? "minimax" : "heygen", required: selectedVideoProvider() === "minimax" ? ["video", "voice", "storage"] : ["avatar", "voice", "storage"], fallback: ["elevenlabs_voice_plus_manual_avatar", "kling_talking_video_fallback"] },
     voice_clone: { primary: "elevenlabs", required: ["voice", "reference_audio_consent", "storage"], fallback: ["approved_platform_voice_only"] },
     create_website_project: { primary: "openai", required: ["brain", "storage"], fallback: ["structured_project_brief"] },
     create_saas_project: { primary: "openai", required: ["brain", "storage"], fallback: ["structured_saas_brief"] }
