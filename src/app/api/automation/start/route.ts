@@ -8,6 +8,7 @@ import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
+import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { applyMarketingTextOverlay, hasImageMarketingText, stripImageMarketingTextInstructions } from "@/lib/image-postprocess";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
@@ -341,12 +342,17 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
       avatar_style: String(selected.avatar_style ?? selected.avatarStyle ?? "normal")
     }]
   };
-  const result = await createHeyGenTalkingVideo(payload);
+  const result = await createMiniMaxH3VideoTask({
+    content: [{ type: "text", text: input.prompt }],
+    resolution: "768P",
+    duration: 8 as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
+    ratio: aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16"
+  });
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
-  const videoId = String(data.video_id ?? data.videoId ?? data.id ?? "").trim();
-  if (!videoId) throw new Error(`HeyGen v2 generate did not return a video id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "heygen", id: videoId, status: String(data.status ?? "processing"), videoId, payload, raw: result });
+  const taskId = String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim();
+  if (!taskId) throw new Error(`MiniMax did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload, raw: result });
 }
 
 async function requireAutomationAccess(request: Request, body: Record<string, unknown>, production: { user_id?: string | null }) {
@@ -545,18 +551,18 @@ if (talkingProviderType) {
     ...existingOutput,
     automationMode: "fully_automatic",
     automationStatus: "running",
-    providerStatus: "heygen_start_requested",
+    providerStatus: "minimax_start_requested",
     requiredPipeline: "talking_lip_sync",
     jobId,
     currentStep: "HeyGen talking/lip-sync provider start requested",
     providerReadiness,
-    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: { ...existingOutput, providerReadiness } })
+    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "minimax_start_requested", output_json: { ...existingOutput, providerReadiness } })
   };
   const { error: startRequestedError } = await supabase
     .from("production_requests")
-    .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "heygen_start_requested", output_json: startRequestedOutput, admin_notes: "HeyGen talking/lip-sync start requested.", started_at: now, updated_at: now }))
+    .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_start_requested", output_json: startRequestedOutput, admin_notes: "Minimax talking/lip-sync start requested.", started_at: now, updated_at: now }))
     .eq("id", productionId);
-  if (startRequestedError) throw new Error(`heygen_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
+  if (startRequestedError) throw new Error(`minimax_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
   const useHeyGenVideoAgent = /heygen_video_agent|video_agent|video\s+agent|heygen_v3|v3 video agent/i.test(productionDetectionText);
   let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
@@ -565,7 +571,7 @@ if (talkingProviderType) {
       ? await startHeyGenVideoAgentProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
       : await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
   } catch (error) {
-  const failureMessage = errorMessage(error, "HeyGen provider job could not be started.");
+  const failureMessage = errorMessage(error, "MiniMax provider job could not be started.");
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
   if (reservedCredits > 0) {
     const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
@@ -594,7 +600,7 @@ if (talkingProviderType) {
         ...existingOutput,
         automationMode: "fully_automatic",
         automationStatus: "running",
-        providerStatus: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent_session_created" : "heygen_job_created",
+        providerStatus: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent_session_created" : "minimax_job_created",
         requiredPipeline: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent" : "talking_lip_sync",
         jobId,
         heygenJob,
@@ -612,17 +618,17 @@ if (talkingProviderType) {
           creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", heygenJob.provider),
           creativeActivityItem("b-roll", "B-roll / UI overlays", "working", "Motion graphics, product proof overlays and captions are being prepared by the provider.", heygenJob.provider)
         ]),
-        currentStep: heygenJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "HeyGen talking/lip-sync provider job created",
+        currentStep: heygenJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "MiniMax talking/lip-sync provider job created",
         providerReadiness,
-        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: { ...existingOutput, heygenJob, providerReadiness } })
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: { ...existingOutput, heygenJob, providerReadiness } })
       };
       const { data: talkingProduction, error: talkingError } = await supabase
         .from("production_requests")
-        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "heygen_job_created", output_json: talkingOutput, admin_notes: `HeyGen talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now }))
+        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: talkingOutput, admin_notes: `MiniMax talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now }))
         .eq("id", productionId)
         .select("*")
         .single();
-      if (talkingError) throw new Error(`heygen_job_created_update: ${errorMessage(talkingError, "DB update failed")}`);
+      if (talkingError) throw new Error(`minimax_job_created_update: ${errorMessage(talkingError, "DB update failed")}`);
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
@@ -999,7 +1005,7 @@ if (isImageProduction) {
   }
 }
 if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && String(providerPreflight.provider ?? "").toLowerCase() !== "minimax") {
-  const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.";
+  const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through MiniMax, not Replicate/FAL/Runway.";
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
   if (reservedCredits > 0) {
     const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
