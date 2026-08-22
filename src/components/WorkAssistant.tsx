@@ -149,7 +149,7 @@ const HEYGEN_MANUAL_VOICE_CREDITS = 1500;
 const HEYGEN_MOTION_PROMPT_CREDITS = 700;
 const HEYGEN_MANUAL_MUSIC_CREDITS = 900;
 const HEYGEN_PREMIUM_CREDITS_PER_MINUTE = 3000;
-const heygenQualityOptions = ["Video Agent auto edit", "Premium Avatar IV/V"];
+const minimaxH3Options = ["Minimax H3"];
 const heygenMotionPromptOptions = ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"];
 const heygenMusicVibes = [
   { label: "Enerjik reklam", query: "upbeat electronic ad music" },
@@ -165,7 +165,7 @@ const setupProfiles: Record<string, SetupProfile> = {
     note: "Only video-specific production choices are shown here.",
     groups: [
       { id: "videoStyle", title: "Video style", options: ["Silent / music only", "No presenter / B-roll only", "Voice-over only", "AI presenter"] },
-      { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
+      { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
       { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
       { id: "presenterMotion", title: "Presenter motions", multi: true, options: ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"], credit: HEYGEN_MOTION_PROMPT_CREDITS },
       { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video"] },
@@ -377,9 +377,8 @@ const trUiLabels: Record<string, string> = {
   "AI video setup": "Video üretim ayarları",
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
   "Video style": "Video tarzı",
-  "HeyGen quality level": "HeyGen kalite seviyesi",
-  "Premium Avatar IV/V": "Premium Avatar IV/V",
-  "Video Agent auto edit": "Video Agent otomatik kurgu",
+  "Minimax H3": "Minimax H3",
+  "Minimax H3 provider tier": "Minimax H3 provider tier",
   "Presenter choice": "Sunucu seçimi",
   "Presenter motions": "Sunucu hareketleri",
   "Natural delivery": "Doğal anlatım",
@@ -599,7 +598,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       note: "Presenter, voice, product-demo and HeyGen options are prioritized for this UGC-style ad.",
       groups: [
         { id: "videoStyle", title: "Video style", options: ["AI presenter", "Avatar / talking host", "Voice-over only", "No presenter / B-roll only"] },
-        { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
+        { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
         { id: "presenterChoice", title: "Presenter choice", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
         { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
         { id: "videoType", title: "Ad type", options: ["UGC-style product script", "Product ad video", "Social media short", "Product demo"] },
@@ -666,7 +665,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       note: isCompetitorComparison ? "Options focus on safe competitor analysis, positioning angle, comparison hook, and an original Crelavo ad." : isUgcProductRecommendation ? "Options focus on a native creator-style recommendation using the supplied product link." : "Options are generated from the supplied link and the selected ad/video intent.",
       groups: [
         { id: "videoType", title: "Ad type", options: isCompetitorComparison ? ["Competitor comparison", "Alternative positioning", "Market gap ad", "Website promo", "Explainer video", "Social media short"] : isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
-        { id: "heygenQuality", title: "HeyGen quality level", options: heygenQualityOptions },
+        { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
         { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
         { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
         { id: "source", title: isCompetitorComparison ? "Competitor analysis" : "Link analysis", multi: true, options: isCompetitorComparison ? ["Analyze competitor page", "Extract competitor offer", "Extract benefits", "Find positioning angle", "Create comparison hook", "Create Crelavo CTA", "Safe no-copy guard"] : ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
@@ -827,10 +826,8 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/cta|çağrı|cagri|hemen|başla|basla|try|start/.test(text)) addOption(/cta hand gesture|point at camera/);
       }
     if (group.id === "heygenQuality") {
-      selected.length = 0;
-      if (wantsNoPresenterIntent || wantsNoPeopleMotionAd) selected.push("Video Agent auto edit");
-      else if (/premium|sinematik|cinematic|ultra realistic|avatar iv|avatar v|vay canına|wow/.test(text)) selected.push("Premium Avatar IV/V");
-      else selected.push("Video Agent auto edit");
+selected.length = 0;
+  selected.push("Minimax H3");
     }
 
       return [group.id, selected];
@@ -1049,10 +1046,10 @@ function selectedDurationSeconds(setup: ProductionSetupState, plan?: StudioPlan 
 }
 
 function heygenQualityCreditBreakdown(setup: ProductionSetupState, plan?: StudioPlan | null) {
-  if (isImageProductionType(String(plan?.production_type ?? ""))) return { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
-  const selected = String((setup.heygenQuality ?? [])[0] ?? "Video Agent auto edit");
+  if (isImageProductionType(String(plan?.production_type ?? ""))) return { title: "Minimax H3 provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
+  const selected = String((setup.heygenQuality ?? [])[0] ?? "Minimax H3");
   const seconds = selectedDurationSeconds(setup, plan);
-  if (!seconds) return { title: "HeyGen provider tier", selected, credits: 0, seconds, creditsPerMinute: 0 };
+  if (!seconds) return { title: "Minimax H3 provider tier", selected, credits: 0, seconds, creditsPerMinute: 0 };
   const creditsPerMinute = HEYGEN_PREMIUM_CREDITS_PER_MINUTE;
   return {
     title: selected,
@@ -1643,7 +1640,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const setupItems = useMemo(() => selectedSetupItems(activeProductionSetup, plan?.production_type ?? ""), [activeProductionSetup, plan]);
   const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || activeSelectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, activeProductionSetup, plan, productionPrompt || input) : [];
-const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProductionSetup, plan) : { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
+const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProductionSetup, plan) : { title: "Minimax H3 provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
 const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualHeyGenBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
@@ -2025,7 +2022,7 @@ if (isImageStart) {
       : chip === "Campaign" ? "Create a campaign production with hooks, captions, ad angles, visuals, and launch assets together."
       : chip === "Product Link to Video" ? "Create an ecommerce product ad video from a Shopify, Amazon, Trendyol, WooCommerce, or product page link. Turn the product link into a TikTok / Instagram Reels style ad video with hook, product proof, offer, captions, and final social-ready delivery."
       : chip === "Ad Creative Angles" ? "Create fresh ecommerce ad creative angles for this product or offer. Generate multiple selling angles such as fear/problem, discount, benefit, before-after, social proof, urgency, and problem-solution so the brand can fight creative fatigue."
-      : chip === "UGC Style Ad" ? "Create a natural UGC-style product ad with one AI presenter / creator speaking to camera. Use HeyGen Video Agent auto edit, a friendly presenter, Turkish narration, vertical 9:16, product demo style, social-first pacing, thumbnail, final MP4, dashboard delivery, and revision right."
+      : chip === "UGC Style Ad" ? "Create a natural UGC-style product ad with one AI presenter / creator speaking to camera. Use Minimax H3, a premium product demo style, social-first pacing, thumbnail, final MP4, dashboard delivery, and revision right."
       : chip === "Lower Ad Costs" ? "Create a lower-ad-cost creative plan for Facebook, Instagram, and TikTok ads. Focus on stronger hooks, clearer product proof, better CTA, higher ROI, lower CPC, and more conversion-focused video/image angles."
       : chip === "Video Clipping" ? "Create a video clipping production. Extract the best hooks and highlights from the uploaded long video or link, keep the strongest moments, and prepare final social-ready clips with captions if needed."
       : `Create a ${chip.toLowerCase()} production.`;
