@@ -319,6 +319,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "imageType", title: "Image type", options: ["Product visual", "Poster", "Social media post", "Logo/brand kit", "Thumbnail", "Banner"] },
       { id: "outputs", title: "Output count", options: ["1 visual", "3 alternatives", "5 alternatives"], credit: 600 },
       { id: "style", title: "Style", options: ["Realistic", "Luxury product", "Minimal", "Corporate", "Viral TikTok", "Product demo"], credit: 250 },
+      { id: "aspectRatio", title: "Aspect ratio", options: ["Portrait 4:5", "Square 1:1", "Story 9:16", "Landscape 16:9"], credit: 150 },
       { id: "delivery", title: "Delivery", multi: true, options: ["PNG/JPG", "Prompt pack", "Source file delivery", "Final ZIP", "Social caption", "Revision right"], credit: 350 }
     ]
   },
@@ -519,6 +520,59 @@ function profileForType(type: string) {
 
 function hasUrlIntent(text: string) {
   return /https?:\/\/[^\s)\]}"']+/i.test(text);
+}
+
+function isImageProductionType(type: string) {
+  return ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(type);
+}
+
+function isStaticImagePrompt(text: string) {
+  return /\b(image|visual|photo|picture|png|jpg|jpeg|banner|poster|thumbnail|cover|flyer|static\s+ad|social\s+media\s+post|instagram\s+post|instagram\s+portrait|feed\s+post|reklam\s+görseli|reklam\s+gorseli|sosyal\s+medya\s+(post|görseli|gorseli)|görsel|gorsel|resim|afiş|afis|kapak)\b|\b4\s*[:x]\s*5\b/.test(text.toLocaleLowerCase("tr-TR"));
+}
+
+function imageTypeFromPrompt(text: string, options: string[]) {
+  const signal = text.toLocaleLowerCase("tr-TR");
+  const checks: Array<[RegExp, RegExp]> = [
+    [/instagram|social\s+media|sosyal\s+medya|\bpost\b|reklam\s+görseli|reklam\s+gorseli|product\s+advertisement|feed\s+post/, /social media post/i],
+    [/poster|afiş|afis|kampanya\s+posteri/, /poster/i],
+    [/banner|web\s+banner/, /banner/i],
+    [/logo|brand\s+kit|marka\s+kiti/, /logo\/brand kit/i],
+    [/thumbnail|cover|kapak/, /thumbnail/i],
+  ];
+  for (const [textPattern, optionPattern] of checks) {
+    if (textPattern.test(signal)) {
+      const wanted = options.find((option) => optionPattern.test(option));
+      if (wanted) return wanted;
+    }
+  }
+  return options.find((option) => /product visual/i.test(option));
+}
+
+function imageAspectRatioFromPrompt(text: string, options: string[]) {
+  const signal = text.toLocaleLowerCase("tr-TR");
+  const checks: Array<[RegExp, RegExp]> = [
+    [/\b4\s*[:x]\s*5\b|instagram\s+(portrait|feed)|portrait\s+post/, /portrait 4:5/i],
+    [/\b1\s*[:x]\s*1\b|square|kare/, /square 1:1/i],
+    [/\b9\s*[:x]\s*16\b|story|reels|tiktok|vertical|dikey/, /story 9:16/i],
+    [/\b16\s*[:x]\s*9\b|landscape|horizontal|yatay/, /landscape 16:9/i],
+  ];
+  for (const [textPattern, optionPattern] of checks) {
+    if (textPattern.test(signal)) {
+      const wanted = options.find((option) => optionPattern.test(option));
+      if (wanted) return wanted;
+    }
+  }
+  return undefined;
+}
+
+function normalizedImageAspectRatio(setup: ProductionSetupState, hint = "") {
+  const selected = String((setup.aspectRatio ?? [])[0] ?? "");
+  const signal = `${selected} ${hint}`.toLocaleLowerCase("tr-TR");
+  if (/4\s*[:x]\s*5|portrait\s+4:5/.test(signal)) return "4:5";
+  if (/1\s*[:x]\s*1|square/.test(signal)) return "1:1";
+  if (/9\s*[:x]\s*16|story/.test(signal)) return "9:16";
+  if (/16\s*[:x]\s*9|landscape/.test(signal)) return "16:9";
+  return undefined;
 }
 
 function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
@@ -743,7 +797,8 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/create|generate|ai characters|karakter oluştur|karakter olustur/.test(text)) addOption(/create ai characters/);
       }
       if (group.id === "delivery") {
-        if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
+        if (isImageProductionType(type)) addOption(/png\/jpg/);
+        if (!isImageProductionType(type) && /mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
         if (/dashboard/.test(text)) addOption(/dashboard delivery/);
         if (/revision|revizyon/.test(text)) addOption(/revision/);
       }
@@ -781,6 +836,19 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       return [group.id, selected];
     }
     let selected = group.options[0] ? [group.options[0]] : [];
+    if (group.id === "imageType") {
+      const wanted = imageTypeFromPrompt(text, group.options);
+      if (wanted) selected = [wanted];
+    }
+    if (group.id === "style" && isImageProductionType(type)) {
+      const luxury = /premium|luxury|lüks|luks|editorial|beauty|serum|cosmetic|kozmetik|clean|minimal/.test(text) ? group.options.find((option) => /luxury product|minimal/i.test(option)) : undefined;
+      const wanted = group.options.find((option) => text.includes(option.toLowerCase())) || luxury;
+      if (wanted) selected = [wanted];
+    }
+    if (group.id === "aspectRatio") {
+      const wanted = imageAspectRatioFromPrompt(text, group.options);
+      if (wanted) selected = [wanted];
+    }
     if (group.id === "videoType" && /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/.test(text)) {
       const wanted = group.options.find((option) => /competitor comparison|alternative positioning|market gap/.test(option.toLowerCase()));
       if (wanted) selected = [wanted];
@@ -895,8 +963,22 @@ const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand 
   }));
 }
 
-function selectedSetupItems(setup: ProductionSetupState) {
-  return Object.values(setup).flat().filter(Boolean);
+function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | undefined, hint = "", plan?: StudioPlan | null): ProductionSetupState {
+  if (!isImageProductionType(type)) return setup ?? {};
+  const defaults = defaultSetupFor(type, hint, plan);
+  return {
+    imageType: defaults.imageType ?? ["Social media post"],
+    outputs: defaults.outputs ?? ["1 visual"],
+    style: defaults.style ?? ["Luxury product"],
+    aspectRatio: defaults.aspectRatio ?? ["Portrait 4:5"],
+    delivery: defaults.delivery?.length ? defaults.delivery : ["PNG/JPG"]
+  };
+}
+
+function selectedSetupItems(setup: ProductionSetupState, type = "") {
+  const items = Object.values(setup).flat().filter(Boolean);
+  if (!isImageProductionType(type)) return items;
+  return items.filter((item) => !/video agent auto edit|heygen|avatar|voice|music|mp4|presenter|sunucu/i.test(String(item)));
 }
 
 function productionSourceHandling(type: string, selectedItems: string[]) {
@@ -947,11 +1029,13 @@ function optionCredit(option: string, group: SetupGroup) {
 
 function setupCreditBreakdown(type: string, setup: ProductionSetupState, plan?: StudioPlan | null, hint = "") {
   const profile = plan ? dynamicProfileForPlan(plan, hint) : profileForType(type);
-  return profile.groups.map((group) => {
-    const selected = setup[group.id] ?? [];
-    const credits = group.id === "heygenQuality" ? 0 : selected.reduce((sum, option) => sum + optionCredit(option, group), 0);
-    return { groupId: group.id, title: group.title, selected, credits };
-  });
+  return profile.groups
+    .filter((group) => !(isImageProductionType(type) && /heygen|video style|presenter|voice|music/i.test(group.id + " " + group.title)))
+    .map((group) => {
+      const selected = setup[group.id] ?? [];
+      const credits = group.id === "heygenQuality" ? 0 : selected.reduce((sum, option) => sum + optionCredit(option, group), 0);
+      return { groupId: group.id, title: group.title, selected, credits };
+    });
 }
 
 function selectedDurationSeconds(setup: ProductionSetupState, plan?: StudioPlan | null) {
@@ -965,6 +1049,7 @@ function selectedDurationSeconds(setup: ProductionSetupState, plan?: StudioPlan 
 }
 
 function heygenQualityCreditBreakdown(setup: ProductionSetupState, plan?: StudioPlan | null) {
+  if (isImageProductionType(String(plan?.production_type ?? ""))) return { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
   const selected = String((setup.heygenQuality ?? [])[0] ?? "Video Agent auto edit");
   const seconds = selectedDurationSeconds(setup, plan);
   if (!seconds) return { title: "HeyGen provider tier", selected, credits: 0, seconds, creditsPerMinute: 0 };
@@ -1005,26 +1090,33 @@ function baseDraftCredits(plan: StudioPlan | null) {
 
 function setupDerivedFields(type: string, setup: ProductionSetupState) {
   const items = selectedSetupItems(setup);
+  const imageType = items.find((item) => /product visual|poster|social media post|logo\/brand kit|thumbnail|banner/i.test(item));
   const quality = items.find((item) => /1080p|2K|4K|premium/i.test(item));
   const duration = items.find((item) => /sec|min|Episode|Project based/i.test(item));
   const style = items.find((item) => /animation|cinematic|realistic|minimal|corporate|luxury|UGC|product demo|stickman|whiteboard|motion/i.test(item));
   const formats = items.filter((item) => /MP4|PNG|JPG|ZIP|README|PDF|CSV|source|dashboard|caption|subtitle|Expo/i.test(item));
+  const isImage = isImageProductionType(type);
   return {
-    selected_quality: quality || (isProjectType(type) ? "Project based" : "1080p"),
-    selected_duration: duration || (isProjectType(type) ? "Project based" : (/^(animation|anime_short_film|stickman_animation|video|cinematic_video|music_video|drone_video)$/i.test(type) ? "Auto" : "30 sec")),
-    selected_style: style || (isProjectType(type) ? "Premium modern interface" : "Crelavo production style"),
-    selected_features: items.length ? items : ["Production package", "Dashboard delivery"],
-    delivery_formats: formats.length ? formats.map((format) => format.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")) : (isProjectType(type) ? ["source_code", "readme", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"])
+    selected_quality: quality || (isProjectType(type) ? "Project based" : isImage ? "Image" : "1080p"),
+    selected_duration: duration || (isProjectType(type) ? "Project based" : isImage ? "Static" : (/^(animation|anime_short_film|stickman_animation|video|cinematic_video|music_video|drone_video)$/i.test(type) ? "Auto" : "30 sec")),
+    selected_style: style || (isProjectType(type) ? "Premium modern interface" : isImage ? (imageType ? "Social media visual" : "Crelavo image style") : "Crelavo production style"),
+    selected_features: items.length ? items : (isImage ? ["Production package", "PNG/JPG delivery"] : ["Production package", "Dashboard delivery"]),
+    delivery_formats: formats.length ? formats.map((format) => format.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")) : (isProjectType(type) ? ["source_code", "readme", "dashboard_delivery"] : isImage ? ["png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"])
   };
 }
 
-function filterCardsForPrompt(cards: string[], hint = "") {
+function filterCardsForPrompt(cards: string[], hint = "", type = "") {
   const text = hint.toLowerCase();
   const noVoice = voiceDisabledByPrompt(text);
   const noSubtitles = subtitlesDisabledByPrompt(text);
   const noMusic = musicDisabledByPrompt(text);
+  const isImage = isImageProductionType(type) || isStaticImagePrompt(text);
+  const isProject = isProjectType(type);
   return cards.filter((card) => {
     const item = card.toLowerCase();
+    if (isImage && /storefront|product catalog|cart|checkout|admin product manager|orders dashboard|source zip|readme|setup/.test(item)) return false;
+    if (isImage && /video agent auto edit|heygen/.test(item)) return false;
+    if (isProject && /final image|prompt pack|export specs|usage notes/.test(item)) return false;
     if (noVoice && /voice|seslendirme|narration/.test(item)) return false;
     if (noSubtitles && /subtitle|caption|altyaz/.test(item)) return false;
     if (noMusic && /music|müzik|muzik/.test(item)) return false;
@@ -1045,8 +1137,8 @@ function productionCardsFor(plan: StudioPlan | null) {
   if (plan.production_type === "mobile_app") return ["Home screen", "Login flow", "User dashboard", "Settings", "Admin/control screen", "Expo source ZIP", "README / setup"];
   if (plan.production_type === "saas") return ["Landing page", "Auth", "Dashboard", "Billing", "Admin panel", "Database schema", "Source ZIP", "README / setup"];
   if (plan.production_type === "admin_project") return ["Admin dashboard", "User management", "CRUD records", "Roles", "Activity log", "Source ZIP", "README / setup"];
-  if (/ecommerce|commerce|store|shop|product|checkout/.test(text)) return ["Storefront", "Product catalog", "Cart", "Checkout", "Admin product manager", "Orders dashboard", "Source ZIP", "README / setup"];
   if (plan.production_type === "image") return ["Final image", "Prompt pack", "Export specs", "Usage notes"];
+  if (/ecommerce|commerce|store|shop|product|checkout/.test(text)) return ["Storefront", "Product catalog", "Cart", "Checkout", "Admin product manager", "Orders dashboard", "Source ZIP", "README / setup"];
   if (/seo|document/.test(plan.production_type)) return ["Keywords", "Metadata", "Content outline", "Page copy", "Implementation checklist"];
   if (/campaign/.test(plan.production_type)) return ["Campaign copy", "Social export plan", "Marketplace export", "Creative brief", "ZIP package"];
   return ["Production brief", "Preview", "Final delivery", "Revision path"];
@@ -1076,16 +1168,18 @@ function animationStylePackId(prompt: string, productionType: string) {
 function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
-  const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b/.test(raw);
+  const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya\s+(post|görseli|gorseli)|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(raw);
   const routeText = raw
-    .replace(/\b(no|not|without|avoid|exclude|do not use|don't use|do not create|don't create)\s+(anime|cartoon|stickman|animation|animated|çizgi film|cizgi film|çöp adam|cop adam|cöp adam|whiteboard)\b/g, " ")
-    .replace(/\b(no|not|without|avoid|exclude|do not create|don't create)\s+(cinematic battle|sci-fi|war scene|drone footage|action trailer)\b/g, " ");
-  const presenterVideoLock = /\b(ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|video\s*agent|talking\s*avatar|product\s*demo|social\s*media\s*ad)\b/.test(routeText)
-    && !/\b(no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice)\b/.test(routeText);
-  if (presenterVideoLock) return "video";
+    .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
+    .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ")
+    .replace(/\b(no|not)\s+(anime|cartoon|stickman|animation|animated|çizgi film|cizgi film|çöp adam|cop adam|cöp adam|whiteboard)\b/g, " ")
+    .replace(/\b(no|not)\s+(cinematic battle|sci-fi|war scene|drone footage|action trailer)\b/g, " ");
   const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
-  const liveActionRealisticVideoIntent = /(live[-\s]*action|canlı\s*aksiyon|canli\s*aksiyon|ultra\s*realistic|ultra\s*gerçekçi|ultra\s*gercekci|photorealistic|foto\s*gerçekçi|fotogerçekçi|gerçekçi\s*cilt|gercekci\s*cilt|realistic\s*skin|practical\s*lighting|physical(?:ly)?\s*real|gerçek\s*görün|gercek\s*gorun)/.test(raw);
   if (imageDesignIntent && !explicitVideoIntent) return "image";
+  const presenterVideoLock = /\b(ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|video\s*agent|talking\s*avatar|product\s*demo|social\s*media\s*ad)\b/.test(routeText)
+    && !/\b(no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice)\b/.test(raw);
+  if (presenterVideoLock) return "video";
+  const liveActionRealisticVideoIntent = /(live[-\s]*action|canlı\s*aksiyon|canli\s*aksiyon|ultra\s*realistic|ultra\s*gerçekçi|ultra\s*gercekci|photorealistic|foto\s*gerçekçi|fotogerçekçi|gerçekçi\s*cilt|gercekci\s*cilt|realistic\s*skin|practical\s*lighting|physical(?:ly)?\s*real|gerçek\s*görün|gercek\s*gorun)/.test(raw);
   if (currentType === "video" && liveActionRealisticVideoIntent) return "video";
   if (isCharacterDialogueAnimationPrompt(prompt)) return "animation";
   if (/stickman|çöp adam|cop adam|cöp adam|whiteboard/.test(routeText)) return "stickman_animation";
@@ -1170,10 +1264,16 @@ function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
   };
 }
 
+function shouldForceImageProduction(prompt: string) {
+  return normalizeProductionType(prompt, "video") === "image";
+}
+
 function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = ""): StudioPlan {
-  const productionType = forcedProductionType || normalizeProductionType(prompt, plan.production_type);
+  const promptType = normalizeProductionType(prompt, plan.production_type);
+  const hardImageLock = shouldForceImageProduction(prompt);
+  const productionType = hardImageLock ? "image" : forcedProductionType || promptType;
   const project = isProjectType(productionType);
-  const fallback = localPlan(prompt, forcedProductionType);
+  const fallback = localPlan(prompt, productionType);
   const raw = prompt.toLowerCase();
   const isPromoVideo = productionType === "video" && /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw);
   return {
@@ -1201,11 +1301,14 @@ function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = 
 function assistantReply(plan: StudioPlan, language = "auto") {
   const typeLabel = language === "tr" ? uiText(labelFor(plan.production_type)) : labelFor(plan.production_type);
   const project = isProjectType(plan.production_type);
+  const image = isImageProductionType(plan.production_type);
   if (language !== "tr") {
+    if (image) return `I prepared the ${typeLabel} production setup. Review image type, output count, style, aspect ratio and PNG/JPG delivery, then press Start Production when you are ready.`;
     return project
       ? `I prepared the ${typeLabel} production setup. It will include source files, README, preview and dashboard delivery. Press Start Production when you are ready.`
       : `I prepared the ${typeLabel} production setup. Review duration, quality, voice, subtitles, music and transition options, then press Start Production when you are ready.`;
   }
+  if (image) return `${typeLabel} için üretim ayarlarını hazırladım. Görsel tipi, çıktı sayısı, stil, oran ve PNG/JPG teslimini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
   return project
     ? `${typeLabel} için üretim ayarlarını hazırladım. Kaynak kod, kurulum notu, ön izleme ve panel teslimiyle hazırlanacak. Hazırsan Üretimi başlat butonuna bas.`
     : `${typeLabel} için üretim ayarlarını hazırladım. Süre, kalite, ses, altyazı, müzik ve geçiş seçeneklerini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
@@ -1443,22 +1546,34 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const storedDraft = explicitInitialIntent ? null : readStoredWorkDraft();
   const restoredDraftPrompt = storedDraft?.productionPrompt || "";
   const initialPrompt = initialIdea || initialCategory || restoredDraftPrompt;
-  const initialPlan = initialPrompt ? localPlan(initialPrompt, forcedProductionType) : null;
+  const initialPlan = initialPrompt ? localPlan(initialPrompt, shouldForceImageProduction(initialPrompt) ? "image" : forcedProductionType) : null;
+  const restoredPlan = storedDraft?.plan && initialPrompt
+    ? normalizePlan(storedDraft.plan, initialPrompt, shouldForceImageProduction(initialPrompt) ? "image" : forcedProductionType)
+    : initialPlan;
+  const initialEffectivePlan = shouldForceImageProduction(initialPrompt) ? initialPlan : restoredPlan;
   const [input, setInput] = useState(initialIdea || initialCategory || "");
   const [productionPrompt, setProductionPrompt] = useState(initialPrompt);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (!explicitInitialIntent && storedDraft?.messages?.length) return storedDraft.messages;
-    return initialPrompt && initialPlan ? [
+    if (!shouldForceImageProduction(initialPrompt) && !explicitInitialIntent && storedDraft?.messages?.length) return storedDraft.messages;
+    return initialPrompt && initialEffectivePlan ? [
       { id: uid(), role: "user", content: initialPrompt },
-      { id: uid(), role: "assistant", content: assistantReply(initialPlan, detectWorkLanguage(initialPrompt)) }
+      { id: uid(), role: "assistant", content: assistantReply(initialEffectivePlan, detectWorkLanguage(initialPrompt)) }
     ] : [];
   });
-  const [plan, setPlan] = useState<StudioPlan | null>(() => storedDraft?.plan ?? initialPlan);
-  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => storedDraft?.selectedProductionCards ?? filterCardsForPrompt(productionCardsFor(storedDraft?.plan ?? initialPlan), initialPrompt ?? ""));
-  const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
-    const initialPlanForSetup = storedDraft?.plan ?? initialPlan;
-    return storedDraft?.productionSetup ?? (initialPlanForSetup ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : {});
+  const [plan, setPlan] = useState<StudioPlan | null>(() => initialEffectivePlan);
+  const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => {
+    const initialPlanForCards = initialEffectivePlan;
+    const defaultCards = filterCardsForPrompt(productionCardsFor(initialPlanForCards), initialPrompt ?? "", initialPlanForCards?.production_type ?? "");
+    if (isImageProductionType(initialPlanForCards?.production_type ?? "")) return defaultCards;
+    return storedDraft?.selectedProductionCards ?? defaultCards;
   });
+  const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
+    const initialPlanForSetup = initialEffectivePlan;
+    if (!initialPlanForSetup) return {};
+    const baseSetup = shouldForceImageProduction(initialPrompt) ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
+    return sanitizeSetupForProduction(initialPlanForSetup.production_type, baseSetup, initialPrompt, initialPlanForSetup);
+  });
+
   const [conversationId, setConversationId] = useState("");
   const [planning, setPlanning] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -1492,8 +1607,16 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
       if (typeof window !== "undefined") window.localStorage.removeItem(workDraftStorageKey);
       return;
     }
+  if (!plan) {
     writeStoredWorkDraft({ input: "", productionPrompt, plan, selectedProductionCards, productionSetup, messages, status, updatedAt: Date.now() });
-  }, [productionPrompt, plan, selectedProductionCards, productionSetup, messages, status]);
+    return;
+  }
+  const safeSetup = sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt, plan);
+  const safeCards = isImageProductionType(plan.production_type)
+    ? filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type)
+    : selectedProductionCards;
+  writeStoredWorkDraft({ input: "", productionPrompt, plan, selectedProductionCards: safeCards, productionSetup: safeSetup, messages, status, updatedAt: Date.now() });
+  }, [productionPrompt, plan, selectedProductionCards, productionSetup, messages, status, input]);
 
   useEffect(() => {
     if (!activeProduction?.id) return;
@@ -1514,11 +1637,13 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const workUiLanguage = detectWorkLanguage(workLanguageSource);
   const ux = (value: string) => workUiLanguage === "tr" ? uiText(value) : value;
   const statusUx = (tr: string, en: string) => workUiLanguage === "tr" ? tr : en;
-  const setupProfile = plan ? dynamicProfileForPlan(plan, productionPrompt || input) : null;
-  const setupItems = useMemo(() => selectedSetupItems(productionSetup), [productionSetup]);
-  const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || selectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
-const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, productionSetup, plan, productionPrompt || input) : [];
-const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(productionSetup, plan) : { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
+  const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
+  const activeProductionSetup = useMemo(() => plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup, [plan, productionSetup, productionPrompt, input]);
+  const activeSelectedProductionCards = useMemo(() => plan && isImageProductionType(plan.production_type) ? filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type) : selectedProductionCards, [plan, selectedProductionCards, productionPrompt, input]);
+  const setupItems = useMemo(() => selectedSetupItems(activeProductionSetup, plan?.production_type ?? ""), [activeProductionSetup, plan]);
+  const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || activeSelectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
+const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, activeProductionSetup, plan, productionPrompt || input) : [];
+const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProductionSetup, plan) : { title: "HeyGen provider tier", selected: "", credits: 0, seconds: 0, creditsPerMinute: 0 };
 const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualHeyGenBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
@@ -1527,16 +1652,15 @@ const manualHeyGenBreakdown = [
   ...(selectedSound ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen müzik seçimi" : "Manual HeyGen music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
 ];
 const setupCredits = setupBreakdown.reduce((total, item) => total + item.credits, 0) + manualHeyGenCredits;
-const cardCredits = productionCardCredits(selectedProductionCards);
+const cardCredits = productionCardCredits(activeSelectedProductionCards);
 const draftBaseCredits = baseDraftCredits(plan);
 const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const estimatedCredits = totalEstimatedCredits ? totalEstimatedCredits.toLocaleString() : "Calculated on start";
   const draftPromptText = productionPrompt || input;
-  const draftCardsForIntent = plan ? Array.from(new Set([...(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(plan)), ...setupItems, ...(plan.selected_features || [])])) : [];
-  const draftNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(draftPromptText)
-    && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/i.test(draftPromptText);
-  const draftWantsPresenterVideo = Boolean(plan) && !draftNoPeopleMotionIntent && (draftCardsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(draftPromptText));
-  const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup, title: plan.summary }) : null;
+  const draftCardsForIntent = plan ? Array.from(new Set([...(activeSelectedProductionCards.length ? activeSelectedProductionCards : productionCardsFor(plan)), ...setupItems, ...(plan.selected_features || [])])) : [];
+  const draftNoPeopleMotionIntent = draftCardsForIntent.some((item) => /no people|no presenter|motion graphics|ui-only|screenshot-only/i.test(item)) || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kiş/i.test(draftPromptText);
+  const draftWantsPresenterVideo = !isImageProductionType(plan?.production_type ?? "") && draftCardsForIntent.some((item) => /presenter|avatar|heygen|talking|ugc creator|with presenter/i.test(item)) && !draftNoPeopleMotionIntent;
+  const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup: activeProductionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
   const activeProviderProof = productionProviderProof(activeProduction);
 
@@ -1599,30 +1723,39 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   async function createProductionRecord(activePlanInput: StudioPlan, cleanInput: string, userId: string, userEmail: string, accessToken: string): Promise<WorkProductionCard | null> {
     const project = isProjectType(activePlanInput.production_type);
-  const routeSafeInput = sanitizeProviderRouteSignal(cleanInput);
-  const productionCards = filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput);
-  const presenterlessSetupRequested = Object.values(productionSetup).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
-  const activeSelectedAvatar = presenterlessSetupRequested ? null : selectedAvatar;
-  const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
-  const setupForPayload = {
+const routeSafeInput = sanitizeProviderRouteSignal(cleanInput);
+const isImageProduction = isImageProductionType(activePlanInput.production_type);
+const productionCards = isImageProduction
+  ? filterCardsForPrompt(productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type)
+  : filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type);
+const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
+const baseSetupForPayload = isImageProduction
+  ? sanitizeSetupForProduction(activePlanInput.production_type, sanitizedSetup, cleanInput, activePlanInput)
+  : {
     ...productionSetup,
     voice: sanitizedSetup.voice ?? productionSetup.voice,
-    subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles,
-    heygenNoPresenterMode: presenterlessSetupRequested ? ["true"] : ["false"],
-    heygenIncludeNarrator: presenterlessSetupRequested ? ["false"] : ["true"],
-    heygenIncludeVoice: presenterlessSetupRequested ? ["true"] : ["true"],
-    heygenSceneType: presenterlessSetupRequested ? ["b_roll"] : ["a_roll"],
-    heygenAvatarMode: presenterlessSetupRequested ? ["no_presenter"] : ["presenter"],
-    ...(activeSelectedAvatar?.avatarId && !presenterlessSetupRequested ? { heygen_avatar_id: [activeSelectedAvatar.avatarId] } : {}),
-    ...(activeSelectedAvatar?.lookId && !presenterlessSetupRequested ? { heygen_look_id: [activeSelectedAvatar.lookId] } : {}),
-    ...(selectedVoice?.id ? { heygen_voice_id: [selectedVoice.id] } : {}),
-    ...(selectedSound?.id ? { heygen_music_id: [selectedSound.id] } : {}),
-    ...(activeSelectedAvatar?.name && !presenterlessSetupRequested ? { selected_presenter_name: [activeSelectedAvatar.name] } : {}),
-    ...(selectedVoice?.name ? { selected_voice_name: [selectedVoice.name] } : {}),
-    ...(selectedSound?.name ? { selected_music_name: [selectedSound.name] } : {})
+    subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles
   };
+const presenterlessSetupRequested = isImageProduction || Object.values(baseSetupForPayload).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
+const activeSelectedAvatar = presenterlessSetupRequested ? null : selectedAvatar;
+const setupForPayload = isImageProduction ? baseSetupForPayload : {
+  ...baseSetupForPayload,
+  heygenNoPresenterMode: presenterlessSetupRequested ? ["true"] : ["false"],
+  heygenIncludeNarrator: presenterlessSetupRequested ? ["false"] : ["true"],
+  heygenIncludeVoice: ["true"],
+  heygenSceneType: presenterlessSetupRequested ? ["b_roll"] : ["a_roll"],
+  heygenAvatarMode: presenterlessSetupRequested ? ["no_presenter"] : ["presenter"],
+  ...(activeSelectedAvatar?.avatarId && !presenterlessSetupRequested ? { heygen_avatar_id: [activeSelectedAvatar.avatarId] } : {}),
+  ...(activeSelectedAvatar?.lookId && !presenterlessSetupRequested ? { heygen_look_id: [activeSelectedAvatar.lookId] } : {}),
+  ...(selectedVoice?.id ? { heygen_voice_id: [selectedVoice.id] } : {}),
+  ...(selectedSound?.id ? { heygen_music_id: [selectedSound.id] } : {}),
+  ...(activeSelectedAvatar?.name && !presenterlessSetupRequested ? { selected_presenter_name: [activeSelectedAvatar.name] } : {}),
+  ...(selectedVoice?.name ? { selected_voice_name: [selectedVoice.name] } : {}),
+  ...(selectedSound?.name ? { selected_music_name: [selectedSound.name] } : {})
+};
+
     const setupFields = setupDerivedFields(activePlanInput.production_type, setupForPayload);
-    const setupItemsForPayload = selectedSetupItems(setupForPayload);
+    const setupItemsForPayload = selectedSetupItems(setupForPayload, activePlanInput.production_type);
     const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
     const thumbnailPrompt = selectedItemsForIntent.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)))
       ? customThumbnailPrompt.trim() || "Cinematic vertical 9:16 cover image for Crelavo. One strong focal subject, high contrast dark tech background, glowing neon red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, AI video creation energy, no text, no logos, no extra people, no clutter, clean composition, scroll-stopping thumbnail."
@@ -1630,8 +1763,11 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const avoidPrompt = customAvoidPrompt.trim() || undefined;
     const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
     const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
-    const heygenTierForPayload = heygenQualityCreditBreakdown(setupForPayload, activePlanInput);
-    const manualHeyGenCreditsForPayload = heygenTierForPayload.credits + (activeSelectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
+    const setupForPayloadRecord = setupForPayload as ProductionSetupState;
+    const imageAspectRatio = isImageProduction ? normalizedImageAspectRatio(setupForPayloadRecord, cleanInput) : undefined;
+    const imageTypeForPayload = isImageProduction ? String((setupForPayloadRecord.imageType ?? [])[0] ?? imageTypeFromPrompt(cleanInput, setupProfiles.image.groups.find((group) => group.id === "imageType")?.options ?? []) ?? "Product visual") : undefined;
+    const heygenTierForPayload = heygenQualityCreditBreakdown(setupForPayloadRecord, activePlanInput);
+    const manualHeyGenCreditsForPayload = isImageProduction ? 0 : heygenTierForPayload.credits + (activeSelectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
     const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput) + manualHeyGenCreditsForPayload;
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
@@ -1644,11 +1780,11 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     const wantsHeyGenBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedHeyGenVideoAgentAutoEdit;
     const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(routeSafeInput));
-    const productionTypeForPayload = wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
-    const presenterCreative = wantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
+    const productionTypeForPayload = isImageProduction ? "image" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
+    const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
     const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
-    const preferredProviderForPayload = animationProductionIntent ? "runway_first" : wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : undefined;
+    const preferredProviderForPayload = isImageProduction ? undefined : animationProductionIntent ? "runway_first" : wantsPresenterVideo ? "heygen_video_agent" : wantsHeyGenBrollVideoAgent ? "heygen_video_agent" : undefined;
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "HeyGen talking avatar", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
     const formats = setupFields.delivery_formats.length
@@ -1658,9 +1794,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         : project
           ? ["source_code", "readme", "dashboard_delivery"]
           : ["final_mp4", "dashboard_delivery"];
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 25000);
     const response = await fetch("/api/productions", {
       method: "POST",
       headers: authHeaders(accessToken),
+      signal: controller.signal,
       body: JSON.stringify({
         user_id: userId,
         user_email: userEmail,
@@ -1670,7 +1809,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         package_id: activePlanInput.package_id,
         quality: setupFields.selected_quality || activePlanInput.selected_quality,
         selected_quality: setupFields.selected_quality || activePlanInput.selected_quality,
-        output_duration_seconds: Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlanInput.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
+        output_duration_seconds: isImageProduction ? 0 : Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlanInput.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
         output_count: outputIntent.outputCount,
         requested_clip_count: outputIntent.requestedClipCount,
         requested_alternative_count: outputIntent.requestedAlternativeCount,
@@ -1679,12 +1818,12 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         estimated_credits: totalEstimatedCreditsForPayload,
         delivery_level: project ? "working_source_package" : "production_package",
         delivery_requirements: { requested: true, status: "pending", formats },
-        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        input_json: { work_prompt: cleanInput, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? null : selectedAvatar, selectedVoice, selectedSound, heygen_avatar_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: (wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent) ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: selectedVoice?.id, heygen_music_id: selectedSound?.id, heygen_music_audio_url: selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        request_metadata: { source: "omnichannel_studio", workPage: true, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, outputKind: isImageProduction ? "static_image" : undefined, imageType: imageTypeForPayload, aspectRatio: imageAspectRatio, aspect_ratio: imageAspectRatio, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        input_json: { work_prompt: cleanInput, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsHeyGenBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualHeyGenCredits: manualHeyGenCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
         uploaded_materials: materials,
         legal_acceptance: true
       })
-    });
+    }).finally(() => window.clearTimeout(timeout));
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
@@ -1719,7 +1858,23 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       return;
     }
     setActiveProduction(created);
-    setStatus(statusUx("Production oluşturuldu. Gerçek provider başlatılıyor...", "Production created. Starting the real provider..."));
+    const isImageStart = isImageProductionType(activePlanInput.production_type);
+if (isImageStart) {
+  setStatus(statusUx("Production oluşturuldu. Image provider arka planda başlatılıyor...", "Production created. Image provider is starting in the background..."));
+  void fetch("/api/automation/start", {
+    method: "POST",
+    headers: authHeaders(auth.accessToken),
+    keepalive: true,
+    body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
+  }).catch(() => null);
+  void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
+  setStarting(false);
+      if (!options?.stayOnWork) {
+        setStatus(statusUx("Production kaydı hazır. Detaylar Work alanında kalıyor.", "Production record is ready. Details stay in Work."));
+      }
+  return;
+}
+      setStatus(statusUx("Production oluşturuldu. Gerçek provider başlatılıyor ve Work içinde takip ediliyor...", "Production created. The real provider is starting and will be tracked inside Work..."));
     const automationResponse = await fetch("/api/automation/start", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
@@ -1736,7 +1891,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     }
     await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     setStarting(false);
-    if (!options?.stayOnWork) window.location.href = `/dashboard/productions/${created.id}`;
+        if (!options?.stayOnWork) {
+        setStatus(statusUx("Production kaydı hazır. Detaylar Work alanında kalıyor.", "Production record is ready. Details stay in Work."));
+      }
   }
 
   async function askStudio(nextInput = input) {
@@ -1749,14 +1906,14 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       const activeDraft = plan ?? localPlan(productionPrompt.trim(), forcedProductionType);
       setPlan(activeDraft);
       setProductionSetup(defaultSetupFor(activeDraft.production_type, productionPrompt.trim(), activeDraft));
-      setStatus(statusUx("Mevcut taslak hazır. Üretimi başlat ile production kaydını oluştur.", "Draft is ready. Use Start Production to create the production record."));
+      setStatus(statusUx("Mevcut taslak hazır. Üretimi başlat ile bu çalışma alanında production kaydını oluştur.", "Draft is ready. Use Start Production to create the production record in this workspace."));
       setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(activeDraft, detectWorkLanguage(productionPrompt.trim() || clean)) }]);
       return;
     }
 
     if (isExplainIntent(clean) && !/create|build|make|generate|produce|hazırla|hazirla|oluştur|olustur|yap/i.test(clean)) {
       setMessages((current) => [...current, { id: uid(), role: "assistant", content: explainProductionFlow(plan, detectWorkLanguage(clean)) }]);
-      setStatus(plan ? statusUx("Mevcut taslak hazır. Devam etmek istediğinde Üretimi başlat'a bas.", "Current draft is still ready. Press Start Production when you want to continue.") : statusUx("Crelavo'ya ne üretmek istediğini yaz; ardından Üretimi başlat production sayfasını açacak.", "Ask Crelavo what to create, then Start Production will open the production page."));
+      setStatus(plan ? statusUx("Mevcut taslak hazır. Devam etmek istediğinde Üretimi başlat'a bas.", "Current draft is still ready. Press Start Production when you want to continue.") : statusUx("Crelavo'ya ne üretmek istediğini yaz; ardından Üretimi başlat bu çalışma alanında üretim kaydı oluşturacak.", "Ask Crelavo what to create, then Start Production will create the production record in this workspace."));
       return;
     }
 
@@ -1765,9 +1922,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
     const auth = await requireVerifiedBrowserUser();
     if (!auth.ok) {
-      const fallback = localPlan(clean, forcedProductionType);
+      const fallback = localPlan(clean, shouldForceImageProduction(clean) ? "image" : forcedProductionType);
         setPlan(fallback);
-        setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean));
+        setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean, fallback.production_type));
         resetSetupFor(fallback, clean);
       setProductionPrompt(clean);
       setMessages((current) => [...current, { id: uid(), role: "assistant", content: "I prepared a draft, but you need to sign in before starting production." }]);
@@ -1822,9 +1979,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setPlanning(false);
 
     if (!response.ok || !data.plan) {
-      const fallback = localPlan(clean, forcedProductionType);
+      const fallback = localPlan(clean, shouldForceImageProduction(clean) ? "image" : forcedProductionType);
         setPlan(fallback);
-        setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean));
+        setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(fallback), clean, fallback.production_type));
         resetSetupFor(fallback, clean);
       setProductionPrompt(clean);
       setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(fallback, detectWorkLanguage(clean)) }]);
@@ -1833,13 +1990,14 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       return;
     }
 
-    const normalized = normalizePlan(data.plan, clean, forcedProductionType);
+    const normalized = normalizePlan(data.plan, clean, shouldForceImageProduction(clean) ? "image" : forcedProductionType);
+    const finalPlan = shouldForceImageProduction(clean) ? normalizePlan({ ...normalized, production_type: "image", package_id: "image_single", selected_quality: "Image", selected_duration: "Static", selected_modules: ["Image generation"], selected_features: ["Production package", "PNG/JPG delivery"], delivery_requirements: { requested: true, status: "pending", formats: ["final_image", "png", "jpg", "dashboard_delivery"] } }, clean, "image") : normalized;
     setConversationId(data.conversation_id ?? conversationId);
-    setPlan(normalized);
-    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(normalized), clean));
-    resetSetupFor(normalized, clean);
+    setPlan(finalPlan);
+    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(finalPlan), clean, finalPlan.production_type));
+    setProductionSetup(sanitizeSetupForProduction(finalPlan.production_type, defaultSetupFor(finalPlan.production_type, clean, finalPlan), clean, finalPlan));
     setProductionPrompt(clean);
-    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(normalized, detectWorkLanguage(clean)) }]);
+    setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(finalPlan, detectWorkLanguage(clean)) }]);
     setStatus(detectWorkLanguage(clean) === "tr" ? "Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Üretimi başlat ile başlat." : "Production setup is ready. Review the required options, then start with Start Production.");
   }
 
@@ -1877,7 +2035,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setInput(prompt);
     setPlan(chipPlan);
     setProductionSetup(chipSetup);
-    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(chipPlan), prompt));
+    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(chipPlan), prompt, chipPlan.production_type));
     if (typeof window !== "undefined") [workDraftStorageKey, ...legacyWorkDraftStorageKeys].forEach((key) => window.localStorage.removeItem(key));
     setStatus(statusUx(`${chip} promptu ve kurulum taslağı yüklendi. Kontrol edip üretimi başlatabilirsin.`, `${chip} prompt and setup draft loaded. Review it and start production.`));
   }
@@ -1915,13 +2073,19 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   }
 
   async function startProduction() {
-    const clean = (productionPrompt || input).trim();
-    const activePlan = plan ? normalizePlan(plan, clean, forcedProductionType) : clean ? localPlan(clean, forcedProductionType) : null;
-    if (!clean || !activePlan) {
+    const fallbackPrompt = plan ? [productionPrompt, input, plan.summary, plan.selected_features?.join(", "), plan.selected_modules?.join(", "), labelFor(plan.production_type)].filter(Boolean).join("\n").trim() : "";
+    const clean = (productionPrompt || input || fallbackPrompt).trim();
+    const activePlan = plan ? normalizePlan(plan, clean || fallbackPrompt, forcedProductionType) : clean ? localPlan(clean, forcedProductionType) : null;
+    if (!activePlan) {
       setStatus(statusUx("Önce ne üretmek istediğini yaz.", "Describe what you want to create first."));
       return;
     }
-    await startProductionForPlan(activePlan, clean, { stayOnWork: false });
+    try {
+      await startProductionForPlan(activePlan, clean, { stayOnWork: true });
+    } catch (error) {
+      setStarting(false);
+      setStatus(error instanceof DOMException && error.name === "AbortError" ? statusUx("Production isteği zaman aşımına uğradı. Sayfayı yenileyip tekrar deneyin.", "Production request timed out. Refresh and try again.") : error instanceof Error ? error.message : statusUx("Production başlatılamadı.", "Production could not be started."));
+    }
   }
 
   return (
@@ -1974,7 +2138,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                 <div className="omni-result-grid">
                   <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
-                  <span><strong>{ux("Page")}</strong><a href={`/dashboard/productions/${activeProduction.id}`}>{ux("Open production")}</a></span>
+                  <span><strong>{ux("Workspace")}</strong>{ux("Production stays here")}</span>
                 </div>
                 <div className="omni-result-grid">
                   <span><strong>{workUiLanguage === "tr" ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
@@ -2000,8 +2164,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                 </div>
                 <div className="omni-production-cards">
                   <strong>{ux("Choose what will be produced")}</strong>
-                  <div>{filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input).map((item) => {
-                    const active = selectedProductionCards.includes(item);
+                  <div>{filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type).map((item) => {
+                    const active = activeSelectedProductionCards.includes(item);
                     return <button type="button" className={active ? "active" : ""} key={item} onClick={() => setSelectedProductionCards((current) => current.includes(item) ? current.filter((card) => card !== item) : [...current, item])}>{ux(item)}</button>;
                   })}</div>
                 </div>
@@ -2019,7 +2183,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
                         </div>
                         <div className="omni-setup-options">
                           {group.options.map((option) => {
-                            const active = (productionSetup[group.id] ?? []).includes(option);
+                            const active = (activeProductionSetup[group.id] ?? []).includes(option);
                             const credit = optionCredit(option, group);
                             return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{ux(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
                           })}

@@ -288,7 +288,7 @@ const dynamicWizardLabels: Record<DynamicWizardType, string> = {
   ai_agent_wizard: "AI Ajan Wizard",
   drone_wizard: "Drone / Uydu Wizard",
   stickman_wizard: "Çöp Adam Animasyon Wizard",
-  image: "Image & Visual Pack",
+  image: "Image / Banner / Poster Pack",
   document: "Document / PDF Pack"
 };
 
@@ -305,7 +305,7 @@ const wizardCategoryLabels: Record<string, string> = {
   video: "AI Video Generator", talking_video: "Advanced Talking Video", documentary: "Documentary", animation: "Animation Video", anime_short_film: "Anime Short Film", animal_video: "Animal Video", nature_video: "Nature Video", planet_space_video: "Planet / Space Video", drone_video: "Drone / Satellite Video", live_sales_agent: "AI Live Sales Agent", stickman_animation: "Stickman Animation", music_video: "Music Video / MV", studio: "Studio / Series-Film", drama: "Drama / Short Series", cinematic_video: "Cinematic Video", video_clipping: "Video Clipping", video_tools: "Video Tools",
   avatar: "Avatar Design / Avatar Video", lip_sync: "Lip Sync Video", voice_clone: "Voice Cloning", visual_clone: "Visual / Style Clone",
   website: "Website Builder", saas: "SaaS Product", mobile_app: "Mobile App Builder", admin_project: "Admin Panel Projects",
-  image: "Image & Visual Pack", brand_kit: "Brand Kit", document_pack: "Documents / Files"
+  image: "Image / Banner / Poster Pack", brand_kit: "Brand Kit", document_pack: "Documents / Files"
 };
 
 const wizardCategoryOptions: Record<string, string[]> = {
@@ -375,7 +375,7 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "environment", label: "Çekilecek ortam", options: ["Auto scene environment", "Home interior", "Outdoor street", "Hotel / luxury lobby", "Sea / beach", "Cafe / restaurant", "Cinema / dark room", "Studio background", "Office / SaaS dashboard", "Outdoor cinematic", "Luxury product scene", "Regional environment", "Drone / satellite map", "Green screen / clean background"] },
     { id: "subjectWorld", label: "Sosyal kısa video dünyası", multi: true, options: ["Human characters", "Animals", "Nature", "Product / object", "Food / drink", "Fashion / outfit", "Regional clothing", "Traditional costume", "Local culture", "Vehicle / drone", "Fantasy / AI world"] },
     { id: "timeMood", label: "Zaman ve duygu", multi: true, options: ["Morning", "Daytime", "Evening", "Night", "Action environment", "Emotional atmosphere", "Funny / meme mood", "Luxury mood", "Calm documentary mood", "High-energy viral mood"] },
-    { id: "quality", label: "Kalite / format", options: ["480p preview", "720p", "1080p", "1080p premium", "4K", "Vertical 9:16", "Horizontal 16:9", "YouTube 16:9"] },
+    { id: "quality", label: "Kalite / format", options: ["1080p", "1080p premium", "4K", "Vertical 9:16", "Horizontal 16:9", "YouTube 16:9"] },
     { id: "visualStyle", label: "Görsel tarz", options: ["Realistic video", "Cinematic", "Product demo", "2D animation", "3D animation", "Stickman animation", "Motion graphics", "Whiteboard animation"] },
     { id: "platform", label: "Nerede kullanılacak?", multi: true, options: ["TikTok", "Instagram Reels", "YouTube Shorts", "Website", "Meta Ads", "YouTube 16:9"] },
     { id: "duration", label: "Süre", options: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"] },
@@ -469,7 +469,7 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "stickmanType", label: "Çöp adam türü", options: ["Explainer", "Comedy skit", "Education", "Story video", "Social media short"] },
     { id: "characterCreation", label: "Karakter", multi: true, options: ["Choose character", "Create character", "Keep same character", "Multiple stick characters"] },
     { id: "voiceProfile", label: "Ses", multi: true, options: ["No voice-over", "Own voice", "Adult neutral voice", "Child voice", "Energetic voice", "Subtitles"] },
-    { id: "quality", label: "Kalite / teslim", options: ["Fast draft", "1080p", "Vertical 9:16", "YouTube 16:9"] }
+    { id: "quality", label: "Kalite / teslim", options: ["1080p", "Vertical 9:16", "YouTube 16:9"] }
   ],
   image: [
     { id: "imageType", label: "Görsel türü", options: ["Product visual", "Poster", "Social media post", "Logo/brand kit", "Thumbnail", "Banner"] },
@@ -486,7 +486,19 @@ function formatCredits(value: number | null) {
   return typeof value === "number" ? value.toLocaleString() : "-";
 }
 
-const qualityOptions = ["480p test", "720p", "720p quick test", "1080p", "1080p premium", "1080p cinematic", "2K", "4K", "Vertical 9:16", "Horizontal 16:9", "Square 1:1", "Story 9:16", "YouTube 16:9"];
+function safeWorkQuality(value: string | null | undefined, fallback = "1080p") {
+  const cleaned = String(value ?? "").trim();
+  if (!cleaned) return fallback;
+  if (/480p|720p|draft|quick\s*test|fast\s*draft|low[-\s]?cost/i.test(cleaned)) return fallback;
+  return cleaned;
+}
+
+function safeWorkQualityOptions(options: string[]) {
+  const cleaned = options.map((option) => safeWorkQuality(option, "")).filter(Boolean);
+  return Array.from(new Set(cleaned.length ? cleaned : ["1080p", "1080p premium"]));
+}
+
+const qualityOptions = ["1080p", "1080p premium", "1080p cinematic", "2K", "4K", "Vertical 9:16", "Horizontal 16:9", "Square 1:1", "Story 9:16", "YouTube 16:9"];
 const styleOptions = ["Cinematic", "Series / film", "Short film", "Series scene", "Trailer", "Cinematic animation", "2D animation", "2.5D animation", "3D animation", "Stickman animation", "Motion graphics", "Whiteboard animation", "Character animation", "Realistic UGC", "Premium ad", "Luxury product", "SaaS modern", "Minimal", "Viral TikTok", "Corporate", "Fun", "Documentary", "Product demo", "App demo"];
 const featureOptions = ["Voice-over", "Own voice-over", "Choose AI voice", "Create AI voice", "Voice clone", "Child voices", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Script", "Scene plan", "Character breakdown", "Series/film bible", "Trailer cut", "Long film/series clipping", "Scene detection", "Hook extraction", "Shorts/Reels cut", "3 alternatives", "5 alternatives", "A/B hook", "Character", "Photo/avatar input", "Choose character", "Create character", "Add yourself to video", "2-person conversation", "3-person conversation", "4-person conversation", "5+ person conversation", "7-8 person conversation", "Panel / roundtable conversation", "Separate voice per person", "Realistic talking video", "Animated talking video", "Regional clothing", "Traditional outfit", "Regional environment", "Local lifestyle environment", "Local accent voice-over", "Dialect voice-over", "Cultural scene direction", "Scene transition", "Lip-sync", "Drone-style aerial video", "AI map/location drone-style video", "Logo/brand kit", "Source file delivery", "Production package", "Working source package", "Social media caption", "Hashtag set", "Cover visual", "Thumbnail", "Final ZIP", "README", "Revision right"];
 const durationOptions = ["5 sec", "10 sec", "15 sec", "30 sec", "45 sec", "60 sec", "2 min", "3 min", "5 min", "10 min", "Scene 1-3 min", "Pilot 3-10 min", "Episode based", "Season / film plan", "Project based"];
@@ -601,7 +613,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Shopify product link", "Amazon product link", "Trendyol product link", "Product ad video", "Marketplace listing", "E-commerce product pack"],
     features: ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut", "Voice-over", "Subtitles", "Music", "3 alternatives", "5 alternatives"],
     platforms: ["Dashboard delivery", "TikTok", "Instagram Reels", "YouTube Shorts", "Facebook/Meta Ads", "Shopify", "Amazon", "Trendyol", "WooCommerce"],
-    quality: ["720p quick test", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Premium ad", "Realistic UGC", "Viral TikTok", "Product demo"],
     duration: ["15 sec", "30 sec", "45 sec", "60 sec"]
   },
@@ -611,7 +623,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["AI video", "Prompt-to-video", "Link-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video", "Visual/image pack", "Voice-over", "Background music direction", "User audio upload"],
     features: ["Script", "Scene plan", "Choose AI voice", "Create AI voice", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Thumbnail", "Watermark-free output", "3 alternatives"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["480p draft", "720p", "1080p", "1080p premium", "1080p cinematic", "Vertical 9:16", "YouTube 16:9"],
+    quality: ["1080p", "1080p premium", "1080p cinematic", "Vertical 9:16", "YouTube 16:9"],
     style: ["Premium ad", "Cinematic", "Cinematic animation", "Realistic UGC", "Documentary", "Product demo"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "2 min"]
   },
@@ -621,7 +633,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Advanced talking video", "Self-in-video", "Multi-person talking video", "Regional culture video", "Local dialect voice", "Voice-to-video", "Lip-sync", "User audio upload", "Material reference"],
     features: ["Add yourself to video", "Own voice-over", "2-person conversation", "3-person conversation", "4-person conversation", "5+ person conversation", "7-8 person conversation", "Panel / roundtable conversation", "Separate voice per person", "Realistic talking video", "Animated talking video", "Regional clothing", "Traditional outfit", "Regional environment", "Local lifestyle environment", "Local accent voice-over", "Dialect voice-over", "Cultural scene direction", "User material upload", "Uploaded user materials", "Subtitles", "Music", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Realistic UGC", "Cinematic", "Character animation", "Cinematic animation", "Documentary"],
     duration: ["10 sec", "15 sec", "30 sec", "60 sec", "2 min", "Project based"]
   },
@@ -631,7 +643,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Documentary", "Topic research", "Narration outline", "Interview map", "Archival visual plan", "Voice-over", "Documentary background music", "User audio upload"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Social media caption", "Shorts/Reels cut", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "YouTube Shorts", "Instagram Reels", "ZIP source"],
-    quality: ["720p", "1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
+    quality: ["1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
     style: ["Documentary", "Corporate", "Cinematic", "Editorial Document"],
     duration: ["60 sec", "2 min", "5 min", "10 min", "Episode based", "Project based"]
   },
@@ -641,7 +653,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Animation video", "2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation", "Explainer animation", "Script + scene plan", "Animation background music", "User audio upload"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Character", "3 alternatives", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["480p draft", "720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
   },
@@ -651,7 +663,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Anime short film", "Anime style selection", "Character setup", "Dialogue scene", "Action scene", "Fantasy scene", "Anime background music", "User audio upload", "Material reference"],
     features: ["Script", "Scene plan", "Character breakdown", "Action sequence", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "ZIP source", "YouTube Shorts", "Instagram Reels"],
-    quality: ["480p draft", "720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Anime cinematic", "Shonen action", "Slice of life", "Fantasy anime", "Mecha anime", "Cute chibi"],
     duration: ["15 sec", "30 sec", "60 sec", "2 min", "Project based"]
   },
@@ -661,7 +673,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Animal video", "Funny animal short", "Exciting animal scene", "Cinematic animal video", "3D animal video", "Animation video", "Voice-over", "Background music direction", "User audio upload", "Material reference"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Character", "3 alternatives", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Funny", "Exciting", "Cinematic", "Character animation", "3D animation", "Realistic UGC"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
   },
@@ -671,7 +683,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Nature video", "Wildlife scene", "Landscape video", "Weather atmosphere", "Documentary", "Voice-over", "Background music direction", "User audio upload", "Material reference"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Social media caption", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "YouTube Shorts", "Instagram Reels", "ZIP source"],
-    quality: ["720p", "1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
+    quality: ["1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
     style: ["Documentary", "Cinematic", "Realistic UGC", "Luxury product", "Motion graphics"],
     duration: ["15 sec", "30 sec", "60 sec", "2 min", "5 min"]
   },
@@ -681,7 +693,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Planet video", "Space explainer", "Galaxy scene", "3D space visual", "Cinematic space video", "Voice-over", "Background music direction", "User audio upload", "Material reference"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Thumbnail", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "YouTube Shorts", "Instagram Reels", "ZIP source"],
-    quality: ["720p", "1080p", "1080p premium", "2K", "YouTube 16:9", "Vertical 9:16"],
+    quality: ["1080p", "1080p premium", "2K", "YouTube 16:9", "Vertical 9:16"],
     style: ["Cinematic", "3D animation", "Documentary", "Motion graphics", "Luxury product"],
     duration: ["15 sec", "30 sec", "60 sec", "2 min", "5 min"]
   },
@@ -691,7 +703,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Drone-style aerial video", "AI map/location drone-style video", "Satellite-view intro", "Route/path plan", "Voice-over", "Background music direction", "User audio upload", "Material reference"],
     features: ["Scene plan", "Marked area notes", "Voice-over", "Own voice-over", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Thumbnail", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "YouTube Shorts", "Instagram Reels", "ZIP source"],
-    quality: ["720p", "1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
+    quality: ["1080p", "1080p premium", "YouTube 16:9", "Vertical 9:16"],
     style: ["Cinematic", "Documentary", "Real estate flyover", "Travel promo", "Map explainer"],
     duration: ["15 sec", "30 sec", "60 sec", "2 min", "Project based"]
   },
@@ -737,13 +749,13 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
   },
   video_clipping: {
     title: "Video clipping options",
-    note: "Long source video material, shortening, exciting/scary/funny moment extraction, hook detection and social cut decisions.",
-    modules: ["Long film/series clipping", "Long video shortening", "Source video material", "Shorts/Reels/TikTok cuts", "Scene detection", "Hook extraction"],
-    features: ["Long film/series clipping", "Scene detection", "Hook extraction", "Shorts/Reels cut", "Subtitles", "Cover visual", "Social media caption", "Hashtag set"],
-    platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "Vertical 9:16", "YouTube 16:9"],
-    style: ["Viral TikTok", "Documentary", "Cinematic", "Fun"],
-    duration: ["Project based", "15 sec", "30 sec", "60 sec"]
+    note: "Long source video, dynamic promo clipping, Crelavo category showcase, quality, cinematic/neon style, presenter/avatar, voice, music, subtitles, thumbnail and social export decisions.",
+    modules: ["Long film/series clipping", "Long video shortening", "Source video material", "Crelavo category showcase", "Fast dynamic promo clip", "Shorts/Reels/TikTok cuts", "Scene detection", "Hook extraction", "AI video", "Voice-over", "Background music direction", "User audio upload"],
+    features: ["Long film/series clipping", "Scene detection", "Hook extraction", "Shorts/Reels cut", "Fast cuts", "Beat-synced music", "Voice-over", "Choose AI voice", "Create AI voice", "Subtitles", "Music", "Background music", "Emotion-matched music", "Thumbnail", "Cover visual", "Social media caption", "Hashtag set", "Final MP4", "Social export pack", "Revision right"],
+    platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts", "LinkedIn", "X/Twitter", "Facebook/Meta Ads"],
+    quality: ["1080p", "1080p premium", "1080p cinematic", "2K", "4K", "Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"],
+    style: ["Viral TikTok", "Cinematic", "Premium ad", "Neon tech", "SaaS modern", "Motion graphics", "Product demo", "Realistic UGC", "Corporate", "Luxury product", "Fun"],
+    duration: ["15 sec", "30 sec", "45 sec", "60 sec", "2 min", "Project based"]
   },
   avatar: {
     title: "Avatar design / avatar video options",
@@ -761,7 +773,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Lip-sync", "Audio-to-face", "Face/avatar material", "Self-in-video", "Multi-person talking video", "Audio/script material", "Voice-over", "AI video", "Avatar design"],
     features: ["Voice-over", "Subtitles", "Lip-sync", "Dialogue sync", "2-person conversation", "3-person conversation", "4-person conversation", "Separate voice per person", "Multilingual dub", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16"],
     style: ["Realistic UGC", "Corporate", "Character animation"],
     duration: ["10 sec", "15 sec", "30 sec", "60 sec"]
   },
@@ -771,7 +783,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Voice clone", "Voice reference material", "Voice-over", "Clean vocal", "Narration", "Multilingual voice"],
     features: ["Voice-over", "Clean vocal", "Multilingual dub", "Usage rules", "Revision right"],
     platforms: ["Dashboard delivery", "ZIP source", "MP4 download"],
-    quality: ["720p", "1080p", "1080p premium"],
+    quality: ["1080p", "1080p premium"],
     style: ["Corporate", "Documentary", "Realistic UGC"],
     duration: ["Project based", "30 sec", "60 sec", "2 min"]
   },
@@ -791,7 +803,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Link-to-video", "Image-to-video", "Script-to-video", "Voice-to-video", "Video extend", "Motion control", "Watermark control"],
     features: ["Watermark-free final delivery", "Crelavo preview watermark", "Owned-content watermark cleanup", "Rights confirmation", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Cinematic", "Realistic UGC", "Product demo", "Motion graphics"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
   },
@@ -801,7 +813,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Animation video", "Script + scene plan", "Shorts/Reels/TikTok cuts", "Voice-over", "Animation background music", "User audio upload"],
     features: ["Script", "Scene plan", "Voice-over", "Own voice-over", "Child voices", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "3 alternatives", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["480p test", "720p", "1080p", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Stickman animation", "Whiteboard animation", "2D animation", "Fun", "Documentary"],
     duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
   },
@@ -831,7 +843,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["AI video", "Voice-over", "Visual/image pack", "Campaign set"],
     features: ["Voice-over", "Subtitles", "Scene plan", "Social media caption", "3 alternatives", "Revision right"],
     platforms: ["Dashboard delivery", "MP4 download", "ZIP source", "TikTok", "Instagram Reels", "YouTube Shorts"],
-    quality: ["720p", "1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
+    quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Corporate", "Documentary", "Premium ad", "Realistic UGC"],
     duration: ["15 sec", "30 sec", "60 sec", "Project based"]
   },
@@ -1061,7 +1073,7 @@ function localizedWorkspaceReply(kind: "default" | "greeting" | "continue" | "fl
       story: "I will treat this as a series/film production flow: story direction, scene plan, characters, voice, subtitles, and trailer/final delivery can be managed in one workspace.",
       campaign: "I read this as a campaign/video production. If you have a product link, we can use it; otherwise product name and audience are enough. If you do not want voice, music, or subtitles, I will skip them and keep the flow lean.",
       project: "We can set this up as a digital product/project production. I will plan pages, screens, admin side, source delivery, and README package, then turn it into a live production record.",
-      credits: "I will keep the credit side practical: first estimate production type and scope, then suggest whether a low-cost test or full delivery makes more sense. I will not inflate unnecessary expensive features.",
+      credits: "I will keep the credit side practical: first estimate production type and scope, then suggest whether a controlled test or full delivery makes more sense. I will not inflate unnecessary expensive features.",
       analyzed: "I analyzed your command and am moving the production flow to the next step.", failed: "Assistant request failed.", creditsRequired: "Credits required before the assistant can continue."
     }
   };
@@ -1099,6 +1111,9 @@ function matchScore(text: string, patterns: RegExp[]) {
 
 function inferDynamicWizardType(message: string): DynamicWizardType {
   const text = normalizeTurkishQuery(message);
+  const routeText = text
+  .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
+  .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ");
   if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "feature_tool";
   if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model";
   if (/kültürel yerelleştirme|kulturel yerellestirme|cultural localization|global localization|yerelleştirme|yerellestirme/.test(text)) return "localization_tool";
@@ -1107,6 +1122,9 @@ function inferDynamicWizardType(message: string): DynamicWizardType {
   if (/topluluk|community showcase|showcase|vitrin|örnek stil|ornek stil|template reuse/.test(text)) return "showcase_tool";
   if (/ai ajan|yapay zeka ajan|ai influencer|sosyal medya yöneticisi|trend monitor|24\/7|24 saat|satış asistanı|satis asistani/.test(text)) return "ai_agent_wizard";
   if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(text)) return "drone_wizard";
+  const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(text);
+  const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
+  if (imageDesignIntent && !explicitVideoIntent) return "image";
   if (/çöp adam|cop adam|stickman/.test(text)) return "stickman_wizard";
   if (/rakip|competitor|seo|keyword|anahtar kelime|growth intelligence|site analizi|site analiz/.test(text)) return "growth_analysis";
   if (/klip|music video|mv|şarkı|sarki|song|lyrics|lyric|3 kişilik klip|3 kisilik klip/.test(text)) return "music_video";
@@ -1367,7 +1385,7 @@ function localAssistantReply(text: string, turnCount: number, activeLanguage = "
   if (/series|movie|trailer|script|scene/i.test(clean)) return "I will treat this as a series/film production flow: story direction, scene plan, characters, voice, subtitles, and trailer/final delivery can be managed in one workspace.";
   if (/ad|product|campaign|video|shopify|tiktok|instagram/i.test(clean)) return "I read this as a campaign/video production. If you have a product link, we can use it; otherwise product name and audience are enough. If you do not want voice, music, or subtitles, I will skip them and keep the flow lean.";
   if (/web|site|saas|mobile|app|admin panel/i.test(clean)) return "We can set this up as a digital product/project production. I will plan pages, screens, admin side, source delivery, and README package, then turn it into a live production record.";
-  if (/credit|price|package|payment/i.test(clean)) return "I will keep the credit side practical: first estimate production type and scope, then suggest whether a low-cost test or full delivery makes more sense. I will not inflate unnecessary expensive features.";
+  if (/credit|price|package|payment/i.test(clean)) return "I will keep the credit side practical: first estimate production type and scope, then suggest whether a controlled test or full delivery makes more sense. I will not inflate unnecessary expensive features.";
   return turnCount > 2
     ? "I am here and will not repeat the same answer. I will infer the intent from your latest message and turn it into a production plan; you can simply write 'continue' and I will proceed with sensible settings."
     : "Understood. Write what you want in natural language; I will fill small gaps myself and ask clearly only if a critical decision is required.";
@@ -1502,24 +1520,31 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const materials = activePlatformMaterials();
   const siteToolOptions = footerGroups.flatMap((group) => group.links.map((link) => link.label));
   const selectedTypeForEstimate = productionTypeFromSelection();
-  const selectionForEstimate = { input: productionBrief || input, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
+  const safeSelectedQuality = safeWorkQuality(selectedQuality);
+  const selectionForEstimate = { input: productionBrief || input, selectedStyle, selectedQuality: safeSelectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest };
   const selectedPackageForEstimate = packageIdFromSelection(selectedTypeForEstimate, selectionForEstimate, configuredProductionPackages);
   const selectedProduction = productionTypes.find((item) => item.id === selectedProductionType);
   const selectedPackage = configuredProductionPackages.find((item) => item.id === selectedPackageForEstimate) ?? productionPackages.find((item) => item.id === selectedPackageForEstimate);
   const configuredPackageOptionsForSelectedType = configuredProductionPackages.filter((item) => item.productionType === selectedProductionType).map((item) => item.name);
   const baseCategoryProfile = categoryOptionProfiles[selectedProductionType] ?? categoryOptionProfiles.video;
-  const activeCategoryProfile = configuredPackageOptionsForSelectedType.length ? { ...baseCategoryProfile, quality: configuredPackageOptionsForSelectedType } : baseCategoryProfile;
+  const activeCategoryProfile = configuredPackageOptionsForSelectedType.length
+    ? { ...baseCategoryProfile, quality: safeWorkQualityOptions(configuredPackageOptionsForSelectedType) }
+    : { ...baseCategoryProfile, quality: safeWorkQualityOptions(baseCategoryProfile.quality) };
   const promptIntentText = `${chatInput} ${input} ${productionBrief}`.toLocaleLowerCase("tr-TR");
-  const promptSuggestedCategory = isCharacterDialogueAnimationPrompt(`${chatInput} ${input} ${productionBrief}`)
-    ? "animation"
-    : /web site|website|landing|saas site|admin panel|dashboard/.test(promptIntentText)
-      ? "website"
-      : /mobil|mobile app|android|ios|uygulama/.test(promptIntentText)
-        ? "mobile_app"
-        : /talking|konuş|konus|avatar|lip.?sync|dudak|sunucu|presenter/.test(promptIntentText)
-          ? "talking_video"
-          : /(?:^|\b)(clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|hook extraction|best moments)(?:\b|$)/.test(promptIntentText)
-            ? "video_clipping"
+  const promptImageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b/.test(promptIntentText);
+  const promptExplicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(promptIntentText);
+  const promptSuggestedCategory = promptImageDesignIntent && !promptExplicitVideoIntent
+    ? "image"
+    : isCharacterDialogueAnimationPrompt(`${chatInput} ${input} ${productionBrief}`)
+      ? "animation"
+      : /(?:^|\b)(video clipping|clipping|cliping|clip çıkar|clip cikar|klip|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|hook extraction|best moments|shorts|reels|tiktok cut)(?:\b|$)/.test(promptIntentText)
+      ? "video_clipping"
+      : /web site|website|landing|saas site|admin panel|dashboard/.test(promptIntentText)
+        ? "website"
+        : /mobil|mobile app|android|ios|uygulama/.test(promptIntentText)
+          ? "mobile_app"
+          : /talking|konuş|konus|avatar|lip.?sync|dudak|sunucu|presenter/.test(promptIntentText)
+            ? "talking_video"
             : /anime/.test(promptIntentText)
               ? "anime_short_film"
               : /animasyon|animation|2d|3d/.test(promptIntentText)
@@ -1528,7 +1553,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
                   ? "drama"
                   : "video";
   const promptOptionGroups = [
-    { label: "Categories", value: productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? selectedProduction?.label ?? "AI Video", options: Array.from(new Set([productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? "AI Video", selectedProduction?.label ?? "AI Video", "Advanced Talking Video", "Website", "Mobile App", "Animation", "Drama / Short Series", "Video Clipping"])).filter(Boolean), apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) applyCategorySelection(match.id); } },
+    { label: "Categories", value: productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? selectedProduction?.label ?? "AI Video", options: Array.from(new Set([productionTypes.find((item) => item.id === promptSuggestedCategory)?.label ?? "AI Video", selectedProduction?.label ?? "AI Video", "Banner / Poster", "Image / Banner / Poster", "Advanced Talking Video", "Website", "Mobile App", "Animation", "Drama / Short Series", "Video Clipping"])).filter(Boolean), apply: (value: string) => { if (value === "Banner / Poster") { applyCategorySelection("image"); return; } const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) applyCategorySelection(match.id); } },
     { label: "Quality", value: selectedQuality, options: activeCategoryProfile.quality.slice(0, 6), apply: setSelectedQuality },
     { label: "Style / Motion", value: selectedStyle, options: activeCategoryProfile.style.slice(0, 6), apply: setSelectedStyle },
     { label: "Duration / Scope", value: selectedDuration, options: activeCategoryProfile.duration.slice(0, 6), apply: setSelectedDuration },
@@ -1555,12 +1580,12 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
       deliverySignal.includes("thumbnail") || deliverySignal.includes("cover") || deliverySignal.includes("kapak") ? "thumbnail" : null,
       deliverySignal.includes("pdf") ? "pdf" : null,
       deliverySignal.includes("admin panel") ? "admin_panel" : null,
-      selectedQuality.toLocaleLowerCase("tr-TR").includes("4k") ? "4k_export" : null
+      safeSelectedQuality.toLocaleLowerCase("tr-TR").includes("4k") ? "4k_export" : null
     ].filter(Boolean)
   };
   const costEstimate = estimateProductionCost(selectedPackageForEstimate, {
     outputCount: selectedOutputCount,
-    quality: selectedQuality,
+    quality: safeSelectedQuality,
     durationSeconds: selectedDurationSeconds,
     features: selectedCostFeatures,
     productionType: selectedTypeForEstimate,
@@ -1900,14 +1925,14 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
 
   function applyQuickProviderTestPreset() {
     setSelectedProductionType("video");
-    setSelectedQuality("720p quick test");
+    setSelectedQuality("1080p");
     setSelectedStyle("Cinematic animation");
-    setSelectedDuration("5 sec");
+    setSelectedDuration("10 sec");
     setSelectedModules(["AI video"]);
-    setSelectedFeatures(["1 alternative", "MP4 test output"]);
+    setSelectedFeatures(["1 alternative", "Premium MP4 output"]);
     setSelectedPlatforms(["Dashboard delivery", "MP4 download"]);
-    setQuickProviderTest(true);
-    setInput("Produce a simple 5-second AI video in a cinematic animation style for a quick provider test.");
+    setQuickProviderTest(false);
+    setInput("Produce a polished 10-second AI video in a cinematic animation style for a provider smoke test.");
     setOptionsOpen(false);
   }
 
@@ -1948,7 +1973,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   function applyVideoToolPreset(kind: "image" | "text" | "ugc" | "voice") {
     setQuickProviderTest(false);
     setSelectedProductionType("video");
-    setSelectedQuality(kind === "ugc" ? "1080p" : "720p");
+    setSelectedQuality("1080p");
     setSelectedStyle(kind === "ugc" ? "Realistic UGC" : kind === "voice" ? "Corporate" : "Cinematic");
     setSelectedDuration(kind === "voice" ? "60 sec" : "30 sec");
     setSelectedModules(["AI video", kind === "voice" ? "Voice-over" : "Visual/image pack"]);
@@ -2045,10 +2070,10 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     forcedVideoOnly ? applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea) : applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea);
   if (forcedVideoOnly) {
     if (plan?.selected_style || suggestion.style) setSelectedStyle(plan?.selected_style ?? suggestion.style ?? "SaaS modern");
-    if (plan?.selected_quality || suggestion.quality) setSelectedQuality(plan?.selected_quality ?? suggestion.quality ?? "1080p");
+    if (plan?.selected_quality || suggestion.quality) setSelectedQuality(safeWorkQuality(plan?.selected_quality ?? suggestion.quality));
   } else {
     if (plan?.selected_style || suggestion.style) setSelectedStyle(plan?.selected_style ?? suggestion.style ?? "Corporate");
-    if (plan?.selected_quality || suggestion.quality) setSelectedQuality(plan?.selected_quality ?? suggestion.quality ?? "1080p");
+    if (plan?.selected_quality || suggestion.quality) setSelectedQuality(safeWorkQuality(plan?.selected_quality ?? suggestion.quality));
     if (plan?.selected_duration || suggestion.duration) setSelectedDuration(plan?.selected_duration ?? suggestion.duration ?? "30 sec");
     if (Array.isArray(plan?.selected_modules) && plan.selected_modules.length) setSelectedModules(plan.selected_modules);
     if (Array.isArray(plan?.selected_features) && plan.selected_features.length) setSelectedFeatures(plan.selected_features);
@@ -2073,10 +2098,10 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   forcedVideoOnly ? applyAiVideoOnlyPreset(firstJob.brief || idea) : applyGeneralProductionPreset(type, firstJob.brief || idea);
   if (forcedVideoOnly) {
     if (firstJob.selected_style) setSelectedStyle(firstJob.selected_style);
-    if (firstJob.selected_quality) setSelectedQuality(firstJob.selected_quality);
+    if (firstJob.selected_quality) setSelectedQuality(safeWorkQuality(firstJob.selected_quality));
   } else {
     if (firstJob.selected_style) setSelectedStyle(firstJob.selected_style);
-    if (firstJob.selected_quality) setSelectedQuality(firstJob.selected_quality);
+    if (firstJob.selected_quality) setSelectedQuality(safeWorkQuality(firstJob.selected_quality));
     if (firstJob.selected_duration) setSelectedDuration(firstJob.selected_duration);
     if (Array.isArray(firstJob.selected_modules) && firstJob.selected_modules.length) setSelectedModules(firstJob.selected_modules);
     if (Array.isArray(firstJob.selected_features) && firstJob.selected_features.length) setSelectedFeatures(firstJob.selected_features);
@@ -2118,7 +2143,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     const profile = categoryOptionProfiles[type];
     const configuredQualityOptions = configuredProductionPackages.filter((item) => item.productionType === type).map((item) => item.name);
     if (profile && !commerceProject && !["website", "saas", "mobile_app", "admin_project", "brand_kit", "document_pack", "image", "campaign", "video"].includes(type)) {
-      setSelectedQuality(configuredQualityOptions[0] ?? profile.quality[0] ?? "1080p");
+      setSelectedQuality(safeWorkQuality(configuredQualityOptions[0] ?? profile.quality[0]));
       setSelectedStyle(profile.style[0] ?? "Corporate");
       setSelectedDuration(profile.duration[0] ?? "Project based");
       setSelectedModules(profile.modules.slice(0, Math.min(4, profile.modules.length)));
@@ -2392,6 +2417,12 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
 const wantsClipping = !characterDialogueAnimation && /clipping|clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|long video|uzun video|tiktok cut|best moments|komik an|korku|scary|exciting moments|hook extraction/.test(text);
 if (characterDialogueAnimation || selectedProductionType === "animation") return "animation";
 if (wantsClipping || selectedProductionType === "video_clipping") return "video_clipping";
+    const routeText = text
+  .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
+  .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ");
+    const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(text);
+    const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
+    if (selectedProductionType === "image" || (imageDesignIntent && !explicitVideoIntent)) return "image";
     const hasPresenter = selectedCharacterProfile !== "No presenter / UI-only video";
     const explicitSpeakingRequest = /talking|konuş|konus|sunucu|presenter|avatar|lip-sync|lip sync|dudak|röportaj|roportaj|diyalog|dialogue|testimonial|self-in-video|add yourself|multi-person|conversation|panel/.test(`${moduleText} ${featureText} ${briefText} ${styleText}`);
     const selectedTalkingCategory = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(selectedProductionType);
@@ -2451,7 +2482,7 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
     const productionType = productionTypeFromSelection();
     const characterLine = selectedCharacterProfile && selectedCharacterProfile !== "No presenter / UI-only video" ? `\nCharacter/presenter: ${selectedCharacterProfile}` : "\nCharacter/presenter: No presenter / UI-only video";
     const selectionInput = `${productionBrief || input}${characterLine}`;
-    const selection = { input: selectionInput, selectedStyle, selectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
+    const selection = { input: selectionInput, selectedStyle, selectedQuality: safeSelectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
     const packageId = packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
@@ -3284,7 +3315,7 @@ async function startRawMicrophoneFallback() {
           <div className="clean-preview-card clean-preview-large clean-output-viewer">
             <small>Work output viewer</small>
             <strong>{startedProduction ? "Production is ready to review" : productionStartingIntent ? "Production approval is ready" : (selectedProduction?.label ?? selectedProductionType)}</strong>
-            <p>{startedProduction ? "Your production record is ready. Open the production page to watch, review, download, share, or request revisions." : productionStartingIntent ? "The assistant prepared the production setup. Confirm the start step to create the production record and begin automation." : productionBrief ? "Brief ready. Choose a direction below, or ask the assistant to change style, voice, visuals, duration, or delivery." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
+            <p>{startedProduction ? "Your production record is ready. It stays in Work so you can watch, review, download, share, or request revisions." : productionStartingIntent ? "The assistant prepared the production setup. Confirm the start step to create the production record inside Work and begin automation." : productionBrief ? "Brief ready. Choose a direction below, or ask the assistant to change style, voice, visuals, duration, or delivery." : "No production output yet. Write what you want in the assistant and select the needed options above."}</p>
             {!startedProduction && hasUserVisibleProductionSelection && !productionStartingIntent ? (
               <div className="production-example-directions" aria-label="Production example directions">
                 <div className="production-example-head">
@@ -3313,7 +3344,7 @@ async function startRawMicrophoneFallback() {
                 <span><b>Production ID</b>{startedProduction.id}</span>
                 {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}
                 {startedProduction.nextAction ? <p className="workspace-action-note">{startedProduction.nextAction}</p> : null}
-                <a className="btn" href={startedProduction.detailUrl ?? "/dashboard/productions"}>Open production workspace</a>
+                <a className="btn" href="/dashboard/assistant-workspace">Stay in Work</a>
               </div>
             ) : null}
           </div>
@@ -3389,8 +3420,8 @@ async function startRawMicrophoneFallback() {
             <h3>Create a production record with these options?</h3>
             <p>This writes the selected quality, style, duration, material and delivery options to the record, reserves credits and moves you to the live production workspace.</p>
             <div className="start-cost-preview">
-              <strong>{quickProviderTest ? "Low-cost paid test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
-              <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 5 sec / 720p / single output" : ""}</span>
+              <strong>{quickProviderTest ? "Provider smoke test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
+              <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 10 sec / 1080p / single output" : ""}</span>
             </div>
             <div className="production-start-trust-grid">
               <span><b>1</b><strong>Confirm first</strong><small>No credit reserve is created before this screen.</small></span>
@@ -3621,7 +3652,7 @@ async function startRawMicrophoneFallback() {
             <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
             <button className="btn secondary" type="button" onClick={() => setOptionsOpen((current) => !current)}>{optionsOpen ? "Close settings" : "Quality / features"}</button>
             {productionCreditInsufficient ? <a className="btn secondary" href="/dashboard/credits">Kredi ekle</a> : null}
-            <a className="btn secondary" href="/dashboard/productions">Production Studio</a>
+            <a className="btn secondary" href="/dashboard/assistant-workspace">Work studio</a>
           </div>
           {optionsOpen ? (
             <section className="production-options-panel ai-control-drawer">
@@ -3672,10 +3703,10 @@ async function startRawMicrophoneFallback() {
             <div className="production-start-modal">
               <span className="badge">Start production</span>
               <h3>Create a production record with these options?</h3>
-              <p>This writes the selected quality, style, duration, material and delivery options to the record, reserves credits and moves you to the live production workspace.</p>
+              <p>This writes the selected quality, style, duration, material and delivery options to the record, reserves credits and keeps the flow inside Work.</p>
               <div className="start-cost-preview">
-                <strong>{quickProviderTest ? "Low-cost paid test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
-                <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 5 sec / 720p / single output" : ""}</span>
+                <strong>{quickProviderTest ? "Provider smoke test" : `${costEstimate.totalCredits.toLocaleString()} estimated credit reserve`}</strong>
+                <span>Single output: {costEstimate.singleOutputCredits.toLocaleString()} credits · Output count: {costEstimate.outputCount} · Provider risk: {costEstimate.providerRiskLevel}{quickProviderTest ? " · 10 sec / 1080p / single output" : ""}</span>
               </div>
               <div className="production-start-trust-grid">
                 <span><b>1</b><strong>Confirm first</strong><small>No credit reserve is created before this screen.</small></span>

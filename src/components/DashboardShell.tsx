@@ -3,17 +3,17 @@ import { HardReloadLink } from "@/components/HardReloadLink";
 // Dashboard navigation keeps user production, tools and account paths in one place.
 const navGroups = [
   {
-    title: "Production",
-    href: "/dashboard",
-    description: "Assistant, production and delivery tracking",
+      title: "Work",
+    href: "/dashboard/assistant-workspace",
+    description: "Assistant-led planning, production and delivery",
     items: [
+      ["Work Home", "/dashboard/assistant-workspace"],
       ["Overview Dashboard", "/dashboard"],
-      ["AI Assistant Workspace", "/dashboard/assistant-workspace"],
       ["Start Live Production", "/dashboard/create"],
       ["Growth Intelligence", "/dashboard/growth-intelligence"],
       ["Live Sales Control", "/dashboard/live-sales-agent"],
       ["Drone Shoot Panel", "/dashboard/drone-shoot"],
-      ["My Productions", "/dashboard/productions"],
+      ["Production Records", "/dashboard/assistant-workspace"],
       ["Growth Rewards", "/dashboard/growth"],
       ["Share-to-Earn", "/dashboard/share-to-earn"],
       ["Partner Program", "/dashboard/partners"]
@@ -81,7 +81,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
           <HardReloadLink className="btn secondary" href="/dashboard/drone-shoot">Drone Shoot</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Assistant</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/growth-intelligence">Growth Intelligence</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/productions">Productions</HardReloadLink>
+          <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Work Studio</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/growth">Growth</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/partners">Partners</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard">Dashboard</HardReloadLink>
