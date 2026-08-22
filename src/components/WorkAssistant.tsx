@@ -2091,20 +2091,6 @@ if (isImageStart) {
   return (
     <section className="omni-studio-page">
       <div className="omni-studio-shell">
-        <header className="omni-studio-header">
-          <div>
-            <span className="badge"><Sparkles size={14} /> Omnichannel Studio</span>
-            <h1>Ask AI to build anything</h1>
-            <p>One workspace for videos, websites, apps, voices, images, SEO packs, campaigns, and source packages.</p>
-          </div>
-          <div className="omni-live-pill"><span /> AI router online</div>
-        </header>
-
-        <div className="omni-chip-row">
-          {studioChips.map((chip) => <button type="button" key={chip} onClick={() => useChip(chip)}>{chip}</button>)}
-        </div>
-
-
         <div className="omni-agent-workbench">
         <aside className="omni-super-panel omni-brain-panel" aria-label="AI Brain">
           <span className="badge"><Bot size={14} /> Work Brain</span>
