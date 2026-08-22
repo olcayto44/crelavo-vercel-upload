@@ -166,8 +166,8 @@ const setupProfiles: Record<string, SetupProfile> = {
     groups: [
       { id: "videoStyle", title: "Video style", options: ["Silent / music only", "No presenter / B-roll only", "Voice-over only", "AI presenter"] },
       { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
-      { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
-      { id: "presenterMotion", title: "Presenter motions", multi: true, options: ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"], credit: HEYGEN_MOTION_PROMPT_CREDITS },
+      { id: "presenterChoice", title: "Karakter seçimi", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
+      { id: "presenterMotion", title: "Karakter hareketleri", multi: true, options: ["No presenter motions", "Natural delivery", "Smile", "Wave", "Point at camera", "CTA hand gesture", "Energetic gestures"], credit: HEYGEN_MOTION_PROMPT_CREDITS },
       { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Image-to-video", "Script-to-video", "Product ad video", "Explainer video"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Target duration (approx.)", options: heygenVideoDuration, credit: 350 },
@@ -227,7 +227,7 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "source", title: "Source", options: ["Upload video", "Use product/platform footage", "Long podcast", "Long film/episode", "Webinar/lesson", "Product video", "Crelavo category showcase"] },
       { id: "clipType", title: "Clip type", multi: true, options: ["Hook extraction", "Fast dynamic promo clip", "Crelavo platform showcase", "Exciting moments", "Funny scenes", "Educational shorts", "Product highlights", "Ad cutdowns"], credit: 450 },
       { id: "videoStyle", title: "Video style", options: ["No presenter / B-roll only", "Voice-over only", "AI presenter", "Avatar / talking host", "Silent / music only", "UI-only motion graphics"] },
-      { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
+      { id: "presenterChoice", title: "Karakter seçimi", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
       { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
       { id: "visualStyle", title: "Visual style", options: ["Cinematic", "Premium ad", "Neon tech", "SaaS modern", "Motion graphics", "Product demo", "Realistic UGC", "Viral TikTok", "Corporate", "Luxury product"], credit: 350 },
       { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec", "2 min"], credit: 350 },
@@ -378,8 +378,8 @@ const trUiLabels: Record<string, string> = {
   "Only video-specific production choices are shown here.": "Bu kategori için gerekli video ayarları burada seçilir.",
   "Video style": "Video tarzı",
   "Minimax H3": "Minimax H3",
-  "Presenter choice": "Sunucu seçimi",
-  "Presenter motions": "Sunucu hareketleri",
+  "Karakter seçimi": "Karakter seçimi",
+  "Karakter hareketleri": "Karakter hareketleri",
   "Natural delivery": "Doğal anlatım",
   "Smile": "Gülümse",
   "Wave": "El salla",
@@ -594,12 +594,12 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   if (plan.production_type === "video" && isPresenterUgcLock) {
     return {
       title: "AI presenter / UGC video setup",
-      note: "Presenter, voice, product-demo and HeyGen options are prioritized for this UGC-style ad.",
+      note: "Karakter, ses, product-demo ve Minimax seçenekleri bu UGC tarzı reklam için önceliklidir.",
       groups: [
         { id: "videoStyle", title: "Video style", options: ["AI presenter", "Avatar / talking host", "Voice-over only", "No presenter / B-roll only"] },
         { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
-        { id: "presenterChoice", title: "Presenter choice", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
-        { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
+        { id: "presenterChoice", title: "Karakter seçimi", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
+        { id: "presenterMotion", title: "Karakter hareketleri", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
         { id: "videoType", title: "Ad type", options: ["UGC-style product script", "Product ad video", "Social media short", "Product demo"] },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Target duration (approx.)", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
@@ -641,7 +641,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
         { id: "source", title: "Source analysis", options: ["Analyze link", "Long video", "Podcast/webinar", "Social video", "Product video", "Crelavo category showcase"] },
         { id: "clipType", title: "Clip goal", multi: true, options: ["Best hooks", "Fast dynamic promo clip", "Crelavo platform showcase", "Product highlights", "Educational shorts", "Funny moments", "Viral moments", "Ad cutdowns"], credit: 450 },
         { id: "videoStyle", title: "Video style", options: ["No presenter / B-roll only", "Voice-over only", "AI presenter", "Avatar / talking host", "Silent / music only", "UI-only motion graphics"] },
-        { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
+      { id: "presenterChoice", title: "Karakter seçimi", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter", "AI avatar host"] },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "visualStyle", title: "Visual style", options: ["Cinematic", "Premium ad", "Neon tech", "SaaS modern", "Motion graphics", "Product demo", "Realistic UGC", "Viral TikTok", "Corporate", "Luxury product"], credit: 350 },
         { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec", "2 min"], credit: 350 },
@@ -665,8 +665,8 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       groups: [
         { id: "videoType", title: "Ad type", options: isCompetitorComparison ? ["Competitor comparison", "Alternative positioning", "Market gap ad", "Website promo", "Explainer video", "Social media short"] : isCommerceLink ? ["Product ad video", "Marketplace ad", "UGC-style product script", "Explainer product video", "Social media short"] : ["Website promo", "SaaS product demo", "Explainer video", "Social media short", "Cinematic promo"] },
         { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
-        { id: "presenterChoice", title: "Presenter choice", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
-        { id: "presenterMotion", title: "Presenter motions", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
+{ id: "presenterChoice", title: "Karakter seçimi", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
+        { id: "presenterMotion", title: "Karakter hareketleri", multi: true, options: heygenMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
         { id: "source", title: isCompetitorComparison ? "Competitor analysis" : "Link analysis", multi: true, options: isCompetitorComparison ? ["Analyze competitor page", "Extract competitor offer", "Extract benefits", "Find positioning angle", "Create comparison hook", "Create Crelavo CTA", "Safe no-copy guard"] : ["Analyze page", "Extract benefits", "Extract visuals", "Create hook", "Create CTA"], credit: 350 },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
         { id: "duration", title: "Duration", options: ["15 sec", "30 sec", "45 sec", "60 sec"], credit: 350 },
@@ -1490,7 +1490,7 @@ function normalizeAvatarGallery(payload: unknown): HeyGenGalleryAvatar[] {
       id: lookId || avatarId,
       avatarId,
       lookId,
-      name: String(item.name ?? item.display_name ?? item.avatar_name ?? item.avatar?.name ?? "HeyGen avatar"),
+      name: String(item.name ?? item.display_name ?? item.avatar_name ?? item.avatar?.name ?? "Karakter"),
       imageUrl,
       gender: String(item.gender ?? item.avatar?.gender ?? "").trim(),
       style: String(item.style ?? item.look_style ?? item.avatar_type ?? item.type ?? "").trim()
@@ -1503,7 +1503,7 @@ function normalizeVoiceGallery(payload: unknown): HeyGenGalleryVoice[] {
   for (const item of collectRecords(payload, 1200)) {
     const id = String(item.voice_id ?? item.voiceId ?? item.id ?? "").trim();
     if (!id) continue;
-    const name = String(item.name ?? item.display_name ?? item.voice_name ?? "HeyGen voice").trim();
+    const name = String(item.name ?? item.display_name ?? item.voice_name ?? "Ses").trim();
     const language = String(item.language ?? item.locale ?? item.languages?.[0] ?? "").trim();
     const gender = String(item.gender ?? "").trim();
     const age = String(item.age ?? item.age_group ?? "").trim();
@@ -1528,7 +1528,7 @@ function normalizeSoundGallery(payload: unknown): HeyGenGallerySound[] {
     const audioUrl = firstUrlFrom(item.preview_audio_url, item.previewAudioUrl, item.audio_url, item.audioUrl, item.url, item.preview, item.audio, item.media, item.files, item.assets);
     return {
       id,
-      name: String(item.name ?? item.display_name ?? item.title ?? "HeyGen music").trim(),
+      name: String(item.name ?? item.display_name ?? item.title ?? "Müzik").trim(),
       style: String(item.style ?? item.mood ?? item.category ?? item.type ?? "").trim(),
       duration: String(item.duration ?? item.duration_seconds ?? item.durationSeconds ?? "").trim(),
       audioUrl
@@ -1643,9 +1643,9 @@ const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProduction
 const manualHeyGenCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualHeyGenBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
-  ...(selectedAvatar?.avatarId ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen avatar seçimi" : "Manual HeyGen avatar selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
-  ...(selectedVoice ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen ses seçimi" : "Manual HeyGen voice selection", credits: HEYGEN_MANUAL_VOICE_CREDITS }] : []),
-  ...(selectedSound ? [{ title: workUiLanguage === "tr" ? "Manuel HeyGen müzik seçimi" : "Manual HeyGen music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
+  ...(selectedAvatar?.avatarId ? [{ title: workUiLanguage === "tr" ? "Manuel karakter seçimi" : "Manual character selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
+  ...(selectedVoice ? [{ title: workUiLanguage === "tr" ? "Manuel ses seçimi" : "Manual voice selection", credits: HEYGEN_MANUAL_VOICE_CREDITS }] : []),
+  ...(selectedSound ? [{ title: workUiLanguage === "tr" ? "Manuel müzik seçimi" : "Manual music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
 ];
 const setupCredits = setupBreakdown.reduce((total, item) => total + item.credits, 0) + manualHeyGenCredits;
 const cardCredits = productionCardCredits(activeSelectedProductionCards);
@@ -1683,7 +1683,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       const url = mode === "music" ? `/api/heygen?action=${action}&type=music&limit=20&query=${encodeURIComponent(query || "upbeat electronic ad music")}` : `/api/heygen?action=${action}&limit=50`;
       const response = await fetch(url);
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(String(data.error ?? "HeyGen gallery could not be loaded."));
+      if (!response.ok) throw new Error(String(data.error ?? "Galeri yüklenemedi."));
       if (mode === "avatar") setAvatarGallery(normalizeAvatarGallery(data.result ?? data));
       else if (mode === "voice") setVoiceGallery(normalizeVoiceGallery(data.result ?? data));
       else {
@@ -1691,7 +1691,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         setSoundGallery(normalizeSoundGallery(data.result ?? data));
       }
     } catch (error) {
-      setGalleryError(error instanceof Error ? error.message : "HeyGen gallery could not be loaded.");
+      setGalleryError(error instanceof Error ? error.message : "Galeri yüklenemedi.");
   } finally {
     setGalleryLoading(false);
   }
@@ -2140,8 +2140,8 @@ if (isImageStart) {
                 </div>
                 <div className="omni-result-grid">
                   <span><strong>{workUiLanguage === "tr" ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
-                  <span><strong>{workUiLanguage === "tr" ? "HeyGen session/job" : "HeyGen session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
-                  <span><strong>{workUiLanguage === "tr" ? "HeyGen video ID" : "HeyGen video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
+                  <span><strong>{workUiLanguage === "tr" ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
+                  <span><strong>{workUiLanguage === "tr" ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
                   <span><strong>{workUiLanguage === "tr" ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
                 </div>
               </div>
@@ -2187,16 +2187,16 @@ if (isImageStart) {
                           })}
                         </div>
                         {group.id === "presenterChoice" ? <div className="omni-gallery-actions">
-                          <button type="button" onClick={() => openHeyGenGallery("avatar")}>{workUiLanguage === "tr" ? "Avatar galerisinden seç" : "Choose from avatar gallery"}</button>
+                          <button type="button" onClick={() => openHeyGenGallery("avatar")}>{workUiLanguage === "tr" ? "Karakter galerisinden seç" : "Choose from character gallery"}</button>
                           <button type="button" onClick={() => openHeyGenGallery("voice")}>{workUiLanguage === "tr" ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
-                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili avatar" : "Selected avatar"}: {selectedAvatar.name}</small> : null}
+                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili karakter" : "Selected character"}: {selectedAvatar.name}</small> : null}
                           {selectedVoice ? <small>{workUiLanguage === "tr" ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
-                          {selectedAvatar ? <small>{selectedAvatar.avatarId ? (workUiLanguage === "tr" ? "Not: HeyGen Video Agent avatar_id destekler; bu seçim provider'a gönderilir." : "Note: HeyGen Video Agent supports avatar_id; this selection is sent to the provider.") : (workUiLanguage === "tr" ? "Not: Bu seçim görsel tercih olarak kaydedilir; HeyGen Video Agent bu kart için avatar_id vermediği için provider'a avatar olarak gönderilmez." : "Note: This selection is saved as a visual preference; HeyGen Video Agent did not provide avatar_id for this card, so it is not sent as a provider avatar.")}</small> : null}
+                          {selectedAvatar ? <small>{selectedAvatar.avatarId ? (workUiLanguage === "tr" ? "Not: Bu seçim provider'a gönderilir." : "Note: This selection is sent to the provider.") : (workUiLanguage === "tr" ? "Not: Bu seçim görsel tercih olarak kaydedilir; bu kart için avatar_id verilmediği için provider'a avatar olarak gönderilmez." : "Note: This selection is saved as a visual preference; because no avatar_id was provided for this card, it is not sent as a provider avatar.")}</small> : null}
                         </div> : null}
                         {group.id === "extras" ? <div className="omni-gallery-actions">
                           <button type="button" onClick={() => openHeyGenGallery("music")}>{workUiLanguage === "tr" ? "Müzik galerisinden seç" : "Choose from music gallery"}</button>
                           {selectedSound ? <small>{workUiLanguage === "tr" ? "Seçili müzik" : "Selected music"}: {selectedSound.name}</small> : null}
-                          {selectedSound ? <small>{workUiLanguage === "tr" ? "Not: HeyGen Video Agent music_id kabul etmez; müzik seçimi Crelavo kaydında tutulur ve final post-production aşamasında eklenecek şekilde işaretlenir." : "Note: HeyGen Video Agent does not accept music_id; music selection is stored in Crelavo metadata and marked for final post-production."}</small> : null}
+                          {selectedSound ? <small>{workUiLanguage === "tr" ? "Not: Müzik seçimi Crelavo kaydında tutulur ve final post-production aşamasında eklenecek şekilde işaretlenir." : "Note: Music selection is stored in Crelavo metadata and marked for final post-production."}</small> : null}
                         </div> : null}
                       </section>
                     ))}
@@ -2264,13 +2264,13 @@ if (isImageStart) {
               {avatarGallery.length ? avatarGallery.map((avatar) => <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
                 {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
                 <strong>{avatar.name}</strong>
-                <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "HeyGen avatar"}</small>
+                <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "Karakter"}</small>
               </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
               {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                 <strong>{voice.name}</strong>
-                <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "HeyGen voice"}</small>
+                <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "Ses"}</small>
                 {voice.previewAudioUrl ? <button type="button" onClick={() => { void new Audio(voice.previewAudioUrl).play(); }}>{workUiLanguage === "tr" ? "Oynat" : "Play"}</button> : <small>{workUiLanguage === "tr" ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
                 <button type="button" onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu sesi seç" : "Select this voice"}</button>
               </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
@@ -2286,7 +2286,7 @@ if (isImageStart) {
               <div className="omni-gallery-grid voice">
                 {soundGallery.length ? soundGallery.map((sound) => <div key={sound.id} className={selectedSound?.id === sound.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                   <strong>{sound.name}</strong>
-                  <small>{[sound.style, sound.duration].filter(Boolean).join(" · ") || "HeyGen music"}</small>
+                  <small>{[sound.style, sound.duration].filter(Boolean).join(" · ") || "Müzik"}</small>
                   {sound.audioUrl ? <button type="button" onClick={() => { void new Audio(sound.audioUrl).play(); }}>{workUiLanguage === "tr" ? "Oynat" : "Play"}</button> : <small>{workUiLanguage === "tr" ? "Bu müzik için ön izleme yok." : "No preview available for this music."}</small>}
                   <button type="button" onClick={() => { setSelectedSound(sound); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu müziği seç" : "Select this music"}</button>
                 </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Müzik listesi boş döndü." : "No music returned."}</div>}
