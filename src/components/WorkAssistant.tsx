@@ -2106,6 +2106,22 @@ if (isImageStart) {
 
 
         <div className="omni-agent-workbench">
+        <aside className="omni-super-panel omni-brain-panel" aria-label="AI Brain">
+          <span className="badge"><Bot size={14} /> Work Brain</span>
+          <h2>Crelavo AI Brain</h2>
+          <p>Tek ekranda chat, üretim, önizleme ve entegrasyon. Kullanıcı artık farklı sayfalara taşınmadan buradan başlar.</p>
+          <div className="omni-minimax-badge">
+            <span className="omni-pulse-dot" />
+            <div><small>POWERED BY</small><strong>MiniMax H3™ <em>Live Engine</em></strong></div>
+            <b>100 RPM ACTIVE</b>
+          </div>
+          <div className="omni-super-list">
+            <span><strong>1</strong> Chat ile isteği al</span>
+            <span><strong>2</strong> Üretim planını çıkar</span>
+            <span><strong>3</strong> Work içinde başlat</span>
+          </div>
+        </aside>
+
         <main className="omni-chat-panel" ref={chatRef}>
           {messages.length === 0 ? (
             <div className="omni-empty-state">
@@ -2229,6 +2245,27 @@ if (isImageStart) {
             </article>
           ) : null}
         </main>
+
+        <aside className="omni-super-panel omni-deploy-panel" aria-label="Deploy Hub">
+          <span className="badge"><PackageCheck size={14} /> Deploy Hub</span>
+          <h2>Çıktılar ve entegrasyon</h2>
+          <p>Üretim tamamlanınca indirme, embed, kaynak paket ve yayın bağlantıları burada görünür.</p>
+          <div className="omni-deploy-card">
+            <small>Aktif üretim</small>
+            <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "Henüz üretim yok"}</strong>
+            <span>{activeProduction ? ux("Production running") : plan ? ux("Production draft") : "Komut bekleniyor"}</span>
+          </div>
+          <div className="omni-deploy-card">
+            <small>Embed / kod</small>
+            <strong>{activeProduction?.delivery_link ? "Hazır" : "Work içinde hazırlanacak"}</strong>
+            <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
+          </div>
+          <div className="omni-deploy-card">
+            <small>Teslimat</small>
+            <strong>{estimatedCredits} kredi</strong>
+            <span>Video, web, app, live sales veya kaynak paket tek ekrandan takip edilir.</span>
+          </div>
+        </aside>
 
         {galleryMode ? <div className="omni-gallery-modal" role="dialog" aria-modal="true">
           <div className="omni-gallery-card">
