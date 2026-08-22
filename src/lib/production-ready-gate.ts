@@ -75,8 +75,7 @@ function requestedDurationSeconds(signal: string, production: ProductionForReady
 function minResolution(signal: string) {
   if (/4k/.test(signal)) return { shortSide: 2160, label: "4k" };
   if (/1080p/.test(signal)) return { shortSide: 1080, label: "1080p" };
-  if (/720p/.test(signal)) return { shortSide: 720, label: "720p" };
-  if (/480p/.test(signal)) return { shortSide: 480, label: "480p" };
+  if (/720p|480p/.test(signal)) return { shortSide: 1080, label: "1080p" };
   return null;
 }
 

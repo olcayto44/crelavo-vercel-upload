@@ -322,6 +322,7 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
 
   const type = String(production.production_type ?? "general");
   const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(type);
+  const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(type) || /^image_/.test(String(production.package_id ?? ""));
   const previewToolbarTitle = isProjectProduction
     ? previewMode === "shorts" ? "Mobile preview" : previewMode === "compact" ? "Tablet preview" : "Desktop preview"
     : previewMode === "shorts" ? "Shorts vertical" : previewMode === "compact" ? "Compact view" : "Full theater";
@@ -410,7 +411,21 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
   const recoveryStatusText = `${production.automation_status ?? ""} ${production.generation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${String(outputJson.providerStatus ?? "")}`.toLowerCase();
   const lostOutputRecoveryNeeded = isMediaProduction && /lost_output_recovery|output_deleted_regenerate|output_deleted/.test(recoveryStatusText) && !outputJson.visualJob && !outputJson.renderJob && !outputJson.finalVideoUrl && !production.preview_url && !production.delivery_link;
   const primaryAlternative = Array.isArray(outputJson.alternatives) && outputJson.alternatives[0] && typeof outputJson.alternatives[0] === "object" ? outputJson.alternatives[0] as Record<string, any> : null;
-  const rawPreviewUrl = safePlayableMediaUrl(
+  const rawImagePreviewUrl = safeAssetUrl(
+    outputJson.finalImageUrl
+    || outputJson.imageUrl
+    || outputJson.previewUrl
+    || outputJson.preview_url
+    || outputJson.deliveryLink
+    || outputJson.delivery_link
+    || primaryAlternative?.imageUrl
+    || primaryAlternative?.preview_url
+    || primaryAlternative?.previewUrl
+    || primaryAlternative?.url
+    || production.preview_url
+    || production.delivery_link
+  );
+  const rawPreviewUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
     outputJson.finalVideoUrl
     || outputJson.providerFinalUrl
     || outputJson.previewUrl
@@ -424,7 +439,7 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
     || production.preview_url
     || production.delivery_link
   );
-  const rawDeliveryUrl = safePlayableMediaUrl(
+  const rawDeliveryUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
     outputJson.finalVideoUrl
     || outputJson.providerFinalUrl
     || production.delivery_link
@@ -443,8 +458,9 @@ const hasPlayableMediaUrl = Boolean(rawPreviewUrl || rawDeliveryUrl);
 const mediaOutputReleased = !isDroneRawPreviewOnly && (hasPlayableMediaUrl || /final_video_ready|provider_succeeded|completed|admin_force_ready/i.test(mediaReadySignal));
 const previewUrl = isDroneRawPreviewOnly ? rawPreviewUrl : isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUrl;
 const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
-  const mediaDownloadUrl = isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
-  const playbackUrl = previewUrl || (isMediaProduction ? deliveryUrl : "");
+  const mediaDownloadUrl = isImageProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=png` : isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
+  const playbackUrl = previewUrl || (isMediaProduction || isImageProduction ? deliveryUrl : "");
+  const siteEmbedCode = playbackUrl ? `<video controls playsinline src="${playbackUrl}" style="width:100%;max-width:960px;border-radius:18px;display:block;"></video>` : "";
   const posterUrl = safeAssetUrl(
     outputJson.thumbnailUrl
     || outputJson.thumbnail_url
@@ -607,8 +623,8 @@ const isFailed = production.status === "failed" || production.automation_status 
   const reservedCreditsText = projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
   const creditLabel = projectPackageReady ? "Package credits" : production.reserved_credits ? "Reserved" : production.estimated_credits ? "Estimate" : "Credits";
 const previewUrlLower = playbackUrl.toLowerCase();
-const previewKind = isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
-const openVideoLabel = isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
+const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
+const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
   const nextLiveStep = hasAutomationWarning
     ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
     : isDedicatedPipelineRunning
@@ -1181,7 +1197,7 @@ const data = await response.json().catch(() => ({}));
             </div>
             <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
               {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> ZIP</button>}
+              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
@@ -1296,7 +1312,7 @@ const data = await response.json().catch(() => ({}));
             </div>
             <div className="customer-preview-actions delivery-action-grid">
               {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={15} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Final ZIP waiting</button>}
+              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> {isImageProduction ? "Final image waiting" : "Final ZIP waiting"}</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
               {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
@@ -1549,7 +1565,7 @@ const data = await response.json().catch(() => ({}));
         <div className="revision-history-card">
           <form className="revision-inline-form" onSubmit={submitRevision}>
             <h2>Write a revision request</h2>
-            <p>This box is always visible. Write what should change in the video here.</p>
+            <p>{isImageProduction ? "This box is always visible. Write what should change in the image here." : "This box is always visible. Write what should change in the video here."}</p>
             <div className="revision-target-grid">
               <label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} /></label>
               <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} /></label>
@@ -1577,7 +1593,7 @@ const data = await response.json().catch(() => ({}));
 
         <div className="final-delivery-card">
           <h2>{isProjectProduction ? "Project delivery" : "Final delivery"}</h2>
-          <p>{isProjectProduction ? "When the package is ready, preview, source files, README, and revision steps are managed here." : "When production is complete, download, revision, and social sharing steps are managed here."}</p>
+          <p>{isProjectProduction ? "When the package is ready, preview, source files, README, and revision steps are managed here." : "When production is complete, download, revision, and distribution steps are managed here."}</p>
           {!isProjectProduction ? (
             <div className="workflow-step-grid">
               {requestedDurationSeconds ? <span><small>Requested duration</small><strong>{requestedDurationSeconds} sec</strong></span> : null}
@@ -1593,6 +1609,57 @@ const data = await response.json().catch(() => ({}));
             {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
             {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
           </div>
+          {!isProjectProduction ? <div className="distribution-launch-grid" aria-label="Distribution options">
+            <article className="distribution-launch-card">
+              <span className="badge">Website</span>
+              <h3>Add to site</h3>
+              <p>Connect Shopify, WooCommerce, WordPress, Webflow, Wix, Magento, BigCommerce, eBay, Etsy, Amazon, Alibaba, Trendyol, Hepsiburada, N11, or a custom site and place the video or avatar in a storefront, landing page, or support widget.</p>
+              <p style={{ marginTop: 0, color: "#cbd5e1" }}>Alibaba / B2B setup: use the avatar for catalog presentation, inquiry capture, quote collection, and company profile lead generation.</p>
+              <div className="social-chip-row" aria-label="Supported site platforms">
+                {[
+                  "Shopify",
+                  "WooCommerce",
+                  "WordPress",
+                  "Webflow",
+                  "Wix",
+                  "Magento",
+                  "BigCommerce",
+                  "eBay",
+                  "Etsy",
+                  "Amazon",
+                  "Alibaba",
+                  "Trendyol",
+                  "Hepsiburada",
+                  "N11",
+                  "Custom code"
+                ].map((platform) => <span key={platform}>{platform}</span>)}
+              </div>
+              <div className="production-part-actions">
+                <a className="btn secondary" href="/dashboard/connections">Open connections</a>
+                {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank">Copy / preview</a> : <button className="btn secondary" type="button" disabled>Preview waiting</button>}
+                {siteEmbedCode ? <button className="btn" type="button" onClick={() => navigator.clipboard?.writeText(siteEmbedCode)}>Copy embed code</button> : <button className="btn" type="button" disabled>Embed waiting</button>}
+              </div>
+              {siteEmbedCode ? <pre style={{ margin: 0, padding: 12, borderRadius: 14, background: "rgba(2,6,23,.56)", color: "#e2e8f0", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45, overflowX: "auto" }}>{siteEmbedCode}</pre> : <p className="workspace-empty-note">The embed code will appear here when the final preview or delivery link is available.</p>}
+            </article>
+            <article className="distribution-launch-card">
+              <span className="badge">Social</span>
+              <h3>Share to social media</h3>
+              <p>Prepare captions, hashtags, posting notes, and platform-ready export packs for Instagram, TikTok, YouTube Shorts, LinkedIn, Facebook, and X.</p>
+              <div className="production-part-actions">
+                <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
+                <a className="btn secondary" href={`/dashboard/social-export?platform=Instagram&production=${encodeURIComponent(production.id)}`}>Open social export</a>
+              </div>
+            </article>
+            <article className="distribution-launch-card">
+              <span className="badge">Download</span>
+              <h3>Export video</h3>
+              <p>Download the final MP4 for upload to your channel, ads manager, or manual publishing workflow.</p>
+              <div className="production-part-actions">
+                {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download MP4</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download MP4</button>}
+                {deliveryUrl ? <a className="btn secondary" href={playbackUrl || deliveryUrl} target="_blank">Open video</a> : <button className="btn secondary" type="button" disabled>Open video</button>}
+              </div>
+            </article>
+          </div> : null}
         </div>
 
         {!isProjectProduction ? <div className="social-share-card" id="social-share-panel">

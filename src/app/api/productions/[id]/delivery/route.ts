@@ -117,6 +117,23 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     });
   }
 
+  if (file === "image" || file === "png" || file === "jpg" || file === "jpeg") {
+    const output = data.output_json && typeof data.output_json === "object" ? data.output_json as Record<string, unknown> : {};
+    const imageUrl = String(output.finalImageUrl ?? output.imageUrl ?? output.previewUrl ?? data.preview_url ?? data.delivery_link ?? "").trim();
+    if (!imageUrl) return Response.json({ error: "Final image is not ready yet." }, { status: 404 });
+    const providerResponse = await fetch(imageUrl, { cache: "no-store" });
+    if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Final image download failed: ${providerResponse.status}` }, { status: 502 });
+    const contentType = providerResponse.headers.get("content-type") || "image/png";
+    const extension = /jpeg|jpg/i.test(contentType) ? "jpg" : /webp/i.test(contentType) ? "webp" : "png";
+    return new Response(providerResponse.body, {
+      headers: {
+        "Content-Type": contentType,
+        "Content-Disposition": `attachment; filename="${safeTitle}-final-image.${extension}"`,
+        "Cache-Control": "no-store, max-age=0"
+      }
+    });
+  }
+
   if (file === "readme") return responseWithText(buildDeliveryReadme(data), `${safeTitle}-readme.md`);
   if (file === "source") return responseWithText(buildSourceGuide(data), `${safeTitle}-source-guide.md`);
   if (file === "preview" || file === "manifest") return responseWithText(buildPreviewHtml(data), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");

@@ -23,7 +23,7 @@ const metaSalesLaunchPlan = [
 
 const paidCreativeHooks = [
   { title: "Direct product demo", script: "Paste link. Get AI Video in 10 seconds.", note: "Show Shopify product link pasted into Crelavo, then the AI ad video full screen." },
-  { title: "UGC cost-saver", script: "I stopped paying $200 per video for my Amazon products. I tried Crelavo for just $10 and generated 20 drafts in minutes.", note: "Natural English voice, creator-style screen recording, link below CTA." },
+  { title: "UGC cost-saver", script: "I stopped paying $200 per video for my Amazon products. I tried Crelavo for just $10 and generated 20 controlled 1080p variations in minutes.", note: "Natural English voice, creator-style screen recording, link below CTA." },
   { title: "Team Annual preview", script: "Test Crelavo’s agency bundle for $20. Get access to the 174,000-credit Team Annual workflow before the yearly plan continues.", note: "Push the splash funnel: $20 preview, 2 months free, 30,000 bonus credits." },
   { title: "Ad Re-Creator reference hook", script: "Found a video ad format that sells? Paste the reference into Crelavo, analyze the hook, pacing and CTA, then re-create a fresh original version for your own product.", note: "Use safe reference-transformer language. Do not say steal, spy or clone competitor media in public Meta ads." }
 ];

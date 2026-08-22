@@ -26,7 +26,7 @@ function requirement(key: string, label: string, requiredEnv: string[], affects:
     requiredEnv,
     affects,
     note,
-    status: requiredEnv.every((name) => hasConfiguredEnv(name)) || (key === "video_provider" && hasAnyConfiguredEnv(["REPLICATE_API_TOKEN", "REPLICATE_API_KEY", "FAL_KEY", "FAL_API_KEY", "RUNWAY_API_KEY", "DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY"])) || (key === "voice_provider" && hasProviderEnv("elevenlabs")) || (key === "render_provider" && hasProviderEnv("shotstack")) ? "ready" : optional ? "optional" : "missing"
+    status: requiredEnv.every((name) => hasConfiguredEnv(name)) || (key === "video_provider" && (hasAnyConfiguredEnv(["REPLICATE_API_TOKEN", "REPLICATE_API_KEY", "FAL_KEY", "FAL_API_KEY", "RUNWAY_API_KEY", "DEV_RUNWAY_API_KEY", "DEV_RUWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY"]) || (hasAnyConfiguredEnv(["MINIMAX_API_KEY", "MINIMAX_KEY"]) && hasAnyConfiguredEnv(["MINIMAX_GROUP_ID", "MINIMAX_GID", "MINIMAX_GROUPID"])))) || (key === "voice_provider" && hasProviderEnv("elevenlabs")) || (key === "render_provider" && hasProviderEnv("shotstack")) ? "ready" : optional ? "optional" : "missing"
   };
 }
 
@@ -49,7 +49,7 @@ export function providerRequirementsForProduction(productionType: string, packag
   const needsEcommerceAdPipeline = type === "campaign" || packageId === "campaign_product_ad_video";
 
   if (needsVideoProvider) {
-    requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output."));
+    requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN", "MINIMAX_API_KEY", "MINIMAX_GROUP_ID"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output. Minimax, Replicate, FAL, Runway or Kling can satisfy the route depending on provider selection."));
   }
 
   if (["avatar", "talking_video", "lip_sync", "live_sales_agent"].includes(type)) {

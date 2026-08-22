@@ -14,10 +14,10 @@ export const creditCalculatorExamples = [
     href: "/ai-ad-performance-score-checker"
   },
   {
-    title: "Short product video test",
-    estimate: "600-1,200 credits for a 60s draft/standard guide range",
-    bestFor: "Low-cost video tests, product ad previews and early creative validation.",
-    nextStep: "Use draft or standard quality before premium output.",
+    title: "Controlled 1080p product video test",
+    estimate: "900-1,650 credits for a controlled 1080p launch-test guide range",
+    bestFor: "Controlled 1080p product-ad tests, product previews and early creative validation.",
+    nextStep: "Use a controlled 1080p test before cinematic or luxury output.",
     href: "/ai-product-video-generator"
   },
   {
@@ -44,25 +44,13 @@ export const creditCalculatorExamples = [
 ];
 
 export const quickCreditMath = [
-  { label: "15s draft video", math: "15 × 10", result: "150 credits" },
-  { label: "15s standard video", math: "15 × 20", result: "300 credits" },
-  { label: "30s premium video", math: "30 × 55", result: "1,650 credits" },
+  { label: "15s 1080p premium video", math: "15 × 55", result: "825 credits" },
+  { label: "30s 1080p premium video", math: "30 × 55", result: "1,650 credits" },
+  { label: "30s cinematic video", math: "30 × 160", result: "4,800 credits" },
   { label: "60s cinematic video", math: "60 × 160", result: "9,600 credits" }
 ];
 
 export const productionCreditGuide = [
-  {
-    name: "480p Draft / Test",
-    rate: "10 credits/sec",
-    sixtySeconds: "600 credits / 60s",
-    note: "Best for low-cost tests, rough previews, internal drafts, and checking an idea before higher quality production."
-  },
-  {
-    name: "720p Standard",
-    rate: "20 credits/sec",
-    sixtySeconds: "1,200 credits / 60s",
-    note: "Best for standard shorts, tests, simple social videos, and lower-cost automatic production."
-  },
   {
     name: "1080p Premium",
     rate: "55 credits/sec",

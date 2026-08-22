@@ -46,7 +46,7 @@ const couponHuntCards = [
 const freeToolPreviewOffers = [
   {
     title: "$10 Business preview",
-    text: "Best for a single seller testing ecommerce ad drafts, product video variations and campaign assets before the $79 monthly plan continues.",
+    text: "Best for a single seller testing controlled 1080p ecommerce ads, product video variations and campaign assets before the $79 monthly plan continues.",
     href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
     cta: "Start $10 preview"
   },

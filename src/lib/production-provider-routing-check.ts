@@ -22,10 +22,10 @@ export function buildProductionProviderRoutingCheck() {
   return {
     generatedAt: new Date().toISOString(),
     summary: {
-      status: critical.some((item) => item.status === "missing") ? "manual_e2e_required" : "ready_for_low_cost_e2e",
+      status: critical.some((item) => item.status === "missing") ? "manual_e2e_required" : "ready_for_controlled_e2e",
       readyCritical,
       totalCritical: critical.length,
-      note: "Kling/Fal, HeyGen, ElevenLabs and music/payment routes should still be proven with one low-cost success and one forced-failure E2E before public claims."
+      note: "Kling/Fal, HeyGen, ElevenLabs and music/payment routes should still be proven with one controlled success and one forced-failure E2E before public claims."
     },
     selected: plan.selected,
     routeMap: providerRouteMap(),

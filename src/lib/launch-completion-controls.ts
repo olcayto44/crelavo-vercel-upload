@@ -4,7 +4,7 @@ export const liveTestFixIntake = {
   requiredReportFields: ["tested account email", "payment/provider/test path", "expected result", "actual result", "screenshot or error text", "production_id or webhook/event id when available"],
   triageOrder: [
     "Classify the failure as payment/webhook, credit ledger, production state, provider job, dashboard delivery, email notification, public page copy or growth/reward abuse.",
-    "Reproduce safely with dry-run or low-cost test path before touching production-sensitive code.",
+    "Reproduce safely with dry-run or controlled test path before touching production-sensitive code.",
     "Patch the smallest server-side guard or UI state that fixes the real failure.",
     "Run smoke/build plus the closest route-specific smoke before commit.",
     "Report whether the issue is code-fixed, needs external provider/Whop/Cloudflare action, or needs another live retest."

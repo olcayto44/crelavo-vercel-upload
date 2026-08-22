@@ -259,12 +259,11 @@ function buildSourceLayout(production: ProductionLike) {
 }
 
 function projectFeatureSet(production: ProductionLike) {
-  const manifest = buildDeliveryManifest(production);
-  const prompt = `${production.prompt ?? ""} ${manifest.project.modules}`.toLowerCase();
-  const isMobile = manifest.production_type === "mobile_app" || /mobile app|ios|android|expo|react native|uygulama|mobil/.test(prompt);
+  const prompt = `${production.prompt ?? ""} ${production.title ?? ""} ${production.package_id ?? ""} ${production.production_type ?? ""}`.toLowerCase();
+  const isMobile = String(production.production_type ?? "") === "mobile_app" || /mobile app|ios|android|expo|react native|uygulama|mobil/.test(prompt);
   const isStreaming = /movie|film|stream|netflix|watch|series|cinema/.test(prompt);
   const isCommerce = /shop|store|ecommerce|e-commerce|product|cart|checkout/.test(prompt);
-  const isSaas = /saas|subscription|billing|workspace|dashboard|crm|portal/.test(prompt);
+  const isSaas = String(production.production_type ?? "") === "saas" || /saas|subscription|billing|workspace|dashboard|crm|portal/.test(prompt);
   if (isMobile) {
     return {
       vertical: "Mobile app",
@@ -292,7 +291,7 @@ function projectFeatureSet(production: ProductionLike) {
       adminRows: ["Products", "Orders", "Customers", "Inventory", "Discounts"]
     };
   }
-  if (isSaas || manifest.production_type === "saas") {
+  if (isSaas) {
     return {
       vertical: "SaaS platform",
       heroCta: "Open dashboard",

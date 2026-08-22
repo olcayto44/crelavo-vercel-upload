@@ -12,7 +12,7 @@ function blankVideo(index: number): SampleVideo {
     category: "AI video",
     format: "9:16 social video",
     duration: "15-30 sec",
-    quality: "720p draft",
+    quality: "1080p",
     credits: "Business plan fit",
     description: "Describe what this sample proves to the customer.",
     features: ["Script", "Voice-over", "Subtitles"],

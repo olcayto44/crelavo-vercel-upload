@@ -53,6 +53,72 @@ function modulesFor(kind: string, metadata: Record<string, any>, input: Record<s
   return "Home page, service sections, lead form, pricing/CTA, SEO pages, deployment notes";
 }
 
+function includedFilesFor(kind: string) {
+  const shared = ["README.md", "manifest.json", "preview.html", "SOURCE-GUIDE.md", "docs/deployment-guide.md"];
+  if (kind === "mobile_app") return [
+    ...shared,
+    "source/app.json",
+    "source/package.json",
+    "source/App.tsx",
+    "source/src/navigation/AppNavigator.tsx",
+    "source/src/screens/HomeScreen.tsx",
+    "source/src/screens/OnboardingScreen.tsx",
+    "source/src/screens/ProfileScreen.tsx",
+    "source/src/api/client.ts",
+    "source/src/theme/index.ts",
+    "docs/expo-build-guide.md"
+  ];
+  if (kind === "saas") return [
+    ...shared,
+    "source/app/dashboard/page.tsx",
+    "source/app/auth/login/page.tsx",
+    "source/app/admin/page.tsx",
+    "source/components/dashboard-shell.tsx",
+    "source/lib/database-schema.sql",
+    "source/package.json",
+    "docs/env-example.md"
+  ];
+  if (kind === "ecommerce") return [
+    ...shared,
+    "source/app/page.tsx",
+    "source/app/products/[slug]/page.tsx",
+    "source/app/cart/page.tsx",
+    "source/app/checkout/page.tsx",
+    "source/app/admin/products/page.tsx",
+    "source/lib/product-catalog.ts",
+    "source/package.json",
+    "docs/store-export-guide.md"
+  ];
+  if (kind === "admin_project") return [
+    ...shared,
+    "source/app/admin/page.tsx",
+    "source/app/admin/users/page.tsx",
+    "source/app/admin/requests/page.tsx",
+    "source/components/admin-table.tsx",
+    "source/lib/roles.ts",
+    "source/lib/database-schema.sql",
+    "source/package.json"
+  ];
+  return [
+    ...shared,
+    "source/app/page.tsx",
+    "source/app/about/page.tsx",
+    "source/app/contact/page.tsx",
+    "source/app/globals.css",
+    "source/components/site-header.tsx",
+    "source/components/lead-form.tsx",
+    "source/package.json"
+  ];
+}
+
+function revisionActionsFor(kind: string) {
+  if (kind === "mobile_app") return ["Add screen", "Change navigation", "Update app flow", "Adjust Expo build notes", "Update API client notes"];
+  if (kind === "saas") return ["Add dashboard module", "Change auth flow", "Adjust billing notes", "Update database schema", "Change admin panel"];
+  if (kind === "ecommerce") return ["Add product page", "Change cart flow", "Adjust checkout notes", "Update admin product screens", "Update store export notes"];
+  if (kind === "admin_project") return ["Add admin module", "Change table fields", "Adjust roles", "Update workflow statuses", "Update database schema"];
+  return ["Update copy", "Change page structure", "Add section", "Adjust lead form", "Update deployment guide"];
+}
+
 export function buildProjectDeliveryOutput(production: ProjectProduction, jobId: string) {
   const productionType = String(production.production_type ?? "website");
   const packageId = String(production.package_id ?? "");
@@ -76,19 +142,7 @@ export function buildProjectDeliveryOutput(production: ProjectProduction, jobId:
       brief,
       stack,
       modules,
-      includedFiles: [
-        "README.md",
-        "manifest.json",
-        "preview.html",
-        "SOURCE-GUIDE.md",
-        "source/project-structure.md",
-        "source/app/page.tsx",
-        "source/app/admin/page.tsx",
-        "source/app/globals.css",
-        "source/package.json",
-        "docs/deployment-guide.md",
-        "admin-panel/admin-requirements.md"
-      ],
+      includedFiles: includedFilesFor(kind),
       deliveryStatus: "ready_for_customer_review",
       implementationStatus: "working_source_package_ready"
     },
@@ -98,7 +152,7 @@ export function buildProjectDeliveryOutput(production: ProjectProduction, jobId:
     sourceFilesUrl: links.sourceFilesUrl,
     readmeUrl: links.readmeUrl,
     automaticDeliveryLinks: links,
-    revisionActions: ["Update copy", "Change stack notes", "Add module", "Adjust admin panel", "Update deployment guide"],
+    revisionActions: revisionActionsFor(kind),
     userMessage: "Project source package, README, setup guide and delivery ZIP are ready in the dashboard."
   };
   return {

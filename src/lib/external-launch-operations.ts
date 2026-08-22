@@ -33,5 +33,5 @@ export const externalApiAccountReadiness = {
     { name: "n8n workflow", use: "external automation/orchestration", requirement: "hosted n8n instance, webhook auth and secret storage" },
     { name: "Shotstack", use: "template render/final assembly", requirement: "API access and render cost test" }
   ],
-  rule: "External API accounts and platform approvals are not code-complete tasks. Track them separately, and wire them only after credentials, permissions, terms and low-cost live tests are verified."
+  rule: "External API accounts and platform approvals are not code-complete tasks. Track them separately, and wire them only after credentials, permissions, terms and controlled live tests are verified."
 };

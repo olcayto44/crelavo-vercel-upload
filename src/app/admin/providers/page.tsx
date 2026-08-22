@@ -20,16 +20,16 @@ function statusClass(status: string) {
 
 const finalSetupOrder = [
   "Confirm selected brain, image and video provider choices before adding keys.",
-  "Add one provider key at a time and run the matching low-cost test before adding the next provider.",
+  "Add one provider key at a time and run the matching provider smoke test before adding the next provider.",
   "Keep video/provider concurrency conservative during launch week.",
   "Use Whop checkout for the active paid launch; keep Lemon Squeezy out of scope until the later application/migration phase.",
   "Run Manual E2E after provider keys are added and stop if any provider job fails silently."
 ];
 
-const lowCostTests = [
+const providerSmokeTests = [
   { label: "Brain", test: "Run Assistant Workspace planning with a real test user and verify no fallback/mock warning." },
   { label: "Image", test: "Run one image generation or image-editing request only if image products are sold at launch." },
-  { label: "Video", test: "Run one 5-second low-cost provider job and verify status polling plus delivery link." },
+  { label: "Video", test: "Run one controlled 10-second / 1080p provider smoke test and verify status polling plus delivery link." },
   { label: "Voice", test: "Run one short voiceover/dubbing test only if voice products are sold at launch." },
   { label: "Email", test: "Send contact, partner application and credits activated test emails." },
   { label: "Payment", test: "Use Whop checkout first; run live payment, webhook, duplicate-credit and admin fallback checks before full automation." }
@@ -78,10 +78,10 @@ export default function AdminProvidersPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">Low-cost provider tests</span>
-        <h2>Run only the tests needed for launch products</h2>
+        <span className="badge">Provider smoke tests</span>
+        <h2>Run only the controlled 1080p checks needed for launch products</h2>
         <div className="admin-info-grid">
-          {lowCostTests.map((item) => (
+          {providerSmokeTests.map((item) => (
             <div key={item.label}>
               <span>{item.label}</span>
               <strong>{item.test}</strong>
@@ -142,7 +142,7 @@ export default function AdminProvidersPage() {
         <span className="badge">Safe mode policy</span>
         <h2>Missing provider keys should not break the product UI</h2>
         <p style={{ color: "var(--muted)" }}>
-          If a provider key is missing, Crelavo should keep the request as a structured plan, queued dashboard record, manual delivery path or waiting_provider_config state. Real paid provider jobs should start only after the matching low-cost E2E passes.
+          If a provider key is missing, Crelavo should keep the request as a structured plan, queued dashboard record, manual delivery path or waiting_provider_config state. Real paid provider jobs should start only after the matching controlled 1080p smoke-test E2E passes.
         </p>
       </section>
 

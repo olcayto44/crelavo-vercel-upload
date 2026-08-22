@@ -14,6 +14,10 @@ const allowedMimeTypes = new Set([
   "video/mp4",
   "video/quicktime",
   "video/webm",
+  "video/mpeg",
+  "video/x-m4v",
+  "video/x-msvideo",
+  "video/x-matroska",
   "image/jpeg",
   "image/png",
   "image/webp",
@@ -38,6 +42,23 @@ function materialKind(contentType: string) {
   return "file";
 }
 
+function effectiveContentType(file: File) {
+  const declared = String(file.type ?? "").trim().toLowerCase();
+  if (declared && allowedMimeTypes.has(declared)) return declared;
+  const extension = extensionFromName(file.name);
+  const byExtension: Record<string, string> = {
+    mp4: "video/mp4",
+    m4v: "video/x-m4v",
+    mov: "video/quicktime",
+    webm: "video/webm",
+    mpeg: "video/mpeg",
+    mpg: "video/mpeg",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska"
+  };
+  return byExtension[extension] ?? declared;
+}
+
 export async function POST(request: Request) {
   try {
     const ip = clientIpFromRequest(request);
@@ -53,8 +74,9 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) return Response.json({ error: "A material file is required." }, { status: 400 });
     if (file.size <= 0) return Response.json({ error: "The uploaded file is empty." }, { status: 400 });
     if (file.size > maxUploadBytes) return Response.json({ error: "Material files can be up to 50 MB." }, { status: 400 });
-    if (!allowedMimeTypes.has(file.type)) {
-      return Response.json({ error: "Only audio, video, image, PDF, TXT, DOC/DOCX and ZIP material files are accepted." }, { status: 400 });
+    const contentType = effectiveContentType(file);
+    if (!allowedMimeTypes.has(contentType)) {
+      return Response.json({ error: `Unsupported material type: ${file.type || "unknown"}. Please use MP4, MOV, WEBM, audio, image, PDF, TXT, DOC/DOCX or ZIP.` }, { status: 400 });
     }
 
     const suspicious = rejectSuspiciousText([file.name, purpose]);
@@ -78,7 +100,7 @@ export async function POST(request: Request) {
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
+      .upload(path, arrayBuffer, { contentType, upsert: false });
 
     if (uploadError) throw uploadError;
 
@@ -93,9 +115,9 @@ export async function POST(request: Request) {
         file_url: fileUrl,
         storage_bucket: bucket,
         storage_path: path,
-        content_type: file.type,
+        content_type: contentType,
         size_bytes: file.size,
-        kind: materialKind(file.type),
+        kind: materialKind(contentType),
         rights_confirmed: true,
         usage_tags: ["user-upload", purpose]
       }

@@ -4,7 +4,12 @@ import { appUrl } from "./env";
 export async function uploadProviderAsset(path: string, body: Blob | ArrayBuffer | Uint8Array | string, contentType: string) {
   const bucket = process.env.SUPABASE_PROVIDER_ASSETS_BUCKET || "provider-assets";
   const supabase = supabaseAdmin();
-  const payload = typeof body === "string" ? new Blob([body], { type: contentType }) : body;
+  const bytes = typeof body === "string"
+    ? new TextEncoder().encode(body)
+    : body instanceof ArrayBuffer
+      ? new Uint8Array(body)
+      : new Uint8Array(body as Uint8Array);
+  const payload = new Blob([bytes], { type: contentType });
 
   await supabase.storage.updateBucket(bucket, { public: true }).catch(() => undefined);
 

@@ -82,7 +82,7 @@ export const adminDailyFocus = [
   { label: "Krediler", href: "/admin/credits", priority: "Günlük", note: "Manuel kredi yükleme, kredi düşüşü, receipt/reference ve kullanıcı kredi işlemleri." },
   { label: "Finans", href: "/admin/finance", priority: "Günlük", note: "Gelir, reserved credit, provider cost ve margin risklerini kontrol et." },
   { label: "Production QA", href: "/admin/production-qa", priority: "Günlük", note: "Teslim edilen işlerde output, credit ledger, source delivery ve No Fake Proof kontrolleri." },
-  { label: "Provider durumu", href: "/admin/providers", priority: "Sık", note: "API/provider hazır mı, low-cost test ve rate limit/backoff guardları ne durumda." },
+  { label: "Provider durumu", href: "/admin/providers", priority: "Sık", note: "API/provider hazır mı, provider smoke test ve rate limit/backoff guardları ne durumda." },
   { label: "Monitoring", href: "/admin/monitoring", priority: "Sık", note: "Hata, backup, logging ve canlı test failure intake durumları." },
   { label: "SEO", href: "/admin/seo", priority: "Haftalık", note: "Search Console, sitemap, hreflang, programmatic SEO ve growth data optimizasyonu." },
   { label: "Growth", href: "/admin/growth", priority: "Haftalık", note: "Directory, sosyal medya, UGC/demo funnel ve gerçek veriyle optimizasyon işleri." },
@@ -150,7 +150,7 @@ export const adminProductionSections = {
   video: {
     title: "AI Video Management",
     badge: "AI Video",
-    description: "Manage draft, premium and cinematic video requests.",
+    description: "Manage controlled 1080p, premium and cinematic video requests.",
     packageIds: ["video_draft", "video_premium", "video_cinematic"],
     checklist: ["Preview video", "Final MP4", "Caption", "Hashtag", "Revision note"]
   },

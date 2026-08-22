@@ -69,7 +69,7 @@ export const growthWorkstreams: GrowthWorkstream[] = [
     title: "Global organic launch assets",
     priority: "P2",
     status: "planned",
-    summary: "Product Hunt, AI directory, X and LinkedIn launch copy drafts prepared before live domain publishing.",
+    summary: "Product Hunt, AI directory, X and LinkedIn launch copy prepared before live domain publishing.",
     userValue: "Launch channels become ready while technical blockers are being resolved.",
     adminChecks: ["Product Hunt tagline", "AI directory copy", "X thread", "LinkedIn post", "demo script"],
     nextSteps: ["Draft copy", "Wait for live domain", "Publish only after manual E2E"]

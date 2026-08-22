@@ -10,7 +10,9 @@ function hasEnv(name: string) {
 }
 
 function selectedVideoProvider() {
-  return (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
+  const provider = (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
+  if (provider === "minimax") return "minimax";
+  return provider;
 }
 
 function hasAnyEnv(names: string[]) {
@@ -18,6 +20,16 @@ function hasAnyEnv(names: string[]) {
 }
 
 function videoPreflight(provider: string) {
+  if (provider === "minimax") {
+    return {
+      provider,
+      model: "MiniMax-H3",
+      endpointMode: "video_generation_task_api",
+      durationSeconds: { min: 4, max: 15, test: 5 },
+      aspectRatio: "9:16",
+      testTarget: "controlled_minimax_video_job"
+    };
+  }
   if (provider === "replicate") {
     const versionMode = hasEnv("REPLICATE_VIDEO_VERSION");
     return {
@@ -70,6 +82,7 @@ function videoPreflight(provider: string) {
 }
 
 function videoProviderReady(provider: string) {
+  if (provider === "minimax") return { ready: hasProviderEnv("minimax") && hasProviderEnv("minimaxGroupId"), required: [...providerEnvNames("minimax"), ...providerEnvNames("minimaxGroupId")], optional: ["MINIMAX_BASE_URL"] };
   if (provider === "replicate") return { ready: hasProviderEnv("replicate"), required: providerEnvNames("replicate"), optional: ["REPLICATE_VIDEO_VERSION", "REPLICATE_MODEL"] };
   if (provider === "runway") return { ready: hasProviderEnv("runway"), required: providerEnvNames("runway"), optional: ["RUNWAY_API_VERSION", "RUNWAY_MODEL"] };
   if (provider === "kling") return { ready: hasProviderEnv("kling"), required: providerEnvNames("kling"), optional: ["KLING_API_URL", "KLING_STATUS_API_URL", "KLING_MODEL"] };

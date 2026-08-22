@@ -13,7 +13,7 @@ type CategoryDraft = {
 export function AdminCategoryManager() {
   const [categories, setCategories] = useState<CategoryDraft[]>(productionTypes.map((item) => ({ ...item })));
   const [selectedId, setSelectedId] = useState(categories[0]?.id ?? "");
-  const [message, setMessage] = useState("Select any card to edit it. New category drafts can be added from this page.");
+  const [message, setMessage] = useState("Select any card to edit it. New category entries can be added from this page.");
   const editorRef = useRef<HTMLElement | null>(null);
   const selected = categories.find((item) => item.id === selectedId) ?? categories[0];
 

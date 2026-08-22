@@ -200,7 +200,7 @@ const baseFooterInfoPages: FooterInfoPage[] = [
     badge: "Text-to-video",
     title: "Text to Video",
     summary: "Create an AI video from a written scene, product description, ad concept or story idea.",
-    bestFor: "Fast video drafts, ads, cinematic clips, product concepts and social posts.",
+    bestFor: "Controlled 1080p videos, ads, cinematic clips, product concepts and social posts.",
     input: "Text prompt, scene description, action, style and target duration.",
     output: "Text-to-video production request with format, style and delivery path.",
     primaryCtaLabel: "Start Text to Video",

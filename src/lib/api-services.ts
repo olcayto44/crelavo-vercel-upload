@@ -28,13 +28,13 @@ export const apiServiceGroups: ApiServiceGroup[] = [
         image: "/blog/managed-delivery-workflow.svg",
         alt: "Crelavo OpenAI assistant reasoning and production planning illustration",
         readiness: "ready",
-        safeTest: "Safe readiness: API key presence and low-cost assistant route check."
+        safeTest: "Safe readiness: API key presence and controlled assistant route check."
       },
       {
         slug: "fal-ai",
         name: "Fal.ai",
         summary: "Fast and flexible multi-model creative routing.",
-        useCase: "Draft video, quick tests, image generation and fallback creative workflows.",
+        useCase: "Controlled 1080p video tests, image generation and fallback creative workflows.",
         image: "/showcase/production-dashboard.png",
         alt: "Crelavo Fal.ai fast AI video and image production dashboard illustration",
         readiness: "ready",

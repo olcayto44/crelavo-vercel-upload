@@ -24,14 +24,10 @@ export function buildPresenterCreativeBrief(input: {
   const wantsDynamic = includesAny(signal, ["dinamik", "dynamic", "akıcı", "akici", "hızlı", "hizli", "enerjik", "energetic", "hareketli", "dikkat", "viral", "ugc", "creator"]);
   const wantsHook = includesAny(signal, ["hook", "kanca", "kapak", "cover", "ilk 3 saniye", "first 3 seconds", "fomo", "kaçır", "kacir", "missing out"]);
   const wantsDemo = includesAny(signal, ["uygulamalı", "uygulamali", "demo", "göster", "goster", "show", "product demo", "nasıl çalış", "nasil calis"]);
-  const heygenQualityTier = signal.includes("economy avatar iii") || signal.includes("ekonomik avatar iii") ? "Economy Avatar III" :
-    signal.includes("premium avatar iv/v") || signal.includes("premium avatar") ? "Premium Avatar IV/V" :
-    "Video Agent auto edit";
-  const qualityDirection = heygenQualityTier === "Economy Avatar III"
-    ? "HeyGen quality tier: Economy Avatar III. Use a clear, stable presenter style for cost-efficient informational videos; avoid relying on advanced cinematic body motion."
-    : heygenQualityTier === "Premium Avatar IV/V"
-      ? "HeyGen quality tier: Premium Avatar IV/V. Use the most realistic presenter style available, with cinematic, natural movement and motion cues where supported."
-      : "HeyGen quality tier: Video Agent auto edit. Use HeyGen Video Agent for smart planning, presenter delivery, visual pacing, and automatic edit decisions.";
+  const heygenQualityTier = signal.includes("premium avatar iv/v") || signal.includes("premium avatar") ? "Premium Avatar IV/V" : "Video Agent auto edit";
+  const qualityDirection = heygenQualityTier === "Premium Avatar IV/V"
+    ? "HeyGen quality tier: Premium Avatar IV/V. Use the most realistic presenter style available, with cinematic, natural movement and motion cues where supported."
+    : "HeyGen quality tier: Video Agent auto edit. Use HeyGen Video Agent for smart planning, premium presenter delivery, polished visual pacing, and automatic edit decisions.";
   const presenterChoice = signal.includes("female presenter") || signal.includes("kadın sunucu") ? "Female presenter" :
     signal.includes("male presenter") || signal.includes("erkek sunucu") ? "Male presenter" :
     signal.includes("young energetic creator") || signal.includes("genç enerjik") ? "Young energetic creator" :

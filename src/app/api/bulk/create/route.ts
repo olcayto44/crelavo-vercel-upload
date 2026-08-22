@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         valid_count: summary.valid,
         failed_count: summary.failed,
         concurrency: Number(body.concurrency ?? summary.concurrency),
-        default_format: String(body.default_format ?? "720p vertical TikTok video"),
+        default_format: String(body.default_format ?? "1080p vertical TikTok video"),
         source_filename: String(body.source_filename ?? "products.csv"),
         notify_email: String(body.notify_email ?? "") || null,
         metadata: { summary }
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       row_index: item.index,
       product_url: item.productUrl || "invalid",
       title: item.title ?? null,
-      video_format: String(body.default_format ?? "720p vertical TikTok video"),
+      video_format: String(body.default_format ?? "1080p vertical TikTok video"),
       status: item.status,
       error_message: item.error ?? null,
       metadata: item

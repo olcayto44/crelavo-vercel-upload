@@ -8,6 +8,8 @@ import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
+import { createConsistentSceneImage } from "@/lib/providers/stability";
+import { applyMarketingTextOverlay, hasImageMarketingText, stripImageMarketingTextInstructions } from "@/lib/image-postprocess";
 import { hasCinematicActionIntent, hasHeyGenPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
@@ -485,10 +487,11 @@ export async function POST(request: Request) {
     replicateModel: process.env.REPLICATE_MODEL
   });
 const isDroneProduction = productionType === "drone_video";
-const heygenSetupPresenterIntent = hasHeyGenPresenterIntent(productionDetectionText);
-const explicitHeyGenProviderSignal = /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
-const heygenForcedByMetadata = !isDroneProduction && explicitHeyGenProviderSignal;
-const talkingProviderType = !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
+const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
+const heygenSetupPresenterIntent = !isImageProduction && hasHeyGenPresenterIntent(productionDetectionText);
+const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
+const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
+const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
@@ -921,6 +924,78 @@ if (talkingProviderType) {
     }
 
 const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
+if (isImageProduction) {
+  const imagePromptCandidates = [
+    inputJson.work_prompt,
+    inputJson.original_request,
+    inputJson.originalRequest,
+    requestMetadata.work_prompt,
+    requestMetadata.original_request,
+    requestMetadata.originalRequest,
+    currentProduction.prompt,
+    inputJson.providerPrompt,
+    currentProduction.title
+  ].map((value) => String(value ?? "").trim()).filter(Boolean);
+  const originalImagePrompt = (imagePromptCandidates.find((candidate) => hasImageMarketingText(candidate)) || imagePromptCandidates[0] || "Image production").trim();
+  const imagePrompt = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+  const requestedAspectRatio = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
+  const aspectRatio = /4\s*[:x]\s*5|portrait\s*4\s*[:x]\s*5/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s*portrait/i.test(originalImagePrompt) ? "4:5" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : "4:5";
+  try {
+    const imageResult = await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: "final-image-base", aspectRatio });
+    const overlayResult = await applyMarketingTextOverlay({ productionId, sourceUrl: imageResult.imageUrl, prompt: originalImagePrompt, aspectRatio });
+    const finalImageUrl = overlayResult.imageUrl;
+    const imageOutput = {
+      ...existingOutput,
+      automationMode: "fully_automatic",
+      automationStatus: "completed",
+      providerStatus: overlayResult.applied ? "image_provider_succeeded_text_overlay" : "image_provider_succeeded",
+      requiredPipeline: overlayResult.applied ? "image_generation_text_overlay" : "image_generation",
+      currentStep: overlayResult.applied ? "Image provider succeeded and text overlay applied" : "Image provider succeeded",
+      finalImageUrl,
+      imageUrl: finalImageUrl,
+      previewUrl: finalImageUrl,
+      deliveryLink: finalImageUrl,
+      baseImageUrl: imageResult.imageUrl,
+      textOverlay: overlayResult.applied ? { applied: true, marketingText: overlayResult.marketingText } : { applied: false, marketingText: overlayResult.marketingText },
+      visualJob: { provider: imageResult.provider, id: `${productionId}-image`, status: "succeeded", url: finalImageUrl, baseUrl: imageResult.imageUrl, raw: imageResult.raw },
+      visualJobs: [{ provider: imageResult.provider, id: `${productionId}-image`, status: "succeeded", url: finalImageUrl, baseUrl: imageResult.imageUrl, raw: imageResult.raw }],
+      imageProvider: imageResult.provider,
+      imageModel: imageResult.model,
+      imageAspectRatio: imageResult.aspectRatio,
+      imageFallback: imageResult.fallback ? { provider: imageResult.provider, reason: imageResult.fallbackReason ?? null } : null,
+      automaticDeliveryLinks: deliveryLinks,
+      workflowState: buildProductionWorkflowState({ ...currentProduction, status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, output_json: { ...existingOutput, finalImageUrl } })
+    };
+    const imageReadyGate = productionReadyGate({ ...currentProduction, preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: null, output_json: imageOutput }, imageOutput);
+    const { data: imageProduction, error: imageUpdateError } = await supabase
+      .from("production_requests")
+      .update(safeUpdate({ status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: null, output_json: { ...imageOutput, readyGate: imageReadyGate, qualityGate: { status: imageReadyGate.passed ? "passed" : "soft_passed", checkedAt: now, required: imageReadyGate.required, missing: imageReadyGate.missing, warnings: imageReadyGate.warnings } }, admin_notes: overlayResult.applied ? "Image production completed successfully with text overlay." : "Image production completed successfully.", updated_at: now }))
+      .eq("id", productionId)
+      .select("*")
+      .single();
+    if (imageUpdateError) throw imageUpdateError;
+    return Response.json({ job_id: jobId, production: imageProduction, provider_started: true, provider_result: imageResult });
+  } catch (error) {
+    const failureMessage = errorMessage(error, "Image provider job could not be started.");
+    const failedOutput = {
+      ...existingOutput,
+      automationMode: "fully_automatic",
+      automationStatus: "failed",
+      providerStatus: "image_provider_failed",
+      currentStep: "Image provider failed",
+      providerErrors: { image: failureMessage },
+      workflowState: buildProductionWorkflowState({ ...currentProduction, status: "failed", automation_status: "failed", generation_status: "image_provider_failed", output_json: { ...existingOutput } })
+    };
+    const { data: failedProduction, error: failedUpdateError } = await supabase
+      .from("production_requests")
+      .update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "image_provider_failed", output_json: failedOutput, admin_notes: failureMessage, error_message: failureMessage, updated_at: now }))
+      .eq("id", productionId)
+      .select("*")
+      .single();
+    if (failedUpdateError) throw failedUpdateError;
+    return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
+  }
+}
 if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText)) {
   const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.";
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;

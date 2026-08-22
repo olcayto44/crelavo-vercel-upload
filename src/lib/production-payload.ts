@@ -108,6 +108,16 @@ function optionLineValue(optionSummary: string, label: string) {
   return line?.split(":").slice(1).join(":").trim() ?? "";
 }
 
+function aspectRatioFromSelection(selection: Pick<AssistantProductionSelection, "input" | "selectedQuality" | "selectedPlatforms">) {
+  const signal = `${selection.input} ${selection.selectedQuality} ${selection.selectedPlatforms.join(" ")}`.toLocaleLowerCase("tr-TR");
+  if (/21:9|cinematic\s*widescreen/.test(signal)) return "21:9";
+  if (/4:5/.test(signal)) return "4:5";
+  if (/1:1|square/.test(signal)) return "1:1";
+  if (/16:9|horizontal|landscape|youtube/.test(signal)) return "16:9";
+  if (/9:16|vertical|story|reels|tiktok|shorts/.test(signal)) return "9:16";
+  return "9:16";
+}
+
 function isAiVideoOnlySelection(selection: AssistantProductionSelection & { productionType: string; optionSummary: string }) {
   const signal = `${selection.productionType} ${selection.input} ${selection.selectedModules.join(" ")} ${selection.selectedFeatures.join(" ")} ${selection.selectedPlatforms.join(" ")} ${selection.optionSummary}`.toLocaleLowerCase("tr-TR");
   const videoOnlyGuard = /(ai video only|only ai video|not a website|not website|website degil|website değil|site degil|site değil|source code degil|source code değil|zip source degil|zip source değil|admin panel degil|admin panel değil)/.test(signal);
@@ -332,7 +342,7 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     project_details: `${selection.prompt}\n\nProduction options:\n${selection.optionSummary}`,
     style: selection.selectedStyle,
     quality: selection.selectedQuality,
-    aspect_ratio: selection.selectedQuality,
+    aspect_ratio: aspectRatioFromSelection(selection),
     target_platform: selection.selectedPlatforms.join(", "),
     features: effectiveFeatures.join(", "),
     service_network: selection.selectedServiceNetwork ?? "",

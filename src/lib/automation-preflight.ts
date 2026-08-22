@@ -152,10 +152,10 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     metadataObject(inputJson.ecommerceContext).targetDurationSeconds
   );
   const requestedDuration = explicitDuration || (providerTestMode ? 5 : 8);
-  const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service);
-  const selectedVideoProvider = selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
-  const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "video"].includes(input.productionType);
-  const configuredVideoProvider = hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";
+  const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
+  const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
+  const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
+  const configuredVideoProvider = hasProviderEnv("minimax") ? "minimax" : hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";
   const typePreferredProvider = productionNeedsRealVideo ? configuredVideoProvider : "";
   const envVideoProvider = String(input.videoProvider || "").trim().toLowerCase();
   const safeEnvVideoProvider = envVideoProvider === "kling" && selectedVideoProvider !== "kling" ? "" : envVideoProvider;
@@ -182,7 +182,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
 
   return {
     provider: videoProvider,
-    model: videoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : videoProvider,
+    model: videoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : videoProvider === "minimax" ? "MiniMax-H3" : videoProvider,
     durationSeconds: requestedDuration,
     aspectRatio,
     testMode: providerTestMode,

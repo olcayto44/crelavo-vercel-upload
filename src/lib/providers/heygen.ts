@@ -153,9 +153,47 @@ function walkObjects(value: unknown, visit: (record: Record<string, unknown>) =>
   for (const nested of Object.values(record)) walkObjects(nested, visit, seen);
 }
 
+function resourceIdsFrom(record: Record<string, unknown>) {
+  const values = record.resource_ids ?? record.resourceIds ?? record.resources;
+  if (!Array.isArray(values)) return [];
+  return values
+    .map((value) => typeof value === "string" || typeof value === "number" ? String(value).trim() : "")
+    .filter(Boolean);
+}
+
+function inferResourceIdType(id: string): HeyGenAgentArtifact["type"] {
+  const normalized = id.toLowerCase();
+  if (/^video_/.test(normalized)) return "video";
+  if (/^image_/.test(normalized)) return "image";
+  if (/^audio_/.test(normalized)) return "audio";
+  if (/^draft_|^blueprint_/.test(normalized)) return "blueprint";
+  return "file";
+}
+
+function upsertArtifact(byId: Map<string, HeyGenAgentArtifact>, artifact: HeyGenAgentArtifact) {
+  const previous = byId.get(artifact.providerResourceId);
+  if (!previous || (!previous.previewUrl && artifact.previewUrl) || (previous.type !== "video" && artifact.type === "video") || String(previous.createdAt ?? "") < String(artifact.createdAt ?? "")) byId.set(artifact.providerResourceId, artifact);
+}
+
 export function normalizeHeyGenVideoAgentArtifacts(sessionPayload: unknown): HeyGenAgentArtifact[] {
   const byId = new Map<string, HeyGenAgentArtifact>();
   walkObjects(sessionPayload, (record) => {
+    const resourceIds = resourceIdsFrom(record);
+    for (const resourceId of resourceIds) {
+      const type = inferResourceIdType(resourceId);
+      upsertArtifact(byId, {
+        id: resourceId,
+        provider: "heygen",
+        providerResourceId: resourceId,
+        type,
+        title: firstString(record, ["title", "name", "label"]) || (type === "video" ? "HeyGen video" : type === "image" ? "HeyGen visual" : type === "blueprint" ? "HeyGen blueprint" : "HeyGen artifact"),
+        status: artifactStatus(record),
+        description: firstString(record, ["description", "text", "content", "message"]),
+        createdAt: firstString(record, ["created_at", "createdAt", "updated_at", "updatedAt"]),
+        raw: record
+      });
+    }
+
     const providerResourceId = firstString(record, ["resource_id", "resourceId", "asset_id", "assetId", "video_id", "videoId", "id"]);
     const url = firstHttpsUrl(record);
     const hasResourceSignal = Boolean(providerResourceId && (/^(video|image|audio|draft|resource|asset|file|message)_/i.test(providerResourceId) || url || record.resource_id || record.resourceId || record.video_id || record.videoId));
@@ -163,7 +201,7 @@ export function normalizeHeyGenVideoAgentArtifacts(sessionPayload: unknown): Hey
     const type = inferArtifactType(record, providerResourceId, url);
     const title = firstString(record, ["title", "name", "label"]) || (type === "video" ? "HeyGen video" : type === "image" ? "HeyGen visual" : type === "blueprint" ? "HeyGen blueprint" : "HeyGen artifact");
     const thumbnailUrl = firstHttpsUrl(record.thumbnail_url ?? record.thumbnailUrl ?? record.cover_url ?? record.coverUrl);
-    const artifact: HeyGenAgentArtifact = {
+    upsertArtifact(byId, {
       id: providerResourceId,
       provider: "heygen",
       providerResourceId,
@@ -175,9 +213,7 @@ export function normalizeHeyGenVideoAgentArtifacts(sessionPayload: unknown): Hey
       description: firstString(record, ["description", "text", "content", "message"]),
       createdAt: firstString(record, ["created_at", "createdAt", "updated_at", "updatedAt"]),
       raw: record
-    };
-    const previous = byId.get(providerResourceId);
-    if (!previous || (!previous.previewUrl && artifact.previewUrl) || (previous.type !== "video" && artifact.type === "video")) byId.set(providerResourceId, artifact);
+    });
   });
   return Array.from(byId.values()).sort((a, b) => String(a.createdAt ?? "").localeCompare(String(b.createdAt ?? "")) || a.id.localeCompare(b.id));
 }

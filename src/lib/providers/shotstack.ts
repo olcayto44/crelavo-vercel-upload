@@ -147,12 +147,12 @@ function motionCardHtml(title: string, body: string, accent = "Crelavo") {
 
 function motionTextCardClips(title: string, lines: string[] | undefined, durationSeconds: number) {
   const fallback = [
-    "What if one link could become your next best-performing video ad?",
-    "One link. One idea. One finished video.",
-    "AI ads in minutes",
-    "Product demos. Social videos. Final MP4.",
-    "Create more. Spend less. Move faster.",
-    "What would you create today?"
+    "CREATE IT: Ideas become videos, websites, apps and campaigns.",
+    "AI VIDEO + PRODUCT ADS: Fast social clips, product demos and e-commerce campaigns.",
+    "WEBSITES + APPS + SAAS: Landing pages, mobile apps, dashboards and billing flows.",
+    "CREATIVE MEDIA STACK: Music videos, brand kits, image packs, lip-sync and localization.",
+    "SOCIAL EXPORT: Final MP4, thumbnail, captions, hashtags and connected accounts.",
+    "LAUNCH IT. SCALE IT. CRELAVO."
   ];
   const cards = (lines?.length ? lines : fallback).map((line) => String(line ?? "").replace(/^[•\-\d.\s]+/, "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, 8);
   const slot = durationSeconds / Math.max(1, cards.length);

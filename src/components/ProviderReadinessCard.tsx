@@ -101,7 +101,7 @@ export function ProviderReadinessCard() {
       )}
       <div className="provider-readiness-actions">
         <button className="btn secondary" type="button" onClick={load}>Check again</button>
-        <Link className="btn" href="/dashboard/assistant-workspace?providerTest=1">Run Low-Cost Test</Link>
+        <Link className="btn" href="/dashboard/assistant-workspace?providerTest=1">Run Smoke Test</Link>
       </div>
     </section>
   );

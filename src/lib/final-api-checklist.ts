@@ -37,7 +37,7 @@ const apiAutomationReadinessGates: ReadinessGate[] = [
   { title: "Secrets stay server-side", owner: "Owner", check: "Provider, Whop, Resend, Supabase service-role and render keys must exist only in Vercel/env or local .env.local; never in client bundles, docs, screenshots or chat." },
   { title: "Whop is payment source of record", owner: "Finance", check: "Preview activation, subscription status, cancellation visibility, idempotency and credit grants must be driven by verified Whop events before automation is enabled." },
   { title: "Credits never trust client payloads", owner: "Backend", check: "Package price, credit amount, reward credit, coupon claim and clean-export access must be recalculated server-side from package/payment records." },
-  { title: "Provider spend has a stop switch", owner: "Operations", check: "Run a low-cost success job and a failure job for each selected provider; confirm API Guard, admin review and fallback messaging before paid traffic." },
+  { title: "Provider spend has a stop switch", owner: "Operations", check: "Run a controlled success job and a failure job for each selected provider; confirm API Guard, admin review and fallback messaging before paid traffic." },
   { title: "Cloudflare edge guard is live", owner: "Owner", check: "Before paid traffic, verify Cloudflare DNS/SSL, WAF, bot/rate-limit rules and optional Turnstile protection for admin, auth, payment, lead, webhook and provider callback routes." },
   { title: "Viral loops remain manual until proven", owner: "Growth", check: "Referral credits, coupon hunt, share-to-earn, partner commission and abandoned checkout recovery stay manual or consent-safe until fraud and attribution checks pass." },
   { title: "Preview watermark gates clean export", owner: "Product", check: "Watermarked preview export can be generated for proof; watermark-free final export opens only after paid plan eligibility and delivery rules are confirmed." }
@@ -140,7 +140,7 @@ function lemonVariantEnvNames() {
 function providerItem(): ChecklistItem {
   const provider = (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
   if (provider === "replicate") {
-    return item("Selected video provider", ["REPLICATE_API_TOKEN"], "Replicate is selected for video/generation provider tests.", "Run one low-cost provider success production and confirm provider status polling.");
+    return item("Selected video provider", ["REPLICATE_API_TOKEN"], "Replicate is selected for video/generation provider tests.", "Run one controlled provider success production and confirm provider status polling.");
   }
   if (provider === "fal") {
     return {
@@ -148,14 +148,14 @@ function providerItem(): ChecklistItem {
       status: hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "ready" : "missing",
       env: ["FAL_KEY or FAL_API_KEY"],
       note: "FAL is selected for video/generation provider tests.",
-      validation: "Run one low-cost provider success production and confirm provider status polling."
+      validation: "Run one controlled provider success production and confirm provider status polling."
     };
   }
   if (provider === "runway") {
-    return item("Selected video provider", ["RUNWAY_API_KEY"], "Runway is selected for video/generation provider tests.", "Run one low-cost provider success production and confirm provider status polling.");
+    return item("Selected video provider", ["RUNWAY_API_KEY"], "Runway is selected for video/generation provider tests.", "Run one controlled provider success production and confirm provider status polling.");
   }
   if (provider === "kling") {
-    return item("Selected video provider", ["KLING_API_KEY"], "Kling is selected for video/generation provider tests.", "Run one low-cost provider success production and confirm provider status polling.");
+    return item("Selected video provider", ["KLING_API_KEY"], "Kling is selected for video/generation provider tests.", "Run one controlled provider success production and confirm provider status polling.");
   }
   return {
     label: "Selected video provider",
@@ -236,7 +236,7 @@ export function buildFinalApiChecklist() {
         item("OpenAI assistant/planning", ["OPENAI_API_KEY"], "Assistant chat, brief, production planning, script, strategy and prompt generation use OpenAI in the first API phase.", "Run Assistant Workspace planning with a real test user and confirm no provider fallback error."),
         providerItem(),
         item("Image generation provider", ["OPENAI_API_KEY"], "First phase image generation/editing uses OpenAI Images unless IMAGE_PROVIDER is changed later.", "Run one image generation/editing E2E after final API setup."),
-        item("Voice/TTS provider", ["ELEVENLABS_API_KEY"], "Voice-over, narration, dubbing and ad voice flows need the first phase voice provider.", "Run one low-cost voice-over test."),
+        item("Voice/TTS provider", ["ELEVENLABS_API_KEY"], "Voice-over, narration, dubbing and ad voice flows need the first phase voice provider.", "Run one controlled voice-over test."),
         item("Video editing/render provider", ["SHOTSTACK_API_KEY"], "Cut, trim, crop, subtitle burn-in, audio merge and final export automation need the render provider.", "Run one cut/crop/subtitle/export render test."),
         item("Provider routing selector", ["VIDEO_PROVIDER"], "A single primary provider should be explicit before live traffic; fallback routes can exist but must not silently spend without admin awareness.", "Open /api/providers/readiness and confirm selected provider, missing keys and fallback note are understandable.", true)
       ]

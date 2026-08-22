@@ -5,6 +5,17 @@ export async function GET(request: Request) {
   const action = url.searchParams.get("action") || "avatars";
 
   try {
+if (action === "brand_avatar_proxy") {
+  const directUrl = "https://files2.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/v05da9514522743039a8c4e8b76c19522/b0578cda37b142c3bcc882bb97efec8d.mp4?response-content-disposition=attachment%3B+filename%2A%3DUTF-8%27%27Crelavo%2520Brand%2520Face%2520-%2520Digital%2520Solution%2520Expert.mp4%3B&x-s=vp&Expires=1787416123&Signature=NYYNfFkNxyNB5OYfOFvmr7f8oqL~4wXHRcpdprqO1zORRpu4tCVJftvmYPNOrc6iqbEiG0xgMGeTuediqqkTjcmgvj9fRHDFMeOQchyb1F4lr0yzo8JGlQUKGOcPSf4fjVg3tempXA10pNUYrXT3bbUrcmhXPieBpzLCRrj4nMwjAG18OupY6WjvcLNYnvp5arzUKaLkBN5zfstwjmO8bWYRUoftdWCiy-Odq~AINifnRmIuxnfHZL1NYlmYDh99EoKKW~ZxkbTp7cFiwyRIjO~hdZUwjGSO~cSC-14GyW~VHe1yIMIRdTbDowX-Qtg96Vrl3TVzmGtuLYDLsb14ql__&Key-Pair-Id=K38HBHX5LX3X2H";
+  const videoResponse = await fetch(directUrl, { cache: "no-store" });
+  if (!videoResponse.ok || !videoResponse.body) return Response.json({ error: "Brand avatar video fetch failed." }, { status: 502 });
+  return new Response(videoResponse.body, {
+    headers: {
+      "Content-Type": videoResponse.headers.get("content-type") || "video/mp4",
+      "Cache-Control": "no-store, max-age=0"
+    }
+  });
+}
     if (action === "voices") {
       const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit") || 50) || 50));
       const token = url.searchParams.get("token") || undefined;

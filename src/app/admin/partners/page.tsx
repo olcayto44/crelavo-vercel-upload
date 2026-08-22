@@ -489,7 +489,7 @@ export default async function AdminPartnersPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Variable commission by package margin</span>
-        <h2>High-cost and low-cost packages should not use the same commission rate</h2>
+        <h2>High-margin and heavy-cost packages should not use the same commission rate</h2>
         <p style={{ color: "var(--muted)" }}>Affiliate commission can be selected by package group, provider/API cost, labor cost and recurring value. High-margin recurring services can receive higher commission, while custom or heavy-cost packages should require lower commission or manual approval.</p>
         <div className="admin-category-grid">
           {partnerPackageCommissionRules.map((rule) => (

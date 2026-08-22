@@ -107,6 +107,9 @@ function isCharacterDialogueAnimationPrompt(message: string) {
 
 function detectProductionType(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
+  const routeText = text
+    .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
+    .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ");
   if (isCharacterDialogueAnimationPrompt(message)) return "animation";
   if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "ad_score_checker";
   if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model_studio";
@@ -116,6 +119,9 @@ function detectProductionType(message: string) {
   if (/topluluk|community showcase|showcase|vitrin|örnek stil|ornek stil|template reuse/.test(text)) return "community_showcase";
   if (/ai ajan|yapay zeka ajan|ai influencer|sosyal medya yöneticisi|trend monitor|24\/7|24 saat|satış asistanı|satis asistani/.test(text)) return "ai_agent";
   if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(text)) return "drone_video";
+  const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(text);
+  const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
+  if (imageDesignIntent && !explicitVideoIntent) return "image";
   if (/çöp adam|cop adam|stickman/.test(text)) return "stickman_animation";
   if (/rakip|competitor|seo|keyword|anahtar kelime|growth intelligence|site analizi|site analiz/.test(text)) return "document_pack";
   if (/shopify|amazon|trendyol|woocommerce|ürün link|urun link|product link|kampanya|reklam|ad video|tiktok reklam|instagram reklam|marketplace/.test(text)) return "campaign";
@@ -138,7 +144,7 @@ function detectProductionType(message: string) {
 function detectQuality(message: string) {
   const text = message.toLocaleLowerCase("tr-TR");
   if (/4k|ultra|yüksek çözünürlük|yuksek cozunurluk/.test(text)) return "4K";
-  if (/720p|test|draft|taslak/.test(text)) return "720p draft";
+  if (/720p|test|draft|taslak/.test(text)) return "1080p";
   if (/premium|1080p|hd|sinematik|cinematic/.test(text)) return "1080p";
   return "1080p";
 }
@@ -146,7 +152,7 @@ function detectQuality(message: string) {
 function detectDuration(message: string, productionType: string) {
   const match = message.match(/(\d{1,3})\s*(sn|sec|saniye|second|seconds|dk|dakika|min|minute)/i);
   if (match) return /dk|dakika|min|minute/i.test(match[2]) ? `${Number(match[1]) * 60} sec` : `${Number(match[1])} sec`;
-  if (["website", "saas", "mobile_app", "admin_project", "brand_kit", "document_pack"].includes(productionType)) return "Project based";
+  if (["website", "saas", "mobile_app", "admin_project", "brand_kit", "document_pack", "image", "visual_clone", "virtual_model_studio"].includes(productionType)) return "Project based";
   return "30 sec";
 }
 
@@ -260,6 +266,13 @@ function detectMusicProfile(message: string) {
 }
 
 function deliveryRequirements(message: string, productionType: string, features: string[], platforms: string[], quality: string) {
+  if (productionType === "image") {
+    return {
+      requested: true,
+      status: "pending",
+      formats: ["final_image", "png", "jpg", "dashboard_delivery"]
+    };
+  }
   const signal = `${message} ${productionType} ${features.join(" ")} ${platforms.join(" ")} ${quality}`.toLocaleLowerCase("tr-TR");
   const promoVideo = isSaasPromoVideoIntent(message);
   const formats = [
@@ -459,13 +472,15 @@ export async function POST(request: Request) {
     const geminiDraft = openAiDraft ? null : await geminiProductionDraft(message, mode, history, userContextPrompt);
     const aiDraft = openAiDraft || geminiDraft;
     const assistantBrain = openAiDraft ? "openai" : geminiDraft ? "gemini" : "local_rules";
-    const productionType = safeProductionType(message, aiDraft?.production_type?.trim() || detectProductionType(message));
-    const selectedQuality = aiDraft?.selected_quality?.trim() || detectQuality(message);
-    const selectedDuration = aiDraft?.selected_duration?.trim() || detectDuration(message, productionType);
-    const selectedStyle = aiDraft?.selected_style?.trim() || detectStyle(message, productionType);
-    const selectedModules = cleanStringArray(aiDraft?.selected_modules, detectModules(message, productionType));
-    const selectedFeatures = cleanStringArray(aiDraft?.selected_features, detectFeatures(message, productionType));
-    const selectedPlatforms = cleanStringArray(aiDraft?.selected_platforms, detectPlatforms(message, productionType));
+    const localDetectedType = detectProductionType(message);
+    const productionType = localDetectedType === "image" ? "image" : safeProductionType(message, aiDraft?.production_type?.trim() || localDetectedType);
+const isImageProduction = productionType === "image";
+const selectedQuality = isImageProduction ? "Image" : aiDraft?.selected_quality?.trim() || detectQuality(message);
+const selectedDuration = isImageProduction ? "Static" : aiDraft?.selected_duration?.trim() || detectDuration(message, productionType);
+const selectedStyle = isImageProduction ? detectStyle(message, productionType) : aiDraft?.selected_style?.trim() || detectStyle(message, productionType);
+const selectedModules = isImageProduction ? detectModules(message, productionType) : cleanStringArray(aiDraft?.selected_modules, detectModules(message, productionType));
+const selectedFeatures = isImageProduction ? detectFeatures(message, productionType) : cleanStringArray(aiDraft?.selected_features, detectFeatures(message, productionType));
+const selectedPlatforms = isImageProduction ? detectPlatforms(message, productionType) : cleanStringArray(aiDraft?.selected_platforms, detectPlatforms(message, productionType));
     const providerRoute = aiDraft?.provider_route?.trim() || detectProviderRoute(message);
     const voiceProfile = aiDraft?.voice_profile?.trim() || detectVoiceProfile(message);
     const voiceLanguage = aiDraft?.voice_language?.trim() || detectVoiceLanguage(message);

@@ -4,7 +4,18 @@ import { rejectSuspiciousText } from "@/lib/security";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const message = record.message ?? record.error_description ?? record.details ?? record.hint;
+    if (typeof message === "string" && message.trim()) return message;
+    try {
+      return JSON.stringify(record).slice(0, 900);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
 }
 
 export async function POST(request: Request) {
@@ -56,6 +67,8 @@ export async function POST(request: Request) {
     if (error) throw error;
     return Response.json({ lip_sync_job: data, provider_job: job });
   } catch (error) {
-    return Response.json({ error: errorMessage(error, "Could not start lip-sync translation") }, { status: 500 });
+    const message = errorMessage(error, "Could not start lip-sync translation");
+    console.error("lip-sync-start failed", message, error);
+    return Response.json({ error: message }, { status: 500 });
   }
 }

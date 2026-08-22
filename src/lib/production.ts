@@ -213,8 +213,8 @@ export const productionTypes = [
   },
   {
     id: "image",
-    label: "Image / Visual",
-    description: "Hero images, product mockups, social visuals, app screens and marketing graphics.",
+    label: "Image / Banner / Poster",
+    description: "Banners, posters, thumbnail designs, hero images, product mockups, social visuals, app screens and marketing graphics.",
     startingCredits: 100
   },
   {
@@ -417,10 +417,10 @@ export const productionPackages: ProductionPackage[] = [
   {
     id: "video_draft",
     productionType: "video",
-    name: "Draft Video",
+    name: "Controlled 1080p Video Test",
     credits: 600,
-    description: "Low-cost AI video request for previews, concept tests, or short social drafts.",
-    deliverables: ["Video brief", "Preview output", "Basic delivery notes", "Dashboard delivery"]
+    description: "Controlled AI video request for 1080p launch tests, concept validation, or short social variations.",
+    deliverables: ["Video brief", "1080p test output", "Delivery notes", "Dashboard delivery"]
   },
   {
     id: "video_premium",
@@ -763,7 +763,7 @@ export const productionPackages: ProductionPackage[] = [
     productionType: "stickman_animation",
     name: "Stickman Short Video",
     credits: 400,
-    description: "Quick 5-15 second stickman animation draft with a simple topic, character and message.",
+    description: "Quick 5-15 second stickman animation with a simple topic, character and message.",
     deliverables: ["Short script", "Stickman scene plan", "Basic animation output", "Dashboard delivery"]
   },
   {
@@ -1101,11 +1101,6 @@ export function estimateProductionCost(packageId: string, options: ProductionCos
     const workingSourceAllowance = ["website", "saas", "mobile_app", "admin_project"].includes(String(productionType)) ? 2500 : 900;
     single += workingSourceAllowance;
     notes.push(`Working source package build/test allowance: ${workingSourceAllowance} credits`);
-  }
-
-  if (textIncludes(quality, ["480p preview", "fast draft"])) {
-    single = Math.max(base, single - (isVideoLike ? 250 : 100));
-    notes.push("Preview/draft quality keeps provider allowance lower");
   }
 
   if (textIncludes(quality, ["1080p", "premium"])) {

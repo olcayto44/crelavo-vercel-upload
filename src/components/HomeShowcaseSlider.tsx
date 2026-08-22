@@ -11,12 +11,13 @@ export type HomeShowcaseSlide = {
   tone: "cyan" | "purple" | "green" | "amber" | "pink" | "blue";
   imageUrl?: string;
   videoUrl?: string;
+  embedUrl?: string;
   posterUrl?: string;
 };
 
 export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, headingLevel = "h2" }: { title: string; subtitle: string; slides: HomeShowcaseSlide[]; reverse?: boolean; headingLevel?: "h2" | "h3" }) {
   const [activeVideo, setActiveVideo] = useState<HomeShowcaseSlide | null>(null);
-  const hasVideoSlides = slides.some((slide) => Boolean(slide.videoUrl));
+  const hasVideoSlides = slides.some((slide) => Boolean(slide.videoUrl || slide.embedUrl));
   const loopSlides = [
     ...slides.map((slide) => ({ slide, duplicate: false })),
     ...slides.map((slide) => ({ slide, duplicate: true }))
@@ -55,18 +56,29 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
                 video?.pause();
               }}
             >
-              {slide.videoUrl ? (
+              {slide.embedUrl ? (
+                <iframe
+                  className="showcase-video-player"
+                  src={slide.embedUrl}
+                  title={`Crelavo ${slide.kicker} showcase video for ${slide.title}`}
+                  allow="encrypted-media; fullscreen"
+                  allowFullScreen
+                  loading={index === 0 ? "eager" : "lazy"}
+                  style={{ border: 0 }}
+                />
+              ) : slide.videoUrl ? (
                 <video
                   className="showcase-video-player"
                   src={slide.videoUrl}
                   poster={slide.posterUrl}
-                  controls
                   muted
                   loop
                   playsInline
                   preload={index === 0 ? "auto" : "metadata"}
-                  controlsList="nodownload noplaybackrate"
+                  controlsList="nodownload noplaybackrate nofullscreen"
                   disablePictureInPicture
+                  disableRemotePlayback
+                  onContextMenu={(event) => event.preventDefault()}
                   aria-label={`Crelavo ${slide.kicker} showcase video for ${slide.title}`}
                 />
               ) : slide.imageUrl ? (
@@ -86,7 +98,7 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
                 <strong>{slide.title}</strong>
                 <p>{slide.description}</p>
                 <div className="showcase-video-actions">
-                  {slide.videoUrl ? (
+                  {slide.videoUrl || slide.embedUrl ? (
                     <button
                       className="showcase-slide-cta"
                       type="button"
@@ -108,7 +120,7 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
             </article>
           ))}
         </div>
-        {activeVideo?.videoUrl ? (
+        {activeVideo?.videoUrl || activeVideo?.embedUrl ? (
           <div className="showcase-video-modal" role="dialog" aria-modal="true" aria-label={`${activeVideo.title} fullscreen video`}>
             <button className="showcase-video-modal-backdrop" type="button" aria-label="Close video" onClick={() => setActiveVideo(null)} />
             <div className="showcase-video-modal-panel">
@@ -121,18 +133,30 @@ export function HomeShowcaseSlider({ title, subtitle, slides, reverse = false, h
                   Close
                 </button>
               </div>
-              <video
-                className="showcase-video-modal-player"
-                src={activeVideo.videoUrl}
-                poster={activeVideo.posterUrl}
-                controls
-                autoPlay
-                muted
-                loop
-                playsInline
-                controlsList="nodownload noplaybackrate"
-                disablePictureInPicture
-              />
+              {activeVideo.embedUrl ? (
+                <iframe
+                  className="showcase-video-modal-player"
+                  src={activeVideo.embedUrl}
+                  title={`${activeVideo.title} fullscreen video`}
+                  allow="encrypted-media; fullscreen"
+                  allowFullScreen
+                  style={{ border: 0 }}
+                />
+              ) : (
+                <video
+                  className="showcase-video-modal-player"
+                  src={activeVideo.videoUrl}
+                  poster={activeVideo.posterUrl}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controlsList="nodownload noplaybackrate nofullscreen"
+                  disablePictureInPicture
+                  disableRemotePlayback
+                  onContextMenu={(event) => event.preventDefault()}
+                />
+              )}
             </div>
           </div>
         ) : null}

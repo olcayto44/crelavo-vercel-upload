@@ -39,7 +39,7 @@ export default function AdminFinancePage() {
         <div className="admin-info-grid">
           <div><span>Single-job cap</span><strong>{providerQueueConcurrencyGuard.defaults.maxSingleJobCredits.toLocaleString()} credits</strong><small>Block oversized jobs before provider spend</small></div>
           <div><span>Daily user cap</span><strong>{providerQueueConcurrencyGuard.defaults.dailyUserProductionCount} jobs</strong><small>Launch-safe production count limit</small></div>
-          <div><span>Queue pressure</span><strong>{providerQueueConcurrencyGuard.defaults.maxConcurrentProviderJobs} concurrent jobs</strong><small>Raise only after low-cost provider tests pass</small></div>
+          <div><span>Queue pressure</span><strong>{providerQueueConcurrencyGuard.defaults.maxConcurrentProviderJobs} concurrent jobs</strong><small>Raise only after controlled provider smoke tests pass</small></div>
           <div><span>Retry/backoff</span><strong>{providerQueueConcurrencyGuard.defaults.maxProviderRetries} retries</strong><small>{providerQueueConcurrencyGuard.defaults.backoffSeconds.join(" / ")} sec forecast windows</small></div>
         </div>
         <div className="admin-grid two-col" style={{ marginTop: 16 }}>

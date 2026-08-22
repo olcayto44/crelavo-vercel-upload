@@ -64,13 +64,24 @@ function lemonPackageVariantItem(): LaunchReadinessItem {
 }
 
 function selectedVideoProvider() {
-  return (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
+  const provider = (process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate").toLowerCase();
+  if (provider === "minimax") return "minimax";
+  return provider;
 }
 
 function videoProviderItem(): LaunchReadinessItem {
   const provider = selectedVideoProvider();
   if (provider === "replicate") {
     return item("Replicate video provider", ["REPLICATE_API_TOKEN"], "Primary video/generation provider for controlled launch tests.", "Add REPLICATE_API_TOKEN and keep REPLICATE_MODEL set to the selected model.");
+  }
+  if (provider === "minimax") {
+    return {
+      label: "MiniMax video provider",
+      status: hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY"]) && hasEnv("MINIMAX_GROUP_ID") ? "ready" : "missing",
+      required: ["MINIMAX_API_KEY", "MINIMAX_GROUP_ID"],
+      note: "Primary video provider selected through VIDEO_PROVIDER/GENERATION_PROVIDER.",
+      action: "Add MINIMAX_API_KEY and MINIMAX_GROUP_ID, then run one controlled 5-second test."
+    };
   }
   if (provider === "fal") {
     return {
@@ -120,7 +131,7 @@ function isHardBlocker(entry: LaunchReadinessItem) {
 function launchDayTimeline() {
   return [
     { phase: "T-7 days", owner: "Admin", action: "Confirm domain, SSL, Supabase, Lemon Squeezy test mode, Resend DNS, provider routing and admin package variant/direct checkout setup." },
-    { phase: "T-3 days", owner: "Admin", action: "Run build, smoke tests, non-payment E2E, provider low-cost test and partner intake test." },
+    { phase: "T-3 days", owner: "Admin", action: "Run build, smoke tests, non-payment E2E, provider smoke test and partner intake test." },
     { phase: "T-1 day", owner: "Admin", action: "Freeze public copy, confirm Product Hunt/Reddit copy, reduce provider concurrency and prepare rollback notes." },
     { phase: "Launch morning", owner: "Admin", action: "Run final health/API/provider readiness check, confirm Lemon Squeezy webhook, verify support inbox and open monitoring tabs." },
     { phase: "First traffic spike", owner: "Admin", action: "Watch errors, checkout, provider queue, API rate-limit responses, signup volume and support messages every 15 minutes." },
@@ -170,7 +181,7 @@ function finalSetupSequence() {
       title: "Connect first-phase AI/provider keys last",
       status: hasEnv("OPENAI_API_KEY") && videoProviderItem().status === "ready" && hasEnv("ELEVENLABS_API_KEY") && hasEnv("SHOTSTACK_API_KEY") ? "ready" : "pending",
       owner: "Admin / providers",
-      action: "Add OpenAI, Runway/video, image, Voice/TTS and video editing/render keys, set usage limits and run one low-cost real provider job."
+      action: "Add OpenAI, Runway/video, image, Voice/TTS and video editing/render keys, set usage limits and run one controlled 1080p real provider job."
     }
   ];
 }
@@ -305,7 +316,7 @@ export function buildLaunchReadiness() {
           note: "Provider/UI routing is prepared before API keys are entered, so final setup should only require choosing models, adding keys and running E2E tests.",
           action: "Open /admin/providers, confirm brain/video/image/voice/render/email/payment routing, then add keys during final setup."
         },
-        item("Voice/TTS provider", ["ELEVENLABS_API_KEY"], "Voice-over, narration, dubbing and ad voice features need the first phase voice provider.", "Add the voice provider key and run one low-cost voice-over E2E."),
+        item("Voice/TTS provider", ["ELEVENLABS_API_KEY"], "Voice-over, narration, dubbing and ad voice features need the first phase voice provider.", "Add the voice provider key and run one controlled voice-over E2E."),
         item("Video editing/render provider", ["SHOTSTACK_API_KEY"], "Cut, trim, crop, resize, subtitles, audio merge and final export automation need the render provider.", "Add render provider key and run one cut/crop/subtitle/export E2E.")
       ]
     },

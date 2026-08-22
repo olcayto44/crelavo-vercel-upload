@@ -11,7 +11,7 @@ const premiumRoadmap = [
   {
     title: "AI Smart Image-to-Video",
     status: "Paid workflow later",
-    note: "Do not open as free generation. Use brief/preview first, then charge high credits for 5s drafts and cinematic product videos."
+    note: "Do not open as free generation. Use brief/preview first, then charge appropriate credits for controlled 1080p tests and cinematic product videos."
   },
   {
     title: "Review-to-Avatar Video",

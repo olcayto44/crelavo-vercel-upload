@@ -279,7 +279,7 @@ export function ProductionsTable() {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a className="btn" href="/dashboard/create">Start production brief</a>
           <a className="btn secondary" href="/dashboard/credits">Check credits first</a>
-          <a className="btn secondary" href="/dashboard/assistant-workspace?providerTest=1">Run low-cost test</a>
+          <a className="btn secondary" href="/dashboard/assistant-workspace?providerTest=1">Run smoke test</a>
         </div>
       </div>
     );

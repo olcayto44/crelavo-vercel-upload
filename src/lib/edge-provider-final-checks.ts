@@ -20,7 +20,7 @@ export const providerLiveVerificationChecks = {
   liveVerification: [
     "Run provider readiness endpoint without exposing secrets.",
     "Run the matching admin provider test for each launch-critical provider.",
-    "Run one low-cost real provider output for sold media types only.",
+    "Run one controlled real provider output for sold media types only.",
     "Verify job id, status polling, output URL, dashboard delivery and email notification.",
     "Verify failed provider jobs resolve credits safely and do not silently claim success.",
     "Keep real production job E2E as open until payment -> credit reserve/spend -> provider output -> delivery -> notification is proven."

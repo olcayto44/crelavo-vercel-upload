@@ -34,7 +34,7 @@ function parseSplashPromo(code: string, geoOffer?: GeoOfferCopy) {
     return {
       eyebrow: geoOffer?.eyebrow || String(value.eyebrow || "LIMITED TIME ONLY: VIP AGENCY BUNDLE"),
       title: geoOffer?.title || String(value.title || "Scale your e-commerce video production to the moon"),
-      body: geoOffer?.body || String(value.body || "Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added: 174,000 total annual credits for 300+ AI ad drafts, premium Shopify/Amazon video variations, bulk social campaigns or client-ready deliveries. Start with a secure $20 Whop 24-hour preview and cancel in Whop before the main plan starts if it is not the right fit."),
+      body: geoOffer?.body || String(value.body || "Normally $1,560/yr, now $1,300/yr. Get 2 months FREE + 30,000 BONUS credits instantly added: 174,000 total annual credits for 300+ AI ad concepts, premium Shopify/Amazon video variations, bulk social campaigns or client-ready deliveries. Start with a secure $20 Whop 24-hour preview and cancel in Whop before the main plan starts if it is not the right fit."),
       cta: geoOffer?.cta || String(value.cta || "START 24-HOUR TEAM PREVIEW FOR $20"),
       href: geoOffer?.href || String(value.href || "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,

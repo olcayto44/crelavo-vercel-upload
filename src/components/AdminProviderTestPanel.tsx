@@ -75,7 +75,7 @@ export function AdminProviderTestPanel() {
   return (
     <section className="card admin-wide-card" style={{ marginTop: 20 }}>
       <span className="badge">Live provider tests</span>
-      <h2>Run low-cost API checks from admin</h2>
+      <h2>Run controlled API checks from admin</h2>
       <p style={{ color: "var(--muted)", marginTop: 0 }}>These checks confirm keys and basic API access without showing secrets. Video is manual only to avoid unexpected spend. Shopify checks app credentials and OAuth readiness.</p>
       <AdminCredentialFields adminEmail={adminEmail} adminToken={adminToken} onAdminEmailChange={setAdminEmail} onAdminTokenChange={setAdminToken} />
       <div className="admin-faq-actions" style={{ marginTop: 12 }}>

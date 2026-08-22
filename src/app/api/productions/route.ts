@@ -337,11 +337,12 @@ export async function POST(request: Request) {
   const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
   const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
+  const isImageProductionRequest = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
   const sanitizedServerRouteText = sanitizeProviderRouteSignal(serverRouteText);
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(sanitizedServerRouteText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(sanitizedServerRouteText);
   const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
- const serverHeyGenPresenterIntent = !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasHeyGenPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
+ const serverHeyGenPresenterIntent = !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasHeyGenPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
 
 
   if (serverHeyGenPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
@@ -896,7 +897,7 @@ outputPlan,
       }
     };
 
-    const shouldAutoStartProvider = !dedicatedProviderBlocked && ["video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video"].includes(productionType);
+    const shouldAutoStartProvider = !dedicatedProviderBlocked && (["image", "brand_kit", "visual_clone", "virtual_model_studio", "video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video"].includes(productionType) || /^image_/.test(packageId));
     if (shouldAutoStartProvider) {
       const startUrl = `${appBaseUrl(request)}/api/automation/start`;
       const startHeaders = forwardAutomationHeaders(request);

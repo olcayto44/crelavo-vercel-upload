@@ -21,7 +21,9 @@ export type ProviderPlanItem = {
 };
 
 function selectedVideoProvider() {
-  return (optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").toLowerCase();
+  const provider = (optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").toLowerCase();
+  if (provider === "minimax" || provider === "miniMax".toLowerCase()) return "minimax";
+  return provider;
 }
 
 function selectedBrainProvider() {
@@ -71,6 +73,22 @@ function brainPlan(): ProviderPlanItem {
 
 function videoPlan(): ProviderPlanItem {
   const provider = selectedVideoProvider();
+  if (provider === "minimax") {
+    return {
+      id: "video-minimax",
+      label: "Video generation",
+      category: "video",
+      provider: "MiniMax",
+      primaryModel: "MiniMax-H3",
+      fallbackModels: ["Runway", "Kling", "FAL", "Replicate"],
+      intendedUse: "Animation, cinematic clips, music videos, video clipping, drone videos and AI video production through the Minimax route.",
+      requiredEnv: ["MINIMAX_API_KEY", "MINIMAX_GROUP_ID"],
+      optionalEnv: ["VIDEO_PROVIDER", "MINIMAX_BASE_URL"],
+      status: hasProviderEnv("minimax") && hasConfiguredEnv("MINIMAX_GROUP_ID") ? "ready" : "missing",
+      safeMode: "If Minimax is missing, keep the video route on the configured fallback provider and do not promise Minimax jobs.",
+      finalSetup: "Add the Minimax API key and group id, then run one controlled 5-second / 768P or 2K test to verify status polling and delivery links."
+    };
+  }
   if (provider === "fal") {
     return {
       id: "video-fal",
@@ -79,12 +97,12 @@ function videoPlan(): ProviderPlanItem {
       provider: "FAL",
       primaryModel: process.env.FAL_VIDEO_MODEL || "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
       fallbackModels: ["Replicate WAN 2.2", "Kling", "Runway"],
-      intendedUse: "Low-cost test clips, social video drafts, image-to-video/text-to-video generation and provider preflight.",
+      intendedUse: "Controlled 1080p launch-test clips, social video variations, image-to-video/text-to-video generation and provider preflight.",
       requiredEnv: ["FAL_KEY or FAL_API_KEY"],
       optionalEnv: ["VIDEO_PROVIDER", "FAL_VIDEO_MODEL", "BULK_GENERATION_CONCURRENCY"],
       status: hasProviderEnv("fal") ? "ready" : "missing",
       safeMode: "If FAL is missing, production can create dashboard records and delivery plans, but real video jobs stay waiting_provider_config.",
-      finalSetup: "Add FAL key, choose video model, run 5-second provider test, then raise concurrency slowly."
+      finalSetup: "Add FAL key, choose video model, run a 10-second / 1080p provider smoke test, then raise concurrency slowly."
     };
   }
   if (provider === "kling") {
@@ -100,7 +118,7 @@ function videoPlan(): ProviderPlanItem {
       optionalEnv: ["VIDEO_PROVIDER", "KLING_API_URL", "KLING_STATUS_API_URL", "KLING_MODEL"],
       status: requiredStatus(["KLING_API_KEY"]),
       safeMode: "If Kling is missing, keep provider jobs blocked behind waiting_provider_config and use manual/demo delivery only.",
-      finalSetup: "Add Kling key/endpoints, run one low-cost test, verify status polling and failed-job credit handling."
+      finalSetup: "Add Kling key/endpoints, run one provider smoke test, verify status polling and failed-job credit handling."
     };
   }
   if (provider === "runway") {
@@ -116,7 +134,7 @@ function videoPlan(): ProviderPlanItem {
       optionalEnv: ["VIDEO_PROVIDER", "RUNWAY_API_VERSION", "RUNWAY_MODEL"],
       status: requiredStatus(["RUNWAY_API_KEY"]),
       safeMode: "If Runway is missing, block real video jobs and keep the dashboard in provider-ready planning mode.",
-      finalSetup: "Add Runway key/version, verify task creation/status polling and run low-cost test."
+      finalSetup: "Add Runway key/version, verify task creation/status polling and run provider smoke test."
     };
   }
   return {
@@ -126,12 +144,12 @@ function videoPlan(): ProviderPlanItem {
     provider: "Replicate",
     primaryModel: process.env.REPLICATE_MODEL || "wan-video/wan-2.2-t2v-fast",
     fallbackModels: ["FAL WAN", "Kling", "Runway"],
-    intendedUse: "Controlled launch video tests, low-cost 5-second clips and standard video generation before scaling.",
+    intendedUse: "Controlled launch video tests, 10-second 1080p smoke-test clips and standard video generation before scaling.",
     requiredEnv: ["REPLICATE_API_TOKEN"],
     optionalEnv: ["VIDEO_PROVIDER", "REPLICATE_MODEL", "REPLICATE_VIDEO_VERSION", "BULK_GENERATION_CONCURRENCY"],
     status: requiredStatus(["REPLICATE_API_TOKEN"]),
     safeMode: "If Replicate is missing, production requests can be created but real provider jobs remain waiting_provider_config.",
-    finalSetup: "Add REPLICATE_API_TOKEN, confirm selected model/version, run low-cost test and monitor cost/failures."
+    finalSetup: "Add REPLICATE_API_TOKEN, confirm selected model/version, run provider smoke test and monitor cost/failures."
   };
 }
 
@@ -227,7 +245,7 @@ function paymentPlan(): ProviderPlanItem {
 
 export function providerRouteMap() {
   return {
-    create_ai_video: { primary: "video_provider", required: ["video", "storage"], fallback: ["manual_delivery", "demo_plan"] },
+    create_ai_video: { primary: selectedVideoProvider(), required: ["video", "storage"], fallback: ["manual_delivery", "demo_plan"] },
     generate_image: { primary: "image_provider", required: ["image", "storage"], fallback: ["manual_visual_brief"] },
     run_lip_sync: { primary: "heygen", required: ["avatar", "voice", "storage"], fallback: ["elevenlabs_voice_plus_manual_avatar", "kling_talking_video_fallback"] },
     voice_clone: { primary: "elevenlabs", required: ["voice", "reference_audio_consent", "storage"], fallback: ["approved_platform_voice_only"] },
@@ -255,7 +273,7 @@ export function buildProviderPlan() {
       optionalEnv: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"],
       status: requiredStatus(["HEYGEN_API_KEY"]),
       safeMode: "If HeyGen is missing, keep avatar jobs as scripts/assets or route to manual delivery.",
-      finalSetup: "Add HeyGen key, test avatar/voice listing, then run one low-cost talking-video flow."
+      finalSetup: "Add HeyGen key, test avatar/voice listing, then run one premium talking-video smoke test."
     },
     {
       id: "image-stability",

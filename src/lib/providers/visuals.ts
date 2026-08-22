@@ -1,4 +1,5 @@
 import { optionalEnv, requireProviderEnv } from "./env";
+import { createMiniMaxH3VideoTask } from "./minimax";
 import type { ProviderJob } from "./types";
 
 function falApiKey() {
@@ -9,15 +10,30 @@ function hasAnyEnv(names: string[]) {
   return names.some((name) => Boolean(optionalEnv(name)));
 }
 
+function hasMiniMaxVideoEnv() {
+  return hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY"]) && hasAnyEnv(["MINIMAX_GROUP_ID", "MINIMAX_GID", "MINIMAX_GROUPID"]);
+}
+
+function miniMaxRatio(value: string) {
+  return (["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const).includes(value as never) ? value as "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" : "9:16";
+}
+
+function miniMaxResolution(signal = "") {
+  return /2k|cinematic|sinematik|drone|satellite|premium|luxury|4k/i.test(signal) ? "2K" as const : "768P" as const;
+}
+
 function selectedI2vProvider(requested?: string) {
   const allowFalI2v = String(optionalEnv("ALLOW_FAL_I2V") || "").toLowerCase() === "true";
   const candidate = String(requested || optionalEnv("I2V_PROVIDER") || optionalEnv("IMAGE_TO_VIDEO_PROVIDER") || "").trim().toLowerCase();
+  if (["minimax", "minimax_h3", "minimax-h3"].includes(candidate)) return "minimax";
   if (["runway", "runwayml", "runway_ml", "runway_first"].includes(candidate)) return "runway";
   if (["kling", "klingai", "kling_ai"].includes(candidate)) return "kling";
   if (candidate === "fal" && allowFalI2v) return "fal";
   const videoProvider = String(optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "").trim().toLowerCase();
+  if (["minimax", "minimax_h3", "minimax-h3"].includes(videoProvider)) return "minimax";
   if (["runway", "runwayml", "runway_ml"].includes(videoProvider)) return "runway";
   if (["kling", "klingai", "kling_ai"].includes(videoProvider)) return "kling";
+  if (hasMiniMaxVideoEnv()) return "minimax";
   if (hasAnyEnv(["RUNWAY_API_KEY"])) return "runway";
   if (hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"])) return "kling";
   return "unavailable";
@@ -31,6 +47,7 @@ function i2vProviderOrder(requested?: string) {
   const primary = selectedI2vProvider(requested);
   const order: string[] = [];
   if (primary !== "unavailable") order.push(primary);
+  if (hasMiniMaxVideoEnv() && !order.includes("minimax")) order.push("minimax");
   if (hasAnyEnv(["RUNWAY_API_KEY"]) && !order.includes("runway")) order.push("runway");
   if (hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"]) && !order.includes("kling")) order.push("kling");
   if (String(optionalEnv("ALLOW_FAL_I2V") || "").toLowerCase() === "true" && !order.includes("fal")) order.push("fal");
@@ -71,68 +88,76 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
     throw new Error(`QUALITY_BLOCKED: No stable image-to-video provider completed for character-consistent animation. ${errors.join(" | ") || "Configure RUNWAY_API_KEY or KLING_API_KEY."}`);
   }
 
+  if (provider === "minimax") {
+    const resolution = miniMaxResolution(`${input.prompt} ${input.aspectRatio ?? ""}`);
+    const result = await createMiniMaxH3VideoTask({
+      content: [
+        { type: "text", text: input.prompt },
+        { type: "image_url", image_url: { url: input.imageUrl }, role: "first_frame" }
+      ],
+      resolution,
+      duration: safeDuration as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
+      ratio: miniMaxRatio(requestedRatio)
+    });
+    return { provider: "minimax", id: result.task_id ?? result.request_id, status: "submitted", raw: { ...result, sourceImageUrl: input.imageUrl, resolution, ratio: miniMaxRatio(requestedRatio) } };
+  }
+
   if (provider === "runway") {
     const apiKey = requireProviderEnv("runway");
-    const runwayModel = optionalEnv("RUNWAY_I2V_MODEL") || "gen4_turbo";
-    const promptText = `${input.prompt}\nNegative: ${negativePrompt}`.slice(0, 1000);
+
     const response = await fetch("https://api.dev.runwayml.com/v1/image_to_video", {
       method: "POST",
       headers: {
         Authorization: asciiHeaderValue(`Bearer ${apiKey}`),
         "Content-Type": "application/json",
-        "X-Runway-Version": "2024-11-06"
+        "X-Runway-Version": asciiHeaderValue(process.env.RUNWAY_API_VERSION, "2024-11-06")
       },
-      body: JSON.stringify({
-        model: runwayModel,
-        promptText,
-        promptImage: input.imageUrl,
-        duration: Math.round(safeDuration),
-        ratio: runwayRatio
-      })
+      body: JSON.stringify({ promptText: prompt, duration: safeDuration, ratio: runwayRatio })
     });
-    if (!response.ok) throw new Error(`Runway image-to-video failed: ${response.status} ${await response.text()}`);
+
+    if (!response.ok) throw new Error(`Runway video generation failed: ${response.status} ${await response.text()}`);
     const data = await response.json();
-    return { provider: "runway", id: data.id, status: data.status ?? "starting", raw: { ...data, model: runwayModel, sourceImageUrl: input.imageUrl } };
+    return { provider: "runway", id: data.id, status: data.status ?? "starting", raw: data };
   }
 
   if (provider === "kling") {
     const apiKey = requireProviderEnv("kling");
-    const response = await fetch(process.env.KLING_I2V_API_URL || process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/image2video", {
+    const response = await fetch(process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ prompt: input.prompt, negative_prompt: negativePrompt, image: input.imageUrl, image_url: input.imageUrl, duration: safeDuration, aspect_ratio: requestedRatio, motion_strength: motionStrength, motion_speed: "low" })
+      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: requestedRatio })
     });
-    if (!response.ok) throw new Error(`Kling image-to-video failed: ${response.status} ${await response.text()}`);
+
+    if (!response.ok) throw new Error(`Kling video generation failed: ${response.status} ${await response.text()}`);
     const data = await response.json();
-    const taskId = data.id ?? data.task_id ?? data.data?.task_id ?? data.data?.id;
-    const taskStatus = data.status ?? data.task_status ?? data.data?.task_status ?? "starting";
-    return { provider: "kling", id: taskId, status: taskStatus, raw: { ...data, sourceImageUrl: input.imageUrl } };
+    return { provider: "kling", id: data.id ?? data.task_id, status: data.status ?? "starting", raw: data };
   }
 
   if (provider === "fal") {
     const apiKey = falApiKey();
-    const model = optionalEnv("FAL_I2V_MODEL") || optionalEnv("FAL_VIDEO_MODEL") || "fal-ai/kling-video/v2.1/standard/image-to-video";
+    const model = optionalEnv("FAL_VIDEO_MODEL") || "fal-ai/wan/v2.2-a14b/text-to-video/turbo";
     const response = await fetch(`https://queue.fal.run/${model}`, {
       method: "POST",
       headers: {
         Authorization: `Key ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ prompt: input.prompt, negative_prompt: negativePrompt, image_url: input.imageUrl, duration: safeDuration, aspect_ratio: requestedRatio, motion_strength: motionStrength, motion_bucket_id: 40 })
+      body: JSON.stringify({ prompt, duration: safeDuration, aspect_ratio: requestedRatio })
     });
-    if (!response.ok) throw new Error(`FAL image-to-video failed: ${response.status} ${await response.text()}`);
+
+    if (!response.ok) throw new Error(`FAL video generation failed: ${response.status} ${await response.text()}`);
     const data = await response.json();
-    return { provider: "fal", id: data.request_id ?? data.id, status: data.status ?? "queued", raw: { ...data, model, statusUrl: data.status_url, responseUrl: data.response_url, sourceImageUrl: input.imageUrl } };
+    return { provider: "fal", id: data.request_id ?? data.id, status: data.status ?? "queued", raw: { ...data, model } };
   }
 
-  throw new Error("QUALITY_BLOCKED: No stable image-to-video provider is configured for character-consistent animation. Configure RUNWAY_API_KEY or KLING_API_KEY, or explicitly set I2V_PROVIDER=fal only after the FAL image-to-video endpoint is verified.");
+  throw new Error(`Unsupported VIDEO_PROVIDER: ${provider}`);
 }
 
 export async function createVisualVideo(input: { scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string }): Promise<ProviderJob> {
-  const provider = input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate";
+  const provider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
   const requestedRatio = input.aspectRatio || "9:16";
   const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
@@ -145,7 +170,7 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
     isDroneLocationVideo
       ? "Create a geographically focused AI drone / satellite-style location flyover for the exact requested place. Use only aerial views of the supplied location and reference imagery, nearby roads, property layout and surrounding area. No presenter, no people, no office, no SaaS dashboard, no split-screen collage, no product advertisement, no Crelavo promotional content, and no generic business stock footage. Do not invent a different city or neighborhood."
       : isCrelavoUiDemo
-        ? "Create a premium high-fidelity realistic SaaS product UI demo video, suitable for 4K delivery. Show only polished software dashboard screens, crisp browser UI, Crelavo brand/interface, cursor-like interface motion, clean product panels, timeline blocks, export controls and brand-safe motion graphics. No office, no people, no presenter, no children, no characters, no split-screen humans, no cartoon, no semi-cartoon, no lip-sync, no talking head, no stock footage, no low-cost test-video look."
+        ? "Create a premium high-fidelity realistic SaaS product UI demo video, suitable for 4K delivery. Show only polished software dashboard screens, crisp browser UI, Crelavo brand/interface, cursor-like interface motion, clean product panels, timeline blocks, export controls and brand-safe motion graphics. No office, no people, no presenter, no children, no characters, no split-screen humans, no cartoon, no semi-cartoon, no lip-sync, no talking head, no stock footage, no cheap test-video look."
         : isNarrative
           ? "Create a coherent narrative animation/video clip for this exact scene. Keep character count, roles, costumes, setting and action consistent with the scene description. Do not turn it into an e-commerce ad or provider test."
           : "Create a polished realistic product ad video with premium composition and high visual fidelity.",
@@ -170,6 +195,17 @@ export async function createVisualVideo(input: { scenes: string[]; productImageU
         fallbackReason: "Crelavo/UI website demos use deterministic multi-scene Shotstack layout instead of I2V zoom output."
       }
     };
+  }
+
+  if (provider === "minimax") {
+    const resolution = miniMaxResolution(`${input.style ?? ""} ${input.scenes.join(" ")}`);
+    const result = await createMiniMaxH3VideoTask({
+      content: [{ type: "text", text: prompt }],
+      resolution,
+      duration: safeDuration as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
+      ratio: miniMaxRatio(requestedRatio)
+    });
+    return { provider: "minimax", id: result.task_id ?? result.request_id, status: "submitted", raw: { ...result, resolution, ratio: miniMaxRatio(requestedRatio) } };
   }
 
   if (provider === "replicate") {

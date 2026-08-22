@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { connectedProviderLabels, connectedProviders, connectedStatuses, type ConnectedAccountStatus, type ConnectedProvider } from "@/lib/connected-account-constants";
-export { connectedAccountGuardrails, connectedProviderLabels, connectedProviders, connectedStatuses, providerAccountTypes } from "@/lib/connected-account-constants";
-export type { ConnectedAccountJobType, ConnectedAccountStatus, ConnectedAccountType, ConnectedProvider } from "@/lib/connected-account-constants";
+import { connectedProviderLabels, connectedProviders, connectedStatuses, type ConnectedAccountStatus, type ConnectedProvider } from "./connected-account-constants.ts";
+export { connectedAccountGuardrails, connectedProviderLabels, connectedProviders, connectedStatuses, providerAccountTypes } from "./connected-account-constants.ts";
+export type { ConnectedAccountJobType, ConnectedAccountStatus, ConnectedAccountType, ConnectedProvider } from "./connected-account-constants.ts";
 
 function encryptionSecret() {
   return String(process.env.CONNECTED_ACCOUNT_TOKEN_SECRET || process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_API_TOKEN || process.env.NEXTAUTH_SECRET || "").trim();

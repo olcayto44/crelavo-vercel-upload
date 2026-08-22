@@ -6,6 +6,7 @@ import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { freeTools } from "@/lib/free-tools";
 import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
+import { showcaseVideos } from "@/lib/showcase-videos";
 
 const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admin"];
 
@@ -97,7 +98,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  return [...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
+  const showcaseVideoRoutes = showcaseVideos.map((video) => ({
+    path: `/showcase/videos/${video.id}`,
+    priority: 0.82,
+    changeFrequency: "weekly" as const
+  }));
+
+  return [...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,

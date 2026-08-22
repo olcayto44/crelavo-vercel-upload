@@ -63,7 +63,7 @@ export function CrelavoPremiumHero() {
       <div className="crelavo-hero-bg" aria-hidden="true">
         {heroScenes.map((scene, index) => (
           <div className={`crelavo-hero-scene ${index === activeIndex ? "active" : ""} scene-${scene.tone}`} key={scene.title}>
-            <video className="crelavo-hero-video" src={scene.videoUrl} muted loop playsInline autoPlay preload={index === 0 ? "metadata" : "none"} />
+            <video className="crelavo-hero-video" src={scene.videoUrl} muted loop playsInline autoPlay preload={index === 0 ? "metadata" : "none"} controlsList="nodownload noplaybackrate nofullscreen" disablePictureInPicture disableRemotePlayback onContextMenu={(event) => event.preventDefault()} />
             <div className="crelavo-hero-video-overlay" />
           </div>
         ))}

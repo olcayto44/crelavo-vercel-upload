@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 const adScorerFunnelSteps = [
   { title: "1. Score the hook", text: "Check whether the first three seconds, CTA, proof and product promise are strong enough before buying production credits." },
   { title: "2. Test a low-risk preview", text: "Move into the $10 Business preview or the $20 Team Annual preview only after the ad idea has a stronger hook." },
-  { title: "3. Scale the winning angle", text: "Use Crelavo credits for product video drafts, UGC variations, social campaigns and client delivery once the creative direction is clear." }
+  { title: "3. Scale the winning angle", text: "Use Crelavo credits for controlled 1080p product videos, UGC variations, social campaigns and client delivery once the creative direction is clear." }
 ];
 
 export default function AiAdPerformanceScoreCheckerPage() {

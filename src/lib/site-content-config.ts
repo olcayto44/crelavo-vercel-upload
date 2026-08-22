@@ -479,7 +479,7 @@ export const defaultBlogTopics: BlogTopic[] = [
       "A direct translation is rarely enough when a seller wants to move from a local marketplace to Amazon US, Amazon UK, Germany, Etsy or Shopify. Buyers search differently, compare differently and respond to different benefit language in each market.",
       "Crelavo's AI Marketplace Localization Studio starts from a product link or listing, then adapts the title, bullet points, product description, SEO keywords, ad script and social caption set for the selected target country.",
       "For a Trendyol seller, this can mean turning Turkish product language into Amazon-style listing copy for the US or UK, or a more structured German marketplace description. The goal is market adaptation, not word-for-word translation.",
-      "The first phase should stay low-cost and text-focused: listing copy, SEO terms, ad scripts and campaign language. Premium upgrades such as dubbing, visual text replacement, localized videos or lip-sync should remain package-locked and credit-gated.",
+      "The first phase should stay lightweight and text-focused: listing copy, SEO terms, ad scripts and campaign language. Premium upgrades such as dubbing, visual text replacement, localized videos or lip-sync should remain package-locked and credit-gated.",
       "This article connects marketplace localization, Trendyol to Amazon listing, ecommerce globalization, AI dubbing and product ad localization while linking to the dedicated localization service page."
     ],
     image: "/blog/ecommerce-product-campaigns.svg",

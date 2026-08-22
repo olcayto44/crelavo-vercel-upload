@@ -3,7 +3,7 @@ export const mvpApiLaterTrack = {
   phases: [
     { phase: "MVP API planning", items: ["Ad Performance Score Checker", "Virtual Model Studio", "Cultural Localization", "Campaign Calendar"], gate: "Keep as planning/draft APIs until core Whop/payment/provider E2E is stable." },
     { phase: "Community and education", items: ["Crelavo Academy", "Community Showcase", "Long Video Highlight Automation"], gate: "Require public copy safety, moderation and source ownership before scale." },
-    { phase: "Advanced media products", items: ["24/7 AI live sales avatar", "human-image UGC/avatar sales module", "AI Drone-Style Video production"], gate: "Require external provider approval, cost ledger and low-cost live provider tests." }
+    { phase: "Advanced media products", items: ["24/7 AI live sales avatar", "human-image UGC/avatar sales module", "AI Drone-Style Video production"], gate: "Require external provider approval, cost ledger and controlled live provider tests." }
   ],
   rule: "MVP APIs must stay visibly separate from core launch. They can be planned and guarded now, but should not be sold as active E2E deliverables until provider/account approvals exist."
 };
@@ -11,7 +11,7 @@ export const mvpApiLaterTrack = {
 export const adminDebugMonitoringPlan = {
   status: "live_test_result_driven",
   panels: [
-    { panel: "/admin/providers", purpose: "Provider readiness, selected model, low-cost test and live verification status." },
+    { panel: "/admin/providers", purpose: "Provider readiness, selected model, controlled test and live verification status." },
     { panel: "/admin/monitoring", purpose: "Backup, logging, API/env post-key review and incident follow-up." },
     { panel: "/admin/final-api-checklist", purpose: "Final launch gates, commands, live E2E order and blocked items." },
     { panel: "/admin/production-qa", purpose: "Production QA, delivery/failure review and forced-failure checks." },
@@ -30,7 +30,7 @@ export const providerQueueConcurrencyGuard = {
     dailyUserProductionCount: 20
   },
   rules: [
-    "Start with conservative concurrency and raise only after low-cost provider tests pass.",
+    "Start with conservative concurrency and raise only after controlled provider tests pass.",
     "Never retry provider failures silently as success; record retry count and final failure state.",
     "Back off on provider rate limits, quota errors and repeated status polling failures.",
     "Block jobs that exceed single-job or daily credit safety limits before provider spend.",
@@ -40,7 +40,7 @@ export const providerQueueConcurrencyGuard = {
 
 export const productionReadinessScorePlan = {
   status: "scorecard_ready_for_live_inputs",
-  scoreInputs: ["Whop payment/webhook", "credit reserve/spend", "provider low-cost test", "dashboard delivery", "email notification", "Cloudflare WAF", "public copy audit", "forced-failure path"],
+  scoreInputs: ["Whop payment/webhook", "credit reserve/spend", "provider controlled test", "dashboard delivery", "email notification", "Cloudflare WAF", "public copy audit", "forced-failure path"],
   scoreBands: [
     { band: "0-49", meaning: "Do not scale traffic; missing core launch blockers." },
     { band: "50-79", meaning: "Internal testing only; live E2E still incomplete." },
