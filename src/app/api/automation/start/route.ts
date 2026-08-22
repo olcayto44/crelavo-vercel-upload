@@ -370,7 +370,8 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
     .single();
 
   if (scalar.error || !scalar.data) return { data: scalar.data ?? null, error: scalar.error };
-  const productionType = String(scalar.data.production_type ?? "");
+  const rawProductionType = String(scalar.data.production_type ?? "");
+const productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
   if (productionType === "drone_video") {
     const promptText = String(scalar.data.prompt ?? "");
     const durationSeconds = durationSecondsFromPrompt(promptText);
