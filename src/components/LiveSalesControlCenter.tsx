@@ -475,17 +475,19 @@ async function sendMessage() {
                   <div className="live-sales-avatar-face">Avatar</div>
                 )}
               </div>
-              <div className="live-sales-avatar-brand-row">
-                <div className="live-sales-avatar-brand-bar">
-                  <div className="live-sales-avatar-brand-mark">C</div>
-                  <div className="live-sales-avatar-brand-copy">
-                    <strong>Crelavo</strong>
-                    <span>Live sales assistant</span>
+              <div className="live-sales-avatar-brand-panel">
+                <div className="live-sales-avatar-brand-row">
+                  <div className="live-sales-avatar-brand-bar">
+                    <div className="live-sales-avatar-brand-mark">C</div>
+                    <div className="live-sales-avatar-brand-copy">
+                      <strong>Crelavo</strong>
+                      <span>Live sales assistant</span>
+                    </div>
                   </div>
-                </div>
-                <div className="live-sales-avatar-provider-pill">
-                  <span className="live-sales-avatar-provider-chip">AI LIVE</span>
-                  <strong>MiniMax H3</strong>
+                  <div className="live-sales-avatar-provider-pill">
+                    <span className="live-sales-avatar-provider-chip">AI LIVE</span>
+                    <strong>MiniMax H3</strong>
+                  </div>
                 </div>
               </div>
               <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
