@@ -113,7 +113,14 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
     });
 
     const text = await response.text();
-    const payload = text ? JSON.parse(text) : {};
+    let payload: unknown = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = { raw_text: text };
+      }
+    }
     if (!response.ok) throw new Error(`MiniMax request failed: ${response.status} ${text}`);
     return payload as T;
   } catch (error) {
