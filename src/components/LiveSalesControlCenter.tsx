@@ -148,8 +148,8 @@ export function LiveSalesControlCenter() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [agentIdValue, setAgentIdValue] = useState(agentId);
-  const [conversationId, setConversationId] = useState("");
-  const [openPreference, setOpenPreference] = useState("Industry");
+const [conversationId, setConversationId] = useState("");
+const [openPreference, setOpenPreference] = useState("Industry");
   const [loadingAgent, setLoadingAgent] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewRecord | null>(null);
   const [previewingAvatar, setPreviewingAvatar] = useState(false);
@@ -266,7 +266,15 @@ function setPreference(key: keyof Pick<WorkspaceState, "voice" | "language" | "t
 }
 
 function liveSalesContextPrompt() {
-  return `Live Sales Avatar setup:\nPlatform: ${state.platform}\nIndustry / use case: ${state.industry}\nAvatar source: ${state.avatarSource}\nAvatar role: ${state.role}\nLanguage: ${state.language}\nVoice: ${state.voice}\nTone: ${state.tone}\nProduct/business info: ${state.productInfo}\nShipping/delivery policy: ${state.shippingInfo}\nOrder support flow: ${state.orderInfo}\nThe assistant should answer like a live sales avatar for the seller's customers. It should use product, shipping, delivery, order and return context when available. It should not invent real tracking numbers or order statuses; if order data is missing, ask for order number and verification or explain that integration is needed.`;
+  return `Live Sales Avatar setup:\nPlatform: ${state.platform}\nIndustry / use case: ${state.industry}\nAvatar source: ${state.avatarSource}\nAvatar role: ${state.role}\nLanguage: ${state.language}\nVoice: ${state.voice}\nTone: ${state.tone}\nProduct/business info: ${state.productInfo}\nShipping/delivery policy: ${state.shippingInfo}\nOrder support flow: ${state.orderInfo}\nThe assistant should answer like a live sales avatar for the seller's customers. It should use product, shipping, delivery, order and return context when available. It should not invent real tracking numbers or order statuses; if order data is missing, ask for order number and verification or explain that integration is needed. If the visitor message names a business scenario, that scenario overrides stale saved defaults. If the visitor message is unrelated to the saved business context, answer the new message directly and do not force the saved context.`;
+}
+
+function visitorScenarioOverride(message: string) {
+  const text = message.toLowerCase();
+  if (/(amazon|shopify|woocommerce|marketplace|ecommerce|e-commerce|electronic|electronics|youtube|tiktok|instagram|reels|shorts|influencer|content channel|channel|ad channel|advertising|reklam|urun|ürün|mağaza|magaza|store|seller)/.test(text)) {
+    return `Visitor scenario override: the visitor is asking about a concrete ecommerce, marketplace, social media, or ad-channel scenario. If they mention Amazon, YouTube, TikTok, Instagram, or electronics, answer for that scenario and do not default to tourism/hotel or any unrelated industry.`;
+  }
+  return "";
 }
 
 function detectLanguage() {
@@ -414,15 +422,17 @@ async function sendMessage() {
   const localFallback = `I couldn’t reach the live assistant just now. Please try again in a moment.`;
 
   try {
-    const auth = await requireVerifiedBrowserUser().catch(() => null);
-    const requestBody: Record<string, unknown> = {
-      agent_id: agentIdValue || agentId,
-      message: `${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
-      mode: "quick",
-      language,
-      conversation_id: conversationId || undefined,
-      messages: state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
-    };
+  const auth = await requireVerifiedBrowserUser().catch(() => null);
+  const override = visitorScenarioOverride(message);
+  if (override) setConversationId("");
+  const requestBody: Record<string, unknown> = {
+    agent_id: agentIdValue || agentId,
+    message: `${override ? `${override}\n\n` : ""}${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
+    mode: "quick",
+    language,
+    conversation_id: override ? undefined : (conversationId || undefined),
+    messages: override ? [] : state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
+  };
 
     if (auth?.ok) {
       requestBody.user_id = auth.user.id;
@@ -640,7 +650,7 @@ async function sendMessage() {
           ))}
           {sending ? (
             <div className="chat-bubble typing-indicator" aria-live="polite">
-              <span className="typing-label">MiniMax H3 is thinking</span>
+              <span className="typing-label">Live assistant is thinking...</span>
               <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
             </div>
           ) : null}
