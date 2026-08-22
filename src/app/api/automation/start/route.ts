@@ -10,7 +10,7 @@ import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { applyMarketingTextOverlay, hasImageMarketingText, stripImageMarketingTextInstructions } from "@/lib/image-postprocess";
-import { hasCinematicActionIntent, hasHeyGenPresenterIntent } from "@/lib/heygen-routing";
+import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
@@ -488,11 +488,11 @@ export async function POST(request: Request) {
   });
 const isDroneProduction = productionType === "drone_video";
 const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
-const heygenSetupPresenterIntent = !isImageProduction && hasHeyGenPresenterIntent(productionDetectionText);
+const minimaxSetupPresenterIntent = !isImageProduction && hasMinimaxPresenterIntent(productionDetectionText);
 const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
 const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
 const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? "").toLowerCase() === "minimax";
-const talkingProviderType = !minimaxVideoRouteSelected && !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || heygenSetupPresenterIntent);
+const talkingProviderType = !minimaxVideoRouteSelected && !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
@@ -997,7 +997,7 @@ if (isImageProduction) {
     return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
   }
 }
-if (!isDroneProduction && hasHeyGenPresenterIntent(productionDetectionText) && String(providerPreflight.provider ?? "").toLowerCase() !== "minimax") {
+if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && String(providerPreflight.provider ?? "").toLowerCase() !== "minimax") {
   const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through HeyGen, not Replicate/FAL/Runway.";
   const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
   if (reservedCredits > 0) {

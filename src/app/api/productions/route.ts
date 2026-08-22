@@ -13,7 +13,7 @@ import { estimateProductionProfit } from "@/lib/production-profit";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
-import { hasCinematicActionIntent, hasHeyGenPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
+import { hasCinematicActionIntent, hasMinimaxPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
 import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -342,10 +342,10 @@ export async function POST(request: Request) {
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(sanitizedServerRouteText)
     && /motion\s+graphics|kinetic\s+typography|animated\s+text|text\s+cards|dynamic\s+promotional/.test(sanitizedServerRouteText);
   const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
- const serverHeyGenPresenterIntent = !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasHeyGenPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
+ const serverMinimaxPresenterIntent = !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasMinimaxPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
 
 
-  if (serverHeyGenPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
+  if (serverMinimaxPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
   const requestedOutputCount = Number(body.output_count ?? body.requested_clip_count ?? body.requested_alternative_count ?? 1);
@@ -540,7 +540,7 @@ const agentAction = body.agent_action && typeof body.agent_action === "object"
   ? body.agent_action as Record<string, unknown>
   : null;
 const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, productionType, packageId);
-const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !serverHeyGenPresenterIntent && !agentProviderRoutePlan.canStartRealProvider;
+const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !serverMinimaxPresenterIntent && !agentProviderRoutePlan.canStartRealProvider;
 const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits;
 
 const costGuardConfig = apiCostGuardConfig();
@@ -684,9 +684,9 @@ outputPlan,
     capacityPolicy,
     automationMode: "fully_automatic",
     providerTestMode,
-    preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.preferredProvider ?? clientInputJson.preferredProvider ?? undefined,
-    provider_route: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientRequestMetadata.provider_route ?? clientInputJson.provider_route ?? undefined,
-    presenterMode: serverHeyGenPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
+    preferredProvider: serverMinimaxPresenterIntent ? "minimax" : clientRequestMetadata.preferredProvider ?? clientInputJson.preferredProvider ?? undefined,
+    provider_route: serverMinimaxPresenterIntent ? "minimax" : clientRequestMetadata.provider_route ?? clientInputJson.provider_route ?? undefined,
+    presenterMode: serverMinimaxPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
     providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null
   };
   const inputJson = {
@@ -725,8 +725,8 @@ outputPlan,
     liveSalesAgentDetails,
     automationMode: "fully_automatic",
     providerTestMode,
-    preferredProvider: serverHeyGenPresenterIntent ? "heygen_video_agent" : clientInputJson.preferredProvider ?? clientRequestMetadata.preferredProvider ?? undefined,
-    presenterMode: serverHeyGenPresenterIntent || Boolean(clientInputJson.presenterMode ?? clientRequestMetadata.presenterMode),
+    preferredProvider: serverMinimaxPresenterIntent ? "minimax" : clientInputJson.preferredProvider ?? clientRequestMetadata.preferredProvider ?? undefined,
+    presenterMode: serverMinimaxPresenterIntent || Boolean(clientInputJson.presenterMode ?? clientRequestMetadata.presenterMode),
     providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null,
     automationPipeline: pipeline,
     outputPlan,
@@ -747,7 +747,7 @@ outputPlan,
 
   try {
     const supabase = supabaseAdmin();
-    const providerProofStartAllowed = serverHeyGenPresenterIntent && reserveCredits > 0;
+    const providerProofStartAllowed = serverMinimaxPresenterIntent && reserveCredits > 0;
     const dailyBudget = await enforceDailyProductionBudget(supabase, { userId, estimatedCredits: reserveCredits, allowProviderProofTest: providerProofStartAllowed });
     if (!dailyBudget.ok) return dailyBudget.response;
 

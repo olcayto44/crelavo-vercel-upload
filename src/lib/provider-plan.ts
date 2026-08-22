@@ -265,15 +265,15 @@ export function buildProviderPlan() {
       id: "avatar-heygen",
       label: "Avatar and talking video",
       category: "avatar",
-      provider: "HeyGen",
+      provider: "Minimax",
       primaryModel: "heygen_avatar_video_api",
       fallbackModels: ["ElevenLabs voice + manual avatar delivery", "Kling talking-video fallback"],
       intendedUse: "Avatar presenters, talking video, video translation/lip-sync handoff and sales presenter workflows.",
       requiredEnv: ["HEYGEN_API_KEY"],
       optionalEnv: ["HEYGEN_BASE_URL", "HEYGEN_VIDEO_TRANSLATE_URL"],
       status: requiredStatus(["HEYGEN_API_KEY"]),
-      safeMode: "If HeyGen is missing, keep avatar jobs as scripts/assets or route to manual delivery.",
-      finalSetup: "Add HeyGen key, test avatar/voice listing, then run one premium talking-video smoke test."
+      safeMode: "If Minimax is missing, keep avatar jobs as scripts/assets or route to manual delivery.",
+      finalSetup: "Add Minimax key, test avatar/voice listing, then run one premium talking-video smoke test."
     },
     {
       id: "image-stability",

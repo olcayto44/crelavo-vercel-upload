@@ -11,7 +11,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
-import { isAllowedHeyGenPresenterProvider, shouldForceHeyGenPresenterProvider } from "@/lib/heygen-routing";
+import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
 import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
 import { mirrorProviderAsset } from "@/lib/providers/storage";
@@ -858,8 +858,8 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
       }
       const heygenMeta = heygenV3Metadata(successfulStatus);
       const presenterRouteSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.title ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(outputWithRenderJob)}`.toLowerCase();
-      const expectsHeyGenPresenterProvider = shouldForceHeyGenPresenterProvider({ productionType: String(production.production_type ?? ""), routeSignal: presenterRouteSignal });
-      if (expectsHeyGenPresenterProvider && !isAllowedHeyGenPresenterProvider(successfulProviderName)) {
+      const expectsMinimaxPresenterProvider = shouldForceMinimaxPresenterProvider({ productionType: String(production.production_type ?? ""), routeSignal: presenterRouteSignal });
+      if (expectsMinimaxPresenterProvider && !isAllowedMinimaxPresenterProvider(successfulProviderName)) {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
           visualStatus,
           renderStatus,

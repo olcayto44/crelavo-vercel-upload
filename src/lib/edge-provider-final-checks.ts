@@ -16,7 +16,7 @@ export const cloudflareWafFinalChecks = {
 
 export const providerLiveVerificationChecks = {
   status: "connected_pending_real_production_e2e",
-  providerGroups: ["OpenAI", "selected video provider", "image provider", "ElevenLabs", "HeyGen", "Stable Audio/Mubert", "Shotstack", "Resend", "Whop", "Cloudflare"],
+  providerGroups: ["OpenAI", "selected video provider", "image provider", "ElevenLabs", "Minimax", "Stable Audio/Mubert", "Shotstack", "Resend", "Whop", "Cloudflare"],
   liveVerification: [
     "Run provider readiness endpoint without exposing secrets.",
     "Run the matching admin provider test for each launch-critical provider.",

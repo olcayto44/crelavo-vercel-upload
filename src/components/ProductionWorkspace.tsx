@@ -169,8 +169,8 @@ function productionWaitingRoomCopy(production: ProductionWorkspaceProps["product
       statusHint: "dedicated pipeline required"
     };
   }
-  const isHeyGenVideoAgent = /heygen_video_agent|heygen video agent/.test(`${outputJson.providerStatus ?? ""} ${outputJson.visualJob?.provider ?? ""} ${outputJson.heygenProviderProof?.provider ?? ""}`.toLowerCase());
-  const estimated = isHeyGenVideoAgent ? "8–10 minutes" : isProject ? "10–20 minutes" : isVideo && (hasVoice || hasSubtitles) ? "5–7 minutes" : isVideo ? "3–5 minutes" : isImage ? "2–4 minutes" : isAudio ? "2–5 minutes" : "a few minutes";
+  const isMinimaxVideoAgent = /minimax_video_agent|minimax video agent/.test(`${outputJson.providerStatus ?? ""} ${outputJson.visualJob?.provider ?? ""} ${outputJson.minimaxProviderProof?.provider ?? ""}`.toLowerCase());
+  const estimated = isMinimaxVideoAgent ? "8–10 minutes" : isProject ? "10–20 minutes" : isVideo && (hasVoice || hasSubtitles) ? "5–7 minutes" : isVideo ? "3–5 minutes" : isImage ? "2–4 minutes" : isAudio ? "2–5 minutes" : "a few minutes";
   const headline = isProject ? "Project production room is active" : isImage ? "Creative production room is active" : isAudio ? "Audio production room is active" : "Production room is active";
   const description = isProject
     ? "Your project package is moving through the Crelavo production pipeline. Screens, modules, source delivery and setup materials will appear here when ready."
@@ -211,21 +211,21 @@ function workflowActionTone(status?: string) {
 }
 
 function creativeLiveCards(input: { metadata: Record<string, any>; inputJson: Record<string, any>; outputJson: Record<string, any>; type: string }): Array<{ title: string; status: string; description: string; previewUrl?: string; thumbnailUrl?: string; type?: string; providerResourceId?: string }> {
-  const heygenArtifacts = Array.isArray(input.outputJson.heygenAgentArtifacts) ? input.outputJson.heygenAgentArtifacts : [];
-  if (heygenArtifacts.length > 0) return heygenArtifacts.map((item: Record<string, any>) => ({ title: String(item.title ?? "HeyGen artifact"), status: `${String(item.type ?? "artifact")} · ${String(item.status ?? "available")}`, description: String(item.description ?? item.providerResourceId ?? "HeyGen Video Agent produced this resource."), previewUrl: String(item.previewUrl ?? item.thumbnailUrl ?? ""), thumbnailUrl: String(item.thumbnailUrl ?? ""), type: String(item.type ?? "file"), providerResourceId: String(item.providerResourceId ?? item.id ?? "") }));
+  const minimaxArtifacts = Array.isArray(input.outputJson.minimaxAgentArtifacts) ? input.outputJson.minimaxAgentArtifacts : [];
+  if (minimaxArtifacts.length > 0) return minimaxArtifacts.map((item: Record<string, any>) => ({ title: String(item.title ?? "Minimax artifact"), status: `${String(item.type ?? "artifact")} · ${String(item.status ?? "available")}`, description: String(item.description ?? item.providerResourceId ?? "Minimax Video Agent produced this resource."), previewUrl: String(item.previewUrl ?? item.thumbnailUrl ?? ""), thumbnailUrl: String(item.thumbnailUrl ?? ""), type: String(item.type ?? "file"), providerResourceId: String(item.providerResourceId ?? item.id ?? "") }));
   const savedLog = Array.isArray(input.outputJson.creativeActivityLog) ? input.outputJson.creativeActivityLog : Array.isArray(input.metadata.creativeActivityLog) ? input.metadata.creativeActivityLog : Array.isArray(input.inputJson.creativeActivityLog) ? input.inputJson.creativeActivityLog : [];
   if (savedLog.length > 0) return savedLog.map((item: Record<string, any>) => ({ title: String(item.title ?? "Creative step"), status: String(item.status ?? "working"), description: String(item.description ?? "Creative production step is being processed.") }));
   const text = `${String(input.metadata.creativeBrief ?? input.inputJson.creativeBrief ?? input.outputJson.creativeBrief ?? "")} ${String(input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "")} ${String(input.metadata.providerPrompt ?? input.inputJson.providerPrompt ?? "")} ${String(input.outputJson.providerStatus ?? "")}`.toLocaleLowerCase("tr-TR");
-  const isPresenter = ["talking_video", "avatar", "lip_sync"].includes(input.type) || /presenter|avatar|heygen|ugc/.test(text);
+  const isPresenter = ["talking_video", "avatar", "lip_sync"].includes(input.type) || /presenter|avatar|minimax|ugc/.test(text);
   if (!isPresenter) return [];
-  const providerStatus = String(input.outputJson.providerStatus ?? input.outputJson.visualJob?.status ?? input.outputJson.heygenVideoAgent?.status ?? "working").replaceAll("_", " ");
+  const providerStatus = String(input.outputJson.providerStatus ?? input.outputJson.visualJob?.status ?? input.outputJson.minimaxVideoAgent?.status ?? "working").replaceAll("_", " ");
   const cards = [
     { title: "Creative blueprint", status: input.metadata.creativePreset ?? input.inputJson.creativePreset ?? "Creator presenter", description: "Assistant is turning the user request into a directed video concept instead of sending a raw prompt." },
     { title: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "Outdoor UGC direction" : "Presenter direction", status: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "Outdoor / city" : "Single presenter", description: /outdoor|dışarı|disari|sokak|şehir|sehir|city/.test(text) ? "One moving presenter in a modern outside/city environment, with natural gestures and direct eye contact." : "One realistic presenter only, no group, no office panel, no background people." },
     { title: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "Hook + FOMO" : "Hook design", status: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "Strong hook" : "Opening hook", description: /hook|kanca|kapak|fomo|kaçır|kacir/.test(text) ? "First seconds focus on a cover-style hook, urgency, FOMO, and brand recall." : "The first seconds are structured to explain the pain and catch attention quickly." },
     { title: "A-roll scene", status: providerStatus, description: "Presenter speaking directly to camera with energetic delivery and clear Crelavo brand mention." },
     { title: "B-roll / UI overlays", status: providerStatus, description: "Product proof cards, app UI overlays, kinetic captions, fast cuts, and result moments support the presenter." },
-    { title: "Provider job", status: String(input.outputJson.heygenProviderProof?.provider ?? input.outputJson.visualJob?.provider ?? input.outputJson.providerProof ?? "heygen_video_agent"), description: `Live provider status: ${providerStatus}` }
+    { title: "Provider job", status: String(input.outputJson.minimaxProviderProof?.provider ?? input.outputJson.visualJob?.provider ?? input.outputJson.providerProof ?? "minimax_video_agent"), description: `Live provider status: ${providerStatus}` }
   ];
   return cards;
 }
@@ -525,9 +525,9 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
   const automationScript = String(outputJson.script ?? "");
   const automationParts = Array.isArray(outputJson.parts) ? outputJson.parts : Array.isArray(outputJson.scenePlan) ? outputJson.scenePlan : [];
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as Record<string, any> : null;
-  const heygenProviderProof = outputJson.heygenProviderProof && typeof outputJson.heygenProviderProof === "object" ? outputJson.heygenProviderProof as Record<string, any> : null;
-const heygenSessionId = String(outputJson.heygenSessionId ?? heygenProviderProof?.sessionId ?? "").trim();
-const heygenVideoId = String(outputJson.heygenVideoId ?? heygenProviderProof?.videoId ?? "").trim();
+  const minimaxProviderProof = outputJson.minimaxProviderProof && typeof outputJson.minimaxProviderProof === "object" ? outputJson.minimaxProviderProof as Record<string, any> : null;
+ const minimaxSessionId = String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? "").trim();
+ const minimaxVideoId = String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? "").trim();
 const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? "").trim();
 const providerProofStatus = String(visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
@@ -607,7 +607,7 @@ const isFailed = production.status === "failed" || production.automation_status 
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady;
-  const hasActiveProviderJob = Boolean(visualJob || visualJobs.length || heygenSessionId || heygenVideoId);
+   const hasActiveProviderJob = Boolean(visualJob || visualJobs.length || minimaxSessionId || minimaxVideoId);
   const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
@@ -967,12 +967,12 @@ const data = await response.json().catch(() => ({}));
             <strong>{providerProofStatus || "Unknown"}</strong>
           </div>
           <div>
-            <small>HeyGen session</small>
-            <strong title={heygenSessionId || undefined}>{heygenSessionId || "Not attached"}</strong>
+            <small>Minimax session</small>
+            <strong title={minimaxSessionId || undefined}>{minimaxSessionId || "Not attached"}</strong>
           </div>
           <div>
-            <small>HeyGen video</small>
-            <strong title={heygenVideoId || undefined}>{heygenVideoId || "Not attached"}</strong>
+            <small>Minimax video</small>
+            <strong title={minimaxVideoId || undefined}>{minimaxVideoId || "Not attached"}</strong>
           </div>
         </div>
 
@@ -1325,7 +1325,7 @@ const data = await response.json().catch(() => ({}));
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
 {visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Scene {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
 {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
-{heygenSessionId || heygenVideoId ? <p className="provider-job-note">HeyGen proof: session {heygenSessionId || "pending"}{heygenVideoId ? ` · video ${heygenVideoId}` : ""}{outputJson.heygenLatestVideoResourceId ? ` · latest resource ${String(outputJson.heygenLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.heygenAgentArtifacts) ? ` · artifacts ${outputJson.heygenAgentArtifacts.length}` : ""}</p> : null}
+{minimaxSessionId || minimaxVideoId ? <p className="provider-job-note">Minimax proof: session {minimaxSessionId || "pending"}{minimaxVideoId ? ` · video ${minimaxVideoId}` : ""}{outputJson.minimaxLatestVideoResourceId ? ` · latest resource ${String(outputJson.minimaxLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.minimaxAgentArtifacts) ? ` · artifacts ${outputJson.minimaxAgentArtifacts.length}` : ""}</p> : null}
 {providerJobMissingWhileRunning ? <p className="provider-poll-note provider-start-note">Production is marked running, but no provider job is attached yet. Press Start Production once to attach the video provider job.</p> : null}
             {providerStartNote ? <p className="provider-poll-note provider-start-note">{providerStartNote}</p> : null}
             {pollingNote ? <p className="provider-poll-note">{pollingNote}</p> : null}
@@ -1345,9 +1345,9 @@ const data = await response.json().catch(() => ({}));
 
         {creativeActivityCards.length > 0 ? (
           <section className="automation-brief-card">
-            <span className="badge">{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "HeyGen Video Agent artifacts" : "Creative director live board"}</span>
-            <h3>{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "HeyGen agent üretimleri" : "Assistant is shaping the video like a creative director"}</h3>
-            <p>{Array.isArray(outputJson.heygenAgentArtifacts) && outputJson.heygenAgentArtifacts.length > 0 ? "Bu panel HeyGen session içinden gelen gerçek blueprint, görsel, video ve resource çıktılarını gösterir." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
+            <span className="badge">{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax Video Agent artifacts" : "Creative director live board"}</span>
+            <h3>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax agent üretimleri" : "Assistant is shaping the video like a creative director"}</h3>
+            <p>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Bu panel Minimax session içinden gelen gerçek blueprint, görsel, video ve resource çıktılarını gösterir." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
             <div className="automation-part-list">
               {creativeActivityCards.map((card, index) => (
                 <div key={`${card.title}-${index}`}>

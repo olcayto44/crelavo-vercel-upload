@@ -26,8 +26,8 @@ export function buildPresenterCreativeBrief(input: {
   const wantsDemo = includesAny(signal, ["uygulamalı", "uygulamali", "demo", "göster", "goster", "show", "product demo", "nasıl çalış", "nasil calis"]);
   const heygenQualityTier = signal.includes("premium avatar iv/v") || signal.includes("premium avatar") ? "Premium Avatar IV/V" : "Video Agent auto edit";
   const qualityDirection = heygenQualityTier === "Premium Avatar IV/V"
-    ? "HeyGen quality tier: Premium Avatar IV/V. Use the most realistic presenter style available, with cinematic, natural movement and motion cues where supported."
-    : "HeyGen quality tier: Video Agent auto edit. Use HeyGen Video Agent for smart planning, premium presenter delivery, polished visual pacing, and automatic edit decisions.";
+    ? "Minimax quality tier: Premium Avatar IV/V. Use the most realistic presenter style available, with cinematic, natural movement and motion cues where supported."
+    : "Minimax quality tier: Video Agent auto edit. Use Minimax for smart planning, premium presenter delivery, polished visual pacing, and automatic edit decisions.";
   const presenterChoice = signal.includes("female presenter") || signal.includes("kadın sunucu") ? "Female presenter" :
     signal.includes("male presenter") || signal.includes("erkek sunucu") ? "Male presenter" :
     signal.includes("young energetic creator") || signal.includes("genç enerjik") ? "Young energetic creator" :
@@ -50,8 +50,8 @@ export function buildPresenterCreativeBrief(input: {
     signal.includes("energetic gestures") || signal.includes("enerjik jest") ? "[smile]" : ""
   ].filter(Boolean);
   const motionDirection = motionTags.length
-    ? `Presenter motion prompts: when supported by HeyGen Avatar IV/V, weave these motion cues naturally into the spoken script text at suitable moments: ${Array.from(new Set(motionTags)).join(" ")}. Do not overuse them; avoid making the avatar read the cue names aloud.`
-    : "Presenter motion prompts: natural delivery only; use subtle gestures if the selected HeyGen avatar supports them.";
+    ? `Presenter motion prompts: when supported by Minimax Avatar IV/V, weave these motion cues naturally into the spoken script text at suitable moments: ${Array.from(new Set(motionTags)).join(" ")}. Do not overuse them; avoid making the avatar read the cue names aloud.`
+    : "Presenter motion prompts: natural delivery only; use subtle gestures if the selected Minimax avatar supports them.";
 
   const preset = wantsOutdoor || wantsDynamic || wantsHook || wantsDemo
     ? "Outdoor UGC dynamic presenter"
@@ -63,7 +63,7 @@ export function buildPresenterCreativeBrief(input: {
     wantsHook ? "hook-fomo" : "standard-hook",
     wantsDemo ? "applied-demo" : "benefit-demo",
     motionTags.length ? "motion-prompts" : "natural-motion",
-    `heygen-${heygenQualityTier.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+    `minimax-${heygenQualityTier.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
     `presenter-${presenterChoice.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`
   ];
 

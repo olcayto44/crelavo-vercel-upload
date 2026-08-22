@@ -292,7 +292,7 @@ export const productionPackages: ProductionPackage[] = [
     name: "Always-On Brand Agent",
     credits: 20000,
     description: "High-level architecture for live avatar content, scheduled videos and always-on brand communication without unlimited live-hour guarantees.",
-    deliverables: ["Live avatar plan", "HeyGen/Synthesia notes", "ElevenLabs voice plan", "Moderation rules", "Launch roadmap"]
+    deliverables: ["Live avatar plan", "Minimax notes", "ElevenLabs voice plan", "Moderation rules", "Launch roadmap"]
   },
   {
     id: "localization_video",
