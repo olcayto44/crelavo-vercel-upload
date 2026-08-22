@@ -40,12 +40,15 @@ async function diagnoseProductionColumns(supabase: ReturnType<typeof supabaseAdm
 
 async function repairCorruptProductionJson(supabase: ReturnType<typeof supabaseAdmin>, productionId: string, reason: string) {
   const now = new Date().toISOString();
+  const { data: production } = await supabase.from("production_requests").select("production_type").eq("id", productionId).maybeSingle();
+  const productionType = String((production as Record<string, unknown> | null)?.production_type ?? "").toLowerCase();
+  const preferredProvider = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) ? "minimax" : "heygen_video_agent";
   return supabase
     .from("production_requests")
     .update({
-      request_metadata: { preferredProvider: "heygen_video_agent", repairedAt: now, repairReason: reason },
-      input_json: { preferredProvider: "heygen_video_agent", repairedAt: now },
-      output_json: { preferredProvider: "heygen_video_agent", providerRecovery: { mode: "admin_corrupt_json_repair", reason, repairedAt: now } },
+      request_metadata: { preferredProvider, repairedAt: now, repairReason: reason },
+      input_json: { preferredProvider, repairedAt: now },
+      output_json: { preferredProvider, providerRecovery: { mode: "admin_corrupt_json_repair", reason, repairedAt: now } },
       automation_status: "queued",
       generation_status: "admin_corrupt_json_repaired",
       admin_notes: `Admin repaired corrupt production JSON/text payload. Previous provider start error: ${reason}`,
