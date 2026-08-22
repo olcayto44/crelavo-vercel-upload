@@ -464,16 +464,18 @@ async function sendMessage() {
               <div className="live-sales-avatar-visual">
                 <div className="live-sales-avatar-live-pill">LIVE</div>
                 {avatarPreview?.previewUrl ? (
-                  <div style={{ position: "absolute", inset: 0, borderRadius: 28, overflow: "hidden", background: "#050505" }}>
+                  <div className="live-sales-avatar-video-frame">
                     {isDirectVideoUrl(avatarPreview.previewUrl) ? (
-                      <video src={avatarPreview.previewUrl} controls preload="metadata" playsInline style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }} />
+                      <video src={avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
                     ) : (
-                      <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
+                      <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" className="live-sales-avatar-video" />
                     )}
                   </div>
                 ) : (
                   <div className="live-sales-avatar-face">Avatar</div>
                 )}
+              </div>
+              <div className="live-sales-avatar-brand-row">
                 <div className="live-sales-avatar-brand-bar">
                   <div className="live-sales-avatar-brand-mark">C</div>
                   <div className="live-sales-avatar-brand-copy">
@@ -481,11 +483,15 @@ async function sendMessage() {
                     <span>Live sales assistant</span>
                   </div>
                 </div>
-                <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
-                  <strong>{activePlan?.name}</strong>
-                  <span>{activePlan?.price}</span>
-                  <span>{formatMinutes(remainingMinutes)} remaining</span>
+                <div className="live-sales-avatar-provider-pill">
+                  <span className="live-sales-avatar-provider-chip">AI LIVE</span>
+                  <strong>MiniMax H3</strong>
                 </div>
+              </div>
+              <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
+                <strong>{activePlan?.name}</strong>
+                <span>{activePlan?.price}</span>
+                <span>{formatMinutes(remainingMinutes)} remaining</span>
               </div>
 
               <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
