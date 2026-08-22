@@ -2539,16 +2539,19 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
       orchestrator_job_id: orchestratorJob?.id ?? null
     } : fallbackPayload;
 
-    if (selectedServiceNetwork || selectedProviderService) {
+    if (selectedServiceNetwork || selectedProviderService || /talking_video|avatar|lip_sync|live_sales_agent/.test(String((productionPayload as Record<string, unknown>).production_type ?? ""))) {
       const payloadRecord = productionPayload as Record<string, unknown>;
       const existingAgentAction = payloadRecord.agent_action && typeof payloadRecord.agent_action === "object" ? payloadRecord.agent_action as Record<string, unknown> : {};
-      payloadRecord.service_network = selectedServiceNetwork;
-      payloadRecord.provider_service = selectedProviderService;
+      const productionType = String(payloadRecord.production_type ?? existingAgentAction.production_type ?? "");
+      const fallbackProviderRoute = selectedProviderService || selectedServiceNetwork || existingAgentAction.provider_route || (/talking_video|avatar|lip_sync|live_sales_agent/.test(productionType) ? "minimax" : "");
+      payloadRecord.service_network = selectedServiceNetwork || (fallbackProviderRoute ? "video" : undefined);
+      payloadRecord.provider_service = fallbackProviderRoute;
+      payloadRecord.selected_provider_service = fallbackProviderRoute;
       payloadRecord.agent_action = {
         ...existingAgentAction,
-        provider_route: selectedProviderService || selectedServiceNetwork || existingAgentAction.provider_route,
-        selected_service_network: selectedServiceNetwork,
-        selected_provider_service: selectedProviderService
+        provider_route: fallbackProviderRoute,
+        selected_service_network: selectedServiceNetwork || (fallbackProviderRoute ? "video" : ""),
+        selected_provider_service: fallbackProviderRoute
       };
     }
 
