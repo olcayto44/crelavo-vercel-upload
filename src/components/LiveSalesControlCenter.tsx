@@ -588,6 +588,10 @@ async function sendMessage() {
               <span className="badge">Publish / Integration</span>
               <button className="btn" type="button" onClick={saveAvatarSetup} disabled={saving} style={{ marginTop: 10, width: "100%" }}>{saving ? "Saving..." : "Save avatar setup"}</button>
               {saveMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{saveMessage}</p> : null}
+              <div className="workspace-action-note" style={{ marginTop: 10 }}>
+                <strong>Kısa kurulum özeti</strong>
+                <p>1) Ayarları kaydet. 2) Önizleme oluştur. 3) Embed kodunu kopyalayıp sitenin özel kod alanına yapıştır. 4) Ürün, sipariş ve kargo bilgisini bağlayınca asistan daha doğru cevap verir.</p>
+              </div>
               <button className="btn secondary" type="button" onClick={generateAvatarPreview} disabled={previewingAvatar} style={{ marginTop: 10, width: "100%" }}>{previewingAvatar ? "Starting preview..." : "Generate avatar preview"}</button>
               {previewMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{previewMessage}</p> : null}
               {avatarPreview ? (
