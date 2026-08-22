@@ -414,7 +414,7 @@ const productionType = ["talking_video_basic", "talking_video_multi_person", "ta
 
   const message = errorMessage(result.error, "Production select failed");
   if (!/22P05|unicode escape|cannot be converted to text/i.test(message)) return { data: null, error: result.error };
-  const recoveryPreferredProvider = "heygen_video_agent";
+  const recoveryPreferredProvider = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) ? "minimax" : "heygen_video_agent";
   return {
     data: postgresSafe({
       ...scalar.data,
@@ -1025,7 +1025,7 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
     routeGuard: {
       status: "blocked",
       blockedAt: now,
-      requiredProvider: "heygen_video_agent",
+      requiredProvider: "minimax",
       blockedProviders: ["replicate", "fal", "runway", "generic_video"],
       reason: blockMessage
     },
