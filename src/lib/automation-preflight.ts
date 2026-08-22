@@ -155,11 +155,12 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
   const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
   const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
+  const talkingVideoIntent = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(input.productionType) || /talking video|talking head|avatar|lip sync|lip-sync|ugc|live sales/i.test(`${requestMetadata.productionType ?? ""} ${inputJson.productionType ?? ""} ${requestMetadata.provider_service ?? ""} ${inputJson.provider_service ?? ""}`);
   const configuredVideoProvider = hasProviderEnv("minimax") ? "minimax" : hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";
-  const typePreferredProvider = productionNeedsRealVideo ? configuredVideoProvider : "";
+  const typePreferredProvider = productionNeedsRealVideo ? configuredVideoProvider : talkingVideoIntent ? (hasProviderEnv("minimax") ? "minimax" : selectedVideoProvider || "minimax") : "";
   const envVideoProvider = String(input.videoProvider || "").trim().toLowerCase();
   const safeEnvVideoProvider = envVideoProvider === "kling" && selectedVideoProvider !== "kling" ? "" : envVideoProvider;
-  const videoProvider = selectedVideoProvider || typePreferredProvider || safeEnvVideoProvider || "replicate";
+  const videoProvider = selectedVideoProvider || typePreferredProvider || safeEnvVideoProvider || (talkingVideoIntent ? "minimax" : "replicate");
   const aspectRatio = selectedAspectRatio(requestMetadata, inputJson);
   const featureFlags = selectedFeatureFlags(requestMetadata, inputJson);
   const characterDialogueAnimation = detectCharacterDialogueAnimationNeed(textFrom(input.productionType, JSON.stringify(requestMetadata), JSON.stringify(inputJson)));
