@@ -663,7 +663,7 @@ if (talkingProviderType) {
     }
 
     const activeJobLimit = safeActiveVideoJobLimit();
-    if (isVideoLikeProductionType(productionType) && !forceStart) {
+    if (isVideoLikeProductionType(productionType) && !forceStart && !(talkingProviderType && minimaxVideoRouteSelected)) {
       const { data: activeVideoRows, error: activeVideoJobsError } = await supabase
         .from("production_requests")
         .select("id, status, generation_status, output_json")
