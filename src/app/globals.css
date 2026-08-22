@@ -3226,55 +3226,47 @@ body.admin-route > .site-footer {
   letter-spacing: .08em;
 }
 
-.live-sales-avatar-provider-badge {
+.live-sales-avatar-brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(8,17,31,.96), rgba(14,25,44,.92));
+  border: 1px solid rgba(125,211,252,.18);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 12px 26px rgba(2,6,23,.24);
+}
+
+.live-sales-avatar-brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #67e8f9, #a78bfa);
+  color: #08111f;
+  font-weight: 900;
+  font-size: 18px;
+  box-shadow: 0 0 18px rgba(103,232,249,.22);
+}
+
+.live-sales-avatar-brand-copy {
   display: grid;
   gap: 2px;
-  padding: 9px 14px;
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, rgba(8,17,31,.96), rgba(14,25,44,.92)),
-    radial-gradient(circle at top left, rgba(34,211,238,.28), transparent 42%),
-    radial-gradient(circle at bottom right, rgba(167,139,250,.22), transparent 48%);
+}
+
+.live-sales-avatar-brand-copy strong {
   color: #fff;
-  min-width: 152px;
-  border: 1px solid rgba(125,211,252,.24);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.06) inset,
-    0 0 20px rgba(103,232,249,.18),
-    0 0 28px rgba(167,139,250,.12),
-    0 18px 30px rgba(2,6,23,.32);
-  animation: liveSalesBadgePulse 2.4s ease-in-out infinite;
-}
-.live-sales-avatar-provider-chip {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(34,211,238,.95), rgba(167,139,250,.95));
-  color: #08111f;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  box-shadow: 0 0 16px rgba(103,232,249,.28);
-}
-
-.live-sales-avatar-provider-name {
   font-size: 15px;
-  font-weight: 900;
-  letter-spacing: .02em;
-  line-height: 1.05;
+  line-height: 1.1;
 }
 
-.live-sales-avatar-provider-subline {
-  font-size: 11px;
+.live-sales-avatar-brand-copy span {
   color: #b7c3db;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-
 
 .live-sales-avatar-face {
   width: min(78%, 420px);

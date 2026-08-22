@@ -266,7 +266,7 @@ function setPreference(key: keyof Pick<WorkspaceState, "voice" | "language" | "t
 }
 
 function liveSalesContextPrompt() {
-  return `Live Sales Avatar setup:\nPlatform: ${state.platform}\nIndustry / use case: ${state.industry}\nAvatar source: ${state.avatarSource}\nAvatar role: ${state.role}\nLanguage: ${state.language}\nVoice: ${state.voice}\nTone: ${state.tone}\nProduct/business info: ${state.productInfo}\nShipping/delivery policy: ${state.shippingInfo}\nOrder support flow: ${state.orderInfo}\nThe assistant should answer like a live sales avatar for the seller's customers. It should use product, shipping, delivery, order and return context when available. It should not invent real tracking numbers or order statuses; if order data is missing, ask for order number and verification or explain that integration is needed. If the visitor message names a business scenario, that scenario overrides stale saved defaults. If the visitor message is unrelated to the saved business context, answer the new message directly and do not force the saved context.`;
+  return `Live Sales Avatar setup:\nPlatform: ${state.platform}\nIndustry / use case: ${state.industry}\nAvatar source: ${state.avatarSource}\nAvatar role: ${state.role}\nLanguage: ${state.language}\nVoice: ${state.voice}\nTone: ${state.tone}\nProduct/business info: ${state.productInfo}\nShipping/delivery policy: ${state.shippingInfo}\nOrder support flow: ${state.orderInfo}\nThe assistant should answer like a live sales avatar for the seller's customers. It should use product, shipping, delivery, order and return context when available. It should not invent real tracking numbers or order statuses; if order data is missing, ask for order number and verification or explain that integration is needed. If the visitor message names a business scenario, that scenario overrides stale saved defaults. If the visitor message is unrelated to the saved business context, answer the new message directly and do not force the saved context. For factual questions, prefer direct factual answers and avoid attaching Crelavo unless the user asks for it. If the user says they thought it was another answer, acknowledge the correction and stay on the same factual topic instead of changing subjects.`;
 }
 
 function visitorScenarioOverride(message: string) {
@@ -470,18 +470,17 @@ async function sendMessage() {
                     ) : (
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" style={{ width: "100%", height: "100%", border: 0, display: "block" }} />
                     )}
-                    <div style={{ position: "absolute", left: 16, right: 16, bottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 16, background: "rgba(0,0,0,.45)", color: "#fff", backdropFilter: "blur(8px)" }}>
-                      <div className="live-sales-avatar-provider-badge">
-                        <span className="live-sales-avatar-provider-chip">AI LIVE</span>
-                        <span className="live-sales-avatar-provider-name">MiniMax H3</span>
-                        <span className="live-sales-avatar-provider-subline">Studio stream</span>
-                      </div>
-                      <span>{avatarPreview.status || "preview"}</span>
-                    </div>
                   </div>
                 ) : (
                   <div className="live-sales-avatar-face">Avatar</div>
                 )}
+                <div className="live-sales-avatar-brand-bar">
+                  <div className="live-sales-avatar-brand-mark">C</div>
+                  <div className="live-sales-avatar-brand-copy">
+                    <strong>Crelavo</strong>
+                    <span>Live sales assistant</span>
+                  </div>
+                </div>
                 <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
                   <strong>{activePlan?.name}</strong>
                   <span>{activePlan?.price}</span>
