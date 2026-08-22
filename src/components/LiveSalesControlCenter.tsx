@@ -116,19 +116,19 @@ function isDirectVideoUrl(url: string) {
 
 function platformGuide(platform: string) {
   if (["Own website", "Custom embed", "WordPress", "Wix", "Webflow"].includes(platform)) {
-    return "Add the script to your site custom code area. The avatar appears as a floating assistant widget and can answer product, order, shipping, pricing and CTA questions.";
+    return "Paste the script into your site custom code area. The avatar appears as a floating assistant widget and can answer product, order, shipping, pricing and CTA questions.";
   }
   if (["Shopify", "WooCommerce", "Magento", "BigCommerce"].includes(platform)) {
-    return "Use the embed code now. Product, order and shipping API connection can be enabled as the next integration step, so the avatar can guide buyers on product pages, carts or thank-you pages.";
+    return "Paste the embed code into the theme, app embed, or custom code area. If the store blocks scripts on a product page, use a hosted landing page and route traffic there.";
   }
   if (["Amazon promotion", "Trendyol", "Hepsiburada", "N11", "eBay", "Etsy", "AliExpress"].includes(platform)) {
-    return "Most marketplace product pages do not allow custom live widgets. Use avatar ads, hosted landing pages and product videos that send traffic to your listing.";
+    return "Most marketplace product pages do not allow custom live widgets. Use the avatar on your own site or a hosted landing page, then send traffic from the marketplace to that page.";
   }
   if (["Alibaba / B2B", "Made-in-China", "Global Sources"].includes(platform)) {
     return "Use the avatar for B2B catalog presentation, inquiry response, quote collection and company profile lead generation.";
   }
   if (["TikTok Shop", "Instagram / YouTube", "LinkedIn", "X", "WhatsApp Business"].includes(platform)) {
-    return "Use the avatar for live-selling scripts, short videos, customer responses and social selling flows. LinkedIn works well for B2B outreach and X works well for fast campaign updates, product launches and customer engagement. Direct API/live integration requires setup and can run on business hours or a custom schedule.";
+    return "Use the avatar for live-selling scripts, short videos, customer responses and social selling flows. For channels that do not support direct widgets, share a landing page link instead. Direct API or live integration can run on business hours or a custom schedule.";
   }
   return "Use the generated agent ID and connect it with the correct Crelavo publish method for this channel.";
 }
@@ -589,8 +589,8 @@ async function sendMessage() {
               <button className="btn" type="button" onClick={saveAvatarSetup} disabled={saving} style={{ marginTop: 10, width: "100%" }}>{saving ? "Saving..." : "Save avatar setup"}</button>
               {saveMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{saveMessage}</p> : null}
               <div className="workspace-action-note" style={{ marginTop: 10 }}>
-                <strong>Kısa kurulum özeti</strong>
-                <p>1) Ayarları kaydet. 2) Önizleme oluştur. 3) Embed kodunu kopyalayıp sitenin özel kod alanına yapıştır. 4) Ürün, sipariş ve kargo bilgisini bağlayınca asistan daha doğru cevap verir.</p>
+                <strong>Hızlı kurulum</strong>
+                <p>1) Ayarları kaydet. 2) Önizleme oluştur. 3) Embed kodunu sitenin özel kod alanına ekle. 4) Ürün, sipariş ve kargo bilgisini bağlayınca asistan daha doğru cevap verir.</p>
               </div>
               <button className="btn secondary" type="button" onClick={generateAvatarPreview} disabled={previewingAvatar} style={{ marginTop: 10, width: "100%" }}>{previewingAvatar ? "Starting preview..." : "Generate avatar preview"}</button>
               {previewMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{previewMessage}</p> : null}
