@@ -40,7 +40,7 @@ export function providerRequirementsForProduction(productionType: string, packag
       requiredEnv: ["OPENAI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY"],
       affects: ["assistant brief", "script", "production plan"],
       note: "Needed for live assistant planning, scripts, briefs and content generation. OpenAI or Gemini is sufficient.",
-      status: hasPlanningBrain ? "ready" : "missing"
+      status: hasPlanningBrain ? "ready" : "optional"
     }
   ];
 
