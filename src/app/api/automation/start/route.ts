@@ -468,7 +468,8 @@ export async function POST(request: Request) {
         : existingOutput.inputJson && typeof existingOutput.inputJson === "object"
           ? existingOutput.inputJson as Record<string, unknown>
           : {});
-    let productionType = String(currentProduction?.production_type ?? "");
+    const rawProductionType = String(currentProduction?.production_type ?? "");
+    let productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
     const packageId = String(currentProduction?.package_id ?? "");
   const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
   const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
