@@ -1,5 +1,6 @@
 import { optionalEnv, requireProviderEnv } from "./env";
 import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, latestHeyGenVideoArtifact, normalizeHeyGenVideoAgentArtifacts } from "./heygen";
+import { queryMiniMaxH3VideoTask } from "./minimax";
 import type { NormalizedProviderStatus, ProviderJob } from "./types";
 
 function asciiHeaderValue(value: unknown, fallback = "") {
@@ -201,6 +202,25 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
   };
 }
 
+export async function getMiniMaxStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
+  if (!job.id) return { provider: "minimax", status: "unknown", error: "Missing MiniMax task id" };
+  const data = await queryMiniMaxH3VideoTask(job.id);
+  const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
+  const task = record.task && typeof record.task === "object" ? record.task as Record<string, unknown> : record;
+  const rawStatus = String(task.status ?? record.status ?? "unknown");
+  const normalized = normalizeStatus(rawStatus);
+  const outputUrl = firstUrl(task.content) || firstUrl(task.result) || firstUrl(task.video) || firstUrl(task.videos) || firstUrl(task);
+  const error = typeof task.error === "object" && task.error ? String((task.error as Record<string, unknown>).message ?? (task.error as Record<string, unknown>).code ?? "MiniMax task failed.") : typeof task.error === "string" ? task.error : normalized === "succeeded" && !outputUrl ? "MiniMax task succeeded, but no real video URL was found." : undefined;
+  return {
+    provider: "minimax",
+    id: job.id,
+    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
+    outputUrl,
+    error,
+    raw: data
+  };
+}
+
 function shotstackStatusBaseUrl() {
   const configured = optionalEnv("SHOTSTACK_API_URL") || optionalEnv("SHOTSTACK_RENDER_URL");
   if (configured) return configured.replace(/\/render$/, "");
@@ -321,6 +341,7 @@ export async function getProviderStatus(job: ProviderJob): Promise<NormalizedPro
   if (job.provider === "heygen") return getHeyGenStatus(job);
   if (job.provider === "heygen_v3_video") return getHeyGenV3VideoStatus(job);
   if (job.provider === "heygen_video_agent") return getHeyGenVideoAgentStatus(job);
+  if (job.provider === "minimax") return getMiniMaxStatus(job);
   if (job.provider === "shotstack") return getShotstackStatus(job);
   if (job.provider === "website_screenshot_reference") {
     return {
