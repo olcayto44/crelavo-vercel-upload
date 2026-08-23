@@ -476,29 +476,42 @@ const currentLegalSnapshot = currentProductionRecord.legal_acceptance_snapshot &
 const currentLegalAccepted = Boolean(currentLegalSnapshot?.accepted);
 const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "").trim();
     if (!currentLegalAccepted || !currentLegalId) {
-      const { data: repairedLegal, error: repairedLegalError } = await supabase
-        .from("legal_acceptances")
-        .insert({
-          user_id: currentProduction.user_id,
-          production_id: currentProduction.id,
-          acceptance_type: "production_liability",
-          version: LEGAL_ACCEPTANCE_VERSION,
-          accepted: true,
-          ip_address: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? null,
-          user_agent: request.headers.get("user-agent") ?? null,
-          production_type: String(currentProduction.production_type ?? ""),
-          package_id: String(currentProduction.package_id ?? ""),
-          title: String(currentProduction.title ?? ""),
-          responsibility_text: productionResponsibilityText,
-          rights_warranty_text: rightsWarrantyText,
-          metadata: legalSnapshot
-        })
-        .select("id")
-        .single();
-      if (repairedLegalError) throw repairedLegalError;
+      let repairedLegalId: string | null = currentLegalId || null;
+      let legalInsertSkipped = false;
+      try {
+        const { data: repairedLegal, error: repairedLegalError } = await supabase
+          .from("legal_acceptances")
+          .insert({
+            user_id: currentProduction.user_id,
+            production_id: currentProduction.id,
+            acceptance_type: "production_liability",
+            version: LEGAL_ACCEPTANCE_VERSION,
+            accepted: true,
+            ip_address: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? null,
+            user_agent: request.headers.get("user-agent") ?? null,
+            production_type: String(currentProduction.production_type ?? ""),
+            package_id: String(currentProduction.package_id ?? ""),
+            title: String(currentProduction.title ?? ""),
+            responsibility_text: productionResponsibilityText,
+            rights_warranty_text: rightsWarrantyText,
+            metadata: legalSnapshot
+          })
+          .select("id")
+          .single();
+        if (repairedLegalError) throw repairedLegalError;
+        repairedLegalId = repairedLegal?.id ?? null;
+      } catch (repairError) {
+        const repairMessage = errorMessage(repairError, "Legal acceptance repair skipped");
+        if (/PGRST205|schema cache|could not find the table|legal_acceptances/i.test(repairMessage)) {
+          legalInsertSkipped = true;
+          console.warn("Legal acceptance table missing; continuing without repair row.", repairMessage);
+        } else {
+          throw repairError;
+        }
+      }
       const { error: legalPatchError } = await supabase
         .from("production_requests")
-        .update(safeUpdate({ legal_acceptance_id: repairedLegal?.id ?? null, legal_acceptance_snapshot: legalSnapshot, output_json: { ...existingOutput, legalAcceptanceId: repairedLegal?.id ?? null, legalAcceptanceSnapshot: legalSnapshot }, updated_at: now }))
+        .update(safeUpdate({ legal_acceptance_id: repairedLegalId, legal_acceptance_snapshot: legalSnapshot, output_json: { ...existingOutput, legalAcceptanceId: repairedLegalId, legalAcceptanceSnapshot: legalSnapshot, legalAcceptanceFallback: legalInsertSkipped }, updated_at: now }))
         .eq("id", currentProduction.id);
       if (legalPatchError) throw legalPatchError;
     }
