@@ -1872,14 +1872,9 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const providerHint = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(activePlanInput.production_type)
       ? { preferredProvider: "minimax", provider_service: "minimax", selectedProviderService: "minimax" }
       : {};
+    void providerHint;
 if (isImageStart) {
-  setStatus(statusUx("Production oluşturuldu. Image provider arka planda başlatılıyor...", "Production created. Image provider is starting in the background..."));
-  void fetch("/api/automation/start", {
-    method: "POST",
-    headers: authHeaders(auth.accessToken),
-    keepalive: true,
-    body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true, ...providerHint })
-  }).catch(() => null);
+  setStatus(statusUx("Production oluşturuldu. Provider arka planda başlayacak.", "Production created. The provider will start in the background."));
   void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
   setStarting(false);
       if (!options?.stayOnWork) {
@@ -1887,21 +1882,8 @@ if (isImageStart) {
       }
   return;
 }
-      setStatus(statusUx("Production oluşturuldu. Gerçek provider başlatılıyor ve Work içinde takip ediliyor...", "Production created. The real provider is starting and will be tracked inside Work..."));
-    const automationResponse = await fetch("/api/automation/start", {
-      method: "POST",
-      headers: authHeaders(auth.accessToken),
-      body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true, ...providerHint })
-    }).catch(() => null);
+    setStatus(statusUx("Production oluşturuldu. Provider arka planda başlayacak.", "Production created. The provider will start in the background."));
     void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
-    if (automationResponse && !automationResponse.ok) {
-      const automationError = await automationResponse.json().catch(() => ({}));
-      setStatus(automationError.error ?? statusUx("Production oluşturuldu ama provider başlatılamadı.", "Production was created but the provider could not be started."));
-    } else {
-      const automationData = automationResponse ? await automationResponse.json().catch(() => ({})) : {};
-      if (automationData.production) setActiveProduction(automationData.production as WorkProductionCard);
-      setStatus(statusUx("Üretim başladı. Kart gerçek production durumundan güncellenecek.", "Production started. The card will update from the real production status."));
-    }
     await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     setStarting(false);
         if (!options?.stayOnWork) {
