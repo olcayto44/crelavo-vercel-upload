@@ -190,7 +190,28 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return Response.json({ productions: data });
+    const uniqueProductions: Record<string, unknown>[] = [];
+    const seenFingerprints = new Set<string>();
+    for (const item of Array.isArray(data) ? data as Record<string, unknown>[] : []) {
+      const requestMetadata = item.request_metadata && typeof item.request_metadata === "object" ? item.request_metadata as Record<string, unknown> : {};
+      const inputJson = item.input_json && typeof item.input_json === "object" ? item.input_json as Record<string, unknown> : {};
+      const fingerprint = normalizeFingerprintValue(requestMetadata.requestFingerprint ?? inputJson.requestFingerprint ?? buildProductionRequestFingerprint({
+        productionType: String(item.production_type ?? ""),
+        packageId: String(item.package_id ?? ""),
+        title: String(item.title ?? ""),
+        prompt: String(item.prompt ?? ""),
+        quality: String(requestMetadata.quality ?? inputJson.quality ?? item.estimated_credits ?? ""),
+        durationSeconds: Number(inputJson.outputDurationSeconds ?? requestMetadata.outputDurationSeconds ?? 0) || 0,
+        outputCount: Number(inputJson.outputCount ?? requestMetadata.outputCount ?? 0) || 0,
+        features: String(inputJson.features ?? requestMetadata.features ?? ""),
+        deliveryLevel: String(inputJson.deliveryLevel ?? requestMetadata.deliveryLevel ?? "")
+      }));
+      if (seenFingerprints.has(fingerprint)) continue;
+      seenFingerprints.add(fingerprint);
+      uniqueProductions.push(item);
+    }
+
+    return Response.json({ productions: uniqueProductions });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not load productions") }, { status: 500 });
   }

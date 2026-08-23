@@ -1825,6 +1825,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       })
     }).finally(() => window.clearTimeout(timeout));
     const data = await response.json().catch(() => ({}));
+    if (data.duplicate_request_reused && data.production) return data.production as WorkProductionCard;
     if (!response.ok) {
       const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
       if (isCreditError) {
@@ -1852,12 +1853,21 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       if (auth.redirect) window.location.href = auth.redirect;
       return;
     }
-    const created = await createProductionRecord(activePlanInput, cleanInput, auth.user.id, auth.user.email ?? "", auth.accessToken);
+    const created = await createProductionRecord(activePlanInput, cleanInput, auth.user.id, auth.user.email ?? "", auth.accessToken) as (WorkProductionCard & { duplicate_request_reused?: boolean }) | null;
     if (!created?.id) {
       setStarting(false);
       return;
     }
     setActiveProduction(created);
+    if (created.duplicate_request_reused) {
+      await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
+      setStarting(false);
+      setStatus(statusUx("Aynı üretim zaten mevcuttu; yeni provider start yapılmadı.", "The same production already existed; no new provider start was issued."));
+      if (!options?.stayOnWork) {
+        setStatus(statusUx("Production kaydı zaten vardı. Detaylar Work alanında kalıyor.", "Production record already existed. Details stay in Work."));
+      }
+      return;
+    }
     const isImageStart = isImageProductionType(activePlanInput.production_type);
     const providerHint = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(activePlanInput.production_type)
       ? { preferredProvider: "minimax", provider_service: "minimax", selectedProviderService: "minimax" }
