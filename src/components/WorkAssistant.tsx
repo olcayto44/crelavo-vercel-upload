@@ -2239,6 +2239,12 @@ if (isImageStart) {
             <small>Aktif üretim</small>
             <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "Henüz üretim yok"}</strong>
             <span>{activeProduction ? ux("Production running") : plan ? ux("Production draft") : "Komut bekleniyor"}</span>
+            {activeProduction ? <>
+              <span><b>Üretim ID</b>{activeProduction.id}</span>
+              <span><b>Durum</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+              <span><b>Sağlayıcı</b>{productionCardProvider(activeProduction)}</span>
+              <span><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
+            </> : null}
           </div>
           <div className="omni-deploy-card">
             <small>Embed / kod</small>
