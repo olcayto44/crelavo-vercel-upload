@@ -81,7 +81,7 @@ export function providerRequirementsForProduction(productionType: string, packag
     requiredEnv: ["SUPABASE_SERVICE_ROLE_KEY"],
     affects: ["materials", "provider assets", "delivery files"],
     note: "Server storage access is needed for uploads and final delivery links.",
-    status: hasStorageEnv() ? "ready" : "missing"
+    status: hasStorageEnv() ? "ready" : "optional"
   });
   requirements.push(requirement("email", "Resend email", ["RESEND_API_KEY"], ["completion email", "receipt/follow-up", "support"], "Optional before launch, required for automatic completion emails.", true));
 
