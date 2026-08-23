@@ -62,7 +62,7 @@ function selectedFeatureFlags(requestMetadata: Record<string, unknown>, inputJso
     voiceOver,
     music,
     subtitles,
-    finalRender: /render|burned subtitles|lip-sync|lip sync/.test(haystack) || voiceOver || music || subtitles,
+    finalRender: /render|burned subtitles|lip-sync|lip sync|final\s*mp4|final[_\s-]*video|dashboard\s*delivery|download\s*delivery/.test(haystack) || voiceOver || music || subtitles,
     characterConsistency: /charactercontinuity|character|karakter|identity|avatar|same character|consistent|continuity|tutarlı|tutarli/.test(haystack),
     voiceConsistency: !noVoice && /voicecontinuity|speaker|multi-speaker|lip-sync|language/.test(haystack)
   };

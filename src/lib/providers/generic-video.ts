@@ -160,6 +160,10 @@ function isCrelavoPromoIntent(text: string) {
   return /crelavo|paste\s*(a|any)?\s*link|get\s*an\s*ad|ready-to-post\s*ad|product\s*link|website\s*link|shopify|amazon|trendyol|woocommerce/i.test(text) && /promo|ad\s*video|video\s*ad|commercial|reklam|tanıtım|tanitim|sosyal\s*medya|final\s*mp4|tiktok|reels|shorts/i.test(text);
 }
 
+function isLuxuryProductCommercialIntent(text: string) {
+  return /perfume|fragrance|cologne|luxury\s+commercial|luxury\s+ad|premium\s+commercial|matte-black|matte\s*black|marble\s+wall|retail\s+counter|product\s+counter|bottle|cosmetic|beauty\s+commercial|fashion\s+commercial/i.test(text);
+}
+
 function isLinkToAdIntent(text: string) {
   return Boolean(firstUrlFromText(text)) && /ad|advert|reklam|tanıtım|tanitim|promo|video|mp4|tiktok|reels|shorts|ürün|urun|product|shopify|amazon|trendyol|woocommerce|website|landing/i.test(text);
 }
@@ -389,8 +393,9 @@ const pipelineType = classifyVideoPipeline(intentText);
 const isDroneVideo = /drone_video/.test(productionTypeSignal) || /\bdrone\b|\bsatellite\b|route\s*flyover|map\s*route\s*reveal|aerial\s*location/i.test(intentText);
 const droneDetails = requestMetadata.droneDetails && typeof requestMetadata.droneDetails === "object" ? requestMetadata.droneDetails as Record<string, unknown> : inputJson.droneDetails && typeof inputJson.droneDetails === "object" ? inputJson.droneDetails as Record<string, unknown> : {};
 const selectedVoiceLanguage = clean(requestMetadata.voiceLanguage) || clean(inputJson.voiceLanguage) || clean(droneDetails.narrationLanguage) || (isDroneVideo ? "English" : looksTurkish(intentText) ? "Turkish" : "English");
-  const isCrelavoPromo = !isDroneVideo && isCrelavoPromoIntent(intentText);
-  const isLinkAd = !isDroneVideo && !isCrelavoPromo && isLinkToAdIntent(intentText);
+  const isLuxuryProductCommercial = !isDroneVideo && isLuxuryProductCommercialIntent(intentText);
+  const isCrelavoPromo = !isDroneVideo && isCrelavoPromoIntent(intentText) && !isLuxuryProductCommercial;
+  const isLinkAd = !isDroneVideo && !isCrelavoPromo && !isLuxuryProductCommercial && isLinkToAdIntent(intentText);
   const noVoice = voiceExplicitlyDisabled(intentText);
   const noSubtitles = subtitlesExplicitlyDisabled(intentText);
   const mediaGuard = visualOnlyGuard(noVoice, noSubtitles);
