@@ -27,5 +27,5 @@ export function shouldForceMinimaxPresenterProvider(input: {
 
 export function isAllowedMinimaxPresenterProvider(provider: string) {
   const normalized = String(provider ?? "").toLowerCase();
-  return normalized === "heygen_video_agent" || normalized === "heygen_v2_generate" || normalized === "heygen";
+  return normalized === "minimax" || normalized === "minimax_video_agent" || normalized === "heygen_video_agent" || normalized === "heygen_v2_generate" || normalized === "heygen";
 }
