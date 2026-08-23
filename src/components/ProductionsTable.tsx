@@ -145,7 +145,15 @@ export function ProductionsTable() {
         .then((res) => res.json())
         .then((data) => {
           if (Array.isArray(data.productions)) {
-            setRows(data.productions);
+            const deduped: ProductionRow[] = [];
+            const seen = new Set<string>();
+            for (const item of data.productions as ProductionRow[]) {
+              const key = [item.production_type, item.package_id ?? "", item.title, item.prompt].map((value) => String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim()).join("|");
+              if (seen.has(key)) continue;
+              seen.add(key);
+              deduped.push(item);
+            }
+            setRows(deduped);
             setMode("live");
             return;
           }

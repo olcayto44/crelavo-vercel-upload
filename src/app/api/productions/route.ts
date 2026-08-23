@@ -58,6 +58,40 @@ function firstUrlFromText(value: unknown) {
   return match?.[0] ?? "";
 }
 
+function normalizeFingerprintValue(value: unknown) {
+  return String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildProductionRequestFingerprint(input: {
+  productionType: string;
+  packageId: string;
+  title: string;
+  prompt: string;
+  quality: string;
+  durationSeconds: number;
+  outputCount: number;
+  features: string;
+  deliveryLevel: string;
+}) {
+  return [input.productionType, input.packageId, input.title, input.prompt, input.quality, String(input.durationSeconds || 0), String(input.outputCount || 0), input.features, input.deliveryLevel].map(normalizeFingerprintValue).join(" |");
+}
+
+function productionFingerprintForRow(row: Record<string, unknown>) {
+  const requestMetadata = row.request_metadata && typeof row.request_metadata === "object" ? row.request_metadata as Record<string, unknown> : {};
+  const inputJson = row.input_json && typeof row.input_json === "object" ? row.input_json as Record<string, unknown> : {};
+  return normalizeFingerprintValue(requestMetadata.requestFingerprint ?? inputJson.requestFingerprint ?? buildProductionRequestFingerprint({
+    productionType: String(row.production_type ?? ""),
+    packageId: String(row.package_id ?? ""),
+    title: String(row.title ?? ""),
+    prompt: String(row.prompt ?? ""),
+    quality: String(row.request_metadata && typeof row.request_metadata === "object" ? (row.request_metadata as Record<string, unknown>).quality ?? inputJson.quality ?? row.estimated_credits ?? "" : row.estimated_credits ?? ""),
+    durationSeconds: Number(inputJson.outputDurationSeconds ?? requestMetadata.outputDurationSeconds ?? 0) || 0,
+    outputCount: Number(inputJson.outputCount ?? requestMetadata.outputCount ?? 0) || 0,
+    features: String(inputJson.features ?? requestMetadata.features ?? ""),
+    deliveryLevel: String(inputJson.deliveryLevel ?? requestMetadata.deliveryLevel ?? "")
+  }));
+}
+
 function appBaseUrl(request: Request) {
   const requestOrigin = new URL(request.url).origin;
   if (requestOrigin) return requestOrigin.replace(/\/$/, "");
@@ -629,13 +663,24 @@ const costGuardConfig = apiCostGuardConfig();
     note: isPreviewOnlyProduction ? "24-hour preview access: downloads closed until the selected subscription starts." : "Full delivery access follows payment, credit and package eligibility."
   };
 
-  const requestMetadata = {
-    ...clientRequestMetadata,
-    productionType,
-    packageId,
-    packageName: selectedPackage.name,
-    workflowMode,
-    deliveryLevel,
+    const requestMetadata = {
+      ...clientRequestMetadata,
+      requestFingerprint: buildProductionRequestFingerprint({
+        productionType,
+        packageId,
+        title,
+        prompt,
+        quality: safeProductionQuality,
+        durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+        outputCount,
+        features: String(body.features ?? ""),
+        deliveryLevel
+      }),
+      productionType,
+      packageId,
+      packageName: selectedPackage.name,
+      workflowMode,
+      deliveryLevel,
     style: body.style ?? "",
     quality: safeProductionQuality,
     targetPlatform: body.target_platform ?? "",
@@ -691,9 +736,20 @@ outputPlan,
     presenterMode: serverMinimaxPresenterIntent || Boolean(clientRequestMetadata.presenterMode ?? clientInputJson.presenterMode),
     providerTestTarget: providerTestMode ? "premium_10s_1080p_single_output" : null
   };
-  const inputJson = {
-    ...clientInputJson,
-    packageName: selectedPackage.name,
+    const inputJson = {
+      ...clientInputJson,
+      requestFingerprint: buildProductionRequestFingerprint({
+        productionType,
+        packageId,
+        title,
+        prompt,
+        quality: safeProductionQuality,
+        durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+        outputCount,
+        features: String(body.features ?? ""),
+        deliveryLevel
+      }),
+      packageName: selectedPackage.name,
     packageDescription: selectedPackage.description,
     deliverables: selectedPackage.deliverables,
     needsImages,
@@ -759,6 +815,43 @@ outputPlan,
     }
     if (!authUser.user.email_confirmed_at && !authUser.user.confirmed_at) {
       return Response.json({ error: "Production cannot start before email confirmation. Please open the confirmation link sent to your inbox." }, { status: 403 });
+    }
+
+    const { data: recentProductions, error: recentProductionsError } = await supabase
+      .from("production_requests")
+      .select("id,status,automation_status,generation_status,created_at,production_type,package_id,title,prompt,request_metadata,input_json,estimated_credits")
+      .eq("user_id", userId)
+      .neq("status", "deleted")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (recentProductionsError) throw recentProductionsError;
+    const requestFingerprint = buildProductionRequestFingerprint({
+      productionType,
+      packageId,
+      title,
+      prompt,
+      quality: safeProductionQuality,
+      durationSeconds: Number(body.output_duration_seconds ?? 0) || 0,
+      outputCount,
+      features: String(body.features ?? ""),
+      deliveryLevel
+    });
+    const matchingProduction = Array.isArray(recentProductions)
+      ? recentProductions.find((row) => {
+          const rowRecord = row as Record<string, unknown>;
+          const rowStatus = String(rowRecord.status ?? "").toLowerCase();
+          if (["deleted", "failed", "cancelled"].includes(rowStatus)) return false;
+          return productionFingerprintForRow(rowRecord) === normalizeFingerprintValue(requestFingerprint);
+        }) as Record<string, unknown> | undefined
+      : undefined;
+    if (matchingProduction) {
+      return Response.json({
+        production: matchingProduction,
+        automation_job_id: String((matchingProduction.output_json as Record<string, unknown> | undefined)?.jobId ?? "") || null,
+        automation_status: String(matchingProduction.automation_status ?? matchingProduction.generation_status ?? matchingProduction.status ?? "queued"),
+        provider_start_requested: false,
+        duplicate_request_reused: true
+      });
     }
 
     const { error: profileError } = await supabase
@@ -850,7 +943,7 @@ outputPlan,
       prompt,
       status: "queued",
       generation_status: dedicatedProviderBlocked ? "waiting_provider_config" : "automation_queued",
-      request_metadata: { ...requestMetadata, materials, inputJson },
+      request_metadata: { ...requestMetadata, materials, inputJson, requestFingerprint },
       input_json: inputJson,
       materials_json: materials,
       estimated_credits: estimatedCredits,
