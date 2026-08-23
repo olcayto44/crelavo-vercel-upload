@@ -1226,6 +1226,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
     return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
   } catch (error) {
     const failureMessage = errorMessage(error, "Could not start automation job");
+    console.error("Internal Crash Log:", failureMessage, error);
     if (productionId) {
       try {
         const supabase = supabaseAdmin();

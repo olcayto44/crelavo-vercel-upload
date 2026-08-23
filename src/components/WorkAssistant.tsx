@@ -1855,13 +1855,16 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     }
     setActiveProduction(created);
     const isImageStart = isImageProductionType(activePlanInput.production_type);
+    const providerHint = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(activePlanInput.production_type)
+      ? { preferredProvider: "minimax", provider_service: "minimax", selectedProviderService: "minimax" }
+      : {};
 if (isImageStart) {
   setStatus(statusUx("Production oluşturuldu. Image provider arka planda başlatılıyor...", "Production created. Image provider is starting in the background..."));
   void fetch("/api/automation/start", {
     method: "POST",
     headers: authHeaders(auth.accessToken),
     keepalive: true,
-    body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
+    body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true, ...providerHint })
   }).catch(() => null);
   void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
   setStarting(false);
@@ -1874,7 +1877,7 @@ if (isImageStart) {
     const automationResponse = await fetch("/api/automation/start", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
-      body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
+      body: JSON.stringify({ production_id: created.id, user_id: auth.user.id, legal_acceptance: true, force_start: true, ...providerHint })
     }).catch(() => null);
     void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     if (automationResponse && !automationResponse.ok) {

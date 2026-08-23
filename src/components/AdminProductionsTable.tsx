@@ -374,10 +374,13 @@ async function retryProviderJob(item: ProductionRow) {
   setRefreshingId(item.id);
   setMessage("");
 
+  const providerHint = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(String(item.production_type ?? ""))
+    ? { preferredProvider: "minimax", provider_service: "minimax", selectedProviderService: "minimax" }
+    : {};
   const response = await fetch("/api/automation/start", {
     method: "POST",
     headers: adminApiHeaders(adminEmail, adminToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify(adminApiBody({ production_id: item.id, force_start: true }, adminEmail, adminToken))
+    body: JSON.stringify(adminApiBody({ production_id: item.id, force_start: true, ...providerHint }, adminEmail, adminToken))
   });
 
   const responseText = await response.text();
