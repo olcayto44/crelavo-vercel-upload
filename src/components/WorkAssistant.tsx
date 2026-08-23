@@ -1795,7 +1795,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
           ? ["source_code", "readme", "dashboard_delivery"]
           : ["final_mp4", "dashboard_delivery"];
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 25000);
+    const timeout = window.setTimeout(() => controller.abort(), 60000);
     const response = await fetch("/api/productions", {
       method: "POST",
       headers: authHeaders(accessToken),
@@ -2087,7 +2087,7 @@ if (isImageStart) {
       await startProductionForPlan(activePlan, clean, { stayOnWork: true });
     } catch (error) {
       setStarting(false);
-      setStatus(error instanceof DOMException && error.name === "AbortError" ? statusUx("Production isteği zaman aşımına uğradı. Sayfayı yenileyip tekrar deneyin.", "Production request timed out. Refresh and try again.") : error instanceof Error ? error.message : statusUx("Production başlatılamadı.", "Production could not be started."));
+      setStatus(error instanceof DOMException && error.name === "AbortError" ? statusUx("Production isteği henüz tamamlanmadı. Kayıt oluşmuş olabilir; biraz bekleyip üretim durumunu kontrol edin.", "Production request is still starting. The record may already exist; wait a moment and check production status.") : error instanceof Error ? error.message : statusUx("Production başlatılamadı.", "Production could not be started."));
     }
   }
 
