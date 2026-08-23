@@ -1373,11 +1373,12 @@ function firstTextValue(...values: unknown[]) {
 function productionProviderProof(production: WorkProductionCard | null) {
   const output = production?.output_json && typeof production.output_json === "object" ? production.output_json : {};
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : {};
-  const proof = output.heygenProviderProof && typeof output.heygenProviderProof === "object" ? output.heygenProviderProof as Record<string, unknown> : {};
+  const minimaxProof = output.minimaxProviderProof && typeof output.minimaxProviderProof === "object" ? output.minimaxProviderProof as Record<string, unknown> : {};
+  const heygenProof = output.heygenProviderProof && typeof output.heygenProviderProof === "object" ? output.heygenProviderProof as Record<string, unknown> : {};
   const latestArtifact = output.latestMinimaxVideoArtifact && typeof output.latestMinimaxVideoArtifact === "object" ? output.latestMinimaxVideoArtifact as Record<string, unknown> : {};
-  const provider = firstTextValue(proof.provider, visualJob.provider, output.providerStatus);
-  const sessionId = firstTextValue(output.heygenSessionId, proof.sessionId, visualJob.id);
-  const videoId = firstTextValue(output.heygenVideoId, proof.videoId, latestArtifact.providerResourceId);
+  const provider = firstTextValue(minimaxProof.provider, visualJob.provider, heygenProof.provider, output.providerStatus);
+  const sessionId = firstTextValue(output.minimaxSessionId, minimaxProof.sessionId, output.heygenSessionId, heygenProof.sessionId, visualJob.id);
+  const videoId = firstTextValue(output.minimaxVideoId, minimaxProof.videoId, output.heygenVideoId, heygenProof.videoId, latestArtifact.providerResourceId);
   const finalUrl = firstTextValue(production?.delivery_link, production?.preview_url, production?.delivery_zip_url, output.finalVideoUrl, output.providerFinalUrl, output.latestMinimaxVideoUrl, latestArtifact.previewUrl);
   return { provider, sessionId, videoId, finalUrl };
 }
@@ -1629,10 +1630,13 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     };
   }, [activeProduction?.id, activeProduction?.status, activeProduction?.automation_status]);
 
-  const workLanguageSource = `${productionPrompt || ""} ${input || ""}`.trim();
-  const workUiLanguage = detectWorkLanguage(workLanguageSource);
-  const ux = (value: string) => workUiLanguage === "tr" ? uiText(value) : value;
-  const statusUx = (tr: string, en: string) => workUiLanguage === "tr" ? tr : en;
+const workLanguageSource = `${productionPrompt || ""} ${input || ""}`.trim();
+function resolveWorkUiLanguage(): "en" | "tr" {
+  return "en";
+}
+const workUiLanguage = resolveWorkUiLanguage();
+const ux = (value: string) => false ? uiText(value) : value;
+const statusUx = (tr: string, en: string) => false ? tr : en;
   const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
   const activeProductionSetup = useMemo(() => plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup, [plan, productionSetup, productionPrompt, input]);
   const activeSelectedProductionCards = useMemo(() => plan && isImageProductionType(plan.production_type) ? filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type) : selectedProductionCards, [plan, selectedProductionCards, productionPrompt, input]);
@@ -1643,9 +1647,9 @@ const heygenTierBreakdown = plan ? heygenQualityCreditBreakdown(activeProduction
 const manualMinimaxCredits = heygenTierBreakdown.credits + (selectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
 const manualMinimaxBreakdown = [
   ...(heygenTierBreakdown.credits ? [{ title: `${ux(heygenTierBreakdown.title)} (${Math.round(heygenTierBreakdown.seconds)} sn)`, credits: heygenTierBreakdown.credits }] : []),
-  ...(selectedAvatar?.avatarId ? [{ title: workUiLanguage === "tr" ? "Manuel karakter seçimi" : "Manual character selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
-  ...(selectedVoice ? [{ title: workUiLanguage === "tr" ? "Manuel ses seçimi" : "Manual voice selection", credits: HEYGEN_MANUAL_VOICE_CREDITS }] : []),
-  ...(selectedSound ? [{ title: workUiLanguage === "tr" ? "Manuel müzik seçimi" : "Manual music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
+  ...(selectedAvatar?.avatarId ? [{ title: false ? "Manuel karakter seçimi" : "Manual character selection", credits: HEYGEN_MANUAL_AVATAR_CREDITS }] : []),
+  ...(selectedVoice ? [{ title: false ? "Manuel ses seçimi" : "Manual voice selection", credits: HEYGEN_MANUAL_VOICE_CREDITS }] : []),
+  ...(selectedSound ? [{ title: false ? "Manuel müzik seçimi" : "Manual music selection", credits: HEYGEN_MANUAL_MUSIC_CREDITS }] : [])
 ];
 const setupCredits = setupBreakdown.reduce((total, item) => total + item.credits, 0) + manualMinimaxCredits;
 const cardCredits = productionCardCredits(activeSelectedProductionCards);
@@ -1827,7 +1831,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
         const required = Number(data.required ?? data.requiredCredits ?? totalEstimatedCreditsForPayload) || totalEstimatedCreditsForPayload;
         const available = Number(data.available ?? 0) || 0;
         const shortfall = Number(data.shortfall ?? Math.max(0, required - available)) || 0;
-        setStatus(workUiLanguage === "tr" ? `Yetersiz kredi. Gerekli: ${required.toLocaleString()} kredi, mevcut: ${available.toLocaleString()} kredi, eksik: ${shortfall.toLocaleString()} kredi.` : `Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits.`);
+        setStatus(false ? `Yetersiz kredi. Gerekli: ${required.toLocaleString()} kredi, mevcut: ${available.toLocaleString()} kredi, eksik: ${shortfall.toLocaleString()} kredi.` : `Insufficient credits. Required: ${required.toLocaleString()} credits, available: ${available.toLocaleString()} credits, missing: ${shortfall.toLocaleString()} credits.`);
       } else {
         setStatus(data.error ?? statusUx("Production oluşturulamadı.", "Production could not be created."));
       }
@@ -2142,10 +2146,10 @@ if (isImageStart) {
                   <span><strong>{ux("Workspace")}</strong>{ux("Production stays here")}</span>
                 </div>
                 <div className="omni-result-grid">
-                  <span><strong>{workUiLanguage === "tr" ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
-                  <span><strong>{workUiLanguage === "tr" ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
-                  <span><strong>{workUiLanguage === "tr" ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
-                  <span><strong>{workUiLanguage === "tr" ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
+                  <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
+                  <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
+                  <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
+                  <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
                 </div>
               </div>
             </article>
@@ -2190,32 +2194,32 @@ if (isImageStart) {
                           })}
                         </div>
                         {group.id === "presenterChoice" ? <div className="omni-gallery-actions">
-                          <button type="button" onClick={() => openMinimaxGallery("avatar")}>{workUiLanguage === "tr" ? "Karakter galerisinden seç" : "Choose from character gallery"}</button>
-                          <button type="button" onClick={() => openMinimaxGallery("voice")}>{workUiLanguage === "tr" ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
-                          {selectedAvatar ? <small>{workUiLanguage === "tr" ? "Seçili karakter" : "Selected character"}: {selectedAvatar.name}</small> : null}
-                          {selectedVoice ? <small>{workUiLanguage === "tr" ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
-                          {selectedAvatar ? <small>{selectedAvatar.avatarId ? (workUiLanguage === "tr" ? "Not: Bu seçim provider'a gönderilir." : "Note: This selection is sent to the provider.") : (workUiLanguage === "tr" ? "Not: Bu seçim görsel tercih olarak kaydedilir; bu kart için avatar_id verilmediği için provider'a avatar olarak gönderilmez." : "Note: This selection is saved as a visual preference; because no avatar_id was provided for this card, it is not sent as a provider avatar.")}</small> : null}
+                          <button type="button" onClick={() => openMinimaxGallery("avatar")}>{false ? "Karakter galerisinden seç" : "Choose from character gallery"}</button>
+                          <button type="button" onClick={() => openMinimaxGallery("voice")}>{false ? "Ses galerisinden seç" : "Choose from voice gallery"}</button>
+                          {selectedAvatar ? <small>{false ? "Seçili karakter" : "Selected character"}: {selectedAvatar.name}</small> : null}
+                          {selectedVoice ? <small>{false ? "Seçili ses" : "Selected voice"}: {selectedVoice.name}</small> : null}
+                          {selectedAvatar ? <small>{selectedAvatar.avatarId ? (false ? "Not: Bu seçim provider'a gönderilir." : "Note: This selection is sent to the provider.") : (false ? "Not: Bu seçim görsel tercih olarak kaydedilir; bu kart için avatar_id verilmediği için provider'a avatar olarak gönderilmez." : "Note: This selection is saved as a visual preference; because no avatar_id was provided for this card, it is not sent as a provider avatar.")}</small> : null}
                         </div> : null}
                         {group.id === "extras" ? <div className="omni-gallery-actions">
-                          <button type="button" onClick={() => openMinimaxGallery("music")}>{workUiLanguage === "tr" ? "Müzik galerisinden seç" : "Choose from music gallery"}</button>
-                          {selectedSound ? <small>{workUiLanguage === "tr" ? "Seçili müzik" : "Selected music"}: {selectedSound.name}</small> : null}
-                          {selectedSound ? <small>{workUiLanguage === "tr" ? "Not: Müzik seçimi Crelavo kaydında tutulur ve final post-production aşamasında eklenecek şekilde işaretlenir." : "Note: Music selection is stored in Crelavo metadata and marked for final post-production."}</small> : null}
+                          <button type="button" onClick={() => openMinimaxGallery("music")}>{false ? "Müzik galerisinden seç" : "Choose from music gallery"}</button>
+                          {selectedSound ? <small>{false ? "Seçili müzik" : "Selected music"}: {selectedSound.name}</small> : null}
+                          {selectedSound ? <small>{false ? "Not: Müzik seçimi Crelavo kaydında tutulur ve final post-production aşamasında eklenecek şekilde işaretlenir." : "Note: Music selection is stored in Crelavo metadata and marked for final post-production."}</small> : null}
                         </div> : null}
                       </section>
                     ))}
                     {draftWantsThumbnail ? <div className="omni-setup-group">
                       <div className="omni-setup-group-title">
-                        <span>{workUiLanguage === "tr" ? "Thumbnail / kapak promptu" : "Thumbnail / cover prompt"}</span>
-                        <small>{workUiLanguage === "tr" ? "Boş kalırsa Crelavo otomatik FOMO prompt oluşturur." : "If empty, Crelavo creates an automatic FOMO prompt."}</small>
+                        <span>{false ? "Thumbnail / kapak promptu" : "Thumbnail / cover prompt"}</span>
+                        <small>{false ? "Boş kalırsa Crelavo otomatik FOMO prompt oluşturur." : "If empty, Crelavo creates an automatic FOMO prompt."}</small>
                       </div>
-                      <textarea value={customThumbnailPrompt} onChange={(event) => setCustomThumbnailPrompt(event.target.value)} placeholder={workUiLanguage === "tr" ? "Kapak için özel prompt yaz..." : "Write a custom cover prompt..."} rows={4} />
+                      <textarea value={customThumbnailPrompt} onChange={(event) => setCustomThumbnailPrompt(event.target.value)} placeholder={false ? "Kapak için özel prompt yaz..." : "Write a custom cover prompt..."} rows={4} />
                     </div> : null}
                     <div className="omni-setup-group">
                       <div className="omni-setup-group-title">
-                        <span>{workUiLanguage === "tr" ? "Avoid / istenmeyenler" : "Avoid / exclusions"}</span>
-                        <small>{workUiLanguage === "tr" ? "Videoda istemediğin şeyleri yaz. Provider promptuna koruma olarak eklenir." : "Write what should be avoided. This is added as provider prompt guardrails."}</small>
+                        <span>{false ? "Avoid / istenmeyenler" : "Avoid / exclusions"}</span>
+                        <small>{false ? "Videoda istemediğin şeyleri yaz. Provider promptuna koruma olarak eklenir." : "Write what should be avoided. This is added as provider prompt guardrails."}</small>
                       </div>
-                      <textarea value={customAvoidPrompt} onChange={(event) => setCustomAvoidPrompt(event.target.value)} placeholder={workUiLanguage === "tr" ? "Örn: presenter yok, UI yok, siyah placeholder yok, altyazı yok..." : "e.g. no presenter, no UI, no black placeholder, no subtitles..."} rows={3} />
+                      <textarea value={customAvoidPrompt} onChange={(event) => setCustomAvoidPrompt(event.target.value)} placeholder={false ? "Örn: presenter yok, UI yok, siyah placeholder yok, altyazı yok..." : "e.g. no presenter, no UI, no black placeholder, no subtitles..."} rows={3} />
                     </div>
                     <div className="omni-setup-summary">
                       <strong>{ux("Selected setup")}</strong>
@@ -2233,28 +2237,28 @@ if (isImageStart) {
 
         <aside className="omni-super-panel omni-deploy-panel" aria-label="Deploy Hub">
           <span className="badge"><PackageCheck size={14} /> Deploy Hub</span>
-          <h2>Çıktılar ve entegrasyon</h2>
-          <p>Üretim tamamlanınca indirme, embed, kaynak paket ve yayın bağlantıları burada görünür.</p>
+          <h2>Outputs & integrations</h2>
+          <p>Once production is complete, download, embed, source bundle and publish links appear here.</p>
           <div className="omni-deploy-card">
-            <small>Aktif üretim</small>
-            <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "Henüz üretim yok"}</strong>
-            <span>{activeProduction ? ux("Production running") : plan ? ux("Production draft") : "Komut bekleniyor"}</span>
+            <small>Active production</small>
+            <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "No production yet"}</strong>
+            <span>{activeProduction ? ux("Production running") : plan ? ux("Production draft") : "Awaiting command"}</span>
             {activeProduction ? <>
-              <span><b>Üretim ID</b>{activeProduction.id}</span>
-              <span><b>Durum</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-              <span><b>Sağlayıcı</b>{productionCardProvider(activeProduction)}</span>
-              <span><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
+              <span><b>Production ID</b>{activeProduction.id}</span>
+              <span><b>Status</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+              <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>
+              <span><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
           <div className="omni-deploy-card">
             <small>Embed / kod</small>
-            <strong>{activeProduction?.delivery_link ? "Hazır" : "Work içinde hazırlanacak"}</strong>
+            <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
             <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
           </div>
           <div className="omni-deploy-card">
-            <small>Teslimat</small>
-            <strong>{estimatedCredits} kredi</strong>
-            <span>Video, web, app, live sales veya kaynak paket tek ekrandan takip edilir.</span>
+            <small>Delivery</small>
+            <strong>{estimatedCredits} credits</strong>
+            <span>Video, web, app, live sales or source bundle is tracked from one screen.</span>
           </div>
         </aside>
 
@@ -2262,43 +2266,43 @@ if (isImageStart) {
           <div className="omni-gallery-card">
             <div className="omni-gallery-head">
               <div>
-                <strong>{galleryMode === "avatar" ? (workUiLanguage === "tr" ? "Avatar galerisi" : "Avatar gallery") : galleryMode === "voice" ? (workUiLanguage === "tr" ? "Ses galerisi" : "Voice gallery") : (workUiLanguage === "tr" ? "Müzik galerisi" : "Music gallery")}</strong>
-                <p>{galleryMode === "avatar" ? (workUiLanguage === "tr" ? "Görerek bir karakter seç." : "Choose a character visually.") : galleryMode === "voice" ? (workUiLanguage === "tr" ? "Sesi dinleyip üretime bağla." : "Preview and attach a voice to production.") : (workUiLanguage === "tr" ? "Müziği ara, dinle ve üretime bağla." : "Search, preview and attach background music.")}</p>
+                <strong>{galleryMode === "avatar" ? (false ? "Avatar galerisi" : "Avatar gallery") : galleryMode === "voice" ? (false ? "Ses galerisi" : "Voice gallery") : (false ? "Müzik galerisi" : "Music gallery")}</strong>
+                <p>{galleryMode === "avatar" ? (false ? "Görerek bir karakter seç." : "Choose a character visually.") : galleryMode === "voice" ? (false ? "Sesi dinleyip üretime bağla." : "Preview and attach a voice to production.") : (false ? "Müziği ara, dinle ve üretime bağla." : "Search, preview and attach background music.")}</p>
               </div>
               <button type="button" onClick={() => setGalleryMode(null)}>×</button>
             </div>
-            {galleryLoading ? <div className="omni-gallery-empty"><Loader2 size={16} className="spin" /> {workUiLanguage === "tr" ? "Galeri yükleniyor..." : "Loading gallery..."}</div> : null}
+            {galleryLoading ? <div className="omni-gallery-empty"><Loader2 size={16} className="spin" /> {false ? "Galeri yükleniyor..." : "Loading gallery..."}</div> : null}
             {galleryError ? <div className="omni-gallery-empty">{galleryError}</div> : null}
             {!galleryLoading && !galleryError && galleryMode === "avatar" ? <div className="omni-gallery-grid">
               {avatarGallery.length ? avatarGallery.map((avatar) => <button type="button" key={avatar.id} className={selectedAvatar?.id === avatar.id ? "active" : ""} onClick={() => { setSelectedAvatar(avatar); setGalleryMode(null); }}>
                 {avatar.imageUrl ? <img src={avatar.imageUrl} alt={avatar.name} /> : <span className="omni-gallery-placeholder">{avatar.name.slice(0, 1)}</span>}
                 <strong>{avatar.name}</strong>
                 <small>{[avatar.gender, avatar.style].filter(Boolean).join(" · ") || "Karakter"}</small>
-              </button>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
+              </button>) : <div className="omni-gallery-empty">{false ? "Avatar listesi boş döndü." : "No avatars returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "voice" ? <div className="omni-gallery-grid voice">
               {voiceGallery.length ? voiceGallery.map((voice) => <div key={voice.id} className={selectedVoice?.id === voice.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                 <strong>{voice.name}</strong>
                 <small>{[voice.language, voice.gender, voice.age, voice.style].filter(Boolean).join(" · ") || "Ses"}</small>
-                {voice.previewAudioUrl ? <button type="button" onClick={() => { void new Audio(voice.previewAudioUrl).play(); }}>{workUiLanguage === "tr" ? "Oynat" : "Play"}</button> : <small>{workUiLanguage === "tr" ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
-                <button type="button" onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu sesi seç" : "Select this voice"}</button>
-              </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Ses listesi boş döndü." : "No voices returned."}</div>}
+                {voice.previewAudioUrl ? <button type="button" onClick={() => { void new Audio(voice.previewAudioUrl).play(); }}>{false ? "Oynat" : "Play"}</button> : <small>{false ? "Bu ses için ön izleme yok." : "No preview available for this voice."}</small>}
+                <button type="button" onClick={() => { setSelectedVoice(voice); setGalleryMode(null); }}>{false ? "Bu sesi seç" : "Select this voice"}</button>
+              </div>) : <div className="omni-gallery-empty">{false ? "Ses listesi boş döndü." : "No voices returned."}</div>}
             </div> : null}
             {!galleryLoading && !galleryError && galleryMode === "music" ? <>
               <div className="omni-gallery-actions">
                 {minimaxMusicVibes.map((vibe) => <button type="button" key={vibe.query} onClick={() => openMinimaxGallery("music", vibe.query)}>{vibe.label}</button>)}
               </div>
               <div className="omni-gallery-actions">
-                <input value={soundQuery} onChange={(event) => setSoundQuery(event.target.value)} placeholder={workUiLanguage === "tr" ? "Örn: energetic lofi beats" : "e.g. energetic lofi beats"} />
-                <button type="button" onClick={() => openMinimaxGallery("music", soundQuery)}>{workUiLanguage === "tr" ? "Ara" : "Search"}</button>
+                <input value={soundQuery} onChange={(event) => setSoundQuery(event.target.value)} placeholder={false ? "Örn: energetic lofi beats" : "e.g. energetic lofi beats"} />
+                <button type="button" onClick={() => openMinimaxGallery("music", soundQuery)}>{false ? "Ara" : "Search"}</button>
               </div>
               <div className="omni-gallery-grid voice">
                 {soundGallery.length ? soundGallery.map((sound) => <div key={sound.id} className={selectedSound?.id === sound.id ? "active omni-gallery-voice-card" : "omni-gallery-voice-card"}>
                   <strong>{sound.name}</strong>
                   <small>{[sound.style, sound.duration].filter(Boolean).join(" · ") || "Müzik"}</small>
-                  {sound.audioUrl ? <button type="button" onClick={() => { void new Audio(sound.audioUrl).play(); }}>{workUiLanguage === "tr" ? "Oynat" : "Play"}</button> : <small>{workUiLanguage === "tr" ? "Bu müzik için ön izleme yok." : "No preview available for this music."}</small>}
-                  <button type="button" onClick={() => { setSelectedSound(sound); setGalleryMode(null); }}>{workUiLanguage === "tr" ? "Bu müziği seç" : "Select this music"}</button>
-                </div>) : <div className="omni-gallery-empty">{workUiLanguage === "tr" ? "Müzik listesi boş döndü." : "No music returned."}</div>}
+                  {sound.audioUrl ? <button type="button" onClick={() => { void new Audio(sound.audioUrl).play(); }}>{false ? "Oynat" : "Play"}</button> : <small>{false ? "Bu müzik için ön izleme yok." : "No preview available for this music."}</small>}
+                  <button type="button" onClick={() => { setSelectedSound(sound); setGalleryMode(null); }}>{false ? "Bu müziği seç" : "Select this music"}</button>
+                </div>) : <div className="omni-gallery-empty">{false ? "Müzik listesi boş döndü." : "No music returned."}</div>}
               </div>
             </> : null}
           </div>
@@ -2309,7 +2313,7 @@ if (isImageStart) {
         {status ? <p className="omni-status-line">{status}</p> : null}
         {materials.length ? (
           <div className="omni-material-list omni-material-list-floating" aria-live="polite">
-            <strong>{workUiLanguage === "tr" ? "Ekli materyaller" : "Attached materials"}</strong>
+            <strong>{false ? "Ekli materyaller" : "Attached materials"}</strong>
             {materials.map((material) => <span key={material.file_url} title={material.title}>{material.title}</span>)}
           </div>
         ) : null}
