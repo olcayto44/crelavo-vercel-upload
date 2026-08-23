@@ -535,7 +535,7 @@ const minimaxSetupPresenterIntent = !isImageProduction && hasMinimaxPresenterInt
 const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
 const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
 const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? "").toLowerCase() === "minimax";
-const talkingProviderType = !minimaxVideoRouteSelected && !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent);
+const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
