@@ -459,7 +459,7 @@ const mediaOutputReleased = !isDroneRawPreviewOnly && (hasPlayableMediaUrl || /f
 const previewUrl = isDroneRawPreviewOnly ? rawPreviewUrl : isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUrl;
 const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
   const mediaDownloadUrl = isImageProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=png` : isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
-  const playbackUrl = previewUrl || (isMediaProduction || isImageProduction ? deliveryUrl : "");
+  const playbackUrl = (isMediaProduction || isImageProduction ? deliveryUrl : "") || previewUrl;
   const siteEmbedCode = playbackUrl ? `<video controls playsinline src="${playbackUrl}" style="width:100%;max-width:960px;border-radius:18px;display:block;"></video>` : "";
   const posterUrl = safeAssetUrl(
     outputJson.thumbnailUrl

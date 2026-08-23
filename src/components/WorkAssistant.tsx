@@ -1379,7 +1379,7 @@ function productionProviderProof(production: WorkProductionCard | null) {
   const provider = firstTextValue(minimaxProof.provider, visualJob.provider, heygenProof.provider, output.providerStatus);
   const sessionId = firstTextValue(output.minimaxSessionId, minimaxProof.sessionId, output.heygenSessionId, heygenProof.sessionId, visualJob.id);
   const videoId = firstTextValue(output.minimaxVideoId, minimaxProof.videoId, output.heygenVideoId, heygenProof.videoId, latestArtifact.providerResourceId);
-  const finalUrl = firstTextValue(production?.delivery_link, production?.preview_url, production?.delivery_zip_url, output.finalVideoUrl, output.providerFinalUrl, output.latestMinimaxVideoUrl, latestArtifact.previewUrl);
+  const finalUrl = firstTextValue(output.finalVideoUrl, output.providerFinalUrl, output.latestMinimaxVideoUrl, production?.delivery_link, production?.delivery_zip_url, latestArtifact.previewUrl, production?.preview_url);
   return { provider, sessionId, videoId, finalUrl };
 }
 
