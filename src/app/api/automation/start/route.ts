@@ -428,9 +428,10 @@ const productionType = ["talking_video_basic", "talking_video_multi_person", "ta
 }
 
 export async function POST(request: Request) {
+  let productionId = "";
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-    const productionId = String(body.production_id ?? "").trim();
+    productionId = String(body.production_id ?? "").trim();
     const guardConfig = apiCostGuardConfig();
     const routeBudget = enforceRouteBudget(request, { route: "automation:start", userId: String(body.user_id ?? ""), ipLimit: guardConfig.automationStartIpLimit, userLimit: guardConfig.automationStartUserLimit, windowMs: 15 * 60 * 1000 });
     if (!routeBudget.ok) return routeBudget.response;
@@ -1224,6 +1225,36 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
     if (demoError) throw demoError;
     return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
   } catch (error) {
-    return Response.json({ error: errorMessage(error, "Could not start automation job") }, { status: 500 });
+    const failureMessage = errorMessage(error, "Could not start automation job");
+    if (productionId) {
+      try {
+        const supabase = supabaseAdmin();
+        const { data: currentProduction } = await selectProductionForAutomation(supabase, productionId);
+        if (currentProduction) {
+          const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
+          const failureOutput = {
+            ...existingOutput,
+            automationStatus: "provider_start_failed",
+            providerStatus: "provider_start_failed",
+            providerErrors: { ...(existingOutput.providerErrors && typeof existingOutput.providerErrors === "object" ? existingOutput.providerErrors as Record<string, unknown> : {}), automation_start: failureMessage },
+            errorMessage: failureMessage
+          };
+          await supabase
+            .from("production_requests")
+            .update(safeUpdate({
+              automation_status: "provider_start_failed",
+              generation_status: "provider_start_failed",
+              output_json: failureOutput,
+              error_message: failureMessage,
+              admin_notes: `Automation start failed before provider job creation: ${failureMessage}`,
+              updated_at: new Date().toISOString()
+            }))
+            .eq("id", productionId);
+        }
+      } catch (logError) {
+        console.error("automation:start failure logging failed", logError);
+      }
+    }
+    return Response.json({ error: failureMessage, production_id: productionId || null, provider_started: false, provider_start_failed: true }, { status: 500 });
   }
 }
