@@ -10,7 +10,6 @@ import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
-import { applyMarketingTextOverlay, hasImageMarketingText, stripImageMarketingTextInstructions } from "@/lib/image-postprocess";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
@@ -981,10 +980,11 @@ if (isImageProduction) {
     inputJson.providerPrompt,
     currentProduction.title
   ].map((value) => String(value ?? "").trim()).filter(Boolean);
+  const { applyMarketingTextOverlay, hasImageMarketingText, stripImageMarketingTextInstructions } = await import("@/lib/image-postprocess");
   const originalImagePrompt = (imagePromptCandidates.find((candidate) => hasImageMarketingText(candidate)) || imagePromptCandidates[0] || "Image production").trim();
   const imagePrompt = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
   const requestedAspectRatio = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
-  const aspectRatio = /4\s*[:x]\s*5|portrait\s*4\s*[:x]\s*5/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s*portrait/i.test(originalImagePrompt) ? "4:5" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : "4:5";
+  const aspectRatio = /4\s*[:x]\s*5|portrait\s*4\s*[:x]\s*5/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s+portrait/i.test(originalImagePrompt) ? "4:5" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : "4:5";
   try {
     const imageResult = await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: "final-image-base", aspectRatio });
     const overlayResult = await applyMarketingTextOverlay({ productionId, sourceUrl: imageResult.imageUrl, prompt: originalImagePrompt, aspectRatio });
