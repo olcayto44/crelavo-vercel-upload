@@ -24,17 +24,29 @@ function firstUrl(value: unknown): string | undefined {
     return firstUrl(record.url)
       || firstUrl(record.output)
       || firstUrl(record.outputs)
+      || firstUrl(record.output_url)
+      || firstUrl(record.outputUrl)
+      || firstUrl(record.download_url)
+      || firstUrl(record.downloadUrl)
+      || firstUrl(record.media_url)
+      || firstUrl(record.mediaUrl)
+      || firstUrl(record.play_url)
+      || firstUrl(record.playUrl)
       || firstUrl(record.video)
       || firstUrl(record.videos)
       || firstUrl(record.video_url)
       || firstUrl(record.videoUrl)
+      || firstUrl(record.file_url)
+      || firstUrl(record.fileUrl)
+      || firstUrl(record.file)
+      || firstUrl(record.files)
       || firstUrl(record.result)
       || firstUrl(record.results)
       || firstUrl(record.task_result)
       || firstUrl(record.taskResult)
       || firstUrl(record.src)
-      || firstUrl(record.file)
-      || firstUrl(record.files)
+      || firstUrl(record.uri)
+      || firstUrl(record.link)
       || firstUrl(record.data);
   }
   return undefined;
@@ -43,7 +55,7 @@ function firstUrl(value: unknown): string | undefined {
 function isRealMediaUrl(url: string | undefined) {
   if (!url) return false;
   if (/api\.replicate\.com\/v1\/predictions|preview\.html|manifest|readme|placeholder|generated_on_download|\/api\/productions\/.*\/delivery\?file=/i.test(url)) return false;
-  return /\.mp4(\?|$)|\.mov(\?|$)|\.webm(\?|$)|replicate\.delivery|fal\.media|heygen\.ai|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url);
+  return /\.mp4(\?|$)|\.mov(\?|$)|\.webm(\?|$)|replicate\.delivery|fal\.media|heygen\.ai|minimax|api\.minimax|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url);
 }
 
 function firstRealMediaUrl(value: unknown): string | undefined {
