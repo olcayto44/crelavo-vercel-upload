@@ -2479,11 +2479,19 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
 
   async function startProduction() {
     const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
-    const productionType = productionTypeFromSelection();
-    const characterLine = selectedCharacterProfile && selectedCharacterProfile !== "No presenter / UI-only video" ? `\nCharacter/presenter: ${selectedCharacterProfile}` : "\nCharacter/presenter: No presenter / UI-only video";
+    const luxuryCommercialIntent = /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(clean);
+    const productionType = luxuryCommercialIntent ? "video" : productionTypeFromSelection();
+    const characterLine = (luxuryCommercialIntent ? "No presenter / UI-only video" : selectedCharacterProfile) !== "No presenter / UI-only video" ? `\nCharacter/presenter: ${luxuryCommercialIntent ? selectedCharacterProfile : selectedCharacterProfile}` : "\nCharacter/presenter: No presenter / UI-only video";
     const selectionInput = `${productionBrief || input}${characterLine}`;
-    const selection = { input: selectionInput, selectedStyle, selectedQuality: safeSelectedQuality, selectedDuration, selectedModules, selectedFeatures, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork, selectedProviderService, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile, selectedEnvironmentProfile, selectedDeliveryHandoff };
-    const packageId = packageIdFromSelection(productionType, selection, configuredProductionPackages);
+    const selectedFeaturesForProduction = luxuryCommercialIntent ? Array.from(new Set([...(selectedFeatures.filter((item) => !/(voice-over|voice over|subtitles?|subtitle|motion graphics)/i.test(item))), "Music"])) : selectedFeatures;
+    const selectedStyleForProduction = luxuryCommercialIntent && /(motion graphics|product demo|ui)/i.test(selectedStyle) ? "Cinematic" : selectedStyle;
+    const selectedEnvironmentProfileForProduction = luxuryCommercialIntent ? "Studio background" : selectedEnvironmentProfile;
+    const selectedCharacterProfileForProduction = luxuryCommercialIntent ? "No presenter / UI-only video" : selectedCharacterProfile;
+    const selectedMusicProfileForProduction = luxuryCommercialIntent ? "Cinematic background music" : selectedMusicProfile;
+    const selectedServiceNetworkForProduction = luxuryCommercialIntent ? "" : selectedServiceNetwork;
+    const selectedProviderServiceForProduction = luxuryCommercialIntent ? "" : selectedProviderService;
+    const selection = { input: selectionInput, selectedStyle: selectedStyleForProduction, selectedQuality: safeSelectedQuality, selectedDuration, selectedModules, selectedFeatures: selectedFeaturesForProduction, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork: selectedServiceNetworkForProduction, selectedProviderService: selectedProviderServiceForProduction, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile: selectedMusicProfileForProduction, selectedEnvironmentProfile: selectedEnvironmentProfileForProduction, selectedDeliveryHandoff };
+    const packageId = luxuryCommercialIntent ? "video_premium" : packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
       setStartError(`Insufficient credits for this production. Available: ${(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: ${costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.`);
