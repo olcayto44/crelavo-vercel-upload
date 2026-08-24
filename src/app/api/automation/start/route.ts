@@ -1091,7 +1091,7 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
   if (blockedUpdateError) throw new Error(`generic_provider_block_update: ${errorMessage(blockedUpdateError, "DB update failed")}`);
   return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
 }
-const requestedDuration = Number(providerPreflight.durationSeconds) || 8;
+const requestedDuration = Math.max(providerPreflight.testMode ? 5 : 15, Number(providerPreflight.durationSeconds) || (providerPreflight.testMode ? 5 : 15));
     const providerTestMode = Boolean(providerPreflight.testMode);
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
     const pipelineMap: Record<string, string> = {

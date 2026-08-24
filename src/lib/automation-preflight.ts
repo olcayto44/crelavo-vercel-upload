@@ -151,7 +151,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     metadataObject(requestMetadata.ecommerceContext).targetDurationSeconds,
     metadataObject(inputJson.ecommerceContext).targetDurationSeconds
   );
-  const requestedDuration = explicitDuration || (providerTestMode ? 5 : 8);
+  const requestedDuration = providerTestMode ? Math.max(5, explicitDuration || 5) : Math.max(15, explicitDuration || 15);
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
   const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
   const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
