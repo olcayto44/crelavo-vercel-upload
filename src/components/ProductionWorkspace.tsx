@@ -522,7 +522,6 @@ const providerProofStatus = String(visualJob?.status ?? outputJson.providerStatu
   const realtimeProgressSteps = productionProgressSteps({ status: production.status, generationStatus: production.generation_status, automationStatus: production.automation_status, outputJson });
   const inferredProgress = productionProgressPercent(realtimeProgressSteps);
   const providerProgress = Number.isFinite(Number(outputJson.providerProgress)) ? Math.max(0, Math.min(100, Number(outputJson.providerProgress))) : inferredProgress;
-  const providerTestMode = Boolean(outputJson.providerTestMode ?? metadata.providerTestMode);
   const providerPreflight = outputJson.providerPreflight && typeof outputJson.providerPreflight === "object" ? outputJson.providerPreflight as Record<string, unknown> : null;
   const providerReadiness = outputJson.providerReadiness && typeof outputJson.providerReadiness === "object" ? outputJson.providerReadiness as Record<string, any> : null;
   const providerRequirements = Array.isArray(providerReadiness?.requirements) ? providerReadiness.requirements as Record<string, any>[] : [];
@@ -1306,7 +1305,6 @@ const data = await response.json().catch(() => ({}));
               {visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
-            {providerTestMode ? <p className="provider-poll-note">Quick provider test: 5 sec / 720p / single output.</p> : null}
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
 {visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Scene {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
 {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
