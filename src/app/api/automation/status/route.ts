@@ -350,7 +350,7 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       if (/supabase|provider-assets/i.test(sourceUrl)) mirroredVisualUrls.push(sourceUrl);
       else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
     }
-    const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || (Boolean(selectedOptions.music) ? await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }) : null));
+    const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }));
     try {
       const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
       return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
