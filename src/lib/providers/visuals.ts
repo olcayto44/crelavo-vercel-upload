@@ -157,7 +157,10 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
 }
 
 export async function createVisualVideo(input: { scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string }): Promise<ProviderJob> {
-  const provider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
+  const requestedProvider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
+  const provider = requestedProvider === "minimax" && !hasMiniMaxVideoEnv()
+    ? (hasAnyEnv(["RUNWAY_API_KEY"]) ? "runway" : hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"]) ? "kling" : hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "fal" : "replicate")
+    : requestedProvider;
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
   const requestedRatio = input.aspectRatio || "9:16";
   const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
