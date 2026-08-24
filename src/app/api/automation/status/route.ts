@@ -854,15 +854,18 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "", thumbnailUrl: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
     const heygenCompletionStatus = await heygenVideoAgentCompletionOverride(outputWithRenderJob, normalizedVisualStatus, outputVisualJobProvider);
+    const isMiniMaxVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || fallbackVisualUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "minimax";
     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
       ? normalizedRenderStatus
       : heygenCompletionStatus
         ? heygenCompletionStatus
         : heygenVideoAgentVisualReady
           ? normalizedVisualStatus
-          : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
+          : isMiniMaxVisualReady
             ? normalizedVisualStatus
-            : null;
+            : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
+              ? normalizedVisualStatus
+              : null;
     if (visualStatus?.status === "succeeded" && visualStatus.outputUrl && requiresFinalRender && !successfulStatus) {
       const rawVisualPreviewUrl = urlValue(visualStatus.outputUrl, visualLifecycle.outputRegistry, outputWithRenderJob.visualJob, outputWithRenderJob.visualStatus, outputWithRenderJob);
       const fallbackPatch = rawVisualPreviewUrl
