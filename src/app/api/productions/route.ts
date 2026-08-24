@@ -605,7 +605,18 @@ const agentAction = body.agent_action && typeof body.agent_action === "object"
   ? body.agent_action as Record<string, unknown>
   : null;
 const agentProviderRoutePlan = buildAgentProviderRoutePlan(agentAction, productionType, packageId);
-const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !serverMinimaxPresenterIntent && !agentProviderRoutePlan.canStartRealProvider;
+const effectiveAgentProviderRoutePlan = directLuxuryProductCommercialRoute ? {
+  ...agentProviderRoutePlan,
+  providerCategory: "video",
+  providerRoute: "minimax",
+  readinessStatus: "ready",
+  canStartRealProvider: true,
+  blockingKeys: [],
+  optionalMissingKeys: [],
+  nextStatusIfMissing: "provider_ready",
+  userMessage: "Luxury product commercial route is forced to the video pipeline."
+} : agentProviderRoutePlan;
+const dedicatedProviderBlocked = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) && !serverMinimaxPresenterIntent && !effectiveAgentProviderRoutePlan.canStartRealProvider;
 const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits;
 
 const costGuardConfig = apiCostGuardConfig();
@@ -933,11 +944,11 @@ outputPlan,
       agentAction,
       agentProviderRoutePlan,
       providerReadiness: {
-        status: agentProviderRoutePlan.readinessStatus,
-        canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
-        blockingKeys: agentProviderRoutePlan.blockingKeys,
-        optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
-        userMessage: agentProviderRoutePlan.userMessage
+        status: effectiveAgentProviderRoutePlan.readinessStatus,
+        canStartRealProvider: effectiveAgentProviderRoutePlan.canStartRealProvider,
+        blockingKeys: effectiveAgentProviderRoutePlan.blockingKeys,
+        optionalMissingKeys: effectiveAgentProviderRoutePlan.optionalMissingKeys,
+        userMessage: effectiveAgentProviderRoutePlan.userMessage
       },
       jobId: automationJobId,
       currentStep: isProductAdVideo ? "Product ad video queued" : "Request queued",
@@ -953,11 +964,11 @@ outputPlan,
         estimated_credits: estimatedCredits,
         output_json: {
           providerReadiness: {
-            status: agentProviderRoutePlan.readinessStatus,
-            canStartRealProvider: agentProviderRoutePlan.canStartRealProvider,
-            blockingKeys: agentProviderRoutePlan.blockingKeys,
-            optionalMissingKeys: agentProviderRoutePlan.optionalMissingKeys,
-            userMessage: agentProviderRoutePlan.userMessage
+            status: effectiveAgentProviderRoutePlan.readinessStatus,
+            canStartRealProvider: effectiveAgentProviderRoutePlan.canStartRealProvider,
+            blockingKeys: effectiveAgentProviderRoutePlan.blockingKeys,
+            optionalMissingKeys: effectiveAgentProviderRoutePlan.optionalMissingKeys,
+            userMessage: effectiveAgentProviderRoutePlan.userMessage
           }
         },
         request_metadata: requestMetadata

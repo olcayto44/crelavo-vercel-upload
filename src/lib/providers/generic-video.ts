@@ -385,7 +385,11 @@ export function buildGenericVideoPlan(input: {
   const prompt = clean(input.prompt) || clean(inputJson.prompt) || title;
   const durationSeconds = Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15;
   const aspectRatio = clean(providerPreflight.aspectRatio) || clean(requestMetadata.aspectRatio) || "9:16";
-  const provider = clean(providerPreflight.provider) || clean(optionalEnv("VIDEO_PROVIDER")) || "replicate";
+  const providerLock = String(clean(requestMetadata.routeLock) || clean(inputJson.routeLock) || "").toLowerCase();
+  const preferredRouteProvider = providerLock === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(`${title} ${prompt} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`)
+    ? "minimax"
+    : "";
+  const provider = preferredRouteProvider || clean(providerPreflight.provider) || clean(optionalEnv("VIDEO_PROVIDER")) || "replicate";
 const selectedVoiceProfile = clean(requestMetadata.voiceProfile) || clean(inputJson.voiceProfile) || "premium clear narrator";
 const intentText = `${title} ${prompt} ${clean(requestMetadata.productionGoal)} ${clean(inputJson.productionGoal)} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
 const productionTypeSignal = `${clean(requestMetadata.productionType)} ${clean(inputJson.productionType)} ${clean(requestMetadata.pipelineType)} ${clean(inputJson.pipelineType)}`.toLowerCase();
