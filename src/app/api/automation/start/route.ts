@@ -548,6 +548,7 @@ const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_
 const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
 const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? "").toLowerCase() === "minimax";
 const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent);
+const directLuxuryProductCommercialRoute = String(requestMetadata.routeLock ?? inputJson.routeLock ?? existingOutput.routeLock ?? "") === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(productionDetectionText);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
@@ -681,7 +682,7 @@ if (talkingProviderType) {
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
-    if (!providerReadiness.canStartRealProvider && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected) {
+    if (!providerReadiness.canStartRealProvider && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute) {
       const waitingLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: existingOutput }, {});
       const waitingOutput = {
         ...existingOutput,
