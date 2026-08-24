@@ -378,7 +378,7 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "quality", label: "Kalite / format", options: ["1080p", "1080p premium", "4K", "Vertical 9:16", "Horizontal 16:9", "YouTube 16:9"] },
     { id: "visualStyle", label: "Görsel tarz", options: ["Realistic video", "Cinematic", "Product demo", "2D animation", "3D animation", "Stickman animation", "Motion graphics", "Whiteboard animation"] },
     { id: "platform", label: "Nerede kullanılacak?", multi: true, options: ["TikTok", "Instagram Reels", "YouTube Shorts", "Website", "Meta Ads", "YouTube 16:9"] },
-    { id: "duration", label: "Süre", options: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"] },
+    { id: "duration", label: "Süre", options: ["10 sec", "15 sec", "30 sec", "60 sec"] },
     { id: "videoStructure", label: "Video yapısı", multi: true, options: ["Hook opening", "Scene plan", "Product close-ups", "Call to action", "End card", "3 alternatives"] },
     { id: "food", label: "Yemek videosu detayları", multi: true, dependsOn: { questionId: "videoType", value: "Restaurant / food video" }, options: ["Menu item", "Campaign price", "Restaurant intro", "Close-up product shots", "Combo meal", "Price text"] },
     { id: "extras", label: "Ek özellikler", multi: true, options: ["Music", "Voice-over", "Subtitles", "Logo", "Thumbnail", "Social caption", "Final MP4"] }
@@ -501,7 +501,7 @@ function safeWorkQualityOptions(options: string[]) {
 const qualityOptions = ["1080p", "1080p premium", "1080p cinematic", "2K", "4K", "Vertical 9:16", "Horizontal 16:9", "Square 1:1", "Story 9:16", "YouTube 16:9"];
 const styleOptions = ["Cinematic", "Series / film", "Short film", "Series scene", "Trailer", "Cinematic animation", "2D animation", "2.5D animation", "3D animation", "Stickman animation", "Motion graphics", "Whiteboard animation", "Character animation", "Realistic UGC", "Premium ad", "Luxury product", "SaaS modern", "Minimal", "Viral TikTok", "Corporate", "Fun", "Documentary", "Product demo", "App demo"];
 const featureOptions = ["Voice-over", "Own voice-over", "Choose AI voice", "Create AI voice", "Voice clone", "Child voices", "Subtitles", "Music", "Background music", "Emotion-matched music", "User music reference", "Script", "Scene plan", "Character breakdown", "Series/film bible", "Trailer cut", "Long film/series clipping", "Scene detection", "Hook extraction", "Shorts/Reels cut", "3 alternatives", "5 alternatives", "A/B hook", "Character", "Photo/avatar input", "Choose character", "Create character", "Add yourself to video", "2-person conversation", "3-person conversation", "4-person conversation", "5+ person conversation", "7-8 person conversation", "Panel / roundtable conversation", "Separate voice per person", "Realistic talking video", "Animated talking video", "Regional clothing", "Traditional outfit", "Regional environment", "Local lifestyle environment", "Local accent voice-over", "Dialect voice-over", "Cultural scene direction", "Scene transition", "Lip-sync", "Drone-style aerial video", "AI map/location drone-style video", "Logo/brand kit", "Source file delivery", "Production package", "Working source package", "Social media caption", "Hashtag set", "Cover visual", "Thumbnail", "Final ZIP", "README", "Revision right"];
-const durationOptions = ["5 sec", "10 sec", "15 sec", "30 sec", "45 sec", "60 sec", "2 min", "3 min", "5 min", "10 min", "Scene 1-3 min", "Pilot 3-10 min", "Episode based", "Season / film plan", "Project based"];
+const durationOptions = ["10 sec", "15 sec", "30 sec", "45 sec", "60 sec", "2 min", "3 min", "5 min", "10 min", "Scene 1-3 min", "Pilot 3-10 min", "Episode based", "Season / film plan", "Project based"];
 const moduleOptions = ["AI video", "Prompt-to-video", "Link-to-video", "Voice-to-video", "Self-in-video", "Advanced talking video", "Multi-person talking video", "Regional culture video", "Local dialect voice", "Series / film studio", "Short film", "Trailer", "Script + scene plan", "Long film/series clipping", "Shorts/Reels/TikTok cuts", "Animation video", "Visual/image pack", "Music video/MV", "Character/photo input", "Character selection", "Character creation", "Voice selection", "AI voice creation", "Voice-over", "Background music direction", "User audio upload", "Drone-style aerial video", "AI map/location drone-style video", "Website", "SaaS screen", "Mobile app", "Admin panel", "Brand kit", "PDF/document", "Shopify product link", "Amazon product link", "Trendyol product link", "E-commerce product pack", "Product ad video", "Marketplace listing", "Product visual set", "Store banner", "SEO product description", "Campaign set", "Bulk product production"];
 const platformOptions = ["Dashboard delivery", "MP4 download", "ZIP source", "TikTok", "Instagram Reels", "YouTube Shorts", "Facebook/Meta Ads", "LinkedIn", "X/Twitter", "Shopify", "Amazon", "Trendyol", "WooCommerce"];
 
@@ -625,7 +625,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
     quality: ["1080p", "1080p premium", "1080p cinematic", "Vertical 9:16", "YouTube 16:9"],
     style: ["Premium ad", "Cinematic", "Cinematic animation", "Realistic UGC", "Documentary", "Product demo"],
-    duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "2 min"]
+    duration: ["10 sec", "15 sec", "30 sec", "60 sec", "2 min"]
   },
   talking_video: {
     title: "Advanced talking video options",
@@ -655,7 +655,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
     quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Motion graphics", "Whiteboard animation"],
-    duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
+    duration: ["10 sec", "15 sec", "30 sec", "60 sec"]
   },
   anime_short_film: {
     title: "Anime short film options",
@@ -675,7 +675,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
     quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Funny", "Exciting", "Cinematic", "Character animation", "3D animation", "Realistic UGC"],
-    duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
+    duration: ["10 sec", "15 sec", "30 sec", "60 sec"]
   },
   nature_video: {
     title: "Nature video options",
@@ -805,7 +805,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
     quality: ["1080p", "1080p premium", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Cinematic", "Realistic UGC", "Product demo", "Motion graphics"],
-    duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
+    duration: ["10 sec", "15 sec", "30 sec", "60 sec"]
   },
   stickman_animation: {
     title: "Stickman animation options",
@@ -815,7 +815,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     platforms: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"],
     quality: ["1080p", "Vertical 9:16", "Horizontal 16:9"],
     style: ["Stickman animation", "Whiteboard animation", "2D animation", "Fun", "Documentary"],
-    duration: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec"]
+    duration: ["10 sec", "15 sec", "30 sec", "60 sec"]
   },
   music_video: {
     title: "Music video / MV options",
@@ -2373,7 +2373,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     { id: "music", title: "Arka fon müziği", subtitle: "Müzik olsun mu, hangi ruh halinde olsun?", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Technology SaaS music"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); } },
     { id: "style", title: "Görsel stil", subtitle: "Video dili ve tempo seçimi.", options: ["SaaS modern", "Cinematic", "Premium ad", "Fast CTA video"], value: selectedStyle, apply: setSelectedStyle },
     { id: "quality", title: "Kalite ve oran", subtitle: "Kalite / platform formatını seç.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
-    { id: "duration", title: "Süre", subtitle: "Video süresini seç.", options: ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "2 min"], value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "duration", title: "Süre", subtitle: "Video süresini seç.", options: ["10 sec", "15 sec", "30 sec", "60 sec", "2 min"], value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
     { id: "delivery", title: "Teslim", subtitle: "Final dosya ve platform çıktısını seç.", options: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
   const manualWizardSteps = isManualAiVideoFlow ? aiVideoWizardSteps : defaultManualWizardSteps;

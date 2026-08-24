@@ -16,7 +16,7 @@ const studioTypes = [
 
 const qualityOptions = ["Fast", "Standard", "Professional", "Cinematic", "Ultra"];
 const formatOptions = ["9:16 Vertical", "16:9 Landscape", "1:1 Square", "4:5 Social", "Custom"];
-const durationOptions = ["5 sec", "10 sec", "15 sec", "30 sec", "60 sec", "Project based"];
+const durationOptions = ["10 sec", "15 sec", "30 sec", "60 sec", "Project based"];
 
 const createTrustSteps = [
   "No credit charge on this screen",
