@@ -390,7 +390,7 @@ export async function POST(request: Request) {
   const title = String(body.title ?? "").trim();
   const prompt = String(body.prompt ?? "").trim();
   let productionType = String(body.production_type ?? "").trim();
-  const packageId = String(body.package_id ?? "").trim();
+  let packageId = String(body.package_id ?? "").trim();
   const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
   const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
@@ -404,7 +404,13 @@ export async function POST(request: Request) {
 
 
   if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(productionType)) productionType = "talking_video";
-  if (!directLuxuryProductCommercialRoute && serverMinimaxPresenterIntent && ["video", "cinematic_video"].includes(productionType)) productionType = "talking_video";
+  if (directLuxuryProductCommercialRoute) {
+    productionType = "video";
+    packageId = "video_premium";
+  } else if (serverMinimaxPresenterIntent && ["video", "cinematic_video"].includes(productionType)) {
+    productionType = "talking_video";
+  }
+
   const needsImages = Boolean(body.needs_images);
   const revisionBuffer = Boolean(body.revision_buffer);
   const requestedOutputCount = Number(body.output_count ?? body.requested_clip_count ?? body.requested_alternative_count ?? 1);
