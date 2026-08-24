@@ -1,3 +1,8 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import ffmpegPath from "ffmpeg-static";
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
@@ -10,11 +15,12 @@ import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jobs";
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
+import { createAmbientMusicBed } from "@/lib/providers/generic-video";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
 import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
-import { mirrorProviderAsset } from "@/lib/providers/storage";
+import { mirrorProviderAsset, uploadProviderAsset } from "@/lib/providers/storage";
 import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/types";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
@@ -259,6 +265,55 @@ async function maybeCreateVoiceoverAsset(productionId: string, output: Record<st
   return { ...output, voiceAudioUrl, voiceRetry: { status: "created", provider: "elevenlabs", createdAt: new Date().toISOString() } };
 }
 
+async function localFinalMux(input: { productionId: string; videoUrl: string; audioUrl?: string | null; durationSeconds: number; title: string }) {
+  const response = await fetch(input.videoUrl, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Final visual download failed: ${response.status} ${await response.text()}`);
+  const directory = await mkdtemp(join(tmpdir(), "crelavo-final-"));
+  const videoPath = join(directory, "input.mp4");
+  const outputPath = join(directory, "final.mp4");
+  try {
+    await writeFile(videoPath, Buffer.from(await response.arrayBuffer()));
+    if (input.audioUrl) {
+      const audioResponse = await fetch(input.audioUrl, { cache: "no-store" });
+      if (!audioResponse.ok) throw new Error(`Final audio download failed: ${audioResponse.status} ${await audioResponse.text()}`);
+      const audioPath = join(directory, "audio.m4a");
+      await writeFile(audioPath, Buffer.from(await audioResponse.arrayBuffer()));
+      await new Promise<void>((resolve, reject) => {
+        if (!ffmpegPath) {
+          reject(new Error("ffmpeg-static binary is not available."));
+          return;
+        }
+        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr || error.message));
+            return;
+          }
+          resolve();
+        });
+      });
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        if (!ffmpegPath) {
+          reject(new Error("ffmpeg-static binary is not available."));
+          return;
+        }
+        execFile(ffmpegPath, ["-y", "-i", videoPath, "-c:v", "copy", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+          if (error) {
+            reject(new Error(stderr || error.message));
+            return;
+          }
+          resolve();
+        });
+      });
+    }
+    const finalBytes = await readFile(outputPath);
+    const storedUrl = await uploadProviderAsset(`${input.productionId}/local-final-render.mp4`, finalBytes, "video/mp4");
+    return { provider: "local_final", id: `local-final-${input.productionId}`, status: "succeeded", url: storedUrl, raw: { sourceVideoUrl: input.videoUrl, audioUrl: input.audioUrl ?? null, title: input.title } };
+  } finally {
+    await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+  }
+}
+
 async function maybeCreateRenderAfterVisualReady(productionId: string, output: Record<string, unknown>, visualStatus: NormalizedProviderStatus | null, visualStatuses: NormalizedProviderStatus[] = []): Promise<{ renderJob: ProviderJob | null; renderStarted: boolean; renderError?: string; mirroredVisualUrls?: string[] }> {
   const currentRenderJob = existingRenderJob(output);
   if (currentRenderJob) return { renderJob: currentRenderJob, renderStarted: false };
@@ -295,17 +350,27 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       if (/supabase|provider-assets/i.test(sourceUrl)) mirroredVisualUrls.push(sourceUrl);
       else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
     }
-    const renderJob = await createShotstackRender({
-      title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
-      videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
-      videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
-      audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl,
-      audioSegments: voiceAudioSegments,
-      subtitleUrl,
-      subtitleLines,
-      durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
-    });
-    return { renderJob, renderStarted: true, mirroredVisualUrls };
+    try {
+      const renderJob = await createShotstackRender({
+        title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
+        videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
+        videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
+        audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl,
+        audioSegments: voiceAudioSegments,
+        subtitleUrl,
+        subtitleLines,
+        durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
+      });
+      return { renderJob, renderStarted: true, mirroredVisualUrls };
+    } catch (error) {
+      const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || (Boolean(selectedOptions.music) ? await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }) : null));
+      try {
+        const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
+        return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
+      } catch (localError) {
+        return { renderJob: null, renderStarted: false, renderError: errorMessage(localError ?? error, "Render job could not be started after visual output became ready.") };
+      }
+    }
   } catch (error) {
     return { renderJob: null, renderStarted: false, renderError: errorMessage(error, "Render job could not be started after visual output became ready.") };
   }

@@ -355,6 +355,16 @@ export async function getProviderStatus(job: ProviderJob): Promise<NormalizedPro
   if (job.provider === "heygen_video_agent") return getHeyGenVideoAgentStatus(job);
   if (job.provider === "minimax") return getMiniMaxStatus(job);
   if (job.provider === "shotstack") return getShotstackStatus(job);
+  if (job.provider === "local_final") {
+    return {
+      provider: job.provider,
+      id: job.id,
+      status: "succeeded",
+      outputUrl: job.url,
+      raw: job.raw,
+      hasAudio: Boolean(job.url)
+    };
+  }
   if (job.provider === "website_screenshot_reference") {
     return {
       provider: job.provider,

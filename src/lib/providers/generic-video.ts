@@ -101,7 +101,7 @@ async function sourceContextForPrompt(text: string) {
   }
 }
 
-async function extractAudioTrackFromVideoUrl(input: { productionId: string; videoUrl: string; filenameBase: string }) {
+export async function extractAudioTrackFromVideoUrl(input: { productionId: string; videoUrl: string; filenameBase: string }) {
   const response = await fetch(input.videoUrl, { cache: "no-store" });
   if (!response.ok) throw new Error(`Video download failed for audio extraction: ${response.status} ${await response.text()}`);
   const directory = await mkdtemp(join(tmpdir(), "crelavo-audio-"));
@@ -129,7 +129,7 @@ async function extractAudioTrackFromVideoUrl(input: { productionId: string; vide
   }
 }
 
-async function createAmbientMusicBed(input: { productionId: string; durationSeconds: number; filenameBase: string; profile?: string }) {
+export async function createAmbientMusicBed(input: { productionId: string; durationSeconds: number; filenameBase: string; profile?: string }) {
   const durationSeconds = Math.max(4, Number(input.durationSeconds) || 15);
   const directory = await mkdtemp(join(tmpdir(), "crelavo-music-"));
   const audioPath = join(directory, `${input.filenameBase}.m4a`);
