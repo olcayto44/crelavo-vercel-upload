@@ -16,6 +16,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { createAmbientMusicBed } from "@/lib/providers/generic-video";
+import { hasProviderEnv } from "@/lib/providers/env";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
 import { createShotstackRender } from "@/lib/providers/shotstack";
@@ -349,12 +350,21 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       if (/supabase|provider-assets/i.test(sourceUrl)) mirroredVisualUrls.push(sourceUrl);
       else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
     }
+    const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || (Boolean(selectedOptions.music) ? await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }) : null));
+    if (!hasProviderEnv("shotstack")) {
+      try {
+        const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
+        return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
+      } catch (localError) {
+        return { renderJob: null, renderStarted: false, renderError: errorMessage(localError, "Render job could not be started after visual output became ready.") };
+      }
+    }
     try {
       const renderJob = await createShotstackRender({
         title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
         videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
         videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
-        audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl,
+        audioUrl: voiceAudioSegments.length ? null : fallbackAudioUrl,
         audioSegments: voiceAudioSegments,
         subtitleUrl,
         subtitleLines,
@@ -362,7 +372,6 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       });
       return { renderJob, renderStarted: true, mirroredVisualUrls };
     } catch (error) {
-      const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || (Boolean(selectedOptions.music) ? await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }) : null));
       try {
         const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
         return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
