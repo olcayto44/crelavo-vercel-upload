@@ -351,33 +351,28 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
     }
     const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || (Boolean(selectedOptions.music) ? await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }) : null));
-    if (!hasProviderEnv("shotstack")) {
-      try {
-        const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
-        return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
-      } catch (localError) {
-        return { renderJob: null, renderStarted: false, renderError: errorMessage(localError, "Render job could not be started after visual output became ready.") };
-      }
-    }
     try {
-      const renderJob = await createShotstackRender({
-        title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
-        videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
-        videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
-        audioUrl: voiceAudioSegments.length ? null : fallbackAudioUrl,
-        audioSegments: voiceAudioSegments,
-        subtitleUrl,
-        subtitleLines,
-        durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
-      });
-      return { renderJob, renderStarted: true, mirroredVisualUrls };
-    } catch (error) {
-      try {
-        const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
-        return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
-      } catch (localError) {
-        return { renderJob: null, renderStarted: false, renderError: errorMessage(localError ?? error, "Render job could not be started after visual output became ready.") };
+      const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
+      return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
+    } catch (localError) {
+      if (hasProviderEnv("shotstack")) {
+        try {
+          const renderJob = await createShotstackRender({
+            title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad"),
+            videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0],
+            videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : undefined,
+            audioUrl: voiceAudioSegments.length ? null : fallbackAudioUrl,
+            audioSegments: voiceAudioSegments,
+            subtitleUrl,
+            subtitleLines,
+            durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds))
+          });
+          return { renderJob, renderStarted: true, mirroredVisualUrls };
+        } catch (shotstackError) {
+          return { renderJob: null, renderStarted: false, renderError: errorMessage(shotstackError ?? localError, "Render job could not be started after visual output became ready.") };
+        }
       }
+      return { renderJob: null, renderStarted: false, renderError: errorMessage(localError, "Render job could not be started after visual output became ready.") };
     }
   } catch (error) {
     return { renderJob: null, renderStarted: false, renderError: errorMessage(error, "Render job could not be started after visual output became ready.") };
