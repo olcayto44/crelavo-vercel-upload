@@ -336,7 +336,6 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
   const subtitleUrl = String(output.subtitleUrl ?? "").trim();
   if (wantsVoice && !hasVoiceAudio) return { renderJob: null, renderStarted: false, renderError: "Voice-over was selected but no voice audio was created; final render is blocked to avoid silent delivery." };
   if (wantsSubtitles && !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Subtitles were selected but no subtitle file was created; final render is blocked." };
-  if (!isDroneRender && !hasVoiceAudio && !subtitleUrl && !Boolean(selectedOptions.music)) return { renderJob: null, renderStarted: false, renderError: "Voice/subtitle/music asset is missing; render cannot start." };
 
   const brain = output.brain && typeof output.brain === "object" ? output.brain as Record<string, unknown> : {};
   const requestedDurationSeconds = Number(output.requestedDurationSeconds ?? output.targetDurationSeconds ?? 30) || 30;
