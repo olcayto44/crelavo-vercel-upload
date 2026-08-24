@@ -28,7 +28,7 @@ export function minimaxGroupId() {
 }
 
 export function hasMiniMaxConfig() {
-  return Boolean(optionalProviderEnv("minimax") && minimaxGroupId());
+  return Boolean(optionalProviderEnv("minimax"));
 }
 
 export function maskGroupId(value: string) {
@@ -43,7 +43,7 @@ export function minimaxReadiness(): MiniMaxReadiness {
   const hasGroupId = Boolean(groupId);
   return {
     provider: "minimax",
-    ready: hasApiKey && hasGroupId,
+    ready: hasApiKey,
     hasApiKey,
     hasGroupId,
     baseUrl: minimaxBaseUrl(),
