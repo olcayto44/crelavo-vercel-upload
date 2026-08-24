@@ -1,3 +1,9 @@
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import ffmpegPath from "ffmpeg-static";
+import { uploadProviderAsset } from "./storage";
 import { voiceDirectionGuard } from "@/lib/voice-production-guard";
 import { createVoiceover, createVoiceoverSegments, type VoiceAudioSegment } from "./elevenlabs";
 import { optionalEnv } from "./env";
@@ -92,6 +98,34 @@ async function sourceContextForPrompt(text: string) {
     return { url, contextText, imageUrls: snapshot.imageUrls.slice(0, 3) };
   } catch {
     return { url, contextText: `SOURCE URL: ${url}. Use this exact website/link as the visual and brand reference.`, imageUrls: [] as string[] };
+  }
+}
+
+async function extractAudioTrackFromVideoUrl(input: { productionId: string; videoUrl: string; filenameBase: string }) {
+  const response = await fetch(input.videoUrl, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Video download failed for audio extraction: ${response.status} ${await response.text()}`);
+  const directory = await mkdtemp(join(tmpdir(), "crelavo-audio-"));
+  const videoPath = join(directory, "input.mp4");
+  const audioPath = join(directory, `${input.filenameBase}.m4a`);
+  try {
+    await writeFile(videoPath, Buffer.from(await response.arrayBuffer()));
+    await new Promise<void>((resolve, reject) => {
+      if (!ffmpegPath) {
+        reject(new Error("ffmpeg-static binary is not available."));
+        return;
+      }
+      execFile(ffmpegPath, ["-y", "-i", videoPath, "-vn", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        resolve();
+      });
+    });
+    const audioBytes = await readFile(audioPath);
+    return uploadProviderAsset(`${input.productionId}/${input.filenameBase}.m4a`, audioBytes, "audio/mp4");
+  } finally {
+    await rm(directory, { recursive: true, force: true }).catch(() => undefined);
   }
 }
 
@@ -611,9 +645,19 @@ export async function runGenericVideoPipeline(input: {
   const requiredAudioReady = !wantsVoice || Boolean(voiceAudioUrl);
   const requiredSubtitleReady = !wantsSubtitles || Boolean(subtitleUrl);
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
+  const primaryVisualUrl = readyVisualUrls[0] || visualJob?.url || "";
+  let finalRenderAudioUrl = voiceAudioSegments.length ? null : voiceAudioUrl;
+  if (!finalRenderAudioUrl && primaryVisualUrl && (wantsFinalAssembly || selectedOptions.music)) {
+    try {
+      finalRenderAudioUrl = await extractAudioTrackFromVideoUrl({ productionId: input.productionId, videoUrl: primaryVisualUrl, filenameBase: "final-render-audio" });
+    } catch (error) {
+      providerErrors.audio_extract = providerErrorMessage(error);
+      missingProviders.push("audio_extract");
+    }
+  }
   if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady) {
     try {
-      renderJob = await createShotstackRender({ title: plan.title, videoUrl: readyVisualUrls[0] || visualJob?.url, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : voiceAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
+      renderJob = await createShotstackRender({ title: plan.title, videoUrl: primaryVisualUrl || undefined, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : finalRenderAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
     } catch (error) {
       missingProviders.push("final_render");
       providerErrors.final_render = providerErrorMessage(error);

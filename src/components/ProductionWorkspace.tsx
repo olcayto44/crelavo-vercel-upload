@@ -428,28 +428,13 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
   const rawPreviewUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
     outputJson.finalVideoUrl
     || outputJson.providerFinalUrl
-    || outputJson.previewUrl
-    || outputJson.preview_url
-    || outputJson.rawVisualPreviewUrl
     || outputJson.deliveryLink
     || outputJson.delivery_link
-    || primaryAlternative?.preview_url
-    || primaryAlternative?.previewUrl
-    || primaryAlternative?.url
-    || production.preview_url
-    || production.delivery_link
   );
   const rawDeliveryUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
     outputJson.finalVideoUrl
     || outputJson.providerFinalUrl
     || production.delivery_link
-    || production.delivery_zip_url
-    || outputJson.deliveryLink
-    || outputJson.delivery_link
-    || outputJson.deliveryZipUrl
-    || outputJson.delivery_url
-    || primaryAlternative?.url
-    || rawPreviewUrl
   );
 const mediaReadySignal = `${production.automation_status ?? ""} ${production.generation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalVideoUrl ?? "")} ${String(outputJson.providerFinalUrl ?? "")} ${String(outputJson.releaseSource ?? "")}`;
 const droneRenderSignal = `${String(outputJson.renderStatus?.provider ?? "")} ${String(outputJson.renderJob?.provider ?? "")} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalAssetMirror?.providerUrl ?? "")}`.toLowerCase();
