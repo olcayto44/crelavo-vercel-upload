@@ -225,7 +225,7 @@ export async function createShotstackRender(input: {
           const imageAsset = isImageUrl(src);
           return imageAsset
             ? { asset: { type: "image", src }, start, length, fit: "contain" }
-            : { asset: { type: "video", src, volume: 0 }, start, length, fit: "crop" };
+            : { asset: { type: "video", src, volume: input.audioUrl || input.audioSegments?.length ? 0 : 1 }, start, length, fit: "crop" };
         }).filter((clip) => clip.length > 0)
       : isCrelavoUiDemo(input)
         ? motionTextCardClips(input.title, input.subtitleLines, input.durationSeconds)

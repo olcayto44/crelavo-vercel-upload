@@ -129,6 +129,35 @@ async function extractAudioTrackFromVideoUrl(input: { productionId: string; vide
   }
 }
 
+async function createAmbientMusicBed(input: { productionId: string; durationSeconds: number; filenameBase: string; profile?: string }) {
+  const durationSeconds = Math.max(4, Number(input.durationSeconds) || 15);
+  const directory = await mkdtemp(join(tmpdir(), "crelavo-music-"));
+  const audioPath = join(directory, `${input.filenameBase}.m4a`);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      if (!ffmpegPath) {
+        reject(new Error("ffmpeg-static binary is not available."));
+        return;
+      }
+      const low = input.profile && /luxury|premium/i.test(input.profile) ? 174 : 196;
+      const mid = input.profile && /luxury|premium/i.test(input.profile) ? 261 : 294;
+      const high = input.profile && /luxury|premium/i.test(input.profile) ? 349 : 392;
+      const filter = `[0:a]volume=0.05[a0];[1:a]volume=0.04[a1];[2:a]volume=0.03[a2];[a0][a1][a2]amix=inputs=3:normalize=0:dropout_transition=2,lowpass=f=1800,acompressor=threshold=-22dB:ratio=3:attack=10:release=250,aecho=0.8:0.88:1200:0.2,afade=t=in:ss=0:d=1,afade=t=out:st=${Math.max(0, durationSeconds - 1)}:d=1,volume=1.6`;
+      execFile(ffmpegPath, ["-y", "-f", "lavfi", "-i", `sine=frequency=${low}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${mid}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${high}:sample_rate=44100:duration=${durationSeconds}`, "-filter_complex", filter, "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message));
+          return;
+        }
+        resolve();
+      });
+    });
+    const audioBytes = await readFile(audioPath);
+    return uploadProviderAsset(`${input.productionId}/${input.filenameBase}.m4a`, audioBytes, "audio/mp4");
+  } finally {
+    await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+  }
+}
+
 function sentenceParts(text: string) {
   return text
     .split(/[.!?\n]+/)
@@ -647,12 +676,20 @@ export async function runGenericVideoPipeline(input: {
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
   const primaryVisualUrl = readyVisualUrls[0] || visualJob?.url || "";
   let finalRenderAudioUrl = voiceAudioSegments.length ? null : voiceAudioUrl;
-  if (!finalRenderAudioUrl && primaryVisualUrl && (wantsFinalAssembly || selectedOptions.music)) {
+  if (!finalRenderAudioUrl && primaryVisualUrl) {
     try {
       finalRenderAudioUrl = await extractAudioTrackFromVideoUrl({ productionId: input.productionId, videoUrl: primaryVisualUrl, filenameBase: "final-render-audio" });
     } catch (error) {
       providerErrors.audio_extract = providerErrorMessage(error);
       missingProviders.push("audio_extract");
+    }
+  }
+  if (!finalRenderAudioUrl && selectedOptions.music) {
+    try {
+      finalRenderAudioUrl = await createAmbientMusicBed({ productionId: input.productionId, durationSeconds: plan.durationSeconds, filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? "") || plan.title });
+    } catch (error) {
+      providerErrors.music_bed = providerErrorMessage(error);
+      missingProviders.push("music_bed");
     }
   }
   if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady) {
