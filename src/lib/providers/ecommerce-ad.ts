@@ -21,6 +21,7 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
   });
 
   const visualJob = await createVisualVideo({
+    productionId: input.productionId,
     scenes: brain.visualScenes,
     productImageUrls: product.imageUrls,
     durationSeconds: input.targetDurationSeconds,

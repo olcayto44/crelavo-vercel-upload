@@ -237,6 +237,7 @@ const revisionProviderPrompt = revisionAnchorIntent.providerInstruction || ancho
             const durationText = `${String(requestMetadata.duration ?? "")} ${String(requestMetadata.selectedDuration ?? "")} ${String(requestMetadata.selectedOptions ?? "")} ${String(production.prompt ?? "")}`;
             const durationSeconds = /30\s*(sec|second|saniye|sn)/i.test(durationText) ? 30 : /15\s*(sec|second|saniye|sn)/i.test(durationText) ? 15 : 10;
             const visualJob = await createVisualVideo({
+              productionId: String(production.id),
               scenes: [revisionProviderPrompt || message || String(production.prompt ?? production.title ?? "Crelavo revize üretimi")],
               productImageUrls: resolvedAnchorFrameRequest?.frameUrl ? [resolvedAnchorFrameRequest.frameUrl] : [],
               durationSeconds,
