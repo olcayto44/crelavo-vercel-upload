@@ -1037,16 +1037,15 @@ outputPlan,
       const startUrl = `${appBaseUrl(request)}/api/automation/start`;
       const startHeaders = forwardAutomationHeaders(request);
       const startBody = JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true });
-      void fetch(startUrl, { method: "POST", headers: startHeaders, body: startBody })
-        .then(async (startResponse) => {
-          if (startResponse && !startResponse.ok) {
-            const startText = await startResponse.text().catch(() => "");
-            console.error("Auto provider start failed", startResponse.status, startText);
-          }
-        })
-        .catch((error) => {
-          console.error("Auto provider start failed", error);
-        });
+      try {
+        const startResponse = await fetch(startUrl, { method: "POST", headers: startHeaders, body: startBody });
+        if (!startResponse.ok) {
+          const startText = await startResponse.text().catch(() => "");
+          console.error("Auto provider start failed", startResponse.status, startText);
+        }
+      } catch (error) {
+        console.error("Auto provider start failed", error);
+      }
     }
 
     return Response.json({ production: productionWithLegal, automation_job_id: automationJobId, automation_status: shouldAutoStartProvider ? "start_requested" : "queued", provider_start_requested: shouldAutoStartProvider });
