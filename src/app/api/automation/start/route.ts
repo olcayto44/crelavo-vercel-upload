@@ -682,7 +682,7 @@ if (talkingProviderType) {
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
-    if (!providerReadiness.canStartRealProvider && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute) {
+    if (!providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute) {
       const waitingLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: existingOutput }, {});
       const waitingOutput = {
         ...existingOutput,
