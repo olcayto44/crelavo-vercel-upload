@@ -124,9 +124,9 @@ function selectedAspectRatio(requestMetadata: Record<string, unknown>, inputJson
   if (/^\d+\s*:\s*\d+$/.test(explicit)) return explicit.replace(/\s+/g, "");
 
   const haystack = textFrom(requestMetadata.quality, inputJson.quality, requestMetadata.targetPlatform, inputJson.targetPlatform);
-  if (/16:9|horizontal|youtube|1080p|landscape/.test(haystack)) return "16:9";
-  if (/1:1|square/.test(haystack)) return "1:1";
   if (/9:16|vertical|story|reels|shorts|tiktok|instagram/.test(haystack)) return "9:16";
+  if (/1:1|square/.test(haystack)) return "1:1";
+  if (/16:9|horizontal|youtube|landscape/.test(haystack)) return "16:9";
   return "9:16";
 }
 

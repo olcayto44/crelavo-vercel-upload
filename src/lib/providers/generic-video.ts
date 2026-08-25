@@ -579,7 +579,12 @@ export async function runGenericVideoPipeline(input: {
   try {
     const requestedProductionType = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "");
     const requestedPackageId = String(input.requestMetadata?.packageId ?? input.requestMetadata?.package_id ?? input.inputJson?.packageId ?? input.inputJson?.package_id ?? "");
-    const isProductAd = isProductAdProduction(requestedPackageId, requestedProductionType);
+    const pipelineType = String(input.requestMetadata?.pipelineType ?? input.requestMetadata?.pipeline_type ?? input.inputJson?.pipelineType ?? input.inputJson?.pipeline_type ?? "").toLowerCase();
+    const ecommerceContext = input.requestMetadata?.ecommerceContext ?? input.inputJson?.ecommerceContext;
+    const isProductAd = isProductAdProduction(requestedPackageId, requestedProductionType)
+      || pipelineType.includes("product_ad")
+      || pipelineType.includes("ecommerce")
+      || Boolean(ecommerceContext && typeof ecommerceContext === "object");
     const needsMultiShot = plan.durationSeconds > 5 && !isProductAd;
     if (plan.deterministicUiMotion) {
       missingProviders.push("visual_generation");
