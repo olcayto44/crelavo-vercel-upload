@@ -10,6 +10,7 @@ import { optionalEnv } from "./env";
 import { scrapeProduct } from "./scraper";
 import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
+import { isProductAdProduction } from "@/lib/queue-policy";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
 import { captureWebsiteScreenshot } from "./website-screenshot";
@@ -576,7 +577,10 @@ export async function runGenericVideoPipeline(input: {
   let renderJob: ProviderJob | null = null;
 
   try {
-    const needsMultiShot = plan.durationSeconds > 5;
+    const requestedProductionType = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "");
+    const requestedPackageId = String(input.requestMetadata?.packageId ?? input.requestMetadata?.package_id ?? input.inputJson?.packageId ?? input.inputJson?.package_id ?? "");
+    const isProductAd = isProductAdProduction(requestedPackageId, requestedProductionType);
+    const needsMultiShot = plan.durationSeconds > 5 && !isProductAd;
     if (plan.deterministicUiMotion) {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
