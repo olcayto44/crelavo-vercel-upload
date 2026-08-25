@@ -683,7 +683,7 @@ if (talkingProviderType) {
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
-    if (!providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute) {
+    if (!providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute && !(currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign")) {
       const waitingLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: existingOutput }, {});
       const waitingOutput = {
         ...existingOutput,
@@ -714,7 +714,7 @@ if (talkingProviderType) {
     }
 
     const activeJobLimit = safeActiveVideoJobLimit();
-    if (isVideoLikeProductionType(productionType) && !forceStart && !(talkingProviderType && minimaxVideoRouteSelected)) {
+    if (isVideoLikeProductionType(productionType) && !forceStart && !(talkingProviderType && minimaxVideoRouteSelected) && !(currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign")) {
       const { data: activeVideoRows, error: activeVideoJobsError } = await supabase
         .from("production_requests")
         .select("id, status, generation_status, output_json")
