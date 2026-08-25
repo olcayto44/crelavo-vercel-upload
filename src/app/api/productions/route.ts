@@ -1034,48 +1034,52 @@ outputPlan,
     };
 
     if (isProductAdVideo) {
-      const fallbackVisualUrl = await createLocalFallbackVideo({
-        productionId: data.id,
-        title,
-        scenes: [prompt || title || "Crelavo video"],
-        durationSeconds: Math.max(15, Number(body.output_duration_seconds ?? 15) || 15),
-        aspectRatio: String(body.aspect_ratio ?? "9:16")
-      });
-      const readyOutput = {
-        ...productionWithLegal.output_json,
-        automationMode: "fully_automatic",
-        automationStatus: "running",
-        providerStatus: "provider_started",
-        providerStartRequested: true,
-        visualJob: {
-          provider: "local_visual",
-          id: `local-visual-${data.id}`,
-          status: "succeeded",
-          url: fallbackVisualUrl,
-          raw: { fallbackReason: "Local fallback used to avoid provider queue.", sourceScenes: [prompt || title || "Crelavo video"] }
-        },
-        visualJobs: [{ provider: "local_visual", id: `local-visual-${data.id}`, status: "succeeded", url: fallbackVisualUrl }],
-        previewUrl: fallbackVisualUrl,
-        finalVideoUrl: fallbackVisualUrl,
-        deliveryLink: fallbackVisualUrl
-      };
-      const { data: readyProduction, error: readyError } = await supabase
-        .from("production_requests")
-        .update({
-          status: "in_production",
-          automation_status: "running",
-          generation_status: "provider_visual_job_created",
-          preview_url: fallbackVisualUrl,
-          delivery_link: fallbackVisualUrl,
-          output_json: readyOutput,
-          admin_notes: "Product ad video auto-delivered via local fallback.",
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", data.id)
-        .select("*")
-        .single();
-      if (readyError) throw readyError;
-      return Response.json({ production: readyProduction, automation_job_id: automationJobId, automation_status: "running", provider_start_requested: true, provider_job: readyOutput.visualJob, local_fallback: true });
+      try {
+        const fallbackVisualUrl = await createLocalFallbackVideo({
+          productionId: data.id,
+          title,
+          scenes: [prompt || title || "Crelavo video"],
+          durationSeconds: Math.max(15, Number(body.output_duration_seconds ?? 15) || 15),
+          aspectRatio: String(body.aspect_ratio ?? "9:16")
+        });
+        const readyOutput = {
+          ...productionWithLegal.output_json,
+          automationMode: "fully_automatic",
+          automationStatus: "running",
+          providerStatus: "provider_started",
+          providerStartRequested: true,
+          visualJob: {
+            provider: "local_visual",
+            id: `local-visual-${data.id}`,
+            status: "succeeded",
+            url: fallbackVisualUrl,
+            raw: { fallbackReason: "Local fallback used to avoid provider queue.", sourceScenes: [prompt || title || "Crelavo video"] }
+          },
+          visualJobs: [{ provider: "local_visual", id: `local-visual-${data.id}`, status: "succeeded", url: fallbackVisualUrl }],
+          previewUrl: fallbackVisualUrl,
+          finalVideoUrl: fallbackVisualUrl,
+          deliveryLink: fallbackVisualUrl
+        };
+        const { data: readyProduction, error: readyError } = await supabase
+          .from("production_requests")
+          .update({
+            status: "in_production",
+            automation_status: "running",
+            generation_status: "provider_visual_job_created",
+            preview_url: fallbackVisualUrl,
+            delivery_link: fallbackVisualUrl,
+            output_json: readyOutput,
+            admin_notes: "Product ad video auto-delivered via local fallback.",
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", data.id)
+          .select("*")
+          .single();
+        if (readyError) throw readyError;
+        return Response.json({ production: readyProduction, automation_job_id: automationJobId, automation_status: "running", provider_start_requested: true, provider_job: readyOutput.visualJob, local_fallback: true });
+      } catch (productAdError) {
+        console.error("Product ad local fallback failed", productAdError);
+      }
     }
     const shouldAutoStartProvider = !dedicatedProviderBlocked && (["image", "brand_kit", "visual_clone", "virtual_model_studio", "video", "campaign", "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping", "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video", "nature_video", "planet_space_video"].includes(productionType) || /^image_/.test(packageId));
     if (shouldAutoStartProvider) {
