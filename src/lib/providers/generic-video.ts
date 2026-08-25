@@ -3,7 +3,6 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import ffmpegPath from "ffmpeg-static";
-import sharp from "sharp";
 import { uploadProviderAsset } from "./storage";
 import { voiceDirectionGuard } from "@/lib/voice-production-guard";
 import { createVoiceover, createVoiceoverSegments, type VoiceAudioSegment } from "./elevenlabs";
@@ -14,6 +13,7 @@ import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
 import { captureWebsiteScreenshot } from "./website-screenshot";
+
 
 export type DialogueSegment = {
   speaker: string;
@@ -154,60 +154,6 @@ export async function createAmbientMusicBed(input: { productionId: string; durat
     });
     const audioBytes = await readFile(audioPath);
     return uploadProviderAsset(`${input.productionId}/${input.filenameBase}.m4a`, audioBytes, "audio/mp4");
-  } finally {
-    await rm(directory, { recursive: true, force: true }).catch(() => undefined);
-  }
-}
-
-export async function createLocalFallbackVideo(input: { productionId: string; title: string; scenes: string[]; durationSeconds: number; aspectRatio?: string }) {
-  const durationSeconds = Math.max(5, Number(input.durationSeconds) || 15);
-  const ratio = String(input.aspectRatio || "9:16");
-  const [width, height] = ratio.includes("16:9") ? [1920, 1080] : ratio.includes("1:1") ? [1080, 1080] : ratio.includes("4:5") ? [1080, 1350] : ratio.includes("3:4") ? [1080, 1440] : [1080, 1920];
-  const directory = await mkdtemp(join(tmpdir(), "crelavo-local-video-"));
-  const imagePath = join(directory, "poster.png");
-  const videoPath = join(directory, "fallback.mp4");
-  const title = input.title || "Crelavo video";
-  const lines = [title, ...input.scenes.slice(0, 3)].map((line) => String(line).replace(/[<>&]/g, " ").trim()).filter(Boolean);
-  const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#06070b"/>
-        <stop offset="45%" stop-color="#111827"/>
-        <stop offset="100%" stop-color="#040507"/>
-      </linearGradient>
-      <radialGradient id="glow" cx="50%" cy="35%" r="65%">
-        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
-        <stop offset="50%" stop-color="#f59e0b" stop-opacity="0.18"/>
-        <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
-      </radialGradient>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#bg)"/>
-    <rect width="100%" height="100%" fill="url(#glow)"/>
-    <rect x="8%" y="10%" width="84%" height="80%" rx="36" fill="none" stroke="#f5f3ff" stroke-opacity="0.12" stroke-width="3"/>
-    <rect x="12%" y="14%" width="76%" height="72%" rx="28" fill="none" stroke="#60a5fa" stroke-opacity="0.22" stroke-width="2"/>
-    <text x="50%" y="32%" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(width / 18)}" fill="#f8fafc" font-weight="700">CRELAVO</text>
-    <text x="50%" y="40%" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(width / 34)}" fill="#e2e8f0" font-weight="400">Premium video production fallback</text>
-    ${lines.map((line, index) => `<text x="50%" y="${54 + index * 8}%" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(width / 42)}" fill="#dbeafe" font-weight="500">${line}</text>`).join("\n")}
-    <text x="50%" y="88%" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${Math.round(width / 50)}" fill="#f59e0b" font-weight="600">Audio-ready final delivery</text>
-  </svg>`;
-  try {
-    await sharp(Buffer.from(svg)).png().toFile(imagePath);
-    await new Promise<void>((resolve, reject) => {
-      if (!ffmpegPath) {
-        reject(new Error("ffmpeg-static binary is not available."));
-        return;
-      }
-      execFile(ffmpegPath, ["-y", "-loop", "1", "-i", imagePath, "-t", String(durationSeconds), "-r", "30", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", videoPath], { timeout: 45000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message));
-          return;
-        }
-        resolve();
-      });
-    });
-    const videoBytes = await readFile(videoPath);
-    return uploadProviderAsset(`${input.productionId}/fallback-visual.mp4`, videoBytes, "video/mp4");
   } finally {
     await rm(directory, { recursive: true, force: true }).catch(() => undefined);
   }
