@@ -228,6 +228,7 @@ export async function getMiniMaxStatus(job: ProviderJob): Promise<NormalizedProv
     id: job.id,
     status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
     outputUrl,
+    ...mediaMetadata(task),
     error,
     raw: data
   };

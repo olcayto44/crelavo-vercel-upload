@@ -1091,7 +1091,8 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
   if (blockedUpdateError) throw new Error(`generic_provider_block_update: ${errorMessage(blockedUpdateError, "DB update failed")}`);
   return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
 }
-const requestedDuration = Math.max(providerPreflight.testMode ? 5 : 15, Number(providerPreflight.durationSeconds) || (providerPreflight.testMode ? 5 : 15));
+const requestedDurationFloor = isProductAdVideo ? 15 : (providerPreflight.testMode ? 5 : 15);
+    const requestedDuration = Math.max(requestedDurationFloor, Number(providerPreflight.durationSeconds) || requestedDurationFloor);
     const providerTestMode = Boolean(providerPreflight.testMode);
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
     const pipelineMap: Record<string, string> = {
@@ -1131,7 +1132,8 @@ const clippingRun = requiredPipeline === "video_clipping"
         requestMetadata,
         inputJson,
         requestedClipCount,
-        targetDurationSeconds: Number(providerPreflight.durationSeconds ?? requestedDuration) || requestedDuration
+         targetDurationSeconds: requestedDuration
+
       })
       : null;
     const genericRun = !clippingRun && isGenericVideoType
@@ -1141,7 +1143,8 @@ const clippingRun = requiredPipeline === "video_clipping"
         prompt: currentProduction.prompt,
         requestMetadata,
         inputJson,
-        providerPreflight: providerPreflight as Record<string, unknown>,
+         providerPreflight: { ...(providerPreflight as Record<string, unknown>), durationSeconds: requestedDuration },
+
         selectedOptions
       })
       : null;
