@@ -333,6 +333,12 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const ratio = aspect.includes("9:16") || aspect.toLowerCase().includes("vertical") ? "9:16" : "16:9";
   const avatarId = String(selected.heygen_avatar_id ?? selected.avatar_id ?? promptAvatarId ?? process.env.HEYGEN_DEFAULT_AVATAR_ID ?? DEFAULT_HEYGEN_V2_AVATAR_ID).trim() || DEFAULT_HEYGEN_V2_AVATAR_ID;
   const voiceId = String(selected.heygen_voice_id ?? selected.voice_id ?? process.env.HEYGEN_TALKING_VOICE_ID ?? process.env.HEYGEN_DEFAULT_VOICE_ID ?? "kq4igj7j00F2ttmWgN92").trim() || "kq4igj7j00F2ttmWgN92";
+  const requestedDuration = secondsFromValue(selected.durationSeconds)
+    ?? secondsFromValue(selected.duration_seconds)
+    ?? secondsFromValue(selected.outputDurationSeconds)
+    ?? secondsFromValue(selected.output_duration_seconds)
+    ?? 15;
+  const minimaxDuration = Math.min(15, Math.max(4, Math.round(requestedDuration))) as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   const payload = {
     video_setting: { ratio, output_format: "mp4" },
     clips: [{
@@ -345,7 +351,7 @@ async function startHeyGenTalkingProduction(input: { title: string; prompt: stri
   const result = await createMiniMaxH3VideoTask({
     content: [{ type: "text", text: input.prompt }],
     resolution: "768P",
-    duration: 8 as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
+    duration: minimaxDuration,
     ratio: aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16"
   });
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
