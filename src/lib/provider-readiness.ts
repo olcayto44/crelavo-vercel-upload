@@ -1,4 +1,5 @@
 import { hasAnyConfiguredEnv, hasConfiguredEnv, hasProviderEnv } from "./providers/env.ts";
+import { isProductAdProduction } from "./queue-policy";
 
 export type ProviderReadinessStatus = "ready" | "missing" | "optional";
 
@@ -46,8 +47,8 @@ export function providerRequirementsForProduction(productionType: string, packag
 
   const minimaxBackedTalkingTypes = ["avatar", "talking_video", "lip_sync", "live_sales_agent"];
   const needsVideoProvider = (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", ...minimaxBackedTalkingTypes].includes(type) || packageId.includes("video"));
-  const isDirectPromoPackage = packageId === "campaign_product_ad_video";
-  const needsEcommerceAdPipeline = (type === "campaign" || isDirectPromoPackage) && !isDirectPromoPackage;
+  const isDirectPromoPackage = isProductAdProduction(packageId, type);
+  const needsEcommerceAdPipeline = isDirectPromoPackage;
 
   if (needsVideoProvider) {
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN", "MINIMAX_API_KEY", "MINIMAX_GROUP_ID"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output. Minimax, Replicate, FAL, Runway or Kling can satisfy the route depending on provider selection."));

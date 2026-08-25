@@ -24,7 +24,7 @@ import { isActiveProviderJob, providerLifecycleFromJobs } from "@/lib/provider-j
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
-import { isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
+import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function ecommerceContextFrom(value: unknown) {
@@ -769,7 +769,7 @@ if (talkingProviderType) {
     }
 
     const isProjectDelivery = isAutomaticProjectDelivery(productionType, packageId);
-    const isProductAdVideo = currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign";
+    const isProductAdVideo = isProductAdProduction(String(currentProduction?.package_id ?? ""), String(currentProduction?.production_type ?? ""));
     if (isProjectDelivery && !isProductAdVideo) {
       const alreadyReady = String(currentProduction.status ?? "").toLowerCase() === "ready"
         || String(currentProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready"

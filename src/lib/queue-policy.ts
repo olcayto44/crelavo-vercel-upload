@@ -84,3 +84,14 @@ export function isVideoLikeProductionType(productionType: string) {
     "localization"
   ].includes(productionType.trim().toLowerCase());
 }
+
+export function isProductAdProduction(packageId: string, productionType?: string) {
+  const normalizedPackage = String(packageId ?? "").trim().toLowerCase();
+  const normalizedType = String(productionType ?? "").trim().toLowerCase();
+  return normalizedPackage === "campaign_product_ad_video"
+    || normalizedPackage === "ecommerce_product_ad_video"
+    || normalizedPackage === "product_ad_video"
+    || normalizedType === "campaign"
+    || normalizedType === "ecommerce_product_ad_video"
+    || normalizedType === "product_ad_video";
+}

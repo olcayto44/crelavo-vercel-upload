@@ -15,7 +15,7 @@ import { qualityProfileForProduction } from "@/lib/production-quality";
 import { createLocalFallbackVideo } from "@/lib/providers/visuals";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
-import { launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
+import { isProductAdProduction, launchCapacityPolicy, renderQueuePolicyForPackage } from "@/lib/queue-policy";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
@@ -564,7 +564,7 @@ export async function POST(request: Request) {
   });
   const automationJobId = createAutomationJobId();
   const workflowMode = String(body.workflow_mode ?? "").trim() || "general";
-  const isProductAdVideo = packageId === "campaign_product_ad_video";
+  const isProductAdVideo = isProductAdProduction(packageId, productionType);
   const pipeline = isProductAdVideo ? ecommerceAdPipeline() : null;
   const automationSteps = isProductAdVideo ? ecommerceAdAutomationSteps() : initialAutomationSteps();
   const directProductUrl = String(body.product_url ?? body.productUrl ?? body.product_link ?? body.productLink ?? body.reference_url ?? body.referenceUrl ?? "").trim();
