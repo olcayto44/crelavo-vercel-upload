@@ -266,14 +266,36 @@ async function maybeCreateVoiceoverAsset(productionId: string, output: Record<st
   return { ...output, voiceAudioUrl, voiceRetry: { status: "created", provider: "elevenlabs", createdAt: new Date().toISOString() } };
 }
 
-async function localFinalMux(input: { productionId: string; videoUrl: string; audioUrl?: string | null; durationSeconds: number; title: string }) {
-  const response = await fetch(input.videoUrl, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Final visual download failed: ${response.status} ${await response.text()}`);
+async function localFinalMux(input: { productionId: string; videoUrl: string; videoUrls?: string[]; audioUrl?: string | null; durationSeconds: number; title: string }) {
   const directory = await mkdtemp(join(tmpdir(), "crelavo-final-"));
   const videoPath = join(directory, "input.mp4");
   const outputPath = join(directory, "final.mp4");
   try {
-    await writeFile(videoPath, Buffer.from(await response.arrayBuffer()));
+    const sourceUrls = Array.from(new Set([...(input.videoUrls ?? []), input.videoUrl].filter(Boolean)));
+    const sourcePaths: string[] = [];
+    for (let index = 0; index < sourceUrls.length; index += 1) {
+      const response = await fetch(sourceUrls[index], { cache: "no-store" });
+      if (!response.ok) throw new Error(`Final visual download failed: ${response.status} ${await response.text()}`);
+      const sourcePath = join(directory, `input-${index + 1}.mp4`);
+      await writeFile(sourcePath, Buffer.from(await response.arrayBuffer()));
+      sourcePaths.push(sourcePath);
+    }
+    if (sourcePaths.length > 1) {
+      const ffmpegBinary = ffmpegPath;
+      if (!ffmpegBinary) throw new Error("ffmpeg-static binary is not available.");
+      const concatPath = join(directory, "concat.txt");
+      await writeFile(concatPath, sourcePaths.map((path) => `file '${path.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n"));
+      await new Promise<void>((resolve, reject) => {
+        execFile(ffmpegBinary, ["-y", "-f", "concat", "-safe", "0", "-i", concatPath, "-c", "copy", "-movflags", "+faststart", videoPath], { timeout: 120000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+          if (error) reject(new Error(stderr || error.message));
+          else resolve();
+        });
+      });
+    } else if (sourcePaths[0]) {
+      await writeFile(videoPath, await readFile(sourcePaths[0]));
+    } else {
+      throw new Error("No final visual URL was available.");
+    }
     if (input.audioUrl) {
       const audioResponse = await fetch(input.audioUrl, { cache: "no-store" });
       if (!audioResponse.ok) throw new Error(`Final audio download failed: ${audioResponse.status} ${await audioResponse.text()}`);
@@ -352,7 +374,7 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
     }
     const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }));
     try {
-      const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
+      const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : sourceVisualUrls, audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
       return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
     } catch (localError) {
       if (hasProviderEnv("shotstack")) {

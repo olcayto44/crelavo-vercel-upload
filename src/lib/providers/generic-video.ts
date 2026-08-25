@@ -10,7 +10,6 @@ import { optionalEnv } from "./env";
 import { scrapeProduct } from "./scraper";
 import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
-import { isProductAdProduction } from "@/lib/queue-policy";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
 import { captureWebsiteScreenshot } from "./website-screenshot";
@@ -577,15 +576,7 @@ export async function runGenericVideoPipeline(input: {
   let renderJob: ProviderJob | null = null;
 
   try {
-    const requestedProductionType = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "");
-    const requestedPackageId = String(input.requestMetadata?.packageId ?? input.requestMetadata?.package_id ?? input.inputJson?.packageId ?? input.inputJson?.package_id ?? "");
-    const pipelineType = String(input.requestMetadata?.pipelineType ?? input.requestMetadata?.pipeline_type ?? input.inputJson?.pipelineType ?? input.inputJson?.pipeline_type ?? "").toLowerCase();
-    const ecommerceContext = input.requestMetadata?.ecommerceContext ?? input.inputJson?.ecommerceContext;
-    const isProductAd = isProductAdProduction(requestedPackageId, requestedProductionType)
-      || pipelineType.includes("product_ad")
-      || pipelineType.includes("ecommerce")
-      || Boolean(ecommerceContext && typeof ecommerceContext === "object");
-    const needsMultiShot = plan.durationSeconds > 5 && !isProductAd;
+    const needsMultiShot = plan.durationSeconds > 5;
     if (plan.deterministicUiMotion) {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
