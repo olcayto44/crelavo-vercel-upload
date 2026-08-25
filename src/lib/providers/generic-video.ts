@@ -574,9 +574,9 @@ export async function runGenericVideoPipeline(input: {
   let voiceAudioSegments: VoiceAudioSegment[] = [];
   let subtitleUrl: string | null = null;
   let renderJob: ProviderJob | null = null;
+  const needsMultiShot = plan.durationSeconds > 5;
 
   try {
-    const needsMultiShot = plan.durationSeconds > 5;
     if (plan.deterministicUiMotion) {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
@@ -681,7 +681,7 @@ export async function runGenericVideoPipeline(input: {
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
   const primaryVisualUrl = readyVisualUrls[0] || visualJob?.url || "";
   let finalRenderAudioUrl = voiceAudioSegments.length ? null : voiceAudioUrl;
-  if (!finalRenderAudioUrl && primaryVisualUrl) {
+  if (!finalRenderAudioUrl && primaryVisualUrl && !needsMultiShot) {
     try {
       finalRenderAudioUrl = await extractAudioTrackFromVideoUrl({ productionId: input.productionId, videoUrl: primaryVisualUrl, filenameBase: "final-render-audio" });
     } catch (error) {
@@ -689,7 +689,7 @@ export async function runGenericVideoPipeline(input: {
       missingProviders.push("audio_extract");
     }
   }
-  if (!finalRenderAudioUrl && selectedOptions.music) {
+  if (!finalRenderAudioUrl && (selectedOptions.music || needsMultiShot || wantsFinalAssembly)) {
     try {
       finalRenderAudioUrl = await createAmbientMusicBed({ productionId: input.productionId, durationSeconds: plan.durationSeconds, filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? "") || plan.title });
     } catch (error) {
