@@ -223,10 +223,11 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
     ? (hasAnyEnv(["RUNWAY_API_KEY"]) ? "runway" : hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"]) ? "kling" : hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "fal" : "replicate")
     : requestedProvider;
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
+  const forceLocalVideoFallback = String(optionalEnv("FORCE_LOCAL_VIDEO_FALLBACK") ?? "true").toLowerCase() !== "false";
   const hasAnyVideoProviderConfigured = hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY", "RUNWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY", "FAL_KEY", "FAL_API_KEY", "REPLICATE_API_TOKEN"]);
-  if (!hasAnyVideoProviderConfigured) {
+  if (forceLocalVideoFallback || !hasAnyVideoProviderConfigured) {
     const localVideoUrl = await createLocalFallbackVideo({ productionId: input.productionId, title: input.style || "Crelavo video", scenes: input.scenes, durationSeconds: safeDuration, aspectRatio: input.aspectRatio || "9:16" });
-    return { provider: "local_visual", id: `local-visual-${input.productionId}`, status: "succeeded", url: localVideoUrl, raw: { sourceScenes: input.scenes, provider: "local_visual", fallbackReason: "No external video provider was configured." } };
+    return { provider: "local_visual", id: `local-visual-${input.productionId}`, status: "succeeded", url: localVideoUrl, raw: { sourceScenes: input.scenes, provider: "local_visual", fallbackReason: forceLocalVideoFallback ? "Local fallback is forced for stable production delivery." : "No external video provider was configured." } };
   }
   const requestedRatio = input.aspectRatio || "9:16";
   const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
