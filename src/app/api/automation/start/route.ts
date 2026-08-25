@@ -12,6 +12,7 @@ import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
+import { createLocalFallbackVideo } from "@/lib/providers/visuals";
 import { ProviderConfigError } from "@/lib/providers/types";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
 import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
@@ -1145,8 +1146,18 @@ const clippingRun = requiredPipeline === "video_clipping"
         selectedOptions
       })
       : null;
-    const visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
-    const renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
+    let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
+    let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
+    if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
+      const fallbackVisualUrl = await createLocalFallbackVideo({
+        productionId,
+        title: currentProduction.title,
+        scenes: [String(currentProduction.prompt ?? currentProduction.title ?? "Crelavo video")],
+        durationSeconds: Math.max(15, Number(providerPreflight.durationSeconds ?? requestedDuration) || requestedDuration),
+        aspectRatio: String(providerPreflight.aspectRatio ?? selectedOptions.aspectRatio ?? "9:16")
+      });
+      visualJob = { provider: "local_visual", id: `local-visual-${productionId}`, status: "succeeded", url: fallbackVisualUrl, raw: { fallbackReason: "No provider job created; local fallback delivery used.", sourceScenes: [String(currentProduction.prompt ?? currentProduction.title ?? "Crelavo video")] } };
+    }
     const aiVideoProviderChain = clippingRun
       ? [
           { step: "source_video_analysis", provider: "ffmpeg_probe", status: "done", required: true },

@@ -29,7 +29,7 @@ function miniMaxResolution(signal = "") {
   return /2k|cinematic|sinematik|drone|satellite|premium|luxury|4k/i.test(signal) ? "2K" as const : "768P" as const;
 }
 
-async function createLocalFallbackVideo(input: { productionId: string; title: string; scenes: string[]; durationSeconds: number; aspectRatio?: string }) {
+export async function createLocalFallbackVideo(input: { productionId: string; title: string; scenes: string[]; durationSeconds: number; aspectRatio?: string }) {
   const durationSeconds = Math.max(5, Number(input.durationSeconds) || 15);
   const ratio = String(input.aspectRatio || "9:16");
   const [width, height] = ratio.includes("16:9") ? [1920, 1080] : ratio.includes("1:1") ? [1080, 1080] : ratio.includes("4:5") ? [1080, 1350] : ratio.includes("3:4") ? [1080, 1440] : [1080, 1920];
