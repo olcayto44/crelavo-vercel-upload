@@ -163,10 +163,9 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
     ? (hasAnyEnv(["RUNWAY_API_KEY"]) ? "runway" : hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"]) ? "kling" : hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "fal" : "replicate")
     : requestedProvider;
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
-  const forceLocalVideoFallback = String(optionalEnv("FORCE_LOCAL_VIDEO_FALLBACK") ?? "true").toLowerCase() !== "false";
   const hasAnyVideoProviderConfigured = hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY", "RUNWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY", "FAL_KEY", "FAL_API_KEY", "REPLICATE_API_TOKEN"]);
-  if (forceLocalVideoFallback || !hasAnyVideoProviderConfigured) {
-    return { provider: "provider_pending", id: `pending-${input.productionId}`, status: "queued", raw: { sourceScenes: input.scenes, fallbackReason: forceLocalVideoFallback ? "Local fallback disabled in this deployment; queue a real provider job." : "No external video provider was configured." } };
+  if (!hasAnyVideoProviderConfigured) {
+    return { provider: "provider_pending", id: `pending-${input.productionId}`, status: "queued", raw: { sourceScenes: input.scenes, fallbackReason: "No external video provider was configured." } };
   }
   const requestedRatio = input.aspectRatio || "9:16";
   const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
