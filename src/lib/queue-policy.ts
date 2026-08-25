@@ -67,6 +67,9 @@ export function isVideoLikeProductionType(productionType: string) {
   return [
     "video",
     "campaign",
+    "campaign_product_ad_video",
+    "ecommerce_product_ad_video",
+    "product_ad_video",
     "music_video",
     "stickman_animation",
     "anime_short_film",
