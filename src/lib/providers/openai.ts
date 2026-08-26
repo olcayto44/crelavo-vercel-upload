@@ -228,11 +228,19 @@ export type WebsiteGenerationInput = {
   style: string;
 };
 
-const WEBSITE_SYSTEM_PROMPT = `You generate production-ready, renderable website source files, not templates or design briefs. Return only valid JSON with siteTitle, framework set to static-html, and files containing index.html, styles.css, script.js, and README.md. index.html must reference styles.css and script.js.
+const WEBSITE_SYSTEM_PROMPT = `You generate production-ready, renderable English website source files, not templates, wireframes, snippets, or design briefs. Return only valid JSON with siteTitle, framework set to static-html, and files containing index.html, styles.css, script.js, and README.md. index.html must reference styles.css and script.js.
 
-Apply one coherent premium SaaS design contract to the entire user request and every section: polished dark navy foundation with electric-blue accents unless the user's brief explicitly requests a different theme; true glassmorphism built with translucent surfaces, borders, layered shadows, and CSS backdrop-filter; strong responsive typography, spacing, hierarchy, focus states, and mobile navigation. Build a conversion-ready single-page experience with a premium hero containing two distinct CTAs, a credible CSS/HTML dashboard or product mockup, a visual workflow timeline, feature cards, pricing cards, testimonials, an accessible FAQ accordion, About and Contact anchors, and a working Choose Plan action. Keep the same visual language across all requested content instead of mixing generic section templates.
+This is a strict acceptance contract. Build one coherent, polished, conversion-ready website from the user's brief. The final index.html MUST contain: a visually rich hero with an actual img/picture/SVG visual and at least two distinct clickable CTAs; a credible dashboard or product mockup containing at least three visible panels/cards; a visual workflow timeline with at least three steps; pricing with at least three plan cards and Choose Plan controls; testimonials with at least two testimonial items; an accessible FAQ accordion with at least two questions; and working About and Contact anchor sections. Use semantic markup and these stable ids: hero, about, features, workflow, pricing, testimonials, faq, contact.
 
-Use semantic accessible markup and stable section ids: hero, about, features, workflow, pricing, testimonials, faq, contact. The hero must have at least two clickable CTA elements. Pricing must have Choose Plan buttons with data-plan values. FAQ controls must expose aria-expanded and work through script.js. script.js must implement FAQ accordion toggling and CTA actions that navigate, scroll, or open a contact/plan flow without fake checkout claims. Include a responsive @media query, gradients, and backdrop-filter in styles.css. Do not use placeholder blocks, lorem ipsum, fake customer names, invented metrics, fabricated testimonials, unverifiable claims, or unnecessary real-user details. If facts, plan prices, customer quotes, or contact details were not supplied, use clearly labeled neutral interface copy such as Custom or Contact sales rather than inventing data. Keep files text-only, self-contained, and free of secrets. Use the user's requested language.`;
+The final styles.css MUST contain a real glassmorphism combination, not a label: translucent rgba() surface colors with alpha, backdrop-filter (and preferably -webkit-backdrop-filter), visible border, layered box-shadow, and a gradient. It MUST include a responsive @media query and an obvious typography hierarchy for body, h1, h2, and supporting text. The final script.js MUST implement FAQ accordion behavior using aria-expanded, smooth-scroll behavior, and Choose Plan behavior that opens a modal/contact flow or follows a real link. The alert( call is forbidden anywhere. Do not return a plain collection of flat sections and buttons, a generic template, lorem ipsum, placeholder blocks, fake checkout claims, invented metrics, fake customer names, fabricated testimonials, unverifiable claims, or secrets. If facts are absent, use neutral English copy such as Custom or Contact sales without losing supplied brief content. Return complete files, not patch instructions.`;
+
+export class WebsiteQualityError extends Error {
+  readonly code = "website_quality_failed" as const;
+  constructor(public readonly missing: string[]) {
+    super(`website_quality_failed: ${missing.join("; ")}`);
+    this.name = "WebsiteQualityError";
+  }
+}
 
 function parseWebsiteJson(text: string): WebsiteGenerationResult {
   const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<WebsiteGenerationResult> & Record<string, unknown>;
@@ -262,6 +270,14 @@ function hasSection(html: string, name: string) {
   return new RegExp(`id=["']${escaped}["']|<h[1-6][^>]*>[^<]*${escaped}[^<]*<\\/h[1-6]>`, "i").test(html);
 }
 
+function countMatches(value: string, pattern: RegExp) {
+  return value.match(pattern)?.length ?? 0;
+}
+
+function hasAny(value: string, patterns: RegExp[]) {
+  return patterns.some((pattern) => pattern.test(value));
+}
+
 export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQualityResult {
   const missing: string[] = [];
   const index = websiteFile(files, "index.html");
@@ -274,22 +290,33 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQu
     for (const section of ["hero", "about", "features", "workflow", "pricing", "testimonials", "faq", "contact"]) {
       if (!hasSection(index, section)) missing.push(`index.html: ${section} section id or heading`);
     }
-    const ctaCount = (index.match(/<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|btn|button)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi) ?? []).length;
-    if (ctaCount < 2) missing.push("index.html: at least two clickable CTA elements");
-    const planButtons = index.match(/<(?:a|button)\b[^>]*(?:data-plan\b|class=["'][^"']*(?:plan|pricing)[^"']*(?:button|cta|btn)[^"']*["'])[^>]*>/gi) ?? [];
-    if (!planButtons.length || !/choose\s+plan/i.test(index)) missing.push("index.html: working Choose Plan button with data-plan");
+    const hero = index.match(/<section[^>]*(?:id=["']hero["']|class=["'][^"']*hero[^"']*["'])[^>]*>[\s\S]*?<\/section>/i)?.[0] ?? "";
+    if (!hasAny(hero, [/<img\b/i, /<picture\b/i, /<svg\b/i, /background-image\s*:/i])) missing.push("index.html: hero must contain a visual image, picture, SVG, or background image");
+    const heroCtaCount = countMatches(hero, /<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|btn|button)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi);
+    if (heroCtaCount < 2) missing.push("index.html: hero must contain at least two clickable CTA elements");
+    const planCards = countMatches(index, /<(?:article|div|li)\b[^>]*class=["'][^"']*(?:pricing-card|price-card|plan-card|pricing__card)[^"']*["'][^>]*>/gi);
+    if (planCards < 3) missing.push("index.html: pricing must contain at least three plan cards");
+    if (countMatches(index, /<(?:a|button)\b[^>]*data-plan=["'][^"']+["'][^>]*>/gi) < 1 || !/choose\s+plan/i.test(index)) missing.push("index.html: Choose Plan CTA with data-plan");
+    if (countMatches(index, /(?:workflow-step|step-card|timeline-step|data-step)/gi) < 3) missing.push("index.html: visual workflow timeline with at least three steps");
+    if (countMatches(index, /(?:dashboard-panel|mockup-panel|product-panel|dashboard-card|product-card)/gi) < 3) missing.push("index.html: dashboard/product mockup with at least three panels or cards");
+    if (countMatches(index, /(?:testimonial-card|testimonial-item|class=["'][^"']*testimonial)/gi) < 2) missing.push("index.html: at least two testimonial items");
+    if (countMatches(index, /<(?:button|details)\b[^>]*(?:faq|accordion)|class=["'][^"']*(?:faq|accordion)[^"']*["']/gi) < 2) missing.push("index.html: FAQ accordion with at least two questions");
     if (!/aria-expanded=["'](?:true|false)["']/i.test(index)) missing.push("index.html: accessible FAQ controls with aria-expanded");
     if (!/href=["']styles\.css["']/i.test(index)) missing.push("index.html: styles.css reference");
     if (!/src=["']script\.js["']/i.test(index)) missing.push("index.html: script.js reference");
+    if (/(?:lorem ipsum|your brand here|placeholder|coming soon)/i.test(index)) missing.push("index.html: generic placeholder/template content is forbidden");
   }
   if (styles) {
-    if (!/(?:-webkit-)?backdrop-filter\s*:/i.test(styles)) missing.push("styles.css: backdrop-filter glassmorphism");
+    if (!/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0\.|1?\.?\d+)\s*\)/i.test(styles) || !/(?:-webkit-)?backdrop-filter\s*:/i.test(styles) || !/border\s*:/i.test(styles) || !/box-shadow\s*:/i.test(styles)) missing.push("styles.css: complete glassmorphism requires rgba alpha, backdrop-filter, border, and box-shadow");
     if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(styles)) missing.push("styles.css: gradient styling");
     if (!/@media\s*\(/i.test(styles)) missing.push("styles.css: responsive media query");
+    for (const selector of ["body", "h1", "h2"]) if (!new RegExp(`${selector}\\s*\\{`, "i").test(styles)) missing.push(`styles.css: typography hierarchy missing ${selector}`);
   }
   if (script) {
+    if (/alert\s*\(/i.test(script)) missing.push("script.js: alert( is forbidden");
     if (!/(?:faq|accordion)/i.test(script) || !/(?:aria-expanded|classList\.toggle|hidden\s*=)/i.test(script)) missing.push("script.js: FAQ accordion toggle behavior");
-    if (!/(?:data-plan|choose\s+plan|cta)/i.test(script) || !/(?:addEventListener|onclick)/i.test(script)) missing.push("script.js: CTA or Choose Plan action");
+    if (!/(?:data-plan|choose\s+plan)/i.test(script) || !/(?:addEventListener|onclick)/i.test(script) || !/(?:modal|dialog|location\.href|scrollIntoView)/i.test(script)) missing.push("script.js: Choose Plan must open a modal or perform a real link action");
+    if (!/(?:scrollIntoView|behavior:\s*["']smooth["'])/i.test(script)) missing.push("script.js: smooth scroll behavior");
   }
   return { valid: missing.length === 0, missing };
 }
@@ -318,13 +345,16 @@ export async function generateWebsiteSource(input: WebsiteGenerationInput): Prom
     { role: "system", content: WEBSITE_SYSTEM_PROMPT },
     { role: "user", content: JSON.stringify(input) }
   ]);
-  const initialQuality = validateWebsiteQuality(generated.files);
-  if (initialQuality.valid) return generated;
-  const repaired = await requestWebsiteSource(apiKey, [
-    { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing one repair pass. Return the complete corrected source file set in exactly the same JSON format. Preserve supported user facts and the requested language. Fix every listed deterministic defect; do not merely describe the fixes.` },
-    { role: "user", content: JSON.stringify({ originalRequest: input, missingRequirements: initialQuality.missing, currentGeneration: generated }) }
-  ]);
-  const repairedQuality = validateWebsiteQuality(repaired.files);
-  if (!repairedQuality.valid) throw new Error(`generation_failed: website quality requirements missing after repair: ${repairedQuality.missing.join("; ")}`);
-  return repaired;
+  let current = generated;
+  for (let pass = 1; pass <= 2; pass += 1) {
+    const quality = validateWebsiteQuality(current.files);
+    if (quality.valid) return current;
+    current = await requestWebsiteSource(apiKey, [
+      { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing repair pass ${pass} of 2. Return the complete corrected source file set in exactly the same JSON format. Preserve every supported fact and meaningful phrase from the original request and current files. Fix every listed deterministic defect in the exact requirements list; do not merely describe fixes. Do not shorten the site into a template.` },
+      { role: "user", content: JSON.stringify({ originalRequest: input, exactMissingRequirements: quality.missing, currentFiles: current.files, currentSiteTitle: current.siteTitle }) }
+    ]);
+  }
+  const finalQuality = validateWebsiteQuality(current.files);
+  if (!finalQuality.valid) throw new WebsiteQualityError(finalQuality.missing);
+  return current;
 }

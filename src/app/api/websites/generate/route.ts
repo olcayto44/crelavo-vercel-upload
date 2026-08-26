@@ -1,4 +1,4 @@
-import { generateWebsiteSource, validateWebsiteQuality, type WebsiteGeneratedFile } from "@/lib/providers/openai";
+import { generateWebsiteSource, validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile } from "@/lib/providers/openai";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       const generated = await generateWebsiteSource({ brief, siteType, brand, audience, pages, features, style });
       validateFiles(generated.files);
       const quality = validateWebsiteQuality(generated.files);
-      if (!quality.valid) throw new Error(`generation_failed: website quality requirements missing: ${quality.missing.join("; ")}`);
+      if (!quality.valid) throw new WebsiteQualityError(quality.missing);
       const storedFiles = await Promise.all(generated.files.map(async (file) => ({
         ...file,
         url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     if (errorMessage(error).includes("OPENAI_API_KEY") || errorMessage(error).includes("provider environment")) return Response.json({ error: "provider_required", message: "OPENAI_API_KEY is required for real website generation." }, { status: 503 });
+    if (error instanceof WebsiteQualityError) return Response.json({ error: error.code, message: "Generated website failed the deterministic quality gate.", missing: error.missing }, { status: 422 });
     return Response.json({ error: "website_generation_failed", message: errorMessage(error) }, { status: 502 });
   }
 }
