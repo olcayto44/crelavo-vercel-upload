@@ -1826,8 +1826,15 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
     }
   }
 
-function openDynamicWizardFromMessage(message: string) {
-  const type = inferDynamicWizardType(message);
+function openDynamicWizardFromMessage(message: string, plannedProductionType?: string) {
+  const planned = String(plannedProductionType ?? "").toLowerCase().trim();
+  const type: DynamicWizardType = planned === "campaign" || planned.includes("ecommerce") || planned.includes("product_ad")
+    ? "campaign"
+    : planned === "video" || planned.includes("cinematic") || planned.includes("documentary") || planned.includes("animation") || planned.includes("music_video")
+      ? "video"
+      : planned === "talking_video" || planned === "avatar" || planned === "lip_sync" || planned === "voice_clone" || planned === "live_sales_agent"
+        ? "talking_video"
+        : inferDynamicWizardType(message);
   const subject = extractWizardSubject(message) || message.trim();
   applyDynamicWizardPreset(type, subject);
   setDynamicWizard({ open: true, type, subject, answers: {}, creditPromptOpen: false });
@@ -2859,7 +2866,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       let orchestratorPlan: AssistantOrchestratorResponse | null = null;
       if (!conversationalOnly) {
         applyAssistantSuggestion(suggestion, clean, plan);
-        openDynamicWizardFromMessage(clean);
+        openDynamicWizardFromMessage(clean, String(plan.production_type ?? suggestion.category ?? ""));
         try {
           const orchestratorResponse = await fetch("/api/assistant/orchestrate", {
             method: "POST",

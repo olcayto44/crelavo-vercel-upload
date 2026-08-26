@@ -1182,7 +1182,8 @@ function normalizeProductionType(prompt: string, currentType: string) {
   if (/anime|japanese animation|ghibli|shinkai/.test(routeText)) return "anime_short_film";
   if (/pixar|3d cartoon|3d animated|3d animation|animated film|cartoon film|character animation|animasyon|animation|çizgi film|cizgi film|cartoon/.test(routeText)) return "animation";
   if (/sci-?fi|science fiction|futuristic|photoreal|hyperreal|unreal engine|ue5|fantasy|fantastik|magic|magical|epic fantasy|mythic/.test(raw)) return "cinematic_video";
-  if (/saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw)) return "video";
+  if (/product\s*(advertising|advertisement|ad)|e-?commerce\s+product\s+ad|campaign\s+product\s+ad|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad/.test(raw)) return "campaign";
+  if (/saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|crelavo/.test(raw)) return "video";
   if (/clip çıkar|clip cikar|kesit çıkar|kesit cikar|highlight çıkar|highlight cikar|uzun video|long video|kırp|kirp|hook extraction|best moments/.test(raw)) return "video_clipping";
   if (/drone|uydu|satellite|harita|rota|map location|flyover/.test(raw)) return "drone_video";
   if (/müzik video|music video|mv|lyric|klip/.test(raw)) return "music_video";
@@ -1195,8 +1196,9 @@ function normalizeProductionType(prompt: string, currentType: string) {
   const commerceIntent = /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|cart|checkout|store|ürün|urun|sepet/.test(raw);
   if (commerceIntent) return "website";
   if (/web sitesi|website|web site|landing|site/.test(raw)) return "website";
-  if (/voice clone|ses klon|kendi ses|own voice/.test(text)) return "voice_clone";
-  if (/voice|audio|narration|podcast|seslendirme|dublaj/.test(text)) return "talking_video";
+  if (/voice clone|ses klon/.test(text)) return "voice_clone";
+  if (/talking video|talking head|avatar|spokesperson|presenter|sunucu|konuşan kişi|konusan kisi|diyalog|panel|lip[- ]?sync|self[- ]?in[- ]?video|kendi avatarım|kendi avatarim/.test(text)) return "talking_video";
+  if (/voice|audio|narration|podcast|seslendirme|dublaj|voice[- ]?over|voiceover|müzik|muzik|music/.test(text)) return "video";
   if (/image|logo|poster|visual|photo|görsel|gorsel/.test(text)) return "image";
   if (/seo|blog|content pack|document|doküman|dokuman/.test(text)) return "document_pack";
   if (/campaign|ads|marketing|social|kampanya|reklam/.test(text)) return "campaign";
