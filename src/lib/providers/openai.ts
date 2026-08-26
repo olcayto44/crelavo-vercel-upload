@@ -230,7 +230,7 @@ export type WebsiteGenerationInput = {
 
 const WEBSITE_SYSTEM_PROMPT = `You generate production-ready, renderable English website source files, not templates, wireframes, snippets, or design briefs. Return only valid JSON with siteTitle, framework set to static-html, and files containing index.html, styles.css, script.js, and README.md. index.html must reference styles.css and script.js.
 
-This is a strict acceptance contract. Build one coherent, polished, conversion-ready website from the user's brief. The final index.html MUST contain: a visually rich hero with an actual img/picture/SVG visual and at least two distinct clickable CTAs; a credible dashboard or product mockup containing at least three visible panels/cards; a visual workflow timeline with at least three steps; pricing with at least three plan cards and Choose Plan controls; testimonials with at least two testimonial items; an accessible FAQ accordion with at least two questions; and working About and Contact anchor sections. Use semantic markup and these stable ids: hero, about, features, workflow, pricing, testimonials, faq, contact.
+This is a strict acceptance contract. Build one coherent, polished, conversion-ready website from the user's brief. The final index.html MUST contain: a visually rich hero with an actual img/picture/inline SVG or a styled CSS visual panel and at least two distinct clickable CTAs; a credible dashboard or product mockup containing at least three visible panels/cards; a visual workflow timeline with at least three steps; pricing with at least three plan cards, each with a heading and action, plus Choose Plan controls; testimonials with at least two testimonial/review items; an accessible FAQ accordion with at least two questions using buttons with aria-expanded or native details/summary; and working About and Contact anchor sections. Use semantic markup. Section ids, classes, and headings may use clear equivalents such as banner/masthead, company/story, benefits/capabilities, process/how-it-works, plans/packages, reviews/social-proof, questions/help, and get-in-touch/reach-us.
 
 The final styles.css MUST contain a real glassmorphism combination, not a label: translucent rgba() surface colors with alpha, backdrop-filter (and preferably -webkit-backdrop-filter), visible border, layered box-shadow, and a gradient. It MUST include a responsive @media query and an obvious typography hierarchy for body, h1, h2, and supporting text. The final script.js MUST implement FAQ accordion behavior using aria-expanded, smooth-scroll behavior, and Choose Plan behavior that opens a modal/contact flow or follows a real link. The alert( call is forbidden anywhere. Do not return a plain collection of flat sections and buttons, a generic template, lorem ipsum, placeholder blocks, fake checkout claims, invented metrics, fake customer names, fabricated testimonials, unverifiable claims, or secrets. If facts are absent, use neutral English copy such as Custom or Contact sales without losing supplied brief content. Return complete files, not patch instructions.`;
 
@@ -265,9 +265,30 @@ function websiteFile(files: WebsiteGeneratedFile[], path: string) {
   return files.find((file) => file.path === path)?.content ?? "";
 }
 
+const WEBSITE_SECTION_ALIASES: Record<string, string[]> = {
+  hero: ["hero", "banner", "masthead", "intro"],
+  about: ["about", "company", "story", "mission"],
+  features: ["features", "benefits", "capabilities", "solutions"],
+  workflow: ["workflow", "process", "how-it-works", "steps", "timeline"],
+  pricing: ["pricing", "plans", "packages", "tiers"],
+  testimonials: ["testimonials", "reviews", "social-proof", "customer-stories"],
+  faq: ["faq", "faqs", "questions", "help"],
+  contact: ["contact", "get-in-touch", "reach-us", "demo"]
+};
+
+function tokenPattern(values: string[]) {
+  return values.map((value) => value.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")).join("|");
+}
+
 function hasSection(html: string, name: string) {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`id=["']${escaped}["']|<h[1-6][^>]*>[^<]*${escaped}[^<]*<\\/h[1-6]>`, "i").test(html);
+  const aliases = WEBSITE_SECTION_ALIASES[name] ?? [name];
+  const tokens = tokenPattern(aliases);
+  return new RegExp(`(?:id|class)=["'][^"']*(?:${tokens})[^"']*["']|<h[1-6][^>]*>[^<]*(?:${tokens})[^<]*<\\/h[1-6]>`, "i").test(html);
+}
+
+function extractRegion(html: string, name: string) {
+  const tokens = tokenPattern(WEBSITE_SECTION_ALIASES[name] ?? [name]);
+  return html.match(new RegExp(`<(?:section|main|article|div)\\b[^>]*(?:id|class)=["'][^"']*(?:${tokens})[^"']*["'][^>]*>[\\s\\S]*?<\\/(?:section|main|article|div)>`, "i"))?.[0] ?? html;
 }
 
 function countMatches(value: string, pattern: RegExp) {
@@ -278,33 +299,50 @@ function hasAny(value: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(value));
 }
 
+function countPlanCards(html: string) {
+  const cardPattern = /<(?:article|div|li)\b[^>]*class=["'][^"']*(?:pricing[-_ ]?card|price[-_ ]?card|plan[-_ ]?card|tier[-_ ]?card|package[-_ ]?card|pricing[^"']*card|price[^"']*card|plan[^"']*card)[^"']*["'][^>]*>[\s\S]*?<\/(?:article|div|li)>/gi;
+  return [...html.matchAll(cardPattern)].filter((match) => /<h[1-6]\b/i.test(match[0]) && /<(?:a|button)\b/i.test(match[0])).length;
+}
+
+function countFaqQuestions(faq: string) {
+  const details = countMatches(faq, /<details\b[\s\S]*?<summary\b/gi);
+  const buttons = countMatches(faq, /<button\b[^>]*(?:aria-expanded|aria-controls|faq|accordion)[^>]*>/gi);
+  return { details, buttons };
+}
+
 export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQualityResult {
   const missing: string[] = [];
   const index = websiteFile(files, "index.html");
   const styles = websiteFile(files, "styles.css");
   const script = websiteFile(files, "script.js");
+  const allSource = files.map((file) => file.content).join("\\n");
   for (const path of ["index.html", "styles.css", "script.js", "README.md"]) {
     if (!websiteFile(files, path).trim()) missing.push(`${path}: required non-empty file`);
   }
+  if (/(?:lorem\s+ipsum|your\s+brand\s+here|placeholder|coming\s+soon)/i.test(allSource)) missing.push("website source: generic placeholder/template content is forbidden");
+  if (/alert\s*\(/i.test(allSource)) missing.push("website source: alert( is forbidden");
   if (index) {
-    for (const section of ["hero", "about", "features", "workflow", "pricing", "testimonials", "faq", "contact"]) {
-      if (!hasSection(index, section)) missing.push(`index.html: ${section} section id or heading`);
+    for (const section of Object.keys(WEBSITE_SECTION_ALIASES)) {
+      if (!hasSection(index, section)) missing.push(`index.html: ${section} section id, class, or heading`);
     }
-    const hero = index.match(/<section[^>]*(?:id=["']hero["']|class=["'][^"']*hero[^"']*["'])[^>]*>[\s\S]*?<\/section>/i)?.[0] ?? "";
-    if (!hasAny(hero, [/<img\b/i, /<picture\b/i, /<svg\b/i, /background-image\s*:/i])) missing.push("index.html: hero must contain a visual image, picture, SVG, or background image");
-    const heroCtaCount = countMatches(hero, /<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|btn|button)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi);
+    const hero = extractRegion(index, "hero");
+    const hasInlineVisual = /<(?:img\b[^>]*\bsrc=["'][^"']+["']|picture\b[\s\S]*?<img\b|svg\b[\s\S]*?<\/svg>)/i.test(hero);
+    const visualClass = /(?:visual|illustration|artwork|hero-media|hero-art|mockup|visual-panel|media-block)/i.test(hero);
+    const cssVisualBlock = visualClass && /(?:background(?:-image)?|aspect-ratio|min-height|height)\s*:/i.test(styles) && /(?:visual|illustration|artwork|hero-media|hero-art|mockup|visual-panel|media-block)[^{}]*\{[\s\S]*?(?:background|border|box-shadow|border-radius)\s*:/i.test(styles);
+    if (!hasInlineVisual && !cssVisualBlock) missing.push("index.html: hero must contain a real image, picture, inline SVG, or styled CSS visual panel");
+    const heroCtaCount = countMatches(hero, /<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|action|btn|button|primary|secondary|hero-link)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi);
     if (heroCtaCount < 2) missing.push("index.html: hero must contain at least two clickable CTA elements");
-    const planCards = countMatches(index, /<(?:article|div|li)\b[^>]*class=["'][^"']*(?:pricing-card|price-card|plan-card|pricing__card)[^"']*["'][^>]*>/gi);
-    if (planCards < 3) missing.push("index.html: pricing must contain at least three plan cards");
-    if (countMatches(index, /<(?:a|button)\b[^>]*data-plan=["'][^"']+["'][^>]*>/gi) < 1 || !/choose\s+plan/i.test(index)) missing.push("index.html: Choose Plan CTA with data-plan");
-    if (countMatches(index, /(?:workflow-step|step-card|timeline-step|data-step)/gi) < 3) missing.push("index.html: visual workflow timeline with at least three steps");
-    if (countMatches(index, /(?:dashboard-panel|mockup-panel|product-panel|dashboard-card|product-card)/gi) < 3) missing.push("index.html: dashboard/product mockup with at least three panels or cards");
-    if (countMatches(index, /(?:testimonial-card|testimonial-item|class=["'][^"']*testimonial)/gi) < 2) missing.push("index.html: at least two testimonial items");
-    if (countMatches(index, /<(?:button|details)\b[^>]*(?:faq|accordion)|class=["'][^"']*(?:faq|accordion)[^"']*["']/gi) < 2) missing.push("index.html: FAQ accordion with at least two questions");
-    if (!/aria-expanded=["'](?:true|false)["']/i.test(index)) missing.push("index.html: accessible FAQ controls with aria-expanded");
-    if (!/href=["']styles\.css["']/i.test(index)) missing.push("index.html: styles.css reference");
-    if (!/src=["']script\.js["']/i.test(index)) missing.push("index.html: script.js reference");
-    if (/(?:lorem ipsum|your brand here|placeholder|coming soon)/i.test(index)) missing.push("index.html: generic placeholder/template content is forbidden");
+    if (countPlanCards(extractRegion(index, "pricing")) < 3) missing.push("index.html: pricing must contain at least three plan cards with headings and actions");
+    if (countMatches(index, /<(?:a|button)\b[^>]*(?:data-plan|data-(?:action|cta))=["'][^"']+["'][^>]*>/gi) < 1 || !/(?:choose|select)\s+plan/i.test(index)) missing.push("index.html: Choose Plan CTA with data-plan or equivalent action");
+    if (countMatches(index, /(?:workflow[-_ ]?(?:step|item)|step[-_ ]?card|process[-_ ]?step|timeline[-_ ]?step|data-step|aria-label=["'][^"']*step)/gi) < 3) missing.push("index.html: visual workflow timeline with at least three steps");
+    if (countMatches(index, /(?:dashboard|mockup|product|interface|screen|app)[-_ ]?(?:panel|card|tile|widget)/gi) < 3) missing.push("index.html: dashboard/product mockup with at least three panels or cards");
+    if (countMatches(index, /(?:testimonial|review|quote|customer[-_ ]?story|social[-_ ]?proof)[-_ ]?(?:card|item|quote)?|class=["'][^"']*(?:testimonial|review|social-proof)[^"']*["']/gi) < 2) missing.push("index.html: at least two testimonial or review items");
+    const faq = extractRegion(index, "faq");
+    const faqQuestions = countFaqQuestions(faq);
+    if (faqQuestions.details + faqQuestions.buttons < 2) missing.push("index.html: FAQ accordion/details with at least two questions");
+    if (faqQuestions.buttons > 0 && !/<button\b[^>]*aria-expanded=["'](?:true|false)["']/i.test(faq)) missing.push("index.html: FAQ buttons must expose aria-expanded");
+    if (!/href=["'](?:\.\/)?styles\.css(?:#[^"']*)?["']/i.test(index)) missing.push("index.html: styles.css reference");
+    if (!/src=["'](?:\.\/)?script\.js(?:#[^"']*)?["']/i.test(index)) missing.push("index.html: script.js reference");
   }
   if (styles) {
     if (!/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0\.|1?\.?\d+)\s*\)/i.test(styles) || !/(?:-webkit-)?backdrop-filter\s*:/i.test(styles) || !/border\s*:/i.test(styles) || !/box-shadow\s*:/i.test(styles)) missing.push("styles.css: complete glassmorphism requires rgba alpha, backdrop-filter, border, and box-shadow");
@@ -313,7 +351,6 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQu
     for (const selector of ["body", "h1", "h2"]) if (!new RegExp(`${selector}\\s*\\{`, "i").test(styles)) missing.push(`styles.css: typography hierarchy missing ${selector}`);
   }
   if (script) {
-    if (/alert\s*\(/i.test(script)) missing.push("script.js: alert( is forbidden");
     if (!/(?:faq|accordion)/i.test(script) || !/(?:aria-expanded|classList\.toggle|hidden\s*=)/i.test(script)) missing.push("script.js: FAQ accordion toggle behavior");
     if (!/(?:data-plan|choose\s+plan)/i.test(script) || !/(?:addEventListener|onclick)/i.test(script) || !/(?:modal|dialog|location\.href|scrollIntoView)/i.test(script)) missing.push("script.js: Choose Plan must open a modal or perform a real link action");
     if (!/(?:scrollIntoView|behavior:\s*["']smooth["'])/i.test(script)) missing.push("script.js: smooth scroll behavior");
@@ -339,6 +376,8 @@ async function requestWebsiteSource(apiKey: string, messages: Array<{ role: "sys
   return parseWebsiteJson(content);
 }
 
+const WEBSITE_REPAIR_GUIDANCE = `Concrete repair patterns: use <section id="banner"> or <section class="masthead"> for hero; pricing-card, price-card, plan-card, tier-card, and package-card are accepted card class forms. Use equivalent semantic section ids/classes/headings; include <picture><img src="..." alt="..."></picture>, a complete inline <svg>...</svg>, or a hero element such as <div class="hero-visual"></div> backed by .hero-visual { min-height: 20rem; background: linear-gradient(...); border-radius: 1rem; }. Use at least three pricing elements such as <article class="plan-card"><h3>...</h3><a data-plan="...">Choose plan</a></article>; three distinct workflow-step/process-step/timeline-step items; three dashboard-panel/mockup-card/product-panel items; two testimonial-item/review-card items; and either two <details><summary>...</summary>...</details> controls or two FAQ buttons with aria-expanded="false". Use CTA links/buttons with href, data-cta, data-action, or data-plan. Keep styles.css glass surfaces concrete with rgba(..., alpha), backdrop-filter, border, box-shadow, gradient, @media, body, h1, and h2 rules. Keep script.js free of alert( and implement FAQ state, a real Choose Plan action, and smooth scrolling. Do not use lorem ipsum, placeholder, your brand here, or coming soon anywhere in any file.`;
+
 export async function generateWebsiteSource(input: WebsiteGenerationInput): Promise<WebsiteGenerationResult> {
   const apiKey = requireProviderEnv("openai");
   const generated = await requestWebsiteSource(apiKey, [
@@ -350,8 +389,8 @@ export async function generateWebsiteSource(input: WebsiteGenerationInput): Prom
     const quality = validateWebsiteQuality(current.files);
     if (quality.valid) return current;
     current = await requestWebsiteSource(apiKey, [
-      { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing repair pass ${pass} of 2. Return the complete corrected source file set in exactly the same JSON format. Preserve every supported fact and meaningful phrase from the original request and current files. Fix every listed deterministic defect in the exact requirements list; do not merely describe fixes. Do not shorten the site into a template.` },
-      { role: "user", content: JSON.stringify({ originalRequest: input, exactMissingRequirements: quality.missing, currentFiles: current.files, currentSiteTitle: current.siteTitle }) }
+      { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing repair pass ${pass} of 2. Return the complete corrected source file set in exactly the same JSON format. Preserve every supported fact and meaningful phrase from the original request and current files. Fix every listed deterministic defect in the exact requirements list; do not merely describe fixes. Do not shorten the site into a template. ${WEBSITE_REPAIR_GUIDANCE}` },
+      { role: "user", content: JSON.stringify({ originalRequest: input, exactMissingRequirements: quality.missing, minimumConcretePatterns: WEBSITE_REPAIR_GUIDANCE, currentFiles: current.files, currentSiteTitle: current.siteTitle }) }
     ]);
   }
   const finalQuality = validateWebsiteQuality(current.files);
