@@ -25,7 +25,10 @@ export function WebsiteBuilderForm() {
       if (!user) throw new Error("You must sign in to generate a website.");
       const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(sessionData.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, pages: list(fields.pages), features: list(fields.features) }) });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || (data.error === "provider_required" ? "Real AI provider is not configured: OPENAI_API_KEY is required." : data.error || "Website generation failed."));
+      if (!response.ok) {
+        const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : "";
+        throw new Error(`${data.message || (data.error === "provider_required" ? "Real AI provider is not configured: OPENAI_API_KEY is required." : data.error || "Website generation failed.")}${missing}`);
+      }
       setOutputs(data.outputs);
       setStatus("Website generation complete. Preview, ZIP and README links are ready.");
     } catch (error) {

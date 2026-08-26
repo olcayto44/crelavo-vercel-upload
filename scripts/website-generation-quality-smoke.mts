@@ -25,7 +25,7 @@ assert((highQualityVariant.html.match(/(?:process-step|timeline-step|data-step)/
 assert((highQualityVariant.html.match(/(?:tier-card|pricing__card|package-card)/g) ?? []).length >= 3, "quality fixture must contain three pricing variants");
 assert(!/(?:lorem\s+ipsum|placeholder|alert\s*\()/i.test(highQualityVariant.html + highQualityVariant.css + highQualityVariant.js), "quality fixture must be clean");
 assert(/placeholder|alert\s*\(/i.test(weakFixture) && !/<article class="package-card">/.test(weakFixture), "weak fixture must remain distinguishable");
-assert(provider.includes("pass <= 2"), "repair loop must be capped at two passes");
+assert(provider.includes("pass <= 3"), "repair loop must be capped at three passes");
 assert(provider.includes("minimumConcretePatterns"), "repair prompt must include concrete pattern guidance");
 assert(route.includes("provider_required"), "missing provider must remain an explicit error");
 assert(route.includes('error: error.code'), "quality failures must expose website_quality_failed");

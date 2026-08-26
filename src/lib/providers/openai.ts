@@ -387,11 +387,11 @@ export async function generateWebsiteSource(input: WebsiteGenerationInput): Prom
     { role: "user", content: JSON.stringify(input) }
   ]);
   let current = generated;
-  for (let pass = 1; pass <= 2; pass += 1) {
+  for (let pass = 1; pass <= 3; pass += 1) {
     const quality = validateWebsiteQuality(current.files);
     if (quality.valid) return current;
     current = await requestWebsiteSource(apiKey, [
-      { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing repair pass ${pass} of 2. Return the complete corrected source file set in exactly the same JSON format. Preserve every supported fact and meaningful phrase from the original request and current files. Fix every listed deterministic defect in the exact requirements list; do not merely describe fixes. Do not shorten the site into a template. ${WEBSITE_REPAIR_GUIDANCE}` },
+      { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing repair pass ${pass} of 3. Return the complete corrected source file set in exactly the same JSON format. Preserve every supported fact and meaningful phrase from the original request and current files. Fix every listed deterministic defect in the exact requirements list; do not merely describe fixes. Do not shorten the site into a template. ${WEBSITE_REPAIR_GUIDANCE}` },
       { role: "user", content: JSON.stringify({ originalRequest: input, exactMissingRequirements: quality.missing, minimumConcretePatterns: WEBSITE_REPAIR_GUIDANCE, currentFiles: current.files, currentSiteTitle: current.siteTitle }) }
     ]);
   }
