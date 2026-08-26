@@ -48,10 +48,12 @@ export type NormalizedProviderStatus = {
 export type EcommerceAdRunInput = {
   productionId: string;
   jobId: string;
-  productUrl: string;
+  productUrl?: string;
+  productBrief?: string;
   campaignGoal: string;
   channels: string;
   targetDurationSeconds: number;
+  aspectRatio?: string;
   voiceDirection: string;
   subtitleStyle: string;
   style?: string;

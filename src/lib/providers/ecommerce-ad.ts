@@ -1,12 +1,14 @@
 import { createVoiceover } from "./elevenlabs";
 import { createAdBrain } from "./openai";
-import { scrapeProduct } from "./scraper";
+import { productFromBrief, scrapeProduct } from "./scraper";
 import { createSubtitleFile } from "./subtitles";
 import type { EcommerceAdRunInput, EcommerceAdRunResult } from "./types";
 import { createVisualVideo } from "./visuals";
 
 export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promise<EcommerceAdRunResult> {
-  const product = await scrapeProduct(input.productUrl);
+  const product = input.productUrl
+    ? await scrapeProduct(input.productUrl)
+    : productFromBrief(input.productBrief ?? "");
   const brain = await createAdBrain({
     product,
     campaignGoal: input.campaignGoal,
@@ -25,6 +27,7 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
     scenes: brain.visualScenes,
     productImageUrls: product.imageUrls,
     durationSeconds: input.targetDurationSeconds,
+    aspectRatio: input.aspectRatio,
     style: input.style
   });
 

@@ -869,43 +869,21 @@ if (talkingProviderType) {
     if (isProductAdVideo) {
       const ecommerceContext = ecommerceContextFrom(requestMetadata) ?? ecommerceContextFrom(inputJson) ?? ecommerceContextFrom(existingOutput);
       const productUrl = String(ecommerceContext?.productUrl ?? "").trim();
-
-      if (!productUrl) {
-        const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
-        const { data: demoProduction, error: demoError } = await supabase
-          .from("production_requests")
-          .update({
-            status: "in_production",
-            generation_status: "preview_ready",
-            output_json: {
-              ...demoOutput,
-              automationStatus: "demo_ready",
-              automaticDeliveryLinks: deliveryLinks,
-              outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput }),
-              previewUrl: deliveryLinks.previewUrl,
-              deliveryLink: deliveryLinks.deliveryLink,
-              deliveryZipUrl: deliveryLinks.deliveryZipUrl,
-              sourceFilesUrl: deliveryLinks.sourceFilesUrl,
-              readmeUrl: deliveryLinks.readmeUrl
-            },
-            admin_notes: "Demo automation filled workspace because no external product URL/provider input was supplied.",
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", productionId)
-          .select("*")
-          .single();
-        if (demoError) throw demoError;
-        return Response.json({ job_id: jobId, production: demoProduction, demo: true });
+      const productBrief = String(ecommerceContext?.productBrief ?? "").trim();
+      if (!productUrl && productBrief.length < 20) {
+        return Response.json({ error: "provider_required: product URL or product brief is required before campaign production can start." }, { status: 400 });
       }
 
       try {
         const result = await runEcommerceAdPipeline({
           productionId,
           jobId,
-          productUrl,
-          campaignGoal: String(ecommerceContext?.campaignGoal ?? "Sales conversion"),
+           productUrl: productUrl || undefined,
+           productBrief: productBrief || undefined,
+           campaignGoal: String(ecommerceContext?.campaignGoal ?? "Sales conversion"),
           channels: String(ecommerceContext?.channels ?? "TikTok, Instagram Reels, Meta Ads"),
-          targetDurationSeconds: Number(ecommerceContext?.targetDurationSeconds ?? 30) || 30,
+          targetDurationSeconds: Number(ecommerceContext?.targetDurationSeconds),
+          aspectRatio: String(ecommerceContext?.aspectRatio ?? "9:16"),
           voiceDirection: String(ecommerceContext?.voiceDirection ?? "Energetic, trustworthy social ad voice"),
           subtitleStyle: String(ecommerceContext?.subtitleStyle ?? "Animated social captions"),
           style: typeof ecommerceContext?.style === "string" ? ecommerceContext.style : undefined,
@@ -921,9 +899,17 @@ if (talkingProviderType) {
           currentStep: "Visual/video provider job created",
           pipelineType: "ecommerce_product_ad_video",
           providerPipeline: pipeline,
-          product: result.product,
-          brain: result.brain,
-          visualJob: result.visualJob,
+           product: result.product,
+           script: result.brain.voiceoverScript,
+           scenePlan: result.brain.visualScenes,
+           brain: result.brain,
+           providerProof: {
+             visual: { provider: result.visualJob.provider, jobId: result.visualJob.id ?? null, status: result.visualJob.status },
+             voice: { provider: "elevenlabs", assetUrl: result.voiceAudioUrl },
+             subtitles: { provider: "local_srt", assetUrl: result.subtitleUrl },
+             render: result.renderJob ? { provider: result.renderJob.provider, jobId: result.renderJob.id ?? null, status: result.renderJob.status } : null
+           },
+           visualJob: result.visualJob,
           visualJobs: result.visualJob ? [result.visualJob] : [],
           voiceAudioUrl: result.voiceAudioUrl,
           subtitleUrl: result.subtitleUrl,
@@ -957,33 +943,50 @@ if (talkingProviderType) {
         return Response.json({ job_id: jobId, production: completedProduction, provider_result: result });
       } catch (providerError) {
         const message = errorMessage(providerError, "Provider pipeline failed");
-        const providerNote = `Provider pipeline unavailable, demo output is active: ${message}`;
-        const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
-        const { data: demoProduction, error: demoError } = await supabase
+        const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
+        if (reservedCredits > 0) {
+          const { data: balanceRow } = await supabase.from("credit_balances").select("balance, reserved").eq("user_id", currentProduction.user_id).maybeSingle();
+          if (balanceRow) {
+            await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+            await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because the real ecommerce provider pipeline did not start: ${message}` });
+          }
+        }
+        const providerNote = `Real provider pipeline failed; no demo output was created: ${message}`;
+        const failedOutput = {
+          ...existingOutput,
+          automationMode: "fully_automatic",
+          automationStatus: "provider_required",
+          providerStatus: "provider_required",
+          providerPreflight,
+          providerErrors: { ecommerce_ad: message },
+          automaticDeliveryLinks: deliveryLinks,
+          outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: existingOutput }),
+          finalVideoUrl: null,
+          previewUrl: null,
+          deliveryLink: null,
+          deliveryZipUrl: null
+        };
+        const { data: failedProduction, error: failedError } = await supabase
           .from("production_requests")
           .update({
-            status: "in_production",
-            generation_status: "preview_ready",
-            output_json: {
-              ...demoOutput,
-              automationStatus: "demo_ready",
-              providerStatus: "waiting_provider_config",
-              providerPreflight,
-              renderQueuePolicy,
-              capacityPolicy,
-              activeJobLimit,
-              automaticDeliveryLinks: deliveryLinks,
-              outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: demoOutput })
-            },
+            status: "queued",
+            automation_status: "waiting_provider_config",
+            generation_status: "provider_required",
+            preview_url: null,
+            delivery_link: null,
+            delivery_zip_url: null,
+            reserved_credits: 0,
+            output_json: failedOutput,
             admin_notes: providerNote,
+            error_message: message,
             updated_at: new Date().toISOString()
           })
           .eq("id", productionId)
           .select("*")
           .single();
 
-        if (demoError) throw demoError;
-        return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_warning: message });
+        if (failedError) throw failedError;
+        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_required: true, error: message }, { status: 424 });
       }
     }
 

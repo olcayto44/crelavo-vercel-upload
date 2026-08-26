@@ -35,7 +35,15 @@ function textFromHtml(html: string) {
     .slice(0, 6000);
 }
 
+export function productFromBrief(brief: string): ProductSnapshot {
+  const rawText = brief.trim();
+  if (rawText.length < 20) throw new Error("Product brief must contain at least 20 characters with product name, benefit or offer details.");
+  const title = rawText.split(/[\n.!?]/)[0]?.trim().slice(0, 160) || "Product brief";
+  return { url: "", title, description: rawText.slice(0, 1200), price: "", imageUrls: [], rawText };
+}
+
 export async function scrapeProduct(url: string): Promise<ProductSnapshot> {
+  if (!/^https?:\/\//i.test(url.trim())) throw new Error("Product URL must be a valid HTTP or HTTPS URL.");
   const response = await fetch(url, {
     headers: {
       "User-Agent": "CrelavoBot/1.0 (+https://crelavo.com)",
@@ -49,17 +57,23 @@ export async function scrapeProduct(url: string): Promise<ProductSnapshot> {
   const title = meta(html, "og:title") || html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || "Product";
   const description = meta(html, "og:description") || meta(html, "description") || textFromHtml(html).slice(0, 700);
   const price = meta(html, "product:price:amount") || meta(html, "og:price:amount") || "";
+  const rawText = textFromHtml(html);
   const imageUrls = Array.from(new Set([
     meta(html, "og:image"),
     meta(html, "twitter:image")
   ].filter(Boolean)));
+  const normalizedTitle = decodeHtml(title);
+  const normalizedDescription = decodeHtml(description);
+  if (!normalizedTitle || !normalizedDescription || rawText.length < 20) {
+    throw new Error("Product page was fetched but did not contain usable product information. Provide a product brief instead.");
+  }
 
   return {
     url,
-    title: decodeHtml(title),
-    description: decodeHtml(description),
+    title: normalizedTitle,
+    description: normalizedDescription,
     price,
     imageUrls,
-    rawText: textFromHtml(html)
+    rawText
   };
 }

@@ -241,11 +241,18 @@ export async function PATCH(request: Request) {
 
     const { data: existing, error: existingError } = await supabaseAdmin()
       .from("production_requests")
-      .select("status, automation_status, generation_status, approval_status, reserved_credits, estimated_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, output_json")
+      .select("status, automation_status, generation_status, approval_status, reserved_credits, estimated_credits, preview_url, delivery_link, delivery_zip_url, source_files_url, output_json, production_type, package_id")
       .eq("id", id)
       .maybeSingle();
     if (existingError) throw existingError;
     const existingOutput = existing?.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+    if (status === "ready" && isProductAdProduction(String(existing?.package_id ?? ""), String(existing?.production_type ?? ""))) {
+      const finalVideoUrl = String(existingOutput.finalVideoUrl ?? existingOutput.final_video_url ?? existingOutput.providerFinalUrl ?? "").trim();
+      const hasRealFinalVideo = /^https?:\/\//i.test(finalVideoUrl) && /\.mp4(?:\?|$)|\.mov(?:\?|$)|\.webm(?:\?|$)|replicate\.delivery|fal\.media|cloudfront|supabase/i.test(finalVideoUrl) && !/placeholder|preview\.html|manifest|readme/i.test(finalVideoUrl);
+      if (!hasRealFinalVideo || existingOutput.qualityGate && typeof existingOutput.qualityGate === "object" && String((existingOutput.qualityGate as Record<string, unknown>).status ?? "") !== "passed") {
+        return Response.json({ error: "Final MP4 is not complete; Campaign and E-commerce Management production cannot be marked ready." }, { status: 409 });
+      }
+    }
 
     const nextStatusForWorkflow = allowedStatuses.includes(status) ? status : existing?.status ?? undefined;
     const nextAutomationStatusForWorkflow = automationStatus || (status === "ready" ? "completed" : status === "in_production" ? "running" : existing?.automation_status ?? undefined);
@@ -568,14 +575,33 @@ export async function POST(request: Request) {
   const automationSteps = isProductAdVideo ? ecommerceAdAutomationSteps() : initialAutomationSteps();
   const directProductUrl = String(body.product_url ?? body.productUrl ?? body.product_link ?? body.productLink ?? body.reference_url ?? body.referenceUrl ?? "").trim();
   const productUrl = directProductUrl || firstUrlFromText(body.material_links) || firstUrlFromText(body.prompt) || "";
+  const productBrief = String(body.product_brief ?? body.productBrief ?? body.product_description ?? "").trim();
+  const requestedDurationSeconds = Number(body.output_duration_seconds ?? body.target_duration_seconds ?? body.targetDurationSeconds);
+  const requestedAspectRatio = String(body.aspect_ratio ?? body.aspectRatio ?? "").trim();
+  if (isProductAdVideo) {
+    if (!productUrl && productBrief.length < 20) {
+      return Response.json({ error: "Product URL or a product brief of at least 20 characters is required for Campaign and E-commerce Management." }, { status: 400 });
+    }
+    if (productUrl && !/^https?:\/\//i.test(productUrl)) {
+      return Response.json({ error: "Product URL must be a valid HTTP or HTTPS URL." }, { status: 400 });
+    }
+    if (!Number.isFinite(requestedDurationSeconds) || requestedDurationSeconds < 5 || requestedDurationSeconds > 60) {
+      return Response.json({ error: "Target duration must be between 5 and 60 seconds." }, { status: 400 });
+    }
+    if (!( ["9:16", "16:9", "1:1", "4:5", "3:4", "4:3", "21:9"].includes(requestedAspectRatio) )) {
+      return Response.json({ error: "A valid aspect ratio is required: 9:16, 16:9, 1:1, 4:5, 3:4, 4:3 or 21:9." }, { status: 400 });
+    }
+  }
   const ecommerceContext = isProductAdVideo ? {
     productUrl,
+    productBrief,
     campaignGoal: body.campaign_goal ?? "Sales conversion",
     channels: body.campaign_channels ?? "TikTok, Instagram Reels, Meta Ads",
     publishingPlan: body.publishing_plan ?? "Preview first, then one-click export",
     abTestFocus: body.ab_test_focus ?? "Hook, CTA, subtitle style and first 3 seconds",
     adFormula: "Hook + Problem + Solution + Proof + Offer + CTA",
-    targetDurationSeconds: Number(body.output_duration_seconds ?? 30) || 30,
+    targetDurationSeconds: requestedDurationSeconds,
+    aspectRatio: requestedAspectRatio,
     voiceDirection: body.voice_direction ?? "Energetic, trustworthy social ad voice",
     subtitleStyle: body.subtitle_style ?? "Animated social captions",
     revisionActions: ["Change subtitle color", "Switch to male voice", "Switch to female voice", "Change CTA", "Regenerate hook"],

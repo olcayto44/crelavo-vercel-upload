@@ -23,6 +23,7 @@ import { createShotstackRender } from "@/lib/providers/shotstack";
 import { getProviderStatus } from "@/lib/providers/status";
 import { mirrorProviderAsset, uploadProviderAsset } from "@/lib/providers/storage";
 import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/types";
+import { isProductAdProduction } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function stripPostgresUnsafeText(value: string) {
@@ -1031,8 +1032,9 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       const successfulProviderKey = String(successfulStatus.provider ?? "").toLowerCase();
       const isHeyGenSuccessfulVideo = successfulProviderKey === "heygen_video_agent";
       const isMiniMaxSuccessfulVideo = successfulProviderKey === "minimax";
-      const canSoftPassProviderVideo = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo || isMiniMaxSuccessfulVideo || (explicitNoVoice && explicitNoSubtitles)) && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
-      const forcePassProviderVideo = Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo || isMiniMaxSuccessfulVideo);
+       const isStrictProductAd = isProductAdProduction(String(production.package_id ?? ""), String(production.production_type ?? ""));
+       const canSoftPassProviderVideo = !isStrictProductAd && Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo || isMiniMaxSuccessfulVideo || (explicitNoVoice && explicitNoSubtitles)) && readyGate.missing.every((item) => softPassMissing.has(item) || item.startsWith("media_probe_") || item.startsWith("duration_probe"));
+       const forcePassProviderVideo = !isStrictProductAd && Boolean(providerFinalUrl) && (isHeyGenVideoAgentProvider || isHeyGenSuccessfulVideo || isMiniMaxSuccessfulVideo);
       if (!readyGate.passed && !canSoftPassProviderVideo && !forcePassProviderVideo) {
         const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, providerFinalUrl, alternatives: polledAlternatives, alternativeStatuses, providerStatus: "quality_gate_blocked", providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, readyGate, qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: readyGate.required, missing: readyGate.missing, warnings: readyGate.warnings } });
         const { data } = await supabase

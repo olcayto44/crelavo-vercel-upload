@@ -165,7 +165,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
   const hasAnyVideoProviderConfigured = hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY", "RUNWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY", "FAL_KEY", "FAL_API_KEY", "REPLICATE_API_TOKEN"]);
   if (!hasAnyVideoProviderConfigured) {
-    return { provider: "provider_pending", id: `pending-${input.productionId}`, status: "queued", raw: { sourceScenes: input.scenes, fallbackReason: "No external video provider was configured." } };
+    throw new Error("provider_required: no real video provider is configured for this campaign. Configure MiniMax, Replicate, FAL, Runway or Kling before starting production.");
   }
   const requestedRatio = input.aspectRatio || "9:16";
   const runwayRatio = requestedRatio.includes("16:9") ? "1280:720" : requestedRatio.includes("1:1") ? "960:960" : "720:1280";
@@ -189,21 +189,6 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
     `Scenes: ${input.scenes.join(" | ")}`,
     input.productImageUrls.length ? `Product references: ${input.productImageUrls.join(", ")}` : ""
   ].filter(Boolean).join("\n");
-
-  if (isCrelavoUiDemo && input.productImageUrls.length) {
-    const imageReference = input.productImageUrls[0];
-    return {
-      provider: "website_screenshot_reference",
-      id: `screenshot-${Date.now()}`,
-      status: "succeeded",
-      url: imageReference,
-      raw: {
-        sourceImageUrl: imageReference,
-        assetType: "image",
-        fallbackReason: "Crelavo/UI website demos use deterministic multi-scene Shotstack layout instead of I2V zoom output."
-      }
-    };
-  }
 
   if (provider === "minimax") {
     const resolution = miniMaxResolution(`${input.style ?? ""} ${input.scenes.join(" ")}`);

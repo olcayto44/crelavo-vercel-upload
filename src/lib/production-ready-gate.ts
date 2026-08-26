@@ -118,6 +118,9 @@ export function productionReadyGate(production: ProductionForReadyGate, outputOv
 
   const previewUrl = output.previewUrl ?? output.preview_url ?? production.preview_url;
   const finalVideoUrl = output.finalVideoUrl ?? output.final_video_url ?? output.providerFinalUrl ?? output.playbackUrl;
+  const strictProductAd = ["campaign_product_ad_video", "ecommerce_product_ad_video", "product_ad_video"].includes(String(production.package_id ?? "").toLowerCase()) || String(production.production_type ?? "").toLowerCase() === "campaign";
+  const renderStatus = objectValue(output.renderStatus);
+  const renderSucceeded = String(renderStatus.status ?? "").toLowerCase() === "succeeded" || String(output.renderJob && typeof output.renderJob === "object" ? (output.renderJob as Record<string, unknown>).status ?? "" : "").toLowerCase() === "succeeded";
   const voiceAudioUrl = output.voiceAudioUrl ?? output.voice_audio_url;
   const subtitleUrl = output.subtitleUrl ?? output.subtitle_url;
   const thumbnailUrl = output.thumbnailUrl ?? output.thumbnail_url;
@@ -155,7 +158,8 @@ export function productionReadyGate(production: ProductionForReadyGate, outputOv
   }
 
   if (required.has("preview") && !hasUrl(previewUrl, finalVideoUrl, imageUrl, documentUrl)) missing.push("preview");
-  if (required.has("final_video") && !hasUrl(finalVideoUrl, production.delivery_link)) missing.push("final_video");
+  if (required.has("final_video") && (strictProductAd ? !hasPlayableVideoUrl(finalVideoUrl) : !hasUrl(finalVideoUrl, production.delivery_link))) missing.push("final_video");
+  if (strictProductAd && (!hasPlayableVideoUrl(finalVideoUrl) || !renderSucceeded)) missing.push("final_render_complete");
   if (required.has("voice_audio_or_final_render") && !hasUrl(voiceAudioUrl, finalVideoUrl)) missing.push("voice_audio_or_final_render");
   if (required.has("subtitle_or_burned_render") && !hasUrl(subtitleUrl, finalVideoUrl)) missing.push("subtitle_or_burned_render");
   if (required.has("thumbnail") && !hasUrl(thumbnailUrl)) {
