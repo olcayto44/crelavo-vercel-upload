@@ -214,14 +214,20 @@ export type WebsiteGenerationResult = {
 };
 
 function parseWebsiteJson(text: string): WebsiteGenerationResult {
-  const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<WebsiteGenerationResult>;
-  const files = Array.isArray(parsed.files) ? parsed.files : [];
+  const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<WebsiteGenerationResult> & Record<string, unknown>;
+  const rawFiles = parsed.files ?? parsed.sourceFiles ?? parsed.generatedFiles;
+  const files = Array.isArray(rawFiles)
+    ? rawFiles
+    : rawFiles && typeof rawFiles === "object"
+      ? Object.entries(rawFiles as Record<string, unknown>).map(([path, content]) => ({ path, content, contentType: undefined }))
+      : [];
   if (!files.length) throw new Error("OpenAI website provider returned no source files.");
   const normalizedFiles = files.slice(0, 30).map((file) => {
     const item = file && typeof file === "object" ? file as Record<string, unknown> : {};
-    const contentType = String(item.contentType ?? "text/plain");
+    const path = String(item.path ?? item.filename ?? item.name ?? "").trim();
+    const contentType = String(item.contentType ?? (path.endsWith(".html") ? "text/html" : path.endsWith(".css") ? "text/css" : path.endsWith(".js") ? "application/javascript" : path.endsWith(".json") ? "application/json" : path.endsWith(".md") ? "text/markdown" : "text/plain"));
     if (!["text/html", "text/css", "application/javascript", "application/json", "text/markdown"].includes(contentType)) throw new Error("OpenAI website provider returned an unsupported file type.");
-    return { path: String(item.path ?? ""), content: String(item.content ?? ""), contentType: contentType as WebsiteGeneratedFile["contentType"] };
+    return { path, content: String(item.content ?? item.code ?? item.source ?? ""), contentType: contentType as WebsiteGeneratedFile["contentType"] };
   });
   return { siteTitle: String(parsed.siteTitle ?? "Generated website").trim(), framework: parsed.framework === "nextjs-starter" ? "nextjs-starter" : "static-html", files: normalizedFiles };
 }
