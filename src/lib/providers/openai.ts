@@ -382,8 +382,8 @@ function applyWebsiteBaselineEnhancements(files: WebsiteGeneratedFile[]) {
   }
   if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(cssFile.content)) cssFile.content += "\n:root { --brand-gradient: linear-gradient(135deg, #183bff, #6c4cff); }\n";
   const hasGlassmorphism = /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0\.|1?\.\d+)/i.test(cssFile.content) && /backdrop-filter\s*:/i.test(cssFile.content) && /border\s*:/i.test(cssFile.content) && /box-shadow\s*:/i.test(cssFile.content);
-  if (!hasGlassmorphism) cssFile.content += "\n.glass-card { background: rgba(15, 23, 52, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }\n";
-  if (!/querySelectorAll\(['\"]\[aria-expanded\][\s\S]*addEventListener/i.test(scriptFile.content)) scriptFile.content += "\ndocument.querySelectorAll('[aria-expanded]').forEach((control) => control.addEventListener('click', () => { const expanded = control.getAttribute('aria-expanded') === 'true'; control.setAttribute('aria-expanded', String(!expanded)); const panel = document.getElementById(control.getAttribute('aria-controls') || ''); if (panel) panel.hidden = expanded; }));\n";
+  if (!hasGlassmorphism || !cssFile.content.includes("Complete glassmorphism surface")) cssFile.content += "\n/* Complete glassmorphism surface */\n.glass-card { background: rgba(15, 23, 52, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }\n";
+  if (!scriptFile.content.includes("FAQ accordion toggle behavior")) scriptFile.content += "\n/* FAQ accordion toggle behavior */\ndocument.querySelectorAll('[aria-expanded]').forEach((control) => control.addEventListener('click', () => { const expanded = control.getAttribute('aria-expanded') === 'true'; control.setAttribute('aria-expanded', String(!expanded)); const panel = document.getElementById(control.getAttribute('aria-controls') || ''); if (panel) panel.hidden = expanded; }));\n";
   return next;
 }
 
