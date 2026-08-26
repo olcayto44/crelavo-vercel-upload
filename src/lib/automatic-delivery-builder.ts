@@ -708,6 +708,10 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     { name: "manifest.json", content: JSON.stringify(manifest, null, 2) },
     { name: "preview.html", content: buildPreviewHtml(production) }
   ];
+  const generatedWebsiteFiles = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
+  for (const file of generatedWebsiteFiles) {
+    if (file && typeof file === "object" && typeof file.path === "string" && typeof file.content === "string" && /^(index\.html|styles\.css|script\.js|README\.md|src\/[a-zA-Z0-9._/-]+\.(tsx|ts|css|js|json|md))$/.test(file.path) && !file.path.includes("..")) entries.push({ name: `source/${file.path}`, content: file.content });
+  }
   if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
     entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
     entries.push({ name: "source/package.json", content: buildSourcePackageJson(production) });
@@ -788,6 +792,13 @@ if (requirements.wantsSubtitles) entries.push({ name: "media/subtitles-template.
 }
 
 export function buildPreviewHtml(production: ProductionLike) {
+  const generatedWebsiteFiles = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
+  if (generatedWebsiteFiles.length && production.production_type === "website") {
+    const index = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "index.html") as Record<string, unknown> | undefined;
+    const css = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "styles.css") as Record<string, unknown> | undefined;
+    const js = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "script.js") as Record<string, unknown> | undefined;
+    if (index && typeof index.content === "string") return index.content.replace(/<link[^>]+href=[\"']styles\.css[\"'][^>]*>/i, `<style>${String(css?.content ?? "")}</style>`).replace(/<script[^>]+src=[\"']script\.js[\"'][^>]*><\/script>/i, `<script>${String(js?.content ?? "")}</script>`);
+  }
   const manifest = buildDeliveryManifest(production);
   const featureSet = projectFeatureSet(production);
   const modules = featureSet.entities.map((item) => `<article><h3>${item}</h3><p>Included in the delivered project package.</p></article>`).join("");

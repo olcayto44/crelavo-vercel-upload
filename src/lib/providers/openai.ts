@@ -200,3 +200,58 @@ export async function scoreAdPerformance(input: {
   if (!content) throw new Error("OpenAI ad score provider returned no content.");
   return parseAdPerformanceScoreJson(content);
 }
+
+export type WebsiteGeneratedFile = {
+  path: string;
+  content: string;
+  contentType: "text/html" | "text/css" | "application/javascript" | "application/json" | "text/markdown";
+};
+
+export type WebsiteGenerationResult = {
+  siteTitle: string;
+  framework: "static-html" | "nextjs-starter";
+  files: WebsiteGeneratedFile[];
+};
+
+function parseWebsiteJson(text: string): WebsiteGenerationResult {
+  const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<WebsiteGenerationResult>;
+  const files = Array.isArray(parsed.files) ? parsed.files : [];
+  if (!files.length) throw new Error("OpenAI website provider returned no source files.");
+  const normalizedFiles = files.slice(0, 30).map((file) => {
+    const item = file && typeof file === "object" ? file as Record<string, unknown> : {};
+    const contentType = String(item.contentType ?? "text/plain");
+    if (!["text/html", "text/css", "application/javascript", "application/json", "text/markdown"].includes(contentType)) throw new Error("OpenAI website provider returned an unsupported file type.");
+    return { path: String(item.path ?? ""), content: String(item.content ?? ""), contentType: contentType as WebsiteGeneratedFile["contentType"] };
+  });
+  return { siteTitle: String(parsed.siteTitle ?? "Generated website").trim(), framework: parsed.framework === "nextjs-starter" ? "nextjs-starter" : "static-html", files: normalizedFiles };
+}
+
+export async function generateWebsiteSource(input: {
+  brief: string;
+  siteType: string;
+  brand: string;
+  audience: string;
+  pages: string[];
+  features: string[];
+  style: string;
+}): Promise<WebsiteGenerationResult> {
+  const apiKey = requireProviderEnv("openai");
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: optionalEnv("OPENAI_WEBSITE_MODEL") || optionalEnv("OPENAI_ASSISTANT_MODEL") || "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: "You generate real, renderable website source files. Return only JSON with siteTitle, framework (static-html or nextjs-starter), and files. For static-html return index.html, styles.css, script.js and README.md. index.html must reference styles.css and script.js, use semantic accessible responsive markup, and implement requested pages/features as a working single-page experience. Never return a brief or placeholders instead of source. Keep files text-only, self-contained, and free of secrets. Use the user's requested language." },
+        { role: "user", content: JSON.stringify(input) }
+      ],
+      temperature: 0.2
+    })
+  });
+  if (!response.ok) throw new Error(`OpenAI website provider failed: ${response.status}`);
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI website provider returned no content.");
+  return parseWebsiteJson(content);
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ServicePageView } from "@/components/ServicePageView";
+import { WebsiteBuilderForm } from "@/components/WebsiteBuilderForm";
 import { getConfiguredServicePage } from "@/lib/service-pages-loader";
 
 const slug = "ai-website-builder";
@@ -15,5 +16,5 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page() {
   const page = await getConfiguredServicePage(slug);
   if (!page || page.status === "draft") notFound();
-  return <ServicePageView page={page} />;
+  return <><ServicePageView page={page} /><WebsiteBuilderForm /></>;
 }
