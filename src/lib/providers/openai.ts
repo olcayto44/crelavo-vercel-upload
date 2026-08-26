@@ -97,6 +97,61 @@ function parseAdPerformanceScoreJson(text: string): AdPerformanceScoreResult {
   };
 }
 
+export type SocialAgentInput = {
+  agentType: "agent_brand_face" | "agent_social_manager" | "agent_live_brand";
+  brandName: string;
+  product: string;
+  industry: string;
+  audience: string;
+  languageMarket: string;
+  tone: string;
+  contentPillars: string[];
+  platforms: string[];
+  postingFrequency: string;
+};
+
+export type SocialAgentContent = {
+  positioning: string;
+  contentPillars: Array<{ name: string; purpose: string; ideas: string[] }>;
+  platformPosts: Array<{ platform: string; post: string; caption: string; hook: string; cta: string; hashtags: string[] }>;
+  calendar: Array<{ day: string; platform: string; pillar: string; format: string; topic: string; objective: string }>;
+  nextSteps: string[];
+};
+
+function parseSocialAgentJson(text: string): SocialAgentContent {
+  const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<SocialAgentContent>;
+  const objectArray = (value: unknown) => Array.isArray(value) ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object") : [];
+  return {
+    positioning: String(parsed.positioning ?? "").trim(),
+    contentPillars: objectArray(parsed.contentPillars).slice(0, 8).map((item) => ({ name: String(item.name ?? ""), purpose: String(item.purpose ?? ""), ideas: Array.isArray(item.ideas) ? item.ideas.map(String).slice(0, 6) : [] })),
+    platformPosts: objectArray(parsed.platformPosts).slice(0, 24).map((item) => ({ platform: String(item.platform ?? ""), post: String(item.post ?? ""), caption: String(item.caption ?? ""), hook: String(item.hook ?? ""), cta: String(item.cta ?? ""), hashtags: Array.isArray(item.hashtags) ? item.hashtags.map(String).slice(0, 12) : [] })),
+    calendar: objectArray(parsed.calendar).slice(0, 31).map((item) => ({ day: String(item.day ?? ""), platform: String(item.platform ?? ""), pillar: String(item.pillar ?? ""), format: String(item.format ?? ""), topic: String(item.topic ?? ""), objective: String(item.objective ?? "") })),
+    nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps.map(String).filter(Boolean).slice(0, 12) : []
+  };
+}
+
+export async function generateSocialAgentContent(input: SocialAgentInput): Promise<SocialAgentContent> {
+  const apiKey = requireProviderEnv("openai");
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: optionalEnv("OPENAI_SOCIAL_AGENT_MODEL") || optionalEnv("OPENAI_ASSISTANT_MODEL") || "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: "You are Crelavo's real social content strategist. Return only valid JSON with positioning, contentPillars, platformPosts, calendar, nextSteps. Create specific, publishable content from supplied facts only. platformPosts must include platform, post, caption, hook, cta, hashtags. calendar must include day, platform, pillar, format, topic, objective. Never invent product claims. Write in the requested language/market. This is a content package only: never publish, schedule, call social APIs, or claim approval." },
+        { role: "user", content: JSON.stringify(input) }
+      ],
+      temperature: 0.3
+    })
+  });
+  if (!response.ok) throw new Error(`OpenAI social agent provider failed: ${response.status} ${await response.text()}`);
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenAI social agent provider returned no content.");
+  return parseSocialAgentJson(content);
+}
+
 export async function scoreAdPerformance(input: {
   adText: string;
   productBrief: string;

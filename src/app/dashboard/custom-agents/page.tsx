@@ -9,7 +9,7 @@ export default function DashboardCustomAgentsPage() {
         <span className="badge">Custom agents</span>
         <h2>Reusable agent plans without unsafe autonomous actions</h2>
         <p>Custom agents are prepared as reusable brief, approval and workflow plans so brand, ecommerce, live sales and growth requests stay safe and reviewable.</p>
-        <div className="url-action-center"><Link className="btn" href="/admin/agents">Open admin agents</Link><Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Custom%20AI%20agent">Plan custom agent</Link></div>
+        <div className="url-action-center"><Link className="btn" href="/dashboard/ai-agents">Create social content package</Link><Link className="btn secondary" href="/admin/agents">Open admin agents</Link><Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Custom%20AI%20agent">Plan custom agent</Link></div>
       </section>
       <section className="admin-category-grid custom-agent-grid" style={{ marginTop: 20 }}>
         {customAgentSystem.map((item) => (

@@ -29,7 +29,8 @@ const navGroups = [
       ["Social Export Pack", "/dashboard/social-export"],
       ["TikTok / Shorts Growth", "/dashboard/shorts-growth"],
       ["Ad Management & ROAS", "/dashboard/ads"],
-      ["Custom Agents", "/dashboard/custom-agents"],
+      ["AI Social Agents", "/dashboard/ai-agents"],
+       ["Custom Agents", "/dashboard/custom-agents"],
       ["Premium Expansion", "/dashboard/premium-expansion"],
       ["Connect Accounts & Store", "/dashboard/connections"],
       ["Brand Kit", "/dashboard/brand-kit"]

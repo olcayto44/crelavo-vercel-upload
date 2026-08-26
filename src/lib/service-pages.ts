@@ -112,7 +112,7 @@ const coreServicePages: ServicePage[] = [
     keyword: "AI Social Media AI",
     summary: "Build social posts, captions, campaign angles, content calendars, short-video ideas and platform-ready delivery packages.",
     primaryCtaLabel: "Start AI Social Media AI",
-    primaryCtaHref: `${assistantBase}?mode=social&category=social&idea=AI%20Social%20Media%20AI`,
+    primaryCtaHref: "/dashboard/ai-agents",
     secondaryCtaHref: "/dashboard/growth",
     bestFor: "Social posts, captions, short-video plans, content calendars and launch campaigns",
     inputs: ["Brand or product", "Platform", "Campaign goal", "Tone of voice"],
