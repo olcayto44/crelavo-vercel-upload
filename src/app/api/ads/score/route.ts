@@ -41,10 +41,10 @@ export async function POST(request: Request) {
     const platform = text(body.platform, 100);
     const material = body.material && typeof body.material === "object" && !Array.isArray(body.material) ? body.material as Record<string, unknown> : undefined;
 
-    if (!userId) return Response.json({ error: "user_required", message: "Reklam analizi için giriş yapmalısınız." }, { status: 401 });
-    if (!adText) return Response.json({ error: "ad_text_required", message: "Reklam metni veya script gerekli." }, { status: 400 });
-    if (!productBrief) return Response.json({ error: "product_brief_required", message: "Ürün veya kampanya brief'i gerekli." }, { status: 400 });
-    if (productUrl && !/^https?:\/\/\S+$/i.test(productUrl)) return Response.json({ error: "invalid_product_url", message: "Ürün linki http veya https ile başlamalı." }, { status: 400 });
+    if (!userId) return Response.json({ error: "user_required", message: "You must sign in to analyze an ad." }, { status: 401 });
+    if (!adText) return Response.json({ error: "ad_text_required", message: "Ad copy or script is required." }, { status: 400 });
+    if (!productBrief) return Response.json({ error: "product_brief_required", message: "Product or campaign brief is required." }, { status: 400 });
+    if (productUrl && !/^https?:\/\/\S+$/i.test(productUrl)) return Response.json({ error: "invalid_product_url", message: "Product link must start with http or https." }, { status: 400 });
 
     const verified = await requireVerifiedRequestUser(request, userId);
     if (!verified.ok) return verified.response;
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       delivery: { json: `${deliveryBase}?file=score-json`, markdown: `${deliveryBase}?file=score-markdown`, manifest: `${deliveryBase}?file=manifest-json` }
     });
   } catch (error) {
-    if (error instanceof ProviderConfigError) return Response.json({ error: "provider_required", message: "Gerçek reklam analizi için OPENAI_API_KEY gerekli." }, { status: 503 });
-    return Response.json({ error: "ad_score_failed", message: errorMessage(error) || "Reklam analizi başarısız oldu." }, { status: 502 });
+    if (error instanceof ProviderConfigError) return Response.json({ error: "provider_required", message: "OPENAI_API_KEY is required for real ad analysis." }, { status: 503 });
+    return Response.json({ error: "ad_score_failed", message: errorMessage(error) || "Ad analysis failed." }, { status: 502 });
   }
 }
