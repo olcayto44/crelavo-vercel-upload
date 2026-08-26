@@ -334,12 +334,12 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQu
     if (!hasInlineVisual && !cssVisualBlock) missing.push("index.html: hero must contain a real image, picture, inline SVG, or styled CSS visual panel");
     const heroCtaCount = countMatches(hero, /<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|action|btn|button|primary|secondary|hero-link)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi);
     if (heroCtaCount < 2) missing.push("index.html: hero must contain at least two clickable CTA elements");
-    if (countPlanCards(extractRegion(index, "pricing")) < 3) missing.push("index.html: pricing must contain at least three plan cards with headings and actions");
+    if (countPlanCards(index) < 3) missing.push("index.html: pricing must contain at least three plan cards with headings and actions");
     if (countMatches(index, /<(?:a|button)\b[^>]*(?:data-plan|data-(?:action|cta))=["'][^"']+["'][^>]*>/gi) < 1 || !/(?:choose|select)\s+plan/i.test(index)) missing.push("index.html: Choose Plan CTA with data-plan or equivalent action");
     if (countMatches(index, /(?:workflow[-_ ]?(?:step|item)|step[-_ ]?card|process[-_ ]?step|timeline[-_ ]?step|data-step|aria-label=["'][^"']*step)/gi) < 3) missing.push("index.html: visual workflow timeline with at least three steps");
     if (countMatches(index, /(?:dashboard|mockup|product|interface|screen|app)[-_ ]?(?:panel|card|tile|widget)/gi) < 3) missing.push("index.html: dashboard/product mockup with at least three panels or cards");
     if (countMatches(index, /(?:testimonial|review|quote|customer[-_ ]?story|social[-_ ]?proof)[-_ ]?(?:card|item|quote)?|class=["'][^"']*(?:testimonial|review|social-proof)[^"']*["']/gi) < 2) missing.push("index.html: at least two testimonial or review items");
-    const faq = extractRegion(index, "faq");
+    const faq = index;
     const faqQuestions = countFaqQuestions(faq);
     if (faqQuestions.details + faqQuestions.buttons < 2) missing.push("index.html: FAQ accordion/details with at least two questions");
     if (faqQuestions.buttons > 0 && !/<button\b[^>]*aria-expanded=["'](?:true|false)["']/i.test(faq)) missing.push("index.html: FAQ buttons must expose aria-expanded");
