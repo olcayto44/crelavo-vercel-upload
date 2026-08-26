@@ -576,8 +576,8 @@ export async function POST(request: Request) {
   const directProductUrl = String(body.product_url ?? body.productUrl ?? body.product_link ?? body.productLink ?? body.reference_url ?? body.referenceUrl ?? "").trim();
   const productUrl = directProductUrl || firstUrlFromText(body.material_links) || firstUrlFromText(body.prompt) || "";
   const productBrief = String(body.product_brief ?? body.productBrief ?? body.product_description ?? "").trim();
-  const requestedDurationSeconds = Number(body.output_duration_seconds ?? body.target_duration_seconds ?? body.targetDurationSeconds);
-  const requestedAspectRatio = String(body.aspect_ratio ?? body.aspectRatio ?? "").trim();
+  const requestedDurationSeconds = Number(body.output_duration_seconds ?? body.target_duration_seconds ?? body.targetDurationSeconds ?? 15) || 15;
+  const requestedAspectRatio = String(body.aspect_ratio ?? body.aspectRatio ?? "9:16").trim() || "9:16";
   if (isProductAdVideo) {
     if (!productUrl && productBrief.length < 20) {
       return Response.json({ error: "Product URL or a product brief of at least 20 characters is required for Campaign and E-commerce Management." }, { status: 400 });
