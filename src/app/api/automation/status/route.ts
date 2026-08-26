@@ -306,7 +306,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
           reject(new Error("ffmpeg-static binary is not available."));
           return;
         }
-        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-c:v", "copy", "-c:a", "aac", "-shortest", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-filter_complex", "[1:a]apad[a]", "-map", "0:v:0", "-map", "[a]", "-t", String(Math.min(60, Math.max(5, input.durationSeconds))), "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || error.message));
             return;
