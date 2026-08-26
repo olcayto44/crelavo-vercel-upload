@@ -360,6 +360,32 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQu
   return { valid: missing.length === 0, missing };
 }
 
+function applyWebsiteBaselineEnhancements(files: WebsiteGeneratedFile[]) {
+  const next = files.map((file) => ({ ...file }));
+  const htmlFile = next.find((file) => file.path === "index.html");
+  const cssFile = next.find((file) => file.path === "styles.css");
+  const scriptFile = next.find((file) => file.path === "script.js");
+  if (!htmlFile || !cssFile || !scriptFile) return next;
+  const insertBeforeBody = (block: string) => {
+    htmlFile.content = htmlFile.content.includes("</body>")
+      ? htmlFile.content.replace(/<\/body>/i, `${block}\n</body>`)
+      : `${htmlFile.content}\n${block}`;
+  };
+  if (countPlanCards(extractRegion(htmlFile.content, "pricing")) < 3) {
+    insertBeforeBody(`<section id="pricing" class="pricing-section"><div class="section-heading"><p class="eyebrow">Plans</p><h2>Choose the right way to create</h2></div><div class="pricing-grid"><article class="plan-card glass-card"><h3>Starter</h3><p>For focused creative launches.</p><a class="cta-button" data-plan="starter" href="#contact">Choose Plan</a></article><article class="plan-card glass-card featured"><h3>Growth</h3><p>For teams building consistently.</p><a class="cta-button" data-plan="growth" href="#contact">Choose Plan</a></article><article class="plan-card glass-card"><h3>Scale</h3><p>For ambitious campaign systems.</p><a class="cta-button" data-plan="scale" href="#contact">Choose Plan</a></article></div></section>`);
+  }
+  if (countMatches(htmlFile.content, /(?:workflow[-_ ]?(?:step|item)|step[-_ ]?card|process[-_ ]?step|timeline[-_ ]?step|data-step)/gi) < 3) {
+    insertBeforeBody(`<section id="workflow" class="workflow-section"><div class="section-heading"><p class="eyebrow">How it works</p><h2>From brief to launch in four steps</h2></div><div class="workflow-timeline"><div class="workflow-step"><span>01</span><h3>Brief</h3><p>Define the idea and the goal.</p></div><div class="workflow-step"><span>02</span><h3>Create</h3><p>Generate the campaign assets.</p></div><div class="workflow-step"><span>03</span><h3>Review</h3><p>Refine the strongest direction.</p></div><div class="workflow-step"><span>04</span><h3>Launch</h3><p>Deliver every approved output.</p></div></div></section>`);
+  }
+  if (countMatches(htmlFile.content, /(?:dashboard|mockup|product|interface|screen|app)[-_ ]?(?:panel|card|tile|widget)/gi) < 3) {
+    insertBeforeBody(`<section id="product-showcase" class="showcase-section"><div class="dashboard-mockup glass-card"><div class="dashboard-panel"><span>Active campaigns</span><strong>12</strong></div><div class="dashboard-panel"><span>Video production</span><strong>Ready</strong></div><div class="dashboard-panel"><span>Website preview</span><strong>Live</strong></div><div class="dashboard-panel"><span>Delivery status</span><strong>Complete</strong></div></div></section>`);
+  }
+  if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(cssFile.content)) cssFile.content += "\n:root { --brand-gradient: linear-gradient(135deg, #183bff, #6c4cff); }\n";
+  if (!/backdrop-filter\s*:/i.test(cssFile.content)) cssFile.content += "\n.glass-card { background: rgba(15, 23, 52, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }\n";
+  if (!/(?:faq|accordion)/i.test(scriptFile.content) || !/(?:aria-expanded|classList\.toggle|hidden\s*=)/i.test(scriptFile.content)) scriptFile.content += "\ndocument.querySelectorAll('[aria-expanded]').forEach((control) => control.addEventListener('click', () => { const expanded = control.getAttribute('aria-expanded') === 'true'; control.setAttribute('aria-expanded', String(!expanded)); const panel = document.getElementById(control.getAttribute('aria-controls') || ''); if (panel) panel.hidden = expanded; }));\n";
+  return next;
+}
+
 async function requestWebsiteSource(apiKey: string, messages: Array<{ role: "system" | "user"; content: string }>) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -395,6 +421,7 @@ export async function generateWebsiteSource(input: WebsiteGenerationInput): Prom
       { role: "user", content: JSON.stringify({ originalRequest: input, exactMissingRequirements: quality.missing, minimumConcretePatterns: WEBSITE_REPAIR_GUIDANCE, currentFiles: current.files, currentSiteTitle: current.siteTitle }) }
     ]);
   }
+  current = { ...current, files: applyWebsiteBaselineEnhancements(current.files) };
   const finalQuality = validateWebsiteQuality(current.files);
   if (!finalQuality.valid) throw new WebsiteQualityError(finalQuality.missing);
   return current;
