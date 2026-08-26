@@ -300,8 +300,10 @@ function hasAny(value: string, patterns: RegExp[]) {
 }
 
 function countPlanCards(html: string) {
-  const cardPattern = /<(?:article|div|li)\b[^>]*class=["'][^"']*(?:pricing[-_ ]?card|price[-_ ]?card|plan[-_ ]?card|tier[-_ ]?card|package[-_ ]?card|pricing[^"']*card|price[^"']*card|plan[^"']*card)[^"']*["'][^>]*>[\s\S]*?<\/(?:article|div|li)>/gi;
-  return [...html.matchAll(cardPattern)].filter((match) => /<h[1-6]\b/i.test(match[0]) && /<(?:a|button)\b/i.test(match[0])).length;
+  const cardClasses = countMatches(html, /class=["'][^"']*(?:pricing[-_ ]?card|price[-_ ]?card|plan[-_ ]?card|tier[-_ ]?card|package[-_ ]?card)[^"']*["']/gi);
+  const semanticCards = countMatches(html, /<(?:article|li)\b[^>]*(?:data-plan|data-tier|data-package)[^>]*>/gi);
+  const planHeadings = countMatches(html, /<h[1-6]\b[^>]*>[^<]*(?:starter|growth|scale|basic|pro|enterprise|plan|tier|package)[^<]*<\/h[1-6]>/gi);
+  return Math.max(cardClasses, semanticCards, planHeadings);
 }
 
 function countFaqQuestions(faq: string) {
