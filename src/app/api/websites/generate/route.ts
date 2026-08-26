@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const style = String(body.style ?? "").trim().slice(0, 500);
     const pages = cleanList(body.pages);
     const features = cleanList(body.features);
-    if (!brief || !siteType || !brand || !audience || !style) return Response.json({ error: "brief_site_type_brand_audience_style_required" }, { status: 400 });
+    if (!brief || !siteType || !brand || !audience || !style) return Response.json({ error: "brief_site_type_brand_audience_style_required", message: "Brief, site type, brand/product, target audience and style are required." }, { status: 400 });
     if (brief.length < 20) return Response.json({ error: "brief_too_short" }, { status: 400 });
     const suspicious = rejectSuspiciousText([brief, siteType, brand, audience, style, pages.join(","), features.join(",")]);
     if (!suspicious.ok) return Response.json({ error: suspicious.message }, { status: 400 });
