@@ -29,6 +29,20 @@ function finalVideoUrlForDelivery(data: Record<string, unknown>) {
   return String(output.finalVideoUrl ?? output.providerFinalUrl ?? output.previewUrl ?? output.rawVisualPreviewUrl ?? data.delivery_link ?? data.preview_url ?? "").trim();
 }
 
+function adScoreMarkdown(data: Record<string, unknown>) {
+  const output = objectValue(data.output_json);
+  const analysis = objectValue(output.analysis);
+  const section = (key: string) => objectValue(analysis[key]);
+  const list = (key: string) => Array.isArray(analysis[key]) ? analysis[key].map(String).map((item) => `- ${item}`).join("\n") : "- None provided";
+  const hook = section("hook");
+  const clarity = section("messageClarity");
+  const audience = section("targetAudience");
+  const value = section("valueProposition");
+  const cta = section("cta");
+  const platform = section("platformFit");
+  return `# Ad Performance Score\n\n## Overall\n- Total score: ${String(analysis.totalScore ?? "N/A")}/100\n- Verdict: ${String(analysis.verdict ?? "N/A")}\n\n## Category scores\n- Hook: ${String(hook.score ?? "N/A")}/100 — ${String(hook.analysis ?? "")}\n- Message clarity: ${String(clarity.score ?? "N/A")}/100 — ${String(clarity.analysis ?? "")}\n- Target audience: ${String(audience.score ?? "N/A")}/100 — ${String(audience.analysis ?? "")}\n- Value proposition: ${String(value.score ?? "N/A")}/100 — ${String(value.analysis ?? "")}\n- CTA: ${String(cta.score ?? "N/A")}/100 — ${String(cta.analysis ?? "")}\n- Platform fit: ${String(platform.score ?? "N/A")}/100 — ${String(platform.analysis ?? "")}\n\n## Audience\n${String(audience.audience ?? "Not specified")}\n\n## Hook rewrite\n${String(hook.rewrite ?? "Not provided")}\n\n## CTA rewrite\n${String(cta.rewrite ?? "Not provided")}\n\n## Risks\n${list("risks")}\n\n## Improvements\n${list("recommendations")}\n\n## Rewritten ad brief\n${String(analysis.rewrittenBrief ?? "Not provided")}\n\n## Rewritten script\n${String(analysis.rewrittenScript ?? "Not provided")}\n`;
+}
+
 function previewAccessForDelivery(data: { output_json?: Record<string, unknown> | null }) {
   const output = objectValue(data.output_json);
   const input = firstNonEmptyObject(output.requestMetadata, output.inputJson);
@@ -134,6 +148,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     });
   }
 
+  if (data.production_type === "ad_score_checker" && file === "score-json") {
+    const output = objectValue(data.output_json);
+    return new Response(JSON.stringify({ production_id: data.id, title: data.title, analysis: output.analysis ?? null }, null, 2), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${safeTitle}-score.json"`,
+        "Cache-Control": "no-store, max-age=0"
+      }
+    });
+  }
+
+  if (data.production_type === "ad_score_checker" && file === "score-markdown") return responseWithText(adScoreMarkdown(data as Record<string, unknown>), `${safeTitle}-score.md`);
   if (file === "readme") return responseWithText(buildDeliveryReadme(data), `${safeTitle}-readme.md`);
   if (file === "source") return responseWithText(buildSourceGuide(data), `${safeTitle}-source-guide.md`);
   if (file === "preview" || file === "manifest") return responseWithText(buildPreviewHtml(data), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");

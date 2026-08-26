@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdPerformanceScoreChecker } from "@/components/AdPerformanceScoreChecker";
 import { Header } from "@/components/Header";
 import { communityShowcaseAdminChecklist, communityShowcaseApprovalFlow, communityShowcaseProofLoop, communityShowcaseSubmissionRules, communityShowcaseTemplates } from "@/lib/community-showcase";
 import type { PhaseOneFeaturePage } from "@/lib/feature-phase-one";
@@ -29,6 +30,8 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             <Link className="btn secondary" href="/tools">Open tools</Link>
           </div>
         </section>
+
+        {page.slug === "ai-ad-performance-score-checker" ? <AdPerformanceScoreChecker /> : null}
 
         {page.slug === "ai-ad-performance-score-checker" ? (
           <section className="card admin-wide-card" style={{ marginTop: 18 }}>

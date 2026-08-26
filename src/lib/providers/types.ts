@@ -23,6 +23,21 @@ export type AdBrainResult = {
   cta: string;
 };
 
+export type AdPerformanceScoreResult = {
+  totalScore: number;
+  verdict: string;
+  hook: { score: number; analysis: string; rewrite: string };
+  messageClarity: { score: number; analysis: string };
+  targetAudience: { score: number; analysis: string; audience: string };
+  valueProposition: { score: number; analysis: string };
+  cta: { score: number; analysis: string; rewrite: string };
+  platformFit: { score: number; analysis: string; platforms: string[] };
+  risks: string[];
+  recommendations: string[];
+  rewrittenBrief: string;
+  rewrittenScript: string;
+};
+
 export type ProviderJob = {
   provider: string;
   id?: string;
