@@ -213,6 +213,27 @@ export type WebsiteGenerationResult = {
   files: WebsiteGeneratedFile[];
 };
 
+export type WebsiteQualityResult = {
+  valid: boolean;
+  missing: string[];
+};
+
+export type WebsiteGenerationInput = {
+  brief: string;
+  siteType: string;
+  brand: string;
+  audience: string;
+  pages: string[];
+  features: string[];
+  style: string;
+};
+
+const WEBSITE_SYSTEM_PROMPT = `You generate production-ready, renderable website source files, not templates or design briefs. Return only valid JSON with siteTitle, framework set to static-html, and files containing index.html, styles.css, script.js, and README.md. index.html must reference styles.css and script.js.
+
+Apply one coherent premium SaaS design contract to the entire user request and every section: polished dark navy foundation with electric-blue accents unless the user's brief explicitly requests a different theme; true glassmorphism built with translucent surfaces, borders, layered shadows, and CSS backdrop-filter; strong responsive typography, spacing, hierarchy, focus states, and mobile navigation. Build a conversion-ready single-page experience with a premium hero containing two distinct CTAs, a credible CSS/HTML dashboard or product mockup, a visual workflow timeline, feature cards, pricing cards, testimonials, an accessible FAQ accordion, About and Contact anchors, and a working Choose Plan action. Keep the same visual language across all requested content instead of mixing generic section templates.
+
+Use semantic accessible markup and stable section ids: hero, about, features, workflow, pricing, testimonials, faq, contact. The hero must have at least two clickable CTA elements. Pricing must have Choose Plan buttons with data-plan values. FAQ controls must expose aria-expanded and work through script.js. script.js must implement FAQ accordion toggling and CTA actions that navigate, scroll, or open a contact/plan flow without fake checkout claims. Include a responsive @media query, gradients, and backdrop-filter in styles.css. Do not use placeholder blocks, lorem ipsum, fake customer names, invented metrics, fabricated testimonials, unverifiable claims, or unnecessary real-user details. If facts, plan prices, customer quotes, or contact details were not supplied, use clearly labeled neutral interface copy such as Custom or Contact sales rather than inventing data. Keep files text-only, self-contained, and free of secrets. Use the user's requested language.`;
+
 function parseWebsiteJson(text: string): WebsiteGenerationResult {
   const parsed = JSON.parse(text.replace(/```json|```/g, "").trim()) as Partial<WebsiteGenerationResult> & Record<string, unknown>;
   const rawFiles = parsed.files ?? parsed.sourceFiles ?? parsed.generatedFiles;
@@ -232,32 +253,78 @@ function parseWebsiteJson(text: string): WebsiteGenerationResult {
   return { siteTitle: String(parsed.siteTitle ?? "Generated website").trim(), framework: parsed.framework === "nextjs-starter" ? "nextjs-starter" : "static-html", files: normalizedFiles };
 }
 
-export async function generateWebsiteSource(input: {
-  brief: string;
-  siteType: string;
-  brand: string;
-  audience: string;
-  pages: string[];
-  features: string[];
-  style: string;
-}): Promise<WebsiteGenerationResult> {
-  const apiKey = requireProviderEnv("openai");
+function websiteFile(files: WebsiteGeneratedFile[], path: string) {
+  return files.find((file) => file.path === path)?.content ?? "";
+}
+
+function hasSection(html: string, name: string) {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`id=["']${escaped}["']|<h[1-6][^>]*>[^<]*${escaped}[^<]*<\\/h[1-6]>`, "i").test(html);
+}
+
+export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQualityResult {
+  const missing: string[] = [];
+  const index = websiteFile(files, "index.html");
+  const styles = websiteFile(files, "styles.css");
+  const script = websiteFile(files, "script.js");
+  for (const path of ["index.html", "styles.css", "script.js", "README.md"]) {
+    if (!websiteFile(files, path).trim()) missing.push(`${path}: required non-empty file`);
+  }
+  if (index) {
+    for (const section of ["hero", "about", "features", "workflow", "pricing", "testimonials", "faq", "contact"]) {
+      if (!hasSection(index, section)) missing.push(`index.html: ${section} section id or heading`);
+    }
+    const ctaCount = (index.match(/<(?:a|button)\b[^>]*(?:class=["'][^"']*(?:cta|btn|button)[^"']*["']|data-(?:cta|action|plan)\b|href=["']#[^"']+["'])[^>]*>/gi) ?? []).length;
+    if (ctaCount < 2) missing.push("index.html: at least two clickable CTA elements");
+    const planButtons = index.match(/<(?:a|button)\b[^>]*(?:data-plan\b|class=["'][^"']*(?:plan|pricing)[^"']*(?:button|cta|btn)[^"']*["'])[^>]*>/gi) ?? [];
+    if (!planButtons.length || !/choose\s+plan/i.test(index)) missing.push("index.html: working Choose Plan button with data-plan");
+    if (!/aria-expanded=["'](?:true|false)["']/i.test(index)) missing.push("index.html: accessible FAQ controls with aria-expanded");
+    if (!/href=["']styles\.css["']/i.test(index)) missing.push("index.html: styles.css reference");
+    if (!/src=["']script\.js["']/i.test(index)) missing.push("index.html: script.js reference");
+  }
+  if (styles) {
+    if (!/(?:-webkit-)?backdrop-filter\s*:/i.test(styles)) missing.push("styles.css: backdrop-filter glassmorphism");
+    if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(styles)) missing.push("styles.css: gradient styling");
+    if (!/@media\s*\(/i.test(styles)) missing.push("styles.css: responsive media query");
+  }
+  if (script) {
+    if (!/(?:faq|accordion)/i.test(script) || !/(?:aria-expanded|classList\.toggle|hidden\s*=)/i.test(script)) missing.push("script.js: FAQ accordion toggle behavior");
+    if (!/(?:data-plan|choose\s+plan|cta)/i.test(script) || !/(?:addEventListener|onclick)/i.test(script)) missing.push("script.js: CTA or Choose Plan action");
+  }
+  return { valid: missing.length === 0, missing };
+}
+
+async function requestWebsiteSource(apiKey: string, messages: Array<{ role: "system" | "user"; content: string }>) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: optionalEnv("OPENAI_WEBSITE_MODEL") || optionalEnv("OPENAI_ASSISTANT_MODEL") || "gpt-4o-mini",
       response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "You generate real, renderable website source files. Return only JSON with siteTitle, framework (static-html or nextjs-starter), and files. For static-html return index.html, styles.css, script.js and README.md. index.html must reference styles.css and script.js, use semantic accessible responsive markup, and implement requested pages/features as a working single-page experience. Never return a brief or placeholders instead of source. Keep files text-only, self-contained, and free of secrets. Use the user's requested language." },
-        { role: "user", content: JSON.stringify(input) }
-      ],
+      messages,
       temperature: 0.2
     })
   });
-  if (!response.ok) throw new Error(`OpenAI website provider failed: ${response.status}`);
+  if (!response.ok) throw new Error(`OpenAI website provider failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenAI website provider returned no content.");
   return parseWebsiteJson(content);
+}
+
+export async function generateWebsiteSource(input: WebsiteGenerationInput): Promise<WebsiteGenerationResult> {
+  const apiKey = requireProviderEnv("openai");
+  const generated = await requestWebsiteSource(apiKey, [
+    { role: "system", content: WEBSITE_SYSTEM_PROMPT },
+    { role: "user", content: JSON.stringify(input) }
+  ]);
+  const initialQuality = validateWebsiteQuality(generated.files);
+  if (initialQuality.valid) return generated;
+  const repaired = await requestWebsiteSource(apiKey, [
+    { role: "system", content: `${WEBSITE_SYSTEM_PROMPT}\n\nYou are performing one repair pass. Return the complete corrected source file set in exactly the same JSON format. Preserve supported user facts and the requested language. Fix every listed deterministic defect; do not merely describe the fixes.` },
+    { role: "user", content: JSON.stringify({ originalRequest: input, missingRequirements: initialQuality.missing, currentGeneration: generated }) }
+  ]);
+  const repairedQuality = validateWebsiteQuality(repaired.files);
+  if (!repairedQuality.valid) throw new Error(`generation_failed: website quality requirements missing after repair: ${repairedQuality.missing.join("; ")}`);
+  return repaired;
 }

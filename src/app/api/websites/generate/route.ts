@@ -1,4 +1,4 @@
-import { generateWebsiteSource, type WebsiteGeneratedFile } from "@/lib/providers/openai";
+import { generateWebsiteSource, validateWebsiteQuality, type WebsiteGeneratedFile } from "@/lib/providers/openai";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -73,6 +73,8 @@ export async function POST(request: Request) {
     try {
       const generated = await generateWebsiteSource({ brief, siteType, brand, audience, pages, features, style });
       validateFiles(generated.files);
+      const quality = validateWebsiteQuality(generated.files);
+      if (!quality.valid) throw new Error(`generation_failed: website quality requirements missing: ${quality.missing.join("; ")}`);
       const storedFiles = await Promise.all(generated.files.map(async (file) => ({
         ...file,
         url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
