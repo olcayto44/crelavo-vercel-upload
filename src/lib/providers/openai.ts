@@ -347,7 +347,7 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[]): WebsiteQu
     if (!/src=["'](?:\.\/)?script\.js(?:#[^"']*)?["']/i.test(index)) missing.push("index.html: script.js reference");
   }
   if (styles) {
-    if (!/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0\.|1?\.?\d+)\s*\)/i.test(styles) || !/(?:-webkit-)?backdrop-filter\s*:/i.test(styles) || !/border\s*:/i.test(styles) || !/box-shadow\s*:/i.test(styles)) missing.push("styles.css: complete glassmorphism requires rgba alpha, backdrop-filter, border, and box-shadow");
+    if (!/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\s*\)/i.test(styles) || !/(?:-webkit-)?backdrop-filter\s*:/i.test(styles) || !/border\s*:/i.test(styles) || !/box-shadow\s*:/i.test(styles)) missing.push("styles.css: complete glassmorphism requires rgba alpha, backdrop-filter, border, and box-shadow");
     if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(styles)) missing.push("styles.css: gradient styling");
     if (!/@media\s*\(/i.test(styles)) missing.push("styles.css: responsive media query");
     for (const selector of ["body", "h1", "h2"]) if (!new RegExp(`${selector}\\s*\\{`, "i").test(styles)) missing.push(`styles.css: typography hierarchy missing ${selector}`);
@@ -381,7 +381,7 @@ function applyWebsiteBaselineEnhancements(files: WebsiteGeneratedFile[]) {
     insertBeforeBody(`<section id="product-showcase" class="showcase-section"><div class="dashboard-mockup glass-card"><div class="dashboard-panel"><span>Active campaigns</span><strong>12</strong></div><div class="dashboard-panel"><span>Video production</span><strong>Ready</strong></div><div class="dashboard-panel"><span>Website preview</span><strong>Live</strong></div><div class="dashboard-panel"><span>Delivery status</span><strong>Complete</strong></div></div></section>`);
   }
   if (!/(?:linear|radial|conic)-gradient\s*\(/i.test(cssFile.content)) cssFile.content += "\n:root { --brand-gradient: linear-gradient(135deg, #183bff, #6c4cff); }\n";
-  const hasGlassmorphism = /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0\.|1?\.\d+)/i.test(cssFile.content) && /backdrop-filter\s*:/i.test(cssFile.content) && /border\s*:/i.test(cssFile.content) && /box-shadow\s*:/i.test(cssFile.content);
+  const hasGlassmorphism = /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\s*\)/i.test(cssFile.content) && /backdrop-filter\s*:/i.test(cssFile.content) && /border\s*:/i.test(cssFile.content) && /box-shadow\s*:/i.test(cssFile.content);
   if (!hasGlassmorphism || !cssFile.content.includes("Complete glassmorphism surface")) cssFile.content += "\n/* Complete glassmorphism surface */\n.glass-card { background: rgba(15, 23, 52, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }\n";
   if (!scriptFile.content.includes("FAQ accordion toggle behavior")) scriptFile.content += "\n/* FAQ accordion toggle behavior */\ndocument.querySelectorAll('[aria-expanded]').forEach((control) => control.addEventListener('click', () => { const expanded = control.getAttribute('aria-expanded') === 'true'; control.setAttribute('aria-expanded', String(!expanded)); const panel = document.getElementById(control.getAttribute('aria-controls') || ''); if (panel) panel.hidden = expanded; }));\n";
   return next;
