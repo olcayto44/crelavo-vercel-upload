@@ -2321,7 +2321,7 @@ if (isImageStart) {
                   </div>
                 ) : null}
               </div>
-              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || planning}>{starting ? ux("Creating...") : ux("Start Production")}</button>
+              <button className="omni-start-button" type="button" onClick={startProduction} disabled={starting || !plan}>{starting ? ux("Creating...") : ux("Start Production")}</button>
             </article>
           ) : null}
         </main>
