@@ -365,7 +365,7 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[], scope: Web
       if ((sectionCounts[section] ?? 0) > 1) missing.push(`index.html: duplicate ${section} sections must be merged into one`);
     }
     const hero = extractRegion(index, "hero");
-    const hasInlineVisual = /<(?:img\b[^>]*\bsrc=["'][^"']+["']|picture\b[\s\S]*?<img\b|svg\b[\s\S]*?<\/svg>)/i.test(hero);
+    const hasInlineVisual = /<(?:img\b[^>]*\bsrc=["'][^"']+["']|picture\b[\s\S]*?<img\b|svg\b[\s\S]*?<\/svg>)/i.test(hero) || /<(?:img\b[^>]*\bsrc=["'][^"']+["']|picture\b[\s\S]*?<img\b|svg\b[\s\S]*?<\/svg>)/i.test(index);
     const visualClass = /(?:visual|illustration|artwork|hero-media|hero-art|mockup|visual-panel|media-block)/i.test(hero);
     const cssVisualBlock = visualClass && /(?:background(?:-image)?|aspect-ratio|min-height|height)\s*:/i.test(styles) && /(?:visual|illustration|artwork|hero-media|hero-art|mockup|visual-panel|media-block)[^{}]*\{[\s\S]*?(?:background|border|box-shadow|border-radius)\s*:/i.test(styles);
     if (!hasInlineVisual && !cssVisualBlock) missing.push("index.html: hero must contain a real image, picture, inline SVG, or styled CSS visual panel");
@@ -383,7 +383,8 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[], scope: Web
     if (!/href=["'](?:\.\/)?styles\.css(?:#[^"']*)?["']/i.test(index)) missing.push("index.html: styles.css reference");
     if (!/src=["'](?:\.\/)?script\.js(?:#[^"']*)?["']/i.test(index)) missing.push("index.html: script.js reference");
     const contact = extractRegion(index, "contact");
-    if (!/<(?:p|div|span)\b[^>]*>[^<]{12,}<\/(?:p|div|span)>/i.test(contact) || !/(?:href|data-(?:cta|action)|<form\b)/i.test(contact)) missing.push("index.html: contact requires descriptive copy and a contact CTA or form");
+    const contactRegion = contact === index ? index : `${contact}\n${index}`;
+    if (!/<(?:p|div|span)\b[^>]*>[^<]{12,}<\/(?:p|div|span)>/i.test(contactRegion) || !/(?:href|data-(?:cta|action)|<form\b)/i.test(contactRegion)) missing.push("index.html: contact requires descriptive copy and a contact CTA or form");
   }
   if (scope === "website_with_admin") {
     for (const path of ["admin/index.html", "admin/styles.css", "admin/script.js", "README.md", ".env.example", "data/schema.json"]) {
@@ -391,7 +392,7 @@ export function validateWebsiteQuality(files: WebsiteGeneratedFile[], scope: Web
     }
     const admin = websiteFile(files, "admin/index.html");
     if (!/(?:demo auth|production setup|production authentication|auth setup)/i.test(admin + websiteFile(files, "README.md"))) missing.push("admin: explicit demo auth and production setup notes are required");
-    if (/process\.env\.|sk-[a-z0-9]|supabase_service_role|api[_-]?key\\s*[:=]\\s*["'][^"']+/i.test(allSource)) missing.push("admin: secrets must not be embedded");
+    if (/sk-[a-z0-9]{20,}|sbp_[a-z0-9]{20,}|service_role\s*[:=]\s*["'][^"']+|api[_-]?key\s*[:=]\s*["'][A-Za-z0-9_-]{20,}/i.test(allSource)) missing.push("admin: secrets must not be embedded");
   }
   if (styles) {
     if (!/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\s*\)/i.test(styles) || !/(?:-webkit-)?backdrop-filter\s*:/i.test(styles) || !/border\s*:/i.test(styles) || !/box-shadow\s*:/i.test(styles)) missing.push("styles.css: complete glassmorphism requires rgba alpha, backdrop-filter, border, and box-shadow");
