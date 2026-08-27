@@ -47,8 +47,15 @@ function normalizeNavLabel(label: string) {
   return canonicalNavLabels[key] ?? label;
 }
 
+const createGroups = [
+  { title: "Build", links: [{ label: "Website Builder", href: "/ai-website-builder" }, { label: "SaaS & App Builder", href: "/ai-app-builder" }, { label: "E-commerce Builder", href: "/ai-ecommerce-builder" }] },
+  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/dashboard/assistant-workspace?mode=social&category=social" }] },
+  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/dashboard/assistant-workspace?mode=commerce&category=ad_score_checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }] }
+];
+
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
+    .filter((item) => item.active && !["Categories", "Assistant", "Productions", "Dashboard", "Live Sales Plans", "Drone Plans", "Affiliate"].includes(normalizeNavLabel(item.label)))
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
     .map((item) => ({ ...item, label: normalizeNavLabel(item.label) }));
@@ -59,6 +66,23 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
         <span>Crelavo</span>
       </Link>
       <nav className="nav-links primary-nav-links">
+        <div className="tools-mega-wrap create-mega-wrap">
+          <LocalizedNavLink className="tools-mega-trigger" href="/categories" label="Create" languageOverride={languageOverride} />
+          <div className="tools-mega-menu create-mega-menu">
+            {createGroups.map((group) => (
+              <div className="tools-mega-group" key={group.title}>
+                <strong>{group.title}</strong>
+                {group.links.map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
+              </div>
+            ))}
+            <div className="tools-mega-group">
+              <strong>Start</strong>
+              <Link href="/categories">All production categories</Link>
+              <Link href="/dashboard/assistant-workspace">New Production</Link>
+              <Link href="/dashboard/productions">My Productions</Link>
+            </div>
+          </div>
+        </div>
         {activeNavLinks.map((item) => item.label === "Tools" ? (
           <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
             <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" languageOverride={languageOverride} />

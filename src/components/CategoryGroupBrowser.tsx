@@ -88,40 +88,40 @@ const categoryOptions: Record<string, string[]> = {
 
 const categoryGroups = [
   {
-    id: "learning-proof",
-    title: "Learning & Proof",
-    description: "Academy lessons, virtual model previews, community examples and reusable showcase request paths.",
-    typeIds: ["crelavo_academy", "community_showcase", "virtual_model_studio"]
-  },
-  {
-    id: "marketing",
-    title: "Marketing & Commerce",
-    description: "Product links, campaigns, localization and AI agents for growth workflows.",
-    typeIds: ["campaign", "ad_score_checker", "cultural_localization", "campaign_calendar", "ai_agent", "localization"]
-  },
-  {
-    id: "video-motion",
-    title: "Video & Motion",
-    description: "AI video, AI live sales agents, drama, short series, drone/satellite, animation, cinematic work, clipping, music videos and video tools.",
-    typeIds: ["video", "talking_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "live_sales_agent", "stickman_animation", "music_video", "studio", "drama", "cinematic_video", "video_clipping", "video_tools"]
-  },
-  {
-    id: "avatar-cloning",
-    title: "Avatar & Cloning",
-    description: "Custom avatars, talking videos, lip-sync, voice cloning and visual/style cloning.",
-    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone"]
-  },
-  {
-    id: "web-app-software",
-    title: "Web, App & Software",
-    description: "Websites, SaaS products, mobile apps and admin panel projects with source delivery.",
+    id: "build",
+    title: "Build",
+    description: "Create a website, SaaS product, mobile app, ecommerce experience or admin panel.",
     typeIds: ["website", "saas", "mobile_app", "admin_project"]
   },
   {
+    id: "create-media",
+    title: "Create Media",
+    description: "Create videos, product ads, talking videos, animation, music videos and cinematic content.",
+    typeIds: ["video", "talking_video", "documentary", "animation", "music_video", "drama", "cinematic_video", "video_clipping", "video_tools"]
+  },
+  {
+    id: "marketing-growth",
+    title: "Marketing & Growth",
+    description: "Create campaigns, product-link ads, social media systems, localization and performance analysis.",
+    typeIds: ["campaign", "ad_score_checker", "campaign_calendar", "ai_agent", "localization", "cultural_localization", "live_sales_agent"]
+  },
+  {
+    id: "avatars-voice",
+    title: "Avatars & Voice",
+    description: "Create avatars, lip-sync productions, cloned voices and reference-based visual variations.",
+    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone"]
+  },
+  {
     id: "brand-files",
-    title: "Brand, Visuals & Files",
-    description: "Images, brand kits, pitch decks, PDFs and reusable file packages.",
+    title: "Brand & Files",
+    description: "Create images, brand kits, pitch decks, PDFs and reusable source packages.",
     typeIds: ["image", "brand_kit", "document_pack"]
+  },
+  {
+    id: "special-video",
+    title: "Special Video",
+    description: "Create anime, animal, nature, space, drone, stickman and studio productions.",
+    typeIds: ["anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "stickman_animation", "studio"]
   }
 ];
 
@@ -163,13 +163,13 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
           </div>
         ))}
       </div>
-      <HardReloadLink className="btn" href="/dashboard/credits">Create package</HardReloadLink>
+      <HardReloadLink className="btn" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
     </div>
   );
 }
 
 export function CategoryGroupBrowser() {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>("marketing");
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>("build");
   const [packageCatalog, setPackageCatalog] = useState<ProductionPackage[]>(productionPackages);
   const selectedGroup = categoryGroups.find((group) => group.id === selectedGroupId);
 
