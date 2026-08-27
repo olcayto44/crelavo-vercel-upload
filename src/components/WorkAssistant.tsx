@@ -1679,7 +1679,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup: activeProductionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
   const activeProviderProof = productionProviderProof(activeProduction);
-  const activeProjectProduction = Boolean(activeProduction && isProjectType(String(activeProduction.production_type ?? "")));
+  const activeProjectProduction = Boolean(activeProduction && (isProjectType(String(activeProduction.production_type ?? "")) || String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" || String(activeProduction.automation_status ?? "").toLowerCase() === "completed" && Boolean(activeProduction.delivery_zip_url || activeProduction.source_files_url)));
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
