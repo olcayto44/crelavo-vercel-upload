@@ -989,12 +989,17 @@ const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand 
 function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | undefined, hint = "", plan?: StudioPlan | null): ProductionSetupState {
   if (!isImageProductionType(type)) return setup ?? {};
   const defaults = defaultSetupFor(type, hint, plan);
+  const imageOptions = new Set(setupProfiles.image.groups.flatMap((group) => group.options));
+  const allowed = (key: keyof ProductionSetupState, fallback: string[]) => {
+    const values = (setup?.[key] ?? []).filter((item) => imageOptions.has(item));
+    return values.length ? values : fallback;
+  };
   return {
-    imageType: setup?.imageType?.length ? setup.imageType : (defaults.imageType ?? ["Social media post"]),
-    outputs: setup?.outputs?.length ? setup.outputs : (defaults.outputs ?? ["1 visual"]),
-    style: setup?.style?.length ? setup.style : (defaults.style ?? ["Luxury product"]),
-    aspectRatio: setup?.aspectRatio?.length ? setup.aspectRatio : (defaults.aspectRatio ?? ["Portrait 4:5"]),
-    delivery: setup?.delivery?.length ? setup.delivery : (defaults.delivery?.length ? defaults.delivery : ["PNG/JPG"])
+    imageType: allowed("imageType", defaults.imageType ?? ["Social media post"]),
+    outputs: allowed("outputs", defaults.outputs ?? ["1 visual"]),
+    style: allowed("style", defaults.style ?? ["Luxury product"]),
+    aspectRatio: allowed("aspectRatio", defaults.aspectRatio ?? ["Portrait 4:5"]),
+    delivery: allowed("delivery", defaults.delivery ?? ["PNG/JPG"])
   };
 }
 
