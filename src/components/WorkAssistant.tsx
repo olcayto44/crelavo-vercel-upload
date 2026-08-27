@@ -1679,7 +1679,9 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup: activeProductionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
   const activeProviderProof = productionProviderProof(activeProduction);
-  const activeProjectProduction = Boolean(activeProduction && (isProjectType(String(activeProduction.production_type ?? "")) || String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" || String(activeProduction.automation_status ?? "").toLowerCase() === "completed" && Boolean(activeProduction.delivery_zip_url || activeProduction.source_files_url)));
+   const activeProjectProduction = Boolean(activeProduction && (isProjectType(String(activeProduction.production_type ?? "")) || String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" || String(activeProduction.automation_status ?? "").toLowerCase() === "completed" && Boolean(activeProduction.delivery_zip_url || activeProduction.source_files_url)));
+   const activeImageProduction = Boolean(activeProduction && ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(String(activeProduction.production_type ?? "")));
+
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
@@ -2267,11 +2269,11 @@ if (isImageStart) {
             {activeProduction ? <>
               <span><b>Production ID</b>{activeProduction.id}</span>
               <span><b>Status</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-               {activeProjectProduction ? <span><b>Source package</b>{activeProduction.delivery_zip_url || activeProduction.source_files_url ? "Ready" : "Preparing"}</span> : <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>}
-              <span style={{ display: activeProjectProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
+               {activeProjectProduction ? <span><b>Source package</b>{activeProduction.delivery_zip_url || activeProduction.source_files_url ? "Ready" : "Preparing"}</span> : activeImageProduction ? <span><b>Image delivery</b>{activeProduction.preview_url || activeProduction.delivery_link ? "Ready" : "Preparing"}</span> : <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>}
+                             <span style={{ display: activeProjectProduction || activeImageProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
-           {!activeProjectProduction ? <div className="omni-deploy-card">
+           {!activeProjectProduction && !activeImageProduction ? <div className="omni-deploy-card">
              <small>Embed / kod</small>
              <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
              <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>

@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 
 export type ImageMarketingText = {
@@ -72,6 +71,12 @@ export async function applyMarketingTextOverlay(input: { productionId: string; s
     return { imageUrl: input.sourceUrl, applied: false as const, marketingText };
   }
 
+  let sharp: any;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    return { imageUrl: input.sourceUrl, applied: false as const, marketingText };
+  }
   const response = await fetch(input.sourceUrl, { cache: "no-store" });
   if (!response.ok) throw new Error(`Image overlay source download failed: ${response.status}`);
   const source = Buffer.from(await response.arrayBuffer());
