@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { Bot, Code2, Loader2, PackageCheck, Paperclip, Send, Sparkles, Video } from "lucide-react";
+import { Bot, Code2, Image as ImageIcon, Loader2, PackageCheck, Paperclip, Send, Sparkles, Video } from "lucide-react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { buildPresenterCreativeBrief, initialPresenterActivityLog } from "@/lib/creative-director";
 import { sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
@@ -567,12 +567,14 @@ function imageAspectRatioFromPrompt(text: string, options: string[]) {
 }
 
 function normalizedImageAspectRatio(setup: ProductionSetupState, hint = "") {
-  const selected = String((setup.aspectRatio ?? [])[0] ?? "");
-  const signal = `${selected} ${hint}`.toLocaleLowerCase("tr-TR");
-  if (/4\s*[:x]\s*5|portrait\s+4:5/.test(signal)) return "4:5";
-  if (/1\s*[:x]\s*1|square/.test(signal)) return "1:1";
+  const selected = String((setup.aspectRatio ?? [])[0] ?? "").toLocaleLowerCase("tr-TR");
+  const fromSelected = /9\s*[:x]\s*16|story/.test(selected) ? "9:16" : /16\s*[:x]\s*9|landscape/.test(selected) ? "16:9" : /1\s*[:x]\s*1|square/.test(selected) ? "1:1" : /4\s*[:x]\s*5|portrait/.test(selected) ? "4:5" : undefined;
+  if (fromSelected) return fromSelected;
+  const signal = hint.toLocaleLowerCase("tr-TR");
   if (/9\s*[:x]\s*16|story/.test(signal)) return "9:16";
   if (/16\s*[:x]\s*9|landscape/.test(signal)) return "16:9";
+  if (/1\s*[:x]\s*1|square/.test(signal)) return "1:1";
+  if (/4\s*[:x]\s*5|portrait/.test(signal)) return "4:5";
   return undefined;
 }
 
@@ -2149,13 +2151,13 @@ if (isImageStart) {
 
           {activeProduction ? (
             <article className="omni-result-card production-ready-card" role="link" tabIndex={0} title="Open production list" onClick={() => { window.location.href = "/dashboard/productions"; }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.location.href = "/dashboard/productions"; } }}>
-              <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : <Video size={22} />}</div>
+               <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : activeImageProduction ? <ImageIcon size={22} /> : <Video size={22} />}</div>
               <div className="omni-result-body">
-                <span className="badge">{activeProjectProduction && String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" ? ux("Production ready") : ux("Production running")}</span>
+                 <span className="badge">{(activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("Production ready") : ux("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
                   <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>
-                  <span><strong>{ux("Status")}</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+                   <span><strong>{ux("Status")}</strong>{(activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
                    {!activeProjectProduction && !activeImageProduction ? <span><strong>{ux("Provider")}</strong>{productionCardProvider(activeProduction)}</span> : null}
                 </div>
                 <div className="omni-result-grid">
@@ -2169,9 +2171,13 @@ if (isImageStart) {
                     <span><strong>Source package</strong>{activeProduction.source_files_url || activeProduction.delivery_zip_url ? ux("Ready") : ux("Preparing")}</span>
                     <span><strong>README / setup</strong>{activeProduction.readme_url ? ux("Ready") : ux("Preparing")}</span>
                   </div>
-                ) : (
-                  <div className="omni-result-grid">
-                    <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
+                 ) : activeImageProduction ? (
+                   <div className="omni-result-grid">
+                     <span><strong>Image delivery</strong>{activeProduction.preview_url || activeProduction.delivery_link ? ux("Ready") : ux("Preparing")}</span>
+                   </div>
+                 ) : (
+                   <div className="omni-result-grid">
+                     <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
                     <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
                     <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
                     <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
