@@ -1005,7 +1005,8 @@ if (isImageProduction) {
   ].map((value) => String(value ?? "").trim()).filter(Boolean);
    const { hasImageMarketingText, stripImageMarketingTextInstructions } = await import("@/lib/image-postprocess");
    const originalImagePrompt = (imagePromptCandidates[0] || "Image production").trim();
-   const imagePrompt = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+   const imagePromptBase = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+   const imagePrompt = `${imagePromptBase}\nSTRICT STATIC PRODUCT IMAGE RULES: one clean product composition only; completely blank unlabeled packaging; no logo, no brand name, no letters, no words, no numbers, no label, no typography, no symbols and no pseudo-text anywhere on the product; preserve physically correct packaging geometry; do not render any text even if the brief mentions a brand. Output exactly one static image in the requested aspect ratio.`;
   const requestedAspectRatio = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
   const aspectRatio = /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /4\s*[:x]\s*5|portrait/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s+portrait/i.test(originalImagePrompt) ? "4:5" : "4:5";
   try {
