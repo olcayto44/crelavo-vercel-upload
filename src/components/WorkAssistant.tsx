@@ -566,6 +566,16 @@ function imageAspectRatioFromPrompt(text: string, options: string[]) {
   return undefined;
 }
 
+function ecommercePresetSetup(setup: ProductionSetupState, hint = "") {
+  if (!/ecommerce|e-commerce|online\s+store|storefront|shopify|woocommerce|cart|checkout|product\s+catalog/i.test(hint)) return setup;
+  return {
+    ...setup,
+    siteType: ["E-commerce"],
+    commerce: ["Product listing", "Cart", "Checkout", "Admin product panel", "Order management"],
+    delivery: ["Source code", "Final ZIP", "README"]
+  };
+}
+
 function normalizedImageAspectRatio(setup: ProductionSetupState, hint = "") {
   const selected = String((setup.aspectRatio ?? [])[0] ?? "").toLocaleLowerCase("tr-TR");
   const fromSelected = /9\s*[:x]\s*16|story/.test(selected) ? "9:16" : /16\s*[:x]\s*9|landscape/.test(selected) ? "16:9" : /1\s*[:x]\s*1|square/.test(selected) ? "1:1" : /4\s*[:x]\s*5|portrait/.test(selected) ? "4:5" : undefined;
@@ -1585,7 +1595,8 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
     const initialPlanForSetup = initialEffectivePlan;
     if (!initialPlanForSetup) return {};
-    const baseSetup = shouldForceImageProduction(initialPrompt) ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
+     const rawSetup = shouldForceImageProduction(initialPrompt) ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
+     const baseSetup = ecommercePresetSetup(rawSetup, `${initialCategory} ${initialPrompt}`);
     return sanitizeSetupForProduction(initialPlanForSetup.production_type, baseSetup, initialPrompt, initialPlanForSetup);
   });
 
