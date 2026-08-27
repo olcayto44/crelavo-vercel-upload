@@ -2153,7 +2153,7 @@ if (isImageStart) {
                 <div className="omni-result-grid">
                   <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>
                   <span><strong>{ux("Status")}</strong>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-                  <span><strong>{ux("Provider")}</strong>{productionCardProvider(activeProduction)}</span>
+                   {!activeProjectProduction && !activeImageProduction ? <span><strong>{ux("Provider")}</strong>{productionCardProvider(activeProduction)}</span> : null}
                 </div>
                 <div className="omni-result-grid">
                   <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
