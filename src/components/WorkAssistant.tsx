@@ -1700,7 +1700,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
-    setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
+    const rawSetup = defaultSetupFor(nextPlan.production_type, hint, nextPlan);
+    setProductionSetup(ecommercePresetSetup(rawSetup, `${initialCategory} ${hint}`));
   }
 
   function toggleSetupOption(group: SetupGroup, option: string) {
@@ -2029,7 +2030,7 @@ if (isImageStart) {
     setConversationId(data.conversation_id ?? conversationId);
     setPlan(finalPlan);
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(finalPlan), clean, finalPlan.production_type));
-    setProductionSetup(sanitizeSetupForProduction(finalPlan.production_type, defaultSetupFor(finalPlan.production_type, clean, finalPlan), clean, finalPlan));
+    setProductionSetup(ecommercePresetSetup(sanitizeSetupForProduction(finalPlan.production_type, defaultSetupFor(finalPlan.production_type, clean, finalPlan), clean, finalPlan), `${initialCategory} ${clean}`));
     setProductionPrompt(clean);
     setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(finalPlan, detectWorkLanguage(clean)) }]);
     setStatus(detectWorkLanguage(clean) === "tr" ? "Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Üretimi başlat ile başlat." : "Production setup is ready. Review the required options, then start with Start Production.");
