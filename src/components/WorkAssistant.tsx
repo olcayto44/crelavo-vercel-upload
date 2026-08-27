@@ -966,11 +966,11 @@ function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | 
   if (!isImageProductionType(type)) return setup ?? {};
   const defaults = defaultSetupFor(type, hint, plan);
   return {
-    imageType: defaults.imageType ?? ["Social media post"],
-    outputs: defaults.outputs ?? ["1 visual"],
-    style: defaults.style ?? ["Luxury product"],
-    aspectRatio: defaults.aspectRatio ?? ["Portrait 4:5"],
-    delivery: defaults.delivery?.length ? defaults.delivery : ["PNG/JPG"]
+    imageType: setup?.imageType?.length ? setup.imageType : (defaults.imageType ?? ["Social media post"]),
+    outputs: setup?.outputs?.length ? setup.outputs : (defaults.outputs ?? ["1 visual"]),
+    style: setup?.style?.length ? setup.style : (defaults.style ?? ["Luxury product"]),
+    aspectRatio: setup?.aspectRatio?.length ? setup.aspectRatio : (defaults.aspectRatio ?? ["Portrait 4:5"]),
+    delivery: setup?.delivery?.length ? setup.delivery : (defaults.delivery?.length ? defaults.delivery : ["PNG/JPG"])
   };
 }
 
