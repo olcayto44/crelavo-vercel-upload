@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "E-commerce Builder — Crelavo",
   description: "Start building a storefront, product catalog, cart, checkout and admin delivery package.",
