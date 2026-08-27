@@ -1655,7 +1655,10 @@ const ux = (value: string) => false ? uiText(value) : value;
 const statusUx = (tr: string, en: string) => false ? tr : en;
   const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
   const activeProductionSetup = useMemo(() => plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup, [plan, productionSetup, productionPrompt, input]);
-  const activeSelectedProductionCards = useMemo(() => plan && isImageProductionType(plan.production_type) ? filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type) : selectedProductionCards, [plan, selectedProductionCards, productionPrompt, input]);
+  const activeSelectedProductionCards = useMemo(() => {
+    if (!plan || !isImageProductionType(plan.production_type)) return selectedProductionCards;
+    return selectedProductionCards.length ? selectedProductionCards : filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type);
+  }, [plan, selectedProductionCards, productionPrompt, input]);
   const setupItems = useMemo(() => selectedSetupItems(activeProductionSetup, plan?.production_type ?? ""), [activeProductionSetup, plan]);
   const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || activeSelectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
 const setupBreakdown = plan ? setupCreditBreakdown(plan.production_type, activeProductionSetup, plan, productionPrompt || input) : [];
