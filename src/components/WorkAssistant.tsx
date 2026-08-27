@@ -1212,6 +1212,10 @@ function productionTypeFromCategory(category: string) {
   if (category === "Ad Creative Angles") return "video";
   if (category === "Lower Ad Costs") return "video";
   const normalized = normalizeAssistantText(category);
+  const directMap: Record<string, string> = {
+    campaign: "campaign", ai_agent: "ai_agent", localization: "localization", ad_score_checker: "ad_score_checker", virtual_model_studio: "virtual_model_studio", cultural_localization: "cultural_localization", campaign_calendar: "campaign_calendar", crelavo_academy: "crelavo_academy", community_showcase: "community_showcase", video: "video", talking_video: "talking_video", documentary: "documentary", animation: "animation", anime_short_film: "anime_short_film", animal_video: "animal_video", nature_video: "nature_video", planet_space_video: "planet_space_video", drone_video: "drone_video", live_sales_agent: "live_sales_agent", studio: "studio", drama: "drama", cinematic_video: "cinematic_video", video_clipping: "video_clipping", avatar: "avatar", lip_sync: "lip_sync", voice_clone: "voice_clone", visual_clone: "visual_clone", video_tools: "video_tools", stickman_animation: "stickman_animation", music_video: "music_video", website: "website", saas: "saas", mobile_app: "mobile_app", image: "image", brand_kit: "brand_kit", document_pack: "document_pack", admin_project: "admin_project"
+  };
+  if (directMap[normalized]) return directMap[normalized];
   if (!normalized) return "";
   if (/^video$|ai video|video production/.test(normalized)) return "video";
   if (/video clipping|clip/.test(normalized)) return "video_clipping";
