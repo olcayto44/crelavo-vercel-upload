@@ -2268,7 +2268,7 @@ if (isImageStart) {
               <span><b>Production ID</b>{activeProduction.id}</span>
               <span><b>Status</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
                {activeProjectProduction ? <span><b>Source package</b>{activeProduction.delivery_zip_url || activeProduction.source_files_url ? "Ready" : "Preparing"}</span> : <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>}
-              <span><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
+              <span style={{ display: activeProjectProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
            {!activeProjectProduction ? <div className="omni-deploy-card">
@@ -2279,7 +2279,7 @@ if (isImageStart) {
           <div className="omni-deploy-card">
             <small>Delivery</small>
             <strong>{estimatedCredits} credits</strong>
-            <span>Video, web, app, live sales or source bundle is tracked from one screen.</span>
+            <span>{activeProjectProduction ? "Source files, preview, README and project delivery are tracked from one screen." : "Video, web, app, live sales or source bundle is tracked from one screen."}</span>
           </div>
         </aside>
 
