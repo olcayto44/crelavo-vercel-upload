@@ -289,6 +289,22 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
     capture();
   }
 
+  async function shareProductionLink() {
+    const shareUrl = window.location.href;
+    const shareData = { title: String(production.title ?? "Crelavo production"), text: "View this Crelavo production.", url: shareUrl };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setNotice("Production link shared.");
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setNotice("Production link copied to clipboard.");
+    } catch {
+      setNotice("Production link is ready to copy from the browser address bar.");
+    }
+  }
+
   async function prepareSocialSharing() {
     setTargetPart("Social media sharing");
     setAction("Prepare social sharing");
@@ -1186,7 +1202,8 @@ const data = await response.json().catch(() => ({}));
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
-              {(!isProjectProduction || isEcommerceProduction) ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Share production</button> : null}
+              <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
+              {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
