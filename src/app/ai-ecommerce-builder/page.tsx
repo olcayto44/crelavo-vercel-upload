@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { ServicePageView } from "@/components/ServicePageView";
-import { getConfiguredServicePage } from "@/lib/service-pages-loader";
+import { redirect } from "next/navigation";
 
-const slug = "ai-ecommerce-builder";
+export const metadata: Metadata = {
+  title: "E-commerce Builder — Crelavo",
+  description: "Start building a storefront, product catalog, cart, checkout and admin delivery package.",
+  alternates: { canonical: "/ai-ecommerce-builder" }
+};
 
-export async function generateMetadata(): Promise<Metadata> {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") return {};
-  const noindex = page.status === "noindex" || page.includeInSitemap === false;
-  return { title: `${page.title} — ${page.keyword} Service`, description: page.summary, alternates: { canonical: `/${slug}` }, openGraph: { title: page.title, description: page.summary, url: `/${slug}`, type: "website" }, robots: noindex ? { index: false, follow: true } : { index: true, follow: true } };
-}
-
-export default async function Page() {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") notFound();
-  return <ServicePageView page={page} />;
+export default function Page() {
+  redirect("/dashboard/assistant-workspace?mode=project&category=website&idea=E-commerce%20store%20builder");
 }
