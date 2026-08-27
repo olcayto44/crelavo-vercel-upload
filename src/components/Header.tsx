@@ -55,7 +55,6 @@ const createGroups = [
 
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
-    .filter((item) => item.active && !["Categories", "Assistant", "Productions", "Dashboard", "Live Sales Plans", "Drone Plans", "Affiliate"].includes(normalizeNavLabel(item.label)))
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
     .map((item) => ({ ...item, label: normalizeNavLabel(item.label) }));
