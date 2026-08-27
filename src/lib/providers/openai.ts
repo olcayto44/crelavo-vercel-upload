@@ -384,6 +384,24 @@ function applyWebsiteBaselineEnhancements(files: WebsiteGeneratedFile[]) {
   const hasGlassmorphism = /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\s*\)/i.test(cssFile.content) && /backdrop-filter\s*:/i.test(cssFile.content) && /border\s*:/i.test(cssFile.content) && /box-shadow\s*:/i.test(cssFile.content);
   if (!hasGlassmorphism || !cssFile.content.includes("Complete glassmorphism surface")) cssFile.content += "\n/* Complete glassmorphism surface */\n.glass-card { background: rgba(15, 23, 52, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); }\n";
   if (!scriptFile.content.includes("FAQ accordion toggle behavior")) scriptFile.content += "\n/* FAQ accordion toggle behavior */\ndocument.querySelectorAll('[aria-expanded]').forEach((control) => control.addEventListener('click', () => { const expanded = control.getAttribute('aria-expanded') === 'true'; control.setAttribute('aria-expanded', String(!expanded)); const panel = document.getElementById(control.getAttribute('aria-controls') || ''); if (panel) panel.hidden = expanded; }));\n";
+  if (!cssFile.content.includes("Crelavo premium baseline")) cssFile.content += `\n/* Crelavo premium baseline */
+:root { --brand-gradient: linear-gradient(135deg, #183bff 0%, #6c4cff 100%); --surface: rgba(15, 23, 52, 0.62); --line: rgba(255, 255, 255, 0.16); }
+body { background: radial-gradient(circle at 15% 0%, rgba(24, 59, 255, 0.24), transparent 38%), #071027; color: #f7f9ff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; line-height: 1.6; }
+header, section, footer { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding: 5rem 0; }
+.hero { padding: clamp(3rem, 8vw, 7rem) 0; position: relative; overflow: hidden; }
+.hero h1 { max-width: 760px; font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: 0.98; letter-spacing: -0.06em; }
+.hero p { max-width: 650px; font-size: 1.15rem; color: rgba(247, 249, 255, 0.72); }
+.dashboard-mockup, .dashboard, .benefits, .capability-cards, .pricing-cards, .pricing-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.panel, .card, .step, .plan-card, .glass-card, .dashboard-panel, .testimonial, details { background: var(--surface); border: 1px solid var(--line); border-radius: 1.25rem; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); padding: 1.5rem; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.panel:hover, .card:hover, .step:hover, .plan-card:hover { transform: translateY(-4px); border-color: rgba(108, 76, 255, 0.7); box-shadow: 0 30px 80px rgba(24, 59, 255, 0.2); }
+.timeline, .workflow-timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; position: relative; }
+.cta, .choose-plan, button, a[data-plan] { display: inline-flex; align-items: center; justify-content: center; min-height: 2.9rem; padding: .75rem 1.15rem; border-radius: 999px; background: var(--brand-gradient); color: #fff; font-weight: 700; border: 0; text-decoration: none; cursor: pointer; transition: transform .2s ease, filter .2s ease; }
+.cta:hover, .choose-plan:hover, button:hover, a[data-plan]:hover { transform: translateY(-2px); filter: brightness(1.12); }
+.pricing-cards, .pricing-grid { align-items: stretch; }
+.plan-card.featured { transform: translateY(-.75rem); border-color: rgba(108, 76, 255, 0.8); }
+details summary { cursor: pointer; font-weight: 700; }
+@media (max-width: 760px) { .dashboard-mockup, .dashboard, .benefits, .capability-cards, .pricing-cards, .pricing-grid, .timeline, .workflow-timeline { grid-template-columns: 1fr; } .plan-card.featured { transform: none; } header, section, footer { padding: 3rem 0; } }
+`;
   return next;
 }
 
