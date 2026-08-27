@@ -1586,6 +1586,15 @@ function normalizeSoundGallery(payload: unknown): MinimaxGallerySound[] {
   }).filter((item, index, arr) => item.id && arr.findIndex((candidate) => candidate.id === item.id) === index).slice(0, 80);
 }
 
+function projectPreviewIsReady(production: WorkProductionCard | null) {
+  if (!production) return false;
+  const preview = String(production.preview_url ?? "").trim();
+  const delivery = String(production.delivery_link ?? "").trim();
+  const hasRealPreview = Boolean(preview && !/\/dashboard\/productions\/[^?]+(?:\?|$)/i.test(preview));
+  const hasDelivery = Boolean(delivery && !/production room is active|moving through the crelavo pipeline/i.test(delivery));
+  return hasRealPreview || hasDelivery;
+}
+
 export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAssistantProps) {
   const forcedProductionType = productionTypeFromCategory(initialCategory);
   const explicitInitialIntent = Boolean(initialIdea || initialCategory);
@@ -2195,11 +2204,11 @@ if (isImageStart) {
             <article className="omni-result-card production-ready-card" role="link" tabIndex={0} title="Open production list" onClick={() => { window.location.href = "/dashboard/productions"; }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.location.href = "/dashboard/productions"; } }}>
                <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : activeImageProduction ? <ImageIcon size={22} /> : <Video size={22} />}</div>
               <div className="omni-result-body">
-                 <span className="badge">{(activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("Production ready") : ux("Production running")}</span>
+                 <span className="badge">{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
                   <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>
-                   <span><strong>{ux("Status")}</strong>{(activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+                   <span><strong>{ux("Status")}</strong>{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
                    {!activeProjectProduction && !activeImageProduction ? <span><strong>{ux("Provider")}</strong>{productionCardProvider(activeProduction)}</span> : null}
                 </div>
                 <div className="omni-result-grid">
@@ -2207,14 +2216,22 @@ if (isImageStart) {
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Workspace")}</strong>{ux("Production stays here")}</span>
                 </div>
-                {activeProjectProduction ? (
-                  <div className="omni-result-grid">
+                 {activeProjectProduction ? (
+                   <>
+                   <div className="omni-result-grid">
                     <span><strong>Project delivery</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Preparing")}</span>
                     <span><strong>Source package</strong>{activeProduction.source_files_url || activeProduction.delivery_zip_url ? ux("Ready") : ux("Preparing")}</span>
                     <span><strong>README / setup</strong>{activeProduction.readme_url ? ux("Ready") : ux("Preparing")}</span>
                   </div>
-                 ) : activeImageProduction ? (
-                   <div className="omni-result-grid">
+                  <div className="omni-result-actions">
+                    {activeProduction.preview_url ? <a className="btn secondary" href={activeProduction.preview_url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Open preview</a> : null}
+                    {activeProduction.source_files_url ? <a className="btn secondary" href={activeProduction.source_files_url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Download source</a> : null}
+                    {activeProduction.delivery_zip_url ? <a className="btn secondary" href={activeProduction.delivery_zip_url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Download ZIP</a> : null}
+                    {activeProduction.readme_url ? <a className="btn secondary" href={activeProduction.readme_url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>Open README</a> : null}
+                   </div>
+                   </>
+                  ) : activeImageProduction ? (
+                    <div className="omni-result-grid">
                      <span><strong>Image delivery</strong>{activeProduction.preview_url || activeProduction.delivery_link ? ux("Ready") : ux("Preparing")}</span>
                    </div>
                  ) : (
@@ -2316,10 +2333,10 @@ if (isImageStart) {
           <div className="omni-deploy-card">
             <small>Active production</small>
             <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "No production yet"}</strong>
-             <span>{activeProduction ? ((activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("Production ready") : ux("Production running")) : plan ? ux("Production draft") : "Awaiting command"}</span>
+             <span>{activeProduction ? ((activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux("Production running")) : plan ? ux("Production draft") : "Awaiting command"}</span>
             {activeProduction ? <>
               <span><b>Production ID</b>{activeProduction.id}</span>
-               <span><b>Status</b>{(activeProjectProduction || activeImageProduction) && (activeProduction.preview_url || activeProduction.delivery_link) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
+               <span><b>Status</b>{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
                {activeProjectProduction ? <span><b>Source package</b>{activeProduction.delivery_zip_url || activeProduction.source_files_url ? "Ready" : "Preparing"}</span> : activeImageProduction ? <span><b>Image delivery</b>{activeProduction.preview_url || activeProduction.delivery_link ? "Ready" : "Preparing"}</span> : <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>}
                              <span style={{ display: activeProjectProduction || activeImageProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
