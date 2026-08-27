@@ -24,6 +24,7 @@ import { getProviderStatus } from "@/lib/providers/status";
 import { mirrorProviderAsset, uploadProviderAsset } from "@/lib/providers/storage";
 import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/types";
 import { isProductAdProduction } from "@/lib/queue-policy";
+import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function stripPostgresUnsafeText(value: string) {
@@ -424,6 +425,16 @@ export async function POST(request: Request) {
     const access = await requireAutomationStatusAccess(request, body, production);
     if (!access.ok) return access.response;
 
+    const projectType = String(production.production_type ?? "");
+    const projectPackage = String(production.package_id ?? "");
+    if (isAutomaticProjectDelivery(projectType, projectPackage)) {
+      const projectOutput = buildProjectDeliveryOutput(production, `project-${productionId}`);
+      const projectReadyGate = productionReadyGate({ ...production, preview_url: projectOutput.previewUrl, delivery_link: projectOutput.deliveryLink, delivery_zip_url: projectOutput.deliveryZipUrl, source_files_url: projectOutput.sourceFilesUrl, readme_url: projectOutput.readmeUrl, output_json: projectOutput }, projectOutput);
+      const projectOutputWithGate = { ...projectOutput, readyGate: projectReadyGate, qualityGate: { status: projectReadyGate.passed ? "passed" : "blocked", checkedAt: new Date().toISOString(), required: projectReadyGate.required, missing: projectReadyGate.missing, warnings: projectReadyGate.warnings } };
+      const { data: projectData, error: projectError } = await supabase.from("production_requests").update(safeUpdate({ status: projectReadyGate.passed ? "ready" : "in_production", automation_status: projectReadyGate.passed ? "completed" : "quality_blocked", generation_status: projectReadyGate.passed ? "project_delivery_ready" : "quality_gate_blocked", preview_url: projectOutput.previewUrl, delivery_link: projectReadyGate.passed ? projectOutput.deliveryLink : null, delivery_zip_url: projectReadyGate.passed ? projectOutput.deliveryZipUrl : null, source_files_url: projectOutput.sourceFilesUrl, readme_url: projectOutput.readmeUrl, output_json: projectOutputWithGate, admin_notes: projectReadyGate.passed ? "Project delivery completed." : `Project delivery blocked: ${projectReadyGate.missing.join(", ")}`, updated_at: new Date().toISOString() })).eq("id", productionId).select("*").single();
+      if (projectError) throw projectError;
+      return Response.json({ production: projectData, project_delivery_ready: projectReadyGate.passed, ready_gate: projectReadyGate });
+    }
     const baseOutput = production.output_json && typeof production.output_json === "object"
       ? production.output_json as Record<string, unknown>
       : {};
