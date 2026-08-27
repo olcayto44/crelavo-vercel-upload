@@ -1640,6 +1640,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [selectedSound, setSelectedSound] = useState<MinimaxGallerySound | null>(null);
   const [customThumbnailPrompt, setCustomThumbnailPrompt] = useState("");
   const [customAvoidPrompt, setCustomAvoidPrompt] = useState("");
+  const startRequestRef = useRef(false);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -1854,7 +1855,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
           ? ["source_code", "readme", "dashboard_delivery"]
           : ["final_mp4", "dashboard_delivery"];
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 60000);
+    const timeout = window.setTimeout(() => controller.abort(), 180000);
     const response = await fetch("/api/productions", {
       method: "POST",
       headers: authHeaders(accessToken),
@@ -2132,19 +2133,24 @@ if (isImageStart) {
   }
 
   async function startProduction() {
+    if (startRequestRef.current || starting) return;
+    startRequestRef.current = true;
     const fallbackPrompt = plan ? [productionPrompt, input, plan.summary, plan.selected_features?.join(", "), plan.selected_modules?.join(", "), labelFor(plan.production_type)].filter(Boolean).join("\n").trim() : "";
     const clean = (productionPrompt || input || fallbackPrompt).trim();
     const activePlan = plan ? normalizePlan(plan, clean || fallbackPrompt, forcedProductionType) : clean ? localPlan(clean, forcedProductionType) : null;
     if (!activePlan) {
-      setStatus(statusUx("Önce ne üretmek istediğini yaz.", "Describe what you want to create first."));
+      startRequestRef.current = false;
+      setStatus(statusUx("�-nce ne Ǭretmek istedi�Yini yaz.", "Describe what you want to create first."));
       return;
     }
     try {
       await startProductionForPlan(activePlan, clean, { stayOnWork: true });
     } catch (error) {
+      startRequestRef.current = false;
       setStarting(false);
-      setStatus(error instanceof DOMException && error.name === "AbortError" ? statusUx("Production isteği henüz tamamlanmadı. Kayıt oluşmuş olabilir; biraz bekleyip üretim durumunu kontrol edin.", "Production request is still starting. The record may already exist; wait a moment and check production status.") : error instanceof Error ? error.message : statusUx("Production başlatılamadı.", "Production could not be started."));
+      setStatus(error instanceof DOMException && error.name === "AbortError" ? statusUx("Production iste�Yi henǬz tamamlanmad��. Kay��t olu�Ymu�Y olabilir; biraz bekleyip Ǭretim durumunu kontrol edin.", "Production request is still starting. The record may already exist; wait a moment and check production status.") : error instanceof Error ? error.message : statusUx("Production ba�Ylat��lamad��.", "Production could not be started."));
     }
+    startRequestRef.current = false;
   }
 
   return (
