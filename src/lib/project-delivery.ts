@@ -12,7 +12,7 @@ type ProjectProduction = {
   input_json?: Record<string, any> | null;
 };
 
-const PROJECT_TYPES = new Set(["website", "saas", "mobile_app", "admin_project"]);
+const PROJECT_TYPES = new Set(["website", "ecommerce", "saas", "mobile_app", "admin_project"]);
 
 export function isAutomaticProjectDelivery(productionType: string, packageId = "") {
   const type = String(productionType || "");

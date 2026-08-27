@@ -70,6 +70,7 @@ export function packageIdFromSelection(productionType: string, selection: Pick<A
   if (productionType === "video_tools") return packageSignal.includes("watermark") || packageSignal.includes("filigran") ? "video_watermark_control" : "video_tools_pack";
   if (productionType === "video" && packageSignal.includes("kesitleme")) return "video_long_film_clipping";
   if (productionType === "video" && (packageSignal.includes("dizi") || packageSignal.includes("film") || packageSignal.includes("fragman") || packageSignal.includes("senaryo"))) return "video_series_film_studio";
+  if (productionType === "ecommerce") return "website_ecommerce_admin";
   if (productionType === "website" && (packageSignal.includes("e-ticaret") || packageSignal.includes("ecommerce") || packageSignal.includes("e-commerce") || packageSignal.includes("shopify") || packageSignal.includes("woocommerce") || packageSignal.includes("marketplace") || packageSignal.includes("mağaza") || packageSignal.includes("magaza") || packageSignal.includes("sepet") || packageSignal.includes("checkout"))) return "website_ecommerce_admin";
   if (productionType === "website" && packageSignal.includes("admin")) return "website_admin";
   if (productionType === "saas" && packageSignal.includes("shopify")) return "shopify_app_integration";

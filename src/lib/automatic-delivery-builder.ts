@@ -734,7 +734,7 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     const segments = path.split("/");
     if (file && typeof file === "object" && typeof file.content === "string" && /^(index\.html|styles\.css|script\.js|README\.md|\.env\.example|admin\/(index\.html|styles\.css|script\.js|env\.example)|data\/(schema\.json|data\.json)|src\/[a-zA-Z0-9._/-]+\.(tsx|ts|css|js|json|md))$/.test(path) && segments.every((segment: string) => segment && segment !== "." && segment !== "..") && !path.startsWith("/") && !path.includes("\\")) entries.push({ name: `source/${path}`, content: file.content });
   }
-  if (manifest.scope === "website_with_admin" && manifest.production_type === "website") {
+  if (manifest.scope === "website_with_admin" && ["website", "ecommerce"].includes(manifest.production_type)) {
     const sourceNames = new Set(entries.map((entry) => entry.name));
     const add = (name: string, content: string) => { if (!sourceNames.has(name)) entries.push({ name, content }); };
     add("source/admin/index.html", buildWebsiteAdminHtml(production));
@@ -743,7 +743,7 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     add("source/.env.example", "PUBLIC_SITE_URL=http://localhost:3000\\nADMIN_AUTH_PROVIDER=replace-with-production-provider\\n");
     add("source/data/schema.json", JSON.stringify({ version: 1, entities: [{ name: "leads", fields: ["id", "name", "email", "message", "created_at"] }, { name: "content", fields: ["id", "section_id", "title", "body", "updated_at"] }], auth: { mode: "demo", productionNote: "Configure production authentication and authorization before deployment." } }, null, 2));
   }
-  if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
+  if (requirements.wantsSourceCode || ["website", "ecommerce", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
     entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
     entries.push({ name: "source/package.json", content: buildSourcePackageJson(production) });
     if (manifest.production_type === "mobile_app") {
@@ -834,7 +834,7 @@ function buildEcommercePreviewHtml(production: ProductionLike) {
 
 export function buildPreviewHtml(production: ProductionLike) {
   if (production.production_type === "saas") return buildSaaSPreviewHtml(production);
-  if (production.production_type === "website" && /ecommerce|shopify|woocommerce|store/i.test(String(production.package_id ?? ""))) return buildEcommercePreviewHtml(production);
+  if (production.production_type === "ecommerce" || production.production_type === "website" && /ecommerce|shopify|woocommerce|store/i.test(String(production.package_id ?? ""))) return buildEcommercePreviewHtml(production);
   const generatedWebsiteFiles = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
   if (generatedWebsiteFiles.length && production.production_type === "website") {
     const index = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "index.html") as Record<string, unknown> | undefined;

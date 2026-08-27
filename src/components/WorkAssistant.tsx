@@ -96,6 +96,7 @@ const productionLabels: Record<string, string> = {
   lip_sync: "Lip Sync Video",
   live_sales_agent: "AI Live Sales Agent",
   website: "Website",
+  ecommerce: "E-commerce",
   saas: "SaaS / Web App",
   mobile_app: "Mobile App",
   admin_project: "Admin Panel",
@@ -507,7 +508,7 @@ function uiText(value: string) {
 }
 
 function isProjectType(type: string) {
-  return ["website", "saas", "mobile_app", "admin_project"].includes(type);
+  return ["website", "ecommerce", "saas", "mobile_app", "admin_project"].includes(type);
 }
 
 function profileForType(type: string) {
@@ -589,6 +590,17 @@ function normalizedImageAspectRatio(setup: ProductionSetupState, hint = "") {
 }
 
 function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
+  if (plan.production_type === "ecommerce") {
+    return {
+      title: "E-commerce setup",
+      note: "Storefront, catalog, cart, checkout, admin and source delivery choices.",
+      groups: [
+        { id: "commerce", title: "Store features", multi: true, options: ["Product listing", "Cart", "Checkout", "Coupon system"], credit: 650 },
+        { id: "admin", title: "Admin", multi: true, options: ["Admin product panel", "Order management", "Inventory", "Orders dashboard"], credit: 500 },
+        { id: "delivery", title: "Delivery", multi: true, options: ["Source code", "Final ZIP", "README", "Database schema", "Preview delivery"], credit: 350 }
+      ]
+    };
+  }
   const base = profileForType(plan.production_type);
   const signal = `${hint} ${plan.summary ?? ""} ${plan.selected_modules.join(" ")} ${plan.selected_features.join(" ")} ${plan.selected_platforms.join(" ")} ${plan.package_id}`.toLocaleLowerCase("tr-TR");
   const hasLink = hasUrlIntent(signal);
@@ -1209,7 +1221,7 @@ function normalizeProductionType(prompt: string, currentType: string) {
   if (/saas|software as a service|subscription dashboard/.test(raw)) return "saas";
   if (/admin panel|admin dashboard|management panel|control panel|yönetim panel|yonetim panel/.test(raw)) return "admin_project";
   const commerceIntent = /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|cart|checkout|store|ürün|urun|sepet/.test(raw);
-  if (commerceIntent) return "website";
+  if (commerceIntent) return "ecommerce";
   if (/web sitesi|website|web site|landing|site/.test(raw)) return "website";
   if (/voice clone|ses klon/.test(text)) return "voice_clone";
   if (/talking video|talking head|avatar|spokesperson|presenter|sunucu|konuşan kişi|konusan kisi|diyalog|panel|lip[- ]?sync|self[- ]?in[- ]?video|kendi avatarım|kendi avatarim/.test(text)) return "talking_video";
@@ -1228,7 +1240,7 @@ function productionTypeFromCategory(category: string) {
   if (category === "Lower Ad Costs") return "video";
   const normalized = normalizeAssistantText(category);
   const directMap: Record<string, string> = {
-    campaign: "campaign", ai_agent: "ai_agent", localization: "localization", ad_score_checker: "ad_score_checker", virtual_model_studio: "virtual_model_studio", cultural_localization: "cultural_localization", campaign_calendar: "campaign_calendar", crelavo_academy: "crelavo_academy", community_showcase: "community_showcase", video: "video", talking_video: "talking_video", documentary: "documentary", animation: "animation", anime_short_film: "anime_short_film", animal_video: "animal_video", nature_video: "nature_video", planet_space_video: "planet_space_video", drone_video: "drone_video", live_sales_agent: "live_sales_agent", studio: "studio", drama: "drama", cinematic_video: "cinematic_video", video_clipping: "video_clipping", avatar: "avatar", lip_sync: "lip_sync", voice_clone: "voice_clone", visual_clone: "visual_clone", video_tools: "video_tools", stickman_animation: "stickman_animation", music_video: "music_video",     website: "website", ecommerce: "website", saas: "saas", mobile_app: "mobile_app", image: "image", brand_kit: "brand_kit", document_pack: "document_pack", admin_project: "admin_project"
+    campaign: "campaign", ai_agent: "ai_agent", localization: "localization", ad_score_checker: "ad_score_checker", virtual_model_studio: "virtual_model_studio", cultural_localization: "cultural_localization", campaign_calendar: "campaign_calendar", crelavo_academy: "crelavo_academy", community_showcase: "community_showcase", video: "video", talking_video: "talking_video", documentary: "documentary", animation: "animation", anime_short_film: "anime_short_film", animal_video: "animal_video", nature_video: "nature_video", planet_space_video: "planet_space_video", drone_video: "drone_video", live_sales_agent: "live_sales_agent", studio: "studio", drama: "drama", cinematic_video: "cinematic_video", video_clipping: "video_clipping", avatar: "avatar", lip_sync: "lip_sync", voice_clone: "voice_clone", visual_clone: "visual_clone", video_tools: "video_tools", stickman_animation: "stickman_animation", music_video: "music_video",     website: "website", ecommerce: "ecommerce", saas: "saas", mobile_app: "mobile_app", image: "image", brand_kit: "brand_kit", document_pack: "document_pack", admin_project: "admin_project"
   };
   if (directMap[normalized]) return directMap[normalized];
   if (!normalized) return "";
@@ -1255,7 +1267,7 @@ function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
   const visualProject = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType);
   const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["final_image", "png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
   const commerceIntent = /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|cart|checkout|store|ürün|urun|sepet/.test(prompt.toLowerCase());
-  const packageId = productionType === "website" ? (commerceIntent ? "website_ecommerce_admin" : "website_business")
+  const packageId = productionType === "ecommerce" ? "website_ecommerce_admin" : productionType === "website" ? (commerceIntent ? "website_ecommerce_admin" : "website_business")
     : productionType === "saas" ? "saas_admin_billing"
       : productionType === "mobile_app" ? "mobile_expo"
         : productionType === "admin_project" ? "admin_dashboard"
