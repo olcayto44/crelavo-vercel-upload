@@ -2143,10 +2143,10 @@ if (isImageStart) {
           {planning ? <article className="omni-message assistant"><div className="omni-avatar"><Bot size={16} /></div><div className="omni-bubble"><Loader2 size={16} className="spin" /> Routing request...</div></article> : null}
 
           {activeProduction ? (
-            <article className="omni-result-card">
+            <article className="omni-result-card production-ready-card" role="link" tabIndex={0} title="Open production list" onClick={() => { window.location.href = "/dashboard/productions"; }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.location.href = "/dashboard/productions"; } }}>
               <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : <Video size={22} />}</div>
               <div className="omni-result-body">
-                <span className="badge">{ux("Production running")}</span>
+                <span className="badge">{activeProjectProduction && String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" ? ux("Production ready") : ux("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
                   <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>

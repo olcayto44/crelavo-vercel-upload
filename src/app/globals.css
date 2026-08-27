@@ -12536,6 +12536,8 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .
 .omni-bubble .spin, .spin { animation: omniSpin 1s linear infinite; }
 @keyframes omniSpin { to { transform: rotate(360deg); } }
 .omni-result-card { align-self: stretch; border: 1px solid rgba(96,165,250,.24); background: linear-gradient(135deg, rgba(15,23,42,.92), rgba(30,41,59,.78)); border-radius: 22px; padding: 16px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; box-shadow: 0 20px 55px rgba(2,6,23,.22); backdrop-filter: blur(14px); }
+.omni-result-card.production-ready-card { cursor: pointer; border-color: rgba(34,211,238,.72); box-shadow: 0 0 0 1px rgba(34,211,238,.24), 0 0 24px rgba(34,211,238,.26), 0 20px 55px rgba(2,6,23,.32); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.omni-result-card.production-ready-card:hover, .omni-result-card.production-ready-card:focus-visible { transform: translateY(-2px); border-color: rgba(129,140,248,.95); box-shadow: 0 0 0 1px rgba(129,140,248,.34), 0 0 34px rgba(34,211,238,.38), 0 20px 55px rgba(2,6,23,.36); outline: none; }
 .omni-result-icon { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: rgba(37,99,235,.18); color: #93c5fd; border: 1px solid rgba(96,165,250,.22); }
 .omni-result-body { display: grid; gap: 8px; min-width: 0; }
 .omni-result-body h3 { margin: 0; color: #fff; font-size: 1.28rem; }
