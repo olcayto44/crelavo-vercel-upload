@@ -1219,8 +1219,11 @@ function productionTypeFromCategory(category: string) {
   if (!normalized) return "";
   if (/^video$|ai video|video production/.test(normalized)) return "video";
   if (/video clipping|clip/.test(normalized)) return "video_clipping";
-  if (/mobile app|app builder/.test(normalized)) return "mobile_app";
-  if (/website|web site/.test(normalized)) return "website";
+  if (/mobile app|app builder|mobil uygulama|ios|android|expo/.test(normalized)) return "mobile_app";
+  if (/saas|web app|software as a service|saas app|saas dashboard/.test(normalized)) return "saas";
+  if (/admin panel|admin dashboard|control panel|management panel/.test(normalized)) return "admin_project";
+  if (/ecommerce|e-commerce|online store|storefront|shopify|woocommerce/.test(normalized)) return "website";
+  if (/website|web site|landing page/.test(normalized)) return "website";
   if (/anime/.test(normalized)) return "anime_short_film";
   if (/stickman/.test(normalized)) return "stickman_animation";
   if (/animation/.test(normalized)) return "animation";
@@ -1796,7 +1799,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
     const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
-    const preferredProviderForPayload = isImageProduction ? undefined : animationProductionIntent ? "runway_first" : "minimax";
+     const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : "minimax";
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "Minimax talking video", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
     const formats = setupFields.delivery_formats.length
