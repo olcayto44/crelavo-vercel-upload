@@ -321,7 +321,8 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
   const [deliveryProductId, setDeliveryProductId] = useState("");
 
   const type = String(production.production_type ?? "general");
-  const isProjectProduction = ["website", "saas", "mobile_app", "admin_project"].includes(type);
+  const isEcommerceProduction = type === "ecommerce";
+  const isProjectProduction = ["website", "ecommerce", "saas", "mobile_app", "admin_project"].includes(type);
   const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(type) || /^image_/.test(String(production.package_id ?? ""));
   const previewToolbarTitle = isProjectProduction
     ? previewMode === "shorts" ? "Mobile preview" : previewMode === "compact" ? "Tablet preview" : "Desktop preview"
@@ -1185,12 +1186,12 @@ const data = await response.json().catch(() => ({}));
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
-              {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Share to social accounts</button> : null}
+              {(!isProjectProduction || isEcommerceProduction) ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Share production</button> : null}
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
           </div>
-          {!isProjectProduction ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
+          {(!isProjectProduction || isEcommerceProduction) ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
             <h2>Share to social accounts</h2>
             <p>Prepare platform-ready posts, captions, tags and export notes for the final video. When the final MP4 is ready, attach it to the selected social channel.</p>
             <div className="social-platform-grid">
