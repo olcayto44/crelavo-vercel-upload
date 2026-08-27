@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { ServicePageView } from "@/components/ServicePageView";
-import { getConfiguredServicePage } from "@/lib/service-pages-loader";
+import { redirect } from "next/navigation";
 
-const slug = "ai-app-builder";
+export const metadata: Metadata = {
+  title: "AI App Builder — Crelavo",
+  description: "Start the Crelavo AI App Builder workflow for SaaS MVPs, web apps, dashboards and admin panels.",
+  alternates: { canonical: "/ai-app-builder" }
+};
 
-export async function generateMetadata(): Promise<Metadata> {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") return {};
-  const noindex = page.status === "noindex" || page.includeInSitemap === false;
-  return { title: `${page.title} — ${page.keyword} Service`, description: page.summary, alternates: { canonical: `/${slug}` }, openGraph: { title: page.title, description: page.summary, url: `/${slug}`, type: "website" }, robots: noindex ? { index: false, follow: true } : { index: true, follow: true } };
-}
-
-export default async function Page() {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") notFound();
-  return <ServicePageView page={page} />;
+export default function Page() {
+  redirect("/dashboard/assistant-workspace?mode=project&category=app&idea=AI%20App%20Builder");
 }
