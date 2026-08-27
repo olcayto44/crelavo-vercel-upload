@@ -688,7 +688,7 @@ if (talkingProviderType) {
       return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
     }
 
-    if (!providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute && !(currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign")) {
+    if (!isAutomaticProjectDelivery(productionType, packageId) && !providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute && !(currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign")) {
       const waitingLifecycle = providerLifecycleFromJobs({ ...outputRegistryBase, output_json: existingOutput }, {});
       const waitingOutput = {
         ...existingOutput,

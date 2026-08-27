@@ -46,12 +46,15 @@ type PlanResponse = {
 type WorkProductionCard = {
   id: string;
   title?: string;
+  production_type?: string;
   status?: string;
   generation_status?: string;
   automation_status?: string;
   preview_url?: string | null;
   delivery_link?: string | null;
   delivery_zip_url?: string | null;
+  source_files_url?: string | null;
+  readme_url?: string | null;
   output_json?: Record<string, unknown> | null;
 };
 
@@ -1676,6 +1679,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup: activeProductionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
   const activeProviderProof = productionProviderProof(activeProduction);
+  const activeProjectProduction = Boolean(activeProduction && isProjectType(String(activeProduction.production_type ?? "")));
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     setProductionSetup(defaultSetupFor(nextPlan.production_type, hint, nextPlan));
@@ -2140,7 +2144,7 @@ if (isImageStart) {
 
           {activeProduction ? (
             <article className="omni-result-card">
-              <div className="omni-result-icon"><Video size={22} /></div>
+              <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : <Video size={22} />}</div>
               <div className="omni-result-body">
                 <span className="badge">{ux("Production running")}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
@@ -2154,12 +2158,20 @@ if (isImageStart) {
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Workspace")}</strong>{ux("Production stays here")}</span>
                 </div>
-                <div className="omni-result-grid">
-                  <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
-                  <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
-                  <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
-                  <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
-                </div>
+                {activeProjectProduction ? (
+                  <div className="omni-result-grid">
+                    <span><strong>Project delivery</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Preparing")}</span>
+                    <span><strong>Source package</strong>{activeProduction.source_files_url || activeProduction.delivery_zip_url ? ux("Ready") : ux("Preparing")}</span>
+                    <span><strong>README / setup</strong>{activeProduction.readme_url ? ux("Ready") : ux("Preparing")}</span>
+                  </div>
+                ) : (
+                  <div className="omni-result-grid">
+                    <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
+                    <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
+                    <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
+                    <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
+                  </div>
+                )}
               </div>
             </article>
           ) : null}
@@ -2255,15 +2267,15 @@ if (isImageStart) {
             {activeProduction ? <>
               <span><b>Production ID</b>{activeProduction.id}</span>
               <span><b>Status</b>{activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>
-              <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>
+               {activeProjectProduction ? <span><b>Source package</b>{activeProduction.delivery_zip_url || activeProduction.source_files_url ? "Ready" : "Preparing"}</span> : <span><b>Provider</b>{productionCardProvider(activeProduction)}</span>}
               <span><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
-          <div className="omni-deploy-card">
-            <small>Embed / kod</small>
-            <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
-            <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
-          </div>
+           {!activeProjectProduction ? <div className="omni-deploy-card">
+             <small>Embed / kod</small>
+             <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
+             <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
+           </div> : null}
           <div className="omni-deploy-card">
             <small>Delivery</small>
             <strong>{estimatedCredits} credits</strong>
