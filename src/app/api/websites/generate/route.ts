@@ -1,4 +1,5 @@
-import { generateWebsiteSource, validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
+import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
+import { generateDeterministicWebsiteSource } from "@/lib/providers/website-template";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -39,7 +40,6 @@ export async function POST(request: Request) {
     if (!userId || !userEmail) return Response.json({ error: "user_required" }, { status: 401 });
     const verified = await requireVerifiedRequestUser(request, userId);
     if (!verified.ok) return verified.response;
-    if (!hasProviderEnv("openai")) return Response.json({ error: "provider_required", message: "OPENAI_API_KEY is required for real website generation." }, { status: 503 });
 
     const brief = String(body.brief ?? "").trim().slice(0, MAX_BRIEF_LENGTH);
     const brand = String(body.brand ?? "").trim().slice(0, 160);
@@ -68,14 +68,14 @@ export async function POST(request: Request) {
       generation_status: "provider_generating",
       estimated_credits: 0,
       reserved_credits: 0,
-      request_metadata: { source: "website_builder", siteType, scope, brand, audience, pages, features, style, provider: "openai" },
+      request_metadata: { source: "website_builder", siteType, scope, brand, audience, pages, features, style, provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template" },
       input_json: { brief, siteType, scope, brand, audience, pages, features, style },
-      output_json: { provider: "openai", providerStatus: "generating", scope }
+      output_json: { provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerStatus: "generating", scope }
     }).select("*").single();
     if (insertError || !production) throw insertError ?? new Error("Website production record could not be created.");
 
     try {
-      const generated = await generateWebsiteSource({ brief, siteType, scope, brand, audience, pages, features, style });
+      const generated = await generateDeterministicWebsiteSource({ brief, siteType, scope, brand, audience, pages, features, style });
       validateFiles(generated.files, scope);
       const quality = validateWebsiteQuality(generated.files, scope);
       if (!quality.valid) throw new WebsiteQualityError(quality.missing);
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         ...file,
         url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
       })));
-      const outputJson = { provider: "openai", providerModel: process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini", providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
+      const outputJson = { provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerModel: hasProviderEnv("openai") ? (process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini") : null, providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
       const { data: completed, error: updateError } = await supabase.from("production_requests").update({ status: "ready", generation_status: "completed", preview_url: `/api/productions/${production.id}/delivery?file=preview`, delivery_link: `/api/productions/${production.id}/delivery?file=zip`, delivery_zip_url: `/api/productions/${production.id}/delivery?file=zip`, source_files_url: `/api/productions/${production.id}/delivery?file=source`, readme_url: `/api/productions/${production.id}/delivery?file=readme`, output_json: outputJson, updated_at: new Date().toISOString() }).eq("id", production.id).select("*").single();
       if (updateError || !completed) throw updateError ?? new Error("Website production could not be finalized.");
       return Response.json({ production: completed, outputs: { previewUrl: completed.preview_url, zipUrl: completed.delivery_zip_url, sourceUrl: completed.source_files_url, readmeUrl: completed.readme_url, scope } });
@@ -92,8 +92,7 @@ export async function POST(request: Request) {
       throw error;
     }
   } catch (error) {
-    if (errorMessage(error).includes("OPENAI_API_KEY") || errorMessage(error).includes("provider environment")) return Response.json({ error: "provider_required", message: "OPENAI_API_KEY is required for real website generation." }, { status: 503 });
-    if (error instanceof WebsiteQualityError) return Response.json({ error: error.code, message: "Generated website failed the deterministic quality gate.", missing: error.missing }, { status: 422 });
+        if (error instanceof WebsiteQualityError) return Response.json({ error: error.code, message: "Generated website failed the deterministic quality gate.", missing: error.missing }, { status: 422 });
     return Response.json({ error: "website_generation_failed", message: errorMessage(error) }, { status: 502 });
   }
 }

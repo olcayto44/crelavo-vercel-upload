@@ -18,7 +18,7 @@ export function WebsiteBuilderForm() {
     event.preventDefault();
     setBusy(true);
     setOutputs(null);
-    setStatus("Generating source files with the real AI provider...");
+    setStatus("Building a premium static template and shaping the brief copy...");
     try {
       const supabase = supabaseBrowser();
       const [{ data: userData }, { data: sessionData }] = await Promise.all([supabase.auth.getUser(), supabase.auth.getSession()]);
@@ -41,8 +41,8 @@ export function WebsiteBuilderForm() {
 
   return <section className="service-page-shell" style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1rem" }}>
     <span className="badge">AI Website Builder</span>
-    <h1>Generate real website source files from a brief</h1>
-    <p>Enter the site type, brand context, target audience, pages, features and visual direction. The output is not just text; it includes renderable HTML/CSS/JS, a preview, a ZIP source bundle and an installation README.</p>
+    <h1>Generate a premium website source package from a brief</h1>
+    <p>Enter the site type, brand context, target audience, pages, features and visual direction. A fixed premium template guarantees the visual structure; available AI may refine only structured copy. The output includes renderable HTML/CSS/JS, a preview, a ZIP source bundle and an installation README.</p>
     <form onSubmit={submit} className="form-grid">
       <label>Website brief<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder="What does it offer, what problem does it solve and what should the user do?" /></label>
       <label>Site type<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
@@ -52,7 +52,7 @@ export function WebsiteBuilderForm() {
       <label>Pages <small>comma-separated</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
       <label>Features <small>comma-separated</small><input value={fields.features} onChange={(event) => update("features", event.target.value)} /></label>
       <label>Style / visual direction<input required value={fields.style} onChange={(event) => update("style", event.target.value)} /></label>
-      <button className="btn" type="submit" disabled={busy}>{busy ? "Generating..." : "Generate real website"}</button>
+      <button className="btn" type="submit" disabled={busy}>{busy ? "Building..." : "Generate website package"}</button>
     </form>
     {status ? <p role="status" style={{ marginTop: "1rem" }}>{status}</p> : null}
     {outputs ? <div className="mini-card" style={{ marginTop: "1.5rem" }}><h2>Website outputs</h2><p>Scope: {outputs.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website"}</p><p><a className="btn secondary" href={outputs.previewUrl} target="_blank" rel="noreferrer">Open preview</a> <a className="btn secondary" href={outputs.zipUrl}>Download ZIP/source</a> <a className="btn secondary" href={outputs.readmeUrl}>README</a></p><small>Source guide: <a href={outputs.sourceUrl}>{outputs.sourceUrl}</a></small></div> : null}
