@@ -55,7 +55,7 @@ const createGroups = [
 
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
-    .filter((item) => item.active)
+    .filter((item) => item.active && normalizeNavLabel(item.label) !== "Categories")
     .sort((a, b) => a.order - b.order)
     .map((item) => ({ ...item, label: normalizeNavLabel(item.label) }));
   return (

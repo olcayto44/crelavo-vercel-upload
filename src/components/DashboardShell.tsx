@@ -57,7 +57,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
       <aside className="dashboard-sidebar-card">
         <HardReloadLink className="logo" href="/dashboard"><span className="logo-mark">▶</span><span>Crelavo</span></HardReloadLink>
         <p>AI production planning, dashboard delivery, credits and post-launch growth tools.</p>
-        <HardReloadLink className="dashboard-primary-action" href="/dashboard/create">Start new production</HardReloadLink>
+        <HardReloadLink className="dashboard-primary-action" href="/categories">Create</HardReloadLink>
         <nav className="dashboard-nav-groups" aria-label="Dashboard menu">
           {navGroups.map((group) => (
             <section className="dashboard-nav-group" key={group.title}>
@@ -76,7 +76,6 @@ export function DashboardShell({ children, className = "" }: { children: React.R
       <section className="dashboard-workspace">
         <nav className="dashboard-topbar button-nav" aria-label="Dashboard quick navigation">
           <HardReloadLink className="btn secondary" href="/">Home</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/categories">Categories</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/credits">Credits</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/live-sales-agent">Live Control</HardReloadLink>
           <HardReloadLink className="btn secondary" href="/dashboard/drone-shoot">Drone Shoot</HardReloadLink>
