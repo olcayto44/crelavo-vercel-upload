@@ -3,14 +3,15 @@
 import { FormEvent, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 
-type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string };
+type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string };
 
 export function WebsiteBuilderForm() {
-  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
+  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [outputs, setOutputs] = useState<Outputs | null>(null);
   const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  const scopeLabel = fields.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website";
   const list = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
   async function submit(event: FormEvent) {
@@ -23,7 +24,7 @@ export function WebsiteBuilderForm() {
       const [{ data: userData }, { data: sessionData }] = await Promise.all([supabase.auth.getUser(), supabase.auth.getSession()]);
       const user = userData.user;
       if (!user) throw new Error("You must sign in to generate a website.");
-      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(sessionData.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, pages: list(fields.pages), features: list(fields.features) }) });
+      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(sessionData.session?.access_token ? { Authorization: `Bearer ${sessionData.session.access_token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, site_scope: fields.scope, pages: list(fields.pages), features: list(fields.features) }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : "";
@@ -45,7 +46,8 @@ export function WebsiteBuilderForm() {
     <form onSubmit={submit} className="form-grid">
       <label>Website brief<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder="What does it offer, what problem does it solve and what should the user do?" /></label>
       <label>Site type<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
-      <label>Brand / product<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
+       <label>Site scope<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">Public static website — no admin panel</option><option value="website_with_admin">Public website + admin panel source starter</option></select><small>{scopeLabel}. Admin files are included only when selected.</small></label>
+       <label>Brand / product<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
       <label>Target audience<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
       <label>Pages <small>comma-separated</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
       <label>Features <small>comma-separated</small><input value={fields.features} onChange={(event) => update("features", event.target.value)} /></label>
@@ -53,6 +55,6 @@ export function WebsiteBuilderForm() {
       <button className="btn" type="submit" disabled={busy}>{busy ? "Generating..." : "Generate real website"}</button>
     </form>
     {status ? <p role="status" style={{ marginTop: "1rem" }}>{status}</p> : null}
-    {outputs ? <div className="mini-card" style={{ marginTop: "1.5rem" }}><h2>Website outputs</h2><p><a className="btn secondary" href={outputs.previewUrl} target="_blank" rel="noreferrer">Open preview</a> <a className="btn secondary" href={outputs.zipUrl}>Download ZIP/source</a> <a className="btn secondary" href={outputs.readmeUrl}>README</a></p><small>Source guide: <a href={outputs.sourceUrl}>{outputs.sourceUrl}</a></small></div> : null}
+    {outputs ? <div className="mini-card" style={{ marginTop: "1.5rem" }}><h2>Website outputs</h2><p>Scope: {outputs.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website"}</p><p><a className="btn secondary" href={outputs.previewUrl} target="_blank" rel="noreferrer">Open preview</a> <a className="btn secondary" href={outputs.zipUrl}>Download ZIP/source</a> <a className="btn secondary" href={outputs.readmeUrl}>README</a></p><small>Source guide: <a href={outputs.sourceUrl}>{outputs.sourceUrl}</a></small></div> : null}
   </section>;
 }

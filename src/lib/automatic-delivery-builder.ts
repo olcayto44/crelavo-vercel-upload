@@ -17,6 +17,7 @@ type ProductionLike = {
   target_platform?: string | null;
   social_platforms?: string | null;
   publish_targets?: string[] | null;
+  scope?: string | null;
 };
 
 export type AutomaticDeliveryLinks = {
@@ -106,6 +107,7 @@ export function buildDeliveryManifest(production: ProductionLike) {
   const deliveryRequirements = deliveryRequirementsFromProduction(production);
   const productionQuality = productionQualityFromProduction(production);
   const links = automaticDeliveryLinks(production.id);
+  const scope = String(metadata.scope ?? input.scope ?? production.scope ?? production.output_json?.scope ?? "marketing_website") === "website_with_admin" ? "website_with_admin" : "marketing_website";
   const generatedFiles = plannedDeliveryFileList(production, deliveryRequirements);
   const outputRegistry = buildOutputRegistry(production);
   return {
@@ -113,6 +115,7 @@ export function buildDeliveryManifest(production: ProductionLike) {
     title: value(production.title, "Crelavo production"),
     production_type: value(production.production_type, "general"),
     package_id: value(production.package_id, "unknown_package"),
+    scope,
     delivery_standard: deliveryPackage.standard,
     user_promise: deliveryPackage.userPromise,
     required_items: deliveryPackage.requiredItems,
@@ -155,7 +158,7 @@ export function buildDeliveryManifest(production: ProductionLike) {
 
 export function buildDeliveryReadme(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# ${manifest.title}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n- Selected product ID: ${manifest.commerce.selected_product_id || "Not selected"}\n- Selected product title: ${manifest.commerce.selected_product_title || "Not selected"}\n- Product description: ${manifest.commerce.product_description || "Not specified"}\n- Product tags: ${Array.isArray(manifest.commerce.product_tags) ? manifest.commerce.product_tags.join(", ") : "Not specified"}\n- Live upload payload: ${JSON.stringify(manifest.commerce.upload_payload)}\n\n## Social / Store Export-Ready Pack\n${list(manifest.social_store_export_pack.map((item: { label: string; format: string; guardrail: string }) => `${item.label}: ${item.format} — ${item.guardrail}`))}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
+  return `# ${manifest.title}\n\n## Website Scope\n${manifest.scope === "website_with_admin" ? "Public website plus admin panel source starter" : "Public static website; no admin panel is included"}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n- Selected product ID: ${manifest.commerce.selected_product_id || "Not selected"}\n- Selected product title: ${manifest.commerce.selected_product_title || "Not selected"}\n- Product description: ${manifest.commerce.product_description || "Not specified"}\n- Product tags: ${Array.isArray(manifest.commerce.product_tags) ? manifest.commerce.product_tags.join(", ") : "Not specified"}\n- Live upload payload: ${JSON.stringify(manifest.commerce.upload_payload)}\n\n## Social / Store Export-Ready Pack\n${list(manifest.social_store_export_pack.map((item: { label: string; format: string; guardrail: string }) => `${item.label}: ${item.format} — ${item.guardrail}`))}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
 }
 
 export function buildSourceGuide(production: ProductionLike) {
@@ -488,6 +491,19 @@ p { color: #cbd5e1; line-height: 1.75; }
 `;
 }
 
+function buildWebsiteAdminHtml(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${manifest.title} Admin</title><link rel="stylesheet" href="./styles.css"></head><body><main><p class="eyebrow">Admin starter</p><h1>${manifest.title} Admin</h1><p>This is a demo auth starter. Configure production authentication, authorization and server-side sessions before deployment.</p><section class="admin-grid"><article><h2>Content</h2><p>Review and update published sections.</p></article><article><h2>Leads</h2><p>Review contact form submissions.</p></article><article><h2>Analytics</h2><p>Connect approved analytics and monitor conversion events.</p></article></section><p class="notice">Demo auth only. Never put Crelavo secrets in browser source.</p></main><script src="./script.js"></script></body></html>`;
+}
+
+function buildWebsiteAdminCss() {
+  return `:root{font-family:Inter,system-ui,sans-serif;color:#f8fafc;background:#091126}body{margin:0;background:radial-gradient(circle at 10% 0%,#3158aa55,transparent 30rem)}main{width:min(1080px,calc(100% - 2rem));margin:auto;padding:4rem 0}.admin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}.admin-grid article,.notice{padding:1.5rem;border:1px solid #ffffff2b;border-radius:1rem;background:#16213dcc;box-shadow:0 18px 45px #0005}.eyebrow{color:#7dd3fc;font-weight:800;text-transform:uppercase;letter-spacing:.12em}.notice{margin-top:1rem;color:#fde68a}@media(max-width:760px){.admin-grid{grid-template-columns:1fr}}`;
+}
+
+function buildWebsiteAdminJs() {
+  return `document.dispatchEvent(new CustomEvent("admin-starter-ready"));`;
+}
+
 function buildAdminRequirements(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
   return `# Admin Panel Requirements\n\nProduction: ${manifest.title}\n\n## Required Admin Scope\n- Content management\n- User/request management\n- Delivery file management\n- Status updates\n- Revision handling\n\n## Project Modules\n${manifest.project.modules}\n\n## Notes\nAdmin screens must match the selected production scope and should be included in the final source or delivery guide when requested.\n`;
@@ -710,7 +726,18 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
   ];
   const generatedWebsiteFiles = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
   for (const file of generatedWebsiteFiles) {
-    if (file && typeof file === "object" && typeof file.path === "string" && typeof file.content === "string" && /^(index\.html|styles\.css|script\.js|README\.md|src\/[a-zA-Z0-9._/-]+\.(tsx|ts|css|js|json|md))$/.test(file.path) && !file.path.includes("..")) entries.push({ name: `source/${file.path}`, content: file.content });
+    const path = file && typeof file === "object" && typeof file.path === "string" ? file.path : "";
+    const segments = path.split("/");
+    if (file && typeof file === "object" && typeof file.content === "string" && /^(index\.html|styles\.css|script\.js|README\.md|\.env\.example|admin\/(index\.html|styles\.css|script\.js|env\.example)|data\/(schema\.json|data\.json)|src\/[a-zA-Z0-9._/-]+\.(tsx|ts|css|js|json|md))$/.test(path) && segments.every((segment: string) => segment && segment !== "." && segment !== "..") && !path.startsWith("/") && !path.includes("\\")) entries.push({ name: `source/${path}`, content: file.content });
+  }
+  if (manifest.scope === "website_with_admin" && manifest.production_type === "website") {
+    const sourceNames = new Set(entries.map((entry) => entry.name));
+    const add = (name: string, content: string) => { if (!sourceNames.has(name)) entries.push({ name, content }); };
+    add("source/admin/index.html", buildWebsiteAdminHtml(production));
+    add("source/admin/styles.css", buildWebsiteAdminCss());
+    add("source/admin/script.js", buildWebsiteAdminJs());
+    add("source/.env.example", "PUBLIC_SITE_URL=http://localhost:3000\\nADMIN_AUTH_PROVIDER=replace-with-production-provider\\n");
+    add("source/data/schema.json", JSON.stringify({ version: 1, entities: [{ name: "leads", fields: ["id", "name", "email", "message", "created_at"] }, { name: "content", fields: ["id", "section_id", "title", "body", "updated_at"] }], auth: { mode: "demo", productionNote: "Configure production authentication and authorization before deployment." } }, null, 2));
   }
   if (requirements.wantsSourceCode || ["website", "saas", "mobile_app", "admin_project"].includes(manifest.production_type)) {
     entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
