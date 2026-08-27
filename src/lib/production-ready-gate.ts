@@ -92,7 +92,7 @@ export function productionReadyGate(production: ProductionForReadyGate, outputOv
     ...Object.values(setup).flatMap(arrayStrings)
   ];
   const type = String(production.production_type ?? "").toLowerCase();
-  const isProject = ["website", "saas", "mobile_app", "admin_project"].includes(type);
+  const isProject = ["website", "ecommerce", "saas", "mobile_app", "admin_project"].includes(type);
   const signal = textBlob(type, production.package_id, metadata, input, output, selectedOptions);
   const required = new Set<string>();
   const missing: string[] = [];
