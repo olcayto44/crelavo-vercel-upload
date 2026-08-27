@@ -1301,8 +1301,12 @@ function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
   };
 }
 
+function hasEcommerceIntent(prompt: string) {
+  return /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shopping cart|product catalog|checkout|shopping experience|add-to-cart|cart|store builder|mağaza|magaza|sepet/i.test(prompt);
+}
+
 function shouldForceImageProduction(prompt: string) {
-  return normalizeProductionType(prompt, "video") === "image";
+  return !hasEcommerceIntent(prompt) && normalizeProductionType(prompt, "video") === "image";
 }
 
 function isLuxuryProductCommercialPrompt(prompt: string) {
@@ -1952,6 +1956,7 @@ if (isImageStart) {
     const clean = nextInput.trim();
     if (!clean || planning || starting) return;
     setInput("");
+    if (!isStartIntent(clean) && !isExplainIntent(clean)) setActiveProduction(null);
     setMessages((current) => [...current, { id: uid(), role: "user", content: clean }]);
 
     if (isStartIntent(clean) && (plan || productionPrompt.trim())) {
@@ -2043,7 +2048,9 @@ if (isImageStart) {
     }
 
     const normalized = normalizePlan(data.plan, clean, shouldForceImageProduction(clean) ? "image" : forcedProductionType);
-    const finalPlan = shouldForceImageProduction(clean) ? normalizePlan({ ...normalized, production_type: "image", package_id: "image_single", selected_quality: "Image", selected_duration: "Static", selected_modules: ["Image generation"], selected_features: ["Production package", "PNG/JPG delivery"], delivery_requirements: { requested: true, status: "pending", formats: ["final_image", "png", "jpg", "dashboard_delivery"] } }, clean, "image") : normalized;
+    const finalPlan = hasEcommerceIntent(clean)
+      ? normalizePlan({ ...normalized, production_type: "ecommerce", package_id: "website_ecommerce_admin", selected_quality: "Project based", selected_duration: "Project based", selected_style: "Premium modern interface", selected_modules: ["E-commerce", "Storefront", "Product catalog", "Cart", "Checkout", "Admin panel", "Orders", "Inventory"], selected_features: ["Working storefront", "README / setup", "Preview delivery", "Source package"], delivery_requirements: { requested: true, status: "pending", formats: ["source_code", "readme", "dashboard_delivery"] } }, clean, "ecommerce")
+      : shouldForceImageProduction(clean) ? normalizePlan({ ...normalized, production_type: "image", package_id: "image_single", selected_quality: "Image", selected_duration: "Static", selected_modules: ["Image generation"], selected_features: ["Production package", "PNG/JPG delivery"], delivery_requirements: { requested: true, status: "pending", formats: ["final_image", "png", "jpg", "dashboard_delivery"] } }, clean, "image") : normalized;
     setConversationId(data.conversation_id ?? conversationId);
     setPlan(finalPlan);
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(finalPlan), clean, finalPlan.production_type));
