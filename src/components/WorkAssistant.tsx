@@ -2311,7 +2311,7 @@ if (isImageStart) {
                              <span style={{ display: activeProjectProduction || activeImageProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
-           {!activeProjectProduction && !activeImageProduction ? <div className="omni-deploy-card">
+            {!activeProjectProduction && !activeImageProduction && !isProjectType(plan?.production_type ?? "") && !isImageProductionType(plan?.production_type ?? "") ? <div className="omni-deploy-card">
              <small>Embed / kod</small>
              <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
              <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
@@ -2319,7 +2319,7 @@ if (isImageStart) {
           <div className="omni-deploy-card">
             <small>Delivery</small>
             <strong>{estimatedCredits} credits</strong>
-             <span>{activeProjectProduction ? "Source files, preview, README and project delivery are tracked from one screen." : activeImageProduction ? "Preview, PNG/JPG image delivery and production history are tracked from one screen." : "Video, web, app, live sales or source bundle is tracked from one screen."}</span>
+             <span>{activeProjectProduction || isProjectType(plan?.production_type ?? "") ? "Source files, preview, README and project delivery are tracked from one screen." : activeImageProduction || isImageProductionType(plan?.production_type ?? "") ? "Preview, PNG/JPG image delivery and production history are tracked from one screen." : "Video production and final delivery are tracked from one screen."}</span>
           </div>
         </aside>
 
