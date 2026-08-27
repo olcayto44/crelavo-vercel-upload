@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  redirect("/dashboard/assistant-workspace?mode=project&category=website&idea=E-commerce%20store%20builder");
+  redirect("/dashboard/assistant-workspace?mode=project&category=ecommerce&idea=E-commerce%20store%20builder");
 }
