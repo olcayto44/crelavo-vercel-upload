@@ -10,6 +10,8 @@ function shouldHideRail(pathname: string | null) {
   return Boolean(
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/ai-mobile-app-builder") ||
+    pathname.startsWith("/ai-ecommerce-builder") ||
     pathname.startsWith("/productions") ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/checkout") ||
