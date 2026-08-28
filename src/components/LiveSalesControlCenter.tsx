@@ -152,7 +152,8 @@ export function LiveSalesControlCenter() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [agentIdValue, setAgentIdValue] = useState(agentId);
-const [conversationId, setConversationId] = useState("");
+  const [authenticatedUserId, setAuthenticatedUserId] = useState("");
+ const [conversationId, setConversationId] = useState("");
 const [openPreference, setOpenPreference] = useState("Industry");
   const [loadingAgent, setLoadingAgent] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewRecord | null>(null);
@@ -186,9 +187,10 @@ const [openPreference, setOpenPreference] = useState("Industry");
       if (loadingAgent) return;
       setLoadingAgent(true);
       try {
-        const auth = await requireVerifiedBrowserUser();
-        if (!auth.ok) return;
-        const response = await fetch(`${agentConfigEndpoint}?user_id=${encodeURIComponent(auth.user.id)}`, {
+         const auth = await requireVerifiedBrowserUser();
+         if (!auth.ok) return;
+         setAuthenticatedUserId(auth.user.id);
+         const response = await fetch(`${agentConfigEndpoint}?user_id=${encodeURIComponent(auth.user.id)}`, {
           headers: authHeaders(auth.accessToken)
         });
         if (!response.ok) return;
@@ -534,7 +536,7 @@ async function sendMessage() {
                 {avatarPreview?.previewUrl ? (
                   <div className="live-sales-avatar-video-frame">
                     {isDirectVideoUrl(avatarPreview.previewUrl) ? (
-                      <video src={avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
+                      <video src={authenticatedUserId ? `/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(authenticatedUserId)}&agent_id=${encodeURIComponent(agentIdValue)}` : avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
                     ) : (
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" className="live-sales-avatar-video" />
                     )}
@@ -669,7 +671,7 @@ async function sendMessage() {
                   <p>{avatarPreview.provider || "provider"} · {avatarPreview.status || "pending"}</p>
                   {avatarPreview.sessionId ? <small>Session: {avatarPreview.sessionId}</small> : null}
                   <button className="btn secondary" type="button" onClick={refreshAvatarPreviewStatus} disabled={previewingAvatar || !avatarPreview.sessionId} style={{ marginTop: 8 }}>{previewingAvatar ? "Checking..." : "Refresh preview status"}</button>
-                  {avatarPreview.previewUrl ? <a className="btn secondary" href={avatarPreview.previewUrl} target="_blank" rel="noreferrer" style={{ marginTop: 8 }}>Open preview</a> : null}
+                  {avatarPreview.previewUrl && authenticatedUserId ? <a className="btn secondary" href={`/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(authenticatedUserId)}&agent_id=${encodeURIComponent(agentIdValue)}`} target="_blank" rel="noreferrer" style={{ marginTop: 8 }}>Open preview</a> : null}
                 </div>
               ) : null}
               <div className="live-sales-accordion-list">
