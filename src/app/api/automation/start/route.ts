@@ -335,10 +335,13 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
     ?? secondsFromValue(selected.output_duration)
     ?? secondsFromValue(selected.duration)
     ?? 15;
-  const duration = Math.min(15, Math.max(4, Math.round(requestedDurationSeconds))) as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  const testMode = Boolean(selected.testMode ?? selected.test_mode);
+  const minimumDuration = testMode ? 5 : 15;
+  const duration = Math.min(15, Math.max(minimumDuration, Math.round(requestedDurationSeconds))) as 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
+  const providerPrompt = String(selected.providerPrompt ?? selected.provider_prompt ?? selected.work_prompt ?? selected.workPrompt ?? input.prompt ?? input.title).trim() || input.title;
   const result = await createMiniMaxH3VideoTask({
-    content: [{ type: "text", text: input.prompt }],
+    content: [{ type: "text", text: providerPrompt }],
     resolution: "768P",
     duration,
     ratio
@@ -347,7 +350,7 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const taskId = String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim();
   if (!taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: input.prompt, duration, ratio, resolution: "768P" }, raw: result });
+  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution: "768P" }, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
