@@ -7,6 +7,7 @@ import { buildProviderPreflight, detectCharacterDialogueAnimationNeed } from "@/
 import { buildDemoAutomationOutput } from "@/lib/demo-automation";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
+import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
@@ -94,6 +95,28 @@ function firstPromptMatch(text: string, patterns: RegExp[]) {
 function httpsUrlFrom(value: unknown) {
   const text = String(value ?? "").trim();
   return /^https:\/\//i.test(text) ? text : "";
+}
+
+function materialUrlForPurpose(value: unknown, purposes: string[]) {
+  const materials = Array.isArray(value) ? value : [];
+  for (const item of materials) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const purpose = String(record.reference_type ?? record.purpose ?? "").toLowerCase();
+    const url = httpsUrlFrom(record.file_url ?? record.url ?? record.fileUrl);
+    if (url && purposes.some((candidate) => purpose === candidate || purpose.includes(candidate))) return url;
+  }
+  return "";
+}
+
+function materialRightsConfirmed(value: unknown, sourceUrl: string) {
+  const materials = Array.isArray(value) ? value : [];
+  const matching = materials.filter((item) => {
+    if (!item || typeof item !== "object") return false;
+    const record = item as Record<string, unknown>;
+    return httpsUrlFrom(record.file_url ?? record.url ?? record.fileUrl) === sourceUrl;
+  });
+  return matching.length > 0 && matching.every((item) => Boolean((item as Record<string, unknown>).rights_confirmed));
 }
 
 function durationSecondsFromPrompt(text: string) {
@@ -445,7 +468,7 @@ const productionType = ["talking_video_basic", "talking_video_multi_person", "ta
 
   const result = await supabase
     .from("production_requests")
-    .select("id, user_id, title, prompt, status, generation_status, production_type, package_id, reserved_credits, request_metadata, input_json, output_json")
+    .select("id, user_id, title, prompt, status, generation_status, production_type, package_id, reserved_credits, request_metadata, input_json, output_json, materials_json")
     .eq("id", productionId)
     .single();
 
@@ -591,6 +614,55 @@ const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMe
 const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent || /minimax_video_agent|video_agent/.test(productionDetectionText));
 const directLuxuryProductCommercialRoute = String(requestMetadata.routeLock ?? inputJson.routeLock ?? existingOutput.routeLock ?? "") === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(productionDetectionText);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
+
+    if (productionType === "voice_clone") {
+      const missingVoiceConfig = providerReadiness.blocking.map((item) => item.key);
+      if (missingVoiceConfig.length || !currentLegalAccepted) {
+        const message = !currentLegalAccepted
+          ? "Voice cloning requires explicit rights and consent acceptance before the provider can be called."
+          : `Voice cloning provider configuration is required: ${missingVoiceConfig.join(", ")}.`;
+        const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_required", output_json: { ...existingOutput, providerStatus: "provider_required", providerRequired: missingVoiceConfig.length ? missingVoiceConfig : ["legal_acceptance"], deliveryReady: false }, error_message: message, admin_notes: message, updated_at: now })).eq("id", productionId).select("*").single();
+        if (failedError) throw failedError;
+        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_required: true, error: message }, { status: 424 });
+      }
+      const sourceMaterials = Array.isArray(currentProductionRecord.materials_json)
+        ? currentProductionRecord.materials_json
+        : Array.isArray(inputJson.uploaded_materials)
+          ? inputJson.uploaded_materials
+          : Array.isArray(requestMetadata.uploaded_materials)
+            ? requestMetadata.uploaded_materials
+            : [];
+      const sourceAudioUrl = materialUrlForPurpose(sourceMaterials, ["voice_reference", "own_voice", "voiceover", "clean_vocal"])
+         || httpsUrlFrom(inputJson.voice_reference_url ?? inputJson.voiceReferenceUrl ?? requestMetadata.voice_reference_url ?? requestMetadata.voiceReferenceUrl);
+      const hasMatchingSourceMaterial = sourceMaterials.some((item) => item && typeof item === "object" && httpsUrlFrom((item as Record<string, unknown>).file_url ?? (item as Record<string, unknown>).url ?? (item as Record<string, unknown>).fileUrl) === sourceAudioUrl);
+      const explicitCloneRights = Boolean(inputJson.rights_confirmed ?? inputJson.rightsConfirmed ?? requestMetadata.rights_confirmed ?? requestMetadata.rightsConfirmed);
+      const cloneRightsConfirmed = hasMatchingSourceMaterial ? materialRightsConfirmed(sourceMaterials, sourceAudioUrl) : explicitCloneRights;
+      if (!sourceAudioUrl) {
+        const message = "Voice cloning requires an uploaded voice reference audio file. No placeholder voice ID was created.";
+        const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_required", output_json: { ...existingOutput, providerStatus: "provider_required", providerRequired: ["voice_reference_audio", "ELEVENLABS_API_KEY"], deliveryReady: false }, error_message: message, admin_notes: message, updated_at: now })).eq("id", productionId).select("*").single();
+        if (failedError) throw failedError;
+        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_required: true, error: message }, { status: 424 });
+      }
+      if (!cloneRightsConfirmed) {
+        const message = "Voice cloning requires rights_confirmed=true for the uploaded reference audio. No provider clone or placeholder voice ID was created.";
+        const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_required", output_json: { ...existingOutput, providerStatus: "provider_required", providerRequired: ["voice_reference_rights_consent"], deliveryReady: false }, error_message: message, admin_notes: message, updated_at: now })).eq("id", productionId).select("*").single();
+        if (failedError) throw failedError;
+        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_required: true, error: message }, { status: 424 });
+      }
+      try {
+        const clone = await cloneVoiceFromUrl({ productionId, sourceAudioUrl, name: String(currentProduction.title ?? "Crelavo voice clone") });
+        const test = await createVoiceover({ productionId, script: "This is a real voice clone test generated by Crelavo.", voiceDirection: "Voice clone test", voiceId: clone.voiceId });
+        const cloneOutput = { ...existingOutput, provider: clone.provider, providerStatus: "voice_clone_succeeded", voiceClone: { voiceId: clone.voiceId, sourceAudioUrl, testAudioUrl: test, rightsConfirmed: cloneRightsConfirmed }, voiceId: clone.voiceId, testAudioUrl: test, deliveryReady: true, automaticDeliveryLinks: deliveryLinks };
+        const { data: readyProduction, error: readyError } = await supabase.from("production_requests").update(safeUpdate({ status: "ready", automation_status: "completed", generation_status: "voice_clone_ready", output_json: cloneOutput, preview_url: test, delivery_link: deliveryLinks.deliveryLink, delivery_zip_url: deliveryLinks.deliveryZipUrl, readme_url: deliveryLinks.readmeUrl, completed_at: now, admin_notes: "Real ElevenLabs voice clone and test audio are ready.", updated_at: now })).eq("id", productionId).select("*").single();
+        if (readyError) throw readyError;
+        return Response.json({ job_id: jobId, production: readyProduction, provider_started: true, provider_result: { ...clone, testAudioUrl: test } });
+      } catch (error) {
+        const message = errorMessage(error, "Voice cloning provider failed.");
+        const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_failed", output_json: { ...existingOutput, providerStatus: "voice_clone_failed", providerError: message, deliveryReady: false }, error_message: message, admin_notes: message, updated_at: now })).eq("id", productionId).select("*").single();
+        if (failedError) throw failedError;
+        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_failed: true, error: message }, { status: 502 });
+      }
+    }
 
 const characterDialogueNeed = talkingProviderType ? { required: false, reason: "talking_provider_type_uses_heygen_first", signals: [] } : detectCharacterDialogueAnimationNeed(productionDetectionText);
 if (characterDialogueNeed.required) {
@@ -1027,6 +1099,9 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
     }
 
 const demoOutput = buildDemoAutomationOutput(currentProduction, jobId);
+const musicVideoOutputBase = productionType === "music_video"
+  ? { automationMode: "fully_automatic", jobId, alternatives: [], finalVideoUrl: null, delivery_url: null, deliveryZipUrl: null, readmeUrl: null }
+  : demoOutput;
 if (isImageProduction) {
   const imagePromptCandidates = [
     inputJson.work_prompt,
@@ -1166,8 +1241,8 @@ const requestedDurationFloor = isProductAdVideo ? 15 : (providerPreflight.testMo
     };
 const requiredPipeline = pipelineMap[productionType] ?? "manual_or_demo";
 const requiresSpecialPipeline = ["talking_lip_sync", "video_clipping", "music_video", "drone_video", "studio_story_video", "animation_video", "documentary_video", "video_tools", "localization_video"].includes(requiredPipeline);
-const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video", "talking_lip_sync", "video_tools"].includes(requiredPipeline);
-const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization", "talking_video", "avatar", "lip_sync", "live_sales_agent", "video_tools"].includes(productionType);
+const canUseGenericAutomation = ["generic_video", "animation_video", "documentary_video", "drone_video", "studio_story_video", "localization_video", "talking_lip_sync", "video_tools", "music_video"].includes(requiredPipeline);
+const isGenericVideoType = canUseGenericAutomation && ["video", "cinematic_video", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "stickman_animation", "localization", "cultural_localization", "talking_video", "avatar", "lip_sync", "live_sales_agent", "video_tools", "music_video"].includes(productionType);
 const requestedClipCount = Number(requestMetadata.requestedClipCount ?? inputJson.requestedClipCount ?? 3) || 3;
 const clippingRun = requiredPipeline === "video_clipping"
 
@@ -1232,8 +1307,8 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
           : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
     : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
     const outputJson: Record<string, unknown> = {
-      ...demoOutput,
-      providerTestMode,
+      ...musicVideoOutputBase,
+       providerTestMode,
       providerPreflight,
       aiVideoProviderChain,
       videoClippingRun: clippingRun ? {
@@ -1248,9 +1323,10 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
         renderJob: clippingRun.renderJob
       } : null,
       genericVideoPlan: genericRun?.plan ?? null,
-      sourceContext: genericRun?.sourceContext ?? null,
-      websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
-      voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,
+       sourceContext: genericRun?.sourceContext ?? null,
+       websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
+       musicVideoAudioUrl: productionType === "music_video" ? String((genericRun?.sourceContext as Record<string, unknown> | undefined)?.songAudioUrl ?? "").trim() || null : null,
+       voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,
       voiceAudioSegments: genericRun?.voiceAudioSegments ?? [],
       subtitleUrl: clippingRun?.subtitleUrl ?? genericRun?.subtitleUrl ?? null,
       renderJob,

@@ -117,8 +117,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return Response.json({ error: "Downloads are closed during the 24-hour preview. Cancel before 24 hours to stop the main subscription; otherwise the selected plan activates automatically." }, { status: 403 });
   }
 
-  if (file === "video" || file === "mp4") {
-    const videoUrl = finalVideoUrlForDelivery(data as Record<string, unknown>);
+   const output = objectValue(data.output_json);
+   const realOutputTypes = new Set(["music_video", "voice_clone"]);
+   if (realOutputTypes.has(String(data.production_type ?? "")) && data.status !== "ready") {
+     return Response.json({ error: "Real provider output is not ready yet. Demo or placeholder delivery is unavailable." }, { status: 409 });
+   }
+
+   if (file === "audio") {
+     const clone = objectValue(output.voiceClone);
+     const audioUrl = String(output.testAudioUrl ?? output.voiceAudioUrl ?? clone.testAudioUrl ?? output.audioUrl ?? "").trim();
+     if (!audioUrl) return Response.json({ error: "Audio output is not ready yet." }, { status: 404 });
+     const providerResponse = await fetch(audioUrl, { cache: "no-store" });
+     if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Audio download failed: ${providerResponse.status}` }, { status: 502 });
+     return new Response(providerResponse.body, { headers: { "Content-Type": providerResponse.headers.get("content-type") || "audio/mpeg", "Content-Disposition": `attachment; filename="${safeTitle}-audio.mp3"`, "Cache-Control": "no-store, max-age=0" } });
+   }
+
+   if (file === "subtitles") {
+     const subtitleUrl = String(output.subtitleUrl ?? "").trim();
+     if (!subtitleUrl) return Response.json({ error: "Subtitle output is not ready yet." }, { status: 404 });
+     const providerResponse = await fetch(subtitleUrl, { cache: "no-store" });
+     if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Subtitle download failed: ${providerResponse.status}` }, { status: 502 });
+     return new Response(providerResponse.body, { headers: { "Content-Type": "application/x-subrip", "Content-Disposition": `attachment; filename="${safeTitle}-subtitles.srt"`, "Cache-Control": "no-store, max-age=0" } });
+   }
+
+   if (file === "video" || file === "mp4") {
+     const videoUrl = finalVideoUrlForDelivery(data as Record<string, unknown>);
     if (!videoUrl) return Response.json({ error: "Final video is not ready yet." }, { status: 404 });
     const providerResponse = await fetch(videoUrl, { cache: "no-store" });
     if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Final video download failed: ${providerResponse.status}` }, { status: 502 });

@@ -9,6 +9,21 @@ function cleanVoiceScript(script: string) {
   return cleanProviderText(script, MAX_TTS_CHARS);
 }
 
+export async function cloneVoiceFromUrl(input: { productionId: string; sourceAudioUrl: string; name: string }) {
+  const apiKey = requireProviderEnv("elevenlabs");
+  const source = await fetch(input.sourceAudioUrl, { cache: "no-store" });
+  if (!source.ok || !source.body) throw new Error(`Voice reference download failed: ${source.status}`);
+  const form = new FormData();
+  form.append("name", input.name);
+  form.append("description", "User-authorized voice clone created by Crelavo.");
+  form.append("files", new Blob([await source.arrayBuffer()], { type: source.headers.get("content-type") || "audio/mpeg" }), "voice-reference.mp3");
+  const response = await fetch("https://api.elevenlabs.io/v1/voices/add", { method: "POST", headers: { "xi-api-key": apiKey }, body: form });
+  if (!response.ok) throw new Error(`ElevenLabs voice clone failed: ${response.status} ${await response.text()}`);
+  const data = await response.json() as { voice_id?: string };
+  if (!data.voice_id) throw new Error("ElevenLabs voice clone returned no voice_id.");
+  return { provider: "elevenlabs", voiceId: data.voice_id, sourceAudioUrl: input.sourceAudioUrl };
+}
+
 function voiceSettings(direction: string) {
   const normalized = voiceDirectionGuard(direction).toLowerCase();
   return {
@@ -22,7 +37,8 @@ function voiceSettings(direction: string) {
 async function synthesizeVoice(input: { productionId: string; script: string; voiceDirection: string; voiceId?: string; filename: string }) {
   const apiKey = requireProviderEnv("elevenlabs");
   const selectedVoice = voiceById(input.voiceId);
-  const voiceId = selectedVoice.providerVoiceId || optionalEnv("ELEVENLABS_VOICE_ID") || "21m00Tcm4TlvDq8ikWAM";
+  const catalogVoice = selectedVoice.id === input.voiceId ? selectedVoice.providerVoiceId : "";
+  const voiceId = String(input.voiceId ?? "").trim() || catalogVoice || optionalEnv("ELEVENLABS_VOICE_ID") || "21m00Tcm4TlvDq8ikWAM";
   const script = cleanVoiceScript(input.script);
   if (!script) throw new Error("Voice-over script is empty after cleanup.");
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {

@@ -95,8 +95,11 @@ export function buildOutputRegistry(production: RegistryProductionInput): Output
   if (requirements.wantsAdminPanel) {
     items.push(registryItem({ id: "admin_panel", outputType: "admin_panel", deliveryRole: "admin_panel_package", status: "planned", filename: "admin-panel/admin-requirements.md", note: "Admin panel scope and package requirements." }));
   }
-  if (requirements.wantsFinalVideo) {
-    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: usableFinalVideoUrl || effectiveDeliveryLink ? "ready" : "waiting_provider", filename: "final-video.mp4", url: usableFinalVideoUrl || effectiveDeliveryLink || null, note: "Final MP4 from provider or admin upload." }));
+  if (requirements.wantsFinalVideo || production.production_type === "music_video") {
+    items.push(registryItem({ id: "final_video", outputType: "video", deliveryRole: "final_mp4", status: usableFinalVideoUrl ? "ready" : "waiting_provider", filename: "final-video.mp4", url: usableFinalVideoUrl ? `${base}?file=video` : null, note: "Final MP4 from a real provider output." }));
+  }
+  if (production.production_type === "voice_clone" && isUsableProviderUrl(output.testAudioUrl)) {
+    items.push(registryItem({ id: "voice_clone_test", outputType: "audio", deliveryRole: "voice_clone_test", status: "ready", filename: "voice-clone-test.mp3", url: `${base}?file=audio`, note: "Real provider-generated voice clone test audio." }));
   }
   if (requirements.wantsSubtitles) {
     items.push(registryItem({ id: "subtitles", outputType: "subtitle", deliveryRole: "subtitle_file", status: output.subtitleUrl ? "ready" : "planned", filename: "subtitles.srt", url: output.subtitleUrl ?? null, note: "Subtitle file for final media." }));

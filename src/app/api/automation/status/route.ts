@@ -352,7 +352,11 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
 
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
   const genericPlanForRender = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
-  const isDroneRender = /drone|satellite|flyover|aerial/i.test(`${String(genericPlanForRender.title ?? "")} ${String(output.pipelineType ?? "")} ${String(output.providerPreflight && typeof output.providerPreflight === "object" ? (output.providerPreflight as Record<string, unknown>).productionType ?? "" : "")}`);
+  const preflight = output.providerPreflight && typeof output.providerPreflight === "object" ? output.providerPreflight as Record<string, unknown> : {};
+  const preflightProductionType = String(preflight.productionType ?? preflight.production_type ?? "").toLowerCase();
+  const isMusicVideoRender = preflightProductionType === "music_video" || String(output.requiredPipeline ?? "").toLowerCase() === "music_video";
+  const musicVideoAudioUrl = String(output.musicVideoAudioUrl ?? (output.sourceContext && typeof output.sourceContext === "object" ? (output.sourceContext as Record<string, unknown>).songAudioUrl ?? "" : "")).trim();
+  const isDroneRender = /drone|satellite|flyover|aerial/i.test(`${String(genericPlanForRender.title ?? "")} ${String(output.pipelineType ?? "")} ${String(preflightProductionType)}`);
   const wantsVoice = !isDroneRender && Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles);
   const voiceAudioUrl = String(output.voiceAudioUrl ?? "").trim();
@@ -374,7 +378,8 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
       if (/supabase|provider-assets/i.test(sourceUrl)) mirroredVisualUrls.push(sourceUrl);
       else mirroredVisualUrls.push(await mirrorProviderAsset({ productionId, sourceUrl, filenameBase: `raw-visual-${index + 1}`, fallbackContentType: "video/mp4" }));
     }
-    const fallbackAudioUrl = voiceAudioSegments.length ? null : (voiceAudioUrl || await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }));
+    if (isMusicVideoRender && !musicVideoAudioUrl) return { renderJob: null, renderStarted: false, renderError: "Music video final render requires a real uploaded song/audio master; placeholder audio is disabled." };
+     const fallbackAudioUrl = voiceAudioSegments.length ? null : (musicVideoAudioUrl || voiceAudioUrl || await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }));
     try {
       const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : sourceVisualUrls, audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
       return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };

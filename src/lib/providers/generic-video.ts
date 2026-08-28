@@ -54,6 +54,27 @@ function clean(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function firstHttpsUrl(value: unknown): string {
+  if (typeof value === "string") return value.split(/\s+/).find((part) => /^https:\/\//i.test(part)) ?? "";
+  if (Array.isArray(value)) return value.map(firstHttpsUrl).find(Boolean) ?? "";
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["song_audio_link", "songAudioLink", "songAudioUrl", "audioUrl", "audio_url", "file_url", "fileUrl", "url"]) {
+      const found = firstHttpsUrl(record[key]);
+      if (found) return found;
+    }
+  }
+  return "";
+}
+
+function musicVideoAudioUrl(...values: unknown[]) {
+  for (const value of values) {
+    const found = firstHttpsUrl(value);
+    if (found) return found;
+  }
+  return "";
+}
+
 function providerErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error ?? "Unknown provider error");
 }
@@ -649,9 +670,27 @@ export async function runGenericVideoPipeline(input: {
     providerErrors.visual_generation = providerErrorMessage(error);
   }
 
-  const wantsVoice = Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
-  const wantsSubtitles = Boolean(selectedOptions.subtitles);
-  const wantsFinalAssembly = Boolean(plan.deterministicUiMotion || selectedOptions.finalRender || selectedOptions.voiceOver || selectedOptions.voiceConsistency || selectedOptions.subtitles || selectedOptions.music);
+  const productionType = clean(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type).toLowerCase();
+  const isMusicVideo = productionType === "music_video";
+  const sourceAudioUrl = isMusicVideo
+    ? musicVideoAudioUrl(
+      input.requestMetadata?.song_audio_link,
+      input.inputJson?.song_audio_link,
+      input.requestMetadata?.songAudioLink,
+      input.inputJson?.songAudioLink,
+      input.requestMetadata?.musicVideoMaterialGroups,
+      input.inputJson?.musicVideoMaterialGroups,
+      input.requestMetadata?.uploadedMaterials,
+      input.inputJson?.uploadedMaterials,
+      input.requestMetadata?.uploaded_materials,
+      input.inputJson?.uploaded_materials,
+      input.requestMetadata?.music_reference_links,
+      input.inputJson?.music_reference_links
+    )
+    : "";
+  const wantsVoice = !isMusicVideo && Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
+  const wantsSubtitles = Boolean(selectedOptions.subtitles) || (isMusicVideo && Boolean(clean(input.requestMetadata?.lyrics ?? input.inputJson?.lyrics ?? input.requestMetadata?.lyrics_text ?? input.inputJson?.lyrics_text)));
+  const wantsFinalAssembly = Boolean(plan.deterministicUiMotion || isMusicVideo || selectedOptions.finalRender || selectedOptions.voiceOver || selectedOptions.voiceConsistency || selectedOptions.subtitles || selectedOptions.music);
 
   if (wantsVoice) {
     try {
@@ -667,9 +706,13 @@ export async function runGenericVideoPipeline(input: {
     }
   }
 
+  const musicLyrics = isMusicVideo ? clean(input.requestMetadata?.lyrics ?? input.inputJson?.lyrics ?? input.requestMetadata?.lyrics_text ?? input.inputJson?.lyrics_text) : "";
+  const subtitleLinesForRender = musicLyrics
+    ? musicLyrics.split(/\r?\n|(?<=[.!?])\s+/).map((line) => line.trim()).filter(Boolean).slice(0, 32)
+    : plan.subtitleLines;
   if (wantsSubtitles) {
     try {
-      subtitleUrl = await createSubtitleFile({ productionId: input.productionId, lines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
+      subtitleUrl = await createSubtitleFile({ productionId: input.productionId, lines: subtitleLinesForRender, durationSeconds: plan.durationSeconds });
     } catch (error) {
       missingProviders.push("subtitles");
       providerErrors.subtitles = providerErrorMessage(error);
@@ -680,7 +723,7 @@ export async function runGenericVideoPipeline(input: {
   const requiredSubtitleReady = !wantsSubtitles || Boolean(subtitleUrl);
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
   const primaryVisualUrl = readyVisualUrls[0] || visualJob?.url || "";
-  let finalRenderAudioUrl = voiceAudioSegments.length ? null : voiceAudioUrl;
+  let finalRenderAudioUrl = isMusicVideo && sourceAudioUrl ? sourceAudioUrl : voiceAudioSegments.length ? null : voiceAudioUrl;
   if (!finalRenderAudioUrl && primaryVisualUrl && !needsMultiShot) {
     try {
       finalRenderAudioUrl = await extractAudioTrackFromVideoUrl({ productionId: input.productionId, videoUrl: primaryVisualUrl, filenameBase: "final-render-audio" });
@@ -689,7 +732,10 @@ export async function runGenericVideoPipeline(input: {
       missingProviders.push("audio_extract");
     }
   }
-  if (!finalRenderAudioUrl && (selectedOptions.music || needsMultiShot || wantsFinalAssembly)) {
+  if (!finalRenderAudioUrl && isMusicVideo) {
+    missingProviders.push("song_audio");
+    providerErrors.song_audio = "Music video production requires a real uploaded song/audio master; no placeholder soundtrack will be generated.";
+  } else if (!finalRenderAudioUrl && (selectedOptions.music || needsMultiShot || wantsFinalAssembly)) {
     try {
       finalRenderAudioUrl = await createAmbientMusicBed({ productionId: input.productionId, durationSeconds: plan.durationSeconds, filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? "") || plan.title });
     } catch (error) {
@@ -697,9 +743,9 @@ export async function runGenericVideoPipeline(input: {
       missingProviders.push("music_bed");
     }
   }
-  if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady) {
+  if ((readyVisualUrls.length || visualJob?.url || plan.deterministicUiMotion) && wantsFinalAssembly && requiredAudioReady && requiredSubtitleReady && Boolean(finalRenderAudioUrl)) {
     try {
-      renderJob = await createShotstackRender({ title: plan.title, videoUrl: primaryVisualUrl || undefined, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : finalRenderAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: plan.subtitleLines, durationSeconds: plan.durationSeconds });
+      renderJob = await createShotstackRender({ title: plan.title, videoUrl: primaryVisualUrl || undefined, videoUrls: readyVisualUrls.length ? readyVisualUrls : undefined, audioUrl: voiceAudioSegments.length ? null : finalRenderAudioUrl, audioSegments: voiceAudioSegments, subtitleUrl, subtitleLines: subtitleLinesForRender, durationSeconds: plan.durationSeconds });
     } catch (error) {
       missingProviders.push("final_render");
       providerErrors.final_render = providerErrorMessage(error);
@@ -717,6 +763,6 @@ export async function runGenericVideoPipeline(input: {
     chainStatus: renderJob || voiceAudioUrl || subtitleUrl ? "provider_chain_started" : visualJob ? "visual_job_created" : "waiting_provider_config",
     missingProviders,
     providerErrors,
-    sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls, droneReferenceRequired: /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")), droneReferenceWarning: uploadedImageUrls.length ? null : "No uploaded satellite/route/location image reference was available. Output may be a generic AI aerial simulation rather than a location-faithful flyover." }
+    sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls, songAudioUrl: sourceAudioUrl || null, lyricsProvided: Boolean(musicLyrics), droneReferenceRequired: /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")), droneReferenceWarning: uploadedImageUrls.length ? null : "No uploaded satellite/route/location image reference was available. Output may be a generic AI aerial simulation rather than a location-faithful flyover." }
   };
 }
