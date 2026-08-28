@@ -12,10 +12,10 @@ export default function AdminPage() {
       description="A detailed control center similar to WordPress: members, requests, packages, categories, SEO, ads, appearance, payments and backups are managed from one panel."
     >
       <section className="card admin-user-info-card">
-        <span className="badge">Günlük kontrol merkezi</span>
-        <h2>En sık takip edeceğin bölümler</h2>
+        <span className="badge">Daily control center</span>
+        <h2>Most important areas</h2>
         <p style={{ color: "var(--muted)" }}>
-          Admin paneli kalabalık olduğu için günlük işlerde önce buraya bak: üretimler, krediler, finans, QA, provider ve monitoring. Diğer modüller aşağıda kalır.
+          The admin panel is extensive, so start here for daily work: productions, credits, finance, QA, providers, and monitoring. Other modules are available below.
         </p>
         <div className="admin-category-grid" style={{ marginTop: 14 }}>
           {adminDailyFocus.map((item) => (
@@ -23,15 +23,15 @@ export default function AdminPage() {
               <span className="badge">{item.priority}</span>
               <h2>{item.label}</h2>
               <p>{item.note}</p>
-              <Link className="btn" href={item.href}>Aç</Link>
+              <Link className="btn" href={item.href}>Open</Link>
             </article>
           ))}
         </div>
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">Bakma rutini</span>
-        <h2>Günlük / düzenli kontrol sırası</h2>
+        <span className="badge">Review routine</span>
+        <h2>Daily / recurring review order</h2>
         <div className="admin-grid three-col" style={{ marginTop: 14 }}>
           {adminOwnerRoutine.map((routine) => (
             <div className="mini-card" key={routine.cadence}>
@@ -47,15 +47,15 @@ export default function AdminPage() {
       <section className="admin-panel-section"><AdminFinanceCards /></section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">Ayrı sayfa sistemi</span>
-        <h2>Modüller artık ana sayfayı uzatmadan kendi ekranında açılır</h2>
+        <span className="badge">Separate page system</span>
+        <h2>Modules now open on their own screens instead of extending the home page</h2>
         <p style={{ color: "var(--muted)" }}>
-          Ana panel sadece günlük özet ve kritik kontrol merkezi olarak kalır. Üye, üretim, kredi, finans, SEO, growth, provider, appearance ve diğer modüller sol menüden kendi ayrı admin sayfasında açılır.
+          The main panel remains a daily summary and critical control center. Members, productions, credits, finance, SEO, growth, providers, appearance, and other modules open on their own admin pages from the left menu.
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-          <Link className="btn" href="/admin/productions">Üretimler</Link>
+          <Link className="btn" href="/admin/productions">Productions</Link>
           <Link className="btn secondary" href="/admin/users">Members</Link>
-          <Link className="btn secondary" href="/admin/credits">Krediler</Link>
+          <Link className="btn secondary" href="/admin/credits">Credits</Link>
           <Link className="btn secondary" href="/admin/seo">SEO</Link>
         </div>
       </section>

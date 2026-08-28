@@ -35,18 +35,18 @@ export default function AdminAdsRoasPage() {
       <div className="grid" style={{ marginTop: 20 }}>
         <div className="card">
           <span className="badge">Future OAuth</span>
-          <h3>Sosyal hesap planları</h3>
-          <p>connected_ad_accounts tablosu gelecekteki Meta, Instagram, TikTok, YouTube, LinkedIn ve X hedeflerini izler; canlı OAuth final API/env sonrası açılır.</p>
+          <h3>Social account plans</h3>
+          <p>The connected_ad_accounts table tracks future Meta, Instagram, TikTok, YouTube, LinkedIn, and X targets; live OAuth opens after final API/env setup.</p>
         </div>
         <div className="card">
           <span className="badge">Planning</span>
           <h3>Campaign / post / export plan</h3>
-          <p>ad_campaign_jobs tablosu sosyal platform, plan payload, future external id ve hata durumlarını saklar; canlı publish launch şimdilik kapalıdır.</p>
+          <p>The ad_campaign_jobs table stores social platform, plan payload, future external IDs, and error states; live publishing is currently disabled.</p>
         </div>
         <div className="card">
           <span className="badge">ROAS</span>
-          <h3>AI optimizasyon</h3>
-          <p>ROAS düşükse gelecekte reklam durdurma, yeni hook üretme veya platforma özel varyasyon önerisi planlanır; canlı optimizasyon final API/env sonrasına kalır.</p>
+          <h3>AI optimization</h3>
+          <p>If ROAS is low, future plans may pause ads, generate new hooks, or suggest platform-specific variations; live optimization comes after final API/env setup.</p>
         </div>
       </div>
     </AdminShell>

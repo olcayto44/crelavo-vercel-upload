@@ -35,7 +35,7 @@ export default function AdminMonitoringPage() {
       </section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">API/env sonrası tekrar bakılacak</span>
+        <span className="badge">Review again after API/env setup</span>
         <ul>{apiAfterKeysReviewList.map((item) => <li key={item}>{item}</li>)}</ul>
         <div className="url-action-center" style={{ marginTop: 14 }}>
           <Link className="btn" href="/admin/backup">Backup</Link>

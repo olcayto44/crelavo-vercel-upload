@@ -170,7 +170,7 @@ export function RequestForm() {
   const [premiumMaterialOption, setPremiumMaterialOption] = useState<string>(premiumMaterialOptionsByType[premiumMaterialTypes[0] ?? "No premium material"]?.[0] ?? "None");
   const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
   const [previewPrompt, setPreviewPrompt] = useState<string>("");
-  const [previewStatus, setPreviewStatus] = useState<string>("Preview bekleniyor.");
+  const [previewStatus, setPreviewStatus] = useState<string>("Preview pending.");
   const [previewApproved, setPreviewApproved] = useState(false);
   const premiumMaterialOptions = premiumMaterialOptionsByType[premiumMaterialType] ?? ["None"];
   const isDrama = toolCategory === "Drama" || videoType.startsWith("Drama -");
@@ -352,12 +352,12 @@ useEffect(() => {
 
   async function generatePreview() {
     if (!assistantIdea.trim()) {
-      setPreviewStatus("Preview için önce prompt / ürün / sahne açıklaması yazmalısın.");
+      setPreviewStatus("Write a prompt, product, or scene description before generating a preview.");
       return;
     }
 
     setPreviewApproved(false);
-    setPreviewStatus("AI preview oluşturuluyor...");
+    setPreviewStatus("Generating AI preview...");
 
     const response = await fetch("/api/preview", {
       method: "POST",
@@ -373,13 +373,13 @@ useEffect(() => {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      setPreviewStatus(data.error ?? "Preview oluşturulamadı.");
+      setPreviewStatus(data.error ?? "Preview could not be generated.");
       return;
     }
 
   setPreviewImageUrl(data.imageUrl ?? "");
   setPreviewPrompt(data.prompt ?? "");
-  setPreviewStatus("Preview hazır. Beğenirsen onaylayıp final üretime geçebilirsin.");
+  setPreviewStatus("Preview ready. Approve it to continue to final production.");
   }
 
   function toggleAddOn(addOn: string) {
@@ -587,7 +587,7 @@ useEffect(() => {
 
     if (userError || !userData.user) {
       setState("error");
-      setMessage("Video istegi gondermek icin once giris yapmalisin.");
+      setMessage("Sign in before submitting a video request.");
       return;
     }
 
@@ -970,17 +970,17 @@ setPreviewApproved(false);
           </div>
           {premiumMaterialType !== "No premium material" ? (
             <div className="preview-warning">
-              Premium materyal seçildi. Sistem otomatik üretime alır; istersen üretim öncesi görsel preview oluşturup beklentiyi kontrol edebilirsin.
+              Premium material selected. The system queues production automatically; you can generate a visual preview first to confirm expectations.
             </div>
           ) : (
-              <div className="preview-note">Preview opsiyoneldir; talep gönderildiğinde üretim otomatik kuyruğa alınır.</div>
+              <div className="preview-note">Preview is optional; the request is queued automatically when submitted.</div>
           )}
           <div className="preview-actions">
             <button className="btn secondary" type="button" onClick={generatePreview}>Generate visual preview</button>
-            {previewImageUrl ? <button className="btn" type="button" onClick={() => { setPreviewApproved(true); setPreviewStatus("Preview onaylandı. Final üretim için bu görünüm kullanılabilir."); }}>Preview'i onayla</button> : null}
+            {previewImageUrl ? <button className="btn" type="button" onClick={() => { setPreviewApproved(true); setPreviewStatus("Preview approved. This look can be used for final production."); }}>Preview'i onayla</button> : null}
           </div>
-          <p className={previewApproved ? "preview-approved" : "preview-footnote"}>{previewApproved ? "Preview onaylandı." : previewStatus}</p>
-          <p className="preview-footnote">Beğenmezsen promptu, materyali veya stili değiştirip yeniden preview oluşturabilirsin.</p>
+          <p className={previewApproved ? "preview-approved" : "preview-footnote"}>{previewApproved ? "Preview approved." : previewStatus}</p>
+          <p className="preview-footnote">If you do not like it, change the prompt, material, or style and generate another preview.</p>
         </aside>
       </div>
     </form>

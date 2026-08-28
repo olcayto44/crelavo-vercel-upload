@@ -691,8 +691,8 @@ async function sendMessage() {
               <button className="btn" type="button" onClick={saveAvatarSetup} disabled={saving} style={{ marginTop: 10, width: "100%" }}>{saving ? "Saving..." : "Save avatar setup"}</button>
               {saveMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{saveMessage}</p> : null}
               <div className="workspace-action-note" style={{ marginTop: 10 }}>
-                <strong>Hızlı kurulum</strong>
-                <p>1) Ayarları kaydet. 2) Önizleme oluştur. 3) Embed kodunu sitenin özel kod alanına ekle. 4) Ürün, sipariş ve kargo bilgisini bağlayınca asistan daha doğru cevap verir.</p>
+<strong>Quick setup</strong>
+                 <p>1) Save the settings. 2) Generate a preview. 3) Add the embed code to your site custom-code area. 4) Connect product, order and shipping data for more accurate answers.</p>
               </div>
               <button className="btn secondary" type="button" onClick={generateAvatarPreview} disabled={previewingAvatar} style={{ marginTop: 10, width: "100%" }}>{previewingAvatar ? "Starting preview..." : "Generate avatar preview"}</button>
               {previewMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{previewMessage}</p> : null}

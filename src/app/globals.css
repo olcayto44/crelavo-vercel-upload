@@ -12467,6 +12467,93 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
   }
 }
 
+@media (max-width: 1100px) {
+  html body main.container.section.assistant-full-page.assistant-production-page,
+  html body main.container.section.assistant-production-page,
+  html body .assistant-production-page {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    padding: 8px !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "side" "board" !important;
+    overflow-x: hidden !important;
+  }
+
+  .clean-studio-side,
+  .clean-studio-main,
+  .clean-preview-grid,
+  .clean-preview-card,
+  .clean-studio-state,
+  .clean-progress-row {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .clean-studio-side,
+  .clean-studio-main {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .clean-preview-grid,
+  .clean-studio-state,
+  .clean-progress-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .clean-studio-main input,
+  .clean-studio-main textarea,
+  .clean-studio-main select,
+  .clean-studio-main button,
+  .clean-studio-side input,
+  .clean-studio-side textarea,
+  .clean-studio-side select,
+  .clean-studio-side button {
+    max-width: 100% !important;
+  }
+
+  .clean-studio-main button,
+  .clean-studio-side button {
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 430px) {
+  html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  .clean-studio-side,
+  .clean-studio-main,
+  .clean-preview-card {
+    padding: 10px !important;
+  }
+
+  .clean-tool-switcher {
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-height: none !important;
+  }
+
+  .clean-preview-large {
+    min-height: 240px !important;
+  }
+}
+
 /* Final work page layout guard: keep assistant full-height and remove old controls. */
 html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-control-panel {
   display: none !important;
@@ -12791,4 +12878,54 @@ html body .omni-setup-options button.active { border-color: rgba(34,211,238,.7);
 html body .omni-setup-summary { display: grid; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(34,211,238,.08); border: 1px solid rgba(34,211,238,.18); }
 html body .omni-setup-summary strong, html body .omni-setup-summary span { color: #f8fbff; font-weight: 850; }
 html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; font-size: 13px; }
+
+@media (max-width: 700px) {
+  html body .omni-studio-page,
+  html body .omni-work-route,
+  html body .omni-studio-shell {
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+  }
+
+  html body .omni-studio-page {
+    padding: 8px;
+  }
+
+  html body .omni-agent-workbench {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: visible;
+  }
+
+  html body .omni-super-panel,
+  html body .omni-live-board-panel,
+  html body .omni-result-card,
+  html body .omni-setup-panel {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  html body .omni-result-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  html body .omni-result-card > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  html body .omni-setup-options button,
+  html body .omni-studio-page button,
+  html body .omni-studio-page input,
+  html body .omni-studio-page textarea,
+  html body .omni-studio-page select {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  html body .omni-setup-options button {
+    white-space: normal;
+  }
+}
 

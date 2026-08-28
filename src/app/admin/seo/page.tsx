@@ -19,7 +19,7 @@ const seoModules = [
 
 export default function AdminSeoPage() {
   return (
-    <AdminShell title="SEO / Sitemap / Google" description="SEO dosyaları, Google ayarları, sitemap, robots, meta ve sosyal paylaşım önizlemelerini yönet.">
+    <AdminShell title="SEO / Sitemap / Google" description="Manage SEO files, Google settings, sitemap, robots, metadata, and social sharing previews.">
       <section className="card admin-wide-card">
         <span className="badge">16 · Tier-1 global SEO plan</span>
         <h2>Country/use-case SEO plan needs owner priority before scale</h2>
@@ -66,12 +66,12 @@ export default function AdminSeoPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Google indexing continuation</span>
-        <h2>Search Console devam listesi 12. URL’den başlıyor</h2>
-        <p style={{ color: "var(--muted)" }}>1-11 URL kullanıcı tarafından Search Console üzerinden gönderildi. Kota/bekleme sonrası manuel URL inspection devamı aşağıdaki 12-20 listesiyle yapılmalı.</p>
+        <h2>Search Console continuation starts at URL 12</h2>
+        <p style={{ color: "var(--muted)" }}>URLs 1-11 were submitted by the user through Search Console. After the quota/wait period, continue manual URL inspection with the 12-20 list below.</p>
         <div className="admin-info-grid">
-          <div><span>Already submitted</span><strong>{googleIndexingSubmittedUrls.length} URLs</strong><small>1-11 tamamlandı olarak notlandı.</small></div>
-          <div><span>Ready next</span><strong>{googleIndexingContinuationUrls.length} URLs</strong><small>12-20 öncelikli manuel submit listesi.</small></div>
-          <div><span>Full sitemap master</span><strong>{googleIndexingAllSitemapUrls.length} URLs</strong><small>Tüm public sitemap sayfaları; eksik sayfa kontrolü için ana liste.</small></div>
+          <div><span>Already submitted</span><strong>{googleIndexingSubmittedUrls.length} URLs</strong><small>1-11 marked complete.</small></div>
+          <div><span>Ready next</span><strong>{googleIndexingContinuationUrls.length} URLs</strong><small>Priority manual submission list for 12-20.</small></div>
+          <div><span>Full sitemap master</span><strong>{googleIndexingAllSitemapUrls.length} URLs</strong><small>All public sitemap pages; the master list for checking missing pages.</small></div>
           <div><span>Start from</span><strong>URL 12</strong><small>{googleIndexingContinuationUrls[0]?.url}</small></div>
         </div>
         <div className="provider-job-list" style={{ marginTop: 12 }}>
@@ -87,8 +87,8 @@ export default function AdminSeoPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Full sitemap master list</span>
-        <h2>Tüm gönderilebilir public sitemap URL’leri</h2>
-        <p style={{ color: "var(--muted)" }}>Bu ana liste sitemap ile aynı public kapsamı takip eder. Search Console’da eksik kalmasın diye 12-20 öncelikli listeden sonra bu listedeki ready olan URL’ler kontrol edilebilir.</p>
+        <h2>All submittable public sitemap URLs</h2>
+        <p style={{ color: "var(--muted)" }}>This master list follows the same public scope as the sitemap. Check ready URLs here after the priority 12-20 list so none are missed in Search Console.</p>
         <div className="provider-job-list" style={{ marginTop: 12 }}>
           {googleIndexingAllSitemapUrls.map((item) => (
             <div className={item.status === "already_submitted" ? "provider-job-chip" : "provider-job-chip active"} key={item.url}>
@@ -125,13 +125,13 @@ export default function AdminSeoPage() {
               {module.fields.map((field) => (
                 <div className="field" key={field}>
                   <label>{field}</label>
-                  <input placeholder={`${field} değerini gir`} />
+                  <input placeholder={`Enter ${field}`} />
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button className="btn" type="button">Ayarları uygula</button>
-              <button className="btn secondary" type="button">Dosyayı görüntüle</button>
+              <button className="btn" type="button">Apply settings</button>
+              <button className="btn secondary" type="button">View file</button>
             </div>
           </div>
         ))}
@@ -139,7 +139,7 @@ export default function AdminSeoPage() {
 
       <section className="card admin-wide-card">
         <h2>SEO sistem notu</h2>
-        <p style={{ color: "var(--muted)" }}>Sitemap ve robots canlıdır. Search Console URL submission manuel yapılır; bu panel kalan URL sırasını ve guardrail’leri görünür tutar.</p>
+        <p style={{ color: "var(--muted)" }}>Sitemap and robots are live. Search Console URL submission is manual; this panel keeps the remaining URL order and guardrails visible.</p>
         <ul>{googleIndexingGuardrails.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
     </AdminShell>

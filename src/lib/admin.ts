@@ -75,24 +75,24 @@ export const adminMenu = [
 ];
 
 export const adminDailyFocus = [
-  { label: "Üyeler / Kredi yükleme", href: "/admin/users", priority: "Günlük", note: "Kullanıcı bul, üyeyi aç, manuel kredi yükleme ve hesap/kredi durumunu hızlı kontrol et." },
-  { label: "Bugün bakılacak özet", href: "/admin", priority: "Günlük", note: "Genel durum, canlı ziyaretçi, istekler, finans ve launch durumunu tek ekranda gör." },
-  { label: "Üretimler / İstekler", href: "/admin/productions", priority: "Günlük", note: "Yeni iş var mı, üretim bekliyor mu, teslimat linki veya hata var mı kontrol et." },
-  { label: "Gelen e-posta / bildirim", href: "/admin/growth", priority: "Günlük", note: "Contact form, lead, kullanıcı mesajı, şikayet, support veya takip isteyen bildirimleri kontrol et." },
-  { label: "Krediler", href: "/admin/credits", priority: "Günlük", note: "Manuel kredi yükleme, kredi düşüşü, receipt/reference ve kullanıcı kredi işlemleri." },
-  { label: "Finans", href: "/admin/finance", priority: "Günlük", note: "Gelir, reserved credit, provider cost ve margin risklerini kontrol et." },
-  { label: "Production QA", href: "/admin/production-qa", priority: "Günlük", note: "Teslim edilen işlerde output, credit ledger, source delivery ve No Fake Proof kontrolleri." },
-  { label: "Provider durumu", href: "/admin/providers", priority: "Sık", note: "API/provider hazır mı, provider smoke test ve rate limit/backoff guardları ne durumda." },
-  { label: "Monitoring", href: "/admin/monitoring", priority: "Sık", note: "Hata, backup, logging ve canlı test failure intake durumları." },
-  { label: "SEO", href: "/admin/seo", priority: "Haftalık", note: "Search Console, sitemap, hreflang, programmatic SEO ve growth data optimizasyonu." },
-  { label: "Growth", href: "/admin/growth", priority: "Haftalık", note: "Directory, sosyal medya, UGC/demo funnel ve gerçek veriyle optimizasyon işleri." },
-  { label: "Final checklist", href: "/admin/final-api-checklist", priority: "Launch", note: "Launch öncesi Whop, E2E, API, güvenlik, SEO ve growth guardlarını toplu kontrol et." }
+  { label: "Members / Add credits", href: "/admin/users", priority: "Daily", note: "Find users, open member records, add credits manually, and quickly review account and credit status." },
+  { label: "Today's summary", href: "/admin", priority: "Daily", note: "Review overall status, live visitors, requests, finance, and launch status on one screen." },
+  { label: "Productions / Requests", href: "/admin/productions", priority: "Daily", note: "Check for new work, pending productions, delivery links, and errors." },
+  { label: "Incoming email / notifications", href: "/admin/growth", priority: "Daily", note: "Review contact forms, leads, user messages, complaints, support, and follow-up requests." },
+  { label: "Credits", href: "/admin/credits", priority: "Daily", note: "Review manual credit additions, credit deductions, receipts/references, and user credit activity." },
+  { label: "Finance", href: "/admin/finance", priority: "Daily", note: "Review revenue, reserved credits, provider costs, and margin risks." },
+  { label: "Production QA", href: "/admin/production-qa", priority: "Daily", note: "Check delivered outputs, credit ledger, source delivery, and No Fake Proof controls." },
+  { label: "Provider status", href: "/admin/providers", priority: "Frequent", note: "Review API/provider readiness, smoke tests, and rate-limit/backoff guards." },
+  { label: "Monitoring", href: "/admin/monitoring", priority: "Frequent", note: "Review errors, backups, logging, and live test failure intake." },
+  { label: "SEO", href: "/admin/seo", priority: "Weekly", note: "Review Search Console, sitemap, hreflang, programmatic SEO, and growth data optimization." },
+  { label: "Growth", href: "/admin/growth", priority: "Weekly", note: "Review directory, social, UGC/demo funnel, and data-driven optimization work." },
+  { label: "Final checklist", href: "/admin/final-api-checklist", priority: "Launch", note: "Review Whop, E2E, API, security, SEO, and growth guards before launch." }
 ];
 
 export const adminOwnerRoutine = [
-  { cadence: "Her gün", items: ["Yeni üretim/istek var mı?", "Gelen e-posta, şikayet, support veya takip isteyen bildirim var mı?", "Kredi/reserved düşüşü normal mi?", "Teslimat linki ve QA sorunu var mı?", "Ödeme/Whop veya kullanıcı mesajı var mı?"] },
-  { cadence: "Haftada 2-3 kez", items: ["Provider/API durumları", "Monitoring/log/error durumu", "Finance margin ve provider spend", "Social/UGC/directory takipleri"] },
-  { cadence: "Haftalık", items: ["SEO/Search Console verisi", "Growth optimizasyon loopları", "Public site copy/proof kontrolü", "V2 fikirleri launch hardening’i dağıtıyor mu?"] }
+  { cadence: "Every day", items: ["Are there new productions or requests?", "Are there incoming emails, complaints, support requests, or follow-ups?", "Are credit/reserved deductions normal?", "Are there delivery-link or QA issues?", "Are there payment/Whop or user messages?"] },
+  { cadence: "2-3 times per week", items: ["Provider/API status", "Monitoring/log/error status", "Finance margin and provider spend", "Social/UGC/directory follow-ups"] },
+  { cadence: "Weekly", items: ["SEO/Search Console data", "Growth optimization loops", "Public site copy/proof review", "Are V2 ideas distracting from launch hardening?"] }
 ];
 
 export const adminMenuGroups = Array.from(new Set(adminMenu.map((item) => item.group)));

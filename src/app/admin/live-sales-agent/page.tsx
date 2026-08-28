@@ -5,7 +5,7 @@ export default function AdminLiveSalesAgentPage() {
   return (
     <AdminShell
       title="AI Live Sales Agent Management"
-      description="Kaydedilen canlı satış avatarlarını, platformlarını, ürün bilgisini, operasyon durumunu ve embed kodlarını yönet."
+      description="Manage saved live sales avatars, platforms, product information, operational status, and embed codes."
     >
       <AdminLiveSalesAgentsPanel />
     </AdminShell>

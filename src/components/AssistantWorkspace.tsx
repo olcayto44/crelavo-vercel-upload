@@ -278,16 +278,16 @@ const dynamicWizardLabels: Record<DynamicWizardType, string> = {
   campaign: "E-commerce Product Ad",
   talking_video: "Advanced Talking Video",
   music_video: "Music Video / Clip Wizard",
-  growth_analysis: "Rakip / SEO Analiz Wizard",
-  feature_tool: "Reklam Puanlayıcı Wizard",
-  virtual_model: "Sanal Model Wizard",
-  localization_tool: "Kültürel Yerelleştirme Wizard",
-  campaign_calendar_tool: "Kampanya Takvimi Wizard",
-  academy_tool: "Crelavo Akademi Wizard",
-  showcase_tool: "Topluluk Vitrini Wizard",
-  ai_agent_wizard: "AI Ajan Wizard",
-  drone_wizard: "Drone / Uydu Wizard",
-  stickman_wizard: "Çöp Adam Animasyon Wizard",
+  growth_analysis: "Competitor / SEO Analysis Wizard",
+  feature_tool: "Ad Score Wizard",
+  virtual_model: "Virtual Model Wizard",
+  localization_tool: "Cultural Localization Wizard",
+  campaign_calendar_tool: "Campaign Calendar Wizard",
+  academy_tool: "Crelavo Academy Wizard",
+  showcase_tool: "Community Showcase Wizard",
+  ai_agent_wizard: "AI Agent Wizard",
+  drone_wizard: "Drone / Satellite Wizard",
+  stickman_wizard: "Stickman Animation Wizard",
   image: "Image / Banner / Poster Pack",
   document: "Document / PDF Pack"
 };
@@ -359,12 +359,12 @@ const wizardCategoryGroups = [
 
 const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]> = {
   website: [
-    { id: "siteType", label: "Ne tür web sitesi?", options: ["Business website", "Restaurant / cafe", "E-commerce", "SaaS landing page", "Portfolio", "Blog / content"] },
-    { id: "pages", label: "Hangi sayfalar olsun?", multi: true, options: ["Home", "About", "Services", "Menu / products", "Gallery", "Contact", "Pricing", "FAQ"] },
-    { id: "restaurant", label: "Restoran/kafe özellikleri", multi: true, dependsOn: { questionId: "siteType", value: "Restaurant / cafe" }, options: ["Menu page", "Reservation form", "WhatsApp order", "Google Maps", "Photo gallery", "Daily offers"] },
-    { id: "commerce", label: "Satış/ödeme tarafı", multi: true, dependsOn: { questionId: "siteType", value: "E-commerce" }, options: ["Product listing", "Cart", "Checkout", "Admin product panel", "Order management", "Coupon system"] },
-    { id: "admin", label: "Admin panelde ne yönetilsin?", multi: true, options: ["Pages/content", "Products/menu", "Orders/requests", "Users", "Media gallery", "Analytics"] },
-    { id: "delivery", label: "Teslim paketi", multi: true, options: ["Admin panel", "Source code", "Final ZIP", "README", "Deployment guide", "Responsive design"] }
+    { id: "siteType", label: "What type of website?", options: ["Business website", "Restaurant / cafe", "E-commerce", "SaaS landing page", "Portfolio", "Blog / content"] },
+    { id: "pages", label: "Which pages should be included?", multi: true, options: ["Home", "About", "Services", "Menu / products", "Gallery", "Contact", "Pricing", "FAQ"] },
+    { id: "restaurant", label: "Restaurant/cafe features", multi: true, dependsOn: { questionId: "siteType", value: "Restaurant / cafe" }, options: ["Menu page", "Reservation form", "WhatsApp order", "Google Maps", "Photo gallery", "Daily offers"] },
+    { id: "commerce", label: "Sales/payment features", multi: true, dependsOn: { questionId: "siteType", value: "E-commerce" }, options: ["Product listing", "Cart", "Checkout", "Admin product panel", "Order management", "Coupon system"] },
+    { id: "admin", label: "What should the admin panel manage?", multi: true, options: ["Pages/content", "Products/menu", "Orders/requests", "Users", "Media gallery", "Analytics"] },
+    { id: "delivery", label: "Delivery package", multi: true, options: ["Admin panel", "Source code", "Final ZIP", "README", "Deployment guide", "Responsive design"] }
   ],
   video: [
     { id: "videoType", label: "Ne tür video?", options: ["Short film", "Series / episode", "Trailer", "Social media short", "Restaurant / food video", "Product ad", "UGC style", "Explainer", "Cinematic promo", "Animation video"] },
@@ -388,7 +388,7 @@ const dynamicWizardQuestions: Record<DynamicWizardType, DynamicWizardQuestion[]>
     { id: "screens", label: "Ekran kapsamı", options: ["5 screens", "10 screens", "Custom screen count"] },
     { id: "appFeatures", label: "Uygulama özellikleri", multi: true, options: ["Login", "Admin panel", "Payments", "Notifications", "User dashboard", "Database", "Calendar", "Search/filter"] },
     { id: "admin", label: "Admin panel kapsamı", multi: true, options: ["Users", "Bookings/orders", "Products/services", "Payments", "Content", "Analytics"] },
-    { id: "delivery", label: "Teslim paketi", multi: true, options: ["Source code", "Final ZIP", "README", "Deployment guide", "API notes", "Responsive design"] }
+    { id: "delivery", label: "Delivery package", multi: true, options: ["Source code", "Final ZIP", "README", "Deployment guide", "API notes", "Responsive design"] }
   ],
   campaign: [
     { id: "campaignType", label: "Kampanya türü", options: ["Product ad", "Marketplace product kit", "Restaurant campaign", "E-commerce launch", "Social media pack", "Brand promo", "Amazon listing campaign", "Trendyol product campaign", "Shopify launch kit", "WooCommerce product kit"] },

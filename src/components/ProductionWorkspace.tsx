@@ -1347,8 +1347,8 @@ const data = await response.json().catch(() => ({}));
         {creativeActivityCards.length > 0 ? (
           <section className="automation-brief-card">
             <span className="badge">{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax Video Agent artifacts" : "Creative director live board"}</span>
-            <h3>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax agent üretimleri" : "Assistant is shaping the video like a creative director"}</h3>
-            <p>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Bu panel Minimax session içinden gelen gerçek blueprint, görsel, video ve resource çıktılarını gösterir." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
+            <h3>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax agent outputs" : "Assistant is shaping the video like a creative director"}</h3>
+            <p>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "This panel shows the real blueprint, visual, video, and resource outputs from the Minimax session." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
             <div className="automation-part-list">
               {creativeActivityCards.map((card, index) => (
                 <div key={`${card.title}-${index}`}>
