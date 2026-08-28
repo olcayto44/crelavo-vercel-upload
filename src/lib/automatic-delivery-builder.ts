@@ -162,7 +162,9 @@ export function buildDeliveryManifest(production: ProductionLike) {
 
 export function buildDeliveryReadme(production: ProductionLike) {
   const manifest = buildDeliveryManifest(production);
-  return `# ${manifest.title}\n\n## Website Scope\n${manifest.scope === "website_with_admin" ? "Public website plus admin panel source starter" : "Public static website; no admin panel is included"}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n- Selected product ID: ${manifest.commerce.selected_product_id || "Not selected"}\n- Selected product title: ${manifest.commerce.selected_product_title || "Not selected"}\n- Product description: ${manifest.commerce.product_description || "Not specified"}\n- Product tags: ${Array.isArray(manifest.commerce.product_tags) ? manifest.commerce.product_tags.join(", ") : "Not specified"}\n- Live upload payload: ${JSON.stringify(manifest.commerce.upload_payload)}\n\n## Social / Store Export-Ready Pack\n${list(manifest.social_store_export_pack.map((item: { label: string; format: string; guardrail: string }) => `${item.label}: ${item.format} — ${item.guardrail}`))}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
+  const mobileGuide = manifest.production_type === "mobile_app" ? "\n## Mobile App Quick Start\n1. Extract the ZIP and open the `source` folder.\n2. Run `npm install`.\n3. Run `npx expo start`.\n4. Scan the QR code with Expo Go, or press `w` for web, `a` for Android and `i` for iOS.\n5. For release builds, configure EAS credentials and run `npx eas build --platform all`.\n" : "";
+  return `# ${manifest.title}\n\n## Website Scope\n${manifest.scope === "website_with_admin" ? "Public website plus admin panel source starter" : manifest.production_type === "mobile_app" ? "Expo / React Native mobile application source starter" : "Public static website; no admin panel is included"}\n\n## Delivery Standard\n${manifest.delivery_standard}\n\n${manifest.user_promise}\n${mobileGuide}
+\n## Required Delivery Items\n${list(manifest.required_items)}\n\n## Production Quality Standard\n${manifest.production_quality.minimumStandard}\n\nCustomer-ready definition: ${manifest.production_quality.customerReadyDefinition}\n\n### Quality Checklist\n${list(manifest.production_quality.checklist)}\n\n### Acceptance Criteria\n${list(manifest.production_quality.acceptanceCriteria)}\n\n## Optional / Included When Available\n${list(manifest.optional_items)}\n\n## Expected File Formats\n${list(manifest.file_formats)}\n\n## Project / Technical Notes\n- Modules: ${manifest.project.modules}\n- Technical stack: ${manifest.project.technical_stack}\n- Source delivery: ${manifest.project.source_delivery}\n\n## Store / Marketplace Notes\n- Store platform: ${manifest.commerce.store_platform}\n- Store asset goal: ${manifest.commerce.store_asset_goal}\n- Connected store targets: ${manifest.commerce.connected_store_targets}\n- Selected product ID: ${manifest.commerce.selected_product_id || "Not selected"}\n- Selected product title: ${manifest.commerce.selected_product_title || "Not selected"}\n- Product description: ${manifest.commerce.product_description || "Not specified"}\n- Product tags: ${Array.isArray(manifest.commerce.product_tags) ? manifest.commerce.product_tags.join(", ") : "Not specified"}\n- Live upload payload: ${JSON.stringify(manifest.commerce.upload_payload)}\n\n## Social / Store Export-Ready Pack\n${list(manifest.social_store_export_pack.map((item: { label: string; format: string; guardrail: string }) => `${item.label}: ${item.format} — ${item.guardrail}`))}\n\n## Reference Link Safety\n${manifest.reference_link_safety}\n\n## How to Use\n1. Open the preview link from the dashboard.\n2. Download the delivery ZIP/source package.\n3. Read setup or platform notes before publishing.\n4. Use the revision area if any required item is missing or needs adjustment.\n\n## Dashboard Links\n- Preview: ${manifest.links.previewUrl}\n- Delivery ZIP: ${manifest.links.deliveryZipUrl}\n- Source files: ${manifest.links.sourceFilesUrl}\n- Manifest: ${manifest.links.deliveryLink}\n`;
 }
 
 export function buildSourceGuide(production: ProductionLike) {
@@ -233,8 +235,8 @@ function buildSourcePackageJson(production: ProductionLike) {
       private: true,
       main: "node_modules/expo/AppEntry.js",
       scripts: { start: "expo start", android: "expo start --android", ios: "expo start --ios", web: "expo start --web" },
-      dependencies: { expo: "latest", react: "latest", "react-native": "latest", "expo-status-bar": "latest" },
-      devDependencies: { typescript: "latest", "@types/react": "latest" }
+dependencies: { expo: "latest", react: "latest", "react-native": "latest", "expo-status-bar": "latest", "@react-navigation/native": "latest", "@react-navigation/native-stack": "latest", "react-native-screens": "latest", "react-native-safe-area-context": "latest" },
+       devDependencies: { typescript: "latest", "@types/react": "latest" }
     }, null, 2);
   }
   return JSON.stringify({
@@ -437,6 +439,36 @@ export default function App() {
   return <><HomeScreen /><StatusBar style="light" /></>;
 }
 `;
+}
+
+function buildMobileAppConfig(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return JSON.stringify({ expo: { name: manifest.title, slug: manifest.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-mobile-app", version: "1.0.0", orientation: "portrait", platforms: ["ios", "android", "web"], assetBundlePatterns: ["**/*"] } }, null, 2);
+}
+
+function buildMobileTsConfig() {
+  return JSON.stringify({ extends: "expo/tsconfig.base", compilerOptions: { strict: true, noEmit: true } }, null, 2);
+}
+
+function buildMobileBabelConfig() {
+  return "module.exports = function(api) { api.cache(true); return { presets: ['babel-preset-expo'] }; };\\n";
+}
+
+function buildMobileNavigator() {
+  return `import { createNativeStackNavigator } from "@react-navigation/native-stack";\nimport { HomeScreen } from "../screens/HomeScreen";\nimport { AdminScreen } from "../screens/AdminScreen";\n\nconst Stack = createNativeStackNavigator();\n\nexport function AppNavigator() {\n  return <Stack.Navigator><Stack.Screen name="Home" component={HomeScreen} /><Stack.Screen name="Admin" component={AdminScreen} /></Stack.Navigator>;\n}\n`;
+}
+
+function buildMobileProfileScreen() {
+  return `import { Text, View } from "react-native";\nimport { theme } from "../theme";\n\nexport function ProfileScreen() {\n  return <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: 22 }}><Text style={{ color: theme.colors.text, fontSize: 30, fontWeight: "900" }}>Profile</Text><Text style={{ color: theme.colors.muted, marginTop: 12 }}>Connect authentication and customer profile data before publishing.</Text></View>;\n}\n`;
+}
+
+function buildMobileApiClient() {
+  return `export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {\n  const baseUrl = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000";\n  const response = await fetch(baseUrl + path, { ...options, headers: { "Content-Type": "application/json", ...(options.headers ?? {}) } });\n  if (!response.ok) throw new Error("API request failed: " + response.status);\n  return response.json() as Promise<T>;\n}\n`;
+}
+
+function buildMobileBuildGuide(production: ProductionLike) {
+  const manifest = buildDeliveryManifest(production);
+  return `# Expo / React Native Build Guide\n\n## Requirements\n- Node.js 20 or newer\n- npm\n- Expo CLI through npx\n- Expo Go for device preview, or Android Studio / Xcode for native builds\n\n## Run locally\n1. Extract the ZIP and open the source folder.\n2. Run \`npm install\`.\n3. Copy \`.env.example\` to \`.env\` when API access is needed.\n4. Run \`npx expo start\`.\n5. Scan the QR code with Expo Go, or press \`w\` for web, \`a\` for Android and \`i\` for iOS.\n\n## Build for release\n- Android preview: \`npx expo run:android\`\n- iOS preview: \`npx expo run:ios\`\n- Cloud builds: configure EAS credentials, then run \`npx eas build --platform all\`.\n\n## Project\n- Production: ${manifest.title}\n- Entry: \`App.tsx\`\n- Config: \`app.json\`\n- API base URL: \`EXPO_PUBLIC_API_URL\`\n\nReplace demo data, API endpoints, app icons and signing credentials before publishing.\n`;
 }
 
 function buildSourceAdminPage(production: ProductionLike) {
@@ -747,10 +779,21 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     entries.push({ name: "source/project-structure.md", content: buildProjectStructure(production) });
     entries.push({ name: "source/package.json", content: buildSourcePackageJson(production) });
     if (manifest.production_type === "mobile_app") {
+      entries.push({ name: "source/app.json", content: buildMobileAppConfig(production) });
+      entries.push({ name: "source/tsconfig.json", content: buildMobileTsConfig() });
+      entries.push({ name: "source/babel.config.js", content: buildMobileBabelConfig() });
       entries.push({ name: "source/App.tsx", content: buildMobileAppEntry() });
+      entries.push({ name: "source/src/navigation/AppNavigator.tsx", content: buildMobileNavigator() });
       entries.push({ name: "source/src/screens/HomeScreen.tsx", content: buildMobileHomeScreen(production) });
+      entries.push({ name: "source/src/screens/OnboardingScreen.tsx", content: buildMobileHomeScreen(production) });
+      entries.push({ name: "source/src/screens/ProfileScreen.tsx", content: buildMobileProfileScreen() });
       entries.push({ name: "source/src/screens/AdminScreen.tsx", content: buildMobileAdminScreen(production) });
+      entries.push({ name: "source/src/api/client.ts", content: buildMobileApiClient() });
+      entries.push({ name: "source/.env.example", content: "EXPO_PUBLIC_API_URL=http://localhost:3000\n" });
+      entries.push({ name: "source/database/schema.sql", content: "create table profiles (id uuid primary key, email text not null, created_at timestamptz default now());\ncreate table app_events (id uuid primary key, profile_id uuid references profiles(id), event_name text not null, created_at timestamptz default now());\n" });
+      entries.push({ name: "source/src/theme/index.ts", content: buildMobileTheme() });
       entries.push({ name: "source/src/theme.ts", content: buildMobileTheme() });
+      entries.push({ name: "docs/expo-build-guide.md", content: buildMobileBuildGuide(production) });
     } else {
       entries.push({ name: "source/app/layout.tsx", content: buildSourceLayout(production) });
       entries.push({ name: "source/app/page.tsx", content: buildSourcePage(production) });

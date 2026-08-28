@@ -58,6 +58,8 @@ function includedFilesFor(kind: string) {
   if (kind === "mobile_app") return [
     ...shared,
     "source/app.json",
+    "source/tsconfig.json",
+    "source/babel.config.js",
     "source/package.json",
     "source/App.tsx",
     "source/src/navigation/AppNavigator.tsx",
