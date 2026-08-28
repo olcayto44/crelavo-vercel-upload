@@ -236,6 +236,22 @@ export function ProductionsTable() {
     window.location.href = `/dashboard/assistant-workspace?${params.toString()}`;
   }
 
+  async function shareProduction(item: ProductionRow) {
+    const shareUrl = `${window.location.origin}/dashboard/productions/${item.id}`;
+    const shareData = { title: item.title || "Crelavo production", text: "View this Crelavo production.", url: shareUrl };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setMessage("Production link shared.");
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setMessage("Production link copied to clipboard.");
+    } catch {
+      setMessage("Production link is ready to copy from the browser address bar.");
+    }
+  }
+
   async function cancelProduction(item: ProductionRow) {
     const confirmed = window.confirm("If you cancel this automatic production, 50% of the reserved credits will be charged and the remaining 50% will be released. Continue?");
     if (!confirmed) return;
@@ -409,6 +425,7 @@ export function ProductionsTable() {
 
               <div className="production-card-actions">
                 <a className="btn" href={productionWorkspacePath(item)}>Open workspace</a>
+                <button className="btn secondary" type="button" onClick={() => shareProduction(item)}>Share</button>
                 {item.preview_url ? <a className="btn secondary" href={item.preview_url} target="_blank" rel="noreferrer">Preview</a> : null}
                 {(item.delivery_link || item.delivery_zip_url) ? <a className="btn" href={(item.delivery_link || item.delivery_zip_url)!} target="_blank" rel="noreferrer">Open delivery</a> : <small>Delivery pending</small>}
                 {item.package_id === "campaign_product_ad_video" && !["ready", "failed", "cancelled"].includes(item.status) ? <button className="btn secondary" type="button" onClick={() => refreshAutomationStatus(item)} disabled={refreshingId === item.id}>{refreshingId === item.id ? "Refreshing…" : "Refresh"}</button> : null}
