@@ -157,6 +157,7 @@ export function LiveSalesControlCenter() {
 const [openPreference, setOpenPreference] = useState("Industry");
   const [loadingAgent, setLoadingAgent] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewRecord | null>(null);
+  const [previewMediaUrl, setPreviewMediaUrl] = useState("");
   const [previewingAvatar, setPreviewingAvatar] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
   const [session, setSession] = useState<LiveSalesSession | null>(null);
@@ -232,6 +233,36 @@ const [openPreference, setOpenPreference] = useState("Industry");
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(state));
   }, [state]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPreviewMedia() {
+      if (!authenticatedUserId || !agentIdValue || !avatarPreview?.previewUrl) return;
+      try {
+        const auth = await requireVerifiedBrowserUser();
+        if (!auth.ok) return;
+        const response = await fetch(`/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(auth.user.id)}&agent_id=${encodeURIComponent(agentIdValue)}`, { headers: authHeaders(auth.accessToken), cache: "no-store" });
+        if (!response.ok) return;
+        const blobUrl = URL.createObjectURL(await response.blob());
+        if (!cancelled) setPreviewMediaUrl(blobUrl);
+        else URL.revokeObjectURL(blobUrl);
+      } catch { /* keep the provider URL as a fallback for iframe previews */ }
+    }
+    void loadPreviewMedia();
+    return () => { cancelled = true; };
+  }, [authenticatedUserId, agentIdValue, avatarPreview?.previewUrl]);
+
+  async function openAvatarPreview() {
+    try {
+      const auth = await requireVerifiedBrowserUser();
+      if (!auth.ok) throw new Error("Authenticated session is required.");
+      const response = await fetch(`/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(auth.user.id)}&agent_id=${encodeURIComponent(agentIdValue)}`, { headers: authHeaders(auth.accessToken), cache: "no-store" });
+      if (!response.ok) throw new Error("Avatar preview is not available yet.");
+      const url = URL.createObjectURL(await response.blob());
+      setPreviewMediaUrl(url);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) { setPreviewMessage(error instanceof Error ? error.message : "Could not open avatar preview."); }
+  }
 
   const activePlan = liveSalesServicePlans.find((plan) => plan.id === state.planId) ?? liveSalesServicePlans[0];
   const includedMinutes = (activePlan?.fairUseHours ?? 10) * 60;
@@ -536,7 +567,7 @@ async function sendMessage() {
                 {avatarPreview?.previewUrl ? (
                   <div className="live-sales-avatar-video-frame">
                     {isDirectVideoUrl(avatarPreview.previewUrl) ? (
-                      <video src={authenticatedUserId ? `/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(authenticatedUserId)}&agent_id=${encodeURIComponent(agentIdValue)}` : avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
+                      <video src={previewMediaUrl || avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
                     ) : (
                       <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" className="live-sales-avatar-video" />
                     )}
@@ -671,7 +702,7 @@ async function sendMessage() {
                   <p>{avatarPreview.provider || "provider"} · {avatarPreview.status || "pending"}</p>
                   {avatarPreview.sessionId ? <small>Session: {avatarPreview.sessionId}</small> : null}
                   <button className="btn secondary" type="button" onClick={refreshAvatarPreviewStatus} disabled={previewingAvatar || !avatarPreview.sessionId} style={{ marginTop: 8 }}>{previewingAvatar ? "Checking..." : "Refresh preview status"}</button>
-                  {avatarPreview.previewUrl && authenticatedUserId ? <a className="btn secondary" href={`/api/live-sales-agents/avatar-preview/media?user_id=${encodeURIComponent(authenticatedUserId)}&agent_id=${encodeURIComponent(agentIdValue)}`} target="_blank" rel="noreferrer" style={{ marginTop: 8 }}>Open preview</a> : null}
+                  {avatarPreview.previewUrl ? <button className="btn secondary" type="button" onClick={openAvatarPreview} style={{ marginTop: 8 }}>Open preview</button> : null}
                 </div>
               ) : null}
               <div className="live-sales-accordion-list">
