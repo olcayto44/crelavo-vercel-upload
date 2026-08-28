@@ -66,15 +66,16 @@ function isAutomationActive(row: Record<string, unknown>) {
   if (hasFinal) return false;
   if (["ready", "completed", "cancelled", "failed"].includes(status)) return false;
   if (["completed", "cancelled", "failed"].includes(automationStatus)) return false;
-  const activeState = status === "in_production" || automationStatus === "running" || generationStatus.includes("provider") || generationStatus.includes("render") || generationStatus.includes("polling");
-  return activeState && (hasDedicatedPlan || hasGenericProviderJob || requiredPipeline === "generic_video" || providerStatus.includes("provider_started") || providerStatus.includes("render"));
+  const videoAgentQueued = String(row.production_type ?? "").toLowerCase() === "video_agent" && (status === "queued" || generationStatus === "automation_queued" || automationStatus === "queued");
+  const activeState = videoAgentQueued || status === "in_production" || automationStatus === "running" || generationStatus.includes("provider") || generationStatus.includes("render") || generationStatus.includes("polling");
+  return activeState && (videoAgentQueued || hasDedicatedPlan || hasGenericProviderJob || requiredPipeline === "generic_video" || requiredPipeline === "minimax_video_agent" || providerStatus.includes("provider_started") || providerStatus.includes("render"));
 }
 
 async function runWorkerPass(origin: string, targetProductionId?: string) {
   const supabase = supabaseAdmin();
   let query = supabase
     .from("production_requests")
-    .select("id,status,automation_status,generation_status,preview_url,delivery_link,output_json,updated_at")
+    .select("id,status,automation_status,generation_status,production_type,package_id,preview_url,delivery_link,output_json,updated_at")
     .order("updated_at", { ascending: false })
     .limit(25);
 
@@ -93,6 +94,16 @@ async function runWorkerPass(origin: string, targetProductionId?: string) {
     const productionId = String(row.id ?? "").trim();
     if (!productionId) continue;
     try {
+      const rowOutput = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
+      const hasProviderJob = Boolean(rowOutput.visualJob || rowOutput.providerJob || (Array.isArray(rowOutput.visualJobs) && rowOutput.visualJobs.length > 0));
+      const needsVideoAgentStart = String(row.production_type ?? "").toLowerCase() === "video_agent" && !hasProviderJob;
+      if (needsVideoAgentStart) {
+        await fetch(`${origin}/api/automation/start`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-automation-worker": "backend-worker" },
+          body: JSON.stringify({ production_id: productionId, auto: true, admin_email: adminEmail, admin_token: adminToken })
+        }).catch(() => null);
+      }
       const response = await fetch(`${origin}/api/automation/status`, {
         method: "POST",
         headers: { "content-type": "application/json", "x-automation-worker": "backend-worker" },
