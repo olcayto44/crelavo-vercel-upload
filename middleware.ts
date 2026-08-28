@@ -6,9 +6,9 @@ const VERSIONED_PATHS = new Set(["/live-sales-credits", "/live-sales-credits-v2"
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  if (pathname === "/deployBuilder" || pathname.startsWith("/assistant/workspace/")) {
+  if (pathname === "/deployBuilder" || pathname.startsWith("/assistant/workspace/") || pathname.startsWith("/assistant-workstation-production/")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/ai-mobile-app-builder";
+    url.pathname = pathname.includes("ai-video-generator") ? "/ai-video-generator" : "/ai-mobile-app-builder";
     url.search = "";
     return NextResponse.redirect(url, 308);
   }
@@ -32,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*"]
+  matcher: ["/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*", "/assistant-workstation-production/:path*"]
 };
