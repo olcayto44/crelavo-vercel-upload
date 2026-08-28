@@ -339,10 +339,15 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const minimumDuration = testMode ? 5 : 15;
   const duration = Math.min(15, Math.max(minimumDuration, Math.round(requestedDurationSeconds))) as 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
-  const providerPrompt = String(selected.providerPrompt ?? selected.provider_prompt ?? selected.work_prompt ?? selected.workPrompt ?? input.prompt ?? input.title).trim() || input.title;
+  const qualitySignal = `${String(selected.quality ?? selected.selectedQuality ?? selected.selected_quality ?? "")} ${JSON.stringify(selected)}`.toLowerCase();
+  const resolution = /1080p\s*premium|premium\s*1080p|4k|2k/.test(qualitySignal) ? "2K" : "768P";
+  const baseProviderPrompt = String(selected.providerPrompt ?? selected.provider_prompt ?? selected.work_prompt ?? selected.workPrompt ?? input.prompt ?? input.title).trim() || input.title;
+  const providerPrompt = /nova\s*form|black\s*leather\s*(travel\s*)?bag/i.test(baseProviderPrompt)
+    ? `${baseProviderPrompt}\n\nHard CTA requirement: show the exact readable on-screen text “Discover NOVA FORM.” including the final period in the closing hero shot. Do not omit or alter the period.`
+    : baseProviderPrompt;
   const result = await createMiniMaxH3VideoTask({
     content: [{ type: "text", text: providerPrompt }],
-    resolution: "768P",
+    resolution,
     duration,
     ratio
   });
@@ -350,7 +355,7 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const taskId = String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim();
   if (!taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution: "768P" }, raw: result });
+  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
