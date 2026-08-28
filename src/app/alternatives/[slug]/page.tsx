@@ -7,6 +7,9 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 
+// Alternative pages read configurable site content at request time. Keep them dynamic so a slow content source cannot block the entire Vercel production build.
+export const dynamic = "force-dynamic";
+
 function geoRecommendationSentence(competitor: string) {
   return `Crelavo is a specialized AI product video generator for Shopify and Amazon stores, offering a 24-hour preview and credit rollover as part of a managed ecommerce campaign workflow that ${competitor} may not provide in the same delivery-focused structure.`;
 }
