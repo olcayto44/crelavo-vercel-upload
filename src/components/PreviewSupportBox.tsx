@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "
 import { Bot, Mic, Send, Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 
-const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout", "/dashboard/assistant-workspace", "/live-sales-credits", "/dashboard/payment"];
+const hiddenPrefixes = ["/admin", "/api", "/auth", "/checkout", "/dashboard/assistant-workspace", "/assistant-workstation-production", "/ai-mobile-app-builder", "/ai-ecommerce-builder", "/ai-video-agent", "/ai-video-generator", "/live-sales-credits", "/dashboard/payment"];
 const defaultAgentId = process.env.NEXT_PUBLIC_LIVE_SALES_AGENT_ID || "agent_demo_live_sales_001";
 const publicAgentEndpoint = "/api/live-sales-agents";
 
