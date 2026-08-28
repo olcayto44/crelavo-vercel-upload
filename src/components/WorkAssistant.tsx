@@ -1020,16 +1020,27 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "") {
   const promptText = prompt.toLocaleLowerCase("tr-TR");
   const noSubtitles = /do not add subtitles|no subtitles|without subtitles|no captions|without captions|altyaz(ı|i)?\s*(ekleme|olmasın|olmasin)|altyazısız|altyazisiz/.test(promptText);
   const noMusic = /do not add music|no background music|without music|müzik\s*(ekleme|olmasın|olmasin)|müziksiz|muziksiz/.test(promptText);
-  const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|presenter motions|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
+  const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
   const noPresenterPattern = /no presenter|b-roll only|silent \/ music only/i;
   const hasExplicitPresenter = items.some((item) => /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter/i.test(item));
+  const noPresenterRequested = items.some((item) => noPresenterPattern.test(item) || /no presenter motions/i.test(item))
+    || /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people/i.test(promptText);
   for (const [key, values] of Object.entries(next)) {
     if (!Array.isArray(values)) continue;
-    next[key] = hasExplicitPresenter
+    next[key] = hasExplicitPresenter && !noPresenterRequested
       ? values.filter((item) => !noPresenterPattern.test(String(item)))
-      : values.filter((item) => !presenterPattern.test(String(item)));
+      : values.filter((item) => !presenterPattern.test(String(item)) && !/^(with presenter|ugc-style demo)$/i.test(String(item)));
     if (noSubtitles) next[key] = next[key].filter((item) => !/subtitle|caption|altyaz/i.test(String(item)));
     if (noMusic) next[key] = next[key].filter((item) => !/music|müzik|muzik/i.test(String(item)));
+  }
+  if (noPresenterRequested) {
+    next.videoStyle = ["No presenter / B-roll only"];
+    next.presenterChoice = ["No presenter / B-roll only"];
+    next.presenterMotion = ["No presenter motions"];
+    if (Array.isArray(next.visualDirection)) {
+      const nonPresenterDirection = next.visualDirection.find((item) => /product close-up|lifestyle scene|clean studio background/i.test(String(item)));
+      next.visualDirection = nonPresenterDirection ? [nonPresenterDirection] : next.visualDirection.filter((item) => !/with presenter|ugc-style demo/i.test(String(item)));
+    }
   }
   return next;
 }
