@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { WorkAssistant } from "@/components/WorkAssistant";
+import { WorkspaceErrorBoundary } from "@/components/WorkspaceErrorBoundary";
 
 export const dynamic = "force-dynamic";
 
@@ -10,5 +11,17 @@ export const metadata: Metadata = {
 };
 
 export default function MobileAppBuilderPage() {
-  redirect("/dashboard/assistant-workspace?mode=project&category=mobile_app&idea=Mobile%20app%20builder");
+  return (
+    <main className="omni-work-route">
+      <WorkspaceErrorBoundary fallback={
+        <section className="omni-fallback">
+          <h1>Mobile App Builder</h1>
+          <p>The mobile app workspace could not load in this browser session. Please refresh and try again.</p>
+          <a className="btn" href="/ai-mobile-app-builder">Refresh workspace</a>
+        </section>
+      }>
+        <WorkAssistant initialIdea="Mobile app builder" initialCategory="mobile_app" />
+      </WorkspaceErrorBoundary>
+    </main>
+  );
 }
