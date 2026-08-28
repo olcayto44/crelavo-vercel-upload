@@ -326,7 +326,16 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
 async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
   const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
   const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "9:16");
-  const duration = Math.min(15, Math.max(4, Math.round(secondsFromValue(selected.durationSeconds) ?? secondsFromValue(selected.duration_seconds) ?? secondsFromValue(selected.outputDurationSeconds) ?? 6))) as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  const requestedDurationSeconds = secondsFromValue(selected.durationSeconds)
+    ?? secondsFromValue(selected.duration_seconds)
+    ?? secondsFromValue(selected.outputDurationSeconds)
+    ?? secondsFromValue(selected.output_duration_seconds)
+    ?? secondsFromValue(selected.selectedDuration)
+    ?? secondsFromValue(selected.selected_duration)
+    ?? secondsFromValue(selected.output_duration)
+    ?? secondsFromValue(selected.duration)
+    ?? 15;
+  const duration = Math.min(15, Math.max(4, Math.round(requestedDurationSeconds))) as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
   const result = await createMiniMaxH3VideoTask({
     content: [{ type: "text", text: input.prompt }],

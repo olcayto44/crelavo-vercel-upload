@@ -1761,7 +1761,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   const draftCreative = plan && draftWantsPresenterVideo ? buildPresenterCreativeBrief({ prompt: draftPromptText, selectedOptions: draftCardsForIntent, productionSetup: activeProductionSetup, title: plan.summary }) : null;
   const draftActivityLog = draftCreative ? initialPresenterActivityLog(draftCreative) : [];
   const activeProviderProof = productionProviderProof(activeProduction);
-   const activeProjectProduction = Boolean(activeProduction && (isProjectType(String(activeProduction.production_type ?? "")) || String(activeProduction.generation_status ?? "").toLowerCase() === "project_delivery_ready" || String(activeProduction.automation_status ?? "").toLowerCase() === "completed" && Boolean(activeProduction.delivery_zip_url || activeProduction.source_files_url)));
+    const activeProjectProduction = Boolean(activeProduction && isProjectType(String(activeProduction.production_type ?? "")));
    const activeImageProduction = Boolean(activeProduction && ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(String(activeProduction.production_type ?? "")));
 
 
@@ -1981,7 +1981,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       : {};
     void providerHint;
 if (isImageStart) {
-  setStatus(statusUx("Production oluşturuldu. Provider arka planda başlayacak.", "Production created. The provider will start in the background."));
+  setStatus(statusUx("Production kaydı oluşturuldu. Provider başlatma ve durum kontrolü yapılıyor.", "Production record created. Provider start and status tracking are in progress."));
   void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
   setStarting(false);
       if (!options?.stayOnWork) {
@@ -1989,7 +1989,7 @@ if (isImageStart) {
       }
   return;
 }
-    setStatus(statusUx("Production oluşturuldu. Provider arka planda başlayacak.", "Production created. The provider will start in the background."));
+    setStatus(statusUx("Production kaydı oluşturuldu. Provider başlatma ve durum kontrolü yapılıyor.", "Production record created. Provider start and status tracking are in progress."));
     void refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     await refreshActiveProduction(created.id, auth.user.id, auth.accessToken);
     setStarting(false);

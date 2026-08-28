@@ -528,10 +528,10 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
   const automationParts = Array.isArray(outputJson.parts) ? outputJson.parts : Array.isArray(outputJson.scenePlan) ? outputJson.scenePlan : [];
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as Record<string, any> : null;
   const minimaxProviderProof = outputJson.minimaxProviderProof && typeof outputJson.minimaxProviderProof === "object" ? outputJson.minimaxProviderProof as Record<string, any> : null;
- const minimaxSessionId = String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? "").trim();
- const minimaxVideoId = String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? "").trim();
-const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? "").trim();
-const providerProofStatus = String(visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
+  const minimaxSessionId = String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? minimaxProviderProof?.taskId ?? visualJob?.id ?? "").trim();
+  const minimaxVideoId = String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim();
+ const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
+ const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
   const voiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
