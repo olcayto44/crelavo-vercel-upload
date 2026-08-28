@@ -211,7 +211,7 @@ function plannedDeliveryFileList(production: ProductionLike, requirements: Retur
   }
   if (requirements.wantsAdminPanel) files.push({ path: "admin-panel/admin-requirements.md", purpose: "Admin panel modules, roles and data notes" });
   if (requirements.wantsDeploymentGuide) files.push({ path: "docs/deployment-guide.md", purpose: "Deployment and setup instructions" });
-  if (requirements.wantsFinalVideo) files.push({ path: "media/final-video-placeholder.md", purpose: "Final video slot and provider replacement notes" });
+  if (requirements.wantsFinalVideo) files.push({ path: "media/final-video.mp4", purpose: "Final provider MP4 download via dashboard delivery endpoint" });
   if (requirements.wantsSubtitles) files.push({ path: "media/subtitles-template.srt", purpose: "Subtitle file template" });
   if (requirements.wantsThumbnail) files.push({ path: "media/thumbnail-brief.md", purpose: "Thumbnail requirements and replacement slot" });
   if (requirements.wantsPdf) files.push({ path: "documents/final-document.md", purpose: "Document/PDF source content" });
@@ -839,13 +839,15 @@ if (manifest.production_type === "admin_project") {
   entries.push({ name: "source/app/admin/records/page.tsx", content: buildAdminCrudPage(production) });
   entries.push({ name: "database/admin-schema.sql", content: "create table admin_records (id uuid primary key, title text, status text, created_at timestamptz default now());\n" });
 }
-if (["video", "talking_video", "avatar", "lip_sync", "drama", "documentary", "drone_video"].includes(manifest.production_type) || requirements.wantsFinalVideo) {
-  entries.push({ name: "video/video-production-package.md", content: buildVideoProductionPackage(production) });
+  if (["video", "talking_video", "avatar", "lip_sync", "drama", "studio", "documentary", "drone_video", "anime_short_film", "animation"].includes(manifest.production_type) || requirements.wantsFinalVideo) {
+   entries.push({ name: "video/video-production-package.md", content: buildVideoProductionPackage(production) });
+   if (["drama", "studio"].includes(manifest.production_type)) entries.push({ name: "video/scene-assembly.json", content: JSON.stringify({ production_id: manifest.production_id, assembly: "provider_shot_jobs_to_final_mp4", final_video: "media/final-video.mp4", source: "real_provider_outputs_only", status: "ready_after_provider_poll" }, null, 2) });
   entries.push({ name: "video/captions.srt", content: buildCaptionsSrt(production) });
   entries.push({ name: "video/export-specs.json", content: JSON.stringify({ format: "mp4", variants: ["9:16", "1:1", "16:9"], status: "provider_ready" }, null, 2) });
 }
-if (["image", "brand_kit"].includes(manifest.production_type)) {
-  entries.push({ name: "image/image-asset-pack.md", content: buildImageAssetPack(production) });
+  if (["image", "brand_kit", "visual_clone"].includes(manifest.production_type)) {
+   entries.push({ name: "image/image-asset-pack.md", content: buildImageAssetPack(production) });
+   if (manifest.production_type === "visual_clone") entries.push({ name: "image/reference-usage.md", content: "# Visual Clone Reference Usage\n\nThe uploaded reference is used as a style/look input only. The delivered image is a newly generated composition and must not reproduce third-party protected assets one-to-one.\n" });
   entries.push({ name: "image/prompts/final-prompt.txt", content: value(production.prompt, manifest.title) });
   entries.push({ name: "image/export-specs.json", content: JSON.stringify({ formats: ["png", "jpg"], status: "provider_ready" }, null, 2) });
 }

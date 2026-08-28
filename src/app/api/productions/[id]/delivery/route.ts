@@ -118,7 +118,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
    const output = objectValue(data.output_json);
-   const realOutputTypes = new Set(["music_video", "voice_clone"]);
+    const realOutputTypes = new Set(["music_video", "voice_clone", "visual_clone", "drama", "studio"]);
    if (realOutputTypes.has(String(data.production_type ?? "")) && data.status !== "ready") {
      return Response.json({ error: "Real provider output is not ready yet. Demo or placeholder delivery is unavailable." }, { status: 409 });
    }

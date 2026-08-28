@@ -47,11 +47,24 @@ export function providerRequirementsForProduction(productionType: string, packag
 
   const minimaxBackedTalkingTypes = ["avatar", "talking_video", "lip_sync", "live_sales_agent"];
   const needsVideoProvider = (["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", ...minimaxBackedTalkingTypes].includes(type) || packageId.includes("video"));
+  const needsImageProvider = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(type) || packageId.includes("visual_clone");
   const isDirectPromoPackage = isProductAdProduction(packageId, type);
   const needsEcommerceAdPipeline = isDirectPromoPackage;
 
   if (needsVideoProvider) {
     requirements.push(requirement("video_provider", "Video/generation provider", ["REPLICATE_API_TOKEN", "MINIMAX_API_KEY", "MINIMAX_GROUP_ID"], ["final MP4", "visual job", "motion generation"], "At least one real video provider key is required for non-demo video output. Minimax, Replicate, FAL, Runway or Kling can satisfy the route depending on provider selection."));
+  }
+
+  if (needsImageProvider) {
+    const imageProviderConfigured = hasAnyConfiguredEnv(["STABILITY_API_KEY", "FAL_KEY", "FAL_API_KEY", "REPLICATE_API_TOKEN", "REPLICATE_API_KEY"]);
+    requirements.push({
+      key: "image_provider",
+      label: "Image generation provider",
+      requiredEnv: ["STABILITY_API_KEY or FAL_API_KEY or REPLICATE_API_TOKEN"],
+      affects: ["final image", "visual clone output"],
+      note: "A real image provider is required for downloadable visual output. Reference-based clone requests use a provider that accepts image references.",
+      status: imageProviderConfigured ? "ready" : "missing"
+    });
   }
 
   // Talking/avatar/lip-sync/live-sales categories now use the selected video provider route.

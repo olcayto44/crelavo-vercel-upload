@@ -73,6 +73,15 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
   return postgresSafe(payload);
 }
 
+async function releaseReservedCredits(supabase: ReturnType<typeof supabaseAdmin>, production: { user_id?: string | null; reserved_credits?: number | null }, note: string) {
+  const amount = Number(production.reserved_credits ?? 0) || 0;
+  if (!amount || !production.user_id) return;
+  const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).maybeSingle();
+  if (!balanceRow) return;
+  await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
+}
+
 function pokeAutomationWorker(request: Request, productionId: string) {
   after(async () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -1117,11 +1126,21 @@ if (isImageProduction) {
    const { hasImageMarketingText, stripImageMarketingTextInstructions } = await import("@/lib/image-postprocess");
    const originalImagePrompt = (imagePromptCandidates[0] || "Image production").trim();
    const imagePromptBase = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
-   const imagePrompt = `${imagePromptBase}\nSTRICT STATIC PRODUCT IMAGE RULES: one clean product composition only; completely blank unlabeled packaging; no logo, no brand name, no letters, no words, no numbers, no label, no typography, no symbols and no pseudo-text anywhere on the product; preserve physically correct packaging geometry; do not render any text even if the brief mentions a brand. Output exactly one static image in the requested aspect ratio.`;
+   const cloneReferenceUrl = productionType === "visual_clone"
+     ? materialUrlForPurpose(currentProductionRecord.materials_json ?? inputJson.uploaded_materials ?? requestMetadata.uploaded_materials, ["visual_reference", "style_reference", "image_reference", "reference_image", "reference"])
+     : "";
+   if (productionType === "visual_clone" && !cloneReferenceUrl) {
+     const message = "Visual Clone requires an uploaded reference image. No placeholder image was created.";
+     await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because Visual Clone reference image is missing: ${message}`);
+     const { data: waitingProduction, error: waitingError } = await supabase.from("production_requests").update(safeUpdate({ status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_reference_image", reserved_credits: 0, preview_url: null, delivery_link: null, delivery_zip_url: null, output_json: { ...existingOutput, automationStatus: "waiting_provider_config", providerStatus: "waiting_reference_image", providerRequired: ["reference_image"], finalImageUrl: null }, admin_notes: message, error_message: message, updated_at: now })).eq("id", productionId).select("*").single();
+     if (waitingError) throw waitingError;
+     return Response.json({ job_id: jobId, production: waitingProduction, provider_started: false, waiting_provider_config: true, missing_input: "reference_image", error: message }, { status: 424 });
+   }
+    const imagePrompt = `${imagePromptBase}\nSTRICT STATIC PRODUCT IMAGE RULES: one clean product composition only; completely blank unlabeled packaging; no logo, no brand name, no letters, no words, no numbers, no label, no typography, no symbols and no pseudo-text anywhere on the product; preserve physically correct packaging geometry; do not render any text even if the brief mentions a brand. Output exactly one static image in the requested aspect ratio.`;
   const requestedAspectRatio = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
   const aspectRatio = /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /4\s*[:x]\s*5|portrait/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s+portrait/i.test(originalImagePrompt) ? "4:5" : "4:5";
   try {
-    const imageResult = await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: "final-image-base", aspectRatio });
+    const imageResult = await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: productionType === "visual_clone" ? "visual-clone-output" : "final-image-base", aspectRatio, referenceImageUrls: cloneReferenceUrl ? [cloneReferenceUrl] : undefined });
      const overlayResult = { applied: false as const, marketingText: {}, imageUrl: imageResult.imageUrl };
      const finalImageUrl = imageResult.imageUrl;
     const imageOutput = {
@@ -1146,10 +1165,10 @@ if (isImageProduction) {
       automaticDeliveryLinks: deliveryLinks,
       workflowState: buildProductionWorkflowState({ ...currentProduction, status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, output_json: { ...existingOutput, finalImageUrl } })
     };
-    const imageReadyGate = productionReadyGate({ ...currentProduction, preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: null, output_json: imageOutput }, imageOutput);
+    const imageReadyGate = productionReadyGate({ ...currentProduction, preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: deliveryLinks.deliveryZipUrl, source_files_url: deliveryLinks.sourceFilesUrl, readme_url: deliveryLinks.readmeUrl, output_json: imageOutput }, imageOutput);
     const { data: imageProduction, error: imageUpdateError } = await supabase
       .from("production_requests")
-      .update(safeUpdate({ status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: null, output_json: { ...imageOutput, readyGate: imageReadyGate, qualityGate: { status: imageReadyGate.passed ? "passed" : "soft_passed", checkedAt: now, required: imageReadyGate.required, missing: imageReadyGate.missing, warnings: imageReadyGate.warnings } }, admin_notes: overlayResult.applied ? "Image production completed successfully with text overlay." : "Image production completed successfully.", updated_at: now }))
+       .update(safeUpdate({ status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: deliveryLinks.deliveryZipUrl, source_files_url: deliveryLinks.sourceFilesUrl, readme_url: deliveryLinks.readmeUrl, output_json: { ...imageOutput, referenceImageUrl: cloneReferenceUrl || null, deliveryZipUrl: deliveryLinks.deliveryZipUrl, sourceFilesUrl: deliveryLinks.sourceFilesUrl, readmeUrl: deliveryLinks.readmeUrl, readyGate: imageReadyGate, qualityGate: { status: imageReadyGate.passed ? "passed" : "soft_passed", checkedAt: now, required: imageReadyGate.required, missing: imageReadyGate.missing, warnings: imageReadyGate.warnings } }, admin_notes: overlayResult.applied ? "Image production completed successfully with text overlay." : "Image production completed successfully.", updated_at: now }))
       .eq("id", productionId)
       .select("*")
       .single();
@@ -1215,7 +1234,12 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
 const requestedDurationFloor = isProductAdVideo ? 15 : (providerPreflight.testMode ? 5 : 15);
     const requestedDuration = Math.max(requestedDurationFloor, Number(providerPreflight.durationSeconds) || requestedDurationFloor);
     const providerTestMode = Boolean(providerPreflight.testMode);
-    const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? providerPreflight.selectedOptions as Record<string, unknown> : {};
+    const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? { ...(providerPreflight.selectedOptions as Record<string, unknown>) } : {};
+    if (["drama", "studio"].includes(productionType)) {
+      selectedOptions.finalRender = true;
+      selectedOptions.music = selectedOptions.music ?? true;
+      selectedOptions.subtitles = selectedOptions.subtitles ?? true;
+    }
     const pipelineMap: Record<string, string> = {
       video: "generic_video",
       cinematic_video: "generic_video",
@@ -1365,7 +1389,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       .single();
 
     if (demoError) throw demoError;
-    return Response.json({ job_id: jobId, production: demoProduction, demo: true, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
+    return Response.json({ job_id: jobId, production: demoProduction, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
   } catch (error) {
     const failureMessage = errorMessage(error, "Could not start automation job");
     console.error("Internal Crash Log:", failureMessage, error);

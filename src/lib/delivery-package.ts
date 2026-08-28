@@ -12,7 +12,7 @@ export type DeliveryPackage = {
 };
 
 const PROJECT_TYPES = new Set(["website", "saas", "mobile_app", "admin_project"]);
-const BRAND_TYPES = new Set(["brand_kit", "image"]);
+const BRAND_TYPES = new Set(["brand_kit", "image", "visual_clone"]);
 const DOCUMENT_TYPES = new Set(["document_pack"]);
 
 export function isProjectDeliveryType(productionType: string) {

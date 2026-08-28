@@ -519,7 +519,14 @@ export async function POST(request: Request) {
   const safeProductionQuality = /480p|720p|draft|quick\s*test|fast\s*draft|low[-_\s]?cost/i.test(incomingQuality) ? "1080p" : incomingQuality || "1080p";
   const providerTestMode = false;
   const deliveryLevel = String(body.delivery_level ?? "").trim() || (String(body.features ?? "").toLowerCase().includes("working source") ? "working_source_package" : "production_package");
-  const deliveryRequirements = body.delivery_requirements && typeof body.delivery_requirements === "object" ? body.delivery_requirements : {
+  const deliveryRequirements = body.delivery_requirements && typeof body.delivery_requirements === "object" ? body.delivery_requirements : ["visual_clone", "drama", "studio"].includes(productionType) ? {
+    requested: true,
+    status: "pending",
+    wantsZip: true,
+    wantsReadme: true,
+    wantsFinalVideo: ["drama", "studio"].includes(productionType),
+    formats: ["dashboard_delivery", "final_zip", "readme", ...(["drama", "studio"].includes(productionType) ? ["final_mp4"] : ["final_image"])]
+  } : {
     requested: false,
     status: "pending",
     formats: ["dashboard_delivery"]
