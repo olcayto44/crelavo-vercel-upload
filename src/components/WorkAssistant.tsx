@@ -2220,16 +2220,16 @@ if (isImageStart) {
         <aside className="omni-super-panel omni-brain-panel" aria-label="AI Brain">
           <span className="badge"><Bot size={14} /> Work Brain</span>
           <h2>Crelavo AI Brain</h2>
-          <p>Tek ekranda chat, üretim, önizleme ve entegrasyon. Kullanıcı artık farklı sayfalara taşınmadan buradan başlar.</p>
+          <p>Chat, production, preview and integrations in one workspace. Start here without being sent across multiple pages.</p>
           <div className="omni-minimax-badge">
             <span className="omni-pulse-dot" />
             <div><small>POWERED BY</small><strong>MiniMax H3™ <em>Live Engine</em></strong></div>
             <b>100 RPM ACTIVE</b>
           </div>
           <div className="omni-super-list">
-            <span><strong>1</strong> Chat ile isteği al</span>
-            <span><strong>2</strong> Üretim planını çıkar</span>
-            <span><strong>3</strong> Work içinde başlat</span>
+            <span><strong>1</strong> Capture your request in chat</span>
+            <span><strong>2</strong> Build the production plan</span>
+            <span><strong>3</strong> Start inside Work</span>
           </div>
         </aside>
 
