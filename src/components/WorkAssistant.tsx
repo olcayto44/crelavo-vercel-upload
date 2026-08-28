@@ -1014,9 +1014,12 @@ function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | 
   };
 }
 
-function sanitizeVideoSetup(setup: ProductionSetupState) {
+function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "") {
   const next = Object.fromEntries(Object.entries(setup).map(([key, values]) => [key, Array.isArray(values) ? [...values] : values])) as ProductionSetupState;
   const items = Object.values(next).flat().filter(Boolean).map(String);
+  const promptText = prompt.toLocaleLowerCase("tr-TR");
+  const noSubtitles = /do not add subtitles|no subtitles|without subtitles|no captions|without captions|altyaz(ı|i)?\s*(ekleme|olmasın|olmasin)|altyazısız|altyazisiz/.test(promptText);
+  const noMusic = /do not add music|no background music|without music|müzik\s*(ekleme|olmasın|olmasin)|müziksiz|muziksiz/.test(promptText);
   const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|presenter motions|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
   const noPresenterPattern = /no presenter|b-roll only|silent \/ music only/i;
   const hasExplicitPresenter = items.some((item) => /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter/i.test(item));
@@ -1025,6 +1028,8 @@ function sanitizeVideoSetup(setup: ProductionSetupState) {
     next[key] = hasExplicitPresenter
       ? values.filter((item) => !noPresenterPattern.test(String(item)))
       : values.filter((item) => !presenterPattern.test(String(item)));
+    if (noSubtitles) next[key] = next[key].filter((item) => !/subtitle|caption|altyaz/i.test(String(item)));
+    if (noMusic) next[key] = next[key].filter((item) => !/music|müzik|muzik/i.test(String(item)));
   }
   return next;
 }
@@ -1727,7 +1732,7 @@ const statusUx = (tr: string, en: string) => false ? tr : en;
   const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
   const activeProductionSetup = useMemo(() => {
     const setup = plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup;
-    return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup);
+    return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup, productionPrompt || input);
   }, [plan, productionSetup, productionPrompt, input]);
   const activeSelectedProductionCards = useMemo(() => {
     if (!plan || (!isImageProductionType(plan.production_type) && plan.production_type !== "video_agent")) return selectedProductionCards;
@@ -1826,7 +1831,7 @@ const productionCards = isImageProduction
   ? filterCardsForPrompt(productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type)
   : filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type);
 const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
-const normalizedVideoSetup = sanitizeVideoSetup(productionSetup);
+const normalizedVideoSetup = sanitizeVideoSetup(productionSetup, cleanInput);
 const baseSetupForPayload = isImageProduction
   ? sanitizeSetupForProduction(activePlanInput.production_type, sanitizedSetup, cleanInput, activePlanInput)
   : {
