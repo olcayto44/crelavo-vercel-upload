@@ -1185,7 +1185,7 @@ function productionCardsFor(plan: StudioPlan | null) {
   if (["animation", "anime_short_film", "stickman_animation"].includes(type)) return ["Production brief", "Scene plan", "Animation video", "Voice-over", "Subtitles", "Music", "Final MP4", "Revision path"];
   if (type === "drone_video") return ["Production brief", "Route / camera plan", "AI drone video", "Location labels", "Narration", "Final MP4", "Thumbnail", "Revision path"];
   if (type === "video_clipping") return ["Source analysis", "Clip selection", "Captions", "Audio cleanup", "Final clips", "ZIP package", "Revision path"];
-  if (["video", "cinematic_video", "documentary", "drama", "music_video"].includes(type)) return ["Production brief", "Script / scene plan", "Visual video", "Voice-over", "Subtitles", "Music", "Final MP4", "Revision path"];
+  if (["video", "video_agent", "cinematic_video", "documentary", "drama", "music_video"].includes(type)) return type === "video_agent" ? ["Production brief", "Preview", "Final delivery", "Revision path"] : ["Production brief", "Script / scene plan", "Visual video", "Voice-over", "Subtitles", "Music", "Final MP4", "Revision path"];
   if (["talking_video", "avatar", "lip_sync", "voice_clone"].includes(type)) return ["Script", "Avatar / face", "Voice", "Lip-sync", "Subtitles", "Final MP4", "Voice settings", "Revision path"];
   if (type === "live_sales_agent") return ["Agent config", "Sales playbook", "Product FAQ", "Lead capture", "Admin inbox", "Setup guide", "Revision path"];
   if (plan.production_type === "mobile_app") return ["Home screen", "Login flow", "User dashboard", "Settings", "Admin/control screen", "Expo source ZIP", "README / setup"];
@@ -1646,7 +1646,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [selectedProductionCards, setSelectedProductionCards] = useState<string[]>(() => {
     const initialPlanForCards = initialEffectivePlan;
     const defaultCards = filterCardsForPrompt(productionCardsFor(initialPlanForCards), initialPrompt ?? "", initialPlanForCards?.production_type ?? "");
-    if (isImageProductionType(initialPlanForCards?.production_type ?? "")) return defaultCards;
+    if (isImageProductionType(initialPlanForCards?.production_type ?? "") || initialPlanForCards?.production_type === "video_agent") return defaultCards;
     return storedDraft?.selectedProductionCards ?? defaultCards;
   });
   const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
@@ -1730,8 +1730,8 @@ const statusUx = (tr: string, en: string) => false ? tr : en;
     return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup);
   }, [plan, productionSetup, productionPrompt, input]);
   const activeSelectedProductionCards = useMemo(() => {
-    if (!plan || !isImageProductionType(plan.production_type)) return selectedProductionCards;
-    return selectedProductionCards.length ? selectedProductionCards : filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type);
+    if (!plan || (!isImageProductionType(plan.production_type) && plan.production_type !== "video_agent")) return selectedProductionCards;
+    return selectedProductionCards.length && plan.production_type !== "video_agent" ? selectedProductionCards : filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type);
   }, [plan, selectedProductionCards, productionPrompt, input]);
   const setupItems = useMemo(() => selectedSetupItems(activeProductionSetup, plan?.production_type ?? ""), [activeProductionSetup, plan]);
   const draftWantsThumbnail = setupItems.some((item) => /thumbnail|cover visual|kapak/i.test(String(item))) || activeSelectedProductionCards.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)));
