@@ -528,6 +528,10 @@ function isImageProductionType(type: string) {
   return ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(type);
 }
 
+function isVideoLikeProductionType(type: string) {
+  return ["video", "campaign", "music_video", "stickman_animation", "documentary", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "studio", "drama", "cinematic_video", "video_tools", "video_clipping", "localization", "cultural_localization", "talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(type) || type.includes("video");
+}
+
 function isStaticImagePrompt(text: string) {
   return /\b(image|visual|photo|picture|png|jpg|jpeg|banner|poster|thumbnail|cover|flyer|static\s+ad|social\s+media\s+post|instagram\s+post|instagram\s+portrait|feed\s+post|reklam\s+görseli|reklam\s+gorseli|sosyal\s+medya\s+(post|görseli|gorseli)|görsel|gorsel|resim|afiş|afis|kapak)\b|\b4\s*[:x]\s*5\b/.test(text.toLocaleLowerCase("tr-TR"));
 }
@@ -1001,6 +1005,21 @@ function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | 
     aspectRatio: allowed("aspectRatio", defaults.aspectRatio ?? ["Portrait 4:5"]),
     delivery: allowed("delivery", defaults.delivery ?? ["PNG/JPG"])
   };
+}
+
+function sanitizeVideoSetup(setup: ProductionSetupState) {
+  const next = Object.fromEntries(Object.entries(setup).map(([key, values]) => [key, Array.isArray(values) ? [...values] : values])) as ProductionSetupState;
+  const items = Object.values(next).flat().filter(Boolean).map(String);
+  const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|presenter motions|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
+  const noPresenterPattern = /no presenter|b-roll only|silent \/ music only/i;
+  const hasExplicitPresenter = items.some((item) => /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter/i.test(item));
+  for (const [key, values] of Object.entries(next)) {
+    if (!Array.isArray(values)) continue;
+    next[key] = hasExplicitPresenter
+      ? values.filter((item) => !noPresenterPattern.test(String(item)))
+      : values.filter((item) => !presenterPattern.test(String(item)));
+  }
+  return next;
 }
 
 function selectedSetupItems(setup: ProductionSetupState, type = "") {
@@ -1698,7 +1717,10 @@ const workUiLanguage = resolveWorkUiLanguage();
 const ux = (value: string) => false ? uiText(value) : value;
 const statusUx = (tr: string, en: string) => false ? tr : en;
   const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
-  const activeProductionSetup = useMemo(() => plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup, [plan, productionSetup, productionPrompt, input]);
+  const activeProductionSetup = useMemo(() => {
+    const setup = plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup;
+    return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup);
+  }, [plan, productionSetup, productionPrompt, input]);
   const activeSelectedProductionCards = useMemo(() => {
     if (!plan || !isImageProductionType(plan.production_type)) return selectedProductionCards;
     return selectedProductionCards.length ? selectedProductionCards : filterCardsForPrompt(productionCardsFor(plan), productionPrompt || input, plan.production_type);
@@ -1796,13 +1818,14 @@ const productionCards = isImageProduction
   ? filterCardsForPrompt(productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type)
   : filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type);
 const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
+const normalizedVideoSetup = sanitizeVideoSetup(productionSetup);
 const baseSetupForPayload = isImageProduction
   ? sanitizeSetupForProduction(activePlanInput.production_type, sanitizedSetup, cleanInput, activePlanInput)
   : {
-    ...productionSetup,
-    voice: sanitizedSetup.voice ?? productionSetup.voice,
-    subtitles: sanitizedSetup.subtitles ?? productionSetup.subtitles
-  };
+     ...normalizedVideoSetup,
+     voice: sanitizedSetup.voice ?? normalizedVideoSetup.voice,
+     subtitles: sanitizedSetup.subtitles ?? normalizedVideoSetup.subtitles
+   };
 const presenterlessSetupRequested = isImageProduction || Object.values(baseSetupForPayload).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
 const activeSelectedAvatar = presenterlessSetupRequested ? null : selectedAvatar;
 const setupForPayload = isImageProduction ? baseSetupForPayload : {
@@ -2341,7 +2364,7 @@ if (isImageStart) {
                              <span style={{ display: activeProjectProduction || activeImageProduction ? "none" : undefined }}><b>Final video</b>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.45rem 0.8rem", borderRadius: "999px", background: "linear-gradient(135deg, #00e5ff, #7c4dff)", color: "#fff", boxShadow: "0 0 16px rgba(124,77,255,0.6), 0 0 24px rgba(0,229,255,0.35)", fontWeight: 700, textDecoration: "none" }}>{"Open final video"}</a> : <span style={{ color: "#7dd3fc", fontWeight: 700 }}>{"Waiting"}</span>}</span>
             </> : null}
           </div>
-            {!activeProjectProduction && !activeImageProduction && !isProjectType(plan?.production_type ?? "") && !isImageProductionType(plan?.production_type ?? "") ? <div className="omni-deploy-card">
+            {!activeProjectProduction && !activeImageProduction && !isProjectType(plan?.production_type ?? "") && !isImageProductionType(plan?.production_type ?? "") && !isVideoLikeProductionType(plan?.production_type ?? "") ? <div className="omni-deploy-card">
              <small>Embed / kod</small>
              <strong>{activeProduction?.delivery_link ? "Ready" : "Will be prepared in Work"}</strong>
              <code>{"<script src=\"https://www.crelavo.com/embed/live-sales-avatar.js\"></script>"}</code>
