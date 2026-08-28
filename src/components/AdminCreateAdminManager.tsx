@@ -3,15 +3,15 @@
 import { useState } from "react";
 
 const permissionOptions = [
-  { key: "users", label: "Üye yönetimi", note: "Üye detaylarını görme, kullanıcı inceleme" },
-  { key: "credits", label: "Kredi işlemleri", note: "Kredi yükleme/düşme ve kredi geçmişi" },
-  { key: "productions", label: "Üretimler", note: "Üretim istekleri, teslimat ve durum kontrolü" },
-  { key: "support", label: "Destek / gelen e-posta", note: "Gelen mesajlar ve kullanıcıya cevap yazma" },
-  { key: "finance", label: "Finans", note: "Gelir, ödeme, provider maliyeti ve marj ekranları" },
-  { key: "content", label: "Site içerikleri", note: "Paketler, kategori kartları, site metinleri ve SEO" },
-  { key: "providers", label: "Provider / API", note: "Sağlayıcı, API guard, monitoring ve teknik kontroller" },
-  { key: "growth", label: "Growth / partner", note: "Affiliate, growth, analytics ve launch sayfaları" },
-  { key: "owner", label: "Tam yetki / owner", note: "Tüm admin alanları ve yeni admin oluşturma" }
+  { key: "users", label: "Member management", note: "View member details and review users" },
+  { key: "credits", label: "Credit operations", note: "Add, deduct, and review credit history" },
+  { key: "productions", label: "Productions", note: "Production requests, delivery, and status checks" },
+  { key: "support", label: "Support / incoming email", note: "Review messages and reply to users" },
+  { key: "finance", label: "Finance", note: "Revenue, payments, provider costs, and margin screens" },
+  { key: "content", label: "Site content", note: "Packages, category cards, site copy, and SEO" },
+  { key: "providers", label: "Provider / API", note: "Provider, API guard, monitoring, and technical checks" },
+  { key: "growth", label: "Growth / partner", note: "Affiliate, growth, analytics, and launch pages" },
+  { key: "owner", label: "Full access / owner", note: "All admin areas and new admin creation" }
 ];
 
 export function AdminCreateAdminManager() {
@@ -44,11 +44,11 @@ export function AdminCreateAdminManager() {
     setLoading(false);
 
     if (!response.ok) {
-      setMessage(data.error ?? "Admin oluşturulamadı.");
+      setMessage(data.error ?? "Admin could not be created.");
       return;
     }
 
-    setMessage(`Admin oluşturuldu: ${data.admin?.email ?? email}. Bu kişi admin giriş ekranından e-posta + şifre ile girebilir.`);
+    setMessage(`Admin created: ${data.admin?.email ?? email}. This person can sign in from the admin login screen with email and password.`);
     setFullName("");
     setEmail("");
     setPassword("");

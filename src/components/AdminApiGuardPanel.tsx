@@ -125,9 +125,9 @@ export function AdminApiGuardPanel() {
         <div className="admin-production-head">
           <div>
             <span className="badge">Cost safety</span>
-            <h2>API Guard görünürlük paneli</h2>
+            <h2>API Guard visibility paneli</h2>
             <p style={{ color: "var(--muted)" }}>
-              Bu ekran aktif limit değerlerini, bugünkü production kredi kullanımını ve limite yaklaşan kullanıcıları admin tarafında görünür yapar.
+              This screen exposes active limits, today's production credit usage, and users approaching their limits in the admin area.
             </p>
           </div>
           <button className="btn secondary" type="button" onClick={loadReport} disabled={loading}>{loading ? "Loading..." : "Refresh"}</button>
@@ -146,7 +146,7 @@ export function AdminApiGuardPanel() {
 
           <section className="card admin-wide-card">
             <span className="badge">Active guard limits</span>
-            <h2>Limit mantığı</h2>
+            <h2>Limit logic</h2>
             <div className="admin-info-grid">
               <div><span>Single production max</span><strong>{formatNumber(report.config.singleProductionCreditLimit)}</strong><small>One job safety ceiling</small></div>
               <div><span>Daily user credit limit</span><strong>{formatNumber(report.config.dailyProductionCreditLimit)}</strong><small>Per user / UTC day</small></div>
@@ -162,7 +162,7 @@ export function AdminApiGuardPanel() {
             <span className={`provider-job-chip ${usageClass(Math.max(report.today.creditUtilizationPct, report.today.countUtilizationPct))}`}>
               {usageLabel(Math.max(report.today.creditUtilizationPct, report.today.countUtilizationPct))}
             </span>
-            <h2>Bugünkü toplam kullanım</h2>
+            <h2>Today's total usage</h2>
             <div className="admin-info-grid">
               <div><span>Credit usage</span><strong>{report.today.creditUtilizationPct}%</strong><small>{formatNumber(report.today.estimatedCredits)} / {formatNumber(report.today.dailyCreditLimit)}</small></div>
               <div><span>Production count usage</span><strong>{report.today.countUtilizationPct}%</strong><small>{formatNumber(report.today.totalProductions)} / {formatNumber(report.today.dailyCountLimit)}</small></div>
@@ -174,8 +174,8 @@ export function AdminApiGuardPanel() {
             <div className="admin-production-head">
               <div>
                 <span className="badge">Intervention</span>
-                <h2>Limite yaklaşan kullanıcılar</h2>
-                <p style={{ color: "var(--muted)" }}>Buradan kullanıcı/kredi ekranına veya production listesine geçip inceleme, kredi düzeltme, suspend veya retry işlemi yapabilirsin.</p>
+                <h2>Users approaching limits</h2>
+                <p style={{ color: "var(--muted)" }}>Go to the users/credits screen or production list to review, adjust credits, suspend, or retry.</p>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Link className="btn secondary" href={report.intervention.usersAdminPath}>Users</Link>
@@ -205,7 +205,7 @@ export function AdminApiGuardPanel() {
 
           <section className="card admin-wide-card">
             <span className="badge">Recent productions</span>
-            <h2>Bugünkü son production kayıtları</h2>
+            <h2>Today's recent production records</h2>
             <div className="admin-table-wrap">
               <table className="table">
                 <thead><tr><th>Production</th><th>User</th><th>Status</th><th>Credits</th><th>Created</th></tr></thead>
@@ -227,7 +227,7 @@ export function AdminApiGuardPanel() {
 
           <section className="card admin-wide-card">
             <span className="badge">Notes</span>
-            <h2>Ne görebiliyoruz?</h2>
+            <h2>What can we see?</h2>
             {report.notes.map((note) => <p key={note} style={{ color: "var(--muted)" }}>{note}</p>)}
           </section>
         </>
