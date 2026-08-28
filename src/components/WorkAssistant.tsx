@@ -624,8 +624,8 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   const sourceIsVideoPlatform = /https?:\/\/(?:www\.)?(youtube\.com|youtu\.be|tiktok\.com|instagram\.com|vimeo\.com)/.test(signal);
   const isClipLink = hasLink && sourceIsVideoPlatform && explicitClipRequest;
   const isSocialLink = hasLink && !isClipLink && /instagram|tiktok|youtube|reels|shorts|social|sosyal|post|creator|influencer/.test(signal);
-  const isPresenterUgcLock = /ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|video\s*agent|talking\s*avatar|product\s*demo|social\s*media\s*ad/.test(signal)
-    && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice/.test(signal);
+  const isPresenterUgcLock = /ugc|koc|creator|ai\s*presenter|with\s*presenter|heygen|talking\s*avatar|social\s*media\s*ad/.test(signal)
+     && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice|no\s*voice-?over/.test(signal);
   const isFilmAnimation = !isPresenterUgcLock && /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
   const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
 
@@ -636,7 +636,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
       groups: [
         { id: "videoStyle", title: "Video style", options: ["AI presenter", "Avatar / talking host", "Voice-over only", "No presenter / B-roll only"] },
         { id: "heygenQuality", title: "Minimax H3", options: minimaxH3Options },
-        { id: "presenterChoice", title: "Karakter seçimi", options: ["Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
+        { id: "presenterChoice", title: "Karakter seçimi", options: ["No presenter / B-roll only", "Auto choose best presenter", "Female presenter", "Male presenter", "Young energetic creator", "Professional business presenter", "Energetic UGC creator", "Mature trustworthy presenter"] },
         { id: "presenterMotion", title: "Karakter hareketleri", multi: true, options: minimaxMotionPromptOptions, credit: HEYGEN_MOTION_PROMPT_CREDITS },
         { id: "videoType", title: "Ad type", options: ["UGC-style product script", "Product ad video", "Social media short", "Product demo"] },
         { id: "quality", title: "Quality", options: sharedVideoQuality, credit: 900 },
@@ -1773,7 +1773,15 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   function toggleSetupOption(group: SetupGroup, option: string) {
     setProductionSetup((current) => {
       const currentValues = current[group.id] ?? [];
-      const nextValues = group.multi ? (currentValues.includes(option) ? currentValues.filter((item) => item !== option) : [...currentValues, option]) : [option];
+      const isPresenterMotionGroup = group.id === "presenterMotion";
+      const isNoPresenterMotion = option === "No presenter motions";
+      const nextValues = isPresenterMotionGroup
+        ? isNoPresenterMotion
+          ? [option]
+          : [...currentValues.filter((item) => item !== "No presenter motions"), ...(currentValues.includes(option) ? [] : [option])]
+        : group.multi
+          ? (currentValues.includes(option) ? currentValues.filter((item) => item !== option) : [...currentValues, option])
+          : [option];
       return { ...current, [group.id]: nextValues };
     });
   }
