@@ -2,6 +2,7 @@ import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { buildAssistantKnowledgePrompt } from "@/lib/assistant-knowledge";
 import { createMiniMaxH3VideoTask, hasMiniMaxConfig } from "@/lib/providers/minimax";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { catalogActions, catalogFromAgent, fallbackProductReply } from "@/lib/live-sales";
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
@@ -115,7 +116,9 @@ function publicReply(message: string, agent: Record<string, unknown>) {
   const product = clean(agent.product_info);
   const shipping = clean(agent.shipping_info);
   const order = clean(agent.order_info);
+  const catalog = catalogFromAgent(agent);
   const turkish = language === "tr" || detectLanguage(message) === "tr";
+  if (catalog.length && /(product|catalog|price|buy|cart|checkout|ürün|fiyat|satın|sepet|ödeme)/i.test(message)) return fallbackProductReply(message, catalog);
 
   return turkish
     ? `Bu canlı satış avatarı ${platform} için ürün, kargo, sipariş, entegrasyon ve çalışma saatleri hakkında yardımcı olabilir. Setup'ı kaydedip embed kodunu ekleyerek kullanabilir, ürün / sipariş / kargo verilerini bağladıkça daha akıllı hale getirebilirsiniz. Rol: ${role}. ${product || "Ürün bilgisi hazır olduğunda"} müşteriyi doğru teklif sayfasına yönlendirebilir. ${shipping || "Teslimat bilgisi"} ve ${order || "sipariş akışı"} bağlanınca daha net cevap verir.`
@@ -148,8 +151,9 @@ async function aiLiveAvatarReply(message: string, agent: Record<string, unknown>
     `availability: ${clean(agent.availability) || "24/7"}`,
     `product_info: ${clean(agent.product_info) || "Crelavo offers AI video, UGC ads, ecommerce campaigns, websites, apps, SaaS/admin projects, live sales avatar, Growth Intelligence, voice, dubbing, visual production and delivery workflows."}`,
     `shipping_info: ${clean(agent.shipping_info) || "For Crelavo digital services, delivery is normally handled through the dashboard, preview, revision and final delivery flow."}`,
-    `order_info: ${clean(agent.order_info) || "Users can track productions from the dashboard production area after a production is created."}`
-  ].join("\n");
+     `order_info: ${clean(agent.order_info) || "Users can track productions from the dashboard production area after a production is created."}`,
+     `catalog: ${JSON.stringify(catalogFromAgent(agent).slice(0, 50))}`
+   ].join("\n");
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -234,9 +238,20 @@ export async function POST(request: Request) {
     const agent = await loadAgent(agentId);
     if (!agent) return corsJson({ error: "Live sales agent not found." }, { status: 404 });
 
-    const aiReply = await aiLiveAvatarReply(message, agent).catch(() => "");
-    const reply = aiReply || publicReply(message, agent);
-    const wantsAvatarVideo = body.avatar_video !== false;
+     const actions = catalogActions(message, catalogFromAgent(agent));
+     const aiReply = await aiLiveAvatarReply(message, agent).catch(() => "");
+     const reply = aiReply || publicReply(message, agent);
+     if (userId && body.session_id) {
+       try {
+         await supabaseAdmin().from("live_sales_session_messages").insert([
+           { session_id: sessionId, role: "user", content: message, actions: [] },
+           { session_id: sessionId, role: "assistant", content: reply, actions }
+         ]);
+       } catch {
+         void 0;
+       }
+     }
+     const wantsAvatarVideo = body.avatar_video !== false;
     const avatarVideo = wantsAvatarVideo
       ? await submitMiniMaxSpeakingAvatar(reply, message).catch((error) => ({
         provider: "minimax",
@@ -259,8 +274,9 @@ export async function POST(request: Request) {
         tone: agent.tone,
         availability: agent.availability
       },
-      reply,
-      avatar_video: avatarVideo
+       reply,
+       actions,
+       avatar_video: avatarVideo
     });
   } catch (error) {
     return corsJson({ error: errorMessage(error, "Could not answer live sales chat.") }, { status: 500 });

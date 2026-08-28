@@ -10,6 +10,9 @@ type ChatMessage = {
   text: string;
 };
 
+type LiveSalesSession = { id: string; status: string; provider?: string | null; stream_url?: string | null; started_at?: string | null; stopped_at?: string | null };
+type LiveSalesAction = { type: string; product_id?: string; title?: string; requires_confirmation?: boolean };
+
 type WorkspaceState = {
   planId: string;
   voice: string;
@@ -55,6 +58,7 @@ type LiveSalesAgentRecord = {
   availability?: string | null;
   custom_schedule?: string | null;
   metadata?: Record<string, unknown> & { avatarPreview?: AvatarPreviewRecord };
+  catalog_snapshot?: Array<{ id: string; title: string; handle?: string; image?: string | null; price?: string | null }>;
 };
 
 const storageKey = "clipora-live-sales-avatar-v3";
@@ -154,6 +158,10 @@ const [openPreference, setOpenPreference] = useState("Industry");
   const [avatarPreview, setAvatarPreview] = useState<AvatarPreviewRecord | null>(null);
   const [previewingAvatar, setPreviewingAvatar] = useState(false);
   const [previewMessage, setPreviewMessage] = useState("");
+  const [session, setSession] = useState<LiveSalesSession | null>(null);
+  const [sessionMessage, setSessionMessage] = useState("");
+  const [chatActions, setChatActions] = useState<LiveSalesAction[]>([]);
+  const [catalogMessage, setCatalogMessage] = useState("");
   const chatWindowRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -188,8 +196,9 @@ const [openPreference, setOpenPreference] = useState("Industry");
         const agent = data.agent as LiveSalesAgentRecord | null | undefined;
         if (!agent || cancelled) return;
         setAgentIdValue(agent.agent_id || agentId);
-        setAvatarPreview(agent.metadata?.avatarPreview ?? null);
-        setState((current) => ({
+         setAvatarPreview(agent.metadata?.avatarPreview ?? null);
+         setSession((agent.metadata?.liveSalesSession as LiveSalesSession | undefined) ?? null);
+         setState((current) => ({
           ...current,
           planId: agent.plan_id || current.planId,
           platform: agent.platform || current.platform,
@@ -203,8 +212,9 @@ const [openPreference, setOpenPreference] = useState("Industry");
           shippingInfo: agent.shipping_info || current.shippingInfo,
           orderInfo: agent.order_info || current.orderInfo,
           availability: agent.availability || current.availability,
-          customSchedule: agent.custom_schedule || current.customSchedule
-        }));
+         customSchedule: agent.custom_schedule || current.customSchedule
+         }));
+         if (agent.catalog_snapshot?.length) setCatalogMessage(`${agent.catalog_snapshot.length} catalog products loaded.`);
       } catch {
         // keep local defaults
       } finally {
@@ -309,11 +319,11 @@ async function saveAvatarSetup() {
         shipping_info: state.shippingInfo,
         order_info: state.orderInfo,
         availability: state.availability,
-        custom_schedule: state.customSchedule
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(String(data.error || "Could not save avatar setup."));
+         custom_schedule: state.customSchedule
+       })
+     });
+     const data = await response.json().catch(() => ({}));
+     if (!response.ok) throw new Error(String(data.error || "Could not save avatar setup."));
     if (data.agent_id) setAgentIdValue(String(data.agent_id));
     setSaveMessage(data.saved ? "Avatar setup saved. Embed code is ready." : String(data.message || "Avatar setup draft is ready; database setup is pending."));
     if (data.agent?.agent_id) setAgentIdValue(String(data.agent.agent_id));
@@ -409,6 +419,63 @@ async function refreshAvatarPreviewStatus() {
   }
 }
 
+async function updateLiveSession(action: "create" | "start" | "stop") {
+  if (action === "stop" && !session?.id) return;
+  setSessionMessage("");
+  try {
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) { setSessionMessage(auth.message); return; }
+    const response = await fetch(`${agentConfigEndpoint}/sessions`, { method: "POST", headers: authHeaders(auth.accessToken), body: JSON.stringify({ user_id: auth.user.id, agent_id: agentIdValue, action, session_id: session?.id }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(String(data.error || "Could not update live session."));
+    setSession(data.session ?? null);
+    setSessionMessage(String(data.provider_result?.message || `Session ${action} request saved.`));
+  } catch (error) { setSessionMessage(error instanceof Error ? error.message : "Could not update live session."); }
+}
+
+async function loadCommerceCatalog() {
+  setCatalogMessage("");
+  try {
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) { setCatalogMessage(auth.message); return; }
+    const storesResponse = await fetch(`/api/commerce/stores?user_id=${encodeURIComponent(auth.user.id)}`, { headers: authHeaders(auth.accessToken) });
+    const storesData = await storesResponse.json().catch(() => ({}));
+    const store = Array.isArray(storesData.stores) ? storesData.stores.find((item: { id?: string; provider?: string }) => item.id && ["shopify", "woocommerce"].includes(String(item.provider))) : null;
+    if (!store) { setCatalogMessage("Connect a Shopify or WooCommerce store first."); return; }
+    const productsResponse = await fetch(`/api/commerce/products?user_id=${encodeURIComponent(auth.user.id)}&connected_account_id=${encodeURIComponent(store.id)}`, { headers: authHeaders(auth.accessToken) });
+    const productsData = await productsResponse.json().catch(() => ({}));
+    if (!productsResponse.ok) throw new Error(String(productsData.error || "Catalog could not be loaded."));
+    const products = Array.isArray(productsData.products) ? productsData.products : [];
+    const saveResponse = await fetch(agentConfigEndpoint, { method: "POST", headers: authHeaders(auth.accessToken), body: JSON.stringify({ user_id: auth.user.id, agent_id: agentIdValue, plan_id: state.planId, platform: state.platform, industry: state.industry, avatar_source: state.avatarSource, avatar_role: state.role, language: state.language, voice: state.voice, tone: state.tone, product_info: state.productInfo, shipping_info: state.shippingInfo, order_info: state.orderInfo, availability: state.availability, custom_schedule: state.customSchedule, catalog_snapshot: products }) });
+    const saveData = await saveResponse.json().catch(() => ({}));
+    if (!saveResponse.ok) throw new Error(String(saveData.error || "Catalog could not be attached to the agent."));
+    setCatalogMessage(`${products.length} catalog products attached from ${store.display_name || store.provider}.`);
+  } catch (error) { setCatalogMessage(error instanceof Error ? error.message : "Catalog could not be loaded."); }
+}
+
+async function executeCommerceAction(action: "add_to_cart" | "checkout", productId: string) {
+  if (!session?.id) { setSessionMessage("Create or start a live session before using commerce actions."); return; }
+  try {
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) { setSessionMessage(auth.message); return; }
+    const response = await fetch(`${agentConfigEndpoint}/actions`, { method: "POST", headers: authHeaders(auth.accessToken), body: JSON.stringify({ user_id: auth.user.id, agent_id: agentIdValue, session_id: session.id, action, product_id: productId }) });
+    const data = await response.json().catch(() => ({}));
+    setSessionMessage(String(data.result?.message || (data.result?.url ? "Checkout link is ready." : "Commerce intent recorded.")));
+    if (data.result?.url) window.open(String(data.result.url), "_blank", "noopener,noreferrer");
+  } catch (error) { setSessionMessage(error instanceof Error ? error.message : "Commerce action failed."); }
+}
+
+async function sessionTranscript(format: "json" | "md") {
+  if (!session?.id) return;
+  const auth = await requireVerifiedBrowserUser();
+  if (!auth.ok) { setSessionMessage(auth.message); return; }
+  const response = await fetch(`${agentConfigEndpoint}/sessions/${session.id}/transcript?user_id=${encodeURIComponent(auth.user.id)}&format=${format}`, { headers: authHeaders(auth.accessToken) });
+  if (!response.ok) { setSessionMessage("Transcript is not available yet."); return; }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a"); link.href = url; link.download = `live-sales-${session.id}.${format}`; link.click(); URL.revokeObjectURL(url);
+}
+
 async function sendMessage() {
   const message = state.draftMessage.trim();
   if (!message || sending) return;
@@ -430,8 +497,9 @@ async function sendMessage() {
     message: `${override ? `${override}\n\n` : ""}${liveSalesContextPrompt()}\n\nCustomer message: ${message}`,
     mode: "quick",
     language,
-    conversation_id: override ? undefined : (conversationId || undefined),
-    messages: override ? [] : state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
+     conversation_id: override ? undefined : (conversationId || undefined),
+     session_id: session?.id || undefined,
+     messages: override ? [] : state.chatMessages.slice(-8).map((item) => ({ role: item.role, content: item.text }))
   };
 
     if (auth?.ok) {
@@ -447,8 +515,9 @@ async function sendMessage() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(String(data.error || "Assistant chat failed"));
     if (data.conversation_id) setConversationId(String(data.conversation_id));
-    const reply = String(data.reply || "").trim() || localFallback;
-    setState((current) => ({ ...current, chatMessages: [...current.chatMessages, { id: `assistant-${Date.now()}`, role: "assistant", text: reply }] }));
+     const reply = String(data.reply || "").trim() || localFallback;
+     setChatActions(Array.isArray(data.actions) ? data.actions as LiveSalesAction[] : []);
+     setState((current) => ({ ...current, chatMessages: [...current.chatMessages, { id: `assistant-${Date.now()}`, role: "assistant", text: reply }] }));
   } catch {
     setState((current) => ({ ...current, chatMessages: [...current.chatMessages, { id: `assistant-${timestamp + 2}`, role: "assistant", text: localFallback }] }));
   } finally {
@@ -650,7 +719,19 @@ async function sendMessage() {
       <aside className="card live-sales-assistant-rail">
         <span className="badge">Assistant</span>
         <h3>Live sales assistant</h3>
-        <p style={{ color: "var(--muted)" }}>Type or speak as a customer and test the assistant response.</p>
+         <p style={{ color: "var(--muted)" }}>Type or speak as a customer and test the assistant response.</p>
+         <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+           <strong>Session: {session?.status || "not created"}</strong>
+           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+             <button className="btn secondary" type="button" onClick={() => updateLiveSession("create")}>Create session</button>
+             <button className="btn" type="button" onClick={() => updateLiveSession("start")} disabled={!session || session.status === "live"}>Start live</button>
+             <button className="btn secondary" type="button" onClick={() => updateLiveSession("stop")} disabled={!session || session.status === "stopped"}>Stop</button>
+             <button className="btn secondary" type="button" onClick={loadCommerceCatalog}>Refresh catalog</button>
+           </div>
+           {sessionMessage ? <small style={{ color: "var(--muted)" }}>{sessionMessage}</small> : null}
+           {catalogMessage ? <small style={{ color: "var(--muted)" }}>{catalogMessage}</small> : null}
+           {session ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("json")}>Download JSON</button><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("md")}>Download Markdown</button></div> : null}
+         </div>
 
         <div className="live-sales-chat-window" ref={chatWindowRef}>
           {state.chatMessages.map((message) => (
@@ -664,9 +745,10 @@ async function sendMessage() {
               <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
             </div>
           ) : null}
-        </div>
+         </div>
+         {chatActions.length ? <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Suggested actions</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{chatActions.map((action, index) => action.product_id ? <button key={`${action.type}-${action.product_id}-${index}`} className="live-sales-option-chip active" type="button" onClick={() => executeCommerceAction(action.type === "checkout_intent" ? "checkout" : "add_to_cart", action.product_id || "")}>{action.type === "checkout_intent" ? "Confirm checkout" : action.type === "add_to_cart_intent" ? "Confirm add to cart" : `Show ${action.title || "product"}`}</button> : null)}</div></div> : null}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {[
             "How do I connect this?",
             "What can it do?",

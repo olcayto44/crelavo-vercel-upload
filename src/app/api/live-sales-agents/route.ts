@@ -34,8 +34,9 @@ function publicAgentPayload(data: Record<string, unknown>) {
     order_info: data.order_info,
     availability: data.availability,
     custom_schedule: data.custom_schedule,
-    metadata: data.metadata ?? {}
-  };
+     metadata: data.metadata ?? {},
+     catalog_snapshot: data.catalog_snapshot ?? []
+   };
 }
 
 function demoCrelavoAgent(agentId = "agent_demo_live_sales_001") {
@@ -134,8 +135,9 @@ export async function GET(request: Request) {
         order_info: data.order_info,
         availability: data.availability,
         custom_schedule: data.custom_schedule,
-        metadata: data.metadata ?? {}
-      }
+         metadata: data.metadata ?? {},
+         catalog_snapshot: data.catalog_snapshot ?? []
+       }
     });
   } catch (error) {
     return corsJson({ error: errorMessage(error, "Could not load live sales agent.") }, { status: 500 });
@@ -158,14 +160,15 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const { data: existingAgent } = await supabaseAdmin()
       .from("live_sales_agents")
-      .select("metadata, created_at")
+      .select("metadata, catalog_snapshot, created_at")
       .eq("agent_id", agentId)
       .maybeSingle();
     const previousMetadata = existingAgent?.metadata && typeof existingAgent.metadata === "object" && !Array.isArray(existingAgent.metadata)
-      ? existingAgent.metadata as Record<string, unknown>
-      : {};
+       ? existingAgent.metadata as Record<string, unknown>
+       : {};
+    const previousCatalog = Array.isArray(existingAgent?.catalog_snapshot) ? existingAgent.catalog_snapshot : [];
 
-    const payload = {
+     const payload = {
       agent_id: agentId,
       user_id: userId,
       status: "draft",
@@ -182,9 +185,10 @@ export async function POST(request: Request) {
       order_info: clean(body.order_info),
       availability: clean(body.availability),
       custom_schedule: clean(body.custom_schedule),
-      metadata: {
-        ...previousMetadata,
-        embedTheme: "dark",
+       catalog_snapshot: Array.isArray(body.catalog_snapshot) ? body.catalog_snapshot.slice(0, 50) : previousCatalog,
+       metadata: {
+         ...previousMetadata,
+         embedTheme: "dark",
         embedPosition: "bottom-right",
         source: "dashboard_live_sales_agent"
       },
