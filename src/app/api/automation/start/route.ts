@@ -323,6 +323,24 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
   return postgresSafe({ provider: "heygen_video_agent", id: sessionId, status: String(data.status ?? "generating"), videoId: String(data.video_id ?? data.videoId ?? "").trim() || null, payload, internalBlueprint, raw: result });
 }
 
+async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
+  const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
+  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "9:16");
+  const duration = Math.min(15, Math.max(4, Math.round(secondsFromValue(selected.durationSeconds) ?? secondsFromValue(selected.duration_seconds) ?? secondsFromValue(selected.outputDurationSeconds) ?? 6))) as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
+  const result = await createMiniMaxH3VideoTask({
+    content: [{ type: "text", text: input.prompt }],
+    resolution: "768P",
+    duration,
+    ratio
+  });
+  const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
+  const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const taskId = String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim();
+  if (!taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: input.prompt, duration, ratio, resolution: "768P" }, raw: result });
+}
+
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
   const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
   const promptText = String(input.prompt ?? "");
@@ -553,7 +571,7 @@ const minimaxSetupPresenterIntent = !isImageProduction && hasMinimaxPresenterInt
 const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));
 const heygenForcedByMetadata = !isImageProduction && !isDroneProduction && explicitHeyGenProviderSignal;
 const minimaxVideoRouteSelected = String(providerPreflight.provider ?? requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? "").toLowerCase() === "minimax";
-const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent);
+const talkingProviderType = !isImageProduction && !isDroneProduction && (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType) || heygenForcedByMetadata || minimaxSetupPresenterIntent || /minimax_video_agent|video_agent/.test(productionDetectionText));
 const directLuxuryProductCommercialRoute = String(requestMetadata.routeLock ?? inputJson.routeLock ?? existingOutput.routeLock ?? "") === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(productionDetectionText);
     const providerReadiness = providerReadinessSummary(talkingProviderType ? "talking_video" : productionType, packageId);
 
@@ -620,11 +638,11 @@ if (talkingProviderType) {
   if (startRequestedError) throw new Error(`minimax_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
   const explicitVideoAgentProvider = String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? requestMetadata.selectedProviderService ?? inputJson.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.provider_service ?? "").toLowerCase();
-  const useHeyGenVideoAgent = explicitVideoAgentProvider === "heygen_video_agent";
-  let heygenJob: Awaited<ReturnType<typeof startHeyGenVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
+  const useMiniMaxVideoAgent = explicitVideoAgentProvider === "minimax_video_agent" || explicitVideoAgentProvider === "minimax" || /video_agent|video agent/.test(productionDetectionText);
+  let providerJob: Awaited<ReturnType<typeof startMiniMaxVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
-    heygenJob = useHeyGenVideoAgent
-      ? await startHeyGenVideoAgentProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
+    providerJob = useMiniMaxVideoAgent
+      ? await startMiniMaxVideoAgentProduction({ title: String(currentProduction.title ?? "Video Agent"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
       : await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
   } catch (error) {
   const failureMessage = errorMessage(error, "MiniMax provider job could not be started.");
@@ -656,36 +674,37 @@ if (talkingProviderType) {
         ...existingOutput,
         automationMode: "fully_automatic",
         automationStatus: "running",
-        providerStatus: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent_session_created" : "minimax_job_created",
-        requiredPipeline: heygenJob.provider === "heygen_video_agent" ? "heygen_video_agent" : "talking_lip_sync",
+providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "minimax_video_agent_task_created" : "minimax_job_created",
+    requiredPipeline: useMiniMaxVideoAgent ? "minimax_video_agent" : "talking_lip_sync",
         jobId,
-        heygenJob,
-        heygenSessionId: heygenJob.provider === "heygen_video_agent" ? heygenJob.id : null,
-        heygenVideoId: "videoId" in heygenJob ? heygenJob.videoId : null,
-        heygenProviderProof: heygenJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: heygenJob.id, videoId: "videoId" in heygenJob ? heygenJob.videoId : null, status: heygenJob.status } : { provider: "heygen_v2_generate", videoId: heygenJob.id, status: heygenJob.status },
-        heygenVideoAgent: heygenJob.provider === "heygen_video_agent" ? heygenJob : null,
-        heygenAgentBridge: heygenJob.provider === "heygen_video_agent" ? { mode: "native_session_artifacts", sessionId: heygenJob.id, status: "tracking_session_resources", artifactField: "heygenAgentArtifacts" } : null,
+        providerJob,
+        heygenSessionId: providerJob.provider === "heygen_video_agent" ? providerJob.id : null,
+        heygenVideoId: "videoId" in providerJob ? providerJob.videoId : null,
+        minimaxProviderProof: useMiniMaxVideoAgent ? { provider: "minimax_video_agent", taskId: providerJob.id, status: providerJob.status, model: "MiniMax-H3" } : null,
+    heygenProviderProof: providerJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: providerJob.id, videoId: "videoId" in providerJob ? providerJob.videoId : null, status: providerJob.status } : { provider: "heygen_v2_generate", videoId: providerJob.id, status: providerJob.status },
+        heygenVideoAgent: providerJob.provider === "heygen_video_agent" ? providerJob : null,
+        heygenAgentBridge: providerJob.provider === "heygen_video_agent" ? { mode: "native_session_artifacts", sessionId: providerJob.id, status: "tracking_session_resources", artifactField: "heygenAgentArtifacts" } : null,
         heygenAgentArtifacts: [],
         latestHeyGenVideoArtifact: null,
-        visualJob: { provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw },
-        visualJobs: [{ provider: heygenJob.provider, id: heygenJob.id, status: heygenJob.status, type: heygenJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: heygenJob.raw }],
+        visualJob: { provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw },
+        visualJobs: [{ provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw }],
         creativeActivityLog: mergeCreativeActivityLog(existingOutput.creativeActivityLog ?? requestMetadata.creativeActivityLog ?? inputJson.creativeActivityLog, [
-          creativeActivityItem("provider-job", "Provider job", "working", heygenJob.provider === "heygen_video_agent" ? `HeyGen Video Agent session created: ${heygenJob.id}` : `HeyGen talking provider job created: ${heygenJob.id}`, heygenJob.provider),
-          creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", heygenJob.provider),
-          creativeActivityItem("b-roll", "B-roll / UI overlays", "working", "Motion graphics, product proof overlays and captions are being prepared by the provider.", heygenJob.provider)
+          creativeActivityItem("provider-job", "Provider job", "working", providerJob.provider === "heygen_video_agent" ? `HeyGen Video Agent session created: ${providerJob.id}` : `HeyGen talking provider job created: ${providerJob.id}`, providerJob.provider),
+          creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", providerJob.provider),
+          creativeActivityItem("b-roll", "B-roll / UI overlays", "working", "Motion graphics, product proof overlays and captions are being prepared by the provider.", providerJob.provider)
         ]),
-        currentStep: heygenJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "MiniMax talking/lip-sync provider job created",
+        currentStep: providerJob.provider === "heygen_video_agent" ? "HeyGen Video Agent session created" : "MiniMax talking/lip-sync provider job created",
         providerReadiness,
-        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: { ...existingOutput, heygenJob, providerReadiness } })
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: { ...existingOutput, providerJob, providerReadiness } })
       };
       const { data: talkingProduction, error: talkingError } = await supabase
         .from("production_requests")
-        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: talkingOutput, admin_notes: `MiniMax talking/lip-sync job started: ${heygenJob.id}.`, started_at: now, updated_at: now }))
+        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: talkingOutput, admin_notes: `MiniMax talking/lip-sync job started: ${providerJob.id}.`, started_at: now, updated_at: now }))
         .eq("id", productionId)
         .select("*")
         .single();
       if (talkingError) throw new Error(`minimax_job_created_update: ${errorMessage(talkingError, "DB update failed")}`);
-      return Response.json({ job_id: jobId, production: talkingProduction, provider_job: heygenJob, provider_started: true });
+      return Response.json({ job_id: jobId, production: talkingProduction, provider_job: providerJob, provider_started: true });
     }
 
     if (!isAutomaticProjectDelivery(productionType, packageId) && !providerReadiness.canStartRealProvider && !isVideoLikeProductionType(productionType) && !(talkingProviderType && minimaxVideoRouteSelected) && !minimaxVideoRouteSelected && !directLuxuryProductCommercialRoute && !(currentProduction?.package_id === "campaign_product_ad_video" || currentProduction?.production_type === "campaign")) {
