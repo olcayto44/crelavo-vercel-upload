@@ -90,6 +90,7 @@ const studioChips = ["Video", "Video Clipping", "Product Link to Video", "Ad Cre
 
 const productionLabels: Record<string, string> = {
   video: "AI Video",
+  video_agent: "Video Agent",
   campaign: "Campaign",
   talking_video: "Talking Video",
   avatar: "Avatar Video",
@@ -356,6 +357,12 @@ function uid() {
 function labelFor(type: string) {
   return productionLabels[type] ?? type.replaceAll("_", " ");
 }
+
+setupProfiles.video_agent = {
+  ...setupProfiles.video,
+  title: "Video Agent setup",
+  note: "MiniMax Video Agent production choices. HeyGen is not used for this workflow."
+};
 
 const trUiLabels: Record<string, string> = {
   "AI Video": "Reklam videosu",
@@ -712,7 +719,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
   }
 
   if (isFilmAnimation && ["animation", "anime_short_film", "video"].includes(plan.production_type)) {
-    return plan.production_type === "anime_short_film" ? setupProfiles.anime_short_film : plan.production_type === "animation" ? setupProfiles.animation : setupProfiles.video;
+    return plan.production_type === "video_agent" ? setupProfiles.video_agent : plan.production_type === "anime_short_film" ? setupProfiles.anime_short_film : plan.production_type === "animation" ? setupProfiles.animation : setupProfiles.video;
   }
 
   return base;
@@ -2081,7 +2088,9 @@ if (isImageStart) {
     }
 
     const normalized = normalizePlan(data.plan, clean, shouldForceImageProduction(clean) ? "image" : forcedProductionType);
-    const finalPlan = hasEcommerceIntent(clean)
+    const finalPlan = /video agent|video_agent/i.test(clean)
+      ? normalizePlan({ ...normalized, production_type: "video_agent", package_id: "video_premium", selected_quality: "MiniMax-H3", selected_duration: "15 sec", selected_style: "Video Agent", selected_modules: ["Video Agent", "Visual video", "Final MP4"], selected_features: ["MiniMax Video Agent", "Automatic edit", "Final MP4"], delivery_requirements: { requested: true, status: "pending", formats: ["final_mp4", "dashboard_delivery"] } }, clean, "video_agent")
+      : hasEcommerceIntent(clean)
       ? normalizePlan({ ...normalized, production_type: "ecommerce", package_id: "website_ecommerce_admin", selected_quality: "Project based", selected_duration: "Project based", selected_style: "Premium modern interface", selected_modules: ["E-commerce", "Storefront", "Product catalog", "Cart", "Checkout", "Admin panel", "Orders", "Inventory"], selected_features: ["Working storefront", "README / setup", "Preview delivery", "Source package"], delivery_requirements: { requested: true, status: "pending", formats: ["source_code", "readme", "dashboard_delivery"] } }, clean, "ecommerce")
       : shouldForceImageProduction(clean) ? normalizePlan({ ...normalized, production_type: "image", package_id: "image_single", selected_quality: "Image", selected_duration: "Static", selected_modules: ["Image generation"], selected_features: ["Production package", "PNG/JPG delivery"], delivery_requirements: { requested: true, status: "pending", formats: ["final_image", "png", "jpg", "dashboard_delivery"] } }, clean, "image") : normalized;
     setConversationId(data.conversation_id ?? conversationId);
