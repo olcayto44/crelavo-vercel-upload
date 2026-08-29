@@ -853,7 +853,7 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
     modules: ["Visual/image pack", "Product visual set", "Banner design", "Poster design"],
     features: ["1 visual", "3 alternatives", "5 alternatives", "PNG/JPG delivery", "Revision right"],
     platforms: ["Dashboard delivery", "PNG images", "JPG images"],
-    quality: ["Square 1:1", "Story 9:16", "Portrait 4:5", "Horizontal 16:9"],
+    quality: ["Square 1:1", "Story 9:16", "Portrait 4:5", "Horizontal 16:9", "LinkedIn banner 1584x396"],
     style: ["Luxury product", "Minimal", "Corporate", "Premium ad", "Product demo"],
     duration: ["Single visual"]
   },
@@ -1533,7 +1533,7 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const promptIntentText = `${chatInput} ${input} ${productionBrief}`.toLocaleLowerCase("tr-TR");
   const promptImageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b/.test(promptIntentText);
   const promptExplicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(promptIntentText);
-  const promptSuggestedCategory = promptImageDesignIntent && !promptExplicitVideoIntent
+  const promptSuggestedCategory = selectedProductionType === "image" || promptImageDesignIntent && !promptExplicitVideoIntent
     ? "image"
     : isCharacterDialogueAnimationPrompt(`${chatInput} ${input} ${productionBrief}`)
       ? "animation"
@@ -1568,7 +1568,10 @@ const [deliveryCreditRates, setDeliveryCreditRates] = useState<DeliveryCreditRat
   const selectedDurationSeconds = Number(selectedDuration.replace(/\D/g, "")) || (currentAiVideoOnly ? 15 : 30);
   const uploadedMaterialBytes = uploadedMaterials.reduce((total, material) => total + (Number(material.size_bytes) || 0), 0);
   const deliverySignal = `${selectedFeatures.join(" ")} ${selectedPlatforms.join(" ")} ${selectedModules.join(" ")}`.toLocaleLowerCase("tr-TR");
-  const selectedDeliveryRequirements = {
+  const imageOnlySelection = selectedTypeForEstimate === "image";
+  const selectedDeliveryRequirements = imageOnlySelection
+    ? { requested: true, status: "pending", formats: ["png", "jpg", "dashboard_delivery"] }
+    : {
     requested: true,
     status: "pending",
     formats: [
@@ -2156,9 +2159,9 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     const commerceProject = type === "website" && isCommerceProjectIdea(idea);
     const growthIntelligenceProject = type === "document_pack" && /growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/i.test(idea);
     setSelectedProductionType(type);
-    setSelectedQuality(growthIntelligenceProject ? "Monthly service plan" : type === "image" || type === "video" ? "1080p" : "1080p premium");
+    setSelectedQuality(growthIntelligenceProject ? "Monthly service plan" : type === "image" ? (/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(idea) ? "LinkedIn banner 1584x396" : "Portrait 4:5") : type === "video" ? "1080p" : "1080p premium");
     setSelectedStyle(growthIntelligenceProject ? "Growth Intelligence service" : commerceProject ? "E-commerce Product" : type === "saas" ? "SaaS modern" : type === "mobile_app" ? "App demo" : type === "campaign" ? "Premium ad" : type === "video" ? (/saas|startup|premium/i.test(idea) ? "SaaS modern" : "Cinematic") : type === "documentary" ? "Documentary" : type === "drone_video" ? "Cinematic" : type === "live_sales_agent" ? "Friendly sales host" : type === "drama" ? "Short drama" : type === "stickman_animation" ? "Stickman animation" : type === "anime_short_film" ? "Anime cinematic" : "Corporate");
-    setSelectedDuration(growthIntelligenceProject ? "Monthly monitoring" : ["website", "saas", "mobile_app", "admin_project", "image", "brand_kit", "document_pack"].includes(type) ? "Project based" : type === "documentary" ? "2 min" : type === "drone_video" ? "60 sec" : type === "live_sales_agent" ? "10h/month fair use" : type === "drama" ? "Scene 1-3 min" : type === "video" ? (durationFromFollowUp(idea) || "15 sec") : "30 sec");
+    setSelectedDuration(growthIntelligenceProject ? "Monthly monitoring" : ["website", "saas", "mobile_app", "admin_project", "brand_kit", "document_pack"].includes(type) ? "Project based" : type === "image" ? "Single visual" : type === "documentary" ? "2 min" : type === "drone_video" ? "60 sec" : type === "live_sales_agent" ? "10h/month fair use" : type === "drama" ? "Scene 1-3 min" : type === "video" ? (durationFromFollowUp(idea) || "15 sec") : "30 sec");
     setSelectedModules(growthIntelligenceProject ? ["Growth Intelligence brief", "Competitor monitoring", "Weekly executive report", "Campaign response actions"] : commerceProject ? ["Website", "E-commerce product pack", "Marketplace listing", "Admin panel"] : type === "image" ? ["Visual/image pack", "Banner design"] : type === "brand_kit" ? ["Brand kit", "Visual/image pack"] : type === "website" ? ["Website", "Visual/image pack"] : type === "saas" ? ["SaaS screen", "Admin panel"] : type === "mobile_app" ? ["Mobile app", "Admin panel"] : type === "admin_project" ? ["Admin panel"] : type === "brand_kit" ? ["Brand kit"] : type === "document_pack" ? ["PDF/document"] : type === "image" ? ["Visual/image pack"] : type === "ai_agent" ? ["AI video", "Brand kit"] : type === "campaign" ? ["Shopify product link", "Amazon product link", "Trendyol product link", "Product ad video"] : type === "documentary" ? ["Documentary", "Topic research", "Narration outline", "Archival visual plan", "Voice-over"] : type === "drone_video" ? ["Drone-style aerial video", "AI map/location drone-style video", "Voice-over", "Background music direction"] : type === "live_sales_agent" ? ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "Voice selection", "User audio upload", "Visual/image pack"] : type === "drama" ? ["Drama / short series", "Script + scene plan", "Character breakdown", "AI video", "Voice-over"] : ["AI video"]);
     setSelectedFeatures(growthIntelligenceProject ? ["Public-signal monitoring", "Weekly executive PDF", "Alert channel plan", "Campaign response actions"] : commerceProject ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "image" ? ["1 visual", "PNG/JPG delivery", "Revision right"] : type === "brand_kit" ? ["Logo/brand kit", "Revision right"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "campaign" ? ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut"] : type === "video" ? ["Voice-over", "Subtitles", "Music"] : type === "localization" ? ["Voice-over", "Subtitles", "Scene plan"] : type === "documentary" ? ["Script", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "drone_video" ? ["Scene plan", "Marked area notes", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "live_sales_agent" ? ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Choose AI voice", "Photo/avatar input", "Subtitles", "Compliance review", "Revision right"] : type === "drama" ? ["Script", "Scene plan", "Character breakdown", "Dialogue", "Voice-over", "Subtitles", "Music", "Revision right"] : ["Revision right"]);
     setSelectedPlatforms(growthIntelligenceProject ? ["Growth Intelligence dashboard", "Email report", "Slack/email alerts"] : commerceProject ? ["Dashboard delivery", "ZIP source", "Shopify", "WooCommerce"] : type === "image" ? ["Dashboard delivery", "PNG images", "JPG images"] : type === "brand_kit" ? ["Dashboard delivery"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Dashboard delivery", "ZIP source"] : type === "campaign" ? ["Dashboard delivery", "TikTok", "Shopify", "Amazon", "Trendyol"] : type === "documentary" ? ["Dashboard delivery", "MP4 download", "YouTube Shorts", "ZIP source"] : type === "live_sales_agent" ? ["TikTok Live", "YouTube Live"] : type === "drama" ? ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"] : ["Dashboard delivery", "MP4 download"]);
@@ -2444,7 +2447,7 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
   .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ");
     const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya görseli|sosyal medya gorseli|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(text);
     const explicitVideoIntent = /\b(video|klip|clip|reels|shorts|tiktok|youtube shorts|mp4|mov|animasyon|animation|motion|hareketli|film|teaser|trailer)\b/.test(routeText);
-    if (selectedProductionType === "image" || (imageDesignIntent && !explicitVideoIntent)) return "image";
+     if (selectedProductionType === "image" || imageDesignIntent && !explicitVideoIntent) return "image";
     const hasPresenter = selectedCharacterProfile !== "No presenter / UI-only video";
     const explicitSpeakingRequest = /talking|konuş|konus|sunucu|presenter|avatar|lip-sync|lip sync|dudak|röportaj|roportaj|diyalog|dialogue|testimonial|self-in-video|add yourself|multi-person|conversation|panel/.test(`${moduleText} ${featureText} ${briefText} ${styleText}`);
     const selectedTalkingCategory = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(selectedProductionType);
@@ -2513,7 +2516,7 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
     const selectedServiceNetworkForProduction = luxuryCommercialIntent ? "" : selectedServiceNetwork;
     const selectedProviderServiceForProduction = luxuryCommercialIntent ? "" : selectedProviderService;
     const selection = { input: selectionInput, selectedStyle: selectedStyleForProduction, selectedQuality: safeSelectedQuality, selectedDuration, selectedModules, selectedFeatures: selectedFeaturesForProduction, selectedPlatforms, selectedMaterials, uploadedMaterials, quickProviderTest, selectedServiceNetwork: selectedServiceNetworkForProduction, selectedProviderService: selectedProviderServiceForProduction, selectedVoiceProfile, selectedVoiceLanguage, selectedMusicProfile: selectedMusicProfileForProduction, selectedEnvironmentProfile: selectedEnvironmentProfileForProduction, selectedDeliveryHandoff };
-    const packageId = luxuryCommercialIntent ? "video_premium" : packageIdFromSelection(productionType, selection, configuredProductionPackages);
+    const packageId = luxuryCommercialIntent ? "video_premium" : productionType === "image" ? "image_single" : packageIdFromSelection(productionType, selection, configuredProductionPackages);
     if (productionCreditInsufficient) {
       setStartState("error");
       setStartError(`Insufficient credits for this production. Available: ${(availableProductionCredits ?? 0).toLocaleString()} credits. Estimated: ${costEstimate.totalCredits.toLocaleString()} credits. Reduce duration, quality, materials or add credits.`);
@@ -2553,9 +2556,10 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
       ...orchestratorPayload,
       user_id: auth.user.id,
       user_email: auth.user.email ?? "",
-      production_type: String(orchestratorPayload.production_type ?? fallbackPayload.production_type),
-      package_id: String(orchestratorPayload.package_id ?? fallbackPayload.package_id),
-      title: String(orchestratorPayload.title ?? fallbackPayload.title),
+       production_type: productionType === "image" ? "image" : String(orchestratorPayload.production_type ?? fallbackPayload.production_type),
+       package_id: productionType === "image" ? "image_single" : String(orchestratorPayload.package_id ?? fallbackPayload.package_id),
+       title: String(orchestratorPayload.title ?? fallbackPayload.title),
+       delivery_requirements: productionType === "image" ? selectedDeliveryRequirements : orchestratorPayload.delivery_requirements ?? fallbackPayload.delivery_requirements,
       prompt: preservedPrompt,
       project_details: mustPreserveEnglishProductionText ? `${preservedPrompt}\n\nProduction options:\n${selectedOptionSummary()}\n\nEnglish production text preservation: user requested English production content; do not translate the brief, script, narration, scene plan, final prompt, voiceover, or on-screen text.` : String(orchestratorPayload.project_details ?? fallbackPayload.project_details ?? preservedPrompt),
       legal_acceptance: fallbackPayload.legal_acceptance,

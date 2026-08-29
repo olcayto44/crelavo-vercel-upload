@@ -142,6 +142,8 @@ type SetupProfile = {
 type ProductionSetupState = Record<string, string[]>;
 
 const sharedDeliveryOptions = ["Dashboard delivery", "Final ZIP", "README", "Revision right"];
+const imageDeliveryOptions = ["PNG/JPG", "Dashboard delivery"];
+const imageAspectRatioOptions = ["Portrait 4:5", "Square 1:1", "Story 9:16", "Landscape 16:9", "LinkedIn banner 1584x396"];
 const sharedVideoQuality = ["1080p", "1080p premium", "4K"];
 const sharedVideoFormat = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"];
 const sharedVideoDuration = ["15 sec", "30 sec", "45 sec", "60 sec", "10 sec", "2 min", "3 min", "5 min"];
@@ -324,8 +326,8 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "imageType", title: "Image type", options: ["Product visual", "Poster", "Social media post", "Logo/brand kit", "Thumbnail", "Banner"] },
       { id: "outputs", title: "Output count", options: ["1 visual", "3 alternatives", "5 alternatives"], credit: 600 },
       { id: "style", title: "Style", options: ["Realistic", "Luxury product", "Minimal", "Corporate", "Viral TikTok", "Product demo"], credit: 250 },
-      { id: "aspectRatio", title: "Aspect ratio", options: ["Portrait 4:5", "Square 1:1", "Story 9:16", "Landscape 16:9"], credit: 150 },
-      { id: "delivery", title: "Delivery", multi: true, options: ["PNG/JPG", "Prompt pack", "Source file delivery", "Final ZIP", "Social caption", "Revision right"], credit: 350 }
+      { id: "aspectRatio", title: "Aspect ratio", options: imageAspectRatioOptions, credit: 150 },
+      { id: "delivery", title: "Delivery", multi: true, options: imageDeliveryOptions, credit: 350 }
     ]
   },
   campaign: {
@@ -558,6 +560,7 @@ function imageTypeFromPrompt(text: string, options: string[]) {
 function imageAspectRatioFromPrompt(text: string, options: string[]) {
   const signal = text.toLocaleLowerCase("tr-TR");
   const checks: Array<[RegExp, RegExp]> = [
+    [/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/, /linkedin banner 1584x396/i],
     [/\b4\s*[:x]\s*5\b|instagram\s+(portrait|feed)|portrait\s+post/, /portrait 4:5/i],
     [/\b1\s*[:x]\s*1\b|square|kare/, /square 1:1/i],
     [/\b9\s*[:x]\s*16\b|story|reels|tiktok|vertical|dikey/, /story 9:16/i],
@@ -585,9 +588,10 @@ function ecommercePresetSetup(setup: ProductionSetupState, hint = "", production
 
 function normalizedImageAspectRatio(setup: ProductionSetupState, hint = "") {
   const selected = String((setup.aspectRatio ?? [])[0] ?? "").toLocaleLowerCase("tr-TR");
-  const fromSelected = /9\s*[:x]\s*16|story/.test(selected) ? "9:16" : /16\s*[:x]\s*9|landscape/.test(selected) ? "16:9" : /1\s*[:x]\s*1|square/.test(selected) ? "1:1" : /4\s*[:x]\s*5|portrait/.test(selected) ? "4:5" : undefined;
+  const fromSelected = /linkedin|1584\s*[:x]\s*396/.test(selected) ? "1584x396" : /9\s*[:x]\s*16|story/.test(selected) ? "9:16" : /16\s*[:x]\s*9|landscape/.test(selected) ? "16:9" : /1\s*[:x]\s*1|square/.test(selected) ? "1:1" : /4\s*[:x]\s*5|portrait/.test(selected) ? "4:5" : undefined;
   if (fromSelected) return fromSelected;
   const signal = hint.toLocaleLowerCase("tr-TR");
+  if (/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/.test(signal)) return "1584x396";
   if (/9\s*[:x]\s*16|story/.test(signal)) return "9:16";
   if (/16\s*[:x]\s*9|landscape/.test(signal)) return "16:9";
   if (/1\s*[:x]\s*1|square/.test(signal)) return "1:1";
@@ -877,6 +881,7 @@ selected.length = 0;
     if (group.id === "aspectRatio") {
       const wanted = imageAspectRatioFromPrompt(text, group.options);
       if (wanted) selected = [wanted];
+      else if (/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner/.test(text)) selected = ["LinkedIn banner 1584x396"];
     }
     if (group.id === "videoType" && /competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/.test(text)) {
       const wanted = group.options.find((option) => /competitor comparison|alternative positioning|market gap/.test(option.toLowerCase()));
@@ -995,17 +1000,19 @@ const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand 
 function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | undefined, hint = "", plan?: StudioPlan | null): ProductionSetupState {
   if (!isImageProductionType(type)) return setup ?? {};
   const defaults = defaultSetupFor(type, hint, plan);
-  const imageOptions = new Set(setupProfiles.image.groups.flatMap((group) => group.options));
+  const allowedOptions = (groupId: string) => new Set(setupProfiles.image.groups.find((group) => group.id === groupId)?.options ?? []);
   const allowed = (key: keyof ProductionSetupState, fallback: string[]) => {
-    const values = (setup?.[key] ?? []).filter((item) => imageOptions.has(item));
+    const options = allowedOptions(key);
+    const values = (setup?.[key] ?? []).filter((item) => options.has(item));
     return values.length ? values : fallback;
   };
+  const linkedinBanner = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(hint);
   return {
-    imageType: allowed("imageType", defaults.imageType ?? ["Social media post"]),
+    imageType: allowed("imageType", defaults.imageType ?? ["Product visual"]),
     outputs: allowed("outputs", defaults.outputs ?? ["1 visual"]),
-    style: allowed("style", defaults.style ?? ["Luxury product"]),
-    aspectRatio: allowed("aspectRatio", defaults.aspectRatio ?? ["Portrait 4:5"]),
-    delivery: allowed("delivery", defaults.delivery ?? ["PNG/JPG"])
+    style: allowed("style", defaults.style ?? ["Realistic"]),
+    aspectRatio: linkedinBanner ? ["LinkedIn banner 1584x396"] : allowed("aspectRatio", defaults.aspectRatio ?? ["Portrait 4:5"]),
+    delivery: ["PNG/JPG", "Dashboard delivery"]
   };
 }
 
@@ -1308,7 +1315,7 @@ function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
   const productionType = forcedProductionType || normalizeProductionType(prompt, "video");
   const project = isProjectType(productionType);
   const visualProject = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType);
-  const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["final_image", "png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
+  const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
   const commerceIntent = /ecommerce|e-commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|cart|checkout|store|ürün|urun|sepet/.test(prompt.toLowerCase());
   const packageId = productionType === "ecommerce" ? "website_ecommerce_admin" : productionType === "website" ? (commerceIntent ? "website_ecommerce_admin" : "website_business")
     : productionType === "saas" ? "saas_admin_billing"
@@ -1325,9 +1332,9 @@ function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
     selected_quality: project ? "Project based" : "1080p",
     selected_duration: project ? "Project based" : "30 sec",
     selected_style: project ? "Premium modern interface" : "Cinematic commercial",
-    selected_modules: project ? [labelFor(productionType), "Responsive UI", "Dashboard delivery", "Source package"] : ["AI production", "Dashboard delivery"],
-    selected_features: project ? ["Working source package", "README / setup", "Preview delivery"] : ["Production package", "Preview delivery"],
-    selected_platforms: ["Crelavo dashboard"],
+    selected_modules: project ? [labelFor(productionType), "Responsive UI", "Dashboard delivery", "Source package"] : visualProject ? ["Visual/image pack", "Banner design"] : ["AI production", "Dashboard delivery"],
+    selected_features: project ? ["Working source package", "README / setup", "Preview delivery"] : visualProject ? ["1 visual", "PNG/JPG delivery"] : ["Production package", "Preview delivery"],
+    selected_platforms: visualProject ? ["Dashboard delivery", "PNG images", "JPG images"] : ["Crelavo dashboard"],
     delivery_requirements: { requested: true, status: "pending", formats },
     estimated_credits: 0,
     missing_fields: [],
@@ -1356,25 +1363,29 @@ function isLuxuryProductCommercialPrompt(prompt: string) {
 
 function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = ""): StudioPlan {
   const promptType = normalizeProductionType(prompt, plan.production_type);
-  const hardImageLock = shouldForceImageProduction(prompt);
+  const hardImageLock = shouldForceImageProduction(prompt) || forcedProductionType === "image";
   const productionType = hardImageLock ? "image" : isLuxuryProductCommercialPrompt(prompt) ? "video" : forcedProductionType || promptType;
   const project = isProjectType(productionType);
+  const image = productionType === "image";
   const fallback = localPlan(prompt, productionType);
   const raw = prompt.toLowerCase();
   const isPromoVideo = productionType === "video" && /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw);
+  const imageFeatures = (plan.selected_features ?? []).filter((item) => /^(1 visual|3 alternatives|5 alternatives|png\/jpg|revision right)$/i.test(item));
   return {
     ...fallback,
     ...plan,
     production_type: productionType,
-    package_id: isPromoVideo ? "video_premium" : project && (!plan.package_id || plan.package_id === "video_premium") ? fallback.package_id : (plan.package_id || fallback.package_id),
-    selected_quality: project ? "Project based" : (plan.selected_quality || fallback.selected_quality),
-    selected_duration: project ? "Project based" : (plan.selected_duration || fallback.selected_duration),
-    selected_modules: plan.selected_modules?.length ? plan.selected_modules : fallback.selected_modules,
-    selected_features: project ? Array.from(new Set([...(plan.selected_features || []), "Working source package", "README / setup", "Preview delivery"])) : (plan.selected_features?.length ? plan.selected_features : fallback.selected_features),
-    selected_platforms: plan.selected_platforms?.length ? plan.selected_platforms : fallback.selected_platforms,
-    delivery_requirements: project
-      ? { requested: true, status: "pending", formats: ["source_code", "readme", "dashboard_delivery"] }
-      : (plan.delivery_requirements?.formats?.length ? plan.delivery_requirements : fallback.delivery_requirements),
+    package_id: image ? "image_single" : isPromoVideo ? "video_premium" : project && (!plan.package_id || plan.package_id === "video_premium") ? fallback.package_id : (plan.package_id || fallback.package_id),
+    selected_quality: image ? "Image" : project ? "Project based" : (plan.selected_quality || fallback.selected_quality),
+    selected_duration: image ? "Static" : project ? "Project based" : (plan.selected_duration || fallback.selected_duration),
+    selected_modules: image ? fallback.selected_modules : plan.selected_modules?.length ? plan.selected_modules : fallback.selected_modules,
+    selected_features: image ? (imageFeatures.length ? imageFeatures : fallback.selected_features) : project ? Array.from(new Set([...(plan.selected_features || []), "Working source package", "README / setup", "Preview delivery"])) : (plan.selected_features?.length ? plan.selected_features : fallback.selected_features),
+    selected_platforms: image ? fallback.selected_platforms : plan.selected_platforms?.length ? plan.selected_platforms : fallback.selected_platforms,
+    delivery_requirements: image
+      ? { requested: true, status: "pending", formats: ["png", "jpg", "dashboard_delivery"] }
+      : project
+        ? { requested: true, status: "pending", formats: ["source_code", "readme", "dashboard_delivery"] }
+        : (plan.delivery_requirements?.formats?.length ? plan.delivery_requirements : fallback.delivery_requirements),
     missing_fields: [],
     workflow_stage: "ready_to_start_production",
     next_user_action: "Start Production",
@@ -1508,7 +1519,10 @@ type StoredWorkDraft = {
 function readStoredWorkDraft(): StoredWorkDraft | null {
   if (typeof window === "undefined") return null;
   try {
-    [...legacyWorkDraftStorageKeys, workDraftStorageKey].forEach((key) => window.localStorage.removeItem(key));
+    [...legacyWorkDraftStorageKeys, workDraftStorageKey].forEach((key) => {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    });
   } catch {
     // Storage cleanup is best-effort only.
   }
@@ -1678,9 +1692,10 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [productionSetup, setProductionSetup] = useState<ProductionSetupState>(() => {
     const initialPlanForSetup = initialEffectivePlan;
     if (!initialPlanForSetup) return {};
-     const rawSetup = shouldForceImageProduction(initialPrompt) ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
-      const baseSetup = ecommercePresetSetup(rawSetup, `${initialCategory} ${initialPrompt}`, initialPlanForSetup.production_type);
-     return sanitizeSetupForProduction(initialPlanForSetup.production_type, baseSetup, initialPrompt, initialPlanForSetup);
+      const imagePlan = isImageProductionType(initialPlanForSetup.production_type) || shouldForceImageProduction(initialPrompt);
+      const rawSetup = imagePlan ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
+      const sanitizedSetup = sanitizeSetupForProduction(initialPlanForSetup.production_type, rawSetup, initialPrompt, initialPlanForSetup);
+      return ecommercePresetSetup(sanitizedSetup, `${initialCategory} ${initialPrompt}`, initialPlanForSetup.production_type);
   });
 
   const [conversationId, setConversationId] = useState("");
@@ -1810,7 +1825,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     const rawSetup = defaultSetupFor(nextPlan.production_type, hint, nextPlan);
-    setProductionSetup(ecommercePresetSetup(rawSetup, `${initialCategory} ${hint}`, nextPlan.production_type));
+    const sanitizedSetup = sanitizeSetupForProduction(nextPlan.production_type, rawSetup, hint, nextPlan);
+    setProductionSetup(ecommercePresetSetup(sanitizedSetup, `${initialCategory} ${hint}`, nextPlan.production_type));
   }
 
   function toggleSetupOption(group: SetupGroup, option: string) {
@@ -1920,7 +1936,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const setupForPayloadRecord = setupForPayload as ProductionSetupState;
     const imageAspectRatio = isImageProduction ? normalizedImageAspectRatio(setupForPayloadRecord, cleanInput) : undefined;
          const selectedAspect = String(((setupForPayloadRecord as unknown as Record<string, unknown>).aspectRatio as string[] | undefined)?.[0] ?? "");
-     const aspectRatioForPayload = imageAspectRatio ?? (/16\s*[:x]\s*9|landscape/i.test(selectedAspect) ? "16:9" : /1\s*[:x]\s*1|square/i.test(selectedAspect) ? "1:1" : /4\s*[:x]\s*5/i.test(selectedAspect) ? "4:5" : /3\s*[:x]\s*4/i.test(selectedAspect) ? "3:4" : "9:16");
+      const aspectRatioForPayload = imageAspectRatio ?? (/linkedin|1584\s*[:x]\s*396/i.test(selectedAspect) ? "1584x396" : /16\s*[:x]\s*9|landscape/i.test(selectedAspect) ? "16:9" : /1\s*[:x]\s*1|square/i.test(selectedAspect) ? "1:1" : /4\s*[:x]\s*5/i.test(selectedAspect) ? "4:5" : /3\s*[:x]\s*4/i.test(selectedAspect) ? "3:4" : "9:16");
      const imageTypeForPayload = isImageProduction ? String((setupForPayloadRecord.imageType ?? [])[0] ?? imageTypeFromPrompt(cleanInput, setupProfiles.image.groups.find((group) => group.id === "imageType")?.options ?? []) ?? "Product visual") : undefined;
     const heygenTierForPayload = heygenQualityCreditBreakdown(setupForPayloadRecord, activePlanInput);
     const manualMinimaxCreditsForPayload = isImageProduction ? 0 : heygenTierForPayload.credits + (activeSelectedAvatar?.avatarId ? HEYGEN_MANUAL_AVATAR_CREDITS : 0) + (selectedVoice ? HEYGEN_MANUAL_VOICE_CREDITS : 0) + (selectedSound ? HEYGEN_MANUAL_MUSIC_CREDITS : 0);
