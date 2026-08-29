@@ -5852,16 +5852,20 @@ body.admin-route > .site-footer {
 }
 .footer-store-row,
 .footer-commerce-shortcuts,
-.footer-social-links {
+.footer-social-links,
+.site-footer-payment {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 .footer-commerce-shortcuts a,
 .footer-social-links a {
   display: inline-flex;
   width: max-content;
+  max-width: 100%;
   border: 1px solid rgba(125,211,252,.20);
   border-radius: 999px;
   padding: 7px 10px;
@@ -5869,6 +5873,32 @@ body.admin-route > .site-footer {
   background: rgba(255,255,255,.045);
   font-size: 12px;
   font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.site-footer-payment {
+  margin-top: 14px;
+  gap: 8px;
+}
+.site-footer-payment-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 2px;
+}
+.site-footer-payment-mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 8px;
+  color: #e5e7eb;
+  background: rgba(255,255,255,.05);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  overflow-wrap: anywhere;
 }
 .footer-seo-panel {
   border: 1px solid rgba(255,255,255,.10);

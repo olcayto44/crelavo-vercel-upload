@@ -54,10 +54,11 @@ export async function SiteFooter() {
         <div className="site-footer-group footer-social-group">
           <h3>Social</h3>
           <nav className="footer-social-links footer-social-text-links" aria-label="Crelavo social links">
-            <a href="https://www.instagram.com/" target="_blank" rel="noreferrer">Instagram</a>
-            <a href="https://www.youtube.com/" target="_blank" rel="noreferrer">YouTube</a>
-            <a href="https://www.tiktok.com/" target="_blank" rel="noreferrer">TikTok</a>
-            <a href="https://x.com/" target="_blank" rel="noreferrer">X / Twitter</a>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
+            <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
+            <a href="https://x.com/" target="_blank" rel="noopener noreferrer">X / Twitter</a>
+            <a href="https://www.linkedin.com/company/crelavo/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer">LinkedIn</a>
           </nav>
         </div>
       </div>
@@ -67,11 +68,19 @@ export async function SiteFooter() {
         <HardReloadLink href="/dashboard/create?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>
         <HardReloadLink href="/dashboard/create?idea=Trendyol%20product%20video&category=campaign&mode=commerce">Trendyol video</HardReloadLink>
         <HardReloadLink href="/dashboard/create?idea=Product%20link%20to%20ad%20video&category=campaign&mode=commerce">Product link ad</HardReloadLink>
+        <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce plugin</HardReloadLink>
+        <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales</HardReloadLink>
       </div>
 
       <div className="site-footer-brand footer-brand-bottom-copy">
         <HardReloadLink href="/" className="site-footer-brand-link"><strong>Crelavo</strong></HardReloadLink>
         <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for ecommerce, app, website and campaign delivery">Crelavo is an AI production studio for ecommerce product videos, campaign briefs, websites, app assets and dashboard delivery. Teams can start with a free score, pricing review or focused production brief instead of searching through every tool at once.</p>
+        <div className="site-footer-payment" aria-label="Accepted card payment methods">
+          <span className="site-footer-payment-label">Secure checkout</span>
+          <span className="site-footer-payment-mark">Visa</span>
+          <span className="site-footer-payment-mark">Mastercard</span>
+          <span className="site-footer-payment-mark">American Express</span>
+        </div>
       </div>
 
       <div className="site-footer-bottom">
