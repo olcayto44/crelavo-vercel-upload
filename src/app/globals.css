@@ -5876,8 +5876,12 @@ body.admin-route > .site-footer {
   overflow-wrap: anywhere;
 }
 .site-footer-payment {
+  display: grid;
+  grid-template-columns: auto repeat(3, minmax(58px, max-content));
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 10px;
   margin-top: 14px;
-  gap: 8px;
 }
 .site-footer-payment-label {
   color: var(--muted);
@@ -5889,21 +5893,30 @@ body.admin-route > .site-footer {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 58px;
-  min-height: 32px;
+  min-height: 30px;
   max-width: 100%;
-  padding: 5px 9px;
-  border: 1px solid rgba(255,255,255,.16);
-  border-radius: 8px;
-  background: rgba(255,255,255,.94);
+  padding: 2px 4px;
+  background: transparent;
   overflow: hidden;
 }
 .site-footer-payment-mark img {
   display: block;
   width: auto;
-  height: 20px;
-  max-width: 96px;
+  height: 24px;
+  max-width: 104px;
   object-fit: contain;
+}
+@media (max-width: 560px) {
+  .site-footer-payment {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 10px;
+  }
+  .site-footer-payment-label {
+    grid-column: 1 / -1;
+  }
+  .site-footer-payment-mark {
+    justify-content: flex-start;
+  }
 }
 .footer-seo-panel {
   border: 1px solid rgba(255,255,255,.10);
