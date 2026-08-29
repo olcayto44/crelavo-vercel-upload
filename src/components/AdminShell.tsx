@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminLogoutButton } from "@/components/AdminLoginPanel";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
-import { adminDailyFocus, adminMenu, adminMenuGroups } from "@/lib/admin";
+import { adminMenu, adminMenuGroups } from "@/lib/admin";
 
 function isActiveAdminHref(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
@@ -29,25 +29,18 @@ export function AdminShell({ children, title, description }: { children: React.R
 
       <div className="admin-shell">
         <aside className="admin-sidebar-card">
-          <span className="badge">Daily review</span>
-          <h3>Frequent checks</h3>
-          <nav className="admin-menu-group">
-            {adminDailyFocus.slice(0, 7).map((item) => (
-              <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} key={item.href} href={item.href}>{item.priority} · {item.label}</Link>
-            ))}
-          </nav>
-          <span className="badge" style={{ marginTop: 16 }}>All menu</span>
-          <h3>Other admin areas</h3>
-          <nav>
-            {adminMenuGroups.map((group) => (
-              <div className="admin-menu-group" key={group}>
-                <strong>{group}</strong>
-                {adminMenu.filter((item) => item.group === group).map((item) => (
-                  <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} key={item.href} href={item.href}>{item.label}</Link>
-                ))}
-              </div>
-            ))}
-          </nav>
+           <span className="badge">Admin navigation</span>
+           <p className="admin-sidebar-intro">Open a section only when you need its detailed controls.</p>
+           <nav>
+             {adminMenuGroups.map((group) => (
+               <details className="admin-menu-group" key={group} open={group === "Panel"}>
+                 <summary>{group}</summary>
+                 {adminMenu.filter((item) => item.group === group).map((item) => (
+                   <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} key={item.href} href={item.href}>{item.label}</Link>
+                 ))}
+               </details>
+             ))}
+           </nav>
         </aside>
 
         <div className="admin-main-stack">

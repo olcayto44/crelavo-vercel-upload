@@ -1337,6 +1337,19 @@ main.auth-screen .auth-card {
   display: grid;
 }
 
+.admin-menu-group summary {
+  color: #f8fbff;
+  cursor: pointer;
+  padding: 8px 2px;
+  font-weight: 900;
+  list-style: none;
+}
+
+.admin-menu-group summary::-webkit-details-marker { display: none; }
+.admin-menu-group summary::after { content: "+"; float: right; color: var(--muted); }
+.admin-menu-group[open] summary::after { content: "−"; }
+.admin-sidebar-intro { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 10px 0; }
+
 .admin-menu-group a {
   color: #dbeafe;
   background: #ffffff0a;
@@ -8273,6 +8286,38 @@ html body .admin-notification-list a {
 html body .admin-notification-list small {
   grid-column: 1 / -1;
   color: var(--muted);
+}
+html body .admin-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+html body .admin-kpi-strip > div {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(125,211,252,.18);
+  border-radius: 14px;
+  background: rgba(2,6,23,.24);
+}
+html body .admin-kpi-strip span,
+html body .admin-kpi-strip small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.3;
+}
+html body .admin-kpi-strip strong {
+  display: block;
+  margin: 4px 0;
+  color: #fff;
+  font-size: clamp(16px, 2vw, 22px);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  html body .admin-kpi-strip {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 960px) {
   html body .admin-hero-with-notifications {

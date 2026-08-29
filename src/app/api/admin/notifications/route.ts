@@ -64,14 +64,14 @@ export async function GET(request: Request) {
   ]);
 
   const items: NotificationItem[] = [
-    { label: "Gelen e-posta / iletişim", href: "/admin/growth", count: contactLeads.count, priority: "high", note: "Contact form veya support mesajı incelemesi." },
-    { label: "Yeni lead / talep", href: "/admin/growth", count: capturedLeads.count, priority: "medium", note: "Exit intent, checkout intent, streak veya kampanya leadleri." },
-    { label: "Asistan konuşmaları", href: "/admin/assistant", count: assistantNeedsReview.count, priority: "high", note: "Yeni veya follow-up isteyen kullanıcı mesajları." },
-    { label: "Üretim aksiyonları", href: "/admin/productions", count: pendingProductions.count, priority: "high", note: "Bekleyen, üretimde veya admin review isteyen işler." },
-    { label: "Başarısız üretim", href: "/admin/production-qa", count: failedProductions.count, priority: "high", note: "Kredi release/refund ve teslimat kontrolü gerekebilir." },
-    { label: "Video istekleri", href: "/admin/legacy", count: pendingVideoRequests.count, priority: "medium", note: "Legacy video request durumları." },
-    { label: "Partner başvuruları", href: "/admin/partners", count: partnerApplications.count, priority: "medium", note: "Yeni creator/affiliate başvuruları." },
-    { label: "Komisyon incelemesi", href: "/admin/partners", count: partnerCommissions.count, priority: "medium", note: "Payout/refund/margin review bekleyen komisyonlar." }
+    { label: "Incoming email / contact", href: "/admin/growth", count: contactLeads.count, priority: "high", note: "Review contact form and support messages." },
+    { label: "New leads / requests", href: "/admin/growth", count: capturedLeads.count, priority: "medium", note: "Exit-intent, checkout, streak, or campaign leads." },
+    { label: "Assistant conversations", href: "/admin/assistant", count: assistantNeedsReview.count, priority: "high", note: "New messages or conversations needing follow-up." },
+    { label: "Production actions", href: "/admin/productions", count: pendingProductions.count, priority: "high", note: "Pending, active, failed, or admin-review jobs." },
+    { label: "Failed productions", href: "/admin/production-qa", count: failedProductions.count, priority: "high", note: "Credit release/refund and delivery review may be needed." },
+    { label: "Video requests", href: "/admin/legacy", count: pendingVideoRequests.count, priority: "medium", note: "Legacy video request statuses." },
+    { label: "Partner applications", href: "/admin/partners", count: partnerApplications.count, priority: "medium", note: "New creator or affiliate applications." },
+    { label: "Commission reviews", href: "/admin/partners", count: partnerCommissions.count, priority: "medium", note: "Commissions awaiting payout, refund, or margin review." }
   ];
 
   const visibleItems = items.filter((item) => item.count > 0);
