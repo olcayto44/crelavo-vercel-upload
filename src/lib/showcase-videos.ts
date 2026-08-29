@@ -422,6 +422,74 @@ export const showcaseVideos: ShowcaseVideo[] = [
     bestFor: ["Luxury handbag", "Coastal fashion", "Homepage visual proof", "Social teaser"]
   },
   {
+    id: "crelavo-fruit-market-clash",
+    title: "Crelavo Fruit Market Clash",
+    kicker: "3D animation",
+    description: "A playful 3D fruit market showdown between anthropomorphic fruit characters, ending with a Crelavo logo beat.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258230695181931-1787258230674.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258253377667830-1787258253312.mp4",
+    duration: "PT12S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:00:00.000Z",
+    details: [
+      "A playful 3D fruit market showdown between anthropomorphic fruit characters.",
+      "The fast visual conflict ends with a clear Crelavo brand reveal.",
+      "Built for homepage proof and social teaser distribution."
+    ],
+    bestFor: ["3D animation", "Food campaign", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-sunset-soda-spot",
+    title: "Crelavo Sunset Soda Spot",
+    kicker: "Drink ad",
+    description: "A premium drink spot with a young model, sunset interiors and a fresh bottled beverage reveal.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258220675781756-1787258220594.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258250308448564-1787258250278.mp4",
+    duration: "PT12S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:10:00.000Z",
+    details: [
+      "A premium bottled drink reveal set against warm sunset interiors.",
+      "The visual rhythm is designed for a polished social-first beverage ad.",
+      "Built for homepage proof and drink campaign examples."
+    ],
+    bestFor: ["Drink advertising", "Beverage campaign", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-lip-balm-glow",
+    title: "Crelavo Lip Balm Glow",
+    kicker: "Beauty demo",
+    description: "A close-up beauty clip showing lip balm application in a clean, soft-lit home setting.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258222564153770-1787258222557.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258257702490335-1787258257588.mp4",
+    duration: "PT12S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:20:00.000Z",
+    details: [
+      "A close-up beauty demonstration focused on lip balm application.",
+      "The clean home setting keeps attention on product texture and use.",
+      "Built for homepage proof and social beauty campaigns."
+    ],
+    bestFor: ["Beauty demo", "Lip balm campaign", "Homepage visual proof", "Social teaser"]
+  },
+  {
+    id: "crelavo-headphone-escape",
+    title: "Crelavo Headphone Escape",
+    kicker: "Audio lifestyle",
+    description: "A modern headphone spot showing a young woman tuning out the world and settling into music and calm.",
+    imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/image/1787258223407955531-1787258223393.png",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-04/video/1787258261420071662-1787258261329.mp4",
+    duration: "PT12S",
+    orientation: "portrait",
+    uploadDate: "2026-08-21T04:30:00.000Z",
+    details: [
+      "A modern lifestyle spot about finding calm through music.",
+      "The story moves from a noisy environment into an immersive listening moment.",
+      "Built for homepage proof and audio product campaigns."
+    ],
+    bestFor: ["Headphone advertising", "Audio lifestyle", "Homepage visual proof", "Social teaser"]
+  },
+  {
     id: "phoenix-awakening",
     title: "Phoenix Awakening",
     kicker: "3D animation",

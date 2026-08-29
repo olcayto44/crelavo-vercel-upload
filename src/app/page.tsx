@@ -283,15 +283,6 @@ const featuredCrelavoVideoSlides: HomeShowcaseSlide[] = [
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266943087113873-1787266943066.mp4"
   },
   {
-    title: "Crelavo Leopard Chain Bag",
-    kicker: "Fashion product",
-    description: "A fashion showcase for a leopard-print plush chain bag with editorial styling and a Crelavo end card.",
-    href: "/showcase/videos/crelavo-leopard-chain-bag",
-    tone: "purple",
-    posterUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266915208416909-1787266915187.png",
-    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/video/1787266949234140310-1787266949179.mp4"
-  },
-  {
     title: "Crelavo Kung Fu Action Trailer",
     kicker: "Action trailer",
     description: "A cinematic kung fu and ninja action teaser with a bold CRELAVO brand reveal at the end.",

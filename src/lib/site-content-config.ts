@@ -695,16 +695,40 @@ function normalizeBlogKeywordLinks(input: unknown): BlogKeywordLink[] {
   })).filter((item) => item.label && item.href).slice(0, 3);
 }
 
-export function normalizePublicNavLinks(input: unknown): PublicNavLink[] {
-  if (!Array.isArray(input)) return defaultPublicNavLinks;
-  const links = input.filter(isRecord).map((item, index) => ({
-    label: String(item.label ?? "").trim(),
-    href: String(item.href ?? "").trim(),
+const canonicalNavLabels: Record<string, string> = {
+  assistant: "Assistant",
+  asistan: "Assistant",
+  dashboard: "Dashboard",
+  "kontrol paneli": "Dashboard"
+};
+
+const canonicalNavHrefs: Record<string, string> = {
+  Assistant: "/dashboard/assistant-workspace",
+  Dashboard: "/dashboard"
+};
+
+function normalizeConfiguredNavLink(item: Record<string, unknown>, index: number): PublicNavLink {
+  const rawLabel = String(item.label ?? "").trim();
+  const label = canonicalNavLabels[rawLabel.toLocaleLowerCase("tr-TR")] ?? rawLabel;
+  const rawHref = String(item.href ?? "").trim();
+  return {
+    label,
+    href: canonicalNavHrefs[label] ?? rawHref,
     order: Number(item.order ?? index + 1),
     active: Boolean(item.active)
-  })).filter((item) => item.label && item.href);
+  };
+}
+
+export function normalizePublicNavLinks(input: unknown): PublicNavLink[] {
+  if (!Array.isArray(input)) return defaultPublicNavLinks;
+  const links = input
+    .filter(isRecord)
+    .map(normalizeConfiguredNavLink)
+    .filter((item) => item.label && item.href && /^(?:\/|https?:\/\/)/i.test(item.href))
+    .sort((a, b) => a.order - b.order)
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.label === item.label) === index);
   if (!links.length) return defaultPublicNavLinks;
-  return links.sort((a, b) => a.order - b.order);
+  return links;
 }
 
 export function normalizeBlogTopics(input: unknown): BlogTopic[] {

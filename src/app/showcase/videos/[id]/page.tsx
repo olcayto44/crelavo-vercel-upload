@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       url: pageUrl,
       siteName: "Crelavo",
       type: "video.other",
-      images: [{ url: imageUrl, width: 1280, height: 720, alt: `${video.title} video thumbnail` }],
+       images: [{ url: imageUrl, width: video.orientation === "portrait" ? 720 : 1280, height: video.orientation === "portrait" ? 1280 : 720, alt: `${video.title} video thumbnail` }],
       videos: [{ url: video.videoUrl, type: "video/mp4" }]
     },
     twitter: {
@@ -35,34 +35,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       images: [imageUrl]
     }
   };
-}
-
-function VideoJsonLd({ video }: { video: NonNullable<ReturnType<typeof getShowcaseVideo>> }) {
-  const pageUrl = `${siteUrl}/showcase/videos/${video.id}`;
-  const thumbnailUrl = absoluteShowcaseVideoImage(video, siteUrl);
-  const schema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "VideoObject",
-    "@id": `${pageUrl}#video`,
-    name: video.title,
-    description: video.description,
-    thumbnailUrl: [thumbnailUrl],
-    uploadDate: video.uploadDate,
-    contentUrl: video.videoUrl,
-    embedUrl: pageUrl,
-    url: pageUrl,
-    publisher: {
-      "@type": "Organization",
-      name: "Crelavo",
-      url: siteUrl,
-      logo: { "@type": "ImageObject", url: `${siteUrl}/icon.svg` }
-    },
-    potentialAction: { "@type": "WatchAction", target: pageUrl },
-    about: video.bestFor.join(", "),
-    genre: video.kicker
-  };
-  if (video.duration) schema.duration = video.duration;
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
 }
 
 export default async function ShowcaseVideoPage({ params }: { params: Promise<{ id: string }> }) {

@@ -55,9 +55,15 @@ const createGroups = [
 
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
-    .filter((item) => item.active && normalizeNavLabel(item.label) !== "Categories")
+    .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
-    .map((item) => ({ ...item, label: normalizeNavLabel(item.label) }));
+    .map((item) => {
+      const label = normalizeNavLabel(item.label);
+      if (label === "Assistant") return { ...item, label, href: "/dashboard/assistant-workspace" };
+      if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
+      return { ...item, label };
+    })
+    .filter((item, index, items) => item.label !== "Categories" && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
     <header className="container nav site-main-nav">
       <Link className="logo" href="/">
