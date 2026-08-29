@@ -849,13 +849,13 @@ const categoryOptionProfiles: Record<string, CategoryOptionProfile> = {
   },
   image: {
     title: "Image / visual options",
-    note: "Hero image, product mockup, social visual, variations and delivery package decisions.",
-    modules: ["Visual/image pack", "Product visual set", "Store banner", "Brand kit"],
-    features: ["3 alternatives", "5 alternatives", "Logo/brand kit", "Cover visual", "Thumbnail", "Final ZIP", "Revision right"],
-    platforms: ["Dashboard delivery", "ZIP source", "Instagram Reels", "Facebook/Meta Ads"],
-    quality: ["1080p", "2K", "4K", "Square 1:1", "Story 9:16", "Horizontal 16:9"],
-    style: ["Luxury product", "Minimal", "Corporate", "Premium ad", "E-commerce Product"],
-    duration: ["Project based"]
+    note: "Single-image intent, banner/poster type, aspect ratio and image delivery decisions.",
+    modules: ["Visual/image pack", "Product visual set", "Banner design", "Poster design"],
+    features: ["1 visual", "3 alternatives", "5 alternatives", "PNG/JPG delivery", "Revision right"],
+    platforms: ["Dashboard delivery", "PNG images", "JPG images"],
+    quality: ["Square 1:1", "Story 9:16", "Portrait 4:5", "Horizontal 16:9"],
+    style: ["Luxury product", "Minimal", "Corporate", "Premium ad", "Product demo"],
+    duration: ["Single visual"]
   },
   brand_kit: {
     title: "Brand kit options",
@@ -2019,7 +2019,9 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   }
 
   function productionTypeFromAssistantCategory(category?: string) {
-    const normalized = String(category ?? "").toLocaleLowerCase("tr-TR");
+    const normalized = String(category ?? "").trim().toLocaleLowerCase("tr-TR");
+    if (/^(image|banner|poster|image \/ banner \/ poster|banner \/ poster|görsel|gorsel|afiş|afis)$/.test(normalized)) return "image";
+    if (/^(ecommerce|e-commerce|e commerce|e-ticaret)$/.test(normalized)) return "website";
     const match = productionTypes.find((type) => type.label.toLocaleLowerCase("tr-TR") === normalized || type.id.toLocaleLowerCase("tr-TR") === normalized);
     return match?.id ?? "video";
   }
@@ -2138,15 +2140,28 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   function applyGeneralProductionPreset(type: string, idea: string) {
     setQuickProviderTest(false);
     setDynamicWizard(emptyDynamicWizard);
+    if (type === "image" || type === "brand_kit" || type === "visual_clone") {
+      setSelectedMaterials([]);
+      setUploadedMaterials([]);
+      setLastOrchestratorPlan(null);
+      setAssistantCreditState(emptyAssistantCreditState);
+      setProductionCreditAvailable(null);
+      setProductionCreditBalance(null);
+      setProductionCreditReserved(null);
+      setStartedProduction(null);
+      setProductionStartingIntent(false);
+      setSelectedServiceNetwork("");
+      setSelectedProviderService("");
+    }
     const commerceProject = type === "website" && isCommerceProjectIdea(idea);
     const growthIntelligenceProject = type === "document_pack" && /growth intelligence|rakip|competitor|pazar istihbarat|market intelligence|fiyat takibi|pricing changes|ad library|haftalık rapor|weekly report/i.test(idea);
     setSelectedProductionType(type);
     setSelectedQuality(growthIntelligenceProject ? "Monthly service plan" : type === "image" || type === "video" ? "1080p" : "1080p premium");
     setSelectedStyle(growthIntelligenceProject ? "Growth Intelligence service" : commerceProject ? "E-commerce Product" : type === "saas" ? "SaaS modern" : type === "mobile_app" ? "App demo" : type === "campaign" ? "Premium ad" : type === "video" ? (/saas|startup|premium/i.test(idea) ? "SaaS modern" : "Cinematic") : type === "documentary" ? "Documentary" : type === "drone_video" ? "Cinematic" : type === "live_sales_agent" ? "Friendly sales host" : type === "drama" ? "Short drama" : type === "stickman_animation" ? "Stickman animation" : type === "anime_short_film" ? "Anime cinematic" : "Corporate");
     setSelectedDuration(growthIntelligenceProject ? "Monthly monitoring" : ["website", "saas", "mobile_app", "admin_project", "image", "brand_kit", "document_pack"].includes(type) ? "Project based" : type === "documentary" ? "2 min" : type === "drone_video" ? "60 sec" : type === "live_sales_agent" ? "10h/month fair use" : type === "drama" ? "Scene 1-3 min" : type === "video" ? (durationFromFollowUp(idea) || "15 sec") : "30 sec");
-    setSelectedModules(growthIntelligenceProject ? ["Growth Intelligence brief", "Competitor monitoring", "Weekly executive report", "Campaign response actions"] : commerceProject ? ["Website", "E-commerce product pack", "Marketplace listing", "Admin panel"] : type === "website" ? ["Website", "Visual/image pack"] : type === "saas" ? ["SaaS screen", "Admin panel"] : type === "mobile_app" ? ["Mobile app", "Admin panel"] : type === "admin_project" ? ["Admin panel"] : type === "brand_kit" ? ["Brand kit"] : type === "document_pack" ? ["PDF/document"] : type === "image" ? ["Visual/image pack"] : type === "ai_agent" ? ["AI video", "Brand kit"] : type === "campaign" ? ["Shopify product link", "Amazon product link", "Trendyol product link", "Product ad video"] : type === "documentary" ? ["Documentary", "Topic research", "Narration outline", "Archival visual plan", "Voice-over"] : type === "drone_video" ? ["Drone-style aerial video", "AI map/location drone-style video", "Voice-over", "Background music direction"] : type === "live_sales_agent" ? ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "Voice selection", "User audio upload", "Visual/image pack"] : type === "drama" ? ["Drama / short series", "Script + scene plan", "Character breakdown", "AI video", "Voice-over"] : ["AI video"]);
-    setSelectedFeatures(growthIntelligenceProject ? ["Public-signal monitoring", "Weekly executive PDF", "Alert channel plan", "Campaign response actions"] : commerceProject ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "campaign" ? ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut"] : type === "video" ? ["Voice-over", "Subtitles", "Music"] : type === "localization" ? ["Voice-over", "Subtitles", "Scene plan"] : type === "documentary" ? ["Script", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "drone_video" ? ["Scene plan", "Marked area notes", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "live_sales_agent" ? ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Choose AI voice", "Photo/avatar input", "Subtitles", "Compliance review", "Revision right"] : type === "drama" ? ["Script", "Scene plan", "Character breakdown", "Dialogue", "Voice-over", "Subtitles", "Music", "Revision right"] : ["Revision right"]);
-    setSelectedPlatforms(growthIntelligenceProject ? ["Growth Intelligence dashboard", "Email report", "Slack/email alerts"] : commerceProject ? ["Dashboard delivery", "ZIP source", "Shopify", "WooCommerce"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Dashboard delivery", "ZIP source"] : type === "campaign" ? ["Dashboard delivery", "TikTok", "Shopify", "Amazon", "Trendyol"] : type === "documentary" ? ["Dashboard delivery", "MP4 download", "YouTube Shorts", "ZIP source"] : type === "live_sales_agent" ? ["TikTok Live", "YouTube Live"] : type === "drama" ? ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"] : ["Dashboard delivery", "MP4 download"]);
+    setSelectedModules(growthIntelligenceProject ? ["Growth Intelligence brief", "Competitor monitoring", "Weekly executive report", "Campaign response actions"] : commerceProject ? ["Website", "E-commerce product pack", "Marketplace listing", "Admin panel"] : type === "image" ? ["Visual/image pack", "Banner design"] : type === "brand_kit" ? ["Brand kit", "Visual/image pack"] : type === "website" ? ["Website", "Visual/image pack"] : type === "saas" ? ["SaaS screen", "Admin panel"] : type === "mobile_app" ? ["Mobile app", "Admin panel"] : type === "admin_project" ? ["Admin panel"] : type === "brand_kit" ? ["Brand kit"] : type === "document_pack" ? ["PDF/document"] : type === "image" ? ["Visual/image pack"] : type === "ai_agent" ? ["AI video", "Brand kit"] : type === "campaign" ? ["Shopify product link", "Amazon product link", "Trendyol product link", "Product ad video"] : type === "documentary" ? ["Documentary", "Topic research", "Narration outline", "Archival visual plan", "Voice-over"] : type === "drone_video" ? ["Drone-style aerial video", "AI map/location drone-style video", "Voice-over", "Background music direction"] : type === "live_sales_agent" ? ["AI live sales agent", "Product link selling", "Live chat reply agent", "Avatar host persona", "Voice selection", "User audio upload", "Visual/image pack"] : type === "drama" ? ["Drama / short series", "Script + scene plan", "Character breakdown", "AI video", "Voice-over"] : ["AI video"]);
+    setSelectedFeatures(growthIntelligenceProject ? ["Public-signal monitoring", "Weekly executive PDF", "Alert channel plan", "Campaign response actions"] : commerceProject ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "image" ? ["1 visual", "PNG/JPG delivery", "Revision right"] : type === "brand_kit" ? ["Logo/brand kit", "Revision right"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Production package", "Source file delivery", "Final ZIP", "README", "Revision right"] : type === "campaign" ? ["A/B hook", "Social media caption", "Hashtag set", "Shorts/Reels cut"] : type === "video" ? ["Voice-over", "Subtitles", "Music"] : type === "localization" ? ["Voice-over", "Subtitles", "Scene plan"] : type === "documentary" ? ["Script", "Scene plan", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "drone_video" ? ["Scene plan", "Marked area notes", "Voice-over", "Subtitles", "Music", "Revision right"] : type === "live_sales_agent" ? ["Sales script", "Live FAQ", "Objection handling", "CTA/discount playbook", "Choose AI voice", "Photo/avatar input", "Subtitles", "Compliance review", "Revision right"] : type === "drama" ? ["Script", "Scene plan", "Character breakdown", "Dialogue", "Voice-over", "Subtitles", "Music", "Revision right"] : ["Revision right"]);
+    setSelectedPlatforms(growthIntelligenceProject ? ["Growth Intelligence dashboard", "Email report", "Slack/email alerts"] : commerceProject ? ["Dashboard delivery", "ZIP source", "Shopify", "WooCommerce"] : type === "image" ? ["Dashboard delivery", "PNG images", "JPG images"] : type === "brand_kit" ? ["Dashboard delivery"] : type === "website" || type === "saas" || type === "mobile_app" || type === "admin_project" ? ["Dashboard delivery", "ZIP source"] : type === "campaign" ? ["Dashboard delivery", "TikTok", "Shopify", "Amazon", "Trendyol"] : type === "documentary" ? ["Dashboard delivery", "MP4 download", "YouTube Shorts", "ZIP source"] : type === "live_sales_agent" ? ["TikTok Live", "YouTube Live"] : type === "drama" ? ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"] : ["Dashboard delivery", "MP4 download"]);
     const profile = categoryOptionProfiles[type];
     const configuredQualityOptions = configuredProductionPackages.filter((item) => item.productionType === type).map((item) => item.name);
     if (profile && !commerceProject && !["website", "saas", "mobile_app", "admin_project", "brand_kit", "document_pack", "image", "campaign", "video"].includes(type)) {

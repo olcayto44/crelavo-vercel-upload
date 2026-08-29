@@ -572,7 +572,8 @@ function imageAspectRatioFromPrompt(text: string, options: string[]) {
   return undefined;
 }
 
-function ecommercePresetSetup(setup: ProductionSetupState, hint = "") {
+function ecommercePresetSetup(setup: ProductionSetupState, hint = "", productionType = "") {
+  if (isImageProductionType(productionType)) return setup;
   if (!/ecommerce|e-commerce|online\s+store|storefront|shopify|woocommerce|cart|checkout|product\s+catalog/i.test(hint)) return setup;
   return {
     ...setup,
@@ -1520,6 +1521,18 @@ function writeStoredWorkDraft(draft: StoredWorkDraft) {
   }
 }
 
+function clearStoredWorkDraft() {
+  if (typeof window === "undefined") return;
+  try {
+    [...legacyWorkDraftStorageKeys, workDraftStorageKey].forEach((key) => {
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    });
+  } catch {
+    return;
+  }
+}
+
 function collectRecords(value: unknown, limit = 80): Record<string, any>[] {
   const out: Record<string, any>[] = [];
   const walk = (node: unknown) => {
@@ -1663,8 +1676,8 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     const initialPlanForSetup = initialEffectivePlan;
     if (!initialPlanForSetup) return {};
      const rawSetup = shouldForceImageProduction(initialPrompt) ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
-     const baseSetup = ecommercePresetSetup(rawSetup, `${initialCategory} ${initialPrompt}`);
-    return sanitizeSetupForProduction(initialPlanForSetup.production_type, baseSetup, initialPrompt, initialPlanForSetup);
+      const baseSetup = ecommercePresetSetup(rawSetup, `${initialCategory} ${initialPrompt}`, initialPlanForSetup.production_type);
+     return sanitizeSetupForProduction(initialPlanForSetup.production_type, baseSetup, initialPrompt, initialPlanForSetup);
   });
 
   const [conversationId, setConversationId] = useState("");
@@ -1689,6 +1702,28 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const startRequestRef = useRef(false);
   const chatRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!explicitInitialIntent) return;
+    const nextType = productionTypeFromCategory(initialCategory || initialIdea);
+    const categoryType = productionTypeFromCategory(initialCategory);
+    const nextPrompt = (initialCategory && categoryType === "image" && productionTypeFromCategory(initialIdea) !== "image" ? initialCategory : initialIdea || initialCategory).trim();
+    const nextPlan = localPlan(nextPrompt, nextType === "image" || shouldForceImageProduction(nextPrompt) ? "image" : nextType);
+    clearStoredWorkDraft();
+    setInput(nextPrompt);
+    setProductionPrompt(nextPrompt);
+    setPlan(nextPlan);
+    setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(nextPlan), nextPrompt, nextPlan.production_type));
+    setProductionSetup(sanitizeSetupForProduction(nextPlan.production_type, defaultSetupFor(nextPlan.production_type, nextPrompt, nextPlan), nextPrompt, nextPlan));
+    setMessages([
+      { id: uid(), role: "user", content: nextPrompt },
+      { id: uid(), role: "assistant", content: assistantReply(nextPlan, detectWorkLanguage(nextPrompt)) }
+    ]);
+    setActiveProduction(null);
+    setSelectedAvatar(null);
+    setSelectedVoice(null);
+    setSelectedSound(null);
+  }, [explicitInitialIntent, initialCategory, initialIdea]);
 
   useEffect(() => {
     const node = chatRef.current;
@@ -1772,7 +1807,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   function resetSetupFor(nextPlan: StudioPlan, hint = productionPrompt || input) {
     const rawSetup = defaultSetupFor(nextPlan.production_type, hint, nextPlan);
-    setProductionSetup(ecommercePresetSetup(rawSetup, `${initialCategory} ${hint}`));
+    setProductionSetup(ecommercePresetSetup(rawSetup, `${initialCategory} ${hint}`, nextPlan.production_type));
   }
 
   function toggleSetupOption(group: SetupGroup, option: string) {
@@ -2115,7 +2150,7 @@ if (isImageStart) {
     setConversationId(data.conversation_id ?? conversationId);
     setPlan(finalPlan);
     setSelectedProductionCards(filterCardsForPrompt(productionCardsFor(finalPlan), clean, finalPlan.production_type));
-    setProductionSetup(ecommercePresetSetup(sanitizeSetupForProduction(finalPlan.production_type, defaultSetupFor(finalPlan.production_type, clean, finalPlan), clean, finalPlan), `${initialCategory} ${clean}`));
+    setProductionSetup(ecommercePresetSetup(sanitizeSetupForProduction(finalPlan.production_type, defaultSetupFor(finalPlan.production_type, clean, finalPlan), clean, finalPlan), `${initialCategory} ${clean}`, finalPlan.production_type));
     setProductionPrompt(clean);
     setMessages((current) => [...current, { id: uid(), role: "assistant", content: assistantReply(finalPlan, detectWorkLanguage(clean)) }]);
     setStatus(detectWorkLanguage(clean) === "tr" ? "Üretim ayarları hazır. Gerekli seçenekleri kontrol edip Üretimi başlat ile başlat." : "Production setup is ready. Review the required options, then start with Start Production.");
