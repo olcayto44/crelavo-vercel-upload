@@ -5888,17 +5888,22 @@ body.admin-route > .site-footer {
 .site-footer-payment-mark {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 32px;
   max-width: 100%;
   padding: 5px 9px;
   border: 1px solid rgba(255,255,255,.16);
   border-radius: 8px;
-  color: #e5e7eb;
-  background: rgba(255,255,255,.05);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .02em;
-  overflow-wrap: anywhere;
+  background: rgba(255,255,255,.94);
+  overflow: hidden;
+}
+.site-footer-payment-mark img {
+  display: block;
+  width: auto;
+  height: 20px;
+  max-width: 96px;
+  object-fit: contain;
 }
 .footer-seo-panel {
   border: 1px solid rgba(255,255,255,.10);

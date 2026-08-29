@@ -77,9 +77,9 @@ export async function SiteFooter() {
         <p className="site-footer-description clean-footer-copy" aria-label="Global AI production studio for ecommerce, app, website and campaign delivery">Crelavo is an AI production studio for ecommerce product videos, campaign briefs, websites, app assets and dashboard delivery. Teams can start with a free score, pricing review or focused production brief instead of searching through every tool at once.</p>
         <div className="site-footer-payment" aria-label="Accepted card payment methods">
           <span className="site-footer-payment-label">Secure checkout</span>
-          <span className="site-footer-payment-mark">Visa</span>
-          <span className="site-footer-payment-mark">Mastercard</span>
-          <span className="site-footer-payment-mark">American Express</span>
+          <span className="site-footer-payment-mark"><img src="/payment/visa.svg" alt="Visa" /></span>
+          <span className="site-footer-payment-mark"><img src="/payment/mastercard.svg" alt="Mastercard" /></span>
+          <span className="site-footer-payment-mark"><img src="/payment/american-express.svg" alt="American Express" /></span>
         </div>
       </div>
 
