@@ -1344,7 +1344,10 @@ function hasEcommerceIntent(prompt: string) {
 }
 
 function shouldForceImageProduction(prompt: string) {
-  return !hasEcommerceIntent(prompt) && normalizeProductionType(prompt, "video") === "image";
+  const raw = String(prompt ?? "").toLowerCase();
+  const explicitImageIntent = /\b(image|banner|poster|thumbnail|cover|visual|graphic|afiş|görsel|kapak)\b/.test(raw);
+  const linkedinBannerIntent = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner/.test(raw);
+  return explicitImageIntent || linkedinBannerIntent || normalizeProductionType(prompt, "video") === "image";
 }
 
 function isLuxuryProductCommercialPrompt(prompt: string) {
