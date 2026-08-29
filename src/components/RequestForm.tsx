@@ -62,6 +62,7 @@ import {
 } from "@/lib/data";
 import { estimateCredits } from "@/lib/credits";
 import { supabaseBrowser } from "@/lib/supabase";
+import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -358,11 +359,17 @@ useEffect(() => {
 
     setPreviewApproved(false);
     setPreviewStatus("Generating AI preview...");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) {
+      setPreviewStatus("Sign in and confirm a paid package before generating a preview.");
+      return;
+    }
 
     const response = await fetch("/api/preview", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(auth.accessToken),
       body: JSON.stringify({
+        user_id: auth.user.id,
         prompt: assistantIdea,
         category: toolCategory,
         style,

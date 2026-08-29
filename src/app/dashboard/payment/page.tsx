@@ -1,5 +1,6 @@
 import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 import { findPaymentProduct, liveSalesServicePlans, packages } from "@/lib/data";
+import { billingTermsText } from "@/lib/legal";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ export default async function PaymentPage({ searchParams }: { searchParams?: Pro
           <p>{selectedPackage.description}</p>
           {livePlan ? <p><strong>{livePlan.platformLimit}</strong></p> : null}
           {livePlan ? <p>This plan unlocks the live avatar workspace.</p> : null}
+          <p><strong>Start recurring credit subscription</strong> or <strong>Buy one-time top-up credits</strong>.</p>
+          <p style={{ color: "var(--muted)" }}>{billingTermsText}</p>
+          <p style={{ color: "var(--muted)" }}>One-time top-up credits do not renew automatically; the subscription does not renew automatically unless it is selected. Whop handles the secure 24-hour preview and recurring payment.</p>
         </section>
 
         <section className="card payment-checkout-card">

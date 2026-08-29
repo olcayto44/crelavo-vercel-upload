@@ -2,11 +2,12 @@ import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
 import { findPaymentProduct } from "@/lib/data";
-import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail, sendPaymentReceiptEmail } from "@/lib/payment-email";
+import { sendAdminPaymentNotificationEmail, sendBillingFailureEmail, sendCreditActivationEmail, sendPaymentReceiptEmail } from "@/lib/payment-email";
 import { business12000LaunchAffiliateCampaign, calculatePartnerCommission, normalizePartnerCode } from "@/lib/partner-program";
 import { supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
 import { buildWhopCreditReconciliation } from "@/lib/whop-reconciliation";
+import { previewLimitForPlan } from "@/lib/billing-entitlements";
 
 type WhopObject = Record<string, unknown>;
 
@@ -170,6 +171,10 @@ function paymentStatus(payment: WhopObject) {
   return firstString(payment.status, payment.substatus);
 }
 
+function paymentSubstatus(payment: WhopObject) {
+  return firstString(payment.substatus);
+}
+
 function paymentBillingReason(payment: WhopObject) {
   return firstString(payment.billing_reason, payment.billingReason);
 }
@@ -181,6 +186,15 @@ function planIdFromPayment(payment: WhopObject) {
 function customerEmail(payment: WhopObject) {
   const user = paymentUser(payment);
   return firstString(user.email, payment.email, payment.customer_email).toLowerCase();
+}
+
+function providerCustomerId(payment: WhopObject) {
+  const customer = nestedObject(payment, "customer");
+  return firstString(customer.id, payment.customer_id, payment.customerId, payment.user_id);
+}
+
+function updatePaymentUrl(payment: WhopObject) {
+  return firstString(payment.update_payment_url, payment.updatePaymentUrl, nestedString(payment, ["customer", "update_payment_url"]), nestedString(payment, ["membership", "manage_url"]));
 }
 
 function customerName(payment: WhopObject) {
@@ -470,6 +484,11 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   const membershipReference = membershipId(payment);
   const billingReason = paymentBillingReason(payment);
   const status = paymentStatus(payment) || membershipStatus(payment);
+  const profile = email ? await profileByEmail(email, name) : null;
+  if (profile) {
+    await supabaseAdmin().from("profiles").update({ billing_status: "active", billing_failed_at: null, billing_restricted_at: null, billing_update_url: updatePaymentUrl(payment) || null, payment_provider_customer_id: providerCustomerId(payment) || undefined, normalized_email: email }).eq("id", profile.id);
+    await supabaseAdmin().from("credit_balances").update({ subscription_status: "active", updated_at: new Date().toISOString() }).eq("user_id", profile.id);
+  }
 
   const receiptEmailResult = await sendPaymentReceiptEmail({
     to: email,
@@ -541,6 +560,12 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   }
 
   const credits = creditsForProduct(product, mappedPlan.billing);
+  const previewLimit = previewLimitForPlan(product.id);
+  if (profile && previewLimit > 0) {
+    const entitlementStore = supabaseAdmin();
+    const { data: existingEntitlement } = await entitlementStore.from("preview_entitlements").select("preview_used,trial_preview_used,business_trial_used").eq("user_id", profile.id).maybeSingle();
+    await entitlementStore.from("preview_entitlements").upsert({ user_id: profile.id, plan_id: product.id, preview_limit: previewLimit, preview_used: Number(existingEntitlement?.preview_used ?? 0), trial_preview_limit: 1, trial_preview_used: Number(existingEntitlement?.trial_preview_used ?? 0), business_trial_used: Boolean(existingEntitlement?.business_trial_used), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  }
   const activation = await addCredits({
     email,
     customerName: name,
@@ -615,6 +640,16 @@ async function clearCreditsAfterMembershipEnd(payment: WhopObject) {
 
 async function handleAttentionEvent(event: string, payment: WhopObject, webhookId: string) {
   const planId = planIdFromPayment(payment);
+  const email = customerEmail(payment);
+  const profile = email ? await profileByEmail(email, customerName(payment)) : null;
+  let billingFailureEmailResult: unknown = null;
+  if (event === "payment.failed" && profile) {
+    const failedAt = new Date().toISOString();
+    await supabaseAdmin().from("profiles").update({ billing_status: "payment_failed", billing_failed_at: failedAt, billing_update_url: updatePaymentUrl(payment) || null, payment_provider_customer_id: providerCustomerId(payment) || undefined }).eq("id", profile.id);
+    await supabaseAdmin().from("credit_balances").update({ subscription_status: "payment_failed", updated_at: failedAt }).eq("user_id", profile.id);
+    billingFailureEmailResult = await sendBillingFailureEmail({ to: email, customerName: customerName(payment), amountTotal: displayAmountInCents(paymentAmount(payment)), currency: paymentCurrency(payment), updatePaymentUrl: updatePaymentUrl(payment), reason: paymentStatus(payment) || paymentSubstatus(payment) });
+  }
+
   const mappedPlan = whopProductForPlanId(planId);
   const product = mappedPlan ? findPaymentProduct(mappedPlan.productId) : null;
   const creditClearResult = event === "membership.deactivated" ? await clearCreditsAfterMembershipEnd(payment).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "credit_clear_failed" })) : null;
@@ -637,7 +672,7 @@ async function handleAttentionEvent(event: string, payment: WhopObject, webhookI
     status: paymentStatus(payment) || membershipStatus(payment)
   });
 
-  return { emailResult, creditClearResult };
+  return { emailResult, creditClearResult, billingFailureEmailResult };
 }
 
 export async function POST(request: Request) {

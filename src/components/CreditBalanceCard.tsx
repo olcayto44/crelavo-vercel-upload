@@ -14,10 +14,13 @@ type CreditState = {
   rollover_cap: number;
   subscription_status: string;
   billing_cycle_ends_at: string | null;
+  billing_status?: string;
+  billing_update_url?: string;
+  preview?: { remaining?: number; trial_remaining?: number; business_trial_used?: boolean };
 };
 
 export function CreditBalanceCard() {
-  const [credits, setCredits] = useState<CreditState>({ balance: 0, reserved: 0, available: 0, current_subscription_credits: 0, rolled_over_credits: 0, topup_credits: 0, bonus_credits: 0, rollover_cap: 0, subscription_status: "inactive", billing_cycle_ends_at: null });
+  const [credits, setCredits] = useState<CreditState>({ balance: 0, reserved: 0, available: 0, current_subscription_credits: 0, rolled_over_credits: 0, topup_credits: 0, bonus_credits: 0, rollover_cap: 0, subscription_status: "inactive", billing_cycle_ends_at: null, preview: { remaining: 0, trial_remaining: 0, business_trial_used: false } });
   const [mode, setMode] = useState("loading");
 
   useEffect(() => {
@@ -43,8 +46,11 @@ export function CreditBalanceCard() {
               bonus_credits: data.bonus_credits ?? 0,
               rollover_cap: data.rollover_cap ?? 0,
               subscription_status: data.subscription_status ?? "inactive",
-              billing_cycle_ends_at: data.billing_cycle_ends_at ?? null
-            });
+               billing_cycle_ends_at: data.billing_cycle_ends_at ?? null,
+               billing_status: data.billing_status ?? data.subscription_status ?? "inactive",
+               billing_update_url: data.billing_update_url ?? "/dashboard/payment",
+               preview: data.preview ?? { remaining: 0, trial_remaining: 0, business_trial_used: false }
+             });
             setMode("live");
             return;
           }
@@ -74,7 +80,9 @@ export function CreditBalanceCard() {
       <span>Credits</span>
       <strong>{mode === "loading" ? "..." : credits.available}</strong>
       <p>Available balance</p>
-      {mode === "live" ? <small>Total: {credits.balance} · Reserved: {credits.reserved}</small> : null}
+       {mode === "live" ? <small>Total: {credits.balance} · Reserved: {credits.reserved}</small> : null}
+       {mode === "live" && credits.billing_status && credits.billing_status !== "active" ? <div style={{ display: "grid", gap: 6, marginTop: 10 }}><strong>Billing: {credits.billing_status}</strong><small>New production and downloads unlock after confirmed payment.</small><a className="btn secondary" href={credits.billing_update_url || "/dashboard/payment"}>Update payment</a></div> : null}
+       {mode === "live" ? <small style={{ display: "block", marginTop: 8 }}>Preview remaining: {credits.preview?.remaining ?? 0} · Trial remaining: {credits.preview?.trial_remaining ?? 0}</small> : null}
       {mode === "live" ? (
         <div style={{ display: "grid", gap: 4, marginTop: 10 }}>
           <small>Monthly: {credits.current_subscription_credits.toLocaleString()} · Rollover: {credits.rolled_over_credits.toLocaleString()}</small>

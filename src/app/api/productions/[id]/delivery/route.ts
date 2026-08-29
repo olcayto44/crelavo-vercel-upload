@@ -1,6 +1,7 @@
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
 import { isAdminRequest } from "@/lib/admin-guard";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { billingAccess } from "@/lib/billing-entitlements";
 
 function responseWithText(content: string, filename: string, contentType = "text/markdown; charset=utf-8", disposition: "attachment" | "inline" = "attachment") {
   return new Response(content, {
@@ -89,10 +90,7 @@ async function requireDeliveryAccess(request: Request, production: { user_id?: s
     if (verified.ok) return { ok: true as const };
   }
 
-  // Dashboard preview/download buttons open as normal browser links, so they do not carry
-  // the Supabase Authorization header used by fetch requests. The production UUID link is
-  // the delivery handle shown only after the user reaches the production page.
-  return { ok: true as const };
+  return { ok: false as const, response: Response.json({ error: "A verified user session is required for delivery." }, { status: 401 }) };
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -108,12 +106,18 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const access = await requireDeliveryAccess(request, data);
   if (!access.ok) return access.response;
+  let billingStatus = "active";
+  if (!isAdminRequest(request)) {
+    const billing = await billingAccess(supabaseAdmin(), String(data.user_id));
+    billingStatus = billing.status;
+    if (!billing.allowed) return Response.json({ error: "Downloads and final delivery are locked while payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
+  }
 
   const safeTitle = String(data.title ?? "crelavo-delivery").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-delivery";
   const previewAccess = previewAccessForDelivery(data);
   const downloadFiles = new Set(["readme", "source", "zip"]);
 
-  if (previewAccess.previewOnly && downloadFiles.has(file)) {
+  if (previewAccess.previewOnly && billingStatus !== "active" && downloadFiles.has(file)) {
     return Response.json({ error: "Downloads are closed during the 24-hour preview. Cancel before 24 hours to stop the main subscription; otherwise the selected plan activates automatically." }, { status: 403 });
   }
 

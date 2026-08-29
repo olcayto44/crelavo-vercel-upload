@@ -40,10 +40,8 @@ export function OAuthWelcomeCreditClient() {
 
       const storageKey = `crelavo_oauth_welcome_credit_checked_${user.id}`;
       if (window.localStorage.getItem(storageKey) === "1") return;
-      window.localStorage.setItem(storageKey, "1");
-
       const referral = getStoredReferral();
-      await fetch("/api/auth/welcome-credit", {
+      const response = await fetch("/api/auth/welcome-credit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -54,7 +52,12 @@ export function OAuthWelcomeCreditClient() {
           partner_referral_code: referral.partnerCode,
           referral_visitor_id: referral.visitorId
         })
-      }).catch(() => null);
+      });
+      if (response.ok) {
+        window.localStorage.setItem(storageKey, "1");
+        const result = await response.json().catch(() => ({}));
+        if (result.granted === true) window.localStorage.setItem(`crelavo_welcome_splash_seen_${user.id}`, "1");
+      }
     }
 
     claimOAuthWelcomeCredits();

@@ -1,5 +1,6 @@
 import { startGeneration } from "@/lib/generation";
-import { supabaseAdmin } from "@/lib/supabase";
+import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { billingAccess } from "@/lib/billing-entitlements";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,6 +18,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .single();
 
     if (readError) throw readError;
+    const verified = await requireVerifiedRequestUser(_request, String(videoRequest.user_id));
+    if (!verified.ok) return verified.response;
+    const billing = await billingAccess(supabase, String(videoRequest.user_id));
+    if (!billing.allowed) return Response.json({ error: "Generation is locked while your payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
 
     if (["ready", "failed", "cancelled"].includes(videoRequest.status)) {
       return Response.json({ error: "Closed requests cannot start generation." }, { status: 400 });

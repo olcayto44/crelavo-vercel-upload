@@ -182,6 +182,17 @@ export async function sendCreditActivationEmail(input: CreditActivationEmailInpu
   return { sent: true };
 }
 
+export async function sendBillingFailureEmail(input: { to: string; customerName?: string | null; amountTotal?: number | null; currency?: string | null; updatePaymentUrl?: string | null; reason?: string | null }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to = input.to.trim().toLowerCase();
+  if (!isEmail(to)) return { skipped: true, reason: "Valid customer email is missing." };
+  if (!apiKey) return { skipped: true, reason: "RESEND_API_KEY is not configured." };
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://crelavo.com";
+  const updateUrl = input.updatePaymentUrl?.trim() || `${appUrl}/dashboard/payment`;
+  const response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: process.env.SUPPORT_FROM_EMAIL || "Crelavo <support@crelavo.com>", to, subject: "Action needed: Crelavo payment failed", text: [`Hello ${input.customerName?.trim() || "Crelavo customer"},`, "", "Your recurring Crelavo payment could not be confirmed.", input.reason ? `Provider message: ${input.reason}` : "The payment provider will retry according to its billing schedule.", "Your account remains available during the 24-hour recovery window. After that, new production starts and downloads are restricted until payment succeeds.", `Update payment method: ${updateUrl}`, `Billing help: ${appUrl}/whop-billing`].join("\n") }) });
+  return response.ok ? { sent: true } : { skipped: true, reason: "Email provider rejected the billing failure email." };
+}
+
 export async function sendPreviewReminderEmail(input: LifecycleEmailInput) {
   const apiKey = process.env.RESEND_API_KEY;
   const to = input.to.trim().toLowerCase();

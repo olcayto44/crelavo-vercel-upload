@@ -99,7 +99,7 @@ export function RegisterForm() {
     }
 
     if (data.user?.id) {
-      await fetch("/api/auth/welcome-credit", {
+      const welcomeResponse = await fetch("/api/auth/welcome-credit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -110,7 +110,14 @@ export function RegisterForm() {
           partner_referral_code: referral.partnerCode,
           referral_visitor_id: referral.visitorId
         })
-      }).catch(() => null);
+      });
+      if (!welcomeResponse.ok) {
+        setState("error");
+        setMessage("Account created, but the welcome credits could not be confirmed. Please sign in and retry from Assistant Workspace.");
+        return;
+      }
+      const welcomeResult = await welcomeResponse.json();
+      if (welcomeResult.granted === true) window.localStorage.setItem(`crelavo_welcome_splash_seen_${data.user.id}`, "1");
     }
 
     setState("success");
@@ -121,7 +128,7 @@ export function RegisterForm() {
     <form onSubmit={onSubmit}>
       <div className="card" style={{ marginBottom: 14, background: "rgba(34,211,238,.08)" }}>
         <span className="badge">Limited trial credits</span>
-        <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Create an account with Google or email and receive 1,000 one-time Assistant trial credits for planning/chat only. Production rendering still requires paid production credits.</p>
+        <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Create an account with Google or email and receive 250 one-time Assistant trial credits for planning/chat only. Production rendering still requires paid production credits.</p>
       </div>
       <div className="auth-provider-grid">
         <button className="btn auth-google-btn" type="button" onClick={() => continueWithProvider("google")} disabled={state === "loading"}>Continue with Google + trial credits</button>

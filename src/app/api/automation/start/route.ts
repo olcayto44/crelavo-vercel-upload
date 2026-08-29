@@ -26,6 +26,7 @@ import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { billingAccess } from "@/lib/billing-entitlements";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -434,7 +435,7 @@ async function requireAutomationAccess(request: Request, body: Record<string, un
   const userId = String(body.user_id ?? productionUserId).trim();
   if (!productionUserId || !userId || userId !== productionUserId) return { ok: false as const, response: adminRequiredResponse() };
   const verified = await requireVerifiedRequestUser(request, userId);
-  if (!verified.ok) return { ok: true as const };
+  if (!verified.ok) return { ok: false as const, response: verified.response };
   return { ok: true as const };
 }
 
@@ -522,6 +523,10 @@ export async function POST(request: Request) {
     if (!currentProduction) throw new Error("Production not found");
     const access = await requireAutomationAccess(request, body, currentProduction);
     if (!access.ok) return access.response;
+    if (!isAdminRequest(request, body)) {
+      const billing = await billingAccess(supabase, String(currentProduction.user_id));
+      if (!billing.allowed) return Response.json({ error: "Production is locked while your payment is past due. Update your payment method to unlock it.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
+    }
 
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
     const forceRegenerate = body.force_regenerate === true;

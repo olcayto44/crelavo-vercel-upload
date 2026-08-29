@@ -24,6 +24,10 @@ export async function POST(request: Request) {
 
   try {
     const supabase = supabaseAdmin();
+    const { data: authRecord, error: authError } = await supabase.auth.admin.getUserById(userId);
+    if (authError || !authRecord.user?.id || authRecord.user.email?.trim().toLowerCase() !== email) {
+      return Response.json({ error: "User identity could not be verified." }, { status: 401 });
+    }
 
     const { error: profileError } = await supabase
       .from("profiles")

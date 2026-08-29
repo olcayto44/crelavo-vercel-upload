@@ -1,5 +1,7 @@
 import { validateProductionSafety } from "@/lib/content-safety";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
+import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { billingAccess, claimPreview } from "@/lib/billing-entitlements";
 
 export async function POST(request: Request) {
   const ip = clientIpFromRequest(request);
@@ -13,6 +15,19 @@ export async function POST(request: Request) {
     const category = String(body.category ?? "").trim();
     const materialType = String(body.premium_material_type ?? "").trim();
     const materialOption = String(body.premium_material_option ?? "").trim();
+    const userId = String(body.user_id ?? "").trim();
+    if (!userId) return Response.json({ error: "Authenticated user is required for previews." }, { status: 401 });
+    const verified = await requireVerifiedRequestUser(request, userId);
+    if (!verified.ok) return verified.response;
+    const supabase = supabaseAdmin();
+    const billing = await billingAccess(supabase, userId);
+    if (!billing.allowed) return Response.json({ error: "Preview is locked while your payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
+    const packageId = String(body.package_id ?? body.packageId ?? "").trim();
+    const isTrial = Boolean(body.is_trial ?? body.isTrial) || packageId === "business_24h_free_trial";
+    const { data: balanceForPlan } = await supabase.from("credit_balances").select("active_subscription_package").eq("user_id", userId).maybeSingle();
+    const planId = (packageId || String(balanceForPlan?.active_subscription_package ?? "")).replace(/_24h_free_trial$/i, "");
+    const entitlement = await claimPreview(supabase, userId, planId, isTrial);
+    if (!entitlement.ok) return Response.json({ error: "Preview entitlement is unavailable.", code: entitlement.reason, remaining: entitlement.remaining ?? 0 }, { status: 403 });
 
     if (!prompt) {
       return Response.json({ error: "Preview prompt is required." }, { status: 400 });

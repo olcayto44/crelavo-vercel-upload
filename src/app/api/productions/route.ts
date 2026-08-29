@@ -11,6 +11,7 @@ import { findConfiguredProductionPackage, normalizePackageConfig, PACKAGE_CONFIG
 import { estimateProductionCost, getProductionPackage } from "@/lib/production";
 import { estimateProductionProfit } from "@/lib/production-profit";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
+import { billingAccess } from "@/lib/billing-entitlements";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
@@ -888,6 +889,10 @@ outputPlan,
     }
     if (!authUser.user.email_confirmed_at && !authUser.user.confirmed_at) {
       return Response.json({ error: "Production cannot start before email confirmation. Please open the confirmation link sent to your inbox." }, { status: 403 });
+    }
+    const billing = await billingAccess(supabase, userId);
+    if (!billing.allowed) {
+      return Response.json({ error: "Production is locked while your payment is past due. Update your payment method to unlock production.", code: "payment_past_due", billingStatus: billing.status, updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
     }
 
     const { data: recentProductions, error: recentProductionsError } = await supabase

@@ -1,7 +1,8 @@
 import { spendCreditBuckets } from "@/lib/credit-rollover";
 import { getGenerationStatus } from "@/lib/generation";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
-import { supabaseAdmin } from "@/lib/supabase";
+import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { billingAccess } from "@/lib/billing-entitlements";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,6 +20,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .single();
 
     if (readError) throw readError;
+    const verified = await requireVerifiedRequestUser(_request, String(videoRequest.user_id));
+    if (!verified.ok) return verified.response;
+    const billing = await billingAccess(supabase, String(videoRequest.user_id));
+    if (!billing.allowed) return Response.json({ error: "Delivery is locked while your payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
 
     if (videoRequest.status === "ready" || videoRequest.generation_status === "completed") {
       return Response.json({ request: videoRequest, generation_status: "completed", already_completed: true });
