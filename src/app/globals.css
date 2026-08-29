@@ -8246,6 +8246,109 @@ html body .admin-shell-layout pre {
 html body .admin-shell-layout .admin-category-card {
   overflow: visible !important;
 }
+
+html body .admin-shell-layout .admin-sidebar-card {
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+html body .admin-shell-layout .admin-sidebar-card nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+html body .admin-shell-layout .admin-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  overflow: visible;
+}
+
+html body .admin-shell-layout .admin-menu-group + .admin-menu-group {
+  margin-top: 8px;
+}
+
+html body .admin-shell-layout .admin-menu-group summary {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+html body .admin-shell-layout .admin-menu-group summary::after {
+  flex: 0 0 auto;
+  float: none;
+  line-height: 1;
+}
+
+html body .admin-shell-layout .admin-menu-group > a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  text-overflow: ellipsis;
+}
+
+html body .admin-shell-layout .admin-menu-group > a:not(.active) {
+  box-shadow: none;
+}
+
+@media (min-width: 901px) {
+  html body .admin-shell-layout .admin-shell {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  }
+
+  html body .admin-shell-layout .admin-sidebar-card {
+    position: sticky;
+    top: 84px;
+    max-height: calc(100vh - 104px);
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 900px) {
+  html body .admin-shell-layout .admin-sidebar-card {
+    position: static;
+    max-height: none;
+    overflow-y: visible !important;
+  }
+
+  html body .admin-shell-layout .admin-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  html body .admin-shell-layout.container.section {
+    width: min(100% - 16px, 1680px) !important;
+  }
+
+  html body .admin-shell-layout .admin-sidebar-card {
+    padding: 14px;
+  }
+}
 html body .admin-hero-with-notifications {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
