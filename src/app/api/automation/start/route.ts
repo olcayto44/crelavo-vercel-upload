@@ -1193,6 +1193,7 @@ if (isImageProduction) {
     return Response.json({ job_id: jobId, production: imageProduction, provider_started: true, provider_result: imageResult });
   } catch (error) {
     const failureMessage = errorMessage(error, "Image provider job could not be started.");
+    await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because image provider failed before a usable output was created: ${failureMessage}`);
     const failedOutput = {
       ...existingOutput,
       automationMode: "fully_automatic",
@@ -1204,7 +1205,7 @@ if (isImageProduction) {
     };
     const { data: failedProduction, error: failedUpdateError } = await supabase
       .from("production_requests")
-      .update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "image_provider_failed", output_json: failedOutput, admin_notes: failureMessage, error_message: failureMessage, updated_at: now }))
+      .update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "image_provider_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: failureMessage, error_message: failureMessage, updated_at: now }))
       .eq("id", productionId)
       .select("*")
       .single();
