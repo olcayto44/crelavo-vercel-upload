@@ -56,7 +56,7 @@ function findImageUrl(value: unknown): string {
 }
 
 function providerAspectRatio(aspectRatio: string) {
-  return aspectRatio === "1584x396" ? "21:9" : aspectRatio;
+  return aspectRatio === "1584x396" ? "16:9" : aspectRatio;
 }
 
 function dataUrlToBytes(dataUrl: string) {
