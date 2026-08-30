@@ -1,4 +1,4 @@
-import sharp from "sharp";
+import { Jimp } from "jimp";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 
 export type ImageMarketingText = {
@@ -62,9 +62,10 @@ export async function normalizeImageCanvas(input: { productionId: string; source
   if (!response.ok) throw new Error(`Image canvas source download failed: ${response.status}`);
   const source = Buffer.from(await response.arrayBuffer());
   const target = imageTargetDimensions(input.aspectRatio);
-  const output = await sharp(source).rotate().resize({ width: target.width, height: target.height, fit: "cover", position: "centre" }).toColourspace("srgb").png({ palette: false, compressionLevel: 6 }).toBuffer();
-  const metadata = await sharp(output).metadata();
-  if (metadata.width !== target.width || metadata.height !== target.height) throw new Error(`unsupported_aspect_ratio: final image dimensions ${metadata.width ?? 0}x${metadata.height ?? 0} do not match ${target.width}x${target.height}.`);
+  const image = await Jimp.read(source);
+  image.cover({ w: target.width, h: target.height });
+  const output = await image.getBuffer("image/png");
+  if (image.width !== target.width || image.height !== target.height) throw new Error(`unsupported_aspect_ratio: final image dimensions ${image.width}x${image.height} do not match ${target.width}x${target.height}.`);
   const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, output, "image/png");
   return { imageUrl, width: target.width, height: target.height };
 }
@@ -96,14 +97,17 @@ export async function applyMarketingTextOverlay(input: { productionId: string; s
   if (!response.ok) throw new Error(`Image overlay source download failed: ${response.status}`);
   const source = Buffer.from(await response.arrayBuffer());
   const requestedRatio = input.aspectRatio || "4:5";
+  // Text is requested in the provider prompt; keep this path provider-only until a portable font renderer is configured.
+  return { imageUrl: input.sourceUrl, applied: false as const, marketingText, width: undefined, height: undefined };
+  const sharp: any = undefined;
   const target = imageTargetDimensions(requestedRatio);
   const base = sharp(source).rotate().resize({ width: target.width, height: target.height, fit: "cover", position: "centre" });
   const width = target.width;
   const height = target.height;
 
-  const safeHeadline = marketingText.headline ? escapeXml(marketingText.headline) : "";
-  const supportingLines = marketingText.supportingText ? wrapText(marketingText.supportingText, width < 900 ? 34 : 44).map(escapeXml) : [];
-  const safeCta = marketingText.cta ? escapeXml(marketingText.cta) : "";
+  const safeHeadline = marketingText.headline ? escapeXml(marketingText.headline ?? "") : "";
+  const supportingLines = marketingText.supportingText ? wrapText(marketingText.supportingText ?? "", width < 900 ? 34 : 44).map(escapeXml) : [];
+  const safeCta = marketingText.cta ? escapeXml(marketingText.cta ?? "") : "";
 
   const padX = Math.round(width * 0.07);
   const bottomPad = Math.round(height * 0.065);
