@@ -106,7 +106,9 @@ export function SplashAdClient({ slot, geoOffer }: { slot: AdSlotConfig; geoOffe
 
   if (!mounted || !visible) return null;
 
-  const promo = parseSplashPromo(slot.code, geoOffer);
+  // The splash slot owns its campaign copy. Geo offers may personalize other placements,
+  // but must not replace the selected splash campaign with a different campaign.
+  const promo = parseSplashPromo(slot.code);
   const popup = (
     <aside className="splash-ad-backdrop" aria-label={slot.name} role="dialog" aria-modal="true">
       <div className="splash-ad-modal">
