@@ -96,8 +96,16 @@ async function runWorkerPass(origin: string, targetProductionId?: string) {
     try {
       const rowOutput = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
       const hasProviderJob = Boolean(rowOutput.visualJob || rowOutput.providerJob || (Array.isArray(rowOutput.visualJobs) && rowOutput.visualJobs.length > 0));
-      const needsVideoAgentStart = String(row.production_type ?? "").toLowerCase() === "video_agent" && !hasProviderJob;
-      if (needsVideoAgentStart) {
+      const productionType = String(row.production_type ?? "").toLowerCase();
+      const automationStatus = String(row.automation_status ?? row.generation_status ?? row.status ?? "").toLowerCase();
+      const startableProduction = [
+        "video_agent", "image", "brand_kit", "visual_clone", "virtual_model_studio", "video", "campaign",
+        "cinematic_video", "documentary", "music_video", "drama", "drone_video", "video_tools", "video_clipping",
+        "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video",
+        "nature_video", "planet_space_video"
+      ].includes(productionType) || String(row.package_id ?? "").toLowerCase().startsWith("image_");
+      const needsProviderStart = startableProduction && !hasProviderJob && ["queued", "automation_queued", "provider_ready", "provider_ready_queued"].includes(automationStatus);
+      if (needsProviderStart) {
         await fetch(`${origin}/api/automation/start`, {
           method: "POST",
           headers: { "content-type": "application/json", "x-automation-worker": "backend-worker" },
