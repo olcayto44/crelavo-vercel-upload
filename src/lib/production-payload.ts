@@ -111,6 +111,7 @@ function optionLineValue(optionSummary: string, label: string) {
 
 function aspectRatioFromSelection(selection: Pick<AssistantProductionSelection, "input" | "selectedQuality" | "selectedPlatforms">) {
   const signal = `${selection.input} ${selection.selectedQuality} ${selection.selectedPlatforms.join(" ")}`.toLocaleLowerCase("tr-TR");
+  if (/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/.test(signal)) return "1584x396";
   if (/21:9|cinematic\s*widescreen/.test(signal)) return "21:9";
   if (/4:5/.test(signal)) return "4:5";
   if (/1:1|square/.test(signal)) return "1:1";
@@ -337,13 +338,14 @@ export function buildAssistantProductionPayload(selection: AssistantProductionSe
     user_id: selection.userId,
     user_email: selection.userEmail,
     production_type: selection.productionType,
-    package_id: packageId,
+    package_id: selection.productionType === "image" && /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${selection.input} ${selection.selectedQuality} ${selection.selectedPlatforms.join(" ")}`) ? "image_single" : packageId,
     title: `${selection.selectedStyle} ${selection.productionType} production`,
     prompt: selection.prompt,
     project_details: `${selection.prompt}\n\nProduction options:\n${selection.optionSummary}`,
     style: selection.selectedStyle,
     quality: selection.selectedQuality,
     aspect_ratio: aspectRatioFromSelection(selection),
+    image_type: selection.productionType === "image" && /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${selection.input} ${selection.selectedQuality} ${selection.selectedPlatforms.join(" ")}`) ? "Banner" : undefined,
     target_platform: selection.selectedPlatforms.join(", "),
     features: effectiveFeatures.join(", "),
     service_network: selection.selectedServiceNetwork ?? "",

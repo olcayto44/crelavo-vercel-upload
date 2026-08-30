@@ -48,6 +48,32 @@ function escapeXml(value: string) {
     .replace(/'/g, "&apos;");
 }
 
+export function imageTargetDimensions(aspectRatio: string) {
+  if (/^1584x396$/i.test(aspectRatio.trim())) return { width: 1584, height: 396 };
+  if (aspectRatio === "1:1") return { width: 1200, height: 1200 };
+  if (aspectRatio === "16:9") return { width: 1600, height: 900 };
+  if (aspectRatio === "9:16") return { width: 1200, height: 2133 };
+  return { width: 1200, height: 1500 };
+}
+
+export async function normalizeImageCanvas(input: { productionId: string; sourceUrl: string; filenameBase: string; aspectRatio: string }) {
+  let sharp: any;
+  try {
+    sharp = (await import("sharp")).default;
+  } catch {
+    throw new Error("unsupported_aspect_ratio: deterministic image canvas postprocess is unavailable.");
+  }
+  const response = await fetch(input.sourceUrl, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Image canvas source download failed: ${response.status}`);
+  const source = Buffer.from(await response.arrayBuffer());
+  const target = imageTargetDimensions(input.aspectRatio);
+  const output = await sharp(source).rotate().resize({ width: target.width, height: target.height, fit: "cover", position: "centre" }).toColourspace("srgb").png({ palette: false, compressionLevel: 6 }).toBuffer();
+  const metadata = await sharp(output).metadata();
+  if (metadata.width !== target.width || metadata.height !== target.height) throw new Error(`unsupported_aspect_ratio: final image dimensions ${metadata.width ?? 0}x${metadata.height ?? 0} do not match ${target.width}x${target.height}.`);
+  const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, output, "image/png");
+  return { imageUrl, width: target.width, height: target.height };
+}
+
 function wrapText(text: string, maxChars: number) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -68,20 +94,20 @@ function wrapText(text: string, maxChars: number) {
 export async function applyMarketingTextOverlay(input: { productionId: string; sourceUrl: string; prompt: string; aspectRatio?: string }) {
   const marketingText = parseImageMarketingText(input.prompt);
   if (!marketingText.headline && !marketingText.supportingText && !marketingText.cta) {
-    return { imageUrl: input.sourceUrl, applied: false as const, marketingText };
+    return { imageUrl: input.sourceUrl, applied: false as const, marketingText, width: undefined, height: undefined };
   }
 
   let sharp: any;
   try {
     sharp = (await import("sharp")).default;
   } catch {
-    return { imageUrl: input.sourceUrl, applied: false as const, marketingText };
+    return { imageUrl: input.sourceUrl, applied: false as const, marketingText, width: undefined, height: undefined };
   }
   const response = await fetch(input.sourceUrl, { cache: "no-store" });
   if (!response.ok) throw new Error(`Image overlay source download failed: ${response.status}`);
   const source = Buffer.from(await response.arrayBuffer());
   const requestedRatio = input.aspectRatio || "4:5";
-  const target = requestedRatio === "1:1" ? { width: 1200, height: 1200 } : requestedRatio === "16:9" ? { width: 1600, height: 900 } : requestedRatio === "9:16" ? { width: 1200, height: 2133 } : { width: 1200, height: 1500 };
+  const target = imageTargetDimensions(requestedRatio);
   const base = sharp(source).rotate().resize({ width: target.width, height: target.height, fit: "cover", position: "centre" });
   const width = target.width;
   const height = target.height;
@@ -135,5 +161,5 @@ export async function applyMarketingTextOverlay(input: { productionId: string; s
     .toBuffer();
 
   const imageUrl = await uploadProviderAsset(`${input.productionId}/final-image-text-overlay.png`, output, "image/png");
-  return { imageUrl, applied: true as const, marketingText };
+  return { imageUrl, applied: true as const, marketingText, width, height };
 }
