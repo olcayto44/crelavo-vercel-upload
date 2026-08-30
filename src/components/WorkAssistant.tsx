@@ -543,7 +543,9 @@ function imageTypeFromPrompt(text: string, options: string[]) {
   const signal = text.toLocaleLowerCase("tr-TR");
   const explicitType = signal.match(/(?:image\s*type|image\s*purpose)\s*:\s*([^\n.;]+)/i)?.[1]?.trim();
   if (explicitType) {
-    const explicitOption = options.find((option) => explicitType === option.toLocaleLowerCase("tr-TR") || explicitType.includes(option.toLocaleLowerCase("tr-TR")));
+    const normalizeOption = (value: string) => value.toLocaleLowerCase("tr-TR").replace(/\s*\/\s*/g, "/").replace(/\s+/g, " ").trim();
+    const normalizedExplicitType = normalizeOption(explicitType);
+    const explicitOption = options.find((option) => normalizedExplicitType === normalizeOption(option) || normalizedExplicitType.includes(normalizeOption(option)));
     if (explicitOption) return explicitOption;
   }
   const checks: Array<[RegExp, RegExp]> = [
