@@ -739,7 +739,7 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
       method: "POST",
       headers: authHeaders(auth.accessToken),
       signal: controller.signal,
-      body: JSON.stringify({ production_id: production.id, user_id: auth.user.id, legal_acceptance: true, force_start: true })
+      body: JSON.stringify({ production_id: production.id, user_id: auth.user.id, legal_acceptance: true, force_start: true, dispatch_action: production.production_type === "image" ? "generate_image" : "start_production", confirmation: { confirmed: true, source: "start_production_button" } })
     }).catch((error) => ({ aborted: error instanceof DOMException && error.name === "AbortError" }));
     window.clearTimeout(timeoutId);
     if (!response || "aborted" in response) {

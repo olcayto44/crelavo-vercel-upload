@@ -2592,7 +2592,12 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
     const response = await fetch("/api/productions", {
       method: "POST",
       headers: authHeaders(auth.accessToken),
-      body: JSON.stringify(productionPayload)
+       body: JSON.stringify({
+         ...productionPayload,
+         dispatch_action: productionType === "image" ? "generate_image" : "start_production",
+         confirmation: { confirmed: true, source: "start_production_button" }
+       })
+
     });
 
     const data = await response.json().catch(() => ({}));
@@ -2616,7 +2621,7 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
       const automationResponse = await fetch("/api/automation/start", {
         method: "POST",
         headers: authHeaders(auth.accessToken),
-        body: JSON.stringify({ production_id: productionId, user_id: auth.user.id })
+        body: JSON.stringify({ production_id: productionId, user_id: auth.user.id, dispatch_action: productionType === "image" ? "generate_image" : "start_production", confirmation: { confirmed: true, source: "start_production_button" } })
       }).catch(() => null);
       if (automationResponse && !automationResponse.ok) {
         const automationError = await automationResponse.json().catch(() => ({}));

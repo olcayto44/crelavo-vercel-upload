@@ -29,6 +29,7 @@ import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
+import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -122,7 +123,10 @@ function materialUrlForPurpose(value: unknown, purposes: string[]) {
 }
 
 function frameExtractionIntent(text: string) {
-  return /extract\s+(?:one\s+)?(?:clear\s+)?(?:still\s+)?(?:image|frame)|still\s+image\s+from\s+(?:the\s+)?(?:attached\s+)?video|frame\s+from\s+(?:the\s+)?(?:attached\s+)?video|screenshot\s+from\s+(?:the\s+)?video|video\s+frame|videodan\s+(?:gerçek|gercek)\s+kare\s*[çc]ıkar|videodan\s+(?:bir\s+)?kare\s*[çc]ıkar|videodan\s+(?:gerçek|gercek)\s+(?:bir\s+)?görsel\s*[çc]ıkar/i.test(text);
+  const normalized = String(text ?? "").toLocaleLowerCase("tr-TR");
+  const attachedVideo = /(?:attached|uploaded|upload|ekli|yüklenmiş|yuklenmis|yüklediğim|yukledigim|videodan)/.test(normalized) && /video/.test(normalized);
+  const extractionAction = /(?:extract|select|capture|choose|grab|çıkar|cikar|seç|sec|yakala|al)\w*/.test(normalized);
+  return attachedVideo && extractionAction && /(?:frame|still\s+image|image|screenshot|kare|görsel|gorsel)/.test(normalized);
 }
 
 function videoMaterialUrl(value: unknown) {
@@ -523,6 +527,7 @@ export async function POST(request: Request) {
   let productionId = "";
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+    if (!isAdminRequest(request, body) && !hasValidProductionDispatch(body)) return Response.json(productionDispatchError(), { status: 409 });
     productionId = String(body.production_id ?? "").trim();
     const guardConfig = apiCostGuardConfig();
     const routeBudget = enforceRouteBudget(request, { route: "automation:start", userId: String(body.user_id ?? ""), ipLimit: guardConfig.automationStartIpLimit, userLimit: guardConfig.automationStartUserLimit, windowMs: 15 * 60 * 1000 });

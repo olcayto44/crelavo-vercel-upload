@@ -2,6 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { convertToModelMessages, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
+import { hasValidProductionDispatch } from "@/lib/production-dispatch-gate";
 
 export const runtime = "edge";
 
@@ -62,6 +63,7 @@ function inferPackageId(type: string, prompt: string) {
 }
 
 export async function POST(req: Request) {
+  try {
   const body = await req.json().catch(() => ({}));
   const rawMessages = (body.messages ?? []) as Array<UIMessage | LegacyChatMessage>;
   const messages = rawMessages.length && "parts" in rawMessages[0]
@@ -77,6 +79,7 @@ export async function POST(req: Request) {
   const isCodeOrDesign = /site|web|app|uygulama|mobil|saas|admin|ecommerce|e-commerce|store|shop|checkout/.test(lower);
   const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY);
   const hasGoogleKey = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_API_KEY);
+  const canDispatchProduction = hasValidProductionDispatch(body as Record<string, unknown>);
 
   if (!hasAnthropicKey && !hasGoogleKey) {
     const providerStatus = await getInternal(req, "/api/providers/readiness");
@@ -95,10 +98,8 @@ export async function POST(req: Request) {
     model: selectedModel,
     messages,
     temperature: 0,
-    system: `SEN BİR SOHBET BOTU DEĞİLSİN. Crelavo AI Üretim Otomasyon arayüzüsün.
-Kullanıcı üretim isterse gereksiz konuşma yapmadan Crelavo'nun mevcut iç API tool'larını tetikle.
-Hayali dış endpoint kullanma. Sadece mevcut Crelavo API'leri: /api/assistant/plan, /api/productions, /api/automation/start, /api/providers/readiness, /api/productions/[id]/delivery.
-Eksik zorunlu bilgi varsa tek kısa cümleyle iste. Tool sonucu geldiyse production id, status, preview/download linklerini kısa ver.`,
+    system: `Crelavo's chat and planning assistant must keep normal conversation, setup answers, raw parameters, and plan revisions in chat/plan processing. Do not call production tools for those messages. Only use production tools when the request carries an explicit confirmed Start Production, Generate Video, or Generate Image action; otherwise answer or prepare the plan without creating a production or starting a provider.
+Never invent an external endpoint or provider. Use only the existing Crelavo APIs and configured chat providers. If required planning information is missing, ask one short question. Never claim production started unless a production tool returned success.`,
     tools: {
       crelavoPlanla: tool({
         description: "Kullanıcının isteğini Crelavo üretim planına çevirir.",
@@ -135,7 +136,9 @@ Eksik zorunlu bilgi varsa tek kısa cümleyle iste. Tool sonucu geldiyse product
             delivery_requirements: { requested: true, status: "pending", formats: ["website", "saas", "mobile_app", "admin_project"].includes(productionType) ? ["source_code", "readme", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"] },
             request_metadata: { source: "ai_sdk_chat_route", productionCards: selectedOptions, selectedOptions },
             input_json: { source: "ai_sdk_chat_route", work_prompt: prompt, productionCards: selectedOptions, selectedOptions },
-            legal_acceptance: true
+            legal_acceptance: true,
+            dispatch_action: canDispatchProduction ? body.dispatch_action : undefined,
+            confirmation: canDispatchProduction ? body.confirmation : undefined
           });
         }
       }),
@@ -146,7 +149,7 @@ Eksik zorunlu bilgi varsa tek kısa cümleyle iste. Tool sonucu geldiyse product
           userId: z.string().optional(),
           forceStart: z.boolean().default(true)
         }),
-        execute: async ({ productionId, userId: toolUserId, forceStart }) => postInternal(req, "/api/automation/start", { production_id: productionId, user_id: toolUserId || userId, legal_acceptance: true, force_start: forceStart })
+        execute: async ({ productionId, userId: toolUserId, forceStart }) => postInternal(req, "/api/automation/start", { production_id: productionId, user_id: toolUserId || userId, legal_acceptance: true, force_start: forceStart, dispatch_action: canDispatchProduction ? body.dispatch_action : undefined, confirmation: canDispatchProduction ? body.confirmation : undefined })
       }),
       crelavoProviderDurumu: tool({
         description: "Crelavo provider/API readiness durumunu getirir.",
@@ -171,4 +174,8 @@ Eksik zorunlu bilgi varsa tek kısa cümleyle iste. Tool sonucu geldiyse product
   });
 
   return result.toUIMessageStreamResponse();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Chat request could not be completed.";
+    return Response.json({ error: message, code: "chat_request_failed" }, { status: 502 });
+  }
 }

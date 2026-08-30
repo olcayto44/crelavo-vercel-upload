@@ -1257,9 +1257,15 @@ function animationStylePackId(prompt: string, productionType: string) {
   return undefined;
 }
 
+function isExplicitVideoProductionIntent(prompt: string) {
+  const raw = prompt.toLocaleLowerCase("tr-TR");
+  return /\bcampaign\s+video\b|\bsocial\s+(?:media\s+)?campaign\s+video\b|\bvideo\s+ad\b|\bad\s+video\b|\bsocial\s+(?:media\s+)?video\b|\bvertical\s+9\s*[:x]\s*16\b|\bmp4\b/.test(raw);
+}
+
 function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  if (isExplicitVideoProductionIntent(prompt)) return "video";
   const explicitBrandKit = /(?:image\s*type|production\s*type|category|purpose)\s*:\s*logo\s*\/\s*brand\s+kit|(?:image\s*type|production\s*type|category|purpose)\s*:\s*brand\s+kit/.test(raw);
   if (explicitBrandKit) return "brand_kit";
   const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya\s+(post|görseli|gorseli)|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(raw);
@@ -1334,7 +1340,7 @@ function productionTypeFromCategory(category: string) {
 }
 
 function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
-  const productionType = forcedProductionType || normalizeProductionType(prompt, "video");
+  const productionType = isExplicitVideoProductionIntent(prompt) ? "video" : forcedProductionType || normalizeProductionType(prompt, "video");
   const project = isProjectType(productionType);
   const visualProject = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType);
   const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
@@ -1374,14 +1380,17 @@ function hasEcommerceIntent(prompt: string) {
 
 function frameExtractionRequested(prompt: string) {
   const normalized = prompt.toLocaleLowerCase("tr-TR");
-  return /extract\s+(?:one\s+)?(?:clear\s+)?(?:still\s+)?(?:image|frame)|still\s+image\s+from\s+(?:the\s+)?(?:attached\s+)?video|frame\s+from\s+(?:the\s+)?(?:attached\s+)?video|screenshot\s+from\s+(?:the\s+)?video|video\s+frame|videodan\s+(?:gerçek|gercek)\s+kare\s*[çc]ıkar|videodan\s+(?:bir\s+)?kare\s*[çc]ıkar|videodan\s+(?:gerçek|gercek)\s+(?:bir\s+)?görsel\s*[çc]ıkar/.test(normalized);
+  const attachedVideo = /(?:attached|uploaded|upload|ekli|yüklenmiş|yuklenmis|yüklediğim|yukledigim|videodan)/.test(normalized) && /video/.test(normalized);
+  const extractionAction = /(?:extract|select|capture|choose|grab|çıkar|cikar|seç|sec|yakala|al)\w*/.test(normalized);
+  return attachedVideo && extractionAction && /(?:frame|still\s+image|image|screenshot|kare|görsel|gorsel)/.test(normalized);
 }
 
 function shouldForceImageProduction(prompt: string) {
-  const raw = String(prompt ?? "").toLowerCase();
+  const raw = String(prompt ?? "").toLocaleLowerCase("tr-TR");
+  if (isExplicitVideoProductionIntent(raw) && !frameExtractionRequested(raw)) return false;
   const explicitImageIntent = /\b(image|banner|poster|thumbnail|cover|visual|graphic|afiş|görsel|kapak)\b/.test(raw);
   const linkedinBannerIntent = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner/.test(raw);
-  return explicitImageIntent || linkedinBannerIntent || normalizeProductionType(prompt, "video") === "image";
+  return explicitImageIntent || linkedinBannerIntent || normalizeProductionType(raw, "video") === "image";
 }
 
 function isLuxuryProductCommercialPrompt(prompt: string) {
@@ -1390,29 +1399,34 @@ function isLuxuryProductCommercialPrompt(prompt: string) {
 
 function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = ""): StudioPlan {
   const promptType = normalizeProductionType(prompt, plan.production_type);
-  const hardImageLock = shouldForceImageProduction(prompt) || frameExtractionRequested(prompt) || forcedProductionType === "image";
-  const productionType = hardImageLock ? "image" : isLuxuryProductCommercialPrompt(prompt) ? "video" : forcedProductionType || promptType;
+  const explicitVideoIntent = isExplicitVideoProductionIntent(prompt);
+  const hardImageLock = !explicitVideoIntent && (shouldForceImageProduction(prompt) || frameExtractionRequested(prompt) || forcedProductionType === "image");
+  const productionType = hardImageLock ? "image" : isLuxuryProductCommercialPrompt(prompt) || explicitVideoIntent ? "video" : forcedProductionType || promptType;
   const project = isProjectType(productionType);
-  const image = productionType === "image";
+  const image = isImageProductionType(productionType);
+  const video = isVideoLikeProductionType(productionType);
+  const staleImagePlan = isImageProductionType(plan.production_type) && video;
   const fallback = localPlan(prompt, productionType);
   const raw = prompt.toLowerCase();
-  const isPromoVideo = productionType === "video" && /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw);
+  const isPromoVideo = video && /saas\s*promo|promo\s*video|commercial|ad\s*video|video\s*ad|ready-to-post\s*video|product\s*link|paste\s*(a|any)?\s*link|get\s*an\s*ad|crelavo/.test(raw);
   const imageFeatures = (plan.selected_features ?? []).filter((item) => /^(1 visual|3 alternatives|5 alternatives|png\/jpg|revision right)$/i.test(item));
   return {
     ...fallback,
     ...plan,
     production_type: productionType,
-    package_id: image ? "image_single" : isPromoVideo ? "video_premium" : project && (!plan.package_id || plan.package_id === "video_premium") ? fallback.package_id : (plan.package_id || fallback.package_id),
-    selected_quality: image ? "Image" : project ? "Project based" : (plan.selected_quality || fallback.selected_quality),
-    selected_duration: image ? "Static" : project ? "Project based" : (plan.selected_duration || fallback.selected_duration),
-    selected_modules: image ? fallback.selected_modules : plan.selected_modules?.length ? plan.selected_modules : fallback.selected_modules,
-    selected_features: image ? (imageFeatures.length ? imageFeatures : fallback.selected_features) : project ? Array.from(new Set([...(plan.selected_features || []), "Working source package", "README / setup", "Preview delivery"])) : (plan.selected_features?.length ? plan.selected_features : fallback.selected_features),
-    selected_platforms: image ? fallback.selected_platforms : plan.selected_platforms?.length ? plan.selected_platforms : fallback.selected_platforms,
+    package_id: image ? "image_single" : video ? "video_premium" : project && (!plan.package_id || plan.package_id === "video_premium") ? fallback.package_id : (plan.package_id || fallback.package_id),
+    selected_quality: image ? "Image" : project ? "Project based" : staleImagePlan ? fallback.selected_quality : (plan.selected_quality || fallback.selected_quality),
+    selected_duration: image ? "Static" : project ? "Project based" : staleImagePlan ? fallback.selected_duration : (plan.selected_duration || fallback.selected_duration),
+    selected_modules: image ? fallback.selected_modules : staleImagePlan ? fallback.selected_modules : plan.selected_modules?.length ? plan.selected_modules : fallback.selected_modules,
+    selected_features: image ? (imageFeatures.length ? imageFeatures : fallback.selected_features) : project ? Array.from(new Set([...(plan.selected_features || []), "Working source package", "README / setup", "Preview delivery"])) : staleImagePlan ? fallback.selected_features : (plan.selected_features?.length ? plan.selected_features : fallback.selected_features),
+    selected_platforms: image ? fallback.selected_platforms : staleImagePlan ? fallback.selected_platforms : plan.selected_platforms?.length ? plan.selected_platforms : fallback.selected_platforms,
     delivery_requirements: image
       ? { requested: true, status: "pending", formats: ["png", "jpg", "dashboard_delivery"] }
       : project
         ? { requested: true, status: "pending", formats: ["source_code", "readme", "dashboard_delivery"] }
-        : (plan.delivery_requirements?.formats?.length ? plan.delivery_requirements : fallback.delivery_requirements),
+        : staleImagePlan || video
+          ? fallback.delivery_requirements
+          : (plan.delivery_requirements?.formats?.length ? plan.delivery_requirements : fallback.delivery_requirements),
     missing_fields: [],
     workflow_stage: "ready_to_start_production",
     next_user_action: "Start Production",
@@ -1928,7 +1942,8 @@ const productionCards = isImageProduction
   ? filterCardsForPrompt(productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type)
   : filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type);
 const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
-const normalizedVideoSetup = sanitizeVideoSetup(productionSetup, cleanInput);
+const hasStaleImageSetup = isVideoLikeProductionType(activePlanInput.production_type) && Object.prototype.hasOwnProperty.call(productionSetup, "imageType");
+const normalizedVideoSetup = sanitizeVideoSetup(hasStaleImageSetup ? sanitizedSetup : productionSetup, cleanInput);
 const baseSetupForPayload = isImageProduction
   ? sanitizeSetupForProduction(activePlanInput.production_type, sanitizedSetup, cleanInput, activePlanInput)
   : {
@@ -2010,7 +2025,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
          product_url: cleanInput.match(/https?:\/\/[^\s,]+/i)?.[0] ?? undefined,
          product_brief: cleanInput.match(/https?:\/\/[^\s,]+/i) ? undefined : cleanInput,
          production_type: productionTypeForPayload,
-        package_id: isLuxuryProductCommercialPrompt(cleanInput) ? "video_premium" : activePlanInput.package_id,
+         package_id: isLuxuryProductCommercialPrompt(cleanInput) || isVideoLikeProductionType(productionTypeForPayload) ? "video_premium" : activePlanInput.package_id,
         quality: setupFields.selected_quality || activePlanInput.selected_quality,
         selected_quality: setupFields.selected_quality || activePlanInput.selected_quality,
         output_duration_seconds: isImageProduction ? 0 : Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlanInput.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
@@ -2024,8 +2039,11 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
         delivery_requirements: { requested: true, status: "pending", formats },
         request_metadata: { source: "omnichannel_studio", workPage: true, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, plan: { ...activePlanInput, production_type: productionTypeForPayload, package_id: isLuxuryProductCommercialPrompt(cleanInput) ? "video_premium" : activePlanInput.package_id }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, outputKind: isImageProduction ? "static_image" : undefined, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), imageType: imageTypeForPayload, aspectRatio: aspectRatioForPayload, aspect_ratio: aspectRatioForPayload, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
         input_json: { work_prompt: cleanInput, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        uploaded_materials: materials,
-        legal_acceptance: true
+         uploaded_materials: materials,
+         legal_acceptance: true,
+         dispatch_action: isImageProduction ? "generate_image" : "start_production",
+         confirmation: { confirmed: true, source: "start_production_button" }
+
       })
     }).finally(() => window.clearTimeout(timeout));
     const data = await response.json().catch(() => ({}));

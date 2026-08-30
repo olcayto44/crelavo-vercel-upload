@@ -19,6 +19,7 @@ import { isProductAdProduction, launchCapacityPolicy, renderQueuePolicyForPackag
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { hasValidProductionDispatch, productionDispatchAction, productionDispatchError } from "@/lib/production-dispatch-gate";
 
 function stripPostgresUnsafeText(value: string) {
   return value
@@ -393,7 +394,10 @@ export async function POST(request: Request) {
   const limit = rateLimit({ key: `production:create:${ip}`, limit: 20, windowMs: 15 * 60 * 1000 });
   if (!limit.allowed) return rateLimitResponse(limit.resetAt);
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body) return Response.json({ error: "Invalid JSON request." }, { status: 400 });
+  if (!isAdminRequest(request, body) && !hasValidProductionDispatch(body)) return Response.json(productionDispatchError(), { status: 409 });
+  const dispatchAction = productionDispatchAction(body);
   const userId = String(body.user_id ?? "").trim();
   const title = String(body.title ?? "").trim();
   const prompt = String(body.prompt ?? "").trim();
@@ -1074,7 +1078,7 @@ outputPlan,
     if (shouldAutoStartProvider) {
       const startUrl = `${appBaseUrl(request)}/api/automation/start`;
       const startHeaders = forwardAutomationHeaders(request);
-      const startBody = JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true });
+      const startBody = JSON.stringify({ production_id: data.id, user_id: userId, legal_acceptance: true, force_start: true, dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "explicit_user_action" } });
       try {
         const startResponse = await fetch(startUrl, { method: "POST", headers: startHeaders, body: startBody });
         if (!startResponse.ok) {

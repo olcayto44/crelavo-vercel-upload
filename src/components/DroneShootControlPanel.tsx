@@ -278,6 +278,8 @@ export function DroneShootControlPanel() {
           production_type: "drone_video",
           package_id: state.packageId,
           legal_acceptance: true,
+          dispatch_action: "generate_video",
+          confirmation: { confirmed: true, source: "start_production_button" },
           project_details: `${droneDetails.locationAddress}\n${droneDetails.routePath}\n${droneDetails.markedArea}`,
           features: "Route / camera plan, AI drone video, Location labels, Narration, Subtitles, Background music, Final MP4, Thumbnail, Revision path",
           quality: droneDetails.quality,
@@ -307,7 +309,9 @@ export function DroneShootControlPanel() {
             production_id: productionId,
             user_id: user.id,
             legal_acceptance: true,
-            force_start: true
+            force_start: true,
+            dispatch_action: "generate_video",
+            confirmation: { confirmed: true, source: "start_production_button" }
           })
         });
         const automationResult = await automationResponse.json().catch(() => ({}));

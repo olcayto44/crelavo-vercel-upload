@@ -186,7 +186,8 @@ async function openAiSuggestion(idea: string, mode: AssistantMode, history: { ro
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  const body = await request.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body) return Response.json({ error: "Invalid JSON request." }, { status: 400 });
   const userId = String(body.user_id ?? "").trim();
   const userEmail = String(body.user_email ?? "").trim().toLowerCase();
   const idea = String(body.idea ?? "").trim().slice(0, 2000);
