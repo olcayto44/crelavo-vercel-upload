@@ -1260,6 +1260,8 @@ function animationStylePackId(prompt: string, productionType: string) {
 function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  const explicitBrandKit = /(?:image\s*type|production\s*type|category|purpose)\s*:\s*logo\s*\/\s*brand\s+kit|(?:image\s*type|production\s*type|category|purpose)\s*:\s*brand\s+kit/.test(raw);
+  if (explicitBrandKit) return "brand_kit";
   const imageDesignIntent = /\b(banner|afiş|afis|poster|görsel|gorsel|resim|image|visual|photo|picture|png|jpg|jpeg|static\s+ad|static\s+image|single\s+image|final\s+image|social\s+media\s+post|instagram\s+post|feed\s+post|reklam görseli|reklam gorseli|sosyal medya\s+(post|görseli|gorseli)|kapak|thumbnail|cover|flyer|broşür|brosur|duyuru görseli|duyuru gorseli|kampanya görseli|kampanya gorseli)\b|\b4\s*[:x]\s*5\b|\bpng\s*\/\s*jpg\b/.test(raw);
   const routeText = raw
     .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
