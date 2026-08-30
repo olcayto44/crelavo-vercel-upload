@@ -63,11 +63,11 @@ export async function SiteFooter() {
         <div className="site-footer-group footer-social-group">
           <h3>Social</h3>
           <nav className="footer-social-links footer-social-text-links" aria-label="Crelavo social links">
-            <a href="https://www.instagram.com/crelavo/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Instagram"><SocialIcon name="instagram" /><span>Instagram</span></a>
-            <a href="https://www.youtube.com/@crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on YouTube"><SocialIcon name="youtube" /><span>YouTube</span></a>
+            <a href="https://www.instagram.com/crelavohq/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Instagram"><SocialIcon name="instagram" /><span>Instagram</span></a>
+            <a href="https://www.youtube.com/@crelavohq" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on YouTube"><SocialIcon name="youtube" /><span>YouTube</span></a>
             <a href="https://www.tiktok.com/@crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on TikTok"><SocialIcon name="tiktok" /><span>TikTok</span></a>
-            <a href="https://x.com/crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on X"><SocialIcon name="x" /><span>X / Twitter</span></a>
-            <a href="https://www.linkedin.com/company/crelavo/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on LinkedIn"><SocialIcon name="linkedin" /><span>LinkedIn</span></a>
+            <a href="https://x.com/crelavohq" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on X"><SocialIcon name="x" /><span>X / Twitter</span></a>
+            <a href="https://www.linkedin.com/company/crelavo/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on LinkedIn"><SocialIcon name="linkedin" /><span>LinkedIn</span></a>
             <a href="https://www.reddit.com/user/crelavo/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Reddit"><SocialIcon name="reddit" /><span>Reddit</span></a>
           </nav>
         </div>
