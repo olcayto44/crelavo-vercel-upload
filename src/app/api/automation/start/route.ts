@@ -1134,7 +1134,7 @@ if (isImageProduction) {
     const originalImagePrompt = (imagePromptCandidates[0] || "Image production").trim();
     const requestedAspectSignal = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
     const linkedinBanner = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${productionDetectionText} ${requestedAspectSignal}`);
-    const imagePromptBase = !linkedinBanner && hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+    const imagePromptBase = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
    const cloneReferenceUrl = productionType === "visual_clone"
      ? materialUrlForPurpose(currentProductionRecord.materials_json ?? inputJson.uploaded_materials ?? requestMetadata.uploaded_materials, ["visual_reference", "style_reference", "image_reference", "reference_image", "reference"])
      : "";
@@ -1146,7 +1146,8 @@ if (isImageProduction) {
      return Response.json({ job_id: jobId, production: waitingProduction, provider_started: false, waiting_provider_config: true, missing_input: "reference_image", error: message }, { status: 424 });
    }
     const imagePrompt = linkedinBanner
-    ? `${imagePromptBase}\nSTRICT LINKEDIN BANNER RULES: create one wide horizontal LinkedIn company banner, preserve Crelavo branding and the exact requested headline/supporting text if present, keep all important text legible in the center-right safe area, do not imitate the LinkedIn user interface, do not add LinkedIn icons or fake profile elements, do not invent extra words, and output exactly one static image in the requested aspect ratio.`
+     ? `${imagePromptBase}\nSTRICT LINKEDIN BANNER BACKGROUND RULES: create one clean wide horizontal banner background only. Do not render any text, letters, logo, portrait, profile photo, device mockup, browser window, dashboard, button, LinkedIn interface or watermark. Keep the entire left third calm and leave the center-right area clear for deterministic Crelavo typography added after generation. Output exactly one static image in the requested aspect ratio.`
+
     : `${imagePromptBase}\nSTRICT STATIC PRODUCT IMAGE RULES: one clean product composition only; completely blank unlabeled packaging; no logo, no brand name, no letters, no words, no numbers, no label, no typography, no symbols and no pseudo-text anywhere on the product; preserve physically correct packaging geometry; do not render any text even if the brief mentions a brand. Output exactly one static image in the requested aspect ratio.`;
    const requestedAspectRatio = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
    const aspectRatio = /^1584x396$/i.test(requestedAspectRatio.trim()) || /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${productionDetectionText} ${requestedAspectSignal} ${originalImagePrompt}`)
@@ -1157,8 +1158,11 @@ if (isImageProduction) {
      const normalizedImage = aspectRatio === "1584x396"
        ? await normalizeImageCanvas({ productionId, sourceUrl: imageResult.imageUrl, filenameBase: "final-image-linkedin-banner", aspectRatio })
        : { imageUrl: imageResult.imageUrl, width: undefined, height: undefined };
-     const overlayResult = { applied: false as const, marketingText: {}, imageUrl: normalizedImage.imageUrl };
-     const finalImageUrl = normalizedImage.imageUrl;
+      const overlayResult = linkedinBanner
+        ? await applyMarketingTextOverlay({ productionId, sourceUrl: normalizedImage.imageUrl, prompt: originalImagePrompt, aspectRatio })
+        : { applied: false as const, marketingText: {}, imageUrl: normalizedImage.imageUrl };
+      const finalImageUrl = overlayResult.imageUrl;
+
 
     const imageOutput = {
       ...existingOutput,
