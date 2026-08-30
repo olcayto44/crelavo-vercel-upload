@@ -32,6 +32,27 @@ export function imageTargetDimensions(aspectRatio: string) {
   return { width: 1200, height: 1500 };
 }
 
+export async function createDeterministicLinkedInBanner(input: { productionId: string; filenameBase: string; prompt: string }) {
+  const image = new Jimp({ width: 1584, height: 396, color: 0xf4f1ebff });
+  const drawRect = (x: number, y: number, w: number, h: number, color: number) => {
+    for (let py = Math.max(0, y); py < Math.min(396, y + h); py += 1) for (let px = Math.max(0, x); px < Math.min(1584, x + w); px += 1) image.setPixelColor(color, px, py);
+  };
+  drawRect(520, 0, 1064, 396, 0xe8edf2ff);
+  drawRect(1110, 0, 474, 396, 0xdce5ecff);
+  drawRect(730, 54, 640, 288, 0xf8fafbff);
+  drawRect(760, 84, 240, 12, 0xd4dde4ff);
+  drawRect(760, 122, 390, 10, 0xe1e7ecff);
+  drawRect(760, 150, 330, 10, 0xe1e7ecff);
+  drawRect(760, 205, 510, 8, 0xd4dde4ff);
+  drawRect(760, 228, 430, 8, 0xe1e7ecff);
+  drawRect(760, 251, 470, 8, 0xe1e7ecff);
+  drawRect(1260, 42, 5, 312, 0xb7cbd8ff);
+  drawRect(650, 0, 3, 396, 0xc5d5df88);
+  const output = await image.getBuffer("image/png");
+  const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, output, "image/png");
+  return { imageUrl, width: 1584, height: 396, provider: "deterministic_banner" as const, model: "jimp", aspectRatio: "1584x396", raw: { generated: false, deterministic: true }, fallback: false as const, fallbackReason: undefined };
+}
+
 export async function normalizeImageCanvas(input: { productionId: string; sourceUrl: string; filenameBase: string; aspectRatio: string }) {
   const response = await fetch(input.sourceUrl, { cache: "no-store" });
   if (!response.ok) throw new Error(`Image canvas source download failed: ${response.status}`);

@@ -11,7 +11,7 @@ import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
-import { applyMarketingTextOverlay, normalizeImageCanvas } from "@/lib/image-postprocess";
+import { applyMarketingTextOverlay, createDeterministicLinkedInBanner, normalizeImageCanvas } from "@/lib/image-postprocess";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
 import { ProviderConfigError } from "@/lib/providers/types";
@@ -1154,10 +1154,15 @@ if (isImageProduction) {
      ? "1584x396"
      : /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /4\s*[:x]\s*5|portrait/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s+portrait/i.test(originalImagePrompt) ? "4:5" : "4:5";
    try {
-     const imageResult = await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: productionType === "visual_clone" ? "visual-clone-output" : "final-image-base", aspectRatio, referenceImageUrls: cloneReferenceUrl ? [cloneReferenceUrl] : undefined });
-     const normalizedImage = aspectRatio === "1584x396"
-       ? await normalizeImageCanvas({ productionId, sourceUrl: imageResult.imageUrl, filenameBase: "final-image-linkedin-banner", aspectRatio })
-       : { imageUrl: imageResult.imageUrl, width: undefined, height: undefined };
+      const imageResult = linkedinBanner
+        ? await createDeterministicLinkedInBanner({ productionId, filenameBase: "final-image-linkedin-banner", prompt: originalImagePrompt })
+        : await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: productionType === "visual_clone" ? "visual-clone-output" : "final-image-base", aspectRatio, referenceImageUrls: cloneReferenceUrl ? [cloneReferenceUrl] : undefined });
+      const normalizedImage = linkedinBanner
+        ? { imageUrl: imageResult.imageUrl, width: 1584, height: 396 }
+        : aspectRatio === "1584x396"
+          ? await normalizeImageCanvas({ productionId, sourceUrl: imageResult.imageUrl, filenameBase: "final-image-linkedin-banner", aspectRatio })
+          : { imageUrl: imageResult.imageUrl, width: undefined, height: undefined };
+
       const overlayResult = linkedinBanner
         ? await applyMarketingTextOverlay({ productionId, sourceUrl: normalizedImage.imageUrl, prompt: originalImagePrompt, aspectRatio })
         : { applied: false as const, marketingText: {}, imageUrl: normalizedImage.imageUrl };
