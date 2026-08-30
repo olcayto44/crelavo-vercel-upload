@@ -55,6 +55,10 @@ function findImageUrl(value: unknown): string {
   return "";
 }
 
+function providerAspectRatio(aspectRatio: string) {
+  return aspectRatio === "1584x396" ? "21:9" : aspectRatio;
+}
+
 function dataUrlToBytes(dataUrl: string) {
   const [, meta = "image/png", payload = ""] = dataUrl.match(/^data:([^;]+);base64,(.*)$/) || [];
   const binary = Buffer.from(payload, "base64");
@@ -94,7 +98,7 @@ export async function createStabilityImage(input: { productionId: string; prompt
   const aspectRatio = input.aspectRatio || "9:16";
   const form = new FormData();
   form.append("prompt", input.prompt);
-  form.append("aspect_ratio", aspectRatio);
+  form.append("aspect_ratio", providerAspectRatio(aspectRatio));
   form.append("output_format", "png");
   const response = await fetch(`${baseUrl()}/v2beta/stable-image/generate/${model}`, {
     method: "POST",
@@ -116,7 +120,7 @@ async function createFalConsistentImage(input: ConsistentImageInput): Promise<Im
   const aspectRatio = input.aspectRatio || "9:16";
   const body = {
     prompt: input.prompt,
-    aspect_ratio: aspectRatio,
+    aspect_ratio: providerAspectRatio(aspectRatio),
     image_size: aspectRatio === "9:16" ? "portrait_16_9" : undefined,
     image_url: input.referenceImageUrls?.[0],
     image_urls: input.referenceImageUrls,
@@ -158,7 +162,7 @@ async function createReplicateConsistentImage(input: ConsistentImageInput): Prom
   const aspectRatio = input.aspectRatio || "9:16";
   const payload = {
     prompt: input.prompt,
-    aspect_ratio: aspectRatio,
+    aspect_ratio: providerAspectRatio(aspectRatio),
     image: input.referenceImageUrls?.[0],
     image_urls: input.referenceImageUrls,
     reference_image_urls: input.referenceImageUrls
