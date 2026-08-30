@@ -1,0 +1,9 @@
+.crelavo-widget { max-width: 620px; padding: 28px; border: 1px solid #dbeafe; border-radius: 20px; background: linear-gradient(135deg, #f8fbff, #eef7ff); color: #0f172a; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; box-shadow: 0 16px 40px rgba(15, 23, 42, .08); }
+.crelavo-widget__eyebrow { margin-bottom: 8px; color: #0369a1; font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.crelavo-widget__title { margin: 0 0 18px; font-size: clamp(22px, 4vw, 32px); line-height: 1.1; }
+.crelavo-widget__row { display: flex; gap: 10px; }
+.crelavo-widget__input { min-width: 0; flex: 1; padding: 13px 14px; border: 1px solid #bfdbfe; border-radius: 12px; background: #fff; color: #0f172a; font-size: 14px; }
+.crelavo-widget__button { padding: 13px 16px; border: 0; border-radius: 12px; background: #0284c7; color: #fff; cursor: pointer; font-weight: 800; white-space: nowrap; }
+.crelavo-widget__button:hover { background: #0369a1; }
+.crelavo-widget__message { min-height: 1.25em; margin: 12px 0 0; color: #475569; font-size: 13px; }
+@media (max-width: 560px) { .crelavo-widget__row { flex-direction: column; } .crelavo-widget__button { width: 100%; } }
