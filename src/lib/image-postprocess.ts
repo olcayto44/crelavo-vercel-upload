@@ -76,6 +76,18 @@ function printBitmap(image: any, text: string, x: number, y: number, scale: numb
   }
 }
 
+export async function createDeterministicBrandLogo(input: { productionId: string; filenameBase: string }) {
+  const image = new Jimp({ width: 400, height: 400, color: 0x0b1424ff });
+  for (let y = 65; y < 335; y += 1) for (let x = 65; x < 335; x += 1) {
+    const edge = Math.min(x - 65, y - 65, 334 - x, 334 - y);
+    if (edge < 5) image.setPixelColor(0x57d2d4ff, x, y);
+  }
+  printBitmap(image, "Crelavo", 92, 184, 3, 0xffffffff);
+  const output = await image.getBuffer("image/png");
+  const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, output, "image/png");
+  return { imageUrl, width: 400, height: 400, provider: "deterministic_brand_logo" as const, model: "jimp", aspectRatio: "1:1", raw: { generated: false, deterministic: true }, fallback: false as const, fallbackReason: undefined };
+}
+
 export async function applyMarketingTextOverlay(input: { productionId: string; sourceUrl: string; prompt: string; aspectRatio?: string }) {
   const marketingText = parseImageMarketingText(input.prompt);
   if (!marketingText.headline && !marketingText.supportingText && !marketingText.cta) return { imageUrl: input.sourceUrl, applied: false as const, marketingText, width: undefined, height: undefined };

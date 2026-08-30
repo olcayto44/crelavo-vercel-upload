@@ -1130,11 +1130,14 @@ if (isImageProduction) {
      inputJson.providerPrompt,
      currentProduction.title
    ].map((value) => String(value ?? "").trim()).filter(Boolean);
-    const { hasImageMarketingText, stripImageMarketingTextInstructions } = await import("@/lib/image-postprocess");
+     const { hasImageMarketingText, stripImageMarketingTextInstructions, createDeterministicBrandLogo, createDeterministicLinkedInBanner, applyMarketingTextOverlay } = await import("@/lib/image-postprocess");
+
     const originalImagePrompt = (imagePromptCandidates[0] || "Image production").trim();
     const requestedAspectSignal = String(requestMetadata.aspectRatio ?? inputJson.aspectRatio ?? requestMetadata.aspect_ratio ?? inputJson.aspect_ratio ?? "");
-    const linkedinBanner = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${productionDetectionText} ${requestedAspectSignal}`);
-    const imagePromptBase = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+  const linkedinBanner = /linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/i.test(`${productionDetectionText} ${requestedAspectSignal}`);
+  const deterministicBrandLogo = /logo\s*\/\s*brand\s+kit|brand\s+kit|400\s*[:x]\s*400/i.test(`${productionDetectionText} ${requestedAspectSignal} ${originalImagePrompt}`);
+  const imagePromptBase = hasImageMarketingText(originalImagePrompt) ? stripImageMarketingTextInstructions(originalImagePrompt) : originalImagePrompt;
+
    const cloneReferenceUrl = productionType === "visual_clone"
      ? materialUrlForPurpose(currentProductionRecord.materials_json ?? inputJson.uploaded_materials ?? requestMetadata.uploaded_materials, ["visual_reference", "style_reference", "image_reference", "reference_image", "reference"])
      : "";
@@ -1155,16 +1158,20 @@ if (isImageProduction) {
       : /9\s*[:x]\s*16|story|vertical/i.test(requestedAspectRatio) ? "9:16" : /16\s*[:x]\s*9|landscape/i.test(requestedAspectRatio) ? "16:9" : /1\s*[:x]\s*1|square/i.test(requestedAspectRatio) ? "1:1" : /4\s*[:x]\s*5|portrait/i.test(requestedAspectRatio) || /4\s*[:x]\s*5|instagram\s+portrait/i.test(originalImagePrompt) ? "4:5" : "4:5";
     const deterministicLinkedInBanner = linkedinBanner || aspectRatio === "1584x396";
     try {
-       const imageResult = deterministicLinkedInBanner
+       const imageResult = deterministicBrandLogo
+         ? await createDeterministicBrandLogo({ productionId, filenameBase: "final-brand-logo" })
+         : deterministicLinkedInBanner
+           ? await createDeterministicLinkedInBanner({ productionId, filenameBase: "final-image-linkedin-banner", prompt: originalImagePrompt })
 
-        ? await createDeterministicLinkedInBanner({ productionId, filenameBase: "final-image-linkedin-banner", prompt: originalImagePrompt })
         : await createConsistentSceneImage({ productionId, prompt: imagePrompt, filenameBase: productionType === "visual_clone" ? "visual-clone-output" : "final-image-base", aspectRatio, referenceImageUrls: cloneReferenceUrl ? [cloneReferenceUrl] : undefined });
-      const normalizedImage = deterministicLinkedInBanner
+    const normalizedImage = deterministicBrandLogo
+      ? { imageUrl: imageResult.imageUrl, width: 400, height: 400 }
+      : deterministicLinkedInBanner
         ? { imageUrl: imageResult.imageUrl, width: 1584, height: 396 }
-  : { imageUrl: imageResult.imageUrl, width: undefined, height: undefined };
-
+        : { imageUrl: imageResult.imageUrl, width: undefined, height: undefined };
 
       const overlayResult = deterministicLinkedInBanner
+
         ? await applyMarketingTextOverlay({ productionId, sourceUrl: normalizedImage.imageUrl, prompt: originalImagePrompt, aspectRatio })
         : { applied: false as const, marketingText: {}, imageUrl: normalizedImage.imageUrl };
       const finalImageUrl = overlayResult.imageUrl;

@@ -566,6 +566,14 @@ function imageTypeFromPrompt(text: string, options: string[]) {
 
 function imageAspectRatioFromPrompt(text: string, options: string[]) {
   const signal = text.toLocaleLowerCase("tr-TR");
+  const explicitRatio = signal.match(/(?:aspect\s*ratio|canvas|output\s*size)\s*:\s*([^\n.;]+)/i)?.[1]?.trim();
+  if (explicitRatio) {
+    const normalizedRatio = explicitRatio.replace(/\s+/g, " ").trim();
+    const explicitOption = /400\s*[:x]\s*400|1\s*[:x]\s*1|square|kare/.test(normalizedRatio)
+      ? options.find((option) => /square 1:1/i.test(option))
+      : /1584\s*[:x]\s*396/.test(normalizedRatio) ? options.find((option) => /linkedin banner 1584x396/i.test(option)) : undefined;
+    if (explicitOption) return explicitOption;
+  }
   const checks: Array<[RegExp, RegExp]> = [
     [/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|1584\s*[:x]\s*396/, /linkedin banner 1584x396/i],
     [/\b4\s*[:x]\s*5\b|instagram\s+(portrait|feed)|portrait\s+post/, /portrait 4:5/i],
