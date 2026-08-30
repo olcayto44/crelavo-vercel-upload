@@ -5861,7 +5861,7 @@ body.admin-route > .site-footer {
   min-width: 0;
   max-width: 100%;
 }
-.footer-commerce-shortcuts a,
+  .footer-commerce-shortcuts a,
 .footer-social-links a {
   display: inline-flex;
   width: max-content;
@@ -5872,6 +5872,15 @@ body.admin-route > .site-footer {
   color: #dbeafe;
   background: rgba(255,255,255,.045);
   font-size: 12px;
+}
+.footer-social-links a svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+.footer-social-links a span {
+  line-height: 1;
+
   font-weight: 800;
   overflow-wrap: anywhere;
 }
@@ -7008,6 +7017,7 @@ html body .pricing-page .page-demo-video-section .showcase-video-overlay {
 
   .trial-mobile-fomo span {
     font-size: 12px;
+
     font-weight: 900;
     letter-spacing: .08em;
     text-transform: uppercase;

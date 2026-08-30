@@ -1,5 +1,14 @@
 import { HardReloadLink } from "@/components/HardReloadLink";
 
+function SocialIcon({ name }: { name: "instagram" | "youtube" | "tiktok" | "x" | "linkedin" | "reddit" }) {
+  if (name === "instagram") return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>;
+  if (name === "youtube") return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="currentColor"/><path d="m10 8.5 6 3.5-6 3.5z" fill="var(--surface, #07111f)"/></svg>;
+  if (name === "tiktok") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v11.2a4.1 4.1 0 1 1-3-3.95V7.1A7.1 7.1 0 1 0 17 14.2V8.5c1.2 1 2.7 1.6 4.5 1.6V7.2C18.4 7.2 16 5.4 15.7 3z" fill="currentColor"/></svg>;
+  if (name === "x") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h3.2l4.1 5.5L16.9 4H20l-6.2 7.1L20.5 20h-3.2l-4.7-6.3L7.1 20H4l6.8-7.8z" fill="currentColor"/></svg>;
+  if (name === "linkedin") return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="var(--surface, #07111f)"/><path d="M6.8 10h2.5v7H6.8zm4 0h2.4v1c.6-.8 1.5-1.3 2.7-1.3 2.6 0 3.3 1.7 3.3 4v3.3h-2.5V14c0-1.2 0-2.7-1.6-2.7s-1.8 1.3-1.8 2.6V17h-2.5z" fill="var(--surface, #07111f)"/></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="9" cy="11" r="1.2" fill="var(--surface, #07111f)"/><circle cx="15" cy="11" r="1.2" fill="var(--surface, #07111f)"/><path d="M8.5 14.5c1.8 1.6 5.2 1.6 7 0" fill="none" stroke="var(--surface, #07111f)" strokeWidth="1.4" strokeLinecap="round"/></svg>;
+}
+
 export async function SiteFooter() {
   return (
     <footer className="container footer clean-feed-section site-footer">
@@ -54,11 +63,12 @@ export async function SiteFooter() {
         <div className="site-footer-group footer-social-group">
           <h3>Social</h3>
           <nav className="footer-social-links footer-social-text-links" aria-label="Crelavo social links">
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
-            <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
-            <a href="https://x.com/" target="_blank" rel="noopener noreferrer">X / Twitter</a>
-            <a href="https://www.linkedin.com/company/crelavo/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a href="https://www.instagram.com/crelavo/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Instagram"><SocialIcon name="instagram" /><span>Instagram</span></a>
+            <a href="https://www.youtube.com/@crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on YouTube"><SocialIcon name="youtube" /><span>YouTube</span></a>
+            <a href="https://www.tiktok.com/@crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on TikTok"><SocialIcon name="tiktok" /><span>TikTok</span></a>
+            <a href="https://x.com/crelavo" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on X"><SocialIcon name="x" /><span>X / Twitter</span></a>
+            <a href="https://www.linkedin.com/company/crelavo/about/?viewAsMember=true" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on LinkedIn"><SocialIcon name="linkedin" /><span>LinkedIn</span></a>
+            <a href="https://www.reddit.com/user/crelavo/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Reddit"><SocialIcon name="reddit" /><span>Reddit</span></a>
           </nav>
         </div>
       </div>
