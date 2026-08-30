@@ -879,8 +879,11 @@ selected.length = 0;
       if (wanted) selected = [wanted];
     }
     if (group.id === "style" && isImageProductionType(type)) {
-      const explicitStyle = text.match(/(?:style|visual\s+style)\s*:\s*([^\n.;]+)/i)?.[1]?.trim();
-      const explicitOption = explicitStyle ? group.options.find((option) => explicitStyle === option.toLocaleLowerCase("tr-TR") || explicitStyle.includes(option.toLocaleLowerCase("tr-TR"))) : undefined;
+      const explicitStyle = text.match(/(?:^|\n)\s*(?:style|visual\s+style)\s*:\s*([^\n]+)/i)?.[1]?.trim();
+      const explicitOption = explicitStyle ? group.options
+        .map((option) => ({ option, index: explicitStyle.toLocaleLowerCase("tr-TR").indexOf(option.toLocaleLowerCase("tr-TR")) }))
+        .filter(({ index }) => index >= 0)
+        .sort((a, b) => a.index - b.index)[0]?.option : undefined;
       const luxury = !explicitOption && /premium|luxury|lüks|luks|editorial|beauty|serum|cosmetic|kozmetik|clean|minimal/.test(text) ? group.options.find((option) => /luxury product|minimal/i.test(option)) : undefined;
       const wanted = explicitOption || group.options.find((option) => text.includes(option.toLowerCase())) || luxury;
       if (wanted) selected = [wanted];
