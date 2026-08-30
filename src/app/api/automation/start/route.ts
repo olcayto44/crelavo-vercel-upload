@@ -11,6 +11,7 @@ import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
+import { generateVideoThumbnail } from "@/lib/video-thumbnail";
 import { applyMarketingTextOverlay, createDeterministicLinkedInBanner } from "@/lib/image-postprocess";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent } from "@/lib/heygen-routing";
 import { genericVideoProviderChain, runGenericVideoPipeline } from "@/lib/providers/generic-video";
@@ -116,6 +117,23 @@ function materialUrlForPurpose(value: unknown, purposes: string[]) {
     const purpose = String(record.reference_type ?? record.purpose ?? "").toLowerCase();
     const url = httpsUrlFrom(record.file_url ?? record.url ?? record.fileUrl);
     if (url && purposes.some((candidate) => purpose === candidate || purpose.includes(candidate))) return url;
+  }
+  return "";
+}
+
+function frameExtractionIntent(text: string) {
+  return /extract\s+(?:one\s+)?(?:clear\s+)?(?:still\s+)?(?:image|frame)|still\s+image\s+from\s+(?:the\s+)?(?:attached\s+)?video|frame\s+from\s+(?:the\s+)?(?:attached\s+)?video|screenshot\s+from\s+(?:the\s+)?video|video\s+frame|videodan\s+(?:gerçek|gercek)\s+kare\s*[çc]ıkar|videodan\s+(?:bir\s+)?kare\s*[çc]ıkar|videodan\s+(?:gerçek|gercek)\s+(?:bir\s+)?görsel\s*[çc]ıkar/i.test(text);
+}
+
+function videoMaterialUrl(value: unknown) {
+  const materials = Array.isArray(value) ? value : [];
+  for (const item of materials) {
+    if (!item || typeof item !== "object") continue;
+    const record = item as Record<string, unknown>;
+    const contentType = String(record.content_type ?? record.contentType ?? "");
+    const kind = String(record.kind ?? "").toLowerCase();
+    const url = httpsUrlFrom(record.file_url ?? record.url ?? record.fileUrl);
+    if (url && (kind === "video" || /^video\//i.test(contentType))) return url;
   }
   return "";
 }
@@ -1118,6 +1136,48 @@ const musicVideoOutputBase = productionType === "music_video"
   ? { automationMode: "fully_automatic", jobId, alternatives: [], finalVideoUrl: null, delivery_url: null, deliveryZipUrl: null, readmeUrl: null }
   : demoOutput;
 if (isImageProduction) {
+   const frameExtractionRequested = requestMetadata.frameExtractionRequested === true || String(requestMetadata.frameExtractionRequested ?? inputJson.frameExtractionRequested ?? "").toLowerCase() === "true" || frameExtractionIntent(productionDetectionText);
+   const sourceMaterials = [currentProductionRecord.materials_json, inputJson.uploaded_materials, requestMetadata.uploaded_materials];
+   const sourceVideoUrl = httpsUrlFrom(requestMetadata.sourceVideoUrl ?? requestMetadata.source_video_url ?? inputJson.sourceVideoUrl ?? inputJson.source_video_url) || sourceMaterials.map(videoMaterialUrl).find(Boolean) || "";
+   if (frameExtractionRequested && sourceVideoUrl) {
+     try {
+       const frameTimestampSeconds = secondsFromValue(requestMetadata.frameTimestampSeconds ?? requestMetadata.frame_timestamp_seconds ?? inputJson.frameTimestampSeconds ?? inputJson.frame_timestamp_seconds) ?? undefined;
+       const finalImageUrl = await generateVideoThumbnail({ productionId, videoUrl: sourceVideoUrl, timestampSeconds: frameTimestampSeconds });
+       const frameExtractionOutput = {
+         ...existingOutput,
+         automationMode: "fully_automatic",
+         automationStatus: "completed",
+         providerStatus: "ffmpeg_frame_extracted",
+         requiredPipeline: "video_frame_extraction",
+         currentStep: "Uploaded video frame extracted",
+         finalImageUrl,
+         imageUrl: finalImageUrl,
+         previewUrl: finalImageUrl,
+         deliveryLink: finalImageUrl,
+         generatedImage: false,
+         sourceType: "uploaded_video_frame",
+         frameExtraction: { mode: "ffmpeg", sourceVideoUrl, timestampSeconds: frameTimestampSeconds ?? 2.5 },
+         automaticDeliveryLinks: deliveryLinks,
+         workflowState: buildProductionWorkflowState({ ...currentProduction, status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, output_json: { ...existingOutput, finalImageUrl } })
+       };
+       const frameReadyGate = productionReadyGate({ ...currentProduction, preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: deliveryLinks.deliveryZipUrl, source_files_url: deliveryLinks.sourceFilesUrl, readme_url: deliveryLinks.readmeUrl, output_json: frameExtractionOutput }, frameExtractionOutput);
+       const { data: frameProduction, error: frameUpdateError } = await supabase
+         .from("production_requests")
+         .update(safeUpdate({ status: "ready", automation_status: "completed", generation_status: "final_image_ready", preview_url: finalImageUrl, delivery_link: finalImageUrl, delivery_zip_url: deliveryLinks.deliveryZipUrl, source_files_url: deliveryLinks.sourceFilesUrl, readme_url: deliveryLinks.readmeUrl, output_json: { ...frameExtractionOutput, readyGate: frameReadyGate, qualityGate: { status: frameReadyGate.passed ? "passed" : "soft_passed", checkedAt: now, required: frameReadyGate.required, missing: frameReadyGate.missing, warnings: frameReadyGate.warnings } }, admin_notes: "Uploaded video frame extracted successfully.", updated_at: now }))
+         .eq("id", productionId)
+         .select("*")
+         .single();
+       if (frameUpdateError) throw frameUpdateError;
+       return Response.json({ job_id: jobId, production: frameProduction, provider_started: true, provider_result: { provider: "ffmpeg", imageUrl: finalImageUrl, sourceVideoUrl, timestampSeconds: frameTimestampSeconds ?? 2.5 } });
+     } catch (error) {
+       const failureMessage = errorMessage(error, "Video frame extraction failed.");
+       await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because uploaded video frame extraction failed: ${failureMessage}`);
+       const failedOutput = { ...existingOutput, automationMode: "fully_automatic", automationStatus: "failed", providerStatus: "ffmpeg_frame_extraction_failed", requiredPipeline: "video_frame_extraction", sourceType: "uploaded_video_frame", generatedImage: false, frameExtraction: { mode: "ffmpeg", sourceVideoUrl }, providerError: failureMessage, deliveryReady: false };
+       const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_failed", output_json: failedOutput, error_message: failureMessage, admin_notes: failureMessage, updated_at: now })).eq("id", productionId).select("*").single();
+       if (failedError) throw failedError;
+       return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, error: failureMessage }, { status: 502 });
+     }
+   }
    const imagePromptCandidates = [
      currentProduction.prompt,
      requestMetadata.original_request,
