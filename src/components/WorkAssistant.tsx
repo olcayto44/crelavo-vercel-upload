@@ -541,12 +541,17 @@ function isStaticImagePrompt(text: string) {
 
 function imageTypeFromPrompt(text: string, options: string[]) {
   const signal = text.toLocaleLowerCase("tr-TR");
+  const explicitType = signal.match(/(?:image\s*type|image\s*purpose)\s*:\s*([^\n.;]+)/i)?.[1]?.trim();
+  if (explicitType) {
+    const explicitOption = options.find((option) => explicitType === option.toLocaleLowerCase("tr-TR") || explicitType.includes(option.toLocaleLowerCase("tr-TR")));
+    if (explicitOption) return explicitOption;
+  }
   const checks: Array<[RegExp, RegExp]> = [
-    [/instagram|social\s+media|sosyal\s+medya|\bpost\b|reklam\s+görseli|reklam\s+gorseli|product\s+advertisement|feed\s+post/, /social media post/i],
+    [/linkedin\s+(company\s+)?(page\s+)?(banner|cover)|company\s+page\s+banner|\bbanner\b|web\s+banner/, /banner/i],
     [/poster|afiş|afis|kampanya\s+posteri/, /poster/i],
-    [/banner|web\s+banner/, /banner/i],
     [/logo|brand\s+kit|marka\s+kiti/, /logo\/brand kit/i],
     [/thumbnail|cover|kapak/, /thumbnail/i],
+    [/instagram|social\s+media|sosyal\s+medya|\bpost\b|reklam\s+görseli|reklam\s+gorseli|product\s+advertisement|feed\s+post/, /social media post/i],
   ];
   for (const [textPattern, optionPattern] of checks) {
     if (textPattern.test(signal)) {
@@ -874,8 +879,10 @@ selected.length = 0;
       if (wanted) selected = [wanted];
     }
     if (group.id === "style" && isImageProductionType(type)) {
-      const luxury = /premium|luxury|lüks|luks|editorial|beauty|serum|cosmetic|kozmetik|clean|minimal/.test(text) ? group.options.find((option) => /luxury product|minimal/i.test(option)) : undefined;
-      const wanted = group.options.find((option) => text.includes(option.toLowerCase())) || luxury;
+      const explicitStyle = text.match(/(?:style|visual\s+style)\s*:\s*([^\n.;]+)/i)?.[1]?.trim();
+      const explicitOption = explicitStyle ? group.options.find((option) => explicitStyle === option.toLocaleLowerCase("tr-TR") || explicitStyle.includes(option.toLocaleLowerCase("tr-TR"))) : undefined;
+      const luxury = !explicitOption && /premium|luxury|lüks|luks|editorial|beauty|serum|cosmetic|kozmetik|clean|minimal/.test(text) ? group.options.find((option) => /luxury product|minimal/i.test(option)) : undefined;
+      const wanted = explicitOption || group.options.find((option) => text.includes(option.toLowerCase())) || luxury;
       if (wanted) selected = [wanted];
     }
     if (group.id === "aspectRatio") {
