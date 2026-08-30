@@ -33,21 +33,19 @@ export function imageTargetDimensions(aspectRatio: string) {
 }
 
 export async function createDeterministicLinkedInBanner(input: { productionId: string; filenameBase: string; prompt: string }) {
-  const image = new Jimp({ width: 1584, height: 396, color: 0xf4f1ebff });
+  const image = new Jimp({ width: 1584, height: 396, color: 0x0b1424ff });
   const drawRect = (x: number, y: number, w: number, h: number, color: number) => {
     for (let py = Math.max(0, y); py < Math.min(396, y + h); py += 1) for (let px = Math.max(0, x); px < Math.min(1584, x + w); px += 1) image.setPixelColor(color, px, py);
   };
-  drawRect(520, 0, 1064, 396, 0xe8edf2ff);
-  drawRect(1110, 0, 474, 396, 0xdce5ecff);
-  drawRect(730, 54, 640, 288, 0xf8fafbff);
-  drawRect(760, 84, 240, 12, 0xd4dde4ff);
-  drawRect(760, 122, 390, 10, 0xe1e7ecff);
-  drawRect(760, 150, 330, 10, 0xe1e7ecff);
-  drawRect(760, 205, 510, 8, 0xd4dde4ff);
-  drawRect(760, 228, 430, 8, 0xe1e7ecff);
-  drawRect(760, 251, 470, 8, 0xe1e7ecff);
-  drawRect(1260, 42, 5, 312, 0xb7cbd8ff);
-  drawRect(650, 0, 3, 396, 0xc5d5df88);
+  drawRect(520, 0, 1064, 396, 0x112b43ff);
+  drawRect(1010, 0, 574, 396, 0x164a68ff);
+  drawRect(700, 38, 720, 320, 0x153149ff);
+  drawRect(735, 68, 520, 4, 0x41b6cfff);
+  drawRect(735, 302, 590, 3, 0x2d6d89ff);
+  drawRect(1280, 0, 4, 396, 0x57d2d4ff);
+  drawRect(620, 0, 2, 396, 0x24516bff);
+  drawRect(1340, 55, 180, 180, 0x1c6682ff);
+  drawRect(1390, 105, 80, 80, 0x57d2d4ff);
   const output = await image.getBuffer("image/png");
   const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, output, "image/png");
   return { imageUrl, width: 1584, height: 396, provider: "deterministic_banner" as const, model: "jimp", aspectRatio: "1584x396", raw: { generated: false, deterministic: true }, fallback: false as const, fallbackReason: undefined };
@@ -68,7 +66,7 @@ export async function normalizeImageCanvas(input: { productionId: string; source
 const GLYPHS: Record<string, string[]> = {
   A:["01110","10001","10001","11111","10001","10001","10001"],B:["11110","10001","10001","11110","10001","10001","11110"],C:["01111","10000","10000","10000","10000","10000","01111"],D:["11110","10001","10001","10001","10001","10001","11110"],E:["11111","10000","10000","11110","10000","10000","11111"],F:["11111","10000","10000","11110","10000","10000","10000"],G:["01111","10000","10000","10111","10001","10001","01111"],H:["10001","10001","10001","11111","10001","10001","10001"],I:["11111","00100","00100","00100","00100","00100","11111"],J:["00111","00010","00010","00010","10010","10010","01100"],K:["10001","10010","10100","11000","10100","10010","10001"],L:["10000","10000","10000","10000","10000","10000","11111"],M:["10001","11011","10101","10101","10001","10001","10001"],N:["10001","11001","10101","10011","10001","10001","10001"],O:["01110","10001","10001","10001","10001","10001","01110"],P:["11110","10001","10001","11110","10000","10000","10000"],Q:["01110","10001","10001","10001","10101","10010","01101"],R:["11110","10001","10001","11110","10100","10010","10001"],S:["01111","10000","10000","01110","00001","00001","11110"],T:["11111","00100","00100","00100","00100","00100","00100"],U:["10001","10001","10001","10001","10001","10001","01110"],V:["10001","10001","10001","10001","10001","01010","00100"],W:["10001","10001","10001","10101","10101","11011","10001"],X:["10001","10001","01010","00100","01010","10001","10001"],Y:["10001","10001","01010","00100","00100","00100","00100"],Z:["11111","00001","00010","00100","01000","10000","11111"],"0":["01110","10001","10011","10101","11001","10001","01110"],"1":["00100","01100","00100","00100","00100","00100","01110"],"2":["01110","10001","00001","00010","00100","01000","11111"],"3":["11110","00001","00001","01110","00001","00001","11110"],"4":["00010","00110","01010","10010","11111","00010","00010"],"5":["11111","10000","10000","11110","00001","00001","11110"],"6":["01110","10000","10000","11110","10001","10001","01110"],"7":["11111","00001","00010","00100","01000","01000","01000"],"8":["01110","10001","10001","01110","10001","10001","01110"],"9":["01110","10001","10001","01111","00001","00001","01110"],"-":["00000","00000","00000","11111","00000","00000","00000"],".":["00000","00000","00000","00000","00000","00000","00100"]};
 
-function printBitmap(image: any, text: string, x: number, y: number, scale: number, color = 0x2f2a24ff) {
+function printBitmap(image: any, text: string, x: number, y: number, scale: number, color = 0xffffffff) {
   let cursor = x;
   for (const raw of text.toUpperCase()) {
     if (raw === " ") { cursor += 4 * scale; continue; }
@@ -88,7 +86,7 @@ export async function applyMarketingTextOverlay(input: { productionId: string; s
   image.cover({ w: target.width, h: target.height });
   printBitmap(image, "Crelavo", 80, 45, 3);
   printBitmap(image, marketingText.headline ?? "", 680, 90, 4);
-  printBitmap(image, marketingText.supportingText ?? "", 680, 285, 2);
+  printBitmap(image, marketingText.supportingText ?? "", 680, 285, 2, 0x9fe3efff);
   const output = await image.getBuffer("image/png");
   const imageUrl = await uploadProviderAsset(`${input.productionId}/final-image-text-overlay.png`, output, "image/png");
   return { imageUrl, applied: true as const, marketingText, width: target.width, height: target.height };
