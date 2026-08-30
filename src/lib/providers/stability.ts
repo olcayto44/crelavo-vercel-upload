@@ -108,10 +108,40 @@ export async function createStabilityImage(input: { productionId: string; prompt
     },
     body: form
   });
-  if (!response.ok) throw new Error(`Stability image generation failed: ${response.status} ${await response.text()}`);
-  const bytes = await response.arrayBuffer();
-  const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, bytes, "image/png");
-  return { provider: "stability", model, imageUrl, prompt: input.prompt, aspectRatio };
+  if (response.ok) {
+    const bytes = await response.arrayBuffer();
+    const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, bytes, "image/png");
+    return { provider: "stability", model, imageUrl, prompt: input.prompt, aspectRatio };
+  }
+
+  const v2Error = await response.text();
+  const legacyRatio = providerAspectRatio(aspectRatio);
+  const legacySize = legacyRatio === "16:9" ? { width: 1344, height: 768 } : legacyRatio === "1:1" ? { width: 1024, height: 1024 } : { width: 1024, height: 1536 };
+  const legacyForm = new FormData();
+  legacyForm.append("text_prompts[0][text]", input.prompt);
+  legacyForm.append("width", String(legacySize.width));
+  legacyForm.append("height", String(legacySize.height));
+  legacyForm.append("steps", "30");
+  legacyForm.append("samples", "1");
+  legacyForm.append("output_format", "png");
+  const legacyResponse = await fetch(`${baseUrl()}/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json"
+    },
+    body: legacyForm
+  });
+  if (!legacyResponse.ok) {
+    const legacyError = await legacyResponse.text();
+    throw new Error(`Stability image generation failed: v2=${response.status} ${v2Error.slice(0, 400)}; legacy=${legacyResponse.status} ${legacyError.slice(0, 400)}`);
+  }
+  const legacyData = await legacyResponse.json() as { artifacts?: Array<{ base64?: string }> };
+  const artifact = legacyData.artifacts?.find((item) => item.base64)?.base64;
+  if (!artifact) throw new Error(`Stability image generation returned no image artifact after v2 failure: ${v2Error.slice(0, 400)}`);
+  const { bytes, contentType } = dataUrlToBytes(`data:image/png;base64,${artifact}`);
+  const imageUrl = await uploadProviderAsset(`${input.productionId}/${input.filenameBase}.png`, bytes, contentType);
+  return { provider: "stability_legacy", model: "stable-diffusion-xl-1024-v1-0", imageUrl, prompt: input.prompt, aspectRatio, fallback: true, fallbackReason: `Modern Stability endpoint failed with ${response.status}; legacy endpoint succeeded.` };
 }
 
 async function createFalConsistentImage(input: ConsistentImageInput): Promise<ImageProviderResult> {
