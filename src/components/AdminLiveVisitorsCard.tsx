@@ -43,6 +43,31 @@ function timeLabel(value: string) {
   return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+function trafficSourceLabel(session: LiveVisitorPage["sessions"][number]) {
+  const source = session.utmSource.toLowerCase();
+  const medium = session.utmMedium.toLowerCase();
+  const referrer = session.referrer.toLowerCase();
+  if (source.includes("producthunt") || referrer.includes("producthunt.com")) return "Product Hunt";
+  if (source.includes("instagram") || referrer.includes("instagram.com")) return "Instagram";
+  if (source.includes("youtube") || referrer.includes("youtube.com") || referrer.includes("youtu.be")) return "YouTube";
+  if (source.includes("tiktok") || referrer.includes("tiktok.com")) return "TikTok";
+  if (source.includes("linkedin") || referrer.includes("linkedin.com")) return "LinkedIn";
+  if (source === "x" || source.includes("twitter") || referrer.includes("x.com") || referrer.includes("twitter.com")) return "X";
+  if (source.includes("reddit") || referrer.includes("reddit.com")) return "Reddit";
+  if (["cpc", "ppc", "paid", "paid_social", "display"].some((value) => medium.includes(value))) return source ? `Paid ad · ${source}` : "Paid ad";
+  if (source) return medium ? `${source} · ${medium}` : source;
+  if (referrer.includes("google.")) return "Google · Organic search";
+  if (referrer.includes("bing.com")) return "Bing · Organic search";
+  if (referrer) {
+    try {
+      return `Referral · ${new URL(session.referrer).hostname.replace(/^www\\./, "")}`;
+    } catch {
+      return "Referral";
+    }
+  }
+  return "Direct";
+}
+
 export function AdminLiveVisitorsCard() {
   const [adminEmail, setAdminEmail] = useState("");
   const [summary, setSummary] = useState<LiveVisitorsSummary | null>(null);
@@ -123,6 +148,7 @@ export function AdminLiveVisitorsCard() {
                 <div className="provider-job-chip active live-visitor-session" key={session.sessionId}>
                   <strong className="live-visitor-ip">{session.ip}</strong>
                   <span className="live-visitor-page">{session.country || "Unknown"} · {session.title || "Untitled page"}</span>
+                  <small className="live-visitor-source">Traffic source: {trafficSourceLabel(session)}</small>
                   <small>Last seen: {timeLabel(session.lastSeenAt)}</small>
                   {session.utmSource || session.utmMedium ? <small>Source / medium: {session.utmSource || "direct"} / {session.utmMedium || "none"}</small> : null}
                   {session.utmCampaign ? <small>Campaign utm: {session.utmCampaign}</small> : null}

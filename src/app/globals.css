@@ -5815,6 +5815,11 @@ body.admin-route > .site-footer {
   line-height: 1.45;
   overflow-wrap: anywhere;
 }
+.live-visitor-session .live-visitor-source {
+  color: #fef3c7;
+  font-size: 13px;
+  font-weight: 700;
+}
 
 .workspace-action-note {
   color: #fde68a;
