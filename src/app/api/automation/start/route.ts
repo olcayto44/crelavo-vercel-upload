@@ -30,7 +30,7 @@ import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy,
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
 import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
-import { resolveProductionRoute } from "@/lib/production-routing";
+import { isExplicitDroneRequest, resolveProductionRoute } from "@/lib/production-routing";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -477,7 +477,7 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
   if (scalar.error || !scalar.data) return { data: scalar.data ?? null, error: scalar.error };
   const rawProductionType = String(scalar.data.production_type ?? "");
 const productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
-  if (productionType === "drone_video" && resolveProductionRoute({ text: String(scalar.data.prompt ?? ""), productionType }).route === "drone_video") {
+  if (productionType === "drone_video" && isExplicitDroneRequest(String(scalar.data.prompt ?? ""))) {
     const promptText = String(scalar.data.prompt ?? "");
     const durationSeconds = durationSecondsFromPrompt(promptText);
     const voiceLanguage = voiceLanguageFromPrompt(promptText);
@@ -631,6 +631,7 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
   const preferredProvider = String(requestMetadata.preferredProvider ?? requestMetadata.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.preferredProvider ?? inputJson.selectedProviderService ?? inputJson.provider_service ?? existingOutput.preferredProvider ?? "").trim();
   const resolvedRoute = resolveProductionRoute({ text: productionDetectionText, productionType, packageId, preferredProvider });
   if (resolvedRoute.route === "normal_social_video_no_presenter") productionType = resolvedRoute.productionType;
+
   const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
   if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
     productionType = "animation";
@@ -646,14 +647,14 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     readme_url: deliveryLinks.readmeUrl,
     preview_url: deliveryLinks.previewUrl
   };
-   const providerPreflight = buildProviderPreflight({
-     productionType,
-     packageId,
-     requestMetadata: resolvedRoute.provider === "minimax" ? { ...requestMetadata, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : requestMetadata,
-     inputJson: resolvedRoute.provider === "minimax" ? { ...inputJson, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : inputJson,
-     videoProvider: resolvedRoute.provider ?? process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
-    replicateModel: process.env.REPLICATE_MODEL
-  });
+    const providerPreflight = buildProviderPreflight({
+      productionType,
+      packageId,
+      requestMetadata: resolvedRoute.provider === "minimax" ? { ...requestMetadata, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : requestMetadata,
+      inputJson: resolvedRoute.provider === "minimax" ? { ...inputJson, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : inputJson,
+      videoProvider: resolvedRoute.provider ?? process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
+      replicateModel: process.env.REPLICATE_MODEL
+    });
 const isDroneProduction = productionType === "drone_video";
 const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
 const minimaxSetupPresenterIntent = !isImageProduction && hasMinimaxPresenterIntent(productionDetectionText);
@@ -1409,7 +1410,7 @@ const clippingRun = requiredPipeline === "video_clipping"
      if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
         const providerError = String(genericRun?.providerErrors?.visual_generation ?? "").trim();
         const readinessInfo = providerReadiness;
-        const diagnosticProvider = String(providerPreflight.provider ?? resolvedRoute.provider ?? "video").trim() || "video";
+        const diagnosticProvider = String(providerPreflight.provider ?? "video").trim() || "video";
         const recoveryMessage = providerError
           ? `${diagnosticProvider} provider start failed before a provider job was created: ${providerError}`
           : `${diagnosticProvider} provider start failed before a provider job was created. Check the provider configuration and create a new production.`;
@@ -1422,7 +1423,7 @@ const clippingRun = requiredPipeline === "video_clipping"
           providerReadiness: readinessInfo,
           providerErrors: { visual_generation: recoveryMessage, ...(genericRun?.providerErrors ?? {}) },
           providerJobCreated: false,
-          providerStartDiagnostic: { provider: diagnosticProvider, route: resolvedRoute.route, readiness: readinessInfo, recordedAt: now }
+          providerStartDiagnostic: { provider: diagnosticProvider, route: "default", readiness: readinessInfo, recordedAt: now }
         };
         const { error: diagnosticError } = await supabase.from("production_requests").update(safeUpdate({ output_json: diagnosticOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId);
         if (diagnosticError) throw new Error(`provider_start_diagnostic_update: ${errorMessage(diagnosticError, "DB update failed")}`);
