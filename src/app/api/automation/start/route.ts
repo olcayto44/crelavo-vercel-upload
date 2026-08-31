@@ -412,7 +412,7 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const visualJobs = results.map((result, index) => {
     const task = miniMaxTaskRecord(result);
     if (!task.taskId) throw new Error(`MiniMax Video Agent shot ${index + 1} did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-    return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, shotIndex: index + 1, shotPrompt: `${providerPrompt}\nShot ${index + 1}/${results.length}: continue this segment as a distinct 5-second beat.`, requestedDurationSeconds: 5, payload: { model: "MiniMax-H3", content: providerPrompt, duration: 5, ratio, resolution }, raw: result });
+    return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, shotIndex: index + 1, prompt: providerPrompt, shotPrompt: `${providerPrompt}\nShot ${index + 1}/${results.length}: continue this segment as a distinct 5-second beat.`, requestedDurationSeconds: 5, payload: { model: "MiniMax-H3", content: providerPrompt, duration: 5, ratio, resolution }, raw: result });
   });
   if (visualJobs.length !== (targetDurationSeconds > 5 ? Math.ceil(targetDurationSeconds / 5) : 1)) throw new Error("MiniMax shot count did not match the requested duration.");
   return { ...visualJobs[0], visualJobs, targetDurationSeconds };
@@ -1404,15 +1404,23 @@ const clippingRun = requiredPipeline === "video_clipping"
         prompt: currentProduction.prompt,
         requestMetadata,
         inputJson,
-         providerPreflight: { ...(providerPreflight as Record<string, unknown>), durationSeconds: requestedDuration },
+          providerPreflight: { ...(providerPreflight as Record<string, unknown>), durationSeconds: requestedDuration },
+          deferMultiShot: String(providerPreflight.provider ?? "").toLowerCase() === "minimax" && requestedDuration > 5,
 
-        selectedOptions
+         selectedOptions
       })
        : null;
-    const expectedMiniMaxShots = String(providerPreflight.provider ?? "").toLowerCase() === "minimax" && requestedDuration > 5 ? Math.ceil(requestedDuration / 5) : 0;
-    if (expectedMiniMaxShots > 0 && genericRun && (genericRun.visualJobs?.length ?? 0) !== expectedMiniMaxShots) {
-      throw new Error(`provider_start_failed_partial: expected ${expectedMiniMaxShots} independent 5-second MiniMax jobs, received ${genericRun.visualJobs?.length ?? 0}.`);
-    }
+    const expectedMiniMaxShots = String(providerPreflight.provider ?? "").toLowerCase() === "minimax" ? Math.ceil(requestedDuration / 5) : 0;
+    const submittedMiniMaxShots = genericRun?.visualJobs?.filter((job) => String(job?.id ?? "").trim() && !String(job.id).startsWith("pending-")).length ?? 0;
+    const expectedProviderShots = expectedMiniMaxShots || (genericRun?.visualJobs?.length ?? 0) || 1;
+    const persistedProviderPreflight = {
+      ...(providerPreflight as Record<string, unknown>),
+      expectedShotCount: expectedProviderShots,
+      submittedShotCount: submittedMiniMaxShots,
+      providerJobCount: expectedProviderShots,
+      providerJobDurationSeconds: 5,
+      providerCostUnits: expectedMiniMaxShots > 0 ? submittedMiniMaxShots : 1
+    };
     let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
     let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
      if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
@@ -1478,8 +1486,8 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
     const outputJson: Record<string, unknown> = {
       ...musicVideoOutputBase,
        providerTestMode,
-      providerPreflight,
-      aiVideoProviderChain,
+       providerPreflight: persistedProviderPreflight,
+       aiVideoProviderChain,
       videoClippingRun: clippingRun ? {
         sourceVideoUrl: clippingRun.sourceVideoUrl,
         sourceDurationSeconds: clippingRun.sourceDurationSeconds,
@@ -1501,7 +1509,11 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       subtitleUrl: clippingRun?.subtitleUrl ?? genericRun?.subtitleUrl ?? null,
       renderJob,
       visualJob,
-      visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
+       visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
+       shotJobs: clippingRun ? [] : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
+       shotQueue: expectedMiniMaxShots > 1 ? { provider: "minimax", status: submittedMiniMaxShots === expectedMiniMaxShots ? "queued_complete" : "queued", nextShotIndex: submittedMiniMaxShots + 1, claimedShotIndex: null, requestedDurationSeconds: 5 } : null,
+       submittedShotCount: submittedMiniMaxShots,
+       expectedShotCount: expectedProviderShots,
       providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
       providerErrors: clippingRun ? {} : !genericRun && requiresSpecialPipeline ? { [requiredPipeline]: `${requiredPipeline} requires its dedicated production pipeline and cannot be auto-delivered by the generic prompt-to-video pipeline.` } : genericRun?.providerErrors ?? {},
       requiredPipeline,

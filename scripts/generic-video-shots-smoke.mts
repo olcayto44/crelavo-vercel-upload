@@ -31,9 +31,12 @@ const premature = multiShotFinalGate({
 });
 assertEqual(premature.passed, false, "premature final gate");
 assertEqual(premature.reason, "waiting_for_all_shots", "premature final reason");
-const partial = multiShotFinalGate({ targetDurationSeconds: 30, expectedJobCount: 1, visualStatuses: [{ status: "running", outputUrl: null }], renderStatus: null });
+const partial = multiShotFinalGate({ targetDurationSeconds: 30, expectedJobCount: 1, visualStatuses: [{ status: "succeeded", outputUrl: "https://cdn.example/shot-1.mp4" }], renderStatus: null });
 assertEqual(partial.passed, false, "partial provider gate");
 assertEqual(partial.reason, "provider_start_failed_partial", "partial provider reason");
+const noJobs = multiShotFinalGate({ targetDurationSeconds: 30, expectedJobCount: 0, visualStatuses: [], renderStatus: null });
+assertEqual(noJobs.passed, false, "no-job provider gate");
+assertEqual(noJobs.reason, "provider_start_failed_partial", "no-job provider reason");
 const mergedInput = orderedReadyShotUrls(shots.map((_, index) => ({ status: "succeeded", outputUrl: `https://cdn.example/shot-${index + 1}.mp4` })));
 assertEqual(mergedInput.length, 6, "merge receives every shot");
 assertEqual(mergedInput[5], "https://cdn.example/shot-6.mp4", "merge preserves shot order");

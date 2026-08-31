@@ -569,6 +569,7 @@ export async function runGenericVideoPipeline(input: {
   inputJson?: Record<string, unknown>;
   providerPreflight?: Record<string, unknown>;
   selectedOptions?: Record<string, unknown>;
+  deferMultiShot?: boolean;
 }): Promise<GenericVideoRunResult> {
   const plan = buildGenericVideoPlan(input);
   const selectedOptions = input.selectedOptions ?? {};
@@ -607,32 +608,19 @@ export async function runGenericVideoPipeline(input: {
     } else if (needsMultiShot) {
       const shotCount = shotPlan.length;
       const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
-      if (isDroneMultiShot) {
-        const scene = shotPlan[0]?.prompt || plan.title;
-        visualJob = sourceImageUrls[0]
+      const shotsToSubmit = input.deferMultiShot ? shotPlan.slice(0, 1) : shotPlan;
+      for (let index = 0; index < shotsToSubmit.length; index += 1) {
+        if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
+        const scene = shotPlan[index].prompt;
+        const job = isDroneMultiShot && sourceImageUrls[0] && plan.provider !== "minimax"
           ? await createImageToVideoClip({
             imageUrl: sourceImageUrls[0],
-            prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${scene}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
+            prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${scene}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography. Shot ${index + 1}/${shotCount}.`,
             durationSeconds: 5,
             provider: "runway_first",
             aspectRatio: plan.aspectRatio
           })
           : await createVisualVideo({
-            productionId: input.productionId,
-            scenes: [`Scene 1/${shotCount}: ${scene}`],
-            productImageUrls: sourceImageUrls,
-            durationSeconds: 5,
-            style: `${clean(input.requestMetadata?.style) || plan.title} · first provider shot of ${shotCount}`,
-            provider: plan.provider,
-            aspectRatio: plan.aspectRatio
-          });
-
-        visualJobs = visualJob ? [visualJob] : [];
-      } else {
-        for (let index = 0; index < shotPlan.length; index += 1) {
-          if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
-          const scene = shotPlan[index].prompt;
-          visualJobs.push(await createVisualVideo({
             productionId: input.productionId,
             scenes: [`Scene ${index + 1}/${shotCount}: ${scene}`],
             productImageUrls: sourceImageUrls,
@@ -640,10 +628,10 @@ export async function runGenericVideoPipeline(input: {
             style: `${clean(input.requestMetadata?.style) || plan.title} · part ${index + 1} of ${shotCount}`,
             provider: plan.provider,
             aspectRatio: plan.aspectRatio
-          }));
-        }
-        visualJob = visualJobs[0] ?? null;
+          });
+        visualJobs.push({ ...job, shotIndex: index + 1, prompt: scene, shotPrompt: scene, requestedDurationSeconds: 5, provider: job.provider || plan.provider } as ProviderJob);
       }
+      visualJob = visualJobs[0] ?? null;
     } else {
       const isDroneSingleShot = /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")) || /drone|satellite|flyover|aerial/i.test(plan.title);
       visualJob = isDroneSingleShot && sourceImageUrls[0]
@@ -669,6 +657,23 @@ export async function runGenericVideoPipeline(input: {
   visualJob = visualJob ?? visualJobs[0] ?? null;
   missingProviders.push("visual_generation");
     providerErrors.visual_generation = providerErrorMessage(error);
+  }
+
+  if (input.deferMultiShot && needsMultiShot) {
+    return {
+      plan,
+      visualJob,
+      visualJobs,
+      shotPlan,
+      voiceAudioUrl: null,
+      voiceAudioSegments: [],
+      subtitleUrl: null,
+      renderJob: null,
+      chainStatus: visualJob ? "visual_job_created" : "waiting_provider_config",
+      missingProviders,
+      providerErrors,
+      sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls }
+    };
   }
 
   const productionType = clean(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type).toLowerCase();
