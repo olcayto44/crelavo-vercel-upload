@@ -101,7 +101,7 @@ export async function SiteFooter() {
 
       <div className="site-footer-bottom">
         <span>Copyright © 2026 Crelavo. All rights reserved.</span>
-        <span>AI production studio for websites, apps, ecommerce campaigns, AI video and AI + human QA delivery.</span>
+        <span className="site-footer-technical-line">Crelavo · AI production studio for websites, apps and ecommerce · https://www.crelavo.com</span>
       </div>
     </footer>
   );

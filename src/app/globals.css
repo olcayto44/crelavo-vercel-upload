@@ -6025,6 +6025,14 @@ body.admin-route > .site-footer {
   color: var(--muted);
   font-size: 12px;
 }
+.site-footer-technical-line {
+  color: #dbeafe;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: .01em;
+  overflow-wrap: anywhere;
+}
 .product-hunt-footer-badge {
   display: flex;
   justify-content: flex-end;
