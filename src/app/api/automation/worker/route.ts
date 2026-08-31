@@ -61,7 +61,7 @@ function isAutomationActive(row: Record<string, unknown>) {
   const providerStatus = String(output.providerStatus ?? "").toLowerCase();
   const requiredPipeline = String(output.requiredPipeline ?? "").toLowerCase();
   const hasDedicatedPlan = Boolean(output.characterDialoguePlan) || requiredPipeline === "character_consistent_dialogue_animation";
-  const hasGenericProviderJob = Boolean(output.visualJob || output.renderJob || (Array.isArray(output.visualJobs) && output.visualJobs.length > 0));
+  const hasGenericProviderJob = Boolean(output.renderJob || output.providerJob || output.providerJobId || output.visualJob && typeof output.visualJob === "object" && !String((output.visualJob as Record<string, unknown>).id ?? "").startsWith("pending-") || Array.isArray(output.visualJobs) && output.visualJobs.some((job) => job && typeof job === "object" && !String((job as Record<string, unknown>).id ?? "").startsWith("pending-")));
   const hasFinal = Boolean(output.finalVideoUrl || output.providerFinalUrl);
   if (hasFinal) return false;
   if (["ready", "completed", "cancelled", "failed"].includes(status)) return false;
@@ -95,7 +95,7 @@ async function runWorkerPass(origin: string, targetProductionId?: string) {
     if (!productionId) continue;
     try {
       const rowOutput = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
-      const hasProviderJob = Boolean(rowOutput.visualJob || rowOutput.providerJob || (Array.isArray(rowOutput.visualJobs) && rowOutput.visualJobs.length > 0));
+      const hasProviderJob = Boolean(rowOutput.renderJob || rowOutput.providerJob || rowOutput.providerJobId || rowOutput.visualJob && typeof rowOutput.visualJob === "object" && !String((rowOutput.visualJob as Record<string, unknown>).id ?? "").startsWith("pending-") || Array.isArray(rowOutput.visualJobs) && rowOutput.visualJobs.some((job) => job && typeof job === "object" && !String((job as Record<string, unknown>).id ?? "").startsWith("pending-")));
       const productionType = String(row.production_type ?? "").toLowerCase();
       const automationStatus = String(row.automation_status ?? row.generation_status ?? row.status ?? "").toLowerCase();
       const startableProduction = [
@@ -104,8 +104,16 @@ async function runWorkerPass(origin: string, targetProductionId?: string) {
         "talking_video", "avatar", "lip_sync", "animation", "anime_short_film", "stickman_animation", "animal_video",
         "nature_video", "planet_space_video"
       ].includes(productionType) || String(row.package_id ?? "").toLowerCase().startsWith("image_");
+      const pendingNoJobRecovery = row.status === "in_production" && row.generation_status === "provider_pending_unknown" && !hasProviderJob && !rowOutput.providerJobId;
+      if (pendingNoJobRecovery) {
+        await fetch(`${origin}/api/admin/productions/recover-pending`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ production_id: productionId, admin_email: adminEmail, admin_token: adminToken })
+        }).catch(() => null);
+      }
       const needsProviderStart = startableProduction && !hasProviderJob && ["queued", "automation_queued", "provider_ready", "provider_ready_queued"].includes(automationStatus);
-      if (needsProviderStart) {
+      if (needsProviderStart && !pendingNoJobRecovery) {
         await fetch(`${origin}/api/automation/start`, {
           method: "POST",
           headers: { "content-type": "application/json", "x-automation-worker": "backend-worker" },

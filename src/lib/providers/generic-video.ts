@@ -598,7 +598,7 @@ export async function runGenericVideoPipeline(input: {
   const needsMultiShot = plan.durationSeconds > 5;
 
   try {
-    if (plan.deterministicUiMotion) {
+    if (plan.deterministicUiMotion && plan.provider !== "minimax") {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
     } else if (needsMultiShot) {

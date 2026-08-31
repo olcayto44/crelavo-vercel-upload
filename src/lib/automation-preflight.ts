@@ -1,4 +1,5 @@
 import { hasProviderEnv } from "./providers/env.ts";
+import { isNoPresenterSocialVideoRequest } from "./production-routing.ts";
 
 export type AutomationPreflightInput = {
   productionType: string;
@@ -52,12 +53,14 @@ function selectedFeatureFlags(requestMetadata: Record<string, unknown>, inputJso
     JSON.stringify(requestMetadata.productionSetup ?? ""),
     JSON.stringify(inputJson.productionSetup ?? "")
   );
-  const noVoice = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|voice-?over\s*(off|none)|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(haystack);
-  const noMusic = /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok|sessiz/.test(haystack);
-  const noSubtitles = /no\s*subtitle|no\s*subtitles|without\s*subtitle|without\s*subtitles|subtitles?\s*(off|none)|altyaz[ıi]\s*olmasın|altyaz[ıi]\s*yok/.test(haystack);
-  const voiceOver = !noVoice && /voice|voice-over|voiceover|seslendirme|seslendirme\s*olsun|own voice|ai voice|narration|anlatıcı|anlatici|çocuk sesi|cocuk sesi|yetişkin nötr ses|yetiskin notr ses|erkek sesi|kadın sesi|kadin sesi/.test(haystack);
-  const music = !noMusic && /music|background music|müzik|muzik|soundtrack|audio reference/.test(haystack);
-  const subtitles = !noSubtitles && /subtitle|subtitles|altyaz|otomatik altyaz|yanmış altyaz|yanmis altyaz/.test(haystack);
+  const selectedOptions = [requestMetadata.selectedOptions, inputJson.selectedOptions].filter((value) => value && typeof value === "object") as Record<string, unknown>[];
+  const explicitBoolean = (key: string) => selectedOptions.find((value) => typeof value[key] === "boolean")?.[key];
+  const noVoice = explicitBoolean("voiceOver") === false || /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|voice-?over\s*(off|none)|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(haystack);
+  const noMusic = explicitBoolean("music") === false || /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok|sessiz/.test(haystack);
+  const noSubtitles = explicitBoolean("subtitles") === false || /no\s*subtitle|no\s*subtitles|without\s*subtitle|without\s*subtitles|subtitles?\s*(off|none)|altyaz[ıi]\s*olmasın|altyaz[ıi]\s*yok/.test(haystack);
+  const voiceOver = !noVoice && explicitBoolean("voiceOver") !== false && /voice|voice-over|voiceover|seslendirme|seslendirme\s*olsun|own voice|ai voice|narration|anlatıcı|anlatici|çocuk sesi|cocuk sesi|yetişkin nötr ses|yetiskin notr ses|erkek sesi|kadın sesi|kadin sesi/.test(haystack);
+  const music = !noMusic && explicitBoolean("music") !== false && /music|background music|müzik|muzik|soundtrack|audio reference/.test(haystack);
+  const subtitles = !noSubtitles && explicitBoolean("subtitles") !== false && /subtitle|subtitles|altyaz|otomatik altyaz|yanmış altyaz|yanmis altyaz/.test(haystack);
   return {
     voiceOver,
     music,
@@ -153,7 +156,8 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   );
   const requestedDuration = providerTestMode ? Math.max(5, explicitDuration || 5) : Math.max(15, explicitDuration || 15);
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
-  const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
+  const socialNoPresenterRoute = isNoPresenterSocialVideoRequest(`${input.productionType} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`);
+  const selectedVideoProvider = socialNoPresenterRoute ? "minimax" : selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
   const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
   const talkingVideoIntent = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(input.productionType) || /talking video|talking head|avatar|lip sync|lip-sync|ugc|live sales/i.test(`${requestMetadata.productionType ?? ""} ${inputJson.productionType ?? ""} ${requestMetadata.provider_service ?? ""} ${inputJson.provider_service ?? ""}`);
   const configuredVideoProvider = hasProviderEnv("minimax") ? "minimax" : hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";

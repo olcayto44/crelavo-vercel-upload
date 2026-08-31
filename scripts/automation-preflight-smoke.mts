@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { buildProviderPreflight } from "../src/lib/automation-preflight.ts";
 import { providerRequirementsForProduction } from "../src/lib/provider-readiness.ts";
 import { isVideoLikeProductionType, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "../src/lib/queue-policy.ts";
+import { isExplicitDroneRequest, isNoPresenterSocialVideoRequest, resolveProductionRoute } from "../src/lib/production-routing.ts";
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
   if (actual !== expected) {
@@ -38,6 +39,19 @@ assertEqual(videoPreflight.provider, "replicate", "video provider");
 assertEqual(videoPreflight.model, "custom-video-model", "video model");
 assertEqual(videoPreflight.durationSeconds, 15, "video duration");
 assertEqual(videoPreflight.aspectRatio, "9:16", "video aspectRatio");
+const socialPrompt = "Create a TikTok FOMO e-commerce ad for Crelavo, no presenter, no people, music=true, voiceOver=false, subtitles=false";
+const socialRoute = resolveProductionRoute({ text: socialPrompt, productionType: "drone_video", preferredProvider: "runway" });
+assertEqual(isNoPresenterSocialVideoRequest(socialPrompt, "drone_video"), true, "social no-presenter guard");
+assertEqual(socialRoute.productionType, "video", "social production type");
+assertEqual(socialRoute.provider, "minimax", "social provider");
+const socialPreflight = buildProviderPreflight({ productionType: "video", requestMetadata: { preferredProvider: "runway", selectedOptions: { music: true, voiceOver: false, subtitles: false }, noPeopleMotionIntent: true }, inputJson: { prompt: socialPrompt }, videoProvider: "runway" });
+assertEqual(socialPreflight.provider, "minimax", "social preflight provider");
+assertEqual(socialPreflight.model, "MiniMax-H3", "social preflight model");
+assertEqual(socialPreflight.selectedOptions.voiceOver, false, "social voice option");
+assertEqual(socialPreflight.selectedOptions.music, true, "social music option");
+assertEqual(socialPreflight.selectedOptions.subtitles, false, "social subtitles option");
+assertEqual(isExplicitDroneRequest("route flyover of Cappadocia map location"), true, "drone signal");
+assertEqual(resolveProductionRoute({ text: "route flyover of Cappadocia map location", productionType: "drone_video" }).route, "drone_video", "drone route");
 
 const runwayPreflight = buildProviderPreflight({
   productionType: "campaign",

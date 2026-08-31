@@ -30,6 +30,7 @@ import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy,
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
 import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
+import { resolveProductionRoute } from "@/lib/production-routing";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -77,13 +78,16 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
   return postgresSafe(payload);
 }
 
-async function releaseReservedCredits(supabase: ReturnType<typeof supabaseAdmin>, production: { user_id?: string | null; reserved_credits?: number | null }, note: string) {
+async function releaseReservedCredits(supabase: ReturnType<typeof supabaseAdmin>, production: { user_id?: string | null; reserved_credits?: number | null }, note: string, existingOutput?: Record<string, unknown>) {
+  const existingResolution = existingOutput?.creditResolution && typeof existingOutput.creditResolution === "object" ? existingOutput.creditResolution as Record<string, unknown> : null;
+  if (["refunded_reserved", "refunded_reserved_no_provider_cost", "expired_before_provider_start_refunded"].includes(String(existingResolution?.status ?? ""))) return { amount: 0, alreadyResolved: true, creditResolution: existingResolution };
   const amount = Number(production.reserved_credits ?? 0) || 0;
-  if (!amount || !production.user_id) return;
+  if (!amount || !production.user_id) return { amount: 0, alreadyResolved: false, creditResolution: null };
   const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).maybeSingle();
-  if (!balanceRow) return;
+  if (!balanceRow) return { amount: 0, alreadyResolved: false, creditResolution: null };
   await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
+  return { amount, alreadyResolved: false, creditResolution: { status: "refunded_reserved", refundedCredits: amount, releasedReservedCredits: amount, resolvedAt: new Date().toISOString(), reason: "provider_not_created" } };
 }
 
 function pokeAutomationWorker(request: Request, productionId: string) {
@@ -475,7 +479,7 @@ async function selectProductionForAutomation(supabase: ReturnType<typeof supabas
   if (scalar.error || !scalar.data) return { data: scalar.data ?? null, error: scalar.error };
   const rawProductionType = String(scalar.data.production_type ?? "");
 const productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
-  if (productionType === "drone_video") {
+  if (productionType === "drone_video" && resolveProductionRoute({ text: String(scalar.data.prompt ?? ""), productionType }).route === "drone_video") {
     const promptText = String(scalar.data.prompt ?? "");
     const durationSeconds = durationSecondsFromPrompt(promptText);
     const voiceLanguage = voiceLanguageFromPrompt(promptText);
@@ -553,6 +557,11 @@ export async function POST(request: Request) {
     }
 
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
+    const existingVisualJob = existingOutput.visualJob && typeof existingOutput.visualJob === "object" ? existingOutput.visualJob as Record<string, unknown> : null;
+    const existingHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingVisualJob?.id && !String(existingVisualJob.id).startsWith("pending-"));
+    if (currentProduction.status === "in_production" && currentProduction.generation_status === "provider_pending_unknown" && !existingHasProviderJob) {
+      return Response.json({ error: "Provider job was not created. This production is not restarted automatically; use the authenticated admin recovery endpoint to release reserved credits exactly once.", code: "provider_job_not_created", recovery_endpoint: "/api/admin/productions/recover-pending", production_id: productionId }, { status: 409 });
+    }
     const forceRegenerate = body.force_regenerate === true;
     const forceStart = body.force_start === true;
     const existingCreditResolution = existingOutput.creditResolution && typeof existingOutput.creditResolution === "object" ? existingOutput.creditResolution as Record<string, unknown> : null;
@@ -621,6 +630,8 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     let productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
     const packageId = String(currentProduction?.package_id ?? "");
   const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
+  const resolvedRoute = resolveProductionRoute({ text: productionDetectionText, productionType });
+  if (resolvedRoute.route === "normal_social_video_no_presenter") productionType = resolvedRoute.productionType;
   const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
   if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
     productionType = "animation";
@@ -1396,8 +1407,14 @@ const clippingRun = requiredPipeline === "video_clipping"
     let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
     let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
     if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
-      visualJob = { provider: "provider_pending", id: `pending-${productionId}`, status: "running", raw: { fallbackReason: "Provider job has not been created yet.", sourceScenes: [String(currentProduction.prompt ?? currentProduction.title ?? "Crelavo video")] } };
+       const recoveryMessage = "Provider job was not created; production was stopped safely and reserved credits were released. Create a new production after provider configuration is fixed.";
+       const creditRecovery = await releaseReservedCredits(supabase, currentProduction, recoveryMessage, existingOutput);
+       const recoveryOutput = { ...existingOutput, automationStatus: "failed", providerStatus: "provider_start_failed", providerErrors: { visual_generation: recoveryMessage }, providerJobCreated: false, creditResolution: creditRecovery.creditResolution };
+       const { data: recoveredProduction, error: recoveryError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_start_failed_no_job", reserved_credits: 0, output_json: recoveryOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId).select("*").single();
+       if (recoveryError) throw recoveryError;
+       return Response.json({ error: recoveryMessage, production: recoveredProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });
     }
+
     const aiVideoProviderChain = clippingRun
       ? [
           { step: "source_video_analysis", provider: "ffmpeg_probe", status: "done", required: true },
@@ -1421,7 +1438,8 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
           ? "This request requires the music-video pipeline: audio/lyrics analysis, timing, visual planning and final edit. It must not be treated as a generic ad voice-over video."
           : genericRun
         ? genericRun.chainStatus === "waiting_provider_config"
-      ? `Drone video pipeline planned but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
+       ? `${requiredPipeline === "drone_video" ? "Drone video pipeline planned" : "Normal video pipeline planned"} but provider chain is waiting for configuration: ${genericRun.missingProviders.join(", ") || "video provider"}.`
+
       : genericRun.chainStatus === "provider_chain_started"
         ? requiredPipeline === "drone_video"
           ? "Drone video provider chain started: route plan, aerial visual job, voice/subtitle assets or final render were prepared where selected. Poll /api/automation/status to update final output."

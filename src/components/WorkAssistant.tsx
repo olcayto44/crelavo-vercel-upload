@@ -6,6 +6,7 @@ import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { buildPresenterCreativeBrief, initialPresenterActivityLog } from "@/lib/creative-director";
 import { sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
 import { type UserUploadedMaterial } from "@/lib/production-payload";
+import { resolveProductionRoute } from "@/lib/production-routing";
 
 type WorkAssistantProps = {
   initialIdea?: string;
@@ -1291,6 +1292,8 @@ function isExplicitVideoProductionIntent(prompt: string) {
 function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  const socialRoute = resolveProductionRoute({ text: prompt, productionType: currentType });
+  if (socialRoute.route === "normal_social_video_no_presenter") return "video";
   if (isExplicitVideoProductionIntent(prompt)) return "video";
   const explicitBrandKit = /(?:image\s*type|production\s*type|category|purpose)\s*:\s*logo\s*\/\s*brand\s+kit|(?:image\s*type|production\s*type|category|purpose)\s*:\s*brand\s+kit/.test(raw);
   if (explicitBrandKit) return "brand_kit";
@@ -1427,7 +1430,8 @@ function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = 
   const promptType = normalizeProductionType(prompt, plan.production_type);
   const explicitVideoIntent = isExplicitVideoProductionIntent(prompt);
   const hardImageLock = !explicitVideoIntent && (shouldForceImageProduction(prompt) || frameExtractionRequested(prompt) || forcedProductionType === "image");
-  const productionType = hardImageLock ? "image" : isLuxuryProductCommercialPrompt(prompt) || explicitVideoIntent ? "video" : forcedProductionType || promptType;
+  const socialRoute = resolveProductionRoute({ text: prompt, productionType: forcedProductionType || plan.production_type });
+  const productionType = hardImageLock ? "image" : socialRoute.route === "normal_social_video_no_presenter" ? "video" : isLuxuryProductCommercialPrompt(prompt) || explicitVideoIntent ? "video" : forcedProductionType || promptType;
   const project = isProjectType(productionType);
   const image = isImageProductionType(productionType);
   const video = isVideoLikeProductionType(productionType);
@@ -2045,7 +2049,9 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const wantsMinimaxBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedMinimaxVideoAgentAutoEdit;
     const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(routeSafeInput));
-    const productionTypeForPayload = isImageProduction ? "image" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
+     const socialRouteForPayload = resolveProductionRoute({ text: cleanInput, productionType: activePlanInput.production_type });
+     const productionTypeForPayload = isImageProduction ? "image" : socialRouteForPayload.route === "normal_social_video_no_presenter" ? "video" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
+
      const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
      const contentDurationSeconds = Number(setupFields.selected_duration?.match(/\d+/)?.[0] ?? 0);
      const timingBrief = contentDurationSeconds === 30 && /\b25\s*(?:sec|seconds|sn|saniye)\b/i.test(cleanInput)
@@ -2053,7 +2059,8 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
        : "";
      const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief].filter(Boolean).join("\n\n");
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
-     const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : "minimax";
+     const preferredProviderForPayload = isImageProduction || project ? undefined : socialRouteForPayload.route === "normal_social_video_no_presenter" ? "minimax" : animationProductionIntent ? "runway_first" : "minimax";
+
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "Minimax talking video", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));
     const formats = setupFields.delivery_formats.length

@@ -604,7 +604,9 @@ const hasDedicatedCharacterDialogueJobs = characterDialogueProviderJobs.length >
   const hasDelivery = Boolean(deliveryUrl || (!isMediaProduction && (sourceUrl || readmeUrl)));
 const automationWarningText = `${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(production.error_message ?? "")}`;
 const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not exist|42703|error/i.test(automationWarningText);
-const isFailed = production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
+  const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || String(outputJson.providerStatus ?? "") === "provider_start_failed" && outputJson.providerJobCreated === false;
+  const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
+
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady;
@@ -618,7 +620,7 @@ const isFailed = production.status === "failed" || production.automation_status 
     || /running|in_production|strategy_running|provider_start_failed/.test(`${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${providerStatus}`)
   );
   const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && (/provider_started|automation_started|in_progress|processing|running/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs));
-  const liveStatusLabel = isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
+  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
   const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const reservedCreditsText = projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
@@ -626,7 +628,9 @@ const isFailed = production.status === "failed" || production.automation_status 
 const previewUrlLower = playbackUrl.toLowerCase();
 const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
 const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
-  const nextLiveStep = hasAutomationWarning
+  const nextLiveStep = providerJobWasNotCreated
+    ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
+    : hasAutomationWarning
     ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
     : isDedicatedPipelineRunning
     ? "Dedicated character-dialogue pipeline is running. The preview theater stays open while character sheets, scene images, I2V clips, voice segments and final assembly complete."
