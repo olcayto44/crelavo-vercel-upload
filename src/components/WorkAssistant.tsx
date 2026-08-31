@@ -821,6 +821,8 @@ function requestedVoiceOption(text: string, options: string[]) {
 function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): ProductionSetupState {
   const profile = plan ? dynamicProfileForPlan(plan, hint) : profileForType(type);
   const text = hint.toLowerCase();
+  const noPresenterBroll = /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people|sunucusuz|insans[ıi]z/.test(text);
+  const fomoTikTokBroll = type === "video" && noPresenterBroll && /fomo|tiktok|social\s+media\s+ad|viral\s+ad/.test(text);
   const noVoice = voiceDisabledByPrompt(text);
   const noSubtitles = subtitlesDisabledByPrompt(text);
   const wantsVoice = !noVoice && voiceRequestedByPrompt(text);
@@ -865,7 +867,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       if (group.id === "extras") {
         if (wantsSubtitles) addOption(/subtitles/);
         if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
-        if (!musicDisabledByPrompt(text) && /music|müzik|muzik|background music|fon müzik|fon muzik/.test(text)) addOption(/music/);
+         if (!musicDisabledByPrompt(text) && (fomoTikTokBroll || /music|müzik|muzik|background music|fon müzik|fon muzik/.test(text))) addOption(/music/);
         if (/thumbnail|cover|kapak|vitrin|showcase|social|sosyal|fomo|hook|kan[ıi]ca|kanca/.test(text)) addOption(/thumbnail/);
         if (/dashboard|panel/.test(text)) addOption(/dashboard delivery/);
         if (/revision|revizyon/.test(text)) addOption(/revision/);
@@ -926,9 +928,9 @@ selected.length = 0;
       }
     }
     if (group.id === "videoStyle") {
-      const silent = /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice/.test(text) ? group.options.find((option) => /silent/i.test(option)) : undefined;
-      const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !/sunucu\s*olmas[ıi]n|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucusuz|insans[ıi]z/.test(text) ? group.options.find((option) => /presenter/i.test(option)) : undefined;
-      const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
+      const silent = (fomoTikTokBroll || /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice|music[-\s]*only/.test(text)) ? group.options.find((option) => /silent/i.test(option)) : undefined;
+      const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !noPresenterBroll ? group.options.find((option) => /presenter/i.test(option)) : undefined;
+      const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) && !noPresenterBroll ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
       const wanted = silent || presenter || voiceOnly;
       if (wanted) selected = [wanted];
     }
@@ -986,8 +988,8 @@ const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand 
     }
     if (group.id === "voice") {
       const explicitPresenterVoice = /ai\s*presenter|presenter|host|sunucu|spokesperson|with\s+presenter|ekranda\s+sunucu/.test(text) && !/no\s*presenter|no\s*people|sunucu\s*olmas[ıi]n|insan\s*olmas[ıi]n/.test(text);
-      if (noVoice && !explicitPresenterVoice) {
-        selected = group.options.includes("No voice-over") ? ["No voice-over"] : [];
+        if ((noVoice || fomoTikTokBroll) && !explicitPresenterVoice) {
+          selected = group.options.includes("No voice-over") ? ["No voice-over"] : [];
       } else {
         const needsMultiCharacterAiVoices = wantsVoice && /different\s*voices?|different\s*voice\s*for\s*each|separate\s*voices?|separate\s*voice\s*per\s*person|character\s*voices?|per-character|dialogue|diyalog|replik|turkish\s*voices?|farklı\s*ses|farkli\s*ses|her\s*karakter.*ses|karakter\s*ses/.test(text);
         if (needsMultiCharacterAiVoices && group.options.includes("Choose AI voice")) selected = ["Choose AI voice"];
@@ -1046,10 +1048,18 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "", allowedGro
   const noSubtitles = /do not add subtitles|no subtitles|without subtitles|no captions|without captions|altyaz(ı|i)?\s*(ekleme|olmasın|olmasin)|altyazısız|altyazisiz/.test(promptText);
   const noMusic = /do not add music|no background music|without music|müzik\s*(ekleme|olmasın|olmasin)|müziksiz|muziksiz/.test(promptText);
   const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
-  const noPresenterPattern = /no presenter|b-roll only/i;
+  const noPresenterPattern = /no\s*presenter|b-?roll\s*only/i;
+  const videoStyleSelection = (next.videoStyle ?? []).find((item) => /silent\s*\/\s*music\s*only|voice-?over\s*only|ai\s*presenter|no\s*presenter\s*\/\s*b-?roll\s*only/i.test(item));
   const hasExplicitPresenter = items.some((item) => /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter/i.test(item));
-  const noPresenterRequested = items.some((item) => noPresenterPattern.test(item) || /no presenter motions/i.test(item))
-    || /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people/i.test(promptText);
+  const silentMusicOnly = videoStyleSelection ? /silent\s*\/\s*music\s*only/i.test(videoStyleSelection) : false;
+  const voiceOverOnly = videoStyleSelection ? /voice-?over\s*only/i.test(videoStyleSelection) : false;
+  const noPresenterRequested = silentMusicOnly
+    ? true
+    : voiceOverOnly
+      ? false
+      : items.some((item) => noPresenterPattern.test(item))
+        || /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people/i.test(promptText);
+
   for (const [key, values] of Object.entries(next)) {
     if (!Array.isArray(values)) continue;
     next[key] = hasExplicitPresenter && !noPresenterRequested
@@ -1058,7 +1068,20 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "", allowedGro
     if (noSubtitles) next[key] = next[key].filter((item) => !/subtitle|caption|altyaz/i.test(String(item)));
     if (noMusic) next[key] = next[key].filter((item) => !/music|müzik|muzik/i.test(String(item)));
   }
-  if (noPresenterRequested) {
+  if (silentMusicOnly) {
+    next.videoStyle = ["Silent / music only"];
+    next.presenterChoice = ["No presenter / B-roll only"];
+    next.presenterMotion = ["No presenter motions"];
+    if (next.sourceHandling) next.sourceHandling = ["Prompt-only", "No people"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
+    if (next.voice) next.voice = ["No voice-over"];
+    if (next.extras && !noMusic && !next.extras.includes("Background music")) next.extras = [...next.extras, "Background music"];
+  } else if (voiceOverOnly) {
+    next.videoStyle = ["Voice-over only"];
+    next.presenterChoice = ["No presenter / B-roll only"];
+    next.presenterMotion = ["No presenter motions"];
+    if (next.sourceHandling) next.sourceHandling = ["Prompt-only", "No people"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
+    if (next.voice?.[0] === "No voice-over") next.voice = ["Adult neutral voice"];
+  } else if (noPresenterRequested) {
     next.videoStyle = ["No presenter / B-roll only"];
     next.presenterChoice = ["No presenter / B-roll only"];
     next.presenterMotion = ["No presenter motions"];
@@ -1887,7 +1910,25 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
         : group.multi
           ? (currentValues.includes(option) ? currentValues.filter((item) => item !== option) : [...currentValues, option])
           : [option];
-      return { ...current, [group.id]: nextValues };
+      if (group.id !== "videoStyle") return { ...current, [group.id]: nextValues };
+      const isSilent = /silent\s*\/\s*music\s*only/i.test(option);
+      const isVoiceOnly = /voice-?over\s*only/i.test(option);
+      const next: ProductionSetupState = { ...current, [group.id]: nextValues };
+      const setIfPresent = (groupId: string, value: string[]) => {
+        if (setupProfile?.groups.some((item) => item.id === groupId)) next[groupId] = value;
+      };
+      if (isSilent || isVoiceOnly || /no\s*presenter|b-?roll\s*only/i.test(option)) {
+        setIfPresent("presenterChoice", ["No presenter / B-roll only"]);
+        setIfPresent("presenterMotion", ["No presenter motions"]);
+        setIfPresent("sourceHandling", ["Prompt-only", "No people"]);
+      }
+      if (isSilent) {
+        setIfPresent("voice", ["No voice-over"]);
+        setIfPresent("extras", Array.from(new Set([...(current.extras ?? []), "Background music"])));
+      } else if (isVoiceOnly) {
+        setIfPresent("voice", current.voice?.[0] === "No voice-over" ? ["Adult neutral voice"] : (current.voice ?? ["Adult neutral voice"]));
+      }
+      return next;
     });
   }
 
@@ -2445,7 +2486,7 @@ if (isImageStart) {
                           {group.options.map((option) => {
                             const active = (activeProductionSetup[group.id] ?? []).includes(option);
                             const credit = optionCredit(option, group);
-                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} onClick={() => toggleSetupOption(group, option)}>{ux(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
+                            return <button type="button" className={active ? "active" : ""} key={`${group.id}-${option}`} aria-pressed={active} onClick={() => toggleSetupOption(group, option)}>{ux(option)}{credit ? ` +${credit.toLocaleString()}` : ""}</button>;
                           })}
                         </div>
                         {group.id === "presenterChoice" ? <div className="omni-gallery-actions">
