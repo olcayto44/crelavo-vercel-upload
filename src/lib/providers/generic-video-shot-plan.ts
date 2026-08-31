@@ -4,6 +4,38 @@ export type GenericVideoShot = {
   requestedDurationSeconds: 5;
 };
 
+export type MiniMaxShotQueueState = {
+  provider: "minimax";
+  status: "queued" | "submitting_shot" | "queued_complete" | "failed";
+  nextShotIndex: number;
+  claimedShotIndex: number | null;
+  expectedShotCount: number;
+  durable: true;
+};
+
+export async function advanceShotQueue(input: {
+  queue: MiniMaxShotQueueState;
+  jobs: Array<Record<string, unknown>>;
+  shotPlan: GenericVideoShot[];
+  submit: (shot: GenericVideoShot, idempotencyKey: string) => Promise<Record<string, unknown>>;
+}) {
+  const { queue, jobs, shotPlan } = input;
+  if (queue.status === "failed" || queue.status === "queued_complete") return { queue, jobs, advanced: false };
+  if (queue.claimedShotIndex !== null) return { queue, jobs, advanced: false };
+  if (jobs.length >= queue.expectedShotCount) return { queue: { ...queue, status: "queued_complete", nextShotIndex: queue.expectedShotCount + 1 }, jobs, advanced: false };
+  const shotIndex = queue.nextShotIndex;
+  const shot = shotPlan[shotIndex - 1];
+  if (!shot || shotIndex !== jobs.length + 1) return { queue: { ...queue, status: "failed", claimedShotIndex: null }, jobs, advanced: false };
+  const claimedQueue = { ...queue, status: "submitting_shot" as const, claimedShotIndex: shotIndex };
+  const job = await input.submit(shot, `${shotIndex}`);
+  const nextJobs = [...jobs, { ...job, shotIndex, requestedDurationSeconds: 5 }];
+  return {
+    queue: { ...claimedQueue, status: nextJobs.length >= queue.expectedShotCount ? "queued_complete" as const : "queued" as const, claimedShotIndex: null, nextShotIndex: nextJobs.length + 1 },
+    jobs: nextJobs,
+    advanced: true
+  };
+}
+
 export function genericVideoShotCount(targetDurationSeconds: number) {
   const duration = Number(targetDurationSeconds) || 0;
   return duration > 5 ? Math.ceil(duration / 5) : 1;

@@ -274,17 +274,23 @@ async function advanceMiniMaxShotQueue(input: {
   visualJobs: Record<string, any>[];
 }) {
   const queue = input.output.shotQueue && typeof input.output.shotQueue === "object" ? input.output.shotQueue as Record<string, unknown> : null;
-  const expected = Number(input.output.expectedShotCount ?? 0) || 0;
-  if (!queue || String(queue.provider ?? "").toLowerCase() !== "minimax" || expected <= 1) return { output: input.output, visualJobs: input.visualJobs, busy: false, failed: false };
+  const expected = Number(queue?.expectedShotCount ?? input.output.expectedShotCount ?? 0) || 0;
+  if (!queue || queue.durable !== true || String(queue.provider ?? "").toLowerCase() !== "minimax" || expected <= 1) return { output: input.output, visualJobs: input.visualJobs, busy: false, failed: Boolean(queue && queue.durable !== true && expected > 1) };
   if (String(queue.status ?? "") === "failed" || String(queue.status ?? "") === "queued_complete") return { output: input.output, visualJobs: input.visualJobs, busy: false, failed: String(queue.status ?? "") === "failed" };
-  const claim = queue.claimedShotIndex;
-  if (claim !== null && claim !== undefined) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
+  const claimedIndex = queue.claimedShotIndex;
+  if (claimedIndex !== null && claimedIndex !== undefined) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
   if (input.visualJobs.length >= expected) return { output: { ...input.output, shotQueue: { ...queue, status: "queued_complete", nextShotIndex: expected + 1, claimedShotIndex: null } }, visualJobs: input.visualJobs, busy: false, failed: false };
   const shotPlan = Array.isArray(input.output.shotPlan) ? input.output.shotPlan as Array<Record<string, unknown>> : [];
   const shotIndex = input.visualJobs.length + 1;
   const plannedShot = shotPlan[shotIndex - 1];
   if (!plannedShot) return { output: { ...input.output, shotQueue: { ...queue, status: "failed", claimedShotIndex: null }, providerStatus: "provider_start_failed_partial" }, visualJobs: input.visualJobs, busy: false, failed: true };
   const claimedOutput = { ...input.output, shotQueue: { ...queue, status: "submitting_shot", claimedShotIndex: shotIndex, nextShotIndex: shotIndex } };
+  const shotClaim = await input.supabase.from("production_shot_jobs").insert({ production_id: input.production.id, shot_index: shotIndex, status: "submitting", idempotency_key: `${input.production.id}:${shotIndex}` }).select("id").maybeSingle();
+  if (shotClaim.error) {
+    if (shotClaim.error.code === "23505") return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
+    throw shotClaim.error;
+  }
+  if (!shotClaim.data) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
   const claimUpdate = await input.supabase.from("production_requests").update(safeUpdate({ output_json: outputWithWorkflow(input.production, claimedOutput, {}), generation_status: "submitting_video_shot", updated_at: new Date().toISOString() })).eq("id", input.production.id).filter("output_json->shotQueue->>claimedShotIndex", "eq", "null").select("id");
   if (claimUpdate.error) throw claimUpdate.error;
   if (!claimUpdate.data?.length) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
@@ -303,9 +309,19 @@ async function advanceMiniMaxShotQueue(input: {
     });
     const persistedJob = postgresSafe({ ...job, provider: "minimax", shotIndex, prompt, shotPrompt: prompt, requestedDurationSeconds: 5, status: job.status || "submitted" });
     const nextJobs = [...input.visualJobs, persistedJob];
-    const nextOutput = { ...input.output, visualJob: input.output.visualJob ?? persistedJob, visualJobs: nextJobs, shotJobs: nextJobs, submittedShotCount: nextJobs.length, shotQueue: { ...queue, status: nextJobs.length >= expected ? "queued_complete" : "queued", claimedShotIndex: null, nextShotIndex: nextJobs.length + 1 } };
+    const nextOutput = {
+      ...input.output,
+      visualJob: input.output.visualJob ?? persistedJob,
+      visualJobs: nextJobs,
+      shotJobs: nextJobs,
+      submittedShotCount: nextJobs.length,
+      providerPreflight: input.output.providerPreflight && typeof input.output.providerPreflight === "object" ? { ...(input.output.providerPreflight as Record<string, unknown>), providerJobCount: nextJobs.length, providerCostUnits: nextJobs.length } : input.output.providerPreflight,
+      shotQueue: { ...queue, status: nextJobs.length >= expected ? "queued_complete" : "queued", claimedShotIndex: null, nextShotIndex: nextJobs.length + 1 }
+    };
     const update = await input.supabase.from("production_requests").update(safeUpdate({ output_json: outputWithWorkflow(input.production, nextOutput, {}), generation_status: "video_shot_queued", updated_at: new Date().toISOString() })).eq("id", input.production.id);
     if (update.error) throw update.error;
+    const shotRecordUpdate = await input.supabase.from("production_shot_jobs").update({ status: "submitted", provider_job_id: String(persistedJob.id ?? ""), job_json: persistedJob, submitted_at: new Date().toISOString() }).eq("production_id", input.production.id).eq("shot_index", shotIndex);
+    if (shotRecordUpdate.error) throw shotRecordUpdate.error;
     return { output: nextOutput, visualJobs: nextJobs, busy: false, failed: false };
   } catch (error) {
     const failedOutput = { ...claimedOutput, providerStatus: "provider_start_failed_partial", shotQueue: { ...queue, status: "failed", claimedShotIndex: null, failedShotIndex: shotIndex, failure: errorMessage(error, "MiniMax shot submission failed") } };
@@ -550,7 +566,7 @@ let outputWithRenderJob = renderBridge.renderJob
     const terminalStatus = renderStatus?.status === "failed"
       ? renderStatus
       : visualStatuses.find((status) => status.status === "failed") ?? renderStatus ?? visualStatus;
-    if (shotGate.reason === "provider_start_failed_partial") {
+    if (shotGate.reason === "provider_start_failed_partial" || queueAdvance.failed) {
       const partialMessage = `Provider shot start failed partially: expected ${expectedShotCount} independent 5-second jobs, but only ${submittedShotCount} real jobs were recorded. No additional provider request was opened.`;
       const creditResolution = await refundReservedCreditsOnce(supabase, production, outputWithRenderJob, partialMessage);
       const partialOutput = outputWithWorkflow(production, outputWithRenderJob, { providerStatus: "provider_start_failed_partial", generationStatus: "provider_start_failed_partial", partialOutput: true, expectedShotCount, submittedShotCount, shotJobs: visualJobs, visualJobs, finalVideoUrl: null, providerFinalUrl: null, creditResolution });

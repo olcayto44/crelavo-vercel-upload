@@ -1417,7 +1417,7 @@ const clippingRun = requiredPipeline === "video_clipping"
       ...(providerPreflight as Record<string, unknown>),
       expectedShotCount: expectedProviderShots,
       submittedShotCount: submittedMiniMaxShots,
-      providerJobCount: expectedProviderShots,
+      providerJobCount: submittedMiniMaxShots,
       providerJobDurationSeconds: 5,
       providerCostUnits: expectedMiniMaxShots > 0 ? submittedMiniMaxShots : 1
     };
@@ -1511,7 +1511,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       visualJob,
        visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
        shotJobs: clippingRun ? [] : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
-       shotQueue: expectedMiniMaxShots > 1 ? { provider: "minimax", status: submittedMiniMaxShots === expectedMiniMaxShots ? "queued_complete" : "queued", nextShotIndex: submittedMiniMaxShots + 1, claimedShotIndex: null, requestedDurationSeconds: 5 } : null,
+       shotQueue: expectedMiniMaxShots > 1 ? { provider: "minimax", durable: true, status: submittedMiniMaxShots === expectedMiniMaxShots ? "queued_complete" : "queued", expectedShotCount: expectedMiniMaxShots, nextShotIndex: submittedMiniMaxShots + 1, claimedShotIndex: null, requestedDurationSeconds: 5, idempotencyScope: "production_id:shot_index" } : null,
        submittedShotCount: submittedMiniMaxShots,
        expectedShotCount: expectedProviderShots,
       providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",

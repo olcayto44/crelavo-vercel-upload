@@ -535,7 +535,10 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
  const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
   const shotProgress = outputJson.shotProgress && typeof outputJson.shotProgress === "object" ? outputJson.shotProgress as Record<string, unknown> : null;
-  const shotWaitingLabel = shotProgress ? `Waiting for shots (${String(shotProgress.completed ?? 0)}/${String(shotProgress.total ?? visualJobs.length)})` : "Final ZIP waiting";
+  const shotQueue = outputJson.shotQueue && typeof outputJson.shotQueue === "object" ? outputJson.shotQueue as Record<string, unknown> : null;
+  const submittedShotCount = Number(outputJson.submittedShotCount ?? visualJobs.length) || 0;
+  const expectedShotCount = Number(outputJson.expectedShotCount ?? shotQueue?.expectedShotCount ?? 0) || 0;
+  const shotWaitingLabel = expectedShotCount > 1 ? `Waiting for shots (${submittedShotCount}/${expectedShotCount})` : shotProgress ? `Waiting for shots (${String(shotProgress.completed ?? 0)}/${String(shotProgress.total ?? visualJobs.length)})` : "Final ZIP waiting";
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
   const voiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
   const providerStatus = String(outputJson.providerStatus ?? "");
@@ -1332,6 +1335,7 @@ const data = await response.json().catch(() => ({}));
             </div>
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
 {visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Shot {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
+{expectedShotCount > 1 ? <p className="provider-poll-note">Submitted shots: {submittedShotCount}/{expectedShotCount} · {String(shotQueue?.status ?? "queued")}</p> : null}
 {shotProgress ? <p className="provider-poll-note">Shot progress: {String(shotProgress.completed ?? 0)}/{String(shotProgress.total ?? visualJobs.length)} ready · {String(shotProgress.status ?? "waiting")}</p> : null}
 {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
 {minimaxSessionId || minimaxVideoId ? <p className="provider-job-note">Minimax proof: session {minimaxSessionId || "pending"}{minimaxVideoId ? ` · video ${minimaxVideoId}` : ""}{outputJson.minimaxLatestVideoResourceId ? ` · latest resource ${String(outputJson.minimaxLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.minimaxAgentArtifacts) ? ` · artifacts ${outputJson.minimaxAgentArtifacts.length}` : ""}</p> : null}
