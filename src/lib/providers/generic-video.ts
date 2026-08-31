@@ -12,6 +12,7 @@ import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
+import { buildGenericVideoShotPlan, genericVideoShotCount, type GenericVideoShot } from "./generic-video-shot-plan";
 import { captureWebsiteScreenshot } from "./website-screenshot";
 
 
@@ -40,6 +41,7 @@ export type GenericVideoRunResult = {
   plan: GenericVideoPlan;
   visualJob: ProviderJob | null;
   visualJobs?: ProviderJob[];
+  shotPlan?: GenericVideoShot[];
   voiceAudioUrl: string | null;
   voiceAudioSegments?: VoiceAudioSegment[];
   subtitleUrl: string | null;
@@ -595,19 +597,18 @@ export async function runGenericVideoPipeline(input: {
   let voiceAudioSegments: VoiceAudioSegment[] = [];
   let subtitleUrl: string | null = null;
   let renderJob: ProviderJob | null = null;
-  const needsMultiShot = plan.durationSeconds > 5;
+  const shotPlan = buildGenericVideoShotPlan(contextualScenes, plan.durationSeconds);
+  const needsMultiShot = genericVideoShotCount(plan.durationSeconds) > 1;
 
   try {
     if (plan.deterministicUiMotion && plan.provider !== "minimax") {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
     } else if (needsMultiShot) {
-      const shotCount = Math.max(2, Math.ceil(plan.durationSeconds / 5));
-      const shots = contextualScenes.slice(0, shotCount);
-      while (shots.length < shotCount) shots.push(contextualScenes[shots.length % contextualScenes.length] || plan.title);
+      const shotCount = shotPlan.length;
       const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
       if (isDroneMultiShot) {
-        const scene = shots[0];
+        const scene = shotPlan[0]?.prompt || plan.title;
         visualJob = sourceImageUrls[0]
           ? await createImageToVideoClip({
             imageUrl: sourceImageUrls[0],
@@ -628,9 +629,9 @@ export async function runGenericVideoPipeline(input: {
 
         visualJobs = visualJob ? [visualJob] : [];
       } else {
-        for (let index = 0; index < shots.length; index += 1) {
+        for (let index = 0; index < shotPlan.length; index += 1) {
           if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
-          const scene = shots[index];
+          const scene = shotPlan[index].prompt;
           visualJobs.push(await createVisualVideo({
             productionId: input.productionId,
             scenes: [`Scene ${index + 1}/${shotCount}: ${scene}`],
@@ -756,6 +757,7 @@ export async function runGenericVideoPipeline(input: {
     plan,
     visualJob,
     visualJobs,
+    shotPlan,
     voiceAudioUrl,
     voiceAudioSegments,
     subtitleUrl,

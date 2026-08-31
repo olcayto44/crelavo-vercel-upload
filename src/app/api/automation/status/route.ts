@@ -16,6 +16,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { createAmbientMusicBed } from "@/lib/providers/generic-video";
+import { genericVideoShotCount, multiShotFinalGate, orderedReadyShotUrls } from "@/lib/providers/generic-video-shot-plan";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
@@ -288,7 +289,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
       const concatPath = join(directory, "concat.txt");
       await writeFile(concatPath, sourcePaths.map((path) => `file '${path.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n"));
       await new Promise<void>((resolve, reject) => {
-        execFile(ffmpegBinary, ["-y", "-f", "concat", "-safe", "0", "-i", concatPath, "-c", "copy", "-movflags", "+faststart", videoPath], { timeout: 120000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegBinary, ["-y", "-f", "concat", "-safe", "0", "-i", concatPath, "-t", String(Math.min(60, Math.max(5, input.durationSeconds))), "-c", "copy", "-movflags", "+faststart", videoPath], { timeout: 120000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) reject(new Error(stderr || error.message));
           else resolve();
         });
@@ -371,7 +372,7 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
   try {
     const genericPlan = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
     const subtitleLines = Array.isArray(genericPlan.subtitleLines) ? genericPlan.subtitleLines.map(String) : [];
-    const sourceVisualUrls = readyVisualUrls.length ? readyVisualUrls : visualStatus?.outputUrl ? [String(visualStatus.outputUrl)] : [];
+    const sourceVisualUrls = readyVisualUrls.length ? orderedReadyShotUrls(visualStatuses) : visualStatus?.outputUrl ? [String(visualStatus.outputUrl)] : [];
     const mirroredVisualUrls: string[] = [];
     for (let index = 0; index < sourceVisualUrls.length; index += 1) {
       const sourceUrl = sourceVisualUrls[index];
@@ -461,9 +462,39 @@ let outputWithRenderJob = renderBridge.renderJob
     : output;
     const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
     const renderStatus = renderLifecycle.normalizedStatus;
+    const targetDurationSeconds = Number(output.requestedDurationSeconds ?? (output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? (output.genericVideoPlan as Record<string, unknown>).durationSeconds : 5)) || 5;
+    const requiredShotCount = genericVideoShotCount(targetDurationSeconds);
+    const shotGate = multiShotFinalGate({ targetDurationSeconds, visualStatuses, renderStatus });
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
-    const terminalStatus = renderStatus ?? visualStatus;
+    const terminalStatus = renderStatus?.status === "failed"
+      ? renderStatus
+      : visualStatuses.find((status) => status.status === "failed") ?? renderStatus ?? visualStatus;
+    if (shotGate.required && !shotGate.passed && requiredShotCount > 1) {
+      const shotProgress = visualStatuses.map((status, index) => ({ shot: index + 1, status: status.status, outputUrl: status.outputUrl ?? null, provider: status.provider, jobId: status.id ?? null }));
+      const waitingOutput = outputWithWorkflow(production, outputWithRenderJob, {
+        visualStatus,
+        visualStatuses: shotProgress,
+        renderStatus,
+        providerStatus: shotGate.reason === "waiting_for_all_shots" ? "waiting_for_all_shots" : "waiting_for_merged_render",
+        shotProgress: { completed: shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length, total: requiredShotCount, status: shotGate.reason },
+        finalVideoUrl: null,
+        providerFinalUrl: null
+      });
+      const { data } = await supabase.from("production_requests").update(safeUpdate({
+        status: "in_production",
+        automation_status: "running",
+        generation_status: shotGate.reason === "waiting_for_all_shots" ? "waiting_for_all_shots" : "waiting_for_merged_render",
+        preview_url: null,
+        delivery_link: null,
+        output_json: waitingOutput,
+        admin_notes: shotGate.reason === "waiting_for_all_shots"
+          ? `Waiting for all ${requiredShotCount} video shots before final merge (${shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length}/${requiredShotCount} ready).`
+          : "All video shots are ready; waiting for the merged final render.",
+        updated_at: new Date().toISOString()
+      })).eq("id", productionId).select("*").single();
+      return Response.json({ production: data, visualStatus, visualStatuses: shotProgress, renderStatus, shotProgress: { completed: shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length, total: requiredShotCount, status: shotGate.reason }, finalVideoUrl: null, waitingForShots: shotGate.reason === "waiting_for_all_shots", renderPending: shotGate.reason === "waiting_for_merged_render" });
+    }
     let characterDialoguePlan = outputWithRenderJob.characterDialoguePlan && typeof outputWithRenderJob.characterDialoguePlan === "object" ? outputWithRenderJob.characterDialoguePlan as Record<string, unknown> : null;
     let characterDialogueJobs = characterDialoguePlan && Array.isArray((characterDialoguePlan as Record<string, unknown>).providerJobs) ? (characterDialoguePlan as Record<string, unknown>).providerJobs as Array<Record<string, unknown>> : [];
     const hasBrokenDedicatedPlan = Boolean(characterDialoguePlan) && (characterDialogueJobs.filter((job) => job.stage === "scene_image").length === 0 || characterDialogueJobs.filter((job) => job.stage === "image_to_video").length === 0 || characterDialogueJobs.filter((job) => job.stage === "voice_segment").length === 0);

@@ -1483,8 +1483,9 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
         subtitleUrl: clippingRun.subtitleUrl,
         renderJob: clippingRun.renderJob
       } : null,
-      genericVideoPlan: genericRun?.plan ?? null,
-       sourceContext: genericRun?.sourceContext ?? null,
+       genericVideoPlan: genericRun?.plan ?? null,
+       shotPlan: genericRun?.shotPlan ?? [],
+        sourceContext: genericRun?.sourceContext ?? null,
        websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
        musicVideoAudioUrl: productionType === "music_video" ? String((genericRun?.sourceContext as Record<string, unknown> | undefined)?.songAudioUrl ?? "").trim() || null : null,
        voiceAudioUrl: genericRun?.voiceAudioUrl ?? null,

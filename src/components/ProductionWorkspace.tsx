@@ -534,6 +534,8 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
  const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
  const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
+  const shotProgress = outputJson.shotProgress && typeof outputJson.shotProgress === "object" ? outputJson.shotProgress as Record<string, unknown> : null;
+  const shotWaitingLabel = shotProgress ? `Waiting for shots (${String(shotProgress.completed ?? 0)}/${String(shotProgress.total ?? visualJobs.length)})` : "Final ZIP waiting";
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
   const voiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
   const providerStatus = String(outputJson.providerStatus ?? "");
@@ -1319,7 +1321,7 @@ const data = await response.json().catch(() => ({}));
             </div>
             <div className="customer-preview-actions delivery-action-grid">
               {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={15} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> {isImageProduction ? "Final image waiting" : "Final ZIP waiting"}</button>}
+              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> {isImageProduction ? "Final image waiting" : shotWaitingLabel}</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
               {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
@@ -1329,7 +1331,8 @@ const data = await response.json().catch(() => ({}));
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
-{visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Scene {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
+{visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Shot {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
+{shotProgress ? <p className="provider-poll-note">Shot progress: {String(shotProgress.completed ?? 0)}/{String(shotProgress.total ?? visualJobs.length)} ready · {String(shotProgress.status ?? "waiting")}</p> : null}
 {visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
 {minimaxSessionId || minimaxVideoId ? <p className="provider-job-note">Minimax proof: session {minimaxSessionId || "pending"}{minimaxVideoId ? ` · video ${minimaxVideoId}` : ""}{outputJson.minimaxLatestVideoResourceId ? ` · latest resource ${String(outputJson.minimaxLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.minimaxAgentArtifacts) ? ` · artifacts ${outputJson.minimaxAgentArtifacts.length}` : ""}</p> : null}
 {providerJobMissingWhileRunning ? <p className="provider-poll-note provider-start-note">Production is marked running, but no provider job is attached yet. Press Start Production once to attach the video provider job.</p> : null}
