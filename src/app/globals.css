@@ -13197,3 +13197,88 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
   }
 }
 
+html body .production-detail-shell.container.section {
+  width: min(100% - 32px, 1440px) !important;
+  max-width: 1440px !important;
+  padding-inline: 0 !important;
+}
+html body .production-detail-shell .production-workspace-shell,
+html body .production-detail-shell .production-workspace-main,
+html body .production-detail-shell .production-workspace-side {
+  min-height: 0 !important;
+  height: auto !important;
+}
+html body .production-detail-shell .production-workspace-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+  overflow: visible !important;
+}
+html body .production-detail-shell .production-workspace-main,
+html body .production-detail-shell .production-workspace-side {
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+html body .production-detail-shell .production-workspace-head {
+  min-height: 0 !important;
+}
+html body .production-detail-shell .customer-preview-theater {
+  min-height: 0 !important;
+  grid-template-rows: auto auto !important;
+}
+html body .production-detail-shell .customer-preview-screen,
+html body .production-detail-shell .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-screen img,
+html body .production-detail-shell .customer-preview-screen iframe,
+html body .production-detail-shell .customer-preview-placeholder {
+  min-height: 0 !important;
+  height: auto !important;
+}
+html body .production-detail-shell .customer-preview-screen {
+  min-height: clamp(240px, 42vw, 520px) !important;
+  aspect-ratio: 16 / 9;
+}
+html body .production-detail-shell .customer-preview-screen video,
+html body .production-detail-shell .customer-preview-screen img,
+html body .production-detail-shell .customer-preview-screen iframe {
+  aspect-ratio: 16 / 9;
+}
+html body .production-detail-shell .production-waiting-room {
+  min-height: 240px !important;
+  padding: clamp(18px, 3vw, 36px) !important;
+}
+html body .production-detail-shell .actionable-waiting-room {
+  min-height: 180px !important;
+  gap: 8px !important;
+}
+html body .production-detail-shell .production-live-summary {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr) !important;
+}
+html body .production-detail-shell .production-live-steps {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+html body .production-detail-shell .production-workspace-side .production-job-overview-card {
+  display: none !important;
+}
+@media (max-width: 900px) {
+  html body .production-detail-shell .customer-preview-theater,
+  html body .production-detail-shell .production-live-summary {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 640px) {
+  html body .production-detail-shell.container.section {
+    width: min(100% - 20px, 1440px) !important;
+  }
+  html body .production-detail-shell .customer-preview-screen {
+    min-height: 220px !important;
+    aspect-ratio: 4 / 3;
+  }
+  html body .production-detail-shell .customer-preview-screen video,
+  html body .production-detail-shell .customer-preview-screen img,
+  html body .production-detail-shell .customer-preview-screen iframe {
+    aspect-ratio: 4 / 3;
+  }
+}
+

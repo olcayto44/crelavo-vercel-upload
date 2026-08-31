@@ -613,7 +613,9 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
-    const hasActiveProviderJob = isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || Boolean(minimaxSessionId || minimaxVideoId);
+  const hasActiveMinimaxProof = Boolean((minimaxSessionId || minimaxVideoId) && /queued|submitted|starting|processing|running|rendering|generating|in_progress/i.test(providerProofStatus));
+  const hasActiveProviderJob = isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof;
+
   const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
@@ -622,7 +624,7 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
     || production.status === "in_production"
     || /running|in_production|strategy_running|provider_start_failed/.test(`${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${providerStatus}`)
   );
-  const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && (/provider_started|automation_started|in_progress|processing|running/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs));
+  const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && hasActiveProviderJob;
   const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
   const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
@@ -662,6 +664,10 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
   const approvalOptions = Array.isArray(production.approval_options) ? production.approval_options : [];
   const needsApproval = production.approval_status === "waiting" && Boolean(production.approval_question);
   const canCancel = !["ready", "failed", "cancelled"].includes(String(production.status ?? ""));
+   const revisionEnabled = isReady || hasPreview;
+   const canPollProvider = !isFailed && (Boolean(visualJob || hasAlternativeJobs) || dedicatedCharacterDialogueRequired);
+   const actionableWaitingState = isFailed || providerJobMissingWhileRunning || (!isProviderRunning && !isDedicatedPipelineRunning && !isReady && !hasPreview && !hasDelivery);
+
 
   async function submitApproval(option: { label: string; description?: string; extraCredits?: number }) {
     if (!production.user_id) {
@@ -1209,7 +1215,7 @@ const data = await response.json().catch(() => ({}));
               {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
-              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
+              <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
               <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
               {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
@@ -1253,34 +1259,39 @@ const data = await response.json().catch(() => ({}));
             ) : previewKind === "web" ? (
               <iframe src={previewUrl} title="Production preview" loading="lazy" />
             ) : (
-              <div className={`customer-preview-placeholder production-waiting-room${isDedicatedPipelineRunning ? " video-player-waiting" : ""}`}>
-                {isDedicatedPipelineRunning ? <div className="video-player-waiting-frame">
-                  <div className="video-player-waiting-spinner" />
-                  <PlayCircle size={54} />
-                  <h3>Video is being generated</h3>
-                  <p>The final MP4 will start playing here automatically when it is ready.</p>
-                  <span>Character sheets → scene images → image-to-video → voices → subtitles → final MP4</span>
-                </div> : <>
-                <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
-                <PlayCircle size={44} />
-                <span className="badge">{waitingRoom.statusHint}</span>
-                <h3>{waitingRoom.headline}</h3>
-                <p>{waitingRoom.description}</p>
-                <div className="production-waiting-meta">
-                  <strong>Estimated delivery window</strong>
-                  <span>{waitingRoom.estimated}</span>
-                </div>
-                <div className="production-waiting-stage-grid" aria-label="Production pipeline stages">
-                  {waitingRoom.stages.map((stage, index) => (
-                    <span key={`waiting-stage-${stage}-${index}`} className={index === 0 ? "ready" : index <= 3 ? "active" : "pending"}>
-                      <small>{String(index + 1).padStart(2, "0")}</small>
-                      <b>{stage}</b>
-                    </span>
-                  ))}
-                </div>
-                <p className="production-waiting-assurance">You can safely leave or refresh this page. Production will continue in the background. When the output is ready, we will send a completion email to your account and unlock download and revision options automatically.</p>
-                </>}
-              </div>
+              <div className={`customer-preview-placeholder production-waiting-room${isDedicatedPipelineRunning ? " video-player-waiting" : actionableWaitingState ? " actionable-waiting-room" : ""}`}>
+                 {isDedicatedPipelineRunning ? <div className="video-player-waiting-frame">
+                   <div className="video-player-waiting-spinner" />
+                   <PlayCircle size={54} />
+                   <h3>Video is being generated</h3>
+                   <p>The final MP4 will start playing here automatically when it is ready.</p>
+                   <span>Character sheets → scene images → image-to-video → voices → subtitles → final MP4</span>
+                 </div> : actionableWaitingState ? <>
+                 <span className="badge">{isFailed ? "Action required" : "Waiting to start"}</span>
+                 <h3>{isFailed ? "Production needs attention" : providerJobMissingWhileRunning ? "Provider job is missing" : "Production is ready to start"}</h3>
+                 <p>{isFailed ? (production.error_message || String(outputJson.providerError ?? "The provider did not complete this production.")) : nextLiveStep}</p>
+                 </> : <>
+                 <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
+                 <PlayCircle size={44} />
+                 <span className="badge">{waitingRoom.statusHint}</span>
+                 <h3>{waitingRoom.headline}</h3>
+                 <p>{waitingRoom.description}</p>
+                 <div className="production-waiting-meta">
+                   <strong>Estimated delivery window</strong>
+                   <span>{waitingRoom.estimated}</span>
+                 </div>
+                 <div className="production-waiting-stage-grid" aria-label="Production pipeline stages">
+                   {waitingRoom.stages.map((stage, index) => (
+                     <span key={`waiting-stage-${stage}-${index}`} className={index === 0 ? "ready" : index <= 3 ? "active" : "pending"}>
+                       <small>{String(index + 1).padStart(2, "0")}</small>
+                       <b>{stage}</b>
+                     </span>
+                   ))}
+                 </div>
+                 <p className="production-waiting-assurance">You can safely leave or refresh this page. Production will continue in the background. When the output is ready, we will send a completion email to your account and unlock download and revision options automatically.</p>
+                 </>}
+               </div>
+
             )}
           </div>
           <aside className="customer-preview-control">
@@ -1326,9 +1337,9 @@ const data = await response.json().catch(() => ({}));
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
               {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
-              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
+              <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
-              {visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
+              {canPollProvider ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
               <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
@@ -1353,7 +1364,7 @@ const data = await response.json().catch(() => ({}));
           </section>
         ) : null}
 
-        {creativeActivityCards.length > 0 ? (
+        {creativeActivityCards.length > 0 && (hasActiveProviderJob || hasDedicatedCharacterDialogueJobs || hasPreview || hasDelivery) ? (
           <section className="automation-brief-card">
             <span className="badge">{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax Video Agent artifacts" : "Creative director live board"}</span>
             <h3>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax agent outputs" : "Assistant is shaping the video like a creative director"}</h3>
@@ -1558,33 +1569,22 @@ const data = await response.json().catch(() => ({}));
         </div>
       </section>
 
-      <aside className="production-workspace-side">
-        <div className="production-job-overview-card">
-          <span className="badge">Job control</span>
-          <h2>Production status</h2>
-          <div className="production-job-status-list">
-            <span><small>Status</small><strong>{liveStatus}</strong></span>
-            <span><small>Credits reserved</small><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></span>
-            <span><small>Provider</small><strong>{providerStatus || (isWaitingProviderConfig ? "Provider pending" : "Auto routing")}</strong></span>
-            <span><small>Delivery</small><strong>{hasDelivery ? "Final ready" : hasPreview ? "Preview ready" : "Preparing"}</strong></span>
-          </div>
-          <p>{hasDelivery ? "Final files are ready for customer handoff." : hasPreview ? "Preview is ready; final delivery is still being prepared." : "Production is active or waiting for provider output."}</p>
-        </div>
+       <aside className="production-workspace-side">
+         <div className="revision-history-card">
 
+           <form className="revision-inline-form" onSubmit={submitRevision}>
+             <h2>{revisionEnabled ? "Write a revision request" : "Revision unlocks after output"}</h2>
+             <p>{revisionEnabled ? (isImageProduction ? "Write what should change in the image here." : "Write what should change in the video here.") : "A revision can only target a real preview or delivered output."}</p>
 
-        <div className="revision-history-card">
-          <form className="revision-inline-form" onSubmit={submitRevision}>
-            <h2>Write a revision request</h2>
-            <p>{isImageProduction ? "This box is always visible. Write what should change in the image here." : "This box is always visible. Write what should change in the video here."}</p>
             <div className="revision-target-grid">
-              <label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} /></label>
-              <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} /></label>
+<label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} disabled={!revisionEnabled} /></label>
+               <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} disabled={!revisionEnabled} /></label>
             </div>
             <label className="revision-message-field">
               <span>Revision request</span>
-              <textarea aria-label="Revision request" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write the revision request here..." />
-            </label>
-            <button className="btn" disabled={status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : "Send revision request"}</button>
+<textarea aria-label="Revision request" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write the revision request here..." disabled={!revisionEnabled} />
+             </label>
+             <button className="btn" disabled={!revisionEnabled || status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : revisionEnabled ? "Send revision request" : "Waiting for output"}</button>
             {notice ? <p className={`workspace-action-note ${status === "error" ? "error" : ""}`}>{notice}</p> : null}
           </form>
           <h2>{isReady || hasPreview ? "Revision history" : "Production activity"}</h2>
@@ -1615,7 +1615,7 @@ const data = await response.json().catch(() => ({}));
           <div className="delivery-action-grid">
             {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
             {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
-            <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
+            <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
             {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
             {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
           </div>

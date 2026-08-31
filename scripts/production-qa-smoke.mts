@@ -53,6 +53,8 @@ const page = read("src/app/admin/production-qa/page.tsx");
 const panel = read("src/components/AdminProductionQaPanel.tsx");
 const adminMenu = read("src/lib/admin.ts");
 const pkg = read("package.json");
+const workspace = read("src/components/ProductionWorkspace.tsx");
+const styles = read("src/app/globals.css");
 
 assert(route.includes("isAdminRequest(request)"), "Production QA API must require admin auth");
 assert(route.includes("qaProduction"), "Production QA API must run qaProduction");
@@ -61,5 +63,10 @@ assert(panel.includes("/api/admin/production-qa"), "Production QA panel must fet
 assert(panel.includes("Production kalite QA raporu"), "Production QA panel title missing");
 assert(adminMenu.includes("Production Quality QA") && adminMenu.includes("/admin/production-qa"), "Admin menu must include production QA");
 assert(pkg.includes("smoke:production-qa"), "package.json must include production QA smoke");
+assert(workspace.includes("actionableWaitingState"), "Production workspace must expose an actionable waiting state");
+assert(workspace.includes("revisionEnabled = isReady || hasPreview"), "Revisions must stay locked until output exists");
+assert(workspace.includes("hasActiveProviderJob || hasDedicatedCharacterDialogueJobs || hasPreview || hasDelivery"), "Creative activity cards must not appear without real output or job state");
+assert(styles.includes("production-detail-shell .customer-preview-screen") && styles.includes("min-height: clamp(240px, 42vw, 520px)"), "Production detail layout must use a bounded preview height");
+assert(styles.includes("production-workspace-side .production-job-overview-card") && styles.includes("display: none !important"), "Duplicate production status overview must stay hidden");
 
 console.log("production-qa-smoke ok");
