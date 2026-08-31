@@ -147,6 +147,9 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
 }
 
 export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
+  if (input.duration !== undefined && (input.duration < 5 || input.duration > 15)) {
+    throw new Error("MiniMax video duration must be between 5 and 15 seconds.");
+  }
   if (!hasMiniMaxVideoConfig()) {
     throw new ProviderConfigError("MiniMax video provider requires MINIMAX_API_KEY (or MINIMAX_KEY) and MINIMAX_GROUP_ID (or MINIMAX_GID/MINIMAX_GROUPID).");
   }

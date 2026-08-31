@@ -12,7 +12,6 @@ import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
-import { buildGenericVideoShotPlan, genericVideoShotCount, type GenericVideoShot } from "./generic-video-shot-plan";
 import { captureWebsiteScreenshot } from "./website-screenshot";
 
 
@@ -41,7 +40,6 @@ export type GenericVideoRunResult = {
   plan: GenericVideoPlan;
   visualJob: ProviderJob | null;
   visualJobs?: ProviderJob[];
-  shotPlan?: GenericVideoShot[];
   voiceAudioUrl: string | null;
   voiceAudioSegments?: VoiceAudioSegment[];
   subtitleUrl: string | null;
@@ -470,7 +468,7 @@ export function buildGenericVideoPlan(input: {
   const providerPreflight = input.providerPreflight ?? {};
   const title = clean(input.title) || clean(requestMetadata.title) || "Crelavo video";
   const prompt = clean(input.prompt) || clean(inputJson.prompt) || title;
-  const durationSeconds = Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15;
+  const durationSeconds = Math.min(15, Math.max(5, Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15));
   const aspectRatio = clean(providerPreflight.aspectRatio) || clean(requestMetadata.aspectRatio) || "9:16";
   const providerLock = String(clean(requestMetadata.routeLock) || clean(inputJson.routeLock) || "").toLowerCase();
   const preferredRouteProvider = providerLock === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(`${title} ${prompt} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`)
@@ -569,7 +567,6 @@ export async function runGenericVideoPipeline(input: {
   inputJson?: Record<string, unknown>;
   providerPreflight?: Record<string, unknown>;
   selectedOptions?: Record<string, unknown>;
-  deferMultiShot?: boolean;
 }): Promise<GenericVideoRunResult> {
   const plan = buildGenericVideoPlan(input);
   const selectedOptions = input.selectedOptions ?? {};
@@ -598,40 +595,10 @@ export async function runGenericVideoPipeline(input: {
   let voiceAudioSegments: VoiceAudioSegment[] = [];
   let subtitleUrl: string | null = null;
   let renderJob: ProviderJob | null = null;
-  const shotPlan = buildGenericVideoShotPlan(contextualScenes, plan.durationSeconds);
-  const needsMultiShot = genericVideoShotCount(plan.durationSeconds) > 1;
-
   try {
     if (plan.deterministicUiMotion && plan.provider !== "minimax") {
       missingProviders.push("visual_generation");
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
-    } else if (needsMultiShot) {
-      const shotCount = shotPlan.length;
-      const isDroneMultiShot = String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "").includes("drone_video") || /drone|satellite|flyover|aerial/i.test(plan.title);
-      const shotsToSubmit = input.deferMultiShot ? shotPlan.slice(0, 1) : shotPlan;
-      for (let index = 0; index < shotsToSubmit.length; index += 1) {
-        if (index > 0) await new Promise((resolve) => setTimeout(resolve, 11000));
-        const scene = shotPlan[index].prompt;
-        const job = isDroneMultiShot && sourceImageUrls[0] && plan.provider !== "minimax"
-          ? await createImageToVideoClip({
-            imageUrl: sourceImageUrls[0],
-            prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${scene}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography. Shot ${index + 1}/${shotCount}.`,
-            durationSeconds: 5,
-            provider: "runway_first",
-            aspectRatio: plan.aspectRatio
-          })
-          : await createVisualVideo({
-            productionId: input.productionId,
-            scenes: [`Scene ${index + 1}/${shotCount}: ${scene}`],
-            productImageUrls: sourceImageUrls,
-            durationSeconds: 5,
-            style: `${clean(input.requestMetadata?.style) || plan.title} · part ${index + 1} of ${shotCount}`,
-            provider: plan.provider,
-            aspectRatio: plan.aspectRatio
-          });
-        visualJobs.push({ ...job, shotIndex: index + 1, prompt: scene, shotPrompt: scene, requestedDurationSeconds: 5, provider: job.provider || plan.provider } as ProviderJob);
-      }
-      visualJob = visualJobs[0] ?? null;
     } else {
       const isDroneSingleShot = /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")) || /drone|satellite|flyover|aerial/i.test(plan.title);
       visualJob = isDroneSingleShot && sourceImageUrls[0]
@@ -659,23 +626,6 @@ export async function runGenericVideoPipeline(input: {
     providerErrors.visual_generation = providerErrorMessage(error);
   }
 
-  if (input.deferMultiShot && needsMultiShot) {
-    return {
-      plan,
-      visualJob,
-      visualJobs,
-      shotPlan,
-      voiceAudioUrl: null,
-      voiceAudioSegments: [],
-      subtitleUrl: null,
-      renderJob: null,
-      chainStatus: visualJob ? "visual_job_created" : "waiting_provider_config",
-      missingProviders,
-      providerErrors,
-      sourceContext: { url: sourceContext.url, contextText, imageUrls: sourceImageUrls, screenshotUrl, uploadedImageUrls }
-    };
-  }
-
   const productionType = clean(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type).toLowerCase();
   const isMusicVideo = productionType === "music_video";
   const sourceAudioUrl = isMusicVideo
@@ -696,7 +646,7 @@ export async function runGenericVideoPipeline(input: {
     : "";
   const wantsVoice = !isMusicVideo && Boolean(selectedOptions.voiceOver ?? selectedOptions.voiceConsistency);
   const wantsSubtitles = Boolean(selectedOptions.subtitles) || (isMusicVideo && Boolean(clean(input.requestMetadata?.lyrics ?? input.inputJson?.lyrics ?? input.requestMetadata?.lyrics_text ?? input.inputJson?.lyrics_text)));
-  const wantsFinalAssembly = Boolean(plan.deterministicUiMotion || isMusicVideo || selectedOptions.finalRender || selectedOptions.voiceOver || selectedOptions.voiceConsistency || selectedOptions.subtitles || selectedOptions.music);
+  const wantsFinalAssembly = Boolean(isMusicVideo || selectedOptions.finalRender || selectedOptions.voiceOver || selectedOptions.voiceConsistency || selectedOptions.subtitles || selectedOptions.music);
 
   if (wantsVoice) {
     try {
@@ -730,7 +680,7 @@ export async function runGenericVideoPipeline(input: {
   const readyVisualUrls = visualJobs.map((job) => String(job.url ?? "").trim()).filter(Boolean);
   const primaryVisualUrl = readyVisualUrls[0] || visualJob?.url || "";
   let finalRenderAudioUrl = isMusicVideo && sourceAudioUrl ? sourceAudioUrl : voiceAudioSegments.length ? null : voiceAudioUrl;
-  if (!finalRenderAudioUrl && primaryVisualUrl && !needsMultiShot) {
+  if (!finalRenderAudioUrl && primaryVisualUrl) {
     try {
       finalRenderAudioUrl = await extractAudioTrackFromVideoUrl({ productionId: input.productionId, videoUrl: primaryVisualUrl, filenameBase: "final-render-audio" });
     } catch (error) {
@@ -741,7 +691,7 @@ export async function runGenericVideoPipeline(input: {
   if (!finalRenderAudioUrl && isMusicVideo) {
     missingProviders.push("song_audio");
     providerErrors.song_audio = "Music video production requires a real uploaded song/audio master; no placeholder soundtrack will be generated.";
-  } else if (!finalRenderAudioUrl && (selectedOptions.music || needsMultiShot || wantsFinalAssembly)) {
+  } else if (!finalRenderAudioUrl && (selectedOptions.music || wantsFinalAssembly)) {
     try {
       finalRenderAudioUrl = await createAmbientMusicBed({ productionId: input.productionId, durationSeconds: plan.durationSeconds, filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? "") || plan.title });
     } catch (error) {
@@ -762,7 +712,6 @@ export async function runGenericVideoPipeline(input: {
     plan,
     visualJob,
     visualJobs,
-    shotPlan,
     voiceAudioUrl,
     voiceAudioSegments,
     subtitleUrl,

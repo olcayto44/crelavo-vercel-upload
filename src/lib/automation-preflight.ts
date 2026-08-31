@@ -1,5 +1,4 @@
 import { hasProviderEnv } from "./providers/env.ts";
-import { isNoPresenterSocialVideoRequest } from "./production-routing.ts";
 
 export type AutomationPreflightInput = {
   productionType: string;
@@ -155,11 +154,9 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     metadataObject(requestMetadata.ecommerceContext).targetDurationSeconds,
     metadataObject(inputJson.ecommerceContext).targetDurationSeconds
   );
-  const requestedDuration = Math.min(60, Math.max(5, explicitDuration || 5));
+  const requestedDuration = Math.min(15, Math.max(5, explicitDuration || 5));
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
-  const routeText = `${input.productionType} ${input.packageId ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
-  const socialNoPresenterRoute = isNoPresenterSocialVideoRequest(routeText, input.productionType, input.packageId);
-  const selectedVideoProvider = socialNoPresenterRoute ? "minimax" : selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
+  const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
   const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
   const talkingVideoIntent = ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(input.productionType) || /talking video|talking head|avatar|lip sync|lip-sync|ugc|live sales/i.test(`${requestMetadata.productionType ?? ""} ${inputJson.productionType ?? ""} ${requestMetadata.provider_service ?? ""} ${inputJson.provider_service ?? ""}`);
   const envVideoProvider = String(input.videoProvider || "").trim().toLowerCase();
@@ -190,11 +187,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     provider: videoProvider,
     model: videoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : videoProvider === "minimax" ? "MiniMax-H3" : videoProvider,
     durationSeconds: requestedDuration,
-     expectedShotCount: requestedDuration > 5 ? Math.ceil(requestedDuration / 5) : 1,
-     submittedShotCount: 0,
-      providerJobCount: 0,
-      providerJobDurationSeconds: 5,
-      providerCostUnits: 0,
+    supportedDurationMaxSeconds: 15,
     aspectRatio,
     testMode: providerTestMode,
     selectedOptions: { ...featureFlags, outputIntent, sourceHandling },

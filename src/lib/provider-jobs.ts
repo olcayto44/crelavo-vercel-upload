@@ -36,10 +36,11 @@ export function providerJobFromValue(value: unknown): ProviderJob | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   const provider = typeof record.provider === "string" ? record.provider : "";
-  if (!provider) return null;
+  const id = typeof record.id === "string" ? record.id.trim() : "";
+  if (!provider || !id || id.startsWith("pending-")) return null;
   return {
     provider,
-    id: typeof record.id === "string" ? record.id : undefined,
+    id,
     status: typeof record.status === "string" ? record.status : "unknown",
     url: typeof record.url === "string" ? record.url : undefined,
     raw: record.raw

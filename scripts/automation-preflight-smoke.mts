@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs";
 import { buildProviderPreflight } from "../src/lib/automation-preflight.ts";
 import { providerRequirementsForProduction } from "../src/lib/provider-readiness.ts";
 import { isVideoLikeProductionType, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "../src/lib/queue-policy.ts";
-import { isExplicitDroneRequest, isNoPresenterSocialVideoRequest, resolveProductionRoute } from "../src/lib/production-routing.ts";
+import { isExplicitDroneRequest } from "../src/lib/production-routing.ts";
+import { providerJobFromValue } from "../src/lib/provider-jobs.ts";
 import { createVisualVideo } from "../src/lib/providers/visuals.ts";
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
@@ -40,44 +41,24 @@ assertEqual(videoPreflight.provider, "replicate", "video provider");
 assertEqual(videoPreflight.model, "custom-video-model", "video model");
 assertEqual(videoPreflight.durationSeconds, 15, "video duration");
 assertEqual(videoPreflight.aspectRatio, "9:16", "video aspectRatio");
-const socialPrompt = "Create a TikTok FOMO e-commerce ad for Crelavo, no presenter, no people, music=true, voiceOver=false, subtitles=false";
-const socialRoute = resolveProductionRoute({ text: socialPrompt, productionType: "drone_video", preferredProvider: "runway" });
-assertEqual(isNoPresenterSocialVideoRequest(socialPrompt, "drone_video"), true, "social no-presenter guard");
-assertEqual(socialRoute.productionType, "video", "social production type");
-assertEqual(socialRoute.provider, "minimax", "social provider");
-const socialPreflight = buildProviderPreflight({ productionType: "video", requestMetadata: { preferredProvider: "runway", selectedOptions: { music: true, voiceOver: false, subtitles: false }, noPeopleMotionIntent: true }, inputJson: { prompt: socialPrompt }, videoProvider: "runway" });
-assertEqual(socialPreflight.provider, "minimax", "social preflight provider");
-assertEqual(socialPreflight.model, "MiniMax-H3", "social preflight model");
-assertEqual(socialPreflight.selectedOptions.voiceOver, false, "social voice option");
-assertEqual(socialPreflight.selectedOptions.music, true, "social music option");
-assertEqual(socialPreflight.selectedOptions.subtitles, false, "social subtitles option");
-const exactProductionMetadata = {
-  preferredProvider: "runway",
-  selectedProviderService: "minimax",
-  provider_service: "minimax",
-  selectedOptions: { music: true, voiceOver: false, subtitles: false },
-  noPeopleMotionIntent: true,
-  targetPlatform: "TikTok / Instagram Reels / YouTube Shorts"
-};
-const exactRoute = resolveProductionRoute({ text: `Create a Crelavo FOMO e-commerce ad ${JSON.stringify(exactProductionMetadata)}`, productionType: "video", packageId: "video_premium", preferredProvider: exactProductionMetadata.preferredProvider });
-assertEqual(exactRoute.route, "normal_social_video_no_presenter", "exact social route");
-assertEqual(exactRoute.provider, "minimax", "exact social provider override");
-const exactPreflight = buildProviderPreflight({ productionType: exactRoute.productionType, packageId: "video_premium", requestMetadata: exactProductionMetadata, inputJson: { production_type: "video", package_id: "video_premium" }, videoProvider: "runway" });
-assertEqual(exactPreflight.provider, "minimax", "exact social preflight provider");
-assertEqual(exactPreflight.model, "MiniMax-H3", "exact social preflight model");
+assertEqual(videoPreflight.supportedDurationMaxSeconds, 15, "video supported duration maximum");
+const longVideoPreflight = buildProviderPreflight({ productionType: "video", requestMetadata: { selectedDuration: "30 sec" }, inputJson: {}, videoProvider: "replicate" });
+assertEqual(longVideoPreflight.durationSeconds, 15, "long video provider duration clamp");
+assertEqual(providerJobFromValue({ provider: "replicate", id: "pending-smoke", status: "running" }), null, "pending provider job is not real");
+assertEqual(providerJobFromValue({ provider: "replicate", id: "real-smoke-job", status: "running" })?.id, "real-smoke-job", "real provider job id");
 const savedMiniMaxEnv = { apiKey: process.env.MINIMAX_API_KEY, groupId: process.env.MINIMAX_GROUP_ID, provider: process.env.VIDEO_PROVIDER };
 process.env.MINIMAX_API_KEY = "smoke-test-key";
 process.env.MINIMAX_GROUP_ID = "smoke-test-group";
 process.env.VIDEO_PROVIDER = "minimax";
 const originalFetch = globalThis.fetch;
 globalThis.fetch = (async () => new Response(JSON.stringify({ data: { task_id: "smoke-task-1", status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
-const socialJob = await createVisualVideo({ productionId: "smoke-social", scenes: ["Crelavo product UI hook"], productImageUrls: [], durationSeconds: 5, provider: "minimax", aspectRatio: "9:16" });
-assertEqual(socialJob.provider, "minimax", "social MiniMax invocation provider");
-assertEqual(socialJob.id, "smoke-task-1", "nested MiniMax task id");
+const normalVideoJob = await createVisualVideo({ productionId: "smoke-normal-video", scenes: ["Product hook"], productImageUrls: [], durationSeconds: 15, provider: "minimax", aspectRatio: "9:16" });
+assertEqual(normalVideoJob.provider, "minimax", "normal MiniMax invocation provider");
+assertEqual(normalVideoJob.id, "smoke-task-1", "nested MiniMax task id");
 globalThis.fetch = (async () => new Response(JSON.stringify({ data: { status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
 let noJobFailure = "";
 try {
-  await createVisualVideo({ productionId: "smoke-social-no-job", scenes: ["Crelavo product UI hook"], productImageUrls: [], durationSeconds: 5, provider: "minimax", aspectRatio: "9:16" });
+    await createVisualVideo({ productionId: "smoke-normal-video-no-job", scenes: ["Product hook"], productImageUrls: [], durationSeconds: 15, provider: "minimax", aspectRatio: "9:16" });
 } catch (error) {
   noJobFailure = String(error);
 }
@@ -88,7 +69,6 @@ for (const [key, value] of Object.entries({ MINIMAX_API_KEY: savedMiniMaxEnv.api
   else process.env[key] = value;
 }
 assertEqual(isExplicitDroneRequest("route flyover of Cappadocia map location"), true, "drone signal");
-assertEqual(resolveProductionRoute({ text: "route flyover of Cappadocia map location", productionType: "drone_video" }).route, "drone_video", "drone route");
 
 const runwayPreflight = buildProviderPreflight({
   productionType: "campaign",

@@ -16,8 +16,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { createAmbientMusicBed } from "@/lib/providers/generic-video";
-import { createVisualVideo } from "@/lib/providers/visuals";
-import { genericVideoShotCount, multiShotFinalGate, orderedReadyShotUrls } from "@/lib/providers/generic-video-shot-plan";
+import { orderedReadyShotUrls } from "@/lib/providers/generic-video-shot-plan";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
@@ -267,69 +266,6 @@ function existingRenderJob(output: Record<string, unknown>) {
   return providerJobFromValue(output.renderJob);
 }
 
-async function advanceMiniMaxShotQueue(input: {
-  supabase: ReturnType<typeof supabaseAdmin>;
-  production: Record<string, any>;
-  output: Record<string, unknown>;
-  visualJobs: Record<string, any>[];
-}) {
-  const queue = input.output.shotQueue && typeof input.output.shotQueue === "object" ? input.output.shotQueue as Record<string, unknown> : null;
-  const expected = Number(queue?.expectedShotCount ?? input.output.expectedShotCount ?? 0) || 0;
-  if (!queue || queue.durable !== true || String(queue.provider ?? "").toLowerCase() !== "minimax" || expected <= 1) return { output: input.output, visualJobs: input.visualJobs, busy: false, failed: Boolean(queue && queue.durable !== true && expected > 1) };
-  if (String(queue.status ?? "") === "failed" || String(queue.status ?? "") === "queued_complete") return { output: input.output, visualJobs: input.visualJobs, busy: false, failed: String(queue.status ?? "") === "failed" };
-  const claimedIndex = queue.claimedShotIndex;
-  if (claimedIndex !== null && claimedIndex !== undefined) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
-  if (input.visualJobs.length >= expected) return { output: { ...input.output, shotQueue: { ...queue, status: "queued_complete", nextShotIndex: expected + 1, claimedShotIndex: null } }, visualJobs: input.visualJobs, busy: false, failed: false };
-  const shotPlan = Array.isArray(input.output.shotPlan) ? input.output.shotPlan as Array<Record<string, unknown>> : [];
-  const shotIndex = input.visualJobs.length + 1;
-  const plannedShot = shotPlan[shotIndex - 1];
-  if (!plannedShot) return { output: { ...input.output, shotQueue: { ...queue, status: "failed", claimedShotIndex: null }, providerStatus: "provider_start_failed_partial" }, visualJobs: input.visualJobs, busy: false, failed: true };
-  const claimedOutput = { ...input.output, shotQueue: { ...queue, status: "submitting_shot", claimedShotIndex: shotIndex, nextShotIndex: shotIndex } };
-  const shotClaim = await input.supabase.from("production_shot_jobs").insert({ production_id: input.production.id, shot_index: shotIndex, status: "submitting", idempotency_key: `${input.production.id}:${shotIndex}` }).select("id").maybeSingle();
-  if (shotClaim.error) {
-    if (shotClaim.error.code === "23505") return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
-    throw shotClaim.error;
-  }
-  if (!shotClaim.data) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
-  const claimUpdate = await input.supabase.from("production_requests").update(safeUpdate({ output_json: outputWithWorkflow(input.production, claimedOutput, {}), generation_status: "submitting_video_shot", updated_at: new Date().toISOString() })).eq("id", input.production.id).filter("output_json->shotQueue->>claimedShotIndex", "eq", "null").select("id");
-  if (claimUpdate.error) throw claimUpdate.error;
-  if (!claimUpdate.data?.length) return { output: input.output, visualJobs: input.visualJobs, busy: true, failed: false };
-  try {
-    const sourceContext = input.output.sourceContext && typeof input.output.sourceContext === "object" ? input.output.sourceContext as Record<string, unknown> : {};
-    const productImageUrls = Array.isArray(sourceContext.imageUrls) ? sourceContext.imageUrls.map(String) : [];
-    const prompt = String(plannedShot.prompt ?? plannedShot.shotPrompt ?? input.production.prompt ?? "").trim();
-    const job = await createVisualVideo({
-      productionId: String(input.production.id),
-      scenes: [`Scene ${shotIndex}/${expected}: ${prompt}`],
-      productImageUrls,
-      durationSeconds: 5,
-      style: `MiniMax independent shot ${shotIndex}/${expected}`,
-      provider: "minimax",
-      aspectRatio: String((input.output.genericVideoPlan as Record<string, unknown> | null)?.aspectRatio ?? "9:16")
-    });
-    const persistedJob = postgresSafe({ ...job, provider: "minimax", shotIndex, prompt, shotPrompt: prompt, requestedDurationSeconds: 5, status: job.status || "submitted" });
-    const nextJobs = [...input.visualJobs, persistedJob];
-    const nextOutput = {
-      ...input.output,
-      visualJob: input.output.visualJob ?? persistedJob,
-      visualJobs: nextJobs,
-      shotJobs: nextJobs,
-      submittedShotCount: nextJobs.length,
-      providerPreflight: input.output.providerPreflight && typeof input.output.providerPreflight === "object" ? { ...(input.output.providerPreflight as Record<string, unknown>), providerJobCount: nextJobs.length, providerCostUnits: nextJobs.length } : input.output.providerPreflight,
-      shotQueue: { ...queue, status: nextJobs.length >= expected ? "queued_complete" : "queued", claimedShotIndex: null, nextShotIndex: nextJobs.length + 1 }
-    };
-    const update = await input.supabase.from("production_requests").update(safeUpdate({ output_json: outputWithWorkflow(input.production, nextOutput, {}), generation_status: "video_shot_queued", updated_at: new Date().toISOString() })).eq("id", input.production.id);
-    if (update.error) throw update.error;
-    const shotRecordUpdate = await input.supabase.from("production_shot_jobs").update({ status: "submitted", provider_job_id: String(persistedJob.id ?? ""), job_json: persistedJob, submitted_at: new Date().toISOString() }).eq("production_id", input.production.id).eq("shot_index", shotIndex);
-    if (shotRecordUpdate.error) throw shotRecordUpdate.error;
-    return { output: nextOutput, visualJobs: nextJobs, busy: false, failed: false };
-  } catch (error) {
-    const failedOutput = { ...claimedOutput, providerStatus: "provider_start_failed_partial", shotQueue: { ...queue, status: "failed", claimedShotIndex: null, failedShotIndex: shotIndex, failure: errorMessage(error, "MiniMax shot submission failed") } };
-    await input.supabase.from("production_requests").update(safeUpdate({ output_json: outputWithWorkflow(input.production, failedOutput, {}), generation_status: "provider_start_failed_partial", updated_at: new Date().toISOString() })).eq("id", input.production.id);
-    return { output: failedOutput, visualJobs: input.visualJobs, busy: false, failed: true };
-  }
-}
-
 async function maybeCreateVoiceoverAsset(productionId: string, output: Record<string, unknown>) {
   const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
   const wantsVoice = Boolean(selectedOptions.voiceOver || selectedOptions.voiceConsistency);
@@ -540,9 +476,6 @@ export async function POST(request: Request) {
           ? [output.visualJob]
           : [];
     let visualJobs = storedVisualJobs.filter((job) => job && typeof job === "object") as Record<string, any>[];
-    const queueAdvance = await advanceMiniMaxShotQueue({ supabase, production, output, visualJobs });
-    output = queueAdvance.output;
-    visualJobs = queueAdvance.visualJobs;
     const visualStatuses = (await Promise.all(visualJobs.map((job) => runProviderJobLifecycle(production, job)))).map((life) => life.normalizedStatus).filter(Boolean) as NonNullable<typeof visualStatus>[];
     const renderBridge = await maybeCreateRenderAfterVisualReady(productionId, output, visualStatus, visualStatuses);
 let outputWithRenderJob = renderBridge.renderJob
@@ -552,56 +485,11 @@ let outputWithRenderJob = renderBridge.renderJob
     : output;
     const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
     const renderStatus = renderLifecycle.normalizedStatus;
-    const targetDurationSeconds = Number(output.requestedDurationSeconds ?? (output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? (output.genericVideoPlan as Record<string, unknown>).durationSeconds : 5)) || 5;
-    const requiredShotCount = genericVideoShotCount(targetDurationSeconds);
-    const preflight = output.providerPreflight && typeof output.providerPreflight === "object" ? output.providerPreflight as Record<string, unknown> : {};
-    const expectedShotCount = Number(output.expectedShotCount ?? preflight.expectedShotCount ?? preflight.providerJobCount ?? requiredShotCount) || requiredShotCount;
-    const submittedShotCount = visualJobs.filter((job) => {
-      const id = String((job as Record<string, unknown>).id ?? "").trim();
-      return Boolean(id) && !id.startsWith("pending-");
-    }).length;
-    const shotGate = multiShotFinalGate({ targetDurationSeconds, visualStatuses, expectedJobCount: expectedShotCount, renderStatus });
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
     const terminalStatus = renderStatus?.status === "failed"
       ? renderStatus
       : visualStatuses.find((status) => status.status === "failed") ?? renderStatus ?? visualStatus;
-    if (shotGate.reason === "provider_start_failed_partial" || queueAdvance.failed) {
-      const partialMessage = `Provider shot start failed partially: expected ${expectedShotCount} independent 5-second jobs, but only ${submittedShotCount} real jobs were recorded. No additional provider request was opened.`;
-      const creditResolution = await refundReservedCreditsOnce(supabase, production, outputWithRenderJob, partialMessage);
-      const partialOutput = outputWithWorkflow(production, outputWithRenderJob, { providerStatus: "provider_start_failed_partial", generationStatus: "provider_start_failed_partial", partialOutput: true, expectedShotCount, submittedShotCount, shotJobs: visualJobs, visualJobs, finalVideoUrl: null, providerFinalUrl: null, creditResolution });
-      const { data } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_start_failed_partial", reserved_credits: 0, preview_url: null, delivery_link: null, output_json: partialOutput, admin_notes: partialMessage, error_message: partialMessage, updated_at: new Date().toISOString() })).eq("id", productionId).select("*").single();
-      return Response.json({ production: data, visualStatus, visualStatuses, renderStatus, finalVideoUrl: null, waitingForShots: false, partialOutput: true, provider_start_failed_partial: true, message: partialMessage });
-    }
-    if (shotGate.required && !shotGate.passed && requiredShotCount > 1) {
-      const shotProgress = visualStatuses.map((status, index) => ({ shot: index + 1, status: status.status, outputUrl: status.outputUrl ?? null, provider: status.provider, jobId: status.id ?? null }));
-      const waitingOutput = outputWithWorkflow(production, outputWithRenderJob, {
-        visualStatus,
-        visualStatuses: shotProgress,
-        shotJobs: visualJobs,
-        visualJobs,
-        expectedShotCount,
-        submittedShotCount,
-        renderStatus,
-        providerStatus: shotGate.reason === "waiting_for_all_shots" ? "waiting_for_all_shots" : "waiting_for_merged_render",
-        shotProgress: { completed: shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length, total: requiredShotCount, status: shotGate.reason },
-        finalVideoUrl: null,
-        providerFinalUrl: null
-      });
-      const { data } = await supabase.from("production_requests").update(safeUpdate({
-        status: "in_production",
-        automation_status: "running",
-        generation_status: shotGate.reason === "waiting_for_all_shots" ? "waiting_for_all_shots" : "waiting_for_merged_render",
-        preview_url: null,
-        delivery_link: null,
-        output_json: waitingOutput,
-        admin_notes: shotGate.reason === "waiting_for_all_shots"
-          ? `Waiting for all ${requiredShotCount} video shots before final merge (${shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length}/${requiredShotCount} ready).`
-          : "All video shots are ready; waiting for the merged final render.",
-        updated_at: new Date().toISOString()
-      })).eq("id", productionId).select("*").single();
-      return Response.json({ production: data, visualStatus, visualStatuses: shotProgress, renderStatus, shotProgress: { completed: shotProgress.filter((shot) => shot.status === "succeeded" && shot.outputUrl).length, total: requiredShotCount, status: shotGate.reason }, finalVideoUrl: null, waitingForShots: shotGate.reason === "waiting_for_all_shots", renderPending: shotGate.reason === "waiting_for_merged_render" });
-    }
     let characterDialoguePlan = outputWithRenderJob.characterDialoguePlan && typeof outputWithRenderJob.characterDialoguePlan === "object" ? outputWithRenderJob.characterDialoguePlan as Record<string, unknown> : null;
     let characterDialogueJobs = characterDialoguePlan && Array.isArray((characterDialoguePlan as Record<string, unknown>).providerJobs) ? (characterDialoguePlan as Record<string, unknown>).providerJobs as Array<Record<string, unknown>> : [];
     const hasBrokenDedicatedPlan = Boolean(characterDialoguePlan) && (characterDialogueJobs.filter((job) => job.stage === "scene_image").length === 0 || characterDialogueJobs.filter((job) => job.stage === "image_to_video").length === 0 || characterDialogueJobs.filter((job) => job.stage === "voice_segment").length === 0);

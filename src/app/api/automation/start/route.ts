@@ -9,7 +9,7 @@ import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-d
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
-import { createMiniMaxH3VideoShotTasks, createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { generateVideoThumbnail } from "@/lib/video-thumbnail";
 import { applyMarketingTextOverlay, createDeterministicLinkedInBanner } from "@/lib/image-postprocess";
@@ -30,7 +30,7 @@ import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy,
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
 import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
-import { isExplicitDroneRequest, resolveProductionRoute } from "@/lib/production-routing";
+import { isExplicitDroneRequest } from "@/lib/production-routing";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -395,7 +395,7 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
     ?? secondsFromValue(selected.output_duration)
     ?? secondsFromValue(selected.duration)
     ?? 15;
-  const targetDurationSeconds = Math.min(60, Math.max(5, Math.round(requestedDurationSeconds)));
+  const duration = Math.min(15, Math.max(5, Math.round(requestedDurationSeconds))) as 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
   const qualitySignal = `${String(selected.quality ?? selected.selectedQuality ?? selected.selected_quality ?? "")} ${JSON.stringify(selected)}`.toLowerCase();
   const resolution = /1080p\s*premium|premium\s*1080p|4k|2k/.test(qualitySignal) ? "2K" : "768P";
@@ -403,19 +403,15 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const providerPrompt = /nova\s*form|black\s*leather\s*(travel\s*)?bag/i.test(baseProviderPrompt)
     ? `${baseProviderPrompt}\n\nHard CTA requirement: show the exact readable on-screen text “Discover NOVA FORM.” including the final period in the closing hero shot. Do not omit or alter the period.`
     : baseProviderPrompt;
-  const results = await createMiniMaxH3VideoShotTasks({
-    targetDurationSeconds,
+  const result = await createMiniMaxH3VideoTask({
     content: [{ type: "text", text: providerPrompt }],
     resolution,
+    duration,
     ratio
   });
-  const visualJobs = results.map((result, index) => {
-    const task = miniMaxTaskRecord(result);
-    if (!task.taskId) throw new Error(`MiniMax Video Agent shot ${index + 1} did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-    return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, shotIndex: index + 1, prompt: providerPrompt, shotPrompt: `${providerPrompt}\nShot ${index + 1}/${results.length}: continue this segment as a distinct 5-second beat.`, requestedDurationSeconds: 5, payload: { model: "MiniMax-H3", content: providerPrompt, duration: 5, ratio, resolution }, raw: result });
-  });
-  if (visualJobs.length !== (targetDurationSeconds > 5 ? Math.ceil(targetDurationSeconds / 5) : 1)) throw new Error("MiniMax shot count did not match the requested duration.");
-  return { ...visualJobs[0], visualJobs, targetDurationSeconds };
+  const task = miniMaxTaskRecord(result);
+  if (!task.taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+  return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
@@ -543,6 +539,11 @@ export async function POST(request: Request) {
 
     const jobId = createAutomationJobId();
     const now = new Date().toISOString();
+  const hasRealProviderJob = (job: unknown) => {
+    if (!job || typeof job !== "object") return false;
+    const id = String((job as Record<string, unknown>).id ?? "").trim();
+    return Boolean(id) && !id.startsWith("pending-");
+  };
     const supabase = supabaseAdmin();
 
     const { data: currentProduction, error: currentError } = await selectProductionForAutomation(supabase, productionId);
@@ -630,9 +631,6 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     let productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
     const packageId = String(currentProduction?.package_id ?? "");
   const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
-  const preferredProvider = String(requestMetadata.preferredProvider ?? requestMetadata.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.preferredProvider ?? inputJson.selectedProviderService ?? inputJson.provider_service ?? existingOutput.preferredProvider ?? "").trim();
-  const resolvedRoute = resolveProductionRoute({ text: productionDetectionText, productionType, packageId, preferredProvider });
-  if (resolvedRoute.route === "normal_social_video_no_presenter") productionType = resolvedRoute.productionType;
 
   const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
   if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
@@ -652,9 +650,9 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     const providerPreflight = buildProviderPreflight({
       productionType,
       packageId,
-      requestMetadata: resolvedRoute.provider === "minimax" ? { ...requestMetadata, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : requestMetadata,
-      inputJson: resolvedRoute.provider === "minimax" ? { ...inputJson, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : inputJson,
-      videoProvider: resolvedRoute.provider ?? process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
+      requestMetadata,
+      inputJson,
+      videoProvider: process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
       replicateModel: process.env.REPLICATE_MODEL
     });
 const isDroneProduction = productionType === "drone_video";
@@ -764,17 +762,17 @@ if (talkingProviderType) {
   const startRequestedOutput = {
     ...existingOutput,
     automationMode: "fully_automatic",
-    automationStatus: "running",
+    automationStatus: "starting",
     providerStatus: "minimax_start_requested",
     requiredPipeline: "talking_lip_sync",
     jobId,
     currentStep: "HeyGen talking/lip-sync provider start requested",
     providerReadiness,
-    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "in_production", automation_status: "running", generation_status: "minimax_start_requested", output_json: { ...existingOutput, providerReadiness } })
+        workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "starting", generation_status: "minimax_start_requested", output_json: { ...existingOutput, providerReadiness } })
   };
   const { error: startRequestedError } = await supabase
     .from("production_requests")
-    .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_start_requested", output_json: startRequestedOutput, admin_notes: "Minimax talking/lip-sync start requested.", started_at: now, updated_at: now }))
+    .update(safeUpdate({ status: "queued", automation_status: "starting", generation_status: "minimax_start_requested", output_json: startRequestedOutput, admin_notes: "Provider start requested; waiting for a real provider job ID.", started_at: now, updated_at: now }))
     .eq("id", productionId);
   if (startRequestedError) throw new Error(`minimax_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
@@ -1405,21 +1403,13 @@ const clippingRun = requiredPipeline === "video_clipping"
         requestMetadata,
         inputJson,
           providerPreflight: { ...(providerPreflight as Record<string, unknown>), durationSeconds: requestedDuration },
-          deferMultiShot: String(providerPreflight.provider ?? "").toLowerCase() === "minimax" && requestedDuration > 5,
 
          selectedOptions
       })
        : null;
-    const expectedMiniMaxShots = String(providerPreflight.provider ?? "").toLowerCase() === "minimax" ? Math.ceil(requestedDuration / 5) : 0;
-    const submittedMiniMaxShots = genericRun?.visualJobs?.filter((job) => String(job?.id ?? "").trim() && !String(job.id).startsWith("pending-")).length ?? 0;
-    const expectedProviderShots = expectedMiniMaxShots || (genericRun?.visualJobs?.length ?? 0) || 1;
     const persistedProviderPreflight = {
       ...(providerPreflight as Record<string, unknown>),
-      expectedShotCount: expectedProviderShots,
-      submittedShotCount: submittedMiniMaxShots,
-      providerJobCount: submittedMiniMaxShots,
-      providerJobDurationSeconds: 5,
-      providerCostUnits: expectedMiniMaxShots > 0 ? submittedMiniMaxShots : 1
+      providerJobCount: Array.isArray(genericRun?.visualJobs) ? genericRun.visualJobs.length : genericRun?.visualJob ? 1 : 0
     };
     let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
     let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
@@ -1483,6 +1473,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
           ? "Drone visual provider job created. Voice/subtitle/final render routing is tracked in the drone chain. Poll /api/automation/status to update final output."
           : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
     : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
+    const providerStarted = hasRealProviderJob(visualJob) || hasRealProviderJob(renderJob);
     const outputJson: Record<string, unknown> = {
       ...musicVideoOutputBase,
        providerTestMode,
@@ -1500,7 +1491,6 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
         renderJob: clippingRun.renderJob
       } : null,
        genericVideoPlan: genericRun?.plan ?? null,
-       shotPlan: genericRun?.shotPlan ?? [],
         sourceContext: genericRun?.sourceContext ?? null,
        websiteScreenshotUrl: (genericRun?.sourceContext as Record<string, unknown> | undefined)?.screenshotUrl ?? null,
        musicVideoAudioUrl: productionType === "music_video" ? String((genericRun?.sourceContext as Record<string, unknown> | undefined)?.songAudioUrl ?? "").trim() || null : null,
@@ -1510,10 +1500,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       renderJob,
       visualJob,
        visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
-       shotJobs: clippingRun ? [] : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
-       shotQueue: expectedMiniMaxShots > 1 ? { provider: "minimax", durable: true, status: submittedMiniMaxShots === expectedMiniMaxShots ? "queued_complete" : "queued", expectedShotCount: expectedMiniMaxShots, nextShotIndex: submittedMiniMaxShots + 1, claimedShotIndex: null, requestedDurationSeconds: 5, idempotencyScope: "production_id:shot_index" } : null,
-       submittedShotCount: submittedMiniMaxShots,
-       expectedShotCount: expectedProviderShots,
+
       providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
       providerErrors: clippingRun ? {} : !genericRun && requiresSpecialPipeline ? { [requiredPipeline]: `${requiredPipeline} requires its dedicated production pipeline and cannot be auto-delivered by the generic prompt-to-video pipeline.` } : genericRun?.providerErrors ?? {},
       requiredPipeline,
@@ -1532,13 +1519,13 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
         const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
         .update({
-          status: visualJob || renderJob ? "in_production" : "queued",
-          generation_status: visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "waiting_provider_config",
+           status: providerStarted ? "in_production" : "queued",
+           generation_status: providerStarted ? visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "render_job_created" : "waiting_provider_config",
           preview_url: visualJob || renderJob ? undefined : null,
           delivery_link: visualJob || renderJob ? undefined : null,
           delivery_zip_url: visualJob || renderJob ? undefined : null,
           readme_url: visualJob || renderJob ? undefined : null,
-          output_json: { ...outputJson, automationStatus: visualJob || renderJob ? "running" : "waiting_provider_config", providerStatus: visualJob || renderJob ? "provider_started" : "waiting_provider_config", previewUrl: visualJob || renderJob ? outputJson.previewUrl : null, deliveryLink: visualJob || renderJob ? outputJson.deliveryLink : null, deliveryZipUrl: visualJob || renderJob ? outputJson.deliveryZipUrl : null, readmeUrl: visualJob || renderJob ? outputJson.readmeUrl : null },
+           output_json: { ...outputJson, automationStatus: providerStarted ? "running" : "waiting_provider_config", providerStatus: providerStarted ? "provider_started" : "waiting_provider_config", previewUrl: providerStarted ? outputJson.previewUrl : null, deliveryLink: providerStarted ? outputJson.deliveryLink : null, deliveryZipUrl: providerStarted ? outputJson.deliveryZipUrl : null, readmeUrl: providerStarted ? outputJson.readmeUrl : null },
           admin_notes: providerNote,
           updated_at: new Date().toISOString()
         })
@@ -1547,7 +1534,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       .single();
 
     if (demoError) throw demoError;
-    return Response.json({ job_id: jobId, production: demoProduction, provider_started: Boolean(visualJob || renderJob), provider_job: visualJob || renderJob || null, waiting_provider_config: !visualJob && !renderJob });
+    return Response.json({ job_id: jobId, production: demoProduction, provider_started: providerStarted, provider_job: providerStarted ? visualJob || renderJob : null, waiting_provider_config: !providerStarted });
   } catch (error) {
     const failureMessage = errorMessage(error, "Could not start automation job");
     console.error("Internal Crash Log:", failureMessage, error);
