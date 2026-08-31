@@ -147,7 +147,7 @@ const imageAspectRatioOptions = ["Portrait 4:5", "Square 1:1", "Story 9:16", "La
 const sharedVideoQuality = ["1080p", "1080p premium", "4K"];
 const sharedVideoFormat = ["Vertical 9:16", "Horizontal 16:9", "Square 1:1", "YouTube 16:9"];
 const sharedVideoDuration = ["15 sec", "30 sec", "45 sec", "60 sec", "10 sec", "2 min", "3 min", "5 min"];
-const minimaxVideoDuration = ["Auto", "15sec", "30sec", "1min", "2min", "3min"];
+const minimaxVideoDuration = ["5sec", "Auto", "15sec", "30sec", "1min", "2min", "3min"];
 const sharedVoiceOptions = ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Child voice", "Senior voice", "Own voice-over", "Choose AI voice", "Create AI voice"];
 const sharedSubtitleOptions = ["No subtitles", "Auto subtitles", "Burned subtitles", "Subtitle file", "Large social captions"];
 const sharedMotionOptions = ["Dynamic transitions", "Fast cuts", "Smooth zooms", "Swipe transitions", "Animated text overlays", "UI overlays", "Strong opening hook", "Final CTA", "Energetic social pacing", "Premium clean pacing"];
@@ -779,7 +779,7 @@ function requestedDurationOption(options: string[], text: string) {
     ?? text.match(/\b(?:create|make|generate|produce|hazırla|hazirla|oluştur|olustur|yap)[^.!?]{0,80}\b(\d+)[-\s]*(?:sn|saniye|saniyelik|sec|second|seconds|s)\b/);
   const value = Number(overall?.[1]);
   if (Number.isFinite(value) && value > 0) {
-    const exact = options.find((option) => new RegExp(`\b${value}\s*sec\b`, "i").test(option));
+    const exact = options.find((option) => new RegExp(`\\b${value}\\s*sec\\b`, "i").test(option));
     if (exact) return exact;
     const secondOptions = options
       .map((option) => ({ option, seconds: Number(option.match(/(\d+)\s*sec/i)?.[1] ?? 0) }))
@@ -1138,10 +1138,10 @@ function optionCredit(option: string, group: SetupGroup) {
   if (/3 min|3 dakika|3 dk/.test(item)) return Math.round(base * 5.5);
   if (/1080p premium|premium/.test(item)) return Math.round(base * 3.5);
   if (/10 clips|5 alternatives|custom|\$2499/.test(item)) return Math.round(base * 4);
-  if (/60 sec|60 saniye|2 min|2 dakika|multiple characters|separate voice|own voice|ai voice|lip-sync|background music|subtitles|subtitle|thumbnail/.test(item)) return Math.round(base * 2.5);
-  if (/1080p|30 sec|30 saniye|45 sec|45 saniye|5 clips|source code|expo source|final zip|readme|deployment guide/.test(item)) return Math.round(base * 1.6);
-  if (/10 sec|10 saniye|15 sec|15 saniye|3 clips|png\/jpg/.test(item)) return Math.round(base * 1.05);
-  if (/5 sec|5 saniye|1 visual|dashboard delivery/.test(item)) return Math.round(base * 0.55);
+  if (/60\s*sec|60 saniye|2 min|2 dakika|multiple characters|separate voice|own voice|ai voice|lip-sync|background music|subtitles|subtitle|thumbnail/.test(item)) return Math.round(base * 2.5);
+  if (/1080p|30\s*sec|30 saniye|45\s*sec|45 saniye|5 clips|source code|expo source|final zip|readme|deployment guide/.test(item)) return Math.round(base * 1.6);
+  if (/10\s*sec|10 saniye|15\s*sec|15 saniye|3 clips|png\/jpg/.test(item)) return Math.round(base * 1.05);
+  if (/\b5\s*sec\b|5 saniye|1 visual|dashboard delivery/.test(item)) return Math.round(base * 0.55);
   return group.multi ? Math.round(base * 1.3) : Math.round(base * 1.1);
 }
 

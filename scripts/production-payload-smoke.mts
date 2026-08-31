@@ -110,6 +110,28 @@ assertEqual(animePayload.production_type, "anime_short_film", "anime production_
 assertEqual(animePayload.workflow_mode, "media", "anime workflow_mode");
 assertEqual(animePayload.selected_material_ids[0], "clipora-social-brand-pack", "anime selected material");
 
+const smokeVideoSelection = {
+  input: "5 saniyelik MiniMax smoke video üret",
+  selectedStyle: "Product demo",
+  selectedQuality: "1080p",
+  selectedDuration: "5sec",
+  selectedModules: ["Prompt-to-video"],
+  selectedFeatures: ["Final MP4"],
+  selectedPlatforms: ["Dashboard delivery"],
+  selectedMaterials: [],
+  quickProviderTest: false
+};
+const smokeVideoPayload = buildAssistantProductionPayload({
+  ...smokeVideoSelection,
+  productionType: "video",
+  packageId: "video_premium",
+  prompt: smokeVideoSelection.input,
+  optionSummary: "Duration: 5sec",
+  userId: "user-1",
+  userEmail: "user@example.com"
+});
+assertEqual(smokeVideoPayload.output_duration_seconds, 5, "5sec payload duration");
+
 const watermarkSelection = {
   input: "Görselden video üret ve filigransız final teslim et",
   selectedStyle: "Cinematic",

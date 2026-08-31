@@ -900,6 +900,9 @@ function minimumForInput(input: CreditEstimateInput) {
 }
 
 const durationSeconds: Record<string, number> = {
+  "5sec": 5,
+  "5 sec": 5,
+  "5 seconds": 5,
   "15 seconds": 15,
   "30 seconds": 30,
   "45 seconds": 45,

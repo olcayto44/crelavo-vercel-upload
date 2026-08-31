@@ -29,6 +29,16 @@ assertEqual(projectPreflight.durationSeconds, 0, "project duration");
 assertEqual(projectPreflight.aspectRatio, "responsive", "project aspectRatio");
 assertEqual(projectPreflight.testMode, false, "project testMode");
 
+const shortVideoPreflight = buildProviderPreflight({
+  productionType: "video",
+  requestMetadata: { selectedDuration: "5sec", providerTestMode: false },
+  inputJson: {},
+  videoProvider: "minimax"
+});
+
+assertEqual(shortVideoPreflight.provider, "minimax", "short video provider");
+assertEqual(shortVideoPreflight.durationSeconds, 5, "short video duration is not clamped to 15");
+
 const videoPreflight = buildProviderPreflight({
   productionType: "video",
   requestMetadata: { ecommerceContext: { targetDurationSeconds: 15 } },
@@ -51,10 +61,18 @@ process.env.MINIMAX_API_KEY = "smoke-test-key";
 process.env.MINIMAX_GROUP_ID = "smoke-test-group";
 process.env.VIDEO_PROVIDER = "minimax";
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async () => new Response(JSON.stringify({ data: { task_id: "smoke-task-1", status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
-const normalVideoJob = await createVisualVideo({ productionId: "smoke-normal-video", scenes: ["Product hook"], productImageUrls: [], durationSeconds: 15, provider: "minimax", aspectRatio: "9:16" });
+let minimaxRequestBody: Record<string, unknown> | null = null;
+let minimaxRequestCount = 0;
+globalThis.fetch = (async (_input, init) => {
+  minimaxRequestCount += 1;
+  minimaxRequestBody = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
+  return new Response(JSON.stringify({ data: { task_id: "smoke-task-1", status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } });
+}) as typeof fetch;
+const normalVideoJob = await createVisualVideo({ productionId: "smoke-normal-video", scenes: ["Product hook"], productImageUrls: [], durationSeconds: 5, provider: "minimax", aspectRatio: "9:16" });
 assertEqual(normalVideoJob.provider, "minimax", "normal MiniMax invocation provider");
 assertEqual(normalVideoJob.id, "smoke-task-1", "nested MiniMax task id");
+assertEqual(minimaxRequestCount, 1, "5sec normal mode opens one MiniMax job");
+assertEqual(minimaxRequestBody?.duration, 5, "normal MiniMax request duration");
 globalThis.fetch = (async () => new Response(JSON.stringify({ data: { status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
 let noJobFailure = "";
 try {
