@@ -155,7 +155,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     metadataObject(requestMetadata.ecommerceContext).targetDurationSeconds,
     metadataObject(inputJson.ecommerceContext).targetDurationSeconds
   );
-  const requestedDuration = providerTestMode ? Math.max(5, explicitDuration || 5) : Math.max(15, explicitDuration || 15);
+  const requestedDuration = Math.min(60, Math.max(5, explicitDuration || 5));
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
   const routeText = `${input.productionType} ${input.packageId ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
   const socialNoPresenterRoute = isNoPresenterSocialVideoRequest(routeText, input.productionType, input.packageId);
@@ -190,6 +190,9 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     provider: videoProvider,
     model: videoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : videoProvider === "minimax" ? "MiniMax-H3" : videoProvider,
     durationSeconds: requestedDuration,
+    providerJobCount: requestedDuration > 5 ? Math.ceil(requestedDuration / 5) : 1,
+    providerJobDurationSeconds: 5,
+    providerCostUnits: requestedDuration > 5 ? Math.ceil(requestedDuration / 5) : 1,
     aspectRatio,
     testMode: providerTestMode,
     selectedOptions: { ...featureFlags, outputIntent, sourceHandling },

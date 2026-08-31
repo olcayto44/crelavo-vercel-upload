@@ -52,6 +52,19 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
   return postgresSafe(payload);
 }
 
+async function refundReservedCreditsOnce(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, output: Record<string, unknown>, note: string) {
+  const existing = output.creditResolution && typeof output.creditResolution === "object" ? output.creditResolution as Record<string, unknown> : null;
+  if (String(existing?.status ?? "").startsWith("refunded_reserved")) return existing;
+  const amount = Number(production.reserved_credits ?? 0) || 0;
+  if (!amount || !production.user_id) return existing;
+  const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).maybeSingle();
+  if (!balanceRow) return existing;
+  const creditResolution = { status: "refunded_reserved", refundedCredits: amount, releasedReservedCredits: amount, resolvedAt: new Date().toISOString(), reason: "provider_start_failed_partial" };
+  await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
+  return creditResolution;
+}
+
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return stripPostgresUnsafeText(error.message);
   if (error && typeof error === "object") {
@@ -464,12 +477,19 @@ let outputWithRenderJob = renderBridge.renderJob
     const renderStatus = renderLifecycle.normalizedStatus;
     const targetDurationSeconds = Number(output.requestedDurationSeconds ?? (output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? (output.genericVideoPlan as Record<string, unknown>).durationSeconds : 5)) || 5;
     const requiredShotCount = genericVideoShotCount(targetDurationSeconds);
-    const shotGate = multiShotFinalGate({ targetDurationSeconds, visualStatuses, renderStatus });
+    const shotGate = multiShotFinalGate({ targetDurationSeconds, visualStatuses, expectedJobCount: visualJobs.length, renderStatus });
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
     const terminalStatus = renderStatus?.status === "failed"
       ? renderStatus
       : visualStatuses.find((status) => status.status === "failed") ?? renderStatus ?? visualStatus;
+    if (shotGate.reason === "provider_start_failed_partial") {
+      const partialMessage = `Provider shot start failed partially: expected ${requiredShotCount} independent 5-second jobs, but only ${visualJobs.length} real jobs were recorded. No additional provider request was opened.`;
+      const creditResolution = await refundReservedCreditsOnce(supabase, production, outputWithRenderJob, partialMessage);
+      const partialOutput = outputWithWorkflow(production, outputWithRenderJob, { providerStatus: "provider_start_failed_partial", generationStatus: "provider_start_failed_partial", partialOutput: true, finalVideoUrl: null, providerFinalUrl: null, creditResolution });
+      const { data } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_start_failed_partial", reserved_credits: 0, preview_url: null, delivery_link: null, output_json: partialOutput, admin_notes: partialMessage, error_message: partialMessage, updated_at: new Date().toISOString() })).eq("id", productionId).select("*").single();
+      return Response.json({ production: data, visualStatus, visualStatuses, renderStatus, finalVideoUrl: null, waitingForShots: false, partialOutput: true, provider_start_failed_partial: true, message: partialMessage });
+    }
     if (shotGate.required && !shotGate.passed && requiredShotCount > 1) {
       const shotProgress = visualStatuses.map((status, index) => ({ shot: index + 1, status: status.status, outputUrl: status.outputUrl ?? null, provider: status.provider, jobId: status.id ?? null }));
       const waitingOutput = outputWithWorkflow(production, outputWithRenderJob, {

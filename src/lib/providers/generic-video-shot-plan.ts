@@ -1,6 +1,7 @@
 export type GenericVideoShot = {
   index: number;
   prompt: string;
+  requestedDurationSeconds: 5;
 };
 
 export function genericVideoShotCount(targetDurationSeconds: number) {
@@ -14,7 +15,7 @@ export function buildGenericVideoShotPlan(scenes: string[], targetDurationSecond
   const fallback = sourceScenes[0] || "Continue the planned visual story with a distinct product-focused beat.";
   return Array.from({ length: count }, (_, index) => {
     const scene = sourceScenes[index] || `${fallback} Continue with distinct segment ${index + 1}, advancing the visual story without repeating the previous shot.`;
-    return { index: index + 1, prompt: scene };
+    return { index: index + 1, prompt: scene, requestedDurationSeconds: 5 };
   });
 }
 
@@ -25,10 +26,13 @@ export function orderedReadyShotUrls(statuses: Array<{ status?: string | null; o
 export function multiShotFinalGate(input: {
   targetDurationSeconds: number;
   visualStatuses: Array<{ status?: string | null; outputUrl?: string | null }>;
+  expectedJobCount?: number;
   renderStatus?: { status?: string | null; outputUrl?: string | null } | null;
 }) {
   const shotCount = genericVideoShotCount(input.targetDurationSeconds);
-  if (shotCount === 1) return { required: false, passed: Boolean(input.renderStatus?.outputUrl || input.visualStatuses[0]?.outputUrl), reason: "single_shot" };
+  if (shotCount === 1) return { required: false, passed: Boolean(input.renderStatus?.outputUrl || input.visualStatuses[0]?.outputUrl), reason: "single_shot" } as const;
+  const actualJobCount = input.expectedJobCount ?? input.visualStatuses.length;
+  if (actualJobCount !== shotCount) return { required: true, passed: false, reason: "provider_start_failed_partial" } as const;
   const allVisualsReady = input.visualStatuses.length === shotCount
     && input.visualStatuses.every((status) => status.status === "succeeded" && Boolean(status.outputUrl));
   const renderReady = input.renderStatus?.status === "succeeded" && Boolean(input.renderStatus.outputUrl);
@@ -36,5 +40,5 @@ export function multiShotFinalGate(input: {
     required: true,
     passed: allVisualsReady && renderReady,
     reason: !allVisualsReady ? "waiting_for_all_shots" : !renderReady ? "waiting_for_merged_render" : "ready"
-  };
+  } as const;
 }

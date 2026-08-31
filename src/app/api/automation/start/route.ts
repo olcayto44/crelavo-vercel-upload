@@ -9,7 +9,7 @@ import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-d
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
-import { createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoShotTasks, createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { generateVideoThumbnail } from "@/lib/video-thumbnail";
 import { applyMarketingTextOverlay, createDeterministicLinkedInBanner } from "@/lib/image-postprocess";
@@ -395,9 +395,7 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
     ?? secondsFromValue(selected.output_duration)
     ?? secondsFromValue(selected.duration)
     ?? 15;
-  const testMode = Boolean(selected.testMode ?? selected.test_mode);
-  const minimumDuration = testMode ? 5 : 15;
-  const duration = Math.min(15, Math.max(minimumDuration, Math.round(requestedDurationSeconds))) as 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+  const targetDurationSeconds = Math.min(60, Math.max(5, Math.round(requestedDurationSeconds)));
   const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
   const qualitySignal = `${String(selected.quality ?? selected.selectedQuality ?? selected.selected_quality ?? "")} ${JSON.stringify(selected)}`.toLowerCase();
   const resolution = /1080p\s*premium|premium\s*1080p|4k|2k/.test(qualitySignal) ? "2K" : "768P";
@@ -405,15 +403,19 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
   const providerPrompt = /nova\s*form|black\s*leather\s*(travel\s*)?bag/i.test(baseProviderPrompt)
     ? `${baseProviderPrompt}\n\nHard CTA requirement: show the exact readable on-screen text “Discover NOVA FORM.” including the final period in the closing hero shot. Do not omit or alter the period.`
     : baseProviderPrompt;
-  const result = await createMiniMaxH3VideoTask({
+  const results = await createMiniMaxH3VideoShotTasks({
+    targetDurationSeconds,
     content: [{ type: "text", text: providerPrompt }],
     resolution,
-    duration,
     ratio
   });
-  const task = miniMaxTaskRecord(result);
-  if (!task.taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
+  const visualJobs = results.map((result, index) => {
+    const task = miniMaxTaskRecord(result);
+    if (!task.taskId) throw new Error(`MiniMax Video Agent shot ${index + 1} did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+    return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, shotIndex: index + 1, shotPrompt: `${providerPrompt}\nShot ${index + 1}/${results.length}: continue this segment as a distinct 5-second beat.`, requestedDurationSeconds: 5, payload: { model: "MiniMax-H3", content: providerPrompt, duration: 5, ratio, resolution }, raw: result });
+  });
+  if (visualJobs.length !== (targetDurationSeconds > 5 ? Math.ceil(targetDurationSeconds / 5) : 1)) throw new Error("MiniMax shot count did not match the requested duration.");
+  return { ...visualJobs[0], visualJobs, targetDurationSeconds };
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
@@ -826,7 +828,9 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
         heygenAgentArtifacts: [],
         latestHeyGenVideoArtifact: null,
         visualJob: { provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw },
-        visualJobs: [{ provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw }],
+         visualJobs: "visualJobs" in providerJob && Array.isArray(providerJob.visualJobs)
+           ? providerJob.visualJobs
+           : [{ provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw }],
         creativeActivityLog: mergeCreativeActivityLog(existingOutput.creativeActivityLog ?? requestMetadata.creativeActivityLog ?? inputJson.creativeActivityLog, [
           creativeActivityItem("provider-job", "Provider job", "working", providerJob.provider === "heygen_video_agent" ? `HeyGen Video Agent session created: ${providerJob.id}` : `HeyGen talking provider job created: ${providerJob.id}`, providerJob.provider),
           creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", providerJob.provider),
@@ -1404,7 +1408,11 @@ const clippingRun = requiredPipeline === "video_clipping"
 
         selectedOptions
       })
-      : null;
+       : null;
+    const expectedMiniMaxShots = String(providerPreflight.provider ?? "").toLowerCase() === "minimax" && requestedDuration > 5 ? Math.ceil(requestedDuration / 5) : 0;
+    if (expectedMiniMaxShots > 0 && genericRun && (genericRun.visualJobs?.length ?? 0) !== expectedMiniMaxShots) {
+      throw new Error(`provider_start_failed_partial: expected ${expectedMiniMaxShots} independent 5-second MiniMax jobs, received ${genericRun.visualJobs?.length ?? 0}.`);
+    }
     let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
     let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
      if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {

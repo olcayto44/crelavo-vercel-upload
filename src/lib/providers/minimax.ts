@@ -1,5 +1,5 @@
-import { optionalEnv, optionalProviderEnv, requireProviderEnv } from "./env";
-import { ProviderConfigError } from "./types";
+import { optionalEnv, optionalProviderEnv, requireProviderEnv } from "./env.ts";
+import { ProviderConfigError } from "./types.ts";
 
 export type MiniMaxReadiness = {
   provider: "minimax";
@@ -160,6 +160,21 @@ export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
       ...input
     })
   });
+}
+
+export async function createMiniMaxH3VideoShotTasks(
+  input: Omit<MiniMaxH3CreateInput, "duration"> & { targetDurationSeconds: number },
+  createTask: (shot: MiniMaxH3CreateInput) => Promise<MiniMaxH3CreateResponse> = createMiniMaxH3VideoTask
+) {
+  const targetDurationSeconds = Math.max(5, Math.round(Number(input.targetDurationSeconds) || 5));
+  const { targetDurationSeconds: _ignored, ...shotInput } = input;
+  const shotCount = targetDurationSeconds > 5 ? Math.ceil(targetDurationSeconds / 5) : 1;
+  const jobs: MiniMaxH3CreateResponse[] = [];
+  for (let index = 0; index < shotCount; index += 1) {
+    const content = shotInput.content.map((item) => item.type === "text" ? { ...item, text: `${item.text}\nShot ${index + 1}/${shotCount}: continue this segment as a distinct 5-second beat.` } : item);
+    jobs.push(await createTask({ ...shotInput, content, duration: 5 }));
+  }
+  return jobs;
 }
 
 export async function queryMiniMaxH3VideoTask(taskId: string) {
