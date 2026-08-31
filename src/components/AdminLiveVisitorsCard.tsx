@@ -120,9 +120,9 @@ export function AdminLiveVisitorsCard() {
             </div>
             <div className="provider-job-list" style={{ marginTop: 10 }}>
               {page.sessions.map((session) => (
-                <div className="provider-job-chip active" key={session.sessionId}>
-                  <strong>{session.ip}</strong>
-                  <span>{session.country || "Unknown"} · {session.title || "Untitled page"}</span>
+                <div className="provider-job-chip active live-visitor-session" key={session.sessionId}>
+                  <strong className="live-visitor-ip">{session.ip}</strong>
+                  <span className="live-visitor-page">{session.country || "Unknown"} · {session.title || "Untitled page"}</span>
                   <small>Last seen: {timeLabel(session.lastSeenAt)}</small>
                   {session.utmSource || session.utmMedium ? <small>Source / medium: {session.utmSource || "direct"} / {session.utmMedium || "none"}</small> : null}
                   {session.utmCampaign ? <small>Campaign utm: {session.utmCampaign}</small> : null}
