@@ -7,6 +7,7 @@ export type LiveVisitorRecord = {
   title: string;
   referrer: string;
   userAgent: string;
+  maskedEmail?: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -89,8 +90,9 @@ export function recordLiveVisitor(input: {
   url?: string;
   title?: string;
   referrer?: string;
-  userAgent?: string;
-  utmSource?: string;
+    userAgent?: string;
+    maskedEmail?: string;
+    utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
   utmTerm?: string;
@@ -115,6 +117,7 @@ export function recordLiveVisitor(input: {
     title: sanitizeText(input.title, "Untitled page") || "Untitled page",
     referrer: sanitizeText(input.referrer),
     userAgent: sanitizeText(input.userAgent),
+    maskedEmail: sanitizeText(input.maskedEmail, existing?.maskedEmail),
     utmSource: sanitizeText(input.utmSource, existing?.utmSource),
     utmMedium: sanitizeText(input.utmMedium, existing?.utmMedium),
     utmCampaign: sanitizeText(input.utmCampaign, existing?.utmCampaign),
@@ -160,6 +163,7 @@ export function getLiveVisitorSnapshot() {
           title: record.title,
           referrer: record.referrer,
           userAgent: record.userAgent,
+          maskedEmail: record.maskedEmail,
           utmSource: record.utmSource,
           utmMedium: record.utmMedium,
           utmCampaign: record.utmCampaign,

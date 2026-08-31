@@ -8,6 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
 import { buildWhopCreditReconciliation } from "@/lib/whop-reconciliation";
 import { previewLimitForPlan } from "@/lib/billing-entitlements";
+import { recordWhopAnalytics } from "@/lib/whop-analytics";
 
 type WhopObject = Record<string, unknown>;
 
@@ -485,6 +486,7 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   const billingReason = paymentBillingReason(payment);
   const status = paymentStatus(payment) || membershipStatus(payment);
   const profile = email ? await profileByEmail(email, name) : null;
+  await recordWhopAnalytics({ eventId: webhookId, eventType: event, paymentId: paymentReference, membershipId: membershipReference, customerId: providerCustomerId(payment), planId, productId: mappedPlan?.productId, userId: profile?.id, amount: product ? inferWhopAmountUsd(amount, product, mappedPlan?.billing ?? "monthly") : amount, currency: paymentCurrency(payment), status: status || "paid", billingReason }).catch(() => undefined);
   if (profile) {
     await supabaseAdmin().from("profiles").update({ billing_status: "active", billing_failed_at: null, billing_restricted_at: null, billing_update_url: updatePaymentUrl(payment) || null, payment_provider_customer_id: providerCustomerId(payment) || undefined, normalized_email: email }).eq("id", profile.id);
     await supabaseAdmin().from("credit_balances").update({ subscription_status: "active", updated_at: new Date().toISOString() }).eq("user_id", profile.id);
@@ -652,6 +654,7 @@ async function handleAttentionEvent(event: string, payment: WhopObject, webhookI
 
   const mappedPlan = whopProductForPlanId(planId);
   const product = mappedPlan ? findPaymentProduct(mappedPlan.productId) : null;
+  await recordWhopAnalytics({ eventId: webhookId, eventType: event, paymentId: paymentId(payment), membershipId: membershipId(payment), customerId: providerCustomerId(payment), planId, productId: mappedPlan?.productId, userId: profile?.id, amount: product ? inferWhopAmountUsd(paymentAmount(payment), product, mappedPlan?.billing ?? "monthly") : paymentAmount(payment), currency: paymentCurrency(payment), status: event === "membership.deactivated" ? "deactivated" : paymentStatus(payment) || membershipStatus(payment) || event, billingReason: paymentBillingReason(payment) }).catch(() => undefined);
   const creditClearResult = event === "membership.deactivated" ? await clearCreditsAfterMembershipEnd(payment).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "credit_clear_failed" })) : null;
 
   const emailResult = await sendAdminPaymentNotificationEmail({

@@ -34,8 +34,19 @@ type DashboardMetrics = {
   todayRevenueAvailable: boolean;
   activeUsersNow: number;
   activeUsersNowAvailable: boolean;
+  activeVisitorsNow?: number;
   activeUsersTrackingConfigured: boolean;
   activeWindowSeconds: number;
+  acquisitionBillingAvailable?: boolean;
+  dailyUniqueVisitors?: number | null;
+  totalUniqueVisitors?: number | null;
+  checkoutStartedToday?: number | null;
+  checkoutStartedTotal?: number | null;
+  paidUsersToday?: number | null;
+  paidUsersTotal?: number | null;
+  activeSubscribers?: number | null;
+  trialingSubscribers?: number | null;
+  planBreakdown?: Record<string, number> | null;
 };
 
 function money(value: number) {
@@ -104,8 +115,15 @@ export function AdminNotificationBell() {
       <div className="admin-kpi-strip" aria-label="Daily admin metrics">
         <div><span>Daily new members</span><strong>{metricsMode === "loading" ? "..." : metricValue(Boolean(metrics?.dailyNewMembersAvailable), metrics?.dailyNewMembers ?? 0)}</strong><small>UTC day</small></div>
         <div><span>Today revenue</span><strong>{metricsMode === "loading" ? "..." : metrics?.todayRevenueAvailable ? money(metrics.todayRevenue) : "N/A"}</strong><small>Confirmed payment events</small></div>
-        <div><span>Active users now</span><strong>{metricsMode === "loading" ? "..." : metrics?.activeUsersTrackingConfigured ? metricValue(Boolean(metrics.activeUsersNowAvailable), metrics.activeUsersNow) : "N/A"}</strong><small>{metrics?.activeUsersTrackingConfigured ? `Last ${metrics.activeWindowSeconds}s` : "Tracking not configured"}</small></div>
+        <div><span>Active visitors now</span><strong>{metricsMode === "loading" ? "..." : metrics?.activeVisitorsNow ?? "N/A"}</strong><small>Live snapshot</small></div>
       </div>
+      <div className="admin-kpi-strip" aria-label="Acquisition and billing metrics">
+        <div><span>Unique visitors</span><strong>{metrics?.acquisitionBillingAvailable ? `${metrics.dailyUniqueVisitors ?? 0} / ${metrics.totalUniqueVisitors ?? 0}` : "N/A"}</strong><small>Today / total</small></div>
+        <div><span>Checkout starts</span><strong>{metrics?.acquisitionBillingAvailable ? `${metrics.checkoutStartedToday ?? 0} / ${metrics.checkoutStartedTotal ?? 0}` : "N/A"}</strong><small>Today / total</small></div>
+        <div><span>Paid users</span><strong>{metrics?.acquisitionBillingAvailable ? `${metrics.paidUsersToday ?? 0} / ${metrics.paidUsersTotal ?? 0}` : "N/A"}</strong><small>Today / total</small></div>
+        <div><span>Subscribers</span><strong>{metrics?.acquisitionBillingAvailable ? metrics.activeSubscribers ?? 0 : "N/A"}</strong><small>{metrics?.trialingSubscribers ?? 0} trialing</small></div>
+      </div>
+      {metrics?.acquisitionBillingAvailable && metrics.planBreakdown ? <p style={{ marginTop: 10 }}>Plans: {Object.entries(metrics.planBreakdown).map(([plan, count]) => `${plan} (${count})`).join(" · ") || "None"}</p> : null}
       <div className="admin-notification-head">
         <span className="badge">Notifications</span>
         <strong>{mode === "loading" ? "..." : hasAlerts ? `${state.total} new` : "Clear"}</strong>

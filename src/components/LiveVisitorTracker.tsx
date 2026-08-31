@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase";
 
 const SESSION_KEY = "clipora_live_session_id";
 const ATTRIBUTION_KEY = "clipora_attribution";
@@ -79,19 +80,23 @@ export function LiveVisitorTracker() {
 
     async function sendHeartbeat() {
       if (cancelled || document.visibilityState === "hidden") return;
-      const query = searchParams?.toString();
-      const path = `${pathname || "/"}${query ? `?${query}` : ""}`;
+      const path = (pathname || "/").split("?")[0].slice(0, 500) || "/";
       const attribution = captureAttribution(searchParams, path);
+      const { data: sessionData } = await supabaseBrowser().auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       await fetch("/api/analytics/heartbeat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
         body: JSON.stringify({
           sessionId,
           path,
-          url: window.location.href,
-          title: document.title,
-          referrer: document.referrer,
-          ...attribution
+          title: document.title.slice(0, 200),
+          referrer: document.referrer.slice(0, 500),
+          ...attribution,
+          landingUrl: attribution.landingUrl.split("?")[0].slice(0, 500)
         }),
         keepalive: true
       }).catch(() => undefined);

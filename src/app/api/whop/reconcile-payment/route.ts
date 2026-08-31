@@ -3,6 +3,7 @@ import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
 import { supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
+import { recordWhopAnalytics } from "@/lib/whop-analytics";
 
 type WhopObject = Record<string, unknown>;
 type Product = NonNullable<ReturnType<typeof findPaymentProduct>>;
@@ -296,6 +297,8 @@ export async function POST(request: Request) {
     const email = customerEmail(payment);
     const name = customerName(payment);
     const membershipReference = membershipId(payment);
+    const analyticsProfile = email ? await profileByEmail(email, name) : null;
+    await recordWhopAnalytics({ eventId: `reconcile:${resolvedPaymentId}`, eventType: "checkout_complete_fallback", paymentId: resolvedPaymentId, membershipId: membershipReference, customerId: firstString(payment.customer_id, payment.customerId), planId, productId: mappedPlan?.productId, userId: analyticsProfile?.id, amount: paymentAmount(payment), currency: paymentCurrency(payment), status: paymentStatus(payment) || paymentSubstatus(payment) || "paid", billingReason: paymentBillingReason(payment) }).catch(() => undefined);
 
     const adminNotificationInput = {
       eventType: "checkout_complete_fallback",

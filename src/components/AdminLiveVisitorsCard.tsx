@@ -18,6 +18,7 @@ type LiveVisitorPage = {
     title: string;
     referrer: string;
     userAgent: string;
+    maskedEmail?: string;
     utmSource: string;
     utmMedium: string;
     utmCampaign: string;
@@ -146,7 +147,7 @@ export function AdminLiveVisitorsCard() {
             <div className="provider-job-list" style={{ marginTop: 10 }}>
               {page.sessions.map((session) => (
                 <div className="provider-job-chip active live-visitor-session" key={session.sessionId}>
-                  <strong className="live-visitor-ip">{session.ip}</strong>
+                  <strong className="live-visitor-ip">{session.maskedEmail || "Anonymous"}</strong>
                   <span className="live-visitor-page">{session.country || "Unknown"} · {session.title || "Untitled page"}</span>
                   <small className="live-visitor-source">Traffic source: {trafficSourceLabel(session)}</small>
                   <small>Last seen: {timeLabel(session.lastSeenAt)}</small>
