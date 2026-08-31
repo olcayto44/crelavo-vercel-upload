@@ -591,7 +591,7 @@ function imageAspectRatioFromPrompt(text: string, options: string[]) {
 }
 
 function ecommercePresetSetup(setup: ProductionSetupState, hint = "", productionType = "") {
-  if (isImageProductionType(productionType)) return setup;
+  if (productionType !== "ecommerce") return setup;
   if (!/ecommerce|e-commerce|online\s+store|storefront|shopify|woocommerce|cart|checkout|product\s+catalog/i.test(hint)) return setup;
   return {
     ...setup,
@@ -748,7 +748,7 @@ function subtitlesDisabledByPrompt(text: string) {
 }
 
 function musicDisabledByPrompt(text: string) {
-  return /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok|sessiz/.test(text);
+  return /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok/.test(text);
 }
 
 function voiceRequestedByPrompt(text: string) {
@@ -1036,14 +1036,17 @@ function sanitizeSetupForProduction(type: string, setup: ProductionSetupState | 
   };
 }
 
-function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "") {
-  const next = Object.fromEntries(Object.entries(setup).map(([key, values]) => [key, Array.isArray(values) ? [...values] : values])) as ProductionSetupState;
+function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "", allowedGroups?: SetupGroup[]) {
+  const allowedKeys = allowedGroups ? new Set(allowedGroups.map((group) => group.id)) : null;
+  const next = Object.fromEntries(Object.entries(setup)
+    .filter(([key]) => !allowedKeys || allowedKeys.has(key))
+    .map(([key, values]) => [key, Array.isArray(values) ? Array.from(new Set(values)) : values])) as ProductionSetupState;
   const items = Object.values(next).flat().filter(Boolean).map(String);
   const promptText = prompt.toLocaleLowerCase("tr-TR");
   const noSubtitles = /do not add subtitles|no subtitles|without subtitles|no captions|without captions|altyaz(ı|i)?\s*(ekleme|olmasın|olmasin)|altyazısız|altyazisiz/.test(promptText);
   const noMusic = /do not add music|no background music|without music|müzik\s*(ekleme|olmasın|olmasin)|müziksiz|muziksiz/.test(promptText);
   const presenterPattern = /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter|natural delivery|smile|wave|point at camera|cta hand gesture|energetic gestures/i;
-  const noPresenterPattern = /no presenter|b-roll only|silent \/ music only/i;
+  const noPresenterPattern = /no presenter|b-roll only/i;
   const hasExplicitPresenter = items.some((item) => /with presenter|ai presenter|female presenter|male presenter|young energetic creator|professional business presenter|energetic ugc creator|mature trustworthy presenter/i.test(item));
   const noPresenterRequested = items.some((item) => noPresenterPattern.test(item) || /no presenter motions/i.test(item))
     || /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people/i.test(promptText);
@@ -1068,9 +1071,9 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "") {
 }
 
 function selectedSetupItems(setup: ProductionSetupState, type = "") {
-  const items = Object.values(setup).flat().filter(Boolean);
+  const items = Array.from(new Set(Object.values(setup).flat().filter(Boolean).map(String)));
   if (!isImageProductionType(type)) return items;
-  return items.filter((item) => !/video agent auto edit|heygen|avatar|voice|music|mp4|presenter|sunucu/i.test(String(item)));
+  return items.filter((item) => !/video agent auto edit|heygen|avatar|voice|music|mp4|presenter|sunucu/i.test(item));
 }
 
 function productionSourceHandling(type: string, selectedItems: string[]) {
@@ -1831,7 +1834,7 @@ const statusUx = (tr: string, en: string) => false ? tr : en;
   const setupProfile = plan ? (isImageProductionType(plan.production_type) ? profileForType("image") : dynamicProfileForPlan(plan, productionPrompt || input)) : null;
   const activeProductionSetup = useMemo(() => {
     const setup = plan ? sanitizeSetupForProduction(plan.production_type, productionSetup, productionPrompt || input, plan) : productionSetup;
-    return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup, productionPrompt || input);
+    return isImageProductionType(plan?.production_type ?? "") || isProjectType(plan?.production_type ?? "") ? setup : sanitizeVideoSetup(setup, productionPrompt || input, setupProfile?.groups);
   }, [plan, productionSetup, productionPrompt, input]);
   const activeSelectedProductionCards = useMemo(() => {
     if (!plan || (!isImageProductionType(plan.production_type) && plan.production_type !== "video_agent")) return selectedProductionCards;
@@ -1871,6 +1874,8 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
   }
 
   function toggleSetupOption(group: SetupGroup, option: string) {
+    if (group.id === "voice" && /no voice-over/i.test(option)) setSelectedVoice(null);
+    if (group.id === "videoStyle" && /no presenter|b-roll only|silent \/ music only/i.test(option)) setSelectedAvatar(null);
     setProductionSetup((current) => {
       const currentValues = current[group.id] ?? [];
       const isPresenterMotionGroup = group.id === "presenterMotion";
@@ -1943,26 +1948,28 @@ const productionCards = isImageProduction
   : filterCardsForPrompt(selectedProductionCards.length ? selectedProductionCards : productionCardsFor(activePlanInput), routeSafeInput, activePlanInput.production_type);
 const sanitizedSetup = defaultSetupFor(activePlanInput.production_type, cleanInput, activePlanInput);
 const hasStaleImageSetup = isVideoLikeProductionType(activePlanInput.production_type) && Object.prototype.hasOwnProperty.call(productionSetup, "imageType");
-const normalizedVideoSetup = sanitizeVideoSetup(hasStaleImageSetup ? sanitizedSetup : productionSetup, cleanInput);
+const normalizedVideoSetup = sanitizeVideoSetup(hasStaleImageSetup ? sanitizedSetup : productionSetup, cleanInput, setupProfile?.groups);
 const baseSetupForPayload = isImageProduction
   ? sanitizeSetupForProduction(activePlanInput.production_type, sanitizedSetup, cleanInput, activePlanInput)
   : {
      ...normalizedVideoSetup,
-     voice: sanitizedSetup.voice ?? normalizedVideoSetup.voice,
-     subtitles: sanitizedSetup.subtitles ?? normalizedVideoSetup.subtitles
+     voice: normalizedVideoSetup.voice ?? sanitizedSetup.voice,
+     subtitles: normalizedVideoSetup.subtitles ?? sanitizedSetup.subtitles
    };
-const presenterlessSetupRequested = isImageProduction || Object.values(baseSetupForPayload).flat().some((item) => /voice-over only|silent\s*\/\s*music only|no presenter|b-roll only/i.test(String(item))) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
+const setupItemsBeforeProvider = selectedSetupItems(baseSetupForPayload, activePlanInput.production_type);
+const voiceDisabledForPayload = setupItemsBeforeProvider.some((item) => /no voice-over|silent\s*\/\s*music only/i.test(item));
+const presenterlessSetupRequested = isImageProduction || setupItemsBeforeProvider.some((item) => /no presenter|b-roll only|silent\s*\/\s*music only/i.test(item)) || /no\s*presenter|no\s*avatar|without\s*(presenter|avatar)|b-?roll only|sunucusuz|sunucu\s*olmas[ıi]n/i.test(routeSafeInput);
 const activeSelectedAvatar = presenterlessSetupRequested ? null : selectedAvatar;
 const setupForPayload = isImageProduction ? baseSetupForPayload : {
   ...baseSetupForPayload,
   heygenNoPresenterMode: presenterlessSetupRequested ? ["true"] : ["false"],
   heygenIncludeNarrator: presenterlessSetupRequested ? ["false"] : ["true"],
-  heygenIncludeVoice: ["true"],
+  heygenIncludeVoice: [voiceDisabledForPayload ? "false" : "true"],
   heygenSceneType: presenterlessSetupRequested ? ["b_roll"] : ["a_roll"],
   heygenAvatarMode: presenterlessSetupRequested ? ["no_presenter"] : ["presenter"],
   ...(activeSelectedAvatar?.avatarId && !presenterlessSetupRequested ? { heygen_avatar_id: [activeSelectedAvatar.avatarId] } : {}),
   ...(activeSelectedAvatar?.lookId && !presenterlessSetupRequested ? { heygen_look_id: [activeSelectedAvatar.lookId] } : {}),
-  ...(selectedVoice?.id ? { heygen_voice_id: [selectedVoice.id] } : {}),
+  ...(selectedVoice?.id && !voiceDisabledForPayload ? { heygen_voice_id: [selectedVoice.id] } : {}),
   ...(selectedSound?.id ? { heygen_music_id: [selectedSound.id] } : {}),
   ...(activeSelectedAvatar?.name && !presenterlessSetupRequested ? { selected_presenter_name: [activeSelectedAvatar.name] } : {}),
   ...(selectedVoice?.name ? { selected_voice_name: [selectedVoice.name] } : {}),
@@ -1998,8 +2005,12 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(routeSafeInput));
     const productionTypeForPayload = isImageProduction ? "image" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
-    const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
-    const providerPrompt = presenterCreative?.providerPrompt ?? cleanInput;
+     const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
+     const contentDurationSeconds = Number(setupFields.selected_duration?.match(/\d+/)?.[0] ?? 0);
+     const timingBrief = contentDurationSeconds === 30 && /\b25\s*(?:sec|seconds|sn|saniye)\b/i.test(cleanInput)
+       ? "Use approximately 25 seconds for the main content, then hold the final CTA for the remaining 5 seconds."
+       : "";
+     const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief].filter(Boolean).join("\n\n");
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
      const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : "minimax";
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
