@@ -93,6 +93,16 @@ export type MiniMaxH3CreateResponse = {
   request_id?: string;
 };
 
+export class MiniMaxStatusError extends Error {
+  readonly httpStatus: number;
+
+  constructor(message: string, httpStatus: number) {
+    super(message);
+    this.name = "MiniMaxStatusError";
+    this.httpStatus = httpStatus;
+  }
+}
+
 export type MiniMaxH3TaskResponse = {
   task?: {
     id?: string;
@@ -136,7 +146,7 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
         payload = { raw_text: text };
       }
     }
-    if (!response.ok) throw new Error(`MiniMax request failed: ${response.status} ${text}`);
+    if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status);
     return payload as T;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new Error("MiniMax request timed out after 60 seconds.");
@@ -181,7 +191,8 @@ export async function createMiniMaxH3VideoShotTasks(
 }
 
 export async function queryMiniMaxH3VideoTask(taskId: string) {
-  return minimaxJson<MiniMaxH3TaskResponse>(`/v2/query/video_generation/${encodeURIComponent(taskId)}`);
+  const params = new URLSearchParams({ task_id: taskId });
+  return minimaxJson<MiniMaxH3TaskResponse>(`/v2/query/video_generation?${params.toString()}`);
 }
 
 export async function listMiniMaxH3VideoTasks(input?: { pageNum?: number; pageSize?: number; status?: string }) {

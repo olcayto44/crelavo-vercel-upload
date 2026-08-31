@@ -1,7 +1,8 @@
-import { optionalEnv, requireProviderEnv } from "./env";
-import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, latestHeyGenVideoArtifact, normalizeHeyGenVideoAgentArtifacts } from "./heygen";
-import { queryMiniMaxH3VideoTask } from "./minimax";
-import type { NormalizedProviderStatus, ProviderJob } from "./types";
+import { optionalEnv, requireProviderEnv } from "./env.ts";
+import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, latestHeyGenVideoArtifact, normalizeHeyGenVideoAgentArtifacts } from "./heygen.ts";
+import { MiniMaxStatusError, queryMiniMaxH3VideoTask } from "./minimax.ts";
+import { miniMaxStatusFromResponse } from "./minimax-status.ts";
+import type { NormalizedProviderStatus, ProviderJob } from "./types.ts";
 
 function asciiHeaderValue(value: unknown, fallback = "") {
   return String(value ?? fallback).replace(/[^\x20-\x7E]/g, "").trim() || fallback;
@@ -216,22 +217,15 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
 
 export async function getMiniMaxStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
   if (!job.id) return { provider: "minimax", status: "unknown", error: "Missing MiniMax task id" };
-  const data = await queryMiniMaxH3VideoTask(job.id);
-  const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
-  const task = record.task && typeof record.task === "object" ? record.task as Record<string, unknown> : record;
-  const rawStatus = String(task.status ?? record.status ?? "unknown");
-  const normalized = normalizeStatus(rawStatus);
-  const outputUrl = firstUrl(task.content) || firstUrl(task.result) || firstUrl(task.video) || firstUrl(task.videos) || firstUrl(task);
-  const error = typeof task.error === "object" && task.error ? String((task.error as Record<string, unknown>).message ?? (task.error as Record<string, unknown>).code ?? "MiniMax task failed.") : typeof task.error === "string" ? task.error : normalized === "succeeded" && !outputUrl ? "MiniMax task succeeded, but no real video URL was found." : undefined;
-  return {
-    provider: "minimax",
-    id: job.id,
-    status: normalized === "succeeded" && !outputUrl ? "failed" : normalized,
-    outputUrl,
-    ...mediaMetadata(task),
-    error,
-    raw: data
-  };
+  try {
+    const data = await queryMiniMaxH3VideoTask(job.id);
+    return miniMaxStatusFromResponse(data, job.id);
+  } catch (error) {
+    if (error instanceof MiniMaxStatusError && [404, 410].includes(error.httpStatus)) {
+      return { provider: "minimax", id: job.id, status: "failed", error: `MiniMax task ${error.httpStatus === 404 ? "was not found" : "expired"}.`, raw: { httpStatus: error.httpStatus } };
+    }
+    throw error;
+  }
 }
 
 function shotstackStatusBaseUrl() {

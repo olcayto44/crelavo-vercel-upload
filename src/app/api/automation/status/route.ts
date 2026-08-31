@@ -65,6 +65,15 @@ async function refundReservedCreditsOnce(supabase: ReturnType<typeof supabaseAdm
   return creditResolution;
 }
 
+const PROVIDER_TIMEOUT_MS = 30 * 60 * 1000;
+
+function providerJobStartedAt(production: Record<string, any>, output: Record<string, unknown>, job: Record<string, any> | null) {
+  const raw = job?.raw && typeof job.raw === "object" ? job.raw as Record<string, unknown> : {};
+  const value = job?.startedAt ?? job?.createdAt ?? raw.started_at ?? raw.created_at ?? output.providerJobStartedAt ?? production.started_at ?? production.created_at;
+  const timestamp = typeof value === "number" ? value < 10_000_000_000 ? value * 1000 : value : Date.parse(String(value ?? ""));
+  return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
+}
+
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return stripPostgresUnsafeText(error.message);
   if (error && typeof error === "object") {
@@ -830,6 +839,44 @@ let outputWithRenderJob = renderBridge.renderJob
       return Response.json({ production: data, imageToVideoPoll: i2vPoll, finalAssemblyPoll });
     }
 
+    const activeJobForTimeout = visualLifecycle.providerJob ?? renderLifecycle.providerJob;
+    const activeJobStartedAt = providerJobStartedAt(production, outputWithRenderJob, activeJobForTimeout as Record<string, any> | null);
+    const providerAgeMs = activeJobStartedAt ? Date.now() - activeJobStartedAt : 0;
+    if (terminalStatus && ["queued", "running"].includes(terminalStatus.status) && providerAgeMs > PROVIDER_TIMEOUT_MS) {
+      const timeoutDiagnostic = {
+        provider: terminalStatus.provider,
+        taskId: terminalStatus.id ?? activeJobForTimeout?.id ?? null,
+        status: terminalStatus.status,
+        ageMs: providerAgeMs,
+        timeoutMs: PROVIDER_TIMEOUT_MS,
+        checkedAt: new Date().toISOString(),
+        action: "admin_recovery_required",
+        newProviderJobCreated: false
+      };
+      const timeoutOutput = outputWithWorkflow(production, outputWithRenderJob, {
+        visualStatus,
+        renderStatus,
+        providerStatus: `${terminalStatus.provider}_timeout_pending`,
+        providerTimeout: timeoutDiagnostic,
+        providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+        outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry
+      });
+      const { data } = await supabase
+        .from("production_requests")
+        .update(safeUpdate({
+          status: "in_production",
+          automation_status: "provider_timeout_pending",
+          generation_status: `${terminalStatus.provider}_timeout_pending`,
+          output_json: timeoutOutput,
+          admin_notes: `Provider job exceeded the ${Math.round(PROVIDER_TIMEOUT_MS / 60000)} minute safety timeout. Admin recovery is required; no new provider job was created and credits remain reserved.`,
+          updated_at: new Date().toISOString()
+        }))
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      return Response.json({ production: data, visualStatus, renderStatus, providerTimeout: timeoutDiagnostic, adminRecoveryRequired: true });
+    }
+
     if (!terminalStatus) {
       if (alternativeStatuses.length > 0) {
         const { data } = await supabase
@@ -849,12 +896,8 @@ let outputWithRenderJob = renderBridge.renderJob
 
     if (terminalStatus.status === "failed") {
       const failureMessage = terminalStatus.error ?? "Provider job failed.";
-      const creditResolution = {
-        status: "admin_review_required",
-        reason: "provider_failed",
-        reservedCredits: production.reserved_credits ?? production.estimated_credits ?? null,
-        instruction: "Provider failed. Admin must choose whether to refund credits, restart the job or deliver manually. No automatic refund was applied."
-      };
+      const creditResolution = await refundReservedCreditsOnce(supabase, production, output, `Reserved credits released after provider failure: ${production.title ?? production.id}`);
+      const failedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: `${terminalStatus.provider}_failed`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution });
       const { data } = await supabase
         .from("production_requests")
         .update(safeUpdate({
@@ -862,16 +905,17 @@ let outputWithRenderJob = renderBridge.renderJob
           automation_status: "failed",
           generation_status: `${terminalStatus.provider}_failed`,
           error_message: failureMessage,
-            output_json: outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: terminalStatus ? `${terminalStatus.provider}_${terminalStatus.status}` : output.providerStatus, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution }),
+          reserved_credits: 0,
+          output_json: failedOutput,
           automation_steps: updatedSteps(production.automation_steps, terminalStatus),
-          admin_notes: `Provider failed: ${failureMessage}. Credit resolution requires admin review; no automatic refund was applied.`,
+          admin_notes: `Provider failed: ${failureMessage}. Reserved credits were released once; no external provider refund was claimed.`,
           updated_at: new Date().toISOString()
         }))
         .eq("id", productionId)
         .select("*")
         .single();
 
-      return Response.json({ production: data, visualStatus, renderStatus });
+      return Response.json({ production: data, visualStatus, renderStatus, creditResolution });
     }
 
     const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};

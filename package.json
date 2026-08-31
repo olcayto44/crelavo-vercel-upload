@@ -47,6 +47,7 @@
     "smoke:public-placeholder-h1": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/public-placeholder-h1-audit.mts",
     "smoke:non-payment-e2e": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/non-payment-e2e-smoke.mts",
     "smoke:generic-video-shots": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generic-video-shots-smoke.mts",
+    "test:minimax-status": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/minimax-status-smoke.mts",
     "start": "next start",
     "lint": "npm run smoke && npm run build"
   },

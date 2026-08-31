@@ -833,6 +833,7 @@ if (!response) {
 }
 const data = await response.json().catch(() => ({}));
     const nextStatus = data.renderStatus?.status ?? data.visualStatus?.status ?? data.alternativeStatuses?.[0]?.status ?? "unknown";
+    const nextProvider = String(data.renderStatus?.provider ?? data.visualStatus?.provider ?? data.production?.output_json?.visualJob?.provider ?? data.production?.output_json?.provider ?? "").trim();
     const productionStatus = String(data.production?.status ?? "");
     const generationStatus = String(data.production?.generation_status ?? "");
     const dedicatedI2vStatus = String(data.imageToVideoPoll?.imageToVideoPollStatus ?? data.production?.output_json?.imageToVideoPoll?.imageToVideoPollStatus ?? "");
@@ -876,7 +877,7 @@ const data = await response.json().catch(() => ({}));
 
     setPollingNote(finalRenderPending
       ? "Visual video is ready. Final voice/subtitle render is still preparing…"
-      : `Provider status: ${nextStatus}`);
+      : `Provider status${nextProvider ? ` (${nextProvider})` : ""}: ${nextStatus}`);
     if (!auto && data.production) window.setTimeout(() => window.location.reload(), 900);
   }
 
