@@ -34,7 +34,14 @@ export function SiteStructuredData() {
           "Voice-over production",
           "Human quality assurance"
         ],
-        sameAs: []
+         sameAs: [
+           "https://www.instagram.com/crelavohq/",
+           "https://www.youtube.com/@crelavohq",
+           "https://x.com/crelavohq",
+           "https://www.linkedin.com/company/crelavo/",
+           "https://www.reddit.com/user/crelavo/",
+           "https://www.producthunt.com/products/crelavo"
+         ]
       },
       {
         "@type": "WebSite",

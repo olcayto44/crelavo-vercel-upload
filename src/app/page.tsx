@@ -17,7 +17,7 @@ import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlo
 
 export const metadata: Metadata = {
   title: "Crelavo AI Production Platform for Ecommerce Ads, Product Videos and Campaigns",
-  description: "Start with free AI ad scoring, test Crelavo with a $10 or $20 preview, then scale ecommerce product videos, UGC ads, landing pages and campaign assets with credits.",
+  description: "Start with free AI ad scoring, try Crelavo Business free for 24 hours, then create ecommerce product videos, UGC ads, landing pages and campaign assets with credits.",
   keywords: ["AI product video generator", "AI ad scorer", "ecommerce video ads", "Shopify product video", "Amazon product video", "UGC ad scripts", "AI campaign generator"],
   alternates: { canonical: "/" },
   openGraph: {
