@@ -628,7 +628,8 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     let productionType = ["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(rawProductionType) ? "talking_video" : rawProductionType;
     const packageId = String(currentProduction?.package_id ?? "");
   const productionDetectionText = `${productionType} ${packageId} ${currentProduction.title ?? ""} ${currentProduction.prompt ?? ""} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(existingOutput)}`.toLowerCase();
-  const resolvedRoute = resolveProductionRoute({ text: productionDetectionText, productionType });
+  const preferredProvider = String(requestMetadata.preferredProvider ?? requestMetadata.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.preferredProvider ?? inputJson.selectedProviderService ?? inputJson.provider_service ?? existingOutput.preferredProvider ?? "").trim();
+  const resolvedRoute = resolveProductionRoute({ text: productionDetectionText, productionType, packageId, preferredProvider });
   if (resolvedRoute.route === "normal_social_video_no_presenter") productionType = resolvedRoute.productionType;
   const isCinematicActionProduction = hasCinematicActionIntent(productionDetectionText);
   if (!["animation", "anime_short_film", "video", "cinematic_video", "documentary", "drone_video", "studio", "drama", "stickman_animation"].includes(productionType) && /animasyon|animation|animation video|final mp4|scene plan/.test(productionDetectionText)) {
@@ -645,11 +646,12 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
     readme_url: deliveryLinks.readmeUrl,
     preview_url: deliveryLinks.previewUrl
   };
-  const providerPreflight = buildProviderPreflight({
-    productionType,
-    requestMetadata,
-    inputJson,
-    videoProvider: process.env.VIDEO_PROVIDER || process.env.GENERATION_PROVIDER || "replicate",
+   const providerPreflight = buildProviderPreflight({
+     productionType,
+     packageId,
+     requestMetadata: resolvedRoute.provider === "minimax" ? { ...requestMetadata, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : requestMetadata,
+     inputJson: resolvedRoute.provider === "minimax" ? { ...inputJson, preferredProvider: "minimax", selectedProviderService: "minimax", provider_service: "minimax" } : inputJson,
+     videoProvider: resolvedRoute.provider ?? process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
     replicateModel: process.env.REPLICATE_MODEL
   });
 const isDroneProduction = productionType === "drone_video";
@@ -1404,10 +1406,28 @@ const clippingRun = requiredPipeline === "video_clipping"
       : null;
     let visualJob = clippingRun?.renderJob ?? genericRun?.visualJob ?? null;
     let renderJob = clippingRun?.renderJob ?? genericRun?.renderJob ?? null;
-    if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
-       const recoveryMessage = "Provider job was not created; production was stopped safely and reserved credits were released. Create a new production after provider configuration is fixed.";
-       const creditRecovery = await releaseReservedCredits(supabase, currentProduction, recoveryMessage, existingOutput);
-       const recoveryOutput = { ...existingOutput, automationStatus: "failed", providerStatus: "provider_start_failed", providerErrors: { visual_generation: recoveryMessage }, providerJobCreated: false, creditResolution: creditRecovery.creditResolution };
+     if (!visualJob && !renderJob && isVideoLikeProductionType(productionType)) {
+        const providerError = String(genericRun?.providerErrors?.visual_generation ?? "").trim();
+        const readinessInfo = providerReadiness;
+        const diagnosticProvider = String(providerPreflight.provider ?? resolvedRoute.provider ?? "video").trim() || "video";
+        const recoveryMessage = providerError
+          ? `${diagnosticProvider} provider start failed before a provider job was created: ${providerError}`
+          : `${diagnosticProvider} provider start failed before a provider job was created. Check the provider configuration and create a new production.`;
+        const diagnosticOutput = {
+          ...existingOutput,
+          automationStatus: "provider_start_failed",
+          providerStatus: `${diagnosticProvider}_provider_start_failed`,
+          provider: diagnosticProvider,
+          providerPreflight,
+          providerReadiness: readinessInfo,
+          providerErrors: { visual_generation: recoveryMessage, ...(genericRun?.providerErrors ?? {}) },
+          providerJobCreated: false,
+          providerStartDiagnostic: { provider: diagnosticProvider, route: resolvedRoute.route, readiness: readinessInfo, recordedAt: now }
+        };
+        const { error: diagnosticError } = await supabase.from("production_requests").update(safeUpdate({ output_json: diagnosticOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId);
+        if (diagnosticError) throw new Error(`provider_start_diagnostic_update: ${errorMessage(diagnosticError, "DB update failed")}`);
+        const creditRecovery = await releaseReservedCredits(supabase, currentProduction, recoveryMessage, diagnosticOutput);
+        const recoveryOutput = { ...diagnosticOutput, creditResolution: creditRecovery.creditResolution };
        const { data: recoveredProduction, error: recoveryError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_start_failed_no_job", reserved_credits: 0, output_json: recoveryOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId).select("*").single();
        if (recoveryError) throw recoveryError;
        return Response.json({ error: recoveryMessage, production: recoveredProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });

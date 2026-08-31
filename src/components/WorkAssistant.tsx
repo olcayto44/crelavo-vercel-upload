@@ -1534,6 +1534,17 @@ function productionCardProvider(production: WorkProductionCard | null) {
   return String(visualJob?.provider ?? output.providerStatus ?? "Provider pending");
 }
 
+function productionCardStatus(production: WorkProductionCard | null) {
+  if (!production) return "Awaiting command";
+  const output = production.output_json && typeof production.output_json === "object" ? production.output_json : {};
+  const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;
+  const providerJob = output.providerJob && typeof output.providerJob === "object" ? output.providerJob as Record<string, unknown> : null;
+  const providerId = String(visualJob?.id ?? providerJob?.id ?? output.providerJobId ?? "").trim();
+  const failed = production.status === "failed" || production.automation_status === "failed" || /failed|provider_required|waiting_provider_config/.test(`${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(output.providerStatus ?? "")}`.toLowerCase());
+  if (failed || !providerId) return failed ? "Provider start failed" : "Provider pending";
+  return "Production running";
+}
+
 function firstTextValue(...values: unknown[]) {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -2416,7 +2427,7 @@ if (isImageStart) {
             <article className="omni-result-card production-ready-card" role="link" tabIndex={0} title="Open production list" onClick={() => { window.location.href = "/dashboard/productions"; }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); window.location.href = "/dashboard/productions"; } }}>
                <div className="omni-result-icon">{activeProjectProduction ? <Code2 size={22} /> : activeImageProduction ? <ImageIcon size={22} /> : <Video size={22} />}</div>
               <div className="omni-result-body">
-                 <span className="badge">{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux("Production running")}</span>
+                 <span className="badge">{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux(productionCardStatus(activeProduction))}</span>
                 <h3>{activeProduction.title || "Crelavo production"}</h3>
                 <div className="omni-result-grid">
                   <span><strong>{ux("Production ID")}</strong>{activeProduction.id}</span>
@@ -2426,7 +2437,7 @@ if (isImageStart) {
                 <div className="omni-result-grid">
                   <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
-                  <span><strong>{ux("Workspace")}</strong>{ux("Production stays here")}</span>
+                  <span><strong>{ux("Workspace")}</strong>{ux(productionCardStatus(activeProduction) === "Provider start failed" ? "Provider start failed" : "Production stays here")}</span>
                 </div>
                  {activeProjectProduction ? (
                    <>
@@ -2545,7 +2556,7 @@ if (isImageStart) {
           <div className="omni-deploy-card">
             <small>Active production</small>
             <strong>{activeProduction?.title || plan ? ux(labelFor(plan?.production_type ?? "video")) : "No production yet"}</strong>
-             <span>{activeProduction ? ((activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux("Production running")) : plan ? ux("Production draft") : "Awaiting command"}</span>
+             <span>{activeProduction ? ((activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("Production ready") : ux(productionCardStatus(activeProduction))) : plan ? ux("Production draft") : "Awaiting command"}</span>
             {activeProduction ? <>
               <span><b>Production ID</b>{activeProduction.id}</span>
                <span><b>Status</b>{(activeProjectProduction || activeImageProduction) && projectPreviewIsReady(activeProduction) ? ux("ready") : activeProduction.generation_status || activeProduction.automation_status || activeProduction.status || "starting"}</span>

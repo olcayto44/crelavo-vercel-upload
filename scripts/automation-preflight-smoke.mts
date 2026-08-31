@@ -51,6 +51,20 @@ assertEqual(socialPreflight.model, "MiniMax-H3", "social preflight model");
 assertEqual(socialPreflight.selectedOptions.voiceOver, false, "social voice option");
 assertEqual(socialPreflight.selectedOptions.music, true, "social music option");
 assertEqual(socialPreflight.selectedOptions.subtitles, false, "social subtitles option");
+const exactProductionMetadata = {
+  preferredProvider: "runway",
+  selectedProviderService: "minimax",
+  provider_service: "minimax",
+  selectedOptions: { music: true, voiceOver: false, subtitles: false },
+  noPeopleMotionIntent: true,
+  targetPlatform: "TikTok / Instagram Reels / YouTube Shorts"
+};
+const exactRoute = resolveProductionRoute({ text: `Create a Crelavo FOMO e-commerce ad ${JSON.stringify(exactProductionMetadata)}`, productionType: "video", packageId: "video_premium", preferredProvider: exactProductionMetadata.preferredProvider });
+assertEqual(exactRoute.route, "normal_social_video_no_presenter", "exact social route");
+assertEqual(exactRoute.provider, "minimax", "exact social provider override");
+const exactPreflight = buildProviderPreflight({ productionType: exactRoute.productionType, packageId: "video_premium", requestMetadata: exactProductionMetadata, inputJson: { production_type: "video", package_id: "video_premium" }, videoProvider: "runway" });
+assertEqual(exactPreflight.provider, "minimax", "exact social preflight provider");
+assertEqual(exactPreflight.model, "MiniMax-H3", "exact social preflight model");
 const savedMiniMaxEnv = { apiKey: process.env.MINIMAX_API_KEY, groupId: process.env.MINIMAX_GROUP_ID, provider: process.env.VIDEO_PROVIDER };
 process.env.MINIMAX_API_KEY = "smoke-test-key";
 process.env.MINIMAX_GROUP_ID = "smoke-test-group";
