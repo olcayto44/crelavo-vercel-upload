@@ -3,7 +3,9 @@ const SOCIAL_AD_REQUEST = /\b(?:tiktok|reels|instagram\s+reels|shorts|youtube\s+
 const NO_PRESENTER_REQUEST = /(?:no\s+(?:presenter|people|person|human|avatar|voice)|without\s+(?:presenter|people|a\s+presenter)|no-presenter|no[_\s]?people|noPeopleMotionIntent|b-?roll\s+only|ui[-\s]?only|sunucusuz|insans[ıi]z|ki[şs]i\s+olmas[ıi]n|insan\s+olmas[ıi]n|seslendirme\s+olmas[ıi]n|voice-?over\s*(?:off|none)|music[-\s]+only|sadece\s+m[üu]zik)/i;
 
 export function isExplicitDroneRequest(text: string) {
-  return DRONE_REQUEST.test(String(text ?? ""));
+  const raw = String(text ?? "");
+  const withoutNegativeGuardrails = raw.replace(/\b(?:no|not|without|never|don't|do\s+not|do\s+not\s+classify|never\s+classify)\s+(?:classify\s+this\s+request\s+as\s+)?(?:any\s+)?(?:drone(?:\s+video|\s+footage)?|satellite(?:\s+video|\s+footage)?|aerial(?:\s+video|\s+footage|\s+flyover)?|flyover|map(?:\s+video)?|route(?:\s+video)?|location(?:\s+video)?)/gi, " ");
+  return DRONE_REQUEST.test(withoutNegativeGuardrails);
 }
 
 export function isNoPresenterSocialVideoRequest(text: string, productionType = "", packageId = "") {
