@@ -1,4 +1,5 @@
 import { optionalEnv, optionalProviderEnv, requireProviderEnv } from "./env";
+import { ProviderConfigError } from "./types";
 
 export type MiniMaxReadiness = {
   provider: "minimax";
@@ -31,6 +32,20 @@ export function hasMiniMaxConfig() {
   return Boolean(optionalProviderEnv("minimax"));
 }
 
+export function hasMiniMaxVideoConfig() {
+  return Boolean(optionalProviderEnv("minimax") && optionalProviderEnv("minimaxGroupId"));
+}
+
+export function miniMaxTaskRecord(result: unknown) {
+  const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
+  const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  return {
+    data,
+    taskId: String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim(),
+    status: String(data.status ?? "submitted")
+  };
+}
+
 export function maskGroupId(value: string) {
   if (!value) return "";
   if (value.length <= 8) return `${value.slice(0, 2)}***${value.slice(-2)}`;
@@ -43,7 +58,7 @@ export function minimaxReadiness(): MiniMaxReadiness {
   const hasGroupId = Boolean(groupId);
   return {
     provider: "minimax",
-    ready: hasApiKey,
+    ready: hasApiKey && hasGroupId,
     hasApiKey,
     hasGroupId,
     baseUrl: minimaxBaseUrl(),
@@ -132,6 +147,9 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
 }
 
 export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
+  if (!hasMiniMaxVideoConfig()) {
+    throw new ProviderConfigError("MiniMax video provider requires MINIMAX_API_KEY (or MINIMAX_KEY) and MINIMAX_GROUP_ID (or MINIMAX_GID/MINIMAX_GROUPID).");
+  }
   return minimaxJson<MiniMaxH3CreateResponse>("/v2/video_generation", {
     method: "POST",
     body: JSON.stringify({

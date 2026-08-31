@@ -1,5 +1,5 @@
 import { optionalEnv, requireProviderEnv } from "./env";
-import { createMiniMaxH3VideoTask } from "./minimax";
+import { createMiniMaxH3VideoTask, hasMiniMaxVideoConfig, miniMaxTaskRecord } from "./minimax";
 import type { ProviderJob } from "./types";
 
 function falApiKey() {
@@ -100,7 +100,9 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
       duration: safeDuration as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
       ratio: miniMaxRatio(requestedRatio)
     });
-    return { provider: "minimax", id: result.task_id ?? result.request_id, status: "submitted", raw: { ...result, sourceImageUrl: input.imageUrl, resolution, ratio: miniMaxRatio(requestedRatio) } };
+    const task = miniMaxTaskRecord(result);
+    if (!task.taskId) throw new Error(`MiniMax did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+    return { provider: "minimax", id: task.taskId, status: task.status, raw: { ...result, sourceImageUrl: input.imageUrl, resolution, ratio: miniMaxRatio(requestedRatio) } };
   }
 
   if (provider === "runway") {
@@ -159,9 +161,10 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
 
 export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string }): Promise<ProviderJob> {
   const requestedProvider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
-  const provider = requestedProvider === "minimax" && !hasMiniMaxVideoEnv()
-    ? (hasAnyEnv(["RUNWAY_API_KEY"]) ? "runway" : hasAnyEnv(["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"]) ? "kling" : hasAnyEnv(["FAL_KEY", "FAL_API_KEY"]) ? "fal" : "replicate")
-    : requestedProvider;
+  const provider = requestedProvider;
+  if (provider === "minimax" && !hasMiniMaxVideoConfig()) {
+    throw new Error("MiniMax video provider requires MINIMAX_API_KEY (or MINIMAX_KEY) and MINIMAX_GROUP_ID (or MINIMAX_GID/MINIMAX_GROUPID).");
+  }
   const safeDuration = Math.min(15, Math.max(5, input.durationSeconds));
   const hasAnyVideoProviderConfigured = hasAnyEnv(["MINIMAX_API_KEY", "MINIMAX_KEY", "RUNWAY_API_KEY", "KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY", "FAL_KEY", "FAL_API_KEY", "REPLICATE_API_TOKEN"]);
   if (!hasAnyVideoProviderConfigured) {
@@ -198,7 +201,9 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
       duration: safeDuration as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
       ratio: miniMaxRatio(requestedRatio)
     });
-    return { provider: "minimax", id: result.task_id ?? result.request_id, status: "submitted", raw: { ...result, resolution, ratio: miniMaxRatio(requestedRatio) } };
+    const task = miniMaxTaskRecord(result);
+    if (!task.taskId) throw new Error(`MiniMax did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+    return { provider: "minimax", id: task.taskId, status: task.status, raw: { ...result, resolution, ratio: miniMaxRatio(requestedRatio) } };
   }
 
   if (provider === "replicate") {

@@ -9,7 +9,7 @@ import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-d
 import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
-import { createMiniMaxH3VideoTask } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { generateVideoThumbnail } from "@/lib/video-thumbnail";
 import { applyMarketingTextOverlay, createDeterministicLinkedInBanner } from "@/lib/image-postprocess";
@@ -411,11 +411,9 @@ async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: 
     duration,
     ratio
   });
-  const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
-  const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
-  const taskId = String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim();
-  if (!taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "minimax", id: taskId, status: String(data.status ?? "submitted"), videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
+  const task = miniMaxTaskRecord(result);
+  if (!task.taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
+  return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {

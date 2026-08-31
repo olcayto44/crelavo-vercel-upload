@@ -15,7 +15,9 @@ export async function POST(request: Request) {
   if (["refunded_reserved", "refunded_reserved_no_provider_cost", "expired_before_provider_start_refunded"].includes(String(resolution?.status ?? ""))) return Response.json({ production, already_recovered: true, refunded_credits: 0 });
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;
   const hasProviderJob = Boolean(output.providerJob || visualJob?.id && !String(visualJob.id).startsWith("pending-") || output.renderJob);
-  const eligible = production.status === "in_production" && production.generation_status === "provider_pending_unknown" && !hasProviderJob && Number(production.reserved_credits ?? 0) > 0;
+  const eligibleStatus = production.status === "in_production" && production.generation_status === "provider_pending_unknown"
+    || production.status === "failed" && production.generation_status === "provider_start_failed_no_job";
+  const eligible = eligibleStatus && !hasProviderJob && Number(production.reserved_credits ?? 0) > 0;
   if (!eligible) return Response.json({ error: "Production is not an eligible pending no-job recovery candidate." }, { status: 409 });
   const reservedCredits = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
   const { data: balance, error: balanceError } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).single();

@@ -3,6 +3,7 @@ import { buildProviderPreflight } from "../src/lib/automation-preflight.ts";
 import { providerRequirementsForProduction } from "../src/lib/provider-readiness.ts";
 import { isVideoLikeProductionType, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "../src/lib/queue-policy.ts";
 import { isExplicitDroneRequest, isNoPresenterSocialVideoRequest, resolveProductionRoute } from "../src/lib/production-routing.ts";
+import { createVisualVideo } from "../src/lib/providers/visuals.ts";
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
   if (actual !== expected) {
@@ -50,6 +51,28 @@ assertEqual(socialPreflight.model, "MiniMax-H3", "social preflight model");
 assertEqual(socialPreflight.selectedOptions.voiceOver, false, "social voice option");
 assertEqual(socialPreflight.selectedOptions.music, true, "social music option");
 assertEqual(socialPreflight.selectedOptions.subtitles, false, "social subtitles option");
+const savedMiniMaxEnv = { apiKey: process.env.MINIMAX_API_KEY, groupId: process.env.MINIMAX_GROUP_ID, provider: process.env.VIDEO_PROVIDER };
+process.env.MINIMAX_API_KEY = "smoke-test-key";
+process.env.MINIMAX_GROUP_ID = "smoke-test-group";
+process.env.VIDEO_PROVIDER = "minimax";
+const originalFetch = globalThis.fetch;
+globalThis.fetch = (async () => new Response(JSON.stringify({ data: { task_id: "smoke-task-1", status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
+const socialJob = await createVisualVideo({ productionId: "smoke-social", scenes: ["Crelavo product UI hook"], productImageUrls: [], durationSeconds: 5, provider: "minimax", aspectRatio: "9:16" });
+assertEqual(socialJob.provider, "minimax", "social MiniMax invocation provider");
+assertEqual(socialJob.id, "smoke-task-1", "nested MiniMax task id");
+globalThis.fetch = (async () => new Response(JSON.stringify({ data: { status: "queued" } }), { status: 200, headers: { "content-type": "application/json" } })) as typeof fetch;
+let noJobFailure = "";
+try {
+  await createVisualVideo({ productionId: "smoke-social-no-job", scenes: ["Crelavo product UI hook"], productImageUrls: [], durationSeconds: 5, provider: "minimax", aspectRatio: "9:16" });
+} catch (error) {
+  noJobFailure = String(error);
+}
+if (!/did not return a task id/i.test(noJobFailure)) throw new Error(`MiniMax no-job guard missing: ${noJobFailure}`);
+globalThis.fetch = originalFetch;
+for (const [key, value] of Object.entries({ MINIMAX_API_KEY: savedMiniMaxEnv.apiKey, MINIMAX_GROUP_ID: savedMiniMaxEnv.groupId, VIDEO_PROVIDER: savedMiniMaxEnv.provider })) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+}
 assertEqual(isExplicitDroneRequest("route flyover of Cappadocia map location"), true, "drone signal");
 assertEqual(resolveProductionRoute({ text: "route flyover of Cappadocia map location", productionType: "drone_video" }).route, "drone_video", "drone route");
 
