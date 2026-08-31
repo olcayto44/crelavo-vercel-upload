@@ -2070,7 +2070,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
        : "";
      const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief].filter(Boolean).join("\n\n");
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
-     const preferredProviderForPayload = isImageProduction || project ? undefined : socialRouteForPayload.route === "normal_social_video_no_presenter" ? "minimax" : animationProductionIntent ? "runway_first" : "minimax";
+      const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : undefined;
 
     const creativeActivityLog = presenterCreative ? initialPresenterActivityLog(presenterCreative) : [];
     const mergedFeatures = Array.from(new Set([...(activePlanInput.selected_features || []), ...setupFields.selected_features, ...(wantsPresenterVideo ? ["AI presenter", "Minimax talking video", "Creative director prompt", presenterCreative?.preset ?? "Creator-style SaaS presenter"] : []), ...(noPeopleMotionIntent ? ["No presenter", "Motion graphics", "No office", "No people"] : [])]));

@@ -5,6 +5,7 @@ import { Bot, CheckCircle2, Download, ExternalLink, Film, Globe2, ImageIcon, Lib
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { ConnectedAccountsPanel } from "@/components/ConnectedAccountsPanel";
 import { productionProgressPercent, productionProgressSteps } from "@/lib/production-progress";
+import { isActiveProviderJob } from "@/lib/provider-jobs";
 
 type ProductionWorkspaceProps = {
   production: {
@@ -609,8 +610,8 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
 
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
-  const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady;
-   const hasActiveProviderJob = Boolean(visualJob || visualJobs.length || minimaxSessionId || minimaxVideoId);
+  const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
+    const hasActiveProviderJob = isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || Boolean(minimaxSessionId || minimaxVideoId);
   const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
