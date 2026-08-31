@@ -1536,8 +1536,9 @@ function productionCardStatus(production: WorkProductionCard | null) {
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;
   const providerJob = output.providerJob && typeof output.providerJob === "object" ? output.providerJob as Record<string, unknown> : null;
   const providerId = String(visualJob?.id ?? providerJob?.id ?? output.providerJobId ?? "").trim();
-  const failed = production.status === "failed" || production.automation_status === "failed" || /failed|provider_required|waiting_provider_config/.test(`${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(output.providerStatus ?? "")}`.toLowerCase());
-  if (failed || !providerId) return failed ? "Provider start failed" : "Provider pending";
+  const statusText = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(output.providerStatus ?? "")}`.toLowerCase();
+  const failed = /replicate_failed|provider_start_failed|failed|partial|no[_ -]?job|provider_required|waiting_provider_config/.test(statusText);
+  if (failed || !providerId) return failed ? "Action required: provider failed" : "Provider pending";
   return "Production running";
 }
 
@@ -1552,14 +1553,17 @@ function firstTextValue(...values: unknown[]) {
 function productionProviderProof(production: WorkProductionCard | null) {
   const output = production?.output_json && typeof production.output_json === "object" ? production.output_json : {};
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : {};
+  const providerJob = output.providerJob && typeof output.providerJob === "object" ? output.providerJob as Record<string, unknown> : {};
   const minimaxProof = output.minimaxProviderProof && typeof output.minimaxProviderProof === "object" ? output.minimaxProviderProof as Record<string, unknown> : {};
   const heygenProof = output.heygenProviderProof && typeof output.heygenProviderProof === "object" ? output.heygenProviderProof as Record<string, unknown> : {};
   const latestArtifact = output.latestMinimaxVideoArtifact && typeof output.latestMinimaxVideoArtifact === "object" ? output.latestMinimaxVideoArtifact as Record<string, unknown> : {};
-  const provider = firstTextValue(minimaxProof.provider, visualJob.provider, heygenProof.provider, output.providerStatus);
-  const sessionId = firstTextValue(output.minimaxSessionId, minimaxProof.sessionId, output.heygenSessionId, heygenProof.sessionId, visualJob.id);
-  const videoId = firstTextValue(output.minimaxVideoId, minimaxProof.videoId, output.heygenVideoId, heygenProof.videoId, latestArtifact.providerResourceId);
+  const providerHint = firstTextValue(visualJob.provider, providerJob.provider, output.provider, minimaxProof.provider, heygenProof.provider, output.providerStatus);
+  const provider = /minimax/i.test(providerHint) ? "minimax" : /replicate/i.test(providerHint) ? "replicate" : /heygen/i.test(providerHint) ? "heygen" : providerHint;
+  const sessionId = provider === "minimax" ? firstTextValue(output.minimaxSessionId, minimaxProof.sessionId, output.heygenSessionId, heygenProof.sessionId, visualJob.id) : "";
+  const videoId = provider === "minimax" ? firstTextValue(output.minimaxVideoId, minimaxProof.videoId, output.heygenVideoId, heygenProof.videoId, latestArtifact.providerResourceId) : "";
+  const jobId = provider !== "minimax" ? firstTextValue(visualJob.provider === provider ? visualJob.id : "", providerJob.provider === provider ? providerJob.id : "", output.providerJobId, output.provider_job_id) : "";
   const finalUrl = firstTextValue(output.finalVideoUrl, output.providerFinalUrl, output.latestMinimaxVideoUrl, production?.delivery_link, production?.delivery_zip_url);
-  return { provider, sessionId, videoId, finalUrl };
+  return { provider, sessionId, videoId, jobId, finalUrl };
 }
 
 function compactId(value: string) {
@@ -2437,7 +2441,7 @@ if (isImageStart) {
                 <div className="omni-result-grid">
                   <span><strong>{ux("Preview")}</strong>{activeProduction.preview_url ? ux("Ready") : ux("Waiting")}</span>
                   <span><strong>{ux("Delivery")}</strong>{activeProduction.delivery_link ? ux("Ready") : ux("Waiting")}</span>
-                  <span><strong>{ux("Workspace")}</strong>{ux(productionCardStatus(activeProduction) === "Provider start failed" ? "Provider start failed" : "Production stays here")}</span>
+                  <span><strong>{ux("Workspace")}</strong>{ux(productionCardStatus(activeProduction) === "Action required: provider failed" ? "Action required: provider failed" : "Production stays here")}</span>
                 </div>
                  {activeProjectProduction ? (
                    <>
@@ -2458,12 +2462,14 @@ if (isImageStart) {
                      <span><strong>Image delivery</strong>{activeProduction.preview_url || activeProduction.delivery_link ? ux("Ready") : ux("Preparing")}</span>
                    </div>
                  ) : (
-                   <div className="omni-result-grid">
-                     <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
-                    <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
-                    <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
-                    <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
-                  </div>
+                  <div className="omni-result-grid">
+                      <span><strong>{false ? "Provider kanıtı" : "Provider proof"}</strong>{activeProviderProof.provider || productionCardProvider(activeProduction)}</span>
+                     {activeProviderProof.provider === "minimax" ? <>
+                       <span><strong>{false ? "Minimax oturumu/işi" : "Minimax session/job"}</strong>{compactId(activeProviderProof.sessionId)}</span>
+                       <span><strong>{false ? "Minimax video ID" : "Minimax video ID"}</strong>{compactId(activeProviderProof.videoId)}</span>
+                     </> : <span><strong>{activeProviderProof.provider ? `${activeProviderProof.provider} job ID` : "Provider job ID"}</strong>{compactId(activeProviderProof.jobId)}</span>}
+                     <span><strong>{false ? "Final video" : "Final video"}</strong>{activeProviderProof.finalUrl ? <a href={activeProviderProof.finalUrl} target="_blank" rel="noreferrer">{ux("Ready")}</a> : ux("Waiting")}</span>
+                   </div>
                 )}
               </div>
             </article>

@@ -529,11 +529,14 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
   const automationParts = Array.isArray(outputJson.parts) ? outputJson.parts : Array.isArray(outputJson.scenePlan) ? outputJson.scenePlan : [];
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as Record<string, any> : null;
   const minimaxProviderProof = outputJson.minimaxProviderProof && typeof outputJson.minimaxProviderProof === "object" ? outputJson.minimaxProviderProof as Record<string, any> : null;
-  const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
+  const rawProviderProof = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
+  const rawProviderStatus = String(outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
+  const providerProofProvider = /minimax/i.test(rawProviderProof) || /minimax/i.test(rawProviderStatus) ? "minimax" : /replicate/i.test(rawProviderProof) || /replicate/i.test(rawProviderStatus) ? "replicate" : /heygen/i.test(rawProviderProof) || /heygen/i.test(rawProviderStatus) ? "heygen" : rawProviderProof;
   const providerIsMinimax = providerProofProvider.toLowerCase() === "minimax";
    const minimaxSessionId = providerIsMinimax ? String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? minimaxProviderProof?.taskId ?? visualJob?.id ?? "").trim() : "";
    const minimaxVideoId = providerIsMinimax ? String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim() : "";
- const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
+  const providerJobId = !providerIsMinimax ? String(visualJob?.provider === providerProofProvider && visualJob?.id ? visualJob.id : outputJson.providerJobId ?? outputJson.provider_job_id ?? "").trim() : "";
+  const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
    const shotWaitingLabel = "Final video waiting";
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
@@ -607,8 +610,9 @@ const hasDedicatedCharacterDialogueJobs = characterDialogueProviderJobs.length >
   const hasDelivery = Boolean(deliveryUrl || (!isMediaProduction && (sourceUrl || readmeUrl)));
 const automationWarningText = `${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(production.error_message ?? "")}`;
 const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not exist|42703|error/i.test(automationWarningText);
-  const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || String(outputJson.providerStatus ?? "") === "provider_start_failed" && outputJson.providerJobCreated === false;
-  const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
+  const failureStatusText = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${String(outputJson.providerStatus ?? "")}`.toLowerCase();
+  const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || /no[_ -]?job/.test(failureStatusText) || /provider_start_failed/.test(failureStatusText) && outputJson.providerJobCreated === false;
+  const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || /replicate_failed|provider_start_failed|failed|partial|no[_ -]?job/.test(failureStatusText) || liveStatus.includes("failed") || hasAutomationWarning;
 
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
@@ -625,7 +629,7 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
     || /running|in_production|strategy_running|provider_start_failed/.test(`${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${providerStatus}`)
   );
   const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && hasActiveProviderJob;
-  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
+  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Action required: provider failed" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
   const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const reservedCreditsText = projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
@@ -634,8 +638,10 @@ const previewUrlLower = playbackUrl.toLowerCase();
 const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
 const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
   const nextLiveStep = providerJobWasNotCreated
-    ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
-    : hasAutomationWarning
+     ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
+     : isFailed
+     ? `Provider failed${providerProofProvider ? ` (${providerProofProvider})` : ""}. Review the error and take action before treating this production as running.`
+     : hasAutomationWarning
     ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
     : isDedicatedPipelineRunning
     ? "Dedicated character-dialogue pipeline is running. The preview theater stays open while character sheets, scene images, I2V clips, voice segments and final assembly complete."
@@ -981,14 +987,19 @@ const data = await response.json().catch(() => ({}));
             <small>Provider status</small>
             <strong>{providerProofStatus || "Unknown"}</strong>
           </div>
-          <div>
-            <small>Minimax session</small>
-            <strong title={minimaxSessionId || undefined}>{minimaxSessionId || "Not attached"}</strong>
-          </div>
-          <div>
-            <small>Minimax video</small>
-            <strong title={minimaxVideoId || undefined}>{minimaxVideoId || "Not attached"}</strong>
-          </div>
+          {providerIsMinimax ? <>
+            <div>
+              <small>Minimax session/job</small>
+              <strong title={minimaxSessionId || undefined}>{minimaxSessionId || "Not attached"}</strong>
+            </div>
+            <div>
+              <small>Minimax video ID</small>
+              <strong title={minimaxVideoId || undefined}>{minimaxVideoId || "Not attached"}</strong>
+            </div>
+          </> : <div>
+            <small>{providerProofProvider ? `${providerProofProvider} job ID` : "Provider job ID"}</small>
+            <strong title={providerJobId || undefined}>{providerJobId || "Not attached"}</strong>
+          </div>}
         </div>
 
         <section className="dynamic-brief-panel" style={{ marginTop: 14 }}>
