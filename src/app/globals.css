@@ -6025,6 +6025,22 @@ body.admin-route > .site-footer {
   color: var(--muted);
   font-size: 12px;
 }
+.product-hunt-footer-badge {
+  display: flex;
+  justify-content: flex-end;
+  margin: 24px 0 8px;
+}
+.product-hunt-footer-badge img {
+  display: block;
+  width: 250px;
+  height: 54px;
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  .product-hunt-footer-badge {
+    justify-content: flex-start;
+  }
+}
 .faq-section.clean-feed-section {
   border: 0;
   background: transparent;
