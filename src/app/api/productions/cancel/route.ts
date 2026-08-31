@@ -1,6 +1,7 @@
 import { computeCancellationCreditResolution } from "@/lib/credit-resolution";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
-import { supabaseAdmin } from "@/lib/supabase";
+import { cancelReplicatePrediction, replicateProviderJobFromOutput } from "@/lib/providers/replicate";
+import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 function errorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -23,11 +24,13 @@ export async function POST(request: Request) {
       return Response.json({ error: "production_id and user_id are required." }, { status: 400 });
     }
 
+    const verified = await requireVerifiedRequestUser(request, userId);
+    if (!verified.ok) return verified.response;
+
     const supabase = supabaseAdmin();
     const { data: production, error: productionError } = await supabase
       .from("production_requests")
-        .select("id, user_id, status, automation_status, reserved_credits, estimated_credits, output_json")
-
+        .select("id, user_id, status, automation_status, generation_status, reserved_credits, estimated_credits, output_json")
       .eq("id", productionId)
       .eq("user_id", userId)
       .single();
@@ -35,12 +38,39 @@ export async function POST(request: Request) {
     if (productionError) throw productionError;
     if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
 
-    if (["ready", "failed", "cancelled"].includes(production.status)) {
+    if (["ready", "failed"].includes(production.status)) {
       return Response.json({ error: "This production is already closed." }, { status: 400 });
     }
 
     const reservedCredits = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
     const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
+    if (production.status === "cancelled") {
+      const resolution = outputJson.creditResolution && typeof outputJson.creditResolution === "object" ? outputJson.creditResolution : null;
+      return Response.json({ production, cancellation_fee: Number((resolution as Record<string, unknown> | null)?.spentCredits ?? 0) || 0, refund_amount: Number((resolution as Record<string, unknown> | null)?.releasedReservedCredits ?? 0) || 0, idempotent: true });
+    }
+
+    const replicateJobId = replicateProviderJobFromOutput(outputJson);
+    if (replicateJobId) {
+      try {
+        await cancelReplicatePrediction(replicateJobId);
+      } catch (error) {
+        const recoveryMessage = `External Replicate cancellation was not confirmed for prediction ${replicateJobId}. Manual provider cancellation is required before credits can be resolved. ${errorMessage(error, "Unknown provider cancellation error")}`;
+        const { error: recoveryError } = await supabase
+          .from("production_requests")
+          .update({
+            output_json: { ...outputJson, providerCancellation: { provider: "replicate", providerJobId: replicateJobId, status: "admin_recovery_required", message: recoveryMessage, recordedAt: new Date().toISOString() } },
+            automation_status: "admin_recovery_required",
+            generation_status: "provider_cancel_pending",
+            error_message: recoveryMessage,
+            admin_notes: recoveryMessage,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", productionId)
+          .eq("user_id", userId);
+        if (recoveryError) throw recoveryError;
+        return Response.json({ error: recoveryMessage, provider_cancelled: false, admin_recovery_required: true }, { status: 502 });
+      }
+    }
 
     const { data: balanceRow, error: balanceError } = await supabase
       .from("credit_balances")
@@ -77,10 +107,10 @@ export async function POST(request: Request) {
       .update({
         status: "cancelled",
         automation_status: "cancelled",
-        generation_status: "cancelled_by_member",
+        generation_status: replicateJobId ? "provider_cancelled" : "cancelled_by_member",
         cancellation_fee_credits: creditDecision.cancellationFee,
         reserved_credits: 0,
-        output_json: { ...outputJson, creditResolution: creditDecision.creditResolution, workflowState: buildProductionWorkflowState({ ...production, status: "cancelled", automation_status: "cancelled", generation_status: "cancelled_by_member", reserved_credits: 0, output_json: outputJson }) },
+        output_json: { ...outputJson, providerCancellation: replicateJobId ? { provider: "replicate", providerJobId: replicateJobId, status: "cancelled", confirmedAt: new Date().toISOString() } : outputJson.providerCancellation, creditResolution: creditDecision.creditResolution, workflowState: buildProductionWorkflowState({ ...production, status: "cancelled", automation_status: "cancelled", generation_status: replicateJobId ? "provider_cancelled" : "cancelled_by_member", reserved_credits: 0, output_json: outputJson }) },
         error_message: "Cancelled by member. 50% reserved credits charged according to automatic production policy.",
         updated_at: new Date().toISOString()
       })
@@ -91,7 +121,7 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    return Response.json({ production: data, cancellation_fee: creditDecision.cancellationFee, refund_amount: creditDecision.refundAmount });
+    return Response.json({ production: data, cancellation_fee: creditDecision.cancellationFee, refund_amount: creditDecision.refundAmount, provider_cancelled: Boolean(replicateJobId) });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not cancel production") }, { status: 500 });
   }

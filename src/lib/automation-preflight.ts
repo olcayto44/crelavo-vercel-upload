@@ -1,4 +1,5 @@
 import { hasProviderEnv } from "./providers/env.ts";
+import { hasMiniMaxVideoConfig } from "./providers/minimax.ts";
 
 export type AutomationPreflightInput = {
   productionType: string;
@@ -162,7 +163,12 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   const envVideoProvider = String(input.videoProvider || "").trim().toLowerCase();
   const configuredVideoProvider = hasProviderEnv("minimax") ? "minimax" : hasProviderEnv("replicate") ? "replicate" : hasProviderEnv("fal") ? "fal" : hasProviderEnv("runway") ? "runway" : "";
   const typePreferredProvider = productionNeedsRealVideo ? envVideoProvider || configuredVideoProvider : talkingVideoIntent ? (selectedVideoProvider || (hasProviderEnv("minimax") ? "minimax" : "")) : "";
+  const noPresenterVideo = !/presenter|avatar|talking|sunucu|konuşan|konusan|ugc|lip[-\s]?sync/i.test(textFrom(requestMetadata, inputJson));
+  const standardSocialVideoTest = input.productionType === "video" && input.packageId === "video_premium" && requestedDuration === 5 && noPresenterVideo;
+  const explicitReplicateSelection = selectedVideoProvider === "replicate";
+  const minimaxTestGuard = standardSocialVideoTest && !explicitReplicateSelection;
   const videoProvider = selectedVideoProvider || typePreferredProvider || envVideoProvider || (talkingVideoIntent ? "minimax" : "replicate");
+  const guardedVideoProvider = minimaxTestGuard ? "minimax" : videoProvider;
   const aspectRatio = selectedAspectRatio(requestMetadata, inputJson);
   const featureFlags = selectedFeatureFlags(requestMetadata, inputJson);
   const characterDialogueAnimation = detectCharacterDialogueAnimationNeed(textFrom(input.productionType, JSON.stringify(requestMetadata), JSON.stringify(inputJson)));
@@ -184,9 +190,10 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   }
 
   return {
-    provider: videoProvider,
-    model: videoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : videoProvider === "minimax" ? "MiniMax-H3" : videoProvider,
+    provider: guardedVideoProvider,
+    model: guardedVideoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : guardedVideoProvider === "minimax" ? "MiniMax-H3" : guardedVideoProvider,
     durationSeconds: requestedDuration,
+    preflightError: minimaxTestGuard && !hasMiniMaxVideoConfig() ? "MiniMax is required for the 5-second standard/social video test, but its API key and group ID are not configured. Replicate fallback is disabled." : undefined,
     supportedDurationMaxSeconds: 15,
     aspectRatio,
     testMode: providerTestMode,

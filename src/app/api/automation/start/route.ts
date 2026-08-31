@@ -653,9 +653,15 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
       requestMetadata,
       inputJson,
       videoProvider: process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
-      replicateModel: process.env.REPLICATE_MODEL
-    });
-const isDroneProduction = productionType === "drone_video";
+       replicateModel: process.env.REPLICATE_MODEL
+     });
+     if (providerPreflight.preflightError) {
+       const message = String(providerPreflight.preflightError);
+       const { data: blockedProduction, error: blockedError } = await supabase.from("production_requests").update(safeUpdate({ status: "waiting_provider_config", automation_status: "waiting_provider_config", generation_status: "provider_preflight_blocked", output_json: { ...existingOutput, provider: providerPreflight.provider, providerStatus: "provider_preflight_blocked", providerPreflight, providerFallbackDisabled: true, providerError: message }, error_message: message, admin_notes: message, updated_at: now })).eq("id", productionId).select("*").single();
+       if (blockedError) throw blockedError;
+       return Response.json({ job_id: jobId, production: blockedProduction, provider_started: false, provider_required: true, preflight_blocked: true, error: message }, { status: 424 });
+     }
+ const isDroneProduction = productionType === "drone_video";
 const isImageProduction = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
 const minimaxSetupPresenterIntent = !isImageProduction && hasMinimaxPresenterIntent(productionDetectionText);
 const explicitHeyGenProviderSignal = !isImageProduction && /heygen|heygen_video_agent|video_agent/i.test(String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? existingOutput.preferredProvider ?? requestMetadata.provider_route ?? inputJson.provider_route ?? existingOutput.provider_route ?? ""));

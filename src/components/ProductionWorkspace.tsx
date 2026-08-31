@@ -529,9 +529,10 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
   const automationParts = Array.isArray(outputJson.parts) ? outputJson.parts : Array.isArray(outputJson.scenePlan) ? outputJson.scenePlan : [];
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as Record<string, any> : null;
   const minimaxProviderProof = outputJson.minimaxProviderProof && typeof outputJson.minimaxProviderProof === "object" ? outputJson.minimaxProviderProof as Record<string, any> : null;
-  const minimaxSessionId = String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? minimaxProviderProof?.taskId ?? visualJob?.id ?? "").trim();
-  const minimaxVideoId = String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim();
- const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
+  const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
+  const providerIsMinimax = providerProofProvider.toLowerCase() === "minimax";
+   const minimaxSessionId = providerIsMinimax ? String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? minimaxProviderProof?.taskId ?? visualJob?.id ?? "").trim() : "";
+   const minimaxVideoId = providerIsMinimax ? String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim() : "";
  const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
    const shotWaitingLabel = "Final video waiting";
@@ -989,7 +990,7 @@ const data = await response.json().catch(() => ({}));
           <p>{workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
           <div className="production-context-grid">
             <div><span>{projectPackageReady ? "Package credits" : "Credit reserve"}</span><strong>{Number(workflowState?.reservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0).toLocaleString()}</strong><small>{projectPackageReady ? "Included in ready package" : workflowState?.hasReservedCredits ? "Reserved" : "Not fully reserved"}</small></div>
-            <div><span>Provider</span><strong>{workflowState?.activeProviderJob ? "Active job" : String((workflowProviderReadiness?.status ?? workflowProviderReadiness?.readinessStatus ?? providerStatus) || "Pending")}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
+            <div><span>Provider</span><strong>{providerProofProvider || String(workflowProviderReadiness?.provider ?? workflowProviderReadiness?.status ?? providerStatus) || "Pending"}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
             <div><span>Delivery</span><strong>{workflowState?.deliveryReady || hasDelivery ? "Ready" : "Waiting"}</strong><small>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Dashboard delivery"}</small></div>
             <div><span>Revision flow</span><strong>{workflowActions.find((action) => action.key === "revision_flow")?.status ?? (isReady ? "available" : "pending")}</strong><small>{revisions.length ? `${revisions.length} request(s)` : "No revision request"}</small></div>
           </div>
