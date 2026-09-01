@@ -32,6 +32,7 @@ import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
 import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
 import { isExplicitDroneRequest } from "@/lib/production-routing";
+import { productionRequestUpdatePayload } from "@/lib/production-request-schema";
 
 function ecommerceContextFrom(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -76,7 +77,7 @@ function postgresSafe<T>(value: T): T {
 }
 
 function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
-  return postgresSafe(payload);
+  return postgresSafe(productionRequestUpdatePayload(payload)) as T;
 }
 
 async function releaseReservedCredits(supabase: ReturnType<typeof supabaseAdmin>, production: { user_id?: string | null; reserved_credits?: number | null }, note: string, existingOutput?: Record<string, unknown>) {
@@ -509,6 +510,7 @@ const productionType = ["talking_video_basic", "talking_video_multi_person", "ta
 
 export async function POST(request: Request) {
   let productionId = "";
+  let providerJobCreated = false;
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
     if (!isAdminRequest(request, body) && !hasValidProductionDispatch(body)) return Response.json(productionDispatchError(), { status: 409 });
@@ -533,8 +535,12 @@ export async function POST(request: Request) {
     const { data: currentProduction, error: currentError } = await selectProductionForAutomation(supabase, productionId);
 
     if (currentError) throw currentError;
-    if (!currentProduction) throw new Error("Production not found");
-    const access = await requireAutomationAccess(request, body, currentProduction);
+     if (!currentProduction) throw new Error("Production not found");
+     if (String(currentProduction.status ?? "").toLowerCase() === "cancelled" || String(currentProduction.generation_status ?? "").toLowerCase() === "cancelled_by_member") {
+       return Response.json({ error: "This production was cancelled before a provider job was created. It will not be restarted automatically; create a new production instead.", code: "cancelled_production_not_restartable", production_id: productionId }, { status: 409 });
+     }
+     const access = await requireAutomationAccess(request, body, currentProduction);
+
     if (!access.ok) return access.response;
     if (!isAdminRequest(request, body)) {
       const billing = await billingAccess(supabase, String(currentProduction.user_id));
@@ -771,34 +777,35 @@ if (talkingProviderType) {
   let providerJob: Awaited<ReturnType<typeof startMiniMaxVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
     providerJob = useMiniMaxVideoAgent
-      ? await startMiniMaxVideoAgentProduction({ title: String(currentProduction.title ?? "Video Agent"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
-      : await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
-  } catch (error) {
-  const failureMessage = errorMessage(error, "MiniMax provider job could not be started.");
-  const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
-  if (reservedCredits > 0) {
-    const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
-    if (balanceRow) {
-      await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: now }, { onConflict: "user_id" });
-      await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because HeyGen did not create a provider job: ${failureMessage}` });
-    }
-  }
-  const failedOutput = {
-      ...startRequestedOutput,
-      automationStatus: "provider_start_failed",
-      providerStatus: "heygen_start_failed",
-      providerErrors: { heygen: failureMessage },
-      currentStep: "HeyGen start failed before provider job id was created"
-    };
-    const { data: failedProduction, error: failedUpdateError } = await supabase
-      .from("production_requests")
-      .update(safeUpdate({ status: "queued", automation_status: "provider_start_failed", generation_status: "heygen_start_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: `HeyGen start failed before job id: ${failureMessage}`, error_message: failureMessage, updated_at: now }))
-      .eq("id", productionId)
-      .select("*")
-      .single();
-    if (failedUpdateError) throw new Error(`heygen_start_failed_update: ${errorMessage(failedUpdateError, "DB update failed")}; original: ${failureMessage}`);
-    return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
-  }
+       ? await startMiniMaxVideoAgentProduction({ title: String(currentProduction.title ?? "Video Agent"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson })
+       : await startHeyGenTalkingProduction({ title: String(currentProduction.title ?? "Talking video"), prompt: String(currentProduction.prompt ?? ""), requestMetadata, inputJson });
+     providerJobCreated = hasRealProviderJob(providerJob);
+   } catch (error) {
+     const failureMessage = errorMessage(error, "MiniMax provider job could not be started.");
+     const creditRecovery = await releaseReservedCredits(
+       supabase,
+       currentProduction,
+       `Released reserved credits because MiniMax provider start failed before provider job creation: ${failureMessage}`,
+       existingOutput
+     );
+     const failedOutput = {
+       ...startRequestedOutput,
+       automationStatus: "provider_start_failed",
+       providerStatus: "provider_start_failed_no_job",
+       providerJobCreated: false,
+       providerErrors: { minimax: failureMessage },
+       creditResolution: creditRecovery.creditResolution,
+       currentStep: "MiniMax provider start failed before provider job id was created"
+     };
+     const { data: failedProduction, error: failedUpdateError } = await supabase
+       .from("production_requests")
+       .update(safeUpdate({ status: "failed", automation_status: "provider_start_failed", generation_status: "provider_start_failed_no_job", reserved_credits: 0, output_json: failedOutput, admin_notes: `MiniMax start failed before provider job id; reserved credits released: ${failureMessage}`, error_message: failureMessage, updated_at: now }))
+       .eq("id", productionId)
+       .select("*")
+       .single();
+     if (failedUpdateError) throw new Error(`minimax_start_failed_update: ${errorMessage(failedUpdateError, "DB update failed")}; original: ${failureMessage}`);
+     return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });
+   }
       const talkingOutput = {
         ...existingOutput,
         automationMode: "fully_automatic",
@@ -1466,6 +1473,7 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
           : "Generic video visual provider job created. Voice/subtitle/final render routing is tracked in the provider chain. Poll /api/automation/status to update final output."
     : "Demo automation generated script, parts, alternatives and delivery placeholders. Connect providers next for real output URLs.";
     const providerStarted = hasRealProviderJob(visualJob) || hasRealProviderJob(renderJob);
+    providerJobCreated = providerJobCreated || providerStarted;
     const outputJson: Record<string, unknown> = {
       ...musicVideoOutputBase,
        providerTestMode,
@@ -1516,20 +1524,20 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
     outputJson.outputRegistry = providerLifecycle.outputRegistry;
         const { data: demoProduction, error: demoError } = await supabase
           .from("production_requests")
-        .update({
-           status: providerStarted ? "in_production" : "queued",
-           provider: providerStarted ? (visualJob?.provider ?? renderJob?.provider ?? null) : null,
-           provider_job_id: providerStarted ? (visualJob?.id ?? renderJob?.id ?? null) : null,
-           generation_status: providerStarted ? visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "render_job_created" : "waiting_provider_config",
-          preview_url: visualJob || renderJob ? undefined : null,
-          delivery_link: visualJob || renderJob ? undefined : null,
-          delivery_zip_url: visualJob || renderJob ? undefined : null,
-          readme_url: visualJob || renderJob ? undefined : null,
-           output_json: { ...outputJson, automationStatus: providerStarted ? "running" : "waiting_provider_config", providerStatus: providerStarted ? "provider_started" : "waiting_provider_config", previewUrl: providerStarted ? outputJson.previewUrl : null, deliveryLink: providerStarted ? outputJson.deliveryLink : null, deliveryZipUrl: providerStarted ? outputJson.deliveryZipUrl : null, readmeUrl: providerStarted ? outputJson.readmeUrl : null },
-          admin_notes: providerNote,
-          updated_at: new Date().toISOString()
-        })
-      .eq("id", productionId)
+.update(safeUpdate({
+            status: providerStarted ? "in_production" : "queued",
+            provider: providerStarted ? (visualJob?.provider ?? renderJob?.provider ?? null) : null,
+            provider_job_id: providerStarted ? (visualJob?.id ?? renderJob?.id ?? null) : null,
+            generation_status: providerStarted ? visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "render_job_created" : "waiting_provider_config",
+            preview_url: visualJob || renderJob ? undefined : null,
+            delivery_link: visualJob || renderJob ? undefined : null,
+            delivery_zip_url: visualJob || renderJob ? undefined : null,
+            readme_url: visualJob || renderJob ? undefined : null,
+            output_json: { ...outputJson, automationStatus: providerStarted ? "running" : "waiting_provider_config", providerStatus: providerStarted ? "provider_started" : "waiting_provider_config", previewUrl: providerStarted ? outputJson.previewUrl : null, deliveryLink: providerStarted ? outputJson.deliveryLink : null, deliveryZipUrl: providerStarted ? outputJson.deliveryZipUrl : null, readmeUrl: providerStarted ? outputJson.readmeUrl : null },
+            admin_notes: providerNote,
+            updated_at: new Date().toISOString()
+          }))
+       .eq("id", productionId)
       .select("*")
       .single();
 
@@ -1544,24 +1552,33 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
         const { data: currentProduction } = await selectProductionForAutomation(supabase, productionId);
         if (currentProduction) {
           const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
-          const failureOutput = {
-            ...existingOutput,
-            automationStatus: "provider_start_failed",
-            providerStatus: "provider_start_failed",
-            providerErrors: { ...(existingOutput.providerErrors && typeof existingOutput.providerErrors === "object" ? existingOutput.providerErrors as Record<string, unknown> : {}), automation_start: failureMessage },
-            errorMessage: failureMessage
-          };
-          await supabase
-            .from("production_requests")
-            .update(safeUpdate({
-              automation_status: "provider_start_failed",
-              generation_status: "provider_start_failed",
-              output_json: failureOutput,
-              error_message: failureMessage,
-              admin_notes: `Automation start failed before provider job creation: ${failureMessage}`,
-              updated_at: new Date().toISOString()
-            }))
-            .eq("id", productionId);
+           const outputHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingOutput.provider_job_id || existingOutput.visualJob && typeof existingOutput.visualJob === "object" && String((existingOutput.visualJob as Record<string, unknown>).id ?? "").trim() && !String((existingOutput.visualJob as Record<string, unknown>).id).startsWith("pending-"));
+           const noProviderJob = !providerJobCreated && !outputHasProviderJob;
+           const release = noProviderJob
+             ? await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because automation start failed before provider job creation: ${failureMessage}`, existingOutput)
+             : { amount: 0, alreadyResolved: false, creditResolution: null };
+           const failureOutput = {
+             ...existingOutput,
+             automationStatus: "provider_start_failed",
+             providerStatus: noProviderJob ? "provider_start_failed_no_job" : "provider_start_failed",
+             providerJobCreated: !noProviderJob,
+             providerErrors: { ...(existingOutput.providerErrors && typeof existingOutput.providerErrors === "object" ? existingOutput.providerErrors as Record<string, unknown> : {}), automation_start: failureMessage },
+             ...(release.creditResolution ? { creditResolution: release.creditResolution } : {}),
+             errorMessage: failureMessage
+           };
+           await supabase
+             .from("production_requests")
+             .update(safeUpdate({
+               status: noProviderJob ? "queued" : "in_production",
+               automation_status: "provider_start_failed",
+               generation_status: noProviderJob ? "provider_start_failed_no_job" : "provider_start_failed",
+               ...(noProviderJob ? { reserved_credits: 0 } : {}),
+               output_json: failureOutput,
+               error_message: failureMessage,
+               admin_notes: noProviderJob ? `Automation start failed before provider job creation; reserved credits released: ${failureMessage}` : `Automation start persistence failed after provider job creation: ${failureMessage}`,
+               updated_at: new Date().toISOString()
+             }))
+             .eq("id", productionId);
         }
       } catch (logError) {
         console.error("automation:start failure logging failed", logError);

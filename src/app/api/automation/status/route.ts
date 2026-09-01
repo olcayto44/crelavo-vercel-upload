@@ -27,6 +27,7 @@ import type { NormalizedProviderStatus, ProviderJob } from "@/lib/providers/type
 import { isProductAdProduction } from "@/lib/queue-policy";
 import { buildProjectDeliveryOutput, isAutomaticProjectDelivery } from "@/lib/project-delivery";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
+import { productionRequestUpdatePayload } from "@/lib/production-request-schema";
 
 function stripPostgresUnsafeText(value: string) {
   return value
@@ -49,7 +50,7 @@ function postgresSafe<T>(value: T): T {
 }
 
 function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
-  return postgresSafe(payload);
+  return postgresSafe(productionRequestUpdatePayload(payload)) as T;
 }
 
 async function refundReservedCreditsOnce(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, output: Record<string, unknown>, note: string) {
