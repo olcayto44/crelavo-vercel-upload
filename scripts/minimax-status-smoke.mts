@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "../src/lib/providers/minimax-status.ts";
 
 const taskId = "436887923384578";
+const productionWorkspaceSource = readFileSync(new URL("../src/components/ProductionWorkspace.tsx", import.meta.url), "utf8");
+const workAssistantSource = readFileSync(new URL("../src/components/WorkAssistant.tsx", import.meta.url), "utf8");
+assert.match(productionWorkspaceSource, /provider_status_unavailable/);
+assert.match(productionWorkspaceSource, /Provider status unavailable \/ Action required/);
+assert.match(productionWorkspaceSource, /providerStatusUnavailable \? nextLiveStep/);
+assert.match(workAssistantSource, /provider_status_unavailable/);
+assert.match(workAssistantSource, /Provider status unavailable \/ Action required/);
 
 const submitted = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "submitted" } }, taskId);
 assert.equal(submitted.provider, "minimax");

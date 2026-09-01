@@ -196,6 +196,7 @@ function workflowStageLabel(stage?: string) {
     waiting_provider_config: "Waiting provider config",
     provider_ready: "Provider ready",
     in_production: "Production running",
+    provider_status_unavailable: "Provider status unavailable / Action required",
     qa_review: "QA / approval",
     ready: "Delivery ready",
     failed: "Failed",
@@ -537,6 +538,7 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
    const minimaxVideoId = providerIsMinimax ? String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim() : "";
   const providerJobId = !providerIsMinimax ? String(visualJob?.provider === providerProofProvider && visualJob?.id ? visualJob.id : outputJson.providerJobId ?? outputJson.provider_job_id ?? "").trim() : "";
   const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
+  const providerStatusSignal = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${providerProofStatus} ${String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).errorCategory : "") ?? "")} ${String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).errorMessage : "") ?? "")}`.toLowerCase();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
    const shotWaitingLabel = "Final video waiting";
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
@@ -618,7 +620,8 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
   const hasActiveMinimaxProof = Boolean((minimaxSessionId || minimaxVideoId) && /queued|submitted|starting|processing|running|rendering|generating|in_progress/i.test(providerProofStatus));
-  const providerStatusUnavailable = providerIsMinimax && /(^|[_ -])unknown($|[_ -])|minimax_unknown/i.test(`${providerProofStatus} ${outputJson.providerStatus}`);
+  const providerStatusUnavailable = /provider_status_unavailable|minimax_unknown|provider[_ -]?status[_ -]?(unavailable|unknown)|provider[_ -]?(http[_ -]?)?(unavailable|unknown)|http[_ -]?(unavailable|error)|status[_ -]?unavailable/.test(providerStatusSignal)
+    || Boolean(visualJob && /^unknown$/i.test(String(visualJob.status ?? "")) && !hasActiveMinimaxProof);
   const hasActiveProviderJob = !providerStatusUnavailable && (isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof);
   const statusRefreshAvailable = Boolean(visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired);
 
@@ -899,11 +902,11 @@ const data = await response.json().catch(() => ({}));
   }
 
   useEffect(() => {
-    if ((!visualJob && !hasAlternativeJobs && !dedicatedCharacterDialogueRequired) || ["ready", "failed"].includes(String(production.status))) return;
+    if ((!visualJob && !hasAlternativeJobs && !dedicatedCharacterDialogueRequired) || providerStatusUnavailable || ["ready", "failed"].includes(String(production.status))) return;
   const firstTimer = window.setTimeout(() => refreshProviderStatus(true), isDedicatedPipelineRunning ? 1000 : 12000);
   const timer = window.setInterval(() => refreshProviderStatus(true), isDedicatedPipelineRunning ? 15000 : 12000);
   return () => { window.clearTimeout(firstTimer); window.clearInterval(timer); };
-  }, [production.id, production.status, visualJob?.id, hasAlternativeJobs, dedicatedCharacterDialogueRequired]);
+  }, [production.id, production.status, visualJob?.id, hasAlternativeJobs, dedicatedCharacterDialogueRequired, providerStatusUnavailable]);
 
   function primeRevision(part: AssetPart, selectedAction: string) {
     setTargetPart(part.title);
@@ -1009,8 +1012,8 @@ const data = await response.json().catch(() => ({}));
 
         <section className="dynamic-brief-panel" style={{ marginTop: 14 }}>
           <span className="badge">Workflow state</span>
-          <h3>{workflowStageLabel(workflowState?.stage ?? liveStatus)}</h3>
-          <p>{workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
+          <h3>{workflowStageLabel(providerStatusUnavailable ? "provider_status_unavailable" : workflowState?.stage ?? liveStatus)}</h3>
+          <p>{providerStatusUnavailable ? nextLiveStep : workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
           <div className="production-context-grid">
             <div><span>{projectPackageReady ? "Package credits" : "Credit reserve"}</span><strong>{Number(workflowState?.reservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0).toLocaleString()}</strong><small>{projectPackageReady ? "Included in ready package" : workflowState?.hasReservedCredits ? "Reserved" : "Not fully reserved"}</small></div>
             <div><span>Provider</span><strong>{providerProofProvider || String(workflowProviderReadiness?.provider ?? workflowProviderReadiness?.status ?? providerStatus) || "Pending"}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
@@ -1038,7 +1041,7 @@ const data = await response.json().catch(() => ({}));
               <p>These are the options the user selected before starting production. They are carried into preview, delivery ZIP, README and revision flow.</p>
             </div>
             <div className="live-production-card-grid">
-              {liveProductionCards.map((card) => <article key={card}><strong>{`${card} — ${projectPackageReady ? "Ready" : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline not started" : providerJobMissingWhileRunning ? "Provider job missing" : hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline running" : isProviderRunning ? "Producing" : "Queued"}`}</strong></article>)}
+              {liveProductionCards.map((card) => <article key={card}><strong>{`${card} — ${providerStatusUnavailable ? "Provider status unavailable / Action required" : projectPackageReady ? "Ready" : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline not started" : providerJobMissingWhileRunning ? "Provider job missing" : hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline running" : isProviderRunning ? "Producing" : "Queued"}`}</strong></article>)}
             </div>
           </section>
         ) : null}
@@ -1078,7 +1081,7 @@ const data = await response.json().catch(() => ({}));
 
         <div className="production-context-grid">
           <div><span>Production type</span><strong>{type}</strong></div>
-          <div><span>Status</span><strong>{liveStatus}</strong></div>
+          <div><span>Status</span><strong>{providerStatusUnavailable ? "Provider status unavailable / Action required" : liveStatus}</strong></div>
           <div><span>Credits</span><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></div>
           <div><span>Provider risk</span><strong>{String(outputPlan.providerRiskLevel ?? "low")}</strong></div>
           <div><span>Country / city</span><strong>{[audience.targetCountry, audience.targetCity].filter(Boolean).join(" / ") || "To be defined"}</strong></div>
@@ -1101,7 +1104,7 @@ const data = await response.json().catch(() => ({}));
           </section>
         ) : null}
 
-        {isQueuedForRenderSlot ? (
+        {isQueuedForRenderSlot && !providerStatusUnavailable ? (
           <section className="cost-safety-card">
             <span className="badge">Render queue</span>
             <h3>Queued for the next safe provider slot</h3>
@@ -1252,7 +1255,7 @@ const data = await response.json().catch(() => ({}));
               ].map((platform) => <a className={`social-platform-card ${platform.tone}`} href={`/dashboard/social-export?platform=${encodeURIComponent(platform.label)}&production=${encodeURIComponent(production.id)}`} key={`top-${platform.label}`}><span className="social-platform-icon">{platform.icon}</span><strong>{platform.label}</strong><small>Prepare post</small></a>)}
             </div>
           </div> : null}
-          {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
+           {(!isReady && (isDedicatedPipelineRunning || providerStatusUnavailable || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{providerStatusUnavailable ? nextLiveStep : isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
           <div className="customer-preview-screen">
             {previewKind === "video" ? (
               <video src={playbackUrl} controls playsInline crossOrigin="anonymous" poster={posterUrl || autoPosterUrl || undefined} onLoadedData={captureAutoPoster} />
@@ -1614,7 +1617,7 @@ const data = await response.json().catch(() => ({}));
                 </div>
               ))}
             </div>
-          ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline has not attached stage jobs yet. Press Start Production once to create the character sheets, scene images, voice segments and final assembly plan." : providerJobMissingWhileRunning ? "Production is marked running, but no real provider job is attached yet. Press Start Production once to attach the video provider job." : hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline is running. Character sheets, scene images, voice segments and image-to-video jobs are tracked before final assembly." : "Production has started. Provider/automation status is being tracked; revision actions unlock after a preview or delivery is available."}</p>}
+           ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : providerStatusUnavailable ? "Provider status unavailable / Action required. Use Refresh provider status to check the existing provider job; no new production will be started." : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline has not attached stage jobs yet. Press Start Production once to create the character sheets, scene images, voice segments and final assembly plan." : providerJobMissingWhileRunning ? "Production is marked running, but no real provider job is attached yet. Press Start Production once to attach the video provider job." : hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline is running. Character sheets, scene images, voice segments and image-to-video jobs are tracked before final assembly." : "Production has started. Provider/automation status is being tracked; revision actions unlock after a preview or delivery is available."}</p>}
         </div>
 
         <div className="final-delivery-card">

@@ -1538,9 +1538,16 @@ function productionCardStatus(production: WorkProductionCard | null) {
   const output = production.output_json && typeof production.output_json === "object" ? production.output_json : {};
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;
   const providerJob = output.providerJob && typeof output.providerJob === "object" ? output.providerJob as Record<string, unknown> : null;
+  const visualStatus = output.visualStatus && typeof output.visualStatus === "object" ? output.visualStatus as Record<string, unknown> : null;
   const providerId = String(visualJob?.id ?? providerJob?.id ?? output.providerJobId ?? "").trim();
-  const statusText = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(output.providerStatus ?? "")}`.toLowerCase();
+  const statusText = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(output.providerStatus ?? "")} ${String(visualJob?.status ?? "")} ${String(visualStatus?.status ?? "")} ${String(visualStatus?.errorCategory ?? "")} ${String(visualStatus?.errorMessage ?? "")}`.toLowerCase();
+  const providerUnavailable = /provider_status_unavailable|minimax_unknown|provider[_ -]?status[_ -]?(unavailable|unknown)|provider[_ -]?(http[_ -]?)?(unavailable|unknown)|http[_ -]?(unavailable|error)|status[_ -]?unavailable/.test(statusText)
+    || Boolean((visualJob || providerJob) && /^unknown$/i.test(String(visualStatus?.status ?? visualJob?.status ?? providerJob?.status ?? "")));
+  const finalUrl = firstTextValue(output.finalVideoUrl, output.providerFinalUrl, production.preview_url, production.delivery_link);
+  const succeeded = /succeeded|completed|complete|ready|done/.test(statusText);
   const failed = /replicate_failed|provider_start_failed|failed|partial|no[_ -]?job|provider_required|waiting_provider_config/.test(statusText);
+  if (finalUrl && succeeded) return "Production complete";
+  if (providerUnavailable) return "Provider status unavailable / Action required";
   if (failed || !providerId) return failed ? "Action required: provider failed" : "Provider pending";
   return "Production running";
 }
