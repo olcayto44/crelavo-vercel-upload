@@ -172,7 +172,8 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
   const aspectRatio = selectedAspectRatio(requestMetadata, inputJson);
   const featureFlags = selectedFeatureFlags(requestMetadata, inputJson);
   const characterDialogueAnimation = detectCharacterDialogueAnimationNeed(textFrom(input.productionType, JSON.stringify(requestMetadata), JSON.stringify(inputJson)));
-  const outputIntent = metadataObject(requestMetadata.outputIntent) && Object.keys(metadataObject(requestMetadata.outputIntent)).length ? metadataObject(requestMetadata.outputIntent) : metadataObject(inputJson.outputIntent);
+  const outputIntentSource = metadataObject(requestMetadata.outputIntent) && Object.keys(metadataObject(requestMetadata.outputIntent)).length ? metadataObject(requestMetadata.outputIntent) : metadataObject(inputJson.outputIntent);
+  const outputIntent = { ...outputIntentSource, durationSeconds: requestedDuration };
   const sourceHandling = metadataObject(requestMetadata.sourceHandling) && Object.keys(metadataObject(requestMetadata.sourceHandling)).length ? metadataObject(requestMetadata.sourceHandling) : metadataObject(inputJson.sourceHandling);
 
   if (isProjectProduction) {

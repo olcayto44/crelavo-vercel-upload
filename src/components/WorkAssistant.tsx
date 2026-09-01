@@ -1109,7 +1109,7 @@ function productionSourceHandling(type: string, selectedItems: string[]) {
   };
 }
 
-function productionOutputIntent(type: string, selectedItems: string[]) {
+function productionOutputIntent(type: string, selectedItems: string[], durationSeconds = 0) {
   const signal = `${type} ${selectedItems.join(" ")}`.toLowerCase();
   const clipMatch = signal.match(/(3|5|10)\s+clips?/);
   const alternativeMatch = signal.match(/(3|5)\s+alternatives?/);
@@ -1119,6 +1119,7 @@ function productionOutputIntent(type: string, selectedItems: string[]) {
     requestedClipCount,
     requestedAlternativeCount,
     outputCount: requestedClipCount || requestedAlternativeCount || 1,
+    durationSeconds,
     uniqueOutputsRequired: Boolean(requestedClipCount || requestedAlternativeCount),
     duplicatePolicy: requestedClipCount
       ? "Each clip must come from a different source moment/timestamp. Never duplicate the same clip with only minor edits."
@@ -1126,6 +1127,19 @@ function productionOutputIntent(type: string, selectedItems: string[]) {
         ? "Each alternative must use a distinct hook, visual angle or scene structure. Never repeat the same output."
         : "Single best output",
     timestampPolicy: requestedClipCount ? "different_source_timestamps_required" : "not_applicable"
+  };
+}
+
+function selectedOptionFlags(selectedItems: string[], prompt: string) {
+  const signal = `${selectedItems.join(" ")} ${prompt}`.toLowerCase();
+  const noVoice = /no\s*voice|without\s*voice|no\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|sessiz/.test(signal);
+  const noSubtitles = /no\s*subtitle|without\s*subtitle|no\s*caption|altyaz[ıi]\s*(olmasın|yok|sız|siz)/.test(signal);
+  const noMusic = /no\s*music|without\s*music|music\s*(off|none)|müzik\s*(olmasın|yok|siz|sız)|sessiz/.test(signal);
+  return {
+    voiceOver: !noVoice && /voice|voice-?over|narration|seslendirme|anlatıcı|anlatici/.test(signal),
+    subtitles: !noSubtitles && /subtitle|caption|altyaz/.test(signal),
+    music: !noMusic && /music|soundtrack|müzik|muzik/.test(signal),
+    finalRender: (!noVoice && /voice|voice-?over|narration|seslendirme|anlatıcı|anlatici/.test(signal)) || (!noSubtitles && /subtitle|caption|altyaz/.test(signal)) || (!noMusic && /music|soundtrack|müzik|muzik/.test(signal))
   };
 }
 
@@ -2054,15 +2068,18 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
   ...(selectedSound?.name ? { selected_music_name: [selectedSound.name] } : {})
 };
 
-    const setupFields = setupDerivedFields(activePlanInput.production_type, setupForPayload);
-    const setupItemsForPayload = selectedSetupItems(setupForPayload, activePlanInput.production_type);
-    const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
+     const setupFields = setupDerivedFields(activePlanInput.production_type, setupForPayload);
+     const setupItemsForPayload = selectedSetupItems(setupForPayload, activePlanInput.production_type);
+     const selectedItemsForIntent = Array.from(new Set([...productionCards, ...setupItemsForPayload, ...(activePlanInput.selected_features || [])]));
+     const contentDurationSeconds = selectedDurationSeconds(setupForPayload, activePlanInput);
+     const selectedOptionFlagsForPayload = selectedOptionFlags(selectedItemsForIntent, cleanInput);
+     const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent, contentDurationSeconds);
+     const outputDurationSeconds = isImageProduction ? 0 : contentDurationSeconds || (project ? 0 : 5);
     const thumbnailPrompt = selectedItemsForIntent.some((item) => /thumbnail|cover visual|kapak/i.test(String(item)))
       ? customThumbnailPrompt.trim() || "Cinematic vertical 9:16 cover image for Crelavo. One strong focal subject, high contrast dark tech background, glowing neon red and electric blue accents, urgent FOMO-driven atmosphere, premium social media hook, AI video creation energy, no text, no logos, no extra people, no clutter, clean composition, scroll-stopping thumbnail."
       : undefined;
     const avoidPrompt = customAvoidPrompt.trim() || undefined;
-    const outputIntent = productionOutputIntent(activePlanInput.production_type, selectedItemsForIntent);
-    const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
+     const sourceHandling = productionSourceHandling(activePlanInput.production_type, selectedItemsForIntent);
     const setupForPayloadRecord = setupForPayload as ProductionSetupState;
     const imageAspectRatio = isImageProduction ? normalizedImageAspectRatio(setupForPayloadRecord, cleanInput) : undefined;
          const selectedAspect = String(((setupForPayloadRecord as unknown as Record<string, unknown>).aspectRatio as string[] | undefined)?.[0] ?? "");
@@ -2085,8 +2102,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       const productionTypeForPayload = isImageProduction ? "image" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
 
      const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
-      const contentDurationSeconds = Number(setupFields.selected_duration?.match(/\d+/)?.[0] ?? 0);
-      if (!isImageProduction && isVideoLikeProductionType(productionTypeForPayload) && contentDurationSeconds > 15) {
+       if (!isImageProduction && isVideoLikeProductionType(productionTypeForPayload) && contentDurationSeconds > 15) {
         setStarting(false);
         setStatus(statusUx("Bu provider yolu tek istekte en fazla 15 saniyeyi destekliyor. Lütfen 15 saniye veya daha kısa bir süre seç.", "This provider path supports at most 15 seconds per request. Select 15 seconds or less."));
          return null;
@@ -2094,7 +2110,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       const timingBrief = contentDurationSeconds === 30 && /\b25\s*(?:sec|seconds|sn|saniye)\b/i.test(cleanInput)
        ? "Use approximately 25 seconds for the main content, then hold the final CTA for the remaining 5 seconds."
        : "";
-     const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief].filter(Boolean).join("\n\n");
+     const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief, selectedOptionFlagsForPayload.voiceOver ? "Voice-over: enabled." : "Voice-over: disabled.", selectedOptionFlagsForPayload.subtitles ? "Subtitles: enabled." : "Subtitles: disabled.", selectedOptionFlagsForPayload.music ? "Music: enabled." : "Music: disabled."].filter(Boolean).join("\n\n");
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
       const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : undefined;
 
@@ -2124,7 +2140,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
          package_id: isLuxuryProductCommercialPrompt(cleanInput) || isVideoLikeProductionType(productionTypeForPayload) ? "video_premium" : activePlanInput.package_id,
         quality: setupFields.selected_quality || activePlanInput.selected_quality,
         selected_quality: setupFields.selected_quality || activePlanInput.selected_quality,
-        output_duration_seconds: isImageProduction ? 0 : Number(setupFields.selected_duration?.replace(/\D/g, "")) || Number(activePlanInput.selected_duration?.replace(/\D/g, "")) || (project ? 0 : 30),
+         output_duration_seconds: outputDurationSeconds,
         output_count: outputIntent.outputCount,
         requested_clip_count: outputIntent.requestedClipCount,
         requested_alternative_count: outputIntent.requestedAlternativeCount,
@@ -2133,8 +2149,8 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
         estimated_credits: totalEstimatedCreditsForPayload,
         delivery_level: project ? "working_source_package" : "production_package",
         delivery_requirements: { requested: true, status: "pending", formats },
-        request_metadata: { source: "omnichannel_studio", workPage: true, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, plan: { ...activePlanInput, production_type: productionTypeForPayload, package_id: isLuxuryProductCommercialPrompt(cleanInput) ? "video_premium" : activePlanInput.package_id }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, outputKind: isImageProduction ? "static_image" : undefined, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), imageType: imageTypeForPayload, aspectRatio: aspectRatioForPayload, aspect_ratio: aspectRatioForPayload, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
-        input_json: { work_prompt: cleanInput, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        request_metadata: { source: "omnichannel_studio", workPage: true, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, plan: { ...activePlanInput, production_type: productionTypeForPayload, package_id: isLuxuryProductCommercialPrompt(cleanInput) ? "video_premium" : activePlanInput.package_id }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, outputKind: isImageProduction ? "static_image" : undefined, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), imageType: imageTypeForPayload, aspectRatio: aspectRatioForPayload, aspect_ratio: aspectRatioForPayload, noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, productionCards, selectedOptions: selectedOptionFlagsForPayload, selectedOptionLabels: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
+        input_json: { work_prompt: cleanInput, routeLock: isLuxuryProductCommercialPrompt(cleanInput) ? "minimax_direct_luxury_product_commercial" : undefined, providerPrompt, thumbnailPrompt, thumbnail_image_description: thumbnailPrompt, avoidPrompt, providerAvoidPrompt: avoidPrompt, creativeBrief: presenterCreative?.creativeBrief, creativePreset: presenterCreative?.preset, creativeTags: presenterCreative?.tags, creativeActivityLog, plan: { ...activePlanInput, production_type: productionTypeForPayload }, originalPlan: activePlanInput, routedFromProductionType: activePlanInput.production_type, presenterMode: isImageProduction ? false : wantsPresenterVideo, frameExtractionRequested: frameExtraction, ...(sourceVideoUrl ? { sourceVideoUrl } : {}), ...(frameExtraction ? { frameExtractionMode: "ffmpeg", ...(frameTimestampSeconds ? { frameTimestampSeconds } : {}) } : {}), noPeopleMotionIntent, preferredProvider: preferredProviderForPayload, selectedProviderService: preferredProviderForPayload, provider_service: preferredProviderForPayload, stylePackId: stylePackIdForPayload, productionCards, selectedOptions: selectedOptionFlagsForPayload, selectedOptionLabels: selectedItemsForIntent, productionSetup: setupForPayload, selectedAvatar: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? null : selectedAvatar, selectedVoice: isImageProduction ? null : selectedVoice, selectedSound: isImageProduction ? null : selectedSound, heygen_avatar_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.avatarId, heygen_look_id: isImageProduction || wantsMinimaxBrollVideoAgent || wantsNoPresenterIntent ? undefined : activeSelectedAvatar?.lookId, heygen_voice_id: isImageProduction ? undefined : selectedVoice?.id, heygen_music_id: isImageProduction ? undefined : selectedSound?.id, heygen_music_audio_url: isImageProduction ? undefined : selectedSound?.audioUrl, heygenQualityTier: heygenTierForPayload.selected, heygenTierCredits: heygenTierForPayload.credits, heygenTierDurationSeconds: heygenTierForPayload.seconds, manualMinimaxCredits: manualMinimaxCreditsForPayload, outputIntent, sourceHandling, totalEstimatedCredits: totalEstimatedCreditsForPayload, uploadedMaterials: materials },
          uploaded_materials: materials,
          legal_acceptance: true,
          dispatch_action: isImageProduction ? "generate_image" : "start_production",

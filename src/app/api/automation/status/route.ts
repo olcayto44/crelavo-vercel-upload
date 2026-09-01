@@ -976,14 +976,15 @@ let outputWithRenderJob = renderBridge.renderJob
     const explicitNoMusicForRender = /no\s*music|without\s*music|music\s*(off|none)|müzik\s*olmasın|muzik\s*olmasın|müzik\s*yok|muzik\s*yok|sessiz/.test(renderSignal);
 const visualJobForUrl = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, any> : {};
 const renderJobForUrl = output.renderJob && typeof output.renderJob === "object" ? output.renderJob as Record<string, any> : {};
-const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
-const isHeyGenVideoAgentProvider = outputVisualJobProvider.toLowerCase() === "heygen_video_agent" || String(visualStatus?.provider ?? "").toLowerCase() === "heygen_video_agent";
+ const outputVisualJobProvider = outputWithRenderJob.visualJob && typeof outputWithRenderJob.visualJob === "object" ? String((outputWithRenderJob.visualJob as Record<string, unknown>).provider ?? "") : "";
+ const isMiniMaxProvider = outputVisualJobProvider.toLowerCase() === "minimax" || String(visualStatus?.provider ?? "").toLowerCase() === "minimax";
+ const isHeyGenVideoAgentProvider = outputVisualJobProvider.toLowerCase() === "heygen_video_agent" || String(visualStatus?.provider ?? "").toLowerCase() === "heygen_video_agent";
     const wantsVoiceRender = !explicitNoVoiceForRender && Boolean(selectedOptions.voiceOver || output.voiceAudioUrl);
     const wantsSubtitleRender = !explicitNoSubtitlesForRender && Boolean(selectedOptions.subtitles || output.subtitleUrl);
     const wantsMusicRender = !explicitNoMusicForRender && Boolean(selectedOptions.music);
     const isDroneProduction = String(production.production_type ?? "") === "drone_video";
     const requiresFinalRender = !isHeyGenVideoAgentProvider && (isDroneProduction || Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender))));
-const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url || visualJobForUrl.preview_url || visualJobForUrl.raw?.url || visualJobForUrl.raw?.output || visualJobForUrl.raw?.video || visualJobForUrl.raw?.result || "").trim();
+ const fallbackVisualUrl = isMiniMaxProvider ? "" : String(visualStatus?.outputUrl || visualJobForUrl.url || visualJobForUrl.preview_url || visualJobForUrl.raw?.url || visualJobForUrl.raw?.output || visualJobForUrl.raw?.video || visualJobForUrl.raw?.result || "").trim();
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
      const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && visualStatus.provider !== "minimax" && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
      const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && renderStatus.provider !== "minimax" && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;

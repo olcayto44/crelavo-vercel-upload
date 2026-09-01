@@ -71,8 +71,14 @@ assert.equal(miniMaxStatusFromResponse({ data: { status_code: "success", output_
 
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
 const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
-assert.equal(currentTask.status, "succeeded");
-assert.equal(currentTask.outputUrl, currentTaskRawUrl);
+assert.equal(currentTask.status, "failed");
+assert.equal(currentTask.outputUrl, undefined);
+assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawUrlCount, 1);
+assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawVideoUrlCount, 1);
+
+const confirmedTaskOutput = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: { task_id: taskId, url: currentTaskRawUrl } } }, taskId);
+assert.equal(confirmedTaskOutput.status, "succeeded");
+assert.equal(confirmedTaskOutput.outputUrl, currentTaskRawUrl);
 
 const ambiguousRawUrls = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl, "https://video-product.cdn.minimax.io/other/output.mp4"] } }, taskId);
 assert.equal(ambiguousRawUrls.status, "failed");

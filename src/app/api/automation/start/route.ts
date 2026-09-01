@@ -806,8 +806,9 @@ if (talkingProviderType) {
      if (failedUpdateError) throw new Error(`minimax_start_failed_update: ${errorMessage(failedUpdateError, "DB update failed")}; original: ${failureMessage}`);
      return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });
    }
-      const talkingOutput = {
-        ...existingOutput,
+       const providerTaskId = "task_id" in providerJob ? providerJob.task_id : providerJob.id;
+       const talkingOutput = {
+         ...existingOutput,
         automationMode: "fully_automatic",
         automationStatus: "running",
 providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "minimax_video_agent_task_created" : "minimax_job_created",
@@ -819,16 +820,16 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
         provider_job_id: providerJob.id ?? null,
         heygenSessionId: providerJob.provider === "heygen_video_agent" ? providerJob.id : null,
         heygenVideoId: "videoId" in providerJob ? providerJob.videoId : null,
-        minimaxProviderProof: useMiniMaxVideoAgent ? { provider: "minimax_video_agent", taskId: providerJob.id, status: providerJob.status, model: "MiniMax-H3" } : null,
+         minimaxProviderProof: useMiniMaxVideoAgent ? { provider: "minimax", taskId: providerTaskId, status: providerJob.status, model: "MiniMax-H3" } : null,
     heygenProviderProof: providerJob.provider === "heygen_video_agent" ? { provider: "heygen_video_agent", sessionId: providerJob.id, videoId: "videoId" in providerJob ? providerJob.videoId : null, status: providerJob.status } : { provider: "heygen_v2_generate", videoId: providerJob.id, status: providerJob.status },
         heygenVideoAgent: providerJob.provider === "heygen_video_agent" ? providerJob : null,
         heygenAgentBridge: providerJob.provider === "heygen_video_agent" ? { mode: "native_session_artifacts", sessionId: providerJob.id, status: "tracking_session_resources", artifactField: "heygenAgentArtifacts" } : null,
         heygenAgentArtifacts: [],
         latestHeyGenVideoArtifact: null,
-        visualJob: { provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw },
+         visualJob: { provider: providerJob.provider, id: providerJob.id, task_id: providerTaskId, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw },
          visualJobs: "visualJobs" in providerJob && Array.isArray(providerJob.visualJobs)
            ? providerJob.visualJobs
-           : [{ provider: providerJob.provider, id: providerJob.id, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw }],
+            : [{ provider: providerJob.provider, id: providerJob.id, task_id: providerTaskId, status: providerJob.status, type: providerJob.provider === "heygen_video_agent" ? "video_agent" : "talking_lip_sync", raw: providerJob.raw }],
         creativeActivityLog: mergeCreativeActivityLog(existingOutput.creativeActivityLog ?? requestMetadata.creativeActivityLog ?? inputJson.creativeActivityLog, [
           creativeActivityItem("provider-job", "Provider job", "working", providerJob.provider === "heygen_video_agent" ? `HeyGen Video Agent session created: ${providerJob.id}` : `HeyGen talking provider job created: ${providerJob.id}`, providerJob.provider),
           creativeActivityItem("a-roll", "A-roll scene", "working", "Presenter A-roll generation is now running with the selected provider.", providerJob.provider),

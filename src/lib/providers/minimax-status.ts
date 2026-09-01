@@ -5,6 +5,8 @@ type MiniMaxDiagnostics = {
   responseCategory: string;
   statusPath?: string;
   outputPath?: string;
+  rawUrlCount: number;
+  rawVideoUrlCount: number;
 };
 
 function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
@@ -76,6 +78,7 @@ function firstVideoUrl(value: unknown): string | undefined {
 
 function currentTaskOutputUrl(task: Record<string, unknown>, envelope: Record<string, unknown>, taskId: string) {
   const taskIdentity = String(task.task_id ?? task.taskId ?? task.id ?? envelope.task_id ?? envelope.taskId ?? envelope.id ?? "").trim();
+  if (taskIdentity && taskIdentity !== taskId) return { url: undefined, path: undefined };
   const outputCandidates: Array<[string, unknown]> = [
     ["data.task.content", task.content],
     ["data.task.video_url", task.video_url],
@@ -96,11 +99,6 @@ function currentTaskOutputUrl(task: Record<string, unknown>, envelope: Record<st
   for (const [path, value] of outputCandidates) {
     const url = firstVideoUrl(value);
     if (url) return { url, path };
-  }
-  const rawUrls = Array.isArray(task.rawUrls) ? task.rawUrls : Array.isArray(task.raw_urls) ? task.raw_urls : [];
-  if (taskIdentity === taskId && rawUrls.length === 1) {
-    const url = firstVideoUrl(rawUrls[0]);
-    if (url) return { url, path: "data.task.rawUrls[0]" };
   }
   return { url: undefined, path: undefined };
 }
@@ -124,7 +122,9 @@ export function miniMaxStatusFromError(error: unknown, taskId: string): Normaliz
   const httpStatus = typeof record.httpStatus === "number" ? Number(record.httpStatus) : undefined;
   const providerMessage = typeof record.providerMessage === "string" ? record.providerMessage.trim() : typeof record.message === "string" ? record.message.trim() : "";
   const payloadStatus = String(payload.status ?? payload.task_status ?? payload.status_code ?? payload.error?.toString() ?? "").trim();
-  const diagnostics = { responseKeys: responseKeys(record.payload), responseCategory: httpStatus === 404 ? "not_found" : httpStatus === 410 ? "expired" : httpStatus ? "http_error" : "unknown" };
+  const payloadRecord = objectRecord(record.payload);
+  const errorRawUrls = Array.isArray(payloadRecord.rawUrls) ? payloadRecord.rawUrls : Array.isArray(payloadRecord.raw_urls) ? payloadRecord.raw_urls : [];
+  const diagnostics: MiniMaxDiagnostics = { responseKeys: responseKeys(record.payload), responseCategory: httpStatus === 404 ? "not_found" : httpStatus === 410 ? "expired" : httpStatus ? "http_error" : "unknown", rawUrlCount: errorRawUrls.length, rawVideoUrlCount: errorRawUrls.filter((value) => Boolean(firstVideoUrl(value))).length };
   if (httpStatus === 404 || httpStatus === 410) {
     const errorCategory = httpStatus === 404 ? "not_found" : "expired";
     const errorMessage = providerMessage || (httpStatus === 404 ? "MiniMax task was not found." : "MiniMax task expired.");
@@ -145,13 +145,17 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
   const normalized = normalizeStatus(rawStatus);
   const output = currentTaskOutputUrl(effectiveTask, effectiveEnvelope, taskId);
   const outputUrl = output.url;
+  const rawUrls = Array.isArray(effectiveTask.rawUrls) ? effectiveTask.rawUrls : Array.isArray(effectiveTask.raw_urls) ? effectiveTask.raw_urls : [];
+  const rawVideoUrlCount = rawUrls.filter((value) => Boolean(firstVideoUrl(value))).length;
   const errorValue = effectiveTask.error ?? effectiveTask.failure ?? effectiveEnvelope.error ?? effectiveEnvelope.failure ?? record.error;
   const responseClassification = normalizeStatus(rawStatus);
   const diagnostics: MiniMaxDiagnostics = {
     responseKeys: responseKeys(data),
     responseCategory: normalized === "unknown" ? "unknown_response" : candidate.path.includes("status_code") ? "status_code" : candidate.path.includes("task_status") ? "task_status" : "status",
     statusPath: candidate.path,
-    outputPath: output.path
+    outputPath: output.path,
+    rawUrlCount: rawUrls.length,
+    rawVideoUrlCount
   };
   const error = typeof errorValue === "object" && errorValue
     ? String((errorValue as Record<string, unknown>).message ?? (errorValue as Record<string, unknown>).code ?? "MiniMax task failed.")

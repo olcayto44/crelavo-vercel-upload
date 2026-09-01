@@ -38,6 +38,11 @@ const shortVideoPreflight = buildProviderPreflight({
 
 assertEqual(shortVideoPreflight.provider, "minimax", "short video provider");
 assertEqual(shortVideoPreflight.durationSeconds, 5, "short video duration is not clamped to 15");
+assertEqual(buildProviderPreflight({ productionType: "video", requestMetadata: { outputDurationSeconds: 5, outputIntent: { durationSeconds: 3 }, selectedOptions: { voiceOver: false, subtitles: false, music: false } }, inputJson: {}, videoProvider: "minimax" }).outputIntent.durationSeconds, 5, "stale output intent duration is replaced");
+const silentPreflight = buildProviderPreflight({ productionType: "video", requestMetadata: { selectedDuration: "5 sec", selectedOptions: { voiceOver: false, subtitles: false, music: false } }, inputJson: {}, videoProvider: "minimax" });
+assertEqual(silentPreflight.selectedOptions.voiceOver, false, "no voice-over remains false");
+assertEqual(silentPreflight.selectedOptions.subtitles, false, "no subtitles remains false");
+assertEqual(silentPreflight.selectedOptions.music, false, "no music remains false");
 
 const videoPreflight = buildProviderPreflight({
   productionType: "video",

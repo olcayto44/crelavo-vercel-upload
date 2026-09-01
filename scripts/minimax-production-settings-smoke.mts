@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { miniMaxProductionSettings } from "../src/lib/providers/minimax-production-settings.ts";
 
 const selected = { aspectRatio: "9:16", quality: "1080p", providerPrompt: "User's exact production prompt" };
+const fiveSeconds = miniMaxProductionSettings({ selected: { aspectRatio: "9:16", quality: "normal" }, durationSeconds: "5 sec" });
+assert.equal(fiveSeconds.duration, 5);
+assert.equal(fiveSeconds.ratio, "9:16");
+assert.equal(fiveSeconds.resolution, "768P");
 const eightSeconds = miniMaxProductionSettings({ selected, durationSeconds: "8 sec" });
 assert.equal(eightSeconds.model, "MiniMax-H3");
 assert.equal(eightSeconds.duration, 8);
@@ -26,5 +30,11 @@ const startSource = readFileSync(new URL("../src/app/api/automation/start/route.
 const visualsSource = readFileSync(new URL("../src/lib/providers/visuals.ts", import.meta.url), "utf8");
 assert.match(startSource, /providerTaskId: visualJob\?\.task_id/);
 assert.match(startSource, /task_id: visualJob\?\.task_id/);
+assert.match(startSource, /const providerTaskId = "task_id" in providerJob/);
 assert.match(visualsSource, /content: \[\{ type: "text", text: settings\.providerPrompt \}\]/);
+const workAssistantSource = readFileSync(new URL("../src/components/WorkAssistant.tsx", import.meta.url), "utf8");
+assert.match(workAssistantSource, /selectedOptionFlagsForPayload/);
+assert.match(workAssistantSource, /output_duration_seconds: outputDurationSeconds/);
+assert.match(workAssistantSource, /Voice-over: enabled/);
+assert.match(workAssistantSource, /Music: disabled/);
 console.log("MiniMax production settings smoke passed");
