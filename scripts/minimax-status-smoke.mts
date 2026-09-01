@@ -7,7 +7,9 @@ const productionWorkspaceSource = readFileSync(new URL("../src/components/Produc
 const workAssistantSource = readFileSync(new URL("../src/components/WorkAssistant.tsx", import.meta.url), "utf8");
 assert.match(productionWorkspaceSource, /provider_status_unavailable/);
 assert.match(productionWorkspaceSource, /Provider status unavailable \/ Action required/);
-assert.match(productionWorkspaceSource, /providerStatusUnavailable \? nextLiveStep/);
+assert.match(productionWorkspaceSource, /hasProviderJobEvidence/);
+assert.match(productionWorkspaceSource, /providerStatusUnavailable \? "Provider status unavailable"/);
+assert.doesNotMatch(productionWorkspaceSource, /providerStatusUnavailable \? nextLiveStep/);
 assert.match(workAssistantSource, /provider_status_unavailable/);
 assert.match(workAssistantSource, /Provider status unavailable \/ Action required/);
 
