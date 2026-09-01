@@ -1625,25 +1625,28 @@ const data = await response.json().catch(() => ({}));
               <h3>Add to site</h3>
               <p>Connect Shopify, WooCommerce, WordPress, Webflow, Wix, Magento, BigCommerce, eBay, Etsy, Amazon, Alibaba, Trendyol, Hepsiburada, N11, or a custom site and place the video or avatar in a storefront, landing page, or support widget.</p>
               <p style={{ marginTop: 0, color: "#cbd5e1" }}>Alibaba / B2B setup: use the avatar for catalog presentation, inquiry capture, quote collection, and company profile lead generation.</p>
-              <div className="social-chip-row" aria-label="Supported site platforms">
-                {[
-                  "Shopify",
-                  "WooCommerce",
-                  "WordPress",
-                  "Webflow",
-                  "Wix",
-                  "Magento",
-                  "BigCommerce",
-                  "eBay",
-                  "Etsy",
-                  "Amazon",
-                  "Alibaba",
-                  "Trendyol",
-                  "Hepsiburada",
-                  "N11",
-                  "Custom code"
-                ].map((platform) => <span key={platform}>{platform}</span>)}
-              </div>
+              <details className="distribution-platforms">
+                <summary>15 supported platforms</summary>
+                <div className="social-chip-row" aria-label="Supported site platforms">
+                  {[
+                    "Shopify",
+                    "WooCommerce",
+                    "WordPress",
+                    "Webflow",
+                    "Wix",
+                    "Magento",
+                    "BigCommerce",
+                    "eBay",
+                    "Etsy",
+                    "Amazon",
+                    "Alibaba",
+                    "Trendyol",
+                    "Hepsiburada",
+                    "N11",
+                    "Custom code"
+                  ].map((platform) => <span key={platform}>{platform}</span>)}
+                </div>
+              </details>
               <div className="production-part-actions">
                 <a className="btn secondary" href="/dashboard/connections">Open connections</a>
                 {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank">Copy / preview</a> : <button className="btn secondary" type="button" disabled>Preview waiting</button>}

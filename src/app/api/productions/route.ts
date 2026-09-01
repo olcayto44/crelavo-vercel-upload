@@ -355,30 +355,44 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
+    const adminRequest = isAdminRequest(request, body);
     const adminEmail = getAdminEmail(request, body);
+    const requestedUserId = String(body.user_id ?? "").trim();
     const id = String(body.id ?? body.production_id ?? "").trim();
 
-    if (!isAdminRequest(request, body)) return adminRequiredResponse();
     if (!id) return Response.json({ error: "Production id is required." }, { status: 400 });
+
+    let userId = "";
+    if (!adminRequest) {
+      if (!requestedUserId) return Response.json({ error: "User session is required." }, { status: 401 });
+      const verified = await requireVerifiedRequestUser(request, requestedUserId);
+      if (!verified.ok) return verified.response;
+      userId = verified.user.id;
+    }
 
     const { data: existing, error: existingError } = await supabaseAdmin()
       .from("production_requests")
-      .select("output_json")
+      .select("user_id, output_json")
       .eq("id", id)
       .maybeSingle();
     if (existingError) throw existingError;
-    const existingOutput = existing?.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+    if (!existing) return Response.json({ error: "Production not found." }, { status: 404 });
+    if (!adminRequest && String(existing.user_id ?? "") !== userId) return Response.json({ error: "You are not allowed to delete this production." }, { status: 403 });
+    const existingOutput = existing.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+    const deletedBy = adminRequest ? adminEmail : userId;
+    const deletedStatus = adminRequest ? "deleted_by_admin" : "deleted_by_user";
 
     const { data, error } = await supabaseAdmin()
       .from("production_requests")
       .update({
         status: "deleted",
-        automation_status: "deleted_by_admin",
-        generation_status: "deleted_by_admin",
+        automation_status: deletedStatus,
+        generation_status: deletedStatus,
         updated_at: new Date().toISOString(),
-        output_json: { ...existingOutput, adminDeleted: true, deletedAt: new Date().toISOString(), deletedBy: adminEmail }
+        output_json: { ...existingOutput, adminDeleted: adminRequest, userDeleted: !adminRequest, deletedAt: new Date().toISOString(), deletedBy }
       })
       .eq("id", id)
+      .eq(adminRequest ? "id" : "user_id", adminRequest ? id : userId)
       .select("id")
       .single();
 

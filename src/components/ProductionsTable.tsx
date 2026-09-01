@@ -130,6 +130,7 @@ export function ProductionsTable() {
   const [cancellingId, setCancellingId] = useState("");
   const [approvingId, setApprovingId] = useState("");
   const [refreshingId, setRefreshingId] = useState("");
+  const [deletingId, setDeletingId] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "waiting" | "preview" | "ready" | "failed">("all");
 
   useEffect(() => {
@@ -249,6 +250,38 @@ export function ProductionsTable() {
       setMessage("Production link copied to clipboard.");
     } catch {
       setMessage("Production link is ready to copy from the browser address bar.");
+    }
+  }
+
+  async function deleteProduction(item: ProductionRow) {
+    const confirmed = window.confirm(`Delete “${item.title || "this production"}”? This removes it from your production list. Provider jobs and credits will not be changed.`);
+    if (!confirmed) return;
+
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) {
+      setMessage(auth.message);
+      return;
+    }
+
+    setDeletingId(item.id);
+    setMessage("");
+    try {
+      const response = await fetch("/api/productions", {
+        method: "DELETE",
+        headers: authHeaders(auth.accessToken),
+        body: JSON.stringify({ id: item.id, user_id: auth.user.id })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(data.error ?? "Production could not be deleted.");
+        return;
+      }
+      setRows((current) => current.filter((row) => row.id !== item.id));
+      setMessage("Production deleted from your list.");
+    } catch {
+      setMessage("Production could not be deleted. Please try again.");
+    } finally {
+      setDeletingId("");
     }
   }
 
@@ -439,6 +472,7 @@ export function ProductionsTable() {
                   <button className="btn secondary" type="button" onClick={() => { window.location.href = "/dashboard/connections"; }}>Prepare for Shopify/Amazon/Trendyol</button>
                 </div>
               ) : null}
+              <button className="btn production-delete-action" type="button" onClick={() => deleteProduction(item)} disabled={deletingId === item.id} aria-busy={deletingId === item.id}>{deletingId === item.id ? "Deleting..." : "Delete"}</button>
               {!["ready", "failed", "cancelled"].includes(item.status) ? <button className="btn secondary" type="button" onClick={() => cancelProduction(item)} disabled={cancellingId === item.id}>{cancellingId === item.id ? "Cancelling..." : "Cancel (50% credit charge)"}</button> : null}
               {item.admin_notes ? <small style={{ color: "var(--muted)" }}>Automation note: {item.admin_notes}</small> : null}
             </div>

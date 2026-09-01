@@ -11426,6 +11426,15 @@ html body .production-card-actions {
   gap: 8px;
   align-items: center;
 }
+html body .production-delete-action {
+  border-color: rgba(248, 113, 113, 0.38) !important;
+  background: rgba(127, 29, 29, 0.28) !important;
+  color: #fecaca !important;
+}
+html body .production-delete-action:hover:not(:disabled) {
+  border-color: rgba(248, 113, 113, 0.72) !important;
+  background: rgba(127, 29, 29, 0.48) !important;
+}
 html body .production-card-actions small {
   display: grid;
   place-items: center;
@@ -13050,11 +13059,17 @@ html body .production-detail-shell .final-delivery-card .delivery-action-grid a 
 html body .production-detail-shell .distribution-launch-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: max-content !important;
   gap: 14px !important;
   margin-top: 8px !important;
+  align-items: start !important;
+  align-content: start !important;
 }
 html body .production-detail-shell .distribution-launch-card {
   display: grid !important;
+  align-self: start !important;
+  min-height: 0 !important;
+  height: fit-content !important;
   gap: 10px !important;
   padding: 16px !important;
   border: 1px solid rgba(148,163,184,.18) !important;
@@ -13067,6 +13082,24 @@ html body .production-detail-shell .distribution-launch-card h3 {
   color: #f8fbff !important;
   line-height: 1.25 !important;
 }
+html body .production-detail-shell .distribution-platforms {
+  align-self: start !important;
+  min-width: 0 !important;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 14px;
+  background: rgba(2,6,23,.28);
+}
+html body .production-detail-shell .distribution-platforms summary {
+  padding: 9px 10px;
+  color: #bfdbfe;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  list-style-position: inside;
+}
+html body .production-detail-shell .distribution-platforms[open] summary {
+  border-bottom: 1px solid rgba(148,163,184,.16);
+}
 html body .production-detail-shell .distribution-launch-card p {
   margin: 0 !important;
   color: #cbd5e1 !important;
@@ -13076,10 +13109,18 @@ html body .production-detail-shell .distribution-launch-card .production-part-ac
   grid-template-columns: 1fr !important;
 }
 html body .production-detail-shell .distribution-launch-card .social-chip-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
   margin-top: 2px !important;
   margin-bottom: 2px !important;
+  align-content: start !important;
 }
 html body .production-detail-shell .distribution-launch-card .social-chip-row span {
+  min-width: 0 !important;
+  padding: 6px 7px !important;
+  text-align: center !important;
+  overflow-wrap: anywhere !important;
   background: rgba(14,165,233,.12) !important;
   color: #dbeafe !important;
   border-color: rgba(14,165,233,.22) !important;
@@ -13120,6 +13161,14 @@ html body .production-detail-shell .customer-preview-actions {
   align-items: center !important;
   justify-content: center !important;
   gap: 12px !important;
+}
+@media (max-width: 900px) {
+  html body .production-detail-shell .distribution-launch-grid {
+    grid-template-columns: 1fr !important;
+  }
+  html body .production-detail-shell .distribution-launch-card .social-chip-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 html body .production-detail-shell .customer-preview-actions .btn,
 html body .production-detail-shell .customer-preview-actions a,
