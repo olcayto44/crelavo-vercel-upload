@@ -13285,3 +13285,52 @@ html body .production-detail-shell .production-workspace-side .production-job-ov
   }
 }
 
+html body .production-detail-shell .provider-status-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 191, 36, .36);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(120, 53, 15, .34), rgba(127, 29, 29, .2));
+  color: #fde68a;
+}
+html body .production-detail-shell .provider-status-alert strong {
+  color: #fff;
+  white-space: nowrap;
+}
+html body .production-detail-shell .provider-status-alert span {
+  color: #fed7aa;
+  line-height: 1.4;
+}
+html body .production-detail-shell .provider-status-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 191, 36, .3);
+  border-radius: 16px;
+  background: rgba(120, 53, 15, .2);
+}
+html body .production-detail-shell .provider-status-card strong {
+  color: #fff;
+}
+html body .production-detail-shell .provider-status-card span {
+  color: #fed7aa;
+  font-size: 13px;
+}
+html body .production-detail-shell .progress-unavailable {
+  border-color: rgba(251, 191, 36, .28);
+  background: rgba(120, 53, 15, .18);
+}
+html body .production-detail-shell .progress-unavailable strong {
+  color: #fcd34d;
+}
+html body .production-detail-shell .customer-preview-placeholder.production-waiting-room {
+  cursor: default;
+}
+html body .production-detail-shell .customer-preview-placeholder.production-waiting-room .btn:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+

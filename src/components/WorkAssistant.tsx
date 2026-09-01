@@ -1546,8 +1546,8 @@ function productionCardStatus(production: WorkProductionCard | null) {
   const finalUrl = firstTextValue(output.finalVideoUrl, output.providerFinalUrl, production.preview_url, production.delivery_link);
   const succeeded = /succeeded|completed|complete|ready|done/.test(statusText);
   const failed = /replicate_failed|provider_start_failed|failed|partial|no[_ -]?job|provider_required|waiting_provider_config/.test(statusText);
-  if (finalUrl && succeeded) return "Production complete";
-  if (providerUnavailable) return "Provider status unavailable / Action required";
+   if (providerUnavailable) return "Provider status unavailable / Action required";
+   if (finalUrl && succeeded) return "Production complete";
   if (failed || !providerId) return failed ? "Action required: provider failed" : "Provider pending";
   return "Production running";
 }
