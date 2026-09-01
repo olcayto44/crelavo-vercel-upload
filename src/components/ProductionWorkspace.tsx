@@ -1626,7 +1626,11 @@ const data = await response.json().catch(() => ({}));
               <p>Connect Shopify, WooCommerce, WordPress, Webflow, Wix, Magento, BigCommerce, eBay, Etsy, Amazon, Alibaba, Trendyol, Hepsiburada, N11, or a custom site and place the video or avatar in a storefront, landing page, or support widget.</p>
               <p style={{ marginTop: 0, color: "#cbd5e1" }}>Alibaba / B2B setup: use the avatar for catalog presentation, inquiry capture, quote collection, and company profile lead generation.</p>
               <details className="distribution-platforms">
-                <summary>15 supported platforms</summary>
+                <summary>
+                  <span>15 supported platforms</span>
+                  <span className="distribution-platforms-show">Show integrations</span>
+                  <span className="distribution-platforms-hide">Hide integrations</span>
+                </summary>
                 <div className="social-chip-row" aria-label="Supported site platforms">
                   {[
                     "Shopify",
