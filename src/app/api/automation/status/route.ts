@@ -229,6 +229,17 @@ async function pollAlternativeJobs(alternatives: unknown[]) {
   return { updatedAlternatives, statuses };
 }
 
+function providerStatusDiagnostics(statuses: Array<NormalizedProviderStatus | null>) {
+  return statuses.filter((status): status is NormalizedProviderStatus => Boolean(status)).map((status) => ({
+    provider: status.provider,
+    jobId: status.id ?? null,
+    httpStatus: status.httpStatus ?? null,
+    normalizedStatus: status.status,
+    errorCategory: status.errorCategory ?? null,
+    errorMessage: status.errorMessage ?? status.error ?? null
+  }));
+}
+
 function updatedSteps(steps: unknown, finalStatus: NormalizedProviderStatus) {
   if (!Array.isArray(steps)) return steps;
   return steps.map((step) => {
@@ -891,7 +902,7 @@ let outputWithRenderJob = renderBridge.renderJob
           .single();
         return Response.json({ production: data, visualStatus, renderStatus, alternativeStatuses });
       }
-      return Response.json({ production, visualStatus, renderStatus, message: "No provider jobs found yet." });
+      return Response.json({ production, visualStatus, renderStatus, providerStatusDiagnostics: providerStatusDiagnostics([visualStatus, renderStatus, ...alternativeStatuses]), message: "No provider jobs found yet." });
     }
 
     if (terminalStatus.status === "failed") {
@@ -1269,7 +1280,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       .select("*")
       .single();
 
-    return Response.json({ production: data, visualStatus, renderStatus });
+    return Response.json({ production: data, visualStatus, renderStatus, providerStatusDiagnostics: providerStatusDiagnostics([visualStatus, renderStatus, ...alternativeStatuses]) });
   } catch (error) {
     return Response.json({ error: errorMessage(error, "Could not poll automation status") }, { status: 500 });
   }

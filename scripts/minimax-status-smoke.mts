@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { miniMaxStatusFromResponse } from "../src/lib/providers/minimax-status.ts";
+import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "../src/lib/providers/minimax-status.ts";
 
 const taskId = "436887923384578";
 
@@ -27,5 +27,16 @@ assert.match(malformed.error ?? "", /no real video URL/i);
 const existingProviderJob = { provider: "minimax", id: taskId, status: "running" };
 assert.equal(existingProviderJob.id, taskId);
 assert.equal(existingProviderJob.provider, "minimax");
+assert.equal(existingProviderJob.status, "running");
+assert.equal(miniMaxStatusFromResponse({ task: { task_id: taskId, status: "unknown" } }, taskId).status, "unknown");
+
+for (const [httpStatus, category] of [[404, "not_found"], [410, "expired"], [500, "http_error"]] as const) {
+  const status = miniMaxStatusFromError({ httpStatus, message: "provider failure" }, taskId);
+  assert.equal(status.status, httpStatus === 500 ? "unknown" : "failed");
+  assert.equal(status.httpStatus, httpStatus);
+  assert.equal(status.errorCategory, category);
+  assert.match(status.errorMessage ?? "", /MiniMax/);
+  assert.doesNotMatch(status.errorMessage ?? "", /provider failure/);
+}
 
 console.log("MiniMax status smoke tests passed.");

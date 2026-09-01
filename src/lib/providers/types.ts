@@ -57,6 +57,9 @@ export type NormalizedProviderStatus = {
   hasAudio?: boolean;
   resolutionLabel?: string;
   error?: string;
+  httpStatus?: number;
+  errorCategory?: "http_error" | "not_found" | "expired" | "timeout" | "provider_error" | "unknown";
+  errorMessage?: string;
   raw?: unknown;
 };
 

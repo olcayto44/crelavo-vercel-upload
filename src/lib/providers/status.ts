@@ -1,7 +1,7 @@
 import { optionalEnv, requireProviderEnv } from "./env.ts";
 import { getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, latestHeyGenVideoArtifact, normalizeHeyGenVideoAgentArtifacts } from "./heygen.ts";
 import { MiniMaxStatusError, queryMiniMaxH3VideoTask } from "./minimax.ts";
-import { miniMaxStatusFromResponse } from "./minimax-status.ts";
+import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "./minimax-status.ts";
 import type { NormalizedProviderStatus, ProviderJob } from "./types.ts";
 
 function asciiHeaderValue(value: unknown, fallback = "") {
@@ -221,10 +221,7 @@ export async function getMiniMaxStatus(job: ProviderJob): Promise<NormalizedProv
     const data = await queryMiniMaxH3VideoTask(job.id);
     return miniMaxStatusFromResponse(data, job.id);
   } catch (error) {
-    if (error instanceof MiniMaxStatusError && [404, 410].includes(error.httpStatus)) {
-      return { provider: "minimax", id: job.id, status: "failed", error: `MiniMax task ${error.httpStatus === 404 ? "was not found" : "expired"}.`, raw: { httpStatus: error.httpStatus } };
-    }
-    throw error;
+    return miniMaxStatusFromError(error instanceof MiniMaxStatusError ? error : { message: error instanceof Error ? error.message : "" }, job.id);
   }
 }
 

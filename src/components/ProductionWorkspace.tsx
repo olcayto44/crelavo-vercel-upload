@@ -618,9 +618,11 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
   const hasActiveMinimaxProof = Boolean((minimaxSessionId || minimaxVideoId) && /queued|submitted|starting|processing|running|rendering|generating|in_progress/i.test(providerProofStatus));
-  const hasActiveProviderJob = isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof;
+  const providerStatusUnavailable = providerIsMinimax && /(^|[_ -])unknown($|[_ -])|minimax_unknown/i.test(`${providerProofStatus} ${outputJson.providerStatus}`);
+  const hasActiveProviderJob = !providerStatusUnavailable && (isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof);
+  const statusRefreshAvailable = Boolean(visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired);
 
-  const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
+  const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob || providerStatusUnavailable ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
     hasVideoProductionCard
@@ -629,8 +631,8 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
     || /running|in_production|strategy_running|provider_start_failed/.test(`${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${providerStatus}`)
   );
   const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && hasActiveProviderJob;
-  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Action required: provider failed" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
-  const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
+  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : providerStatusUnavailable ? "Provider status unavailable / Action required" : isFailed ? "Action required: provider failed" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
+  const statusTone = isFailed || providerStatusUnavailable ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
   const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
   const reservedCreditsText = projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
   const creditLabel = projectPackageReady ? "Package credits" : production.reserved_credits ? "Reserved" : production.estimated_credits ? "Estimate" : "Credits";
@@ -639,6 +641,8 @@ const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProducti
 const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
   const nextLiveStep = providerJobWasNotCreated
      ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
+     : providerStatusUnavailable
+     ? "Provider status is unavailable. Refresh provider status to check the existing job; no new production will be started."
      : isFailed
      ? `Provider failed${providerProofProvider ? ` (${providerProofProvider})` : ""}. Review the error and take action before treating this production as running.`
      : hasAutomationWarning
@@ -671,8 +675,8 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
   const needsApproval = production.approval_status === "waiting" && Boolean(production.approval_question);
   const canCancel = !["ready", "failed", "cancelled"].includes(String(production.status ?? ""));
    const revisionEnabled = isReady || hasPreview;
-   const canPollProvider = !isFailed && (Boolean(visualJob || hasAlternativeJobs) || dedicatedCharacterDialogueRequired);
-   const actionableWaitingState = isFailed || providerJobMissingWhileRunning || (!isProviderRunning && !isDedicatedPipelineRunning && !isReady && !hasPreview && !hasDelivery);
+    const canPollProvider = !isFailed && statusRefreshAvailable;
+     const actionableWaitingState = isFailed || providerStatusUnavailable || providerJobMissingWhileRunning || (!isProviderRunning && !isDedicatedPipelineRunning && !isReady && !hasPreview && !hasDelivery);
 
 
   async function submitApproval(option: { label: string; description?: string; extraCredits?: number }) {
@@ -806,8 +810,9 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
     const shouldAutoStartDrone = type === "drone_video"
       && !isReady
       && !isFailed
-      && !hasActiveProviderJob
-      && !hasPreview
+       && !hasActiveProviderJob
+       && !providerStatusUnavailable
+       && !hasPreview
       && !hasDelivery
       && !providerStarting
       && !isDedicatedPipelineRunning;
@@ -1230,7 +1235,7 @@ const data = await response.json().catch(() => ({}));
               <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
               {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
-              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob || providerStatusUnavailable ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
           </div>
           {(!isProjectProduction || isEcommerceProduction) ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
@@ -1278,9 +1283,9 @@ const data = await response.json().catch(() => ({}));
                    <p>The final MP4 will start playing here automatically when it is ready.</p>
                    <span>Character sheets → scene images → image-to-video → voices → subtitles → final MP4</span>
                  </div> : actionableWaitingState ? <>
-                 <span className="badge">{isFailed ? "Action required" : "Waiting to start"}</span>
-                 <h3>{isFailed ? "Production needs attention" : providerJobMissingWhileRunning ? "Provider job is missing" : "Production is ready to start"}</h3>
-                 <p>{isFailed ? (production.error_message || String(outputJson.providerError ?? "The provider did not complete this production.")) : nextLiveStep}</p>
+                  <span className="badge">{isFailed || providerStatusUnavailable ? "Action required" : "Waiting to start"}</span>
+                  <h3>{providerStatusUnavailable ? "Provider status unavailable" : isFailed ? "Production needs attention" : providerJobMissingWhileRunning ? "Provider job is missing" : "Production is ready to start"}</h3>
+                  <p>{providerStatusUnavailable ? nextLiveStep : isFailed ? (production.error_message || String(outputJson.providerError ?? "The provider did not complete this production.")) : nextLiveStep}</p>
                  </> : <>
                  <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
                  <PlayCircle size={44} />
@@ -1351,7 +1356,7 @@ const data = await response.json().catch(() => ({}));
               <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
               {canPollProvider ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
-              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob || providerStatusUnavailable ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
             </div>
 {providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
 {visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Shot {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}

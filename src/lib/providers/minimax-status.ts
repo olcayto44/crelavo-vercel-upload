@@ -35,6 +35,17 @@ function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" |
   };
 }
 
+export function miniMaxStatusFromError(error: unknown, taskId: string): NormalizedProviderStatus {
+  const httpStatus = error && typeof error === "object" && typeof (error as Record<string, unknown>).httpStatus === "number" ? Number((error as Record<string, unknown>).httpStatus) : undefined;
+  if (httpStatus === 404 || httpStatus === 410) {
+    const errorCategory = httpStatus === 404 ? "not_found" : "expired";
+    const errorMessage = httpStatus === 404 ? "MiniMax task was not found." : "MiniMax task expired.";
+    return { provider: "minimax", id: taskId, status: "failed", error: errorMessage, httpStatus, errorCategory, errorMessage, raw: { httpStatus } };
+  }
+  const errorMessage = httpStatus ? `MiniMax status request failed with HTTP ${httpStatus}.` : "MiniMax status request could not be completed.";
+  return { provider: "minimax", id: taskId, status: "unknown", error: errorMessage, httpStatus, errorCategory: httpStatus ? "http_error" : "unknown", errorMessage, raw: httpStatus ? { httpStatus } : undefined };
+}
+
 export function miniMaxStatusFromResponse(data: unknown, taskId: string): NormalizedProviderStatus {
   const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
   const envelope = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
@@ -47,5 +58,16 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
     ? String((errorValue as Record<string, unknown>).message ?? (errorValue as Record<string, unknown>).code ?? "MiniMax task failed.")
     : typeof errorValue === "string" ? errorValue
       : normalized === "succeeded" && !outputUrl ? "MiniMax task succeeded, but no real video URL was found." : undefined;
-  return { provider: "minimax", id: taskId, status: normalized === "succeeded" && !outputUrl ? "failed" : normalized, outputUrl, ...mediaMetadata(task), error, raw: data };
+  const finalStatus = normalized === "succeeded" && !outputUrl ? "failed" : normalized;
+  return {
+    provider: "minimax",
+    id: taskId,
+    status: finalStatus,
+    outputUrl,
+    ...mediaMetadata(task),
+    error,
+    errorMessage: error,
+    errorCategory: error ? finalStatus === "failed" && normalized !== "succeeded" ? "provider_error" : "unknown" : undefined,
+    raw: data
+  };
 }
