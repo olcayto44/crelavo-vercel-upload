@@ -1,6 +1,10 @@
+import { MINI_MAX_RESPONSE_DIAGNOSTICS, type MiniMaxResponseDiagnostics } from "./minimax.ts";
 import type { NormalizedProviderStatus } from "./types.ts";
 
 type MiniMaxDiagnostics = {
+  httpStatus?: number;
+  responseContentType?: string;
+  redactedShape?: unknown;
   responseKeys: string[];
   responseCategory: string;
   statusPath?: string;
@@ -46,6 +50,9 @@ function statusCandidate(data: unknown, record: Record<string, unknown>, envelop
     { value: envelope.task_status, path: "data.task_status" },
     { value: envelope.status_code, path: "data.status_code" },
     { value: envelope.state, path: "data.state" },
+    { value: record.status_code, path: "status_code" },
+    { value: record.task_status, path: "task_status" },
+    { value: record.state, path: "state" },
     { value: record.status, path: "status" }
   ];
   for (const candidate of candidates) {
@@ -88,7 +95,6 @@ function firstVideoUrl(value: unknown): string | undefined {
 
 function currentTaskOutputUrl(task: Record<string, unknown>, envelope: Record<string, unknown>, taskId: string) {
   const taskIdentity = String(task.task_id ?? task.taskId ?? task.id ?? envelope.task_id ?? envelope.taskId ?? envelope.id ?? "").trim();
-  const taskPath = Object.keys(envelope).length && envelope !== task ? "data.task" : "task";
   if (taskIdentity && taskIdentity !== taskId) return { url: undefined, path: undefined };
   const outputCandidates: Array<[string, unknown]> = [
     ["data.task.content", task.content],
@@ -122,11 +128,6 @@ function currentTaskOutputUrl(task: Record<string, unknown>, envelope: Record<st
   for (const [path, value] of outputCandidates) {
     const url = firstVideoUrl(value);
     if (url) return { url, path };
-  }
-  const rawUrls = Array.isArray(task.rawUrls) ? task.rawUrls : Array.isArray(task.raw_urls) ? task.raw_urls : [];
-  if (taskIdentity === taskId && rawUrls.length === 1) {
-    const url = firstVideoUrl(rawUrls[0]);
-    if (url) return { url, path: `${taskPath}.rawUrls[0]` };
   }
   return { url: undefined, path: undefined };
 }
@@ -178,7 +179,11 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
   const rawVideoUrlCount = rawUrls.filter((value) => Boolean(firstVideoUrl(value))).length;
   const errorValue = effectiveTask.error ?? effectiveTask.failure ?? effectiveEnvelope.error ?? effectiveEnvelope.failure ?? record.error;
   const responseClassification = normalizeStatus(rawStatus);
+  const responseDiagnostics = record[MINI_MAX_RESPONSE_DIAGNOSTICS] as MiniMaxResponseDiagnostics | undefined;
   const diagnostics: MiniMaxDiagnostics = {
+    httpStatus: responseDiagnostics?.httpStatus,
+    responseContentType: responseDiagnostics?.contentType,
+    redactedShape: responseDiagnostics?.redactedShape,
     responseKeys: responseKeys(data),
     responseCategory: normalized === "unknown" ? "unknown_response" : candidate.path.includes("status_code") ? "status_code" : candidate.path.includes("task_status") ? "task_status" : "status",
     statusPath: candidate.path,

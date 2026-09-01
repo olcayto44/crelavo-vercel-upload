@@ -74,11 +74,16 @@ assert.equal(miniMaxStatusFromResponse({ data: { task: { task_id: taskId, status
 assert.equal(miniMaxTaskRecord({ data: { task: { task_id: taskId, status: "processing" } } }).taskId, taskId);
 
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
-const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
+const historicalRawUrls = Array.from({ length: 20 }, (_, index) => `https://video-product.cdn.minimax.io/history/${index + 1}.mp4`);
+const suppliedUnknown = miniMaxStatusFromResponse({ data: { status: "unknown", task_id: taskId, rawUrls: historicalRawUrls } }, taskId);
+assert.equal(suppliedUnknown.status, "unknown");
+assert.equal(suppliedUnknown.outputUrl, undefined);
+assert.equal((suppliedUnknown.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawUrlCount, 20);
+assert.equal((suppliedUnknown.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawVideoUrlCount, 20);
+
+const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", video_urls: [currentTaskRawUrl] } }, taskId);
 assert.equal(currentTask.status, "succeeded");
 assert.equal(currentTask.outputUrl, currentTaskRawUrl);
-assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawUrlCount, 1);
-assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawVideoUrlCount, 1);
 
 const confirmedTaskOutput = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: { task_id: taskId, url: currentTaskRawUrl } } }, taskId);
 assert.equal(confirmedTaskOutput.status, "succeeded");
@@ -141,6 +146,11 @@ assert.equal(finalVideo?.url, "/api/productions/production-437126020350238/deliv
 
 assert.match(automationStatusSource, /providerStatusDiagnostics/);
 assert.match(automationStatusSource, /No output URL was promoted/);
+assert.match(automationStatusSource, /buildOutputRegistry/);
+const adminProductionsSource = readFileSync(new URL("../src/components/AdminProductionsTable.tsx", import.meta.url), "utf8");
+assert.match(adminProductionsSource, /Active — output not confirmed/);
+assert.match(adminProductionsSource, /Provider job state/);
+assert.match(adminProductionsSource, /data\.visualStatus\?\.status === "succeeded" && data\.visualStatus\?\.outputUrl/);
 const automationStartSource = readFileSync(new URL("../src/app/api/automation/start/route.ts", import.meta.url), "utf8");
 assert.match(automationStartSource, /Legal acceptance table missing; continuing without repair row/);
 assert.match(automationStartSource, /provider_job_id: providerJob.id/);

@@ -202,17 +202,14 @@ function isMediaProductionRow(row: ProductionRow) {
   return ["video", "campaign", "music_video", "cinematic_video", "animation", "anime_short_film", "avatar", "lip_sync", "talking_video", "live_sales_agent", "studio", "drama", "video_tools", "video_clipping"].includes(String(row.production_type ?? ""));
 }
 
+function isConfirmedVideoUrl(value: unknown) {
+  const url = String(value ?? "").trim();
+  return (/^https?:\/\/|^\/api\//i.test(url)) && /\.(mp4|mov|webm)(?:\?|$)/i.test(url) && !/\.(srt|vtt|ass)(?:\?|$)/i.test(url);
+}
+
 function mediaFinalReady(row: ProductionRow) {
   const output = row.output_json ?? {};
-  return Boolean(
-    output.finalVideoUrl
-    || output.providerFinalUrl
-    || output.previewUrl
-    || output.rawVisualPreviewUrl
-    || row.preview_url
-    || row.delivery_link
-    || /provider_succeeded|final_video_ready|completed|admin_force_ready|quality_gate_blocked/i.test(`${String(row.generation_status ?? "")} ${String(row.automation_status ?? "")} ${String(output.providerStatus ?? "")} ${String(output.releaseSource ?? "")}`)
-  );
+  return isConfirmedVideoUrl(output.finalVideoUrl) || isConfirmedVideoUrl(output.providerFinalUrl);
 }
 
 function deliveryReadyStatus(row: ProductionRow, format: string) {
@@ -654,7 +651,11 @@ async function refundReservedCredits(item: ProductionRow) {
       const nextStatus = String(data.production.status ?? "");
       const nextGeneration = String(data.production.generation_status ?? "");
       const isActuallyReady = nextStatus === "ready" || nextGeneration === "final_video_ready";
-      const providerSucceeded = /succeeded|completed|ready/i.test(`${data.visualStatus?.status ?? ""} ${data.renderStatus?.status ?? ""} ${data.production.output_json?.providerStatus ?? ""} ${data.production.generation_status ?? ""}`);
+       const providerSucceeded = Boolean(
+         (data.visualStatus?.status === "succeeded" && data.visualStatus?.outputUrl)
+         || (data.renderStatus?.status === "succeeded" && data.renderStatus?.outputUrl)
+       );
+
       if (!isActuallyReady && providerSucceeded) {
         const releaseResponse = await fetch("/api/admin/productions/force-ready", {
           method: "POST",
@@ -818,8 +819,9 @@ async function refundReservedCredits(item: ProductionRow) {
               <div><span>Stage</span><strong>{workflowStageLabel(workflowState?.stage ?? item.status)}</strong><small>{String(workflowState?.updatedAt ?? item.automation_status ?? item.generation_status ?? "not synced")}</small></div>
               <div><span>Reserved credits</span><strong>{Number(workflowState?.reservedCredits ?? reservedCredits).toLocaleString()}</strong><small>{workflowState?.hasReservedCredits ? "Credit reserve OK" : "Reserve missing or partial"}</small></div>
               <div><span>Provider readiness</span><strong>{String(workflowProviderReadiness?.status ?? workflowProviderReadiness?.readinessStatus ?? providerReadiness?.status ?? "pending")}</strong><small>{String(workflowProviderReadiness?.userMessage ?? agentProviderRoutePlan?.readinessStatus ?? "Provider route check")}</small></div>
-              <div><span>Active provider job</span><strong>{workflowState?.activeProviderJob ? "Yes" : providerJobs.length ? "Tracked separately" : "No"}</strong><small>{item.automation_job_id ?? providerJobs[0]?.id ?? "No active id"}</small></div>
-              <div><span>Delivery readiness</span><strong>{workflowState?.deliveryReady ? "Ready" : (item.delivery_link || item.delivery_zip_url) ? "Ready" : "Waiting"}</strong><small>{deliveryRequirements ? String(deliveryRequirements.status ?? "requirements tracked") : "Dashboard delivery"}</small></div>
+               <div><span>Provider job state</span><strong>{workflowState?.activeProviderJob ? "Active — output not confirmed" : providerJobs.length ? "Tracked — verify status" : "No active job"}</strong><small>{item.automation_job_id ?? providerJobs[0]?.id ?? "No active id"}</small></div>
+               <div><span>Delivery readiness</span><strong>{mediaFinalReady(item) ? "Ready" : "Waiting for confirmed video"}</strong><small>{deliveryRequirements ? String(deliveryRequirements.status ?? "requirements tracked") : "No confirmed provider output"}</small></div>
+
             </div>
             {workflowActions.length > 0 ? (
               <div className="provider-job-list" style={{ marginTop: 10 }}>

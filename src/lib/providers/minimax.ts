@@ -94,6 +94,16 @@ export type MiniMaxH3CreateResponse = {
   request_id?: string;
 };
 
+export const MINI_MAX_RESPONSE_DIAGNOSTICS = "__minimax_response_diagnostics";
+
+export type MiniMaxResponseDiagnostics = {
+  httpStatus: number;
+  contentType: string;
+  topLevelKeys: string[];
+  dataKeys: string[];
+  redactedShape: unknown;
+};
+
 export class MiniMaxStatusError extends Error {
   readonly httpStatus: number;
   readonly payload: unknown;
@@ -126,6 +136,17 @@ export type MiniMaxH3TaskResponse = {
   };
 };
 
+function redactedShape(value: unknown, depth = 0): unknown {
+  if (depth > 3) return "[nested]";
+  if (Array.isArray(value)) return { type: "array", length: value.length, item: value.length ? redactedShape(value[0], depth + 1) : null };
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value as Record<string, unknown>).slice(0, 40).map(([key, item]) => [key, redactedShape(item, depth + 1)]));
+  }
+  if (typeof value === "string") return { type: "string", length: value.length };
+  if (value == null) return value;
+  return { type: typeof value };
+}
+
 export async function minimaxJson<T>(path: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
@@ -152,6 +173,18 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
       }
     }
     if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status, payload, response.headers.get("content-type") ?? "");
+    if (payload && typeof payload === "object") {
+      Object.defineProperty(payload, MINI_MAX_RESPONSE_DIAGNOSTICS, {
+        enumerable: false,
+        value: {
+          httpStatus: response.status,
+          contentType: response.headers.get("content-type") ?? "",
+          topLevelKeys: Object.keys(payload as Record<string, unknown>),
+          dataKeys: payload && typeof (payload as Record<string, unknown>).data === "object" && (payload as Record<string, unknown>).data ? Object.keys((payload as Record<string, unknown>).data as Record<string, unknown>) : [],
+          redactedShape: redactedShape(payload)
+        } satisfies MiniMaxResponseDiagnostics
+      });
+    }
     return payload as T;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new Error("MiniMax request timed out after 60 seconds.");

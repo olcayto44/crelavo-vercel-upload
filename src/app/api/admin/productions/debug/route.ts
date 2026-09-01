@@ -166,7 +166,13 @@ export async function POST(request: Request) {
   }
 
   const allUrls = Array.from(collectUrls({ production, outputJson, liveVisualStatus, liveRenderStatus }));
-  const realVideoUrls = allUrls.filter(isRealVideoUrl);
+  const confirmedVideoUrls = [
+    outputJson.finalVideoUrl,
+    outputJson.providerFinalUrl,
+    (liveVisualStatus as Record<string, unknown> | null)?.outputUrl,
+    (liveRenderStatus as Record<string, unknown> | null)?.outputUrl
+  ].filter((value): value is string => typeof value === "string" && isRealVideoUrl(value));
+  const realVideoUrls = [...new Set(confirmedVideoUrls)];
 
   return Response.json({
     ok: true,
