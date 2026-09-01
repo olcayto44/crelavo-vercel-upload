@@ -50,7 +50,7 @@ export type ProviderJob = {
 export type NormalizedProviderStatus = {
   provider: string;
   id?: string;
-  status: "queued" | "running" | "succeeded" | "failed" | "unknown";
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "unknown";
   outputUrl?: string;
   width?: number;
   height?: number;
@@ -62,7 +62,7 @@ export type NormalizedProviderStatus = {
   errorCategory?: "http_error" | "not_found" | "expired" | "timeout" | "provider_error" | "unknown";
   errorMessage?: string;
   providerResponseStatus?: string;
-  providerResponseClassification?: "queued" | "running" | "succeeded" | "failed" | "unknown";
+  providerResponseClassification?: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "unknown";
   raw?: unknown;
 };
 

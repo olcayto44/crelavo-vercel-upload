@@ -158,7 +158,6 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
         Authorization: `Bearer ${requireProviderEnv("minimax")}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-        ...(minimaxGroupId() ? { "Group-Id": minimaxGroupId() } : {}),
         ...(init?.headers || {})
       }
     });
@@ -229,8 +228,9 @@ export async function createMiniMaxH3VideoShotTasks(
 }
 
 export async function queryMiniMaxH3VideoTask(taskId: string) {
-  const params = new URLSearchParams({ task_id: taskId });
-  return minimaxJson<MiniMaxH3TaskResponse>(`/v2/query/video_generation?${params.toString()}`);
+  const normalizedTaskId = String(taskId ?? "").trim();
+  if (!normalizedTaskId) throw new MiniMaxStatusError("MiniMax task id is required.", 400, { error: "missing_task_id" });
+  return minimaxJson<MiniMaxH3TaskResponse>(`/v2/query/video_generation/${encodeURIComponent(normalizedTaskId)}`);
 }
 
 export async function listMiniMaxH3VideoTasks(input?: { pageNum?: number; pageSize?: number; status?: string }) {

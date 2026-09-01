@@ -515,9 +515,9 @@ let outputWithRenderJob = renderBridge.renderJob
      const effectiveProviderJobId = effectiveProviderJob?.id ?? visualStatus?.id ?? renderStatus?.id ?? null;
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
-    const terminalStatus = renderStatus?.status === "failed"
-      ? renderStatus
-      : visualStatuses.find((status) => status.status === "failed") ?? renderStatus ?? visualStatus;
+     const terminalStatus = renderStatus && ["failed", "cancelled"].includes(renderStatus.status)
+       ? renderStatus
+       : visualStatuses.find((status) => ["failed", "cancelled"].includes(status.status)) ?? renderStatus ?? visualStatus;
     let characterDialoguePlan = outputWithRenderJob.characterDialoguePlan && typeof outputWithRenderJob.characterDialoguePlan === "object" ? outputWithRenderJob.characterDialoguePlan as Record<string, unknown> : null;
     let characterDialogueJobs = characterDialoguePlan && Array.isArray((characterDialoguePlan as Record<string, unknown>).providerJobs) ? (characterDialoguePlan as Record<string, unknown>).providerJobs as Array<Record<string, unknown>> : [];
     const hasBrokenDedicatedPlan = Boolean(characterDialoguePlan) && (characterDialogueJobs.filter((job) => job.stage === "scene_image").length === 0 || characterDialogueJobs.filter((job) => job.stage === "image_to_video").length === 0 || characterDialogueJobs.filter((job) => job.stage === "voice_segment").length === 0);
@@ -917,8 +917,8 @@ let outputWithRenderJob = renderBridge.renderJob
       return Response.json({ production, visualStatus, renderStatus, providerStatusDiagnostics: providerStatusDiagnostics([visualStatus, renderStatus, ...alternativeStatuses]), message: "No provider jobs found yet." });
     }
 
-    if (terminalStatus.status === "failed") {
-      const failureMessage = terminalStatus.error ?? "Provider job failed.";
+    if (terminalStatus.status === "failed" || terminalStatus.status === "cancelled") {
+      const failureMessage = terminalStatus.error ?? `Provider job ${terminalStatus.status}.`;
       const creditResolution = await refundReservedCreditsOnce(supabase, production, output, `Reserved credits released after provider failure: ${production.title ?? production.id}`);
       const failedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: `${terminalStatus.provider}_failed`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution });
       const { data } = await supabase
@@ -1243,13 +1243,44 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
           filenameBase: successfulStatus.provider === "shotstack" ? "final-render" : "provider-visual",
           fallbackContentType: "video/mp4"
         });
-        finalUrl = providerFinalUrl;
-        finalAssetMirror = { status: "mirrored_provider_url_primary", providerUrl: providerFinalUrl, storedUrl };
-      } catch (mirrorError) {
-        finalUrl = providerFinalUrl;
-        finalAssetMirror = { status: "fallback_provider_url", providerUrl: providerFinalUrl, error: errorMessage(mirrorError, "Provider asset could not be mirrored to storage") };
-      }
-      const updatedAlternatives = polledAlternatives.length > 0
+         finalUrl = storedUrl;
+         finalAssetMirror = { status: "mirrored_provider_url_primary", providerUrl: providerFinalUrl, storedUrl };
+       } catch (mirrorError) {
+         const deliveryError = errorMessage(mirrorError, "Provider asset could not be mirrored to storage");
+         const deliveryFailureOutput: Record<string, any> = outputWithWorkflow(production, outputWithRenderJob, {
+           visualStatus,
+           renderStatus,
+           providerStatus: `${successfulStatus.provider}_delivery_failed`,
+           providerFinalUrl,
+           finalVideoUrl: null,
+           finalAssetMirror: { status: "delivery_failed", providerUrl: providerFinalUrl, error: deliveryError },
+           providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+           outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry,
+           deliveryFailure: { status: "failed", reason: "storage_persistence_failed", message: deliveryError, checkedAt: new Date().toISOString() }
+         });
+         deliveryFailureOutput.outputRegistry = buildOutputRegistry({ ...production, output_json: deliveryFailureOutput });
+         const { data } = await supabase
+           .from("production_requests")
+           .update(safeUpdate({
+             status: "failed",
+             provider: effectiveProvider,
+             provider_job_id: effectiveProviderJobId,
+             automation_status: "delivery_failed",
+             generation_status: "delivery_failed",
+             preview_url: null,
+             delivery_link: null,
+             delivery_zip_url: null,
+             output_json: deliveryFailureOutput,
+             error_message: `Provider video completed, but delivery storage persistence failed: ${deliveryError}`,
+             admin_notes: `Delivery failed after provider success: ${deliveryError}`,
+             updated_at: new Date().toISOString()
+           }))
+           .eq("id", productionId)
+           .select("*")
+           .single();
+         return Response.json({ production: data, visualStatus, renderStatus, delivery_failed: true, deliveryFailure: deliveryFailureOutput.deliveryFailure });
+       }
+       const updatedAlternatives = polledAlternatives.length > 0
         ? polledAlternatives.map((item, index) => index === 0 && item && typeof item === "object" ? { ...(item as Record<string, unknown>), status: "ready", preview_url: finalUrl, url: finalUrl, description: "Real output generated by the provider is ready." } : item)
         : [{ id: "provider-output-1", title: "Provider output", status: "ready", description: "Real output generated by the provider is ready.", preview_url: finalUrl, url: finalUrl }];
        const finalProductionState = {
