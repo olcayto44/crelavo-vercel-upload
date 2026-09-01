@@ -9,25 +9,30 @@ function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
   return "unknown";
 }
 
-function firstUrl(value: unknown): string | undefined {
-  if (typeof value === "string") return /^https?:\/\//i.test(value.trim()) ? value.trim() : undefined;
-  if (Array.isArray(value)) return value.map(firstUrl).find(Boolean);
+function isVideoUrl(value: string) {
+  return /^https?:\/\//i.test(value)
+    && !/\.(srt|vtt|ass|html?)(?:\?|$)/i.test(value)
+    && (/\.(mp4|mov|webm)(?:\?|$)/i.test(value) || /(?:minimax|cloudfront|storage\.googleapis|r2\.dev|supabase)/i.test(value));
+}
+
+function firstVideoUrl(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const url = value.trim();
+    return isVideoUrl(url) ? url : undefined;
+  }
+  if (Array.isArray(value)) return value.map(firstVideoUrl).find(Boolean);
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
-    for (const key of ["url", "video_url", "videoUrl", "output_url", "outputUrl", "download_url", "downloadUrl", "media_url", "mediaUrl", "file_url", "fileUrl", "video", "output", "result", "content", "data"]) {
-      const result = firstUrl(record[key]);
+    for (const key of ["url", "video_url", "videoUrl", "output_url", "outputUrl", "download_url", "downloadUrl", "media_url", "mediaUrl", "file_url", "fileUrl", "video", "output", "result", "content"]) {
+      const result = firstVideoUrl(record[key]);
       if (result) return result;
     }
   }
   return undefined;
 }
 
-function currentTaskOutputUrl(task: Record<string, unknown>, taskId: string) {
-  const returnedTaskId = String(task.task_id ?? task.taskId ?? task.id ?? "").trim();
-  const explicit = firstUrl(task.content) || firstUrl(task.video_url) || firstUrl(task.videoUrl) || firstUrl(task.result) || firstUrl(task.video) || firstUrl(task.videos) || firstUrl(task.output);
-  if (explicit) return explicit;
-  const rawUrls = Array.isArray(task.rawUrls) ? task.rawUrls.filter((value): value is string => typeof value === "string" && /^https?:\/\//i.test(value) && /\.mp4(?:\?|$)/i.test(value)) : [];
-  return returnedTaskId === taskId && rawUrls.length === 1 ? rawUrls[0] : undefined;
+function currentTaskOutputUrl(task: Record<string, unknown>) {
+  return firstVideoUrl(task.content) || firstVideoUrl(task.video_url) || firstVideoUrl(task.videoUrl) || firstVideoUrl(task.result) || firstVideoUrl(task.video) || firstVideoUrl(task.videos) || firstVideoUrl(task.output);
 }
 
 function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" | "height" | "durationSeconds" | "resolutionLabel"> {
@@ -62,7 +67,7 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
   const task = envelope.task && typeof envelope.task === "object" ? envelope.task as Record<string, unknown> : envelope;
   const rawStatus = String(task.status ?? task.task_status ?? task.state ?? envelope.status ?? envelope.task_status ?? envelope.state ?? record.status ?? "unknown").trim();
   const normalized = normalizeStatus(rawStatus);
-  const outputUrl = currentTaskOutputUrl(task, taskId);
+  const outputUrl = currentTaskOutputUrl(task);
   const errorValue = task.error ?? task.failure ?? envelope.error ?? envelope.failure ?? record.error;
   const responseClassification = normalizeStatus(rawStatus);
   const error = typeof errorValue === "object" && errorValue

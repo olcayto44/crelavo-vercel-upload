@@ -639,8 +639,9 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
   const hasActiveMinimaxProof = Boolean((minimaxSessionId || minimaxVideoId) && /queued|submitted|starting|processing|running|rendering|generating|in_progress/i.test(providerProofStatus));
-  const providerStatusUnavailable = /provider_status_unavailable|minimax_unknown|provider[_ -]?status[_ -]?(unavailable|unknown)|provider[_ -]?(http[_ -]?)?(unavailable|unknown)|http[_ -]?(unavailable|error)|status[_ -]?unavailable/.test(providerStatusSignal)
-    || Boolean(visualJob && /^unknown$/i.test(String(visualJob.status ?? "")) && !hasActiveMinimaxProof);
+   const providerStatusUnavailable = /provider_status_unavailable|minimax_unknown|provider[_ -]?status[_ -]?(unavailable|unknown)|provider[_ -]?(http[_ -]?)?(unavailable|unknown)|http[_ -]?(unavailable|error)|status[_ -]?unavailable/.test(providerStatusSignal)
+     || Boolean((outputJson.visualStatus && typeof outputJson.visualStatus === "object") && /^unknown$/i.test(String((outputJson.visualStatus as Record<string, unknown>).status ?? "")))
+     || Boolean(visualJob && /^unknown$/i.test(String(visualJob.status ?? "")) && !hasActiveMinimaxProof);
    const hasActiveProviderJob = !providerStatusUnavailable && (isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof);
    const hasProviderJobEvidence = Boolean(visualJob || visualJobs.length > 0 || providerJobId || minimaxSessionId || minimaxVideoId || hasAlternativeJobs || hasDedicatedCharacterDialogueJobs);
    const hasVerifiedPlayableUrl = Boolean(playbackUrl && safePlayableMediaUrl(playbackUrl));

@@ -4,6 +4,8 @@ import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "../src/lib/pr
 
 const taskId = "436887923384578";
 const productionWorkspaceSource = readFileSync(new URL("../src/components/ProductionWorkspace.tsx", import.meta.url), "utf8");
+const automationStatusSource = readFileSync(new URL("../src/app/api/automation/status/route.ts", import.meta.url), "utf8");
+const providerStatusSource = readFileSync(new URL("../src/lib/providers/status.ts", import.meta.url), "utf8");
 const workAssistantSource = readFileSync(new URL("../src/components/WorkAssistant.tsx", import.meta.url), "utf8");
 assert.match(productionWorkspaceSource, /provider_status_unavailable/);
 assert.match(productionWorkspaceSource, /Provider status unavailable \/ Action required/);
@@ -12,6 +14,8 @@ assert.match(productionWorkspaceSource, /providerStatusUnavailable \? "Provider 
 assert.doesNotMatch(productionWorkspaceSource, /providerStatusUnavailable \? nextLiveStep/);
 assert.match(workAssistantSource, /provider_status_unavailable/);
 assert.match(workAssistantSource, /Provider status unavailable \/ Action required/);
+assert.match(providerStatusSource, /queryMiniMaxH3VideoTask\(job\.id\)/);
+assert.match(automationStatusSource, /provider_job_id: effectiveProviderJobId/);
 
 const submitted = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "submitted" } }, taskId);
 assert.equal(submitted.provider, "minimax");
@@ -33,8 +37,8 @@ assert.equal(running.outputUrl, undefined);
 
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
 const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
-assert.equal(currentTask.status, "succeeded");
-assert.equal(currentTask.outputUrl, currentTaskRawUrl);
+assert.equal(currentTask.status, "failed");
+assert.equal(currentTask.outputUrl, undefined);
 
 const ambiguousRawUrls = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl, "https://video-product.cdn.minimax.io/other/output.mp4"] } }, taskId);
 assert.equal(ambiguousRawUrls.status, "failed");
@@ -43,6 +47,10 @@ assert.match(ambiguousRawUrls.error ?? "", /no real video URL/i);
 const crossTaskRawUrl = miniMaxStatusFromResponse({ task: { task_id: "different-task", status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
 assert.equal(crossTaskRawUrl.status, "failed");
 assert.equal(crossTaskRawUrl.outputUrl, undefined);
+
+const subtitleOnly = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: { subtitle_url: "https://video-product.cdn.minimax.io/subtitles.srt" }, rawUrls: [currentTaskRawUrl] } }, taskId);
+assert.equal(subtitleOnly.status, "failed");
+assert.equal(subtitleOnly.outputUrl, undefined);
 
 const malformed = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: {} } }, taskId);
 assert.equal(malformed.status, "failed");

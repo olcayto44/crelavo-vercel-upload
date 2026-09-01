@@ -823,6 +823,9 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
     requiredPipeline: useMiniMaxVideoAgent ? "minimax_video_agent" : "talking_lip_sync",
         jobId,
         providerJob,
+        provider: providerJob.provider,
+        providerJobId: providerJob.id ?? null,
+        provider_job_id: providerJob.id ?? null,
         heygenSessionId: providerJob.provider === "heygen_video_agent" ? providerJob.id : null,
         heygenVideoId: "videoId" in providerJob ? providerJob.videoId : null,
         minimaxProviderProof: useMiniMaxVideoAgent ? { provider: "minimax_video_agent", taskId: providerJob.id, status: providerJob.status, model: "MiniMax-H3" } : null,
@@ -846,7 +849,7 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
       };
       const { data: talkingProduction, error: talkingError } = await supabase
         .from("production_requests")
-        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_job_created", output_json: talkingOutput, admin_notes: `MiniMax talking/lip-sync job started: ${providerJob.id}.`, started_at: now, updated_at: now }))
+        .update(safeUpdate({ status: "in_production", automation_status: "running", generation_status: "minimax_job_created", provider: providerJob.provider, provider_job_id: providerJob.id ?? null, output_json: talkingOutput, admin_notes: `MiniMax talking/lip-sync job started: ${providerJob.id}.`, started_at: now, updated_at: now }))
         .eq("id", productionId)
         .select("*")
         .single();
@@ -1504,7 +1507,10 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       voiceAudioSegments: genericRun?.voiceAudioSegments ?? [],
       subtitleUrl: clippingRun?.subtitleUrl ?? genericRun?.subtitleUrl ?? null,
       renderJob,
-      visualJob,
+       visualJob,
+       provider: visualJob?.provider ?? renderJob?.provider ?? null,
+       providerJobId: visualJob?.id ?? renderJob?.id ?? null,
+       provider_job_id: visualJob?.id ?? renderJob?.id ?? null,
        visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
 
       providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",
@@ -1526,6 +1532,8 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
           .from("production_requests")
         .update({
            status: providerStarted ? "in_production" : "queued",
+           provider: providerStarted ? (visualJob?.provider ?? renderJob?.provider ?? null) : null,
+           provider_job_id: providerStarted ? (visualJob?.id ?? renderJob?.id ?? null) : null,
            generation_status: providerStarted ? visualJob ? renderJob ? "render_job_created" : "provider_visual_job_created" : "render_job_created" : "waiting_provider_config",
           preview_url: visualJob || renderJob ? undefined : null,
           delivery_link: visualJob || renderJob ? undefined : null,

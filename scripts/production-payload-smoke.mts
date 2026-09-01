@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { estimateProductionCost } from "../src/lib/production.ts";
 import { buildAssistantProductionPayload, packageIdFromSelection } from "../src/lib/production-payload.ts";
+
+const automationStartSource = readFileSync(new URL("../src/app/api/automation/start/route.ts", import.meta.url), "utf8");
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
   if (actual !== expected) {
@@ -131,6 +134,8 @@ const smokeVideoPayload = buildAssistantProductionPayload({
   userEmail: "user@example.com"
 });
 assertEqual(smokeVideoPayload.output_duration_seconds, 5, "5sec payload duration");
+if (!automationStartSource.includes("providerPreflight: { ...(providerPreflight as Record<string, unknown>), durationSeconds: requestedDuration }")) throw new Error("normal video duration was not forwarded to the provider plan");
+if (!automationStartSource.includes("provider: visualJob?.provider ?? renderJob?.provider ?? null") || !automationStartSource.includes("provider_job_id: visualJob?.id ?? renderJob?.id ?? null")) throw new Error("normal video provider job proof is not persisted");
 
 const watermarkSelection = {
   input: "Görselden video üret ve filigransız final teslim et",

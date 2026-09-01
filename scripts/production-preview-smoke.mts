@@ -11,6 +11,7 @@ assert.match(source, /outputJson\.providerFinalUrl/);
 assert.match(source, /const confirmedMediaUrl = isDroneRawPreviewOnly \? "" : firstPlayableMediaUrl\(/);
 assert.match(source, /const mediaOutputReleased = Boolean\(confirmedMediaUrl\);/);
 assert.match(source, /const hasVerifiedPlayableUrl = Boolean\(playbackUrl && safePlayableMediaUrl\(playbackUrl\)\);/);
+assert.match(source, /outputJson\.visualStatus as Record<string, unknown>\).*status/);
 assert.match(source, /<section className=\{`customer-preview-theater preview-mode-\$\{previewMode\}`\}>/);
 assert.match(source, /Preview waiting for a validated MP4 URL/);
 assert.match(source, /Provider status alone does not count as a finished delivery/);

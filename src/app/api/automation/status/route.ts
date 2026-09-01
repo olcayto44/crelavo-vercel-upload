@@ -504,7 +504,10 @@ let outputWithRenderJob = renderBridge.renderJob
     ? { ...output, renderStatus: "render_start_failed", renderError: renderBridge.renderError, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? output.mirroredVisualUrls }
     : output;
     const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
-    const renderStatus = renderLifecycle.normalizedStatus;
+     const renderStatus = renderLifecycle.normalizedStatus;
+     const effectiveProviderJob = visualLifecycle.providerJob ?? renderLifecycle.providerJob;
+     const effectiveProvider = effectiveProviderJob?.provider ?? visualStatus?.provider ?? renderStatus?.provider ?? null;
+     const effectiveProviderJobId = effectiveProviderJob?.id ?? visualStatus?.id ?? renderStatus?.id ?? null;
     const existingAlternatives = Array.isArray(outputWithRenderJob.alternatives) ? outputWithRenderJob.alternatives : [];
     const { updatedAlternatives: polledAlternatives, statuses: alternativeStatuses } = await pollAlternativeJobs(existingAlternatives);
     const terminalStatus = renderStatus?.status === "failed"
@@ -746,9 +749,11 @@ let outputWithRenderJob = renderBridge.renderJob
         const { data } = await supabase
           .from("production_requests")
           .update(safeUpdate({
-            status: "ready",
-            automation_status: "completed",
-            generation_status: "final_video_ready",
+           status: "ready",
+           provider: effectiveProvider,
+           provider_job_id: effectiveProviderJobId,
+           automation_status: "completed",
+           generation_status: "final_video_ready",
             preview_url: finalUrl,
             delivery_link: finalUrl,
             delivery_zip_url: finalUrl,
@@ -912,9 +917,11 @@ let outputWithRenderJob = renderBridge.renderJob
       const { data } = await supabase
         .from("production_requests")
         .update(safeUpdate({
-          status: "failed",
-          automation_status: "failed",
-          generation_status: `${terminalStatus.provider}_failed`,
+           status: "failed",
+           provider: effectiveProvider,
+           provider_job_id: effectiveProviderJobId,
+           automation_status: "failed",
+           generation_status: `${terminalStatus.provider}_failed`,
           error_message: failureMessage,
           reserved_credits: 0,
           output_json: failedOutput,
@@ -942,8 +949,10 @@ let outputWithRenderJob = renderBridge.renderJob
       const { data } = await supabase
         .from("production_requests")
         .update(safeUpdate({
-          automation_status: "provider_status_unavailable",
-          generation_status: "provider_status_unavailable",
+           provider: effectiveProvider,
+           provider_job_id: effectiveProviderJobId,
+           automation_status: "provider_status_unavailable",
+           generation_status: "provider_status_unavailable",
           output_json: unavailableOutput,
           admin_notes: `Provider status unavailable for ${terminalStatus.provider} job ${terminalStatus.id ?? "unknown"}. No output URL was promoted and reserved credits remain unchanged.`,
           updated_at: new Date().toISOString()
