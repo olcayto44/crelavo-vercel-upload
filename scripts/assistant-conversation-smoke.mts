@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const workspace = readFileSync(join(process.cwd(), "src", "components", "AssistantWorkspace.tsx"), "utf8");
+const workAssistant = readFileSync(join(process.cwd(), "src", "components", "WorkAssistant.tsx"), "utf8");
 const assistantBox = readFileSync(join(process.cwd(), "src", "components", "AiAssistantBox.tsx"), "utf8");
 const chatRoute = readFileSync(join(process.cwd(), "src", "app", "api", "assistant-chat", "route.ts"), "utf8");
 const assistantPlanRoute = readFileSync(join(process.cwd(), "src", "app", "api", "assistant", "plan", "route.ts"), "utf8");
@@ -115,6 +116,20 @@ const requiredWorkspaceTerms = [
 
 for (const term of requiredWorkspaceTerms) {
   if (!workspace.includes(term) && !chatRoute.includes(term)) throw new Error(`Assistant conversation smoke missing term: ${term}`);
+}
+
+for (const term of [
+  "function resetTypeScopedDraftState(nextType: string)",
+  "const requestedType = normalizeProductionType(clean, (plan?.production_type ?? forcedProductionType) || \"video\")",
+  "setProductionSetup({});",
+  "if (isExplicitVideoProductionIntent(raw) && !frameExtractionRequested(raw)) return false;",
+  "production_type: productionTypeForPayload",
+  "dispatch_action: isImageProduction ? \"generate_image\" : \"start_production\""
+]) {
+  if (!workAssistant.includes(term)) throw new Error(`Production type routing smoke missing term: ${term}`);
+}
+if (!/function isExplicitVideoProductionIntent[\s\S]*?\b(?:ai\s+)?video\b/.test(workAssistant)) {
+  throw new Error("Video intent must be recognized before image fallback.");
 }
 
 for (const term of ["delivery_requirements", "deliveryRequirementsFromSelection", "wantsSourceCode", "wantsZip", "wantsFinalVideo"]) {

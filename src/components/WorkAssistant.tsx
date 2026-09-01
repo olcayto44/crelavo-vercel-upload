@@ -1285,7 +1285,10 @@ function animationStylePackId(prompt: string, productionType: string) {
 
 function isExplicitVideoProductionIntent(prompt: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
-  return /\bcampaign\s+video\b|\bsocial\s+(?:media\s+)?campaign\s+video\b|\bvideo\s+ad\b|\bad\s+video\b|\bsocial\s+(?:media\s+)?video\b|\bvertical\s+9\s*[:x]\s*16\b|\bmp4\b/.test(raw);
+  const routeText = raw
+    .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
+    .replace(/\b(no|not)\s+(?:a\s+)?(?:video|videos|mp4|mov)\b/g, " ");
+  return /\b(?:ai\s+)?video\b|\bvideo\s+(?:prompt|production|request|brief|ad|commercial|content)\b|\bcampaign\s+video\b|\bsocial\s+(?:media\s+)?campaign\s+video\b|\bvideo\s+ad\b|\bad\s+video\b|\bsocial\s+(?:media\s+)?video\b|\bvertical\s+9\s*[:x]\s*16\b|\bmp4\b/.test(routeText);
 }
 
 function normalizeProductionType(prompt: string, currentType: string) {
@@ -1911,6 +1914,18 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
     setProductionSetup(ecommercePresetSetup(sanitizedSetup, `${initialCategory} ${hint}`, nextPlan.production_type));
   }
 
+  function resetTypeScopedDraftState(nextType: string) {
+    const currentType = plan?.production_type ?? "";
+    if (isImageProductionType(currentType) === isImageProductionType(nextType)) return;
+    setSelectedProductionCards([]);
+    setProductionSetup({});
+    setSelectedAvatar(null);
+    setSelectedVoice(null);
+    setSelectedSound(null);
+    setCustomThumbnailPrompt("");
+    setCustomAvoidPrompt("");
+  }
+
   function toggleSetupOption(group: SetupGroup, option: string) {
     if (group.id === "voice" && /no voice-over/i.test(option)) setSelectedVoice(null);
     if (group.id === "videoStyle" && /no presenter|b-roll only|silent \/ music only/i.test(option)) setSelectedAvatar(null);
@@ -2190,6 +2205,8 @@ if (isImageStart) {
   async function askStudio(nextInput = input) {
     const clean = nextInput.trim();
     if (!clean || planning || starting) return;
+    const requestedType = normalizeProductionType(clean, (plan?.production_type ?? forcedProductionType) || "video");
+    resetTypeScopedDraftState(requestedType);
     setInput("");
     if (!isStartIntent(clean) && !isExplainIntent(clean)) setActiveProduction(null);
     setMessages((current) => [...current, { id: uid(), role: "user", content: clean }]);
