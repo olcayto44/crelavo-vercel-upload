@@ -31,8 +31,11 @@ function firstVideoUrl(value: unknown): string | undefined {
   return undefined;
 }
 
-function currentTaskOutputUrl(task: Record<string, unknown>) {
-  return firstVideoUrl(task.content) || firstVideoUrl(task.video_url) || firstVideoUrl(task.videoUrl) || firstVideoUrl(task.result) || firstVideoUrl(task.video) || firstVideoUrl(task.videos) || firstVideoUrl(task.output);
+function currentTaskOutputUrl(task: Record<string, unknown>, taskId: string) {
+  const taskIdentity = String(task.task_id ?? task.taskId ?? task.id ?? "").trim();
+  const rawUrls = Array.isArray(task.rawUrls) ? task.rawUrls : Array.isArray(task.raw_urls) ? task.raw_urls : [];
+  const confirmedRawUrl = taskIdentity === taskId && rawUrls.length === 1 ? firstVideoUrl(rawUrls[0]) : undefined;
+  return firstVideoUrl(task.content) || firstVideoUrl(task.video_url) || firstVideoUrl(task.videoUrl) || firstVideoUrl(task.result) || firstVideoUrl(task.video) || firstVideoUrl(task.videos) || firstVideoUrl(task.output) || confirmedRawUrl;
 }
 
 function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" | "height" | "durationSeconds" | "resolutionLabel"> {
@@ -67,7 +70,7 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
   const task = envelope.task && typeof envelope.task === "object" ? envelope.task as Record<string, unknown> : envelope;
   const rawStatus = String(task.status ?? task.task_status ?? task.state ?? envelope.status ?? envelope.task_status ?? envelope.state ?? record.status ?? "unknown").trim();
   const normalized = normalizeStatus(rawStatus);
-  const outputUrl = currentTaskOutputUrl(task);
+  const outputUrl = currentTaskOutputUrl(task, taskId);
   const errorValue = task.error ?? task.failure ?? envelope.error ?? envelope.failure ?? record.error;
   const responseClassification = normalizeStatus(rawStatus);
   const error = typeof errorValue === "object" && errorValue

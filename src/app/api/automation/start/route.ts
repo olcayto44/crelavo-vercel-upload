@@ -10,6 +10,7 @@ import { runEcommerceAdPipeline } from "@/lib/providers/ecommerce-ad";
 import { cloneVoiceFromUrl, createVoiceover } from "@/lib/providers/elevenlabs";
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession } from "@/lib/providers/heygen";
 import { createMiniMaxH3VideoTask, miniMaxTaskRecord } from "@/lib/providers/minimax";
+import { miniMaxProductionSettings } from "@/lib/providers/minimax-production-settings";
 import { createConsistentSceneImage } from "@/lib/providers/stability";
 import { generateVideoThumbnail } from "@/lib/video-thumbnail";
 import { applyMarketingTextOverlay, createDeterministicLinkedInBanner } from "@/lib/image-postprocess";
@@ -385,33 +386,16 @@ async function startHeyGenVideoAgentProduction(input: { title: string; prompt: s
 
 async function startMiniMaxVideoAgentProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
   const selected = { ...input.requestMetadata, ...input.inputJson } as Record<string, unknown>;
-  const aspect = String(selected.aspectRatio ?? selected.aspect_ratio ?? selected.ratio ?? "9:16");
-  const requestedDurationSeconds = secondsFromValue(selected.durationSeconds)
-    ?? secondsFromValue(selected.duration_seconds)
-    ?? secondsFromValue(selected.outputDurationSeconds)
-    ?? secondsFromValue(selected.output_duration_seconds)
-    ?? secondsFromValue(selected.selectedDuration)
-    ?? secondsFromValue(selected.selected_duration)
-    ?? secondsFromValue(selected.output_duration)
-    ?? secondsFromValue(selected.duration)
-    ?? 15;
-  const duration = Math.min(15, Math.max(5, Math.round(requestedDurationSeconds))) as 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
-  const ratio = aspect.includes("16:9") ? "16:9" : aspect.includes("4:3") ? "4:3" : aspect.includes("1:1") ? "1:1" : aspect.includes("3:4") ? "3:4" : aspect.includes("21:9") ? "21:9" : "9:16";
-  const qualitySignal = `${String(selected.quality ?? selected.selectedQuality ?? selected.selected_quality ?? "")} ${JSON.stringify(selected)}`.toLowerCase();
-  const resolution = /1080p\s*premium|premium\s*1080p|4k|2k/.test(qualitySignal) ? "2K" : "768P";
-  const baseProviderPrompt = String(selected.providerPrompt ?? selected.provider_prompt ?? selected.work_prompt ?? selected.workPrompt ?? input.prompt ?? input.title).trim() || input.title;
-  const providerPrompt = /nova\s*form|black\s*leather\s*(travel\s*)?bag/i.test(baseProviderPrompt)
-    ? `${baseProviderPrompt}\n\nHard CTA requirement: show the exact readable on-screen text “Discover NOVA FORM.” including the final period in the closing hero shot. Do not omit or alter the period.`
-    : baseProviderPrompt;
+  const settings = miniMaxProductionSettings({ selected, prompt: input.prompt, title: input.title, testMode: Boolean(selected.providerTestMode ?? selected.testMode) });
   const result = await createMiniMaxH3VideoTask({
-    content: [{ type: "text", text: providerPrompt }],
-    resolution,
-    duration,
-    ratio
+    content: [{ type: "text", text: settings.providerPrompt }],
+    resolution: settings.resolution,
+    duration: settings.duration,
+    ratio: settings.ratio
   });
   const task = miniMaxTaskRecord(result);
   if (!task.taskId) throw new Error(`MiniMax Video Agent did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-  return postgresSafe({ provider: "minimax", id: task.taskId, status: task.status, videoId: null, payload: { model: "MiniMax-H3", content: providerPrompt, duration, ratio, resolution }, raw: result });
+  return postgresSafe({ provider: "minimax", id: task.taskId, task_id: task.taskId, status: task.status, videoId: null, payload: { model: settings.model, content: settings.providerPrompt, duration: settings.duration, ratio: settings.ratio, resolution: settings.resolution }, raw: result });
 }
 
 async function startHeyGenTalkingProduction(input: { title: string; prompt: string; requestMetadata: Record<string, unknown>; inputJson: Record<string, unknown> }) {
@@ -1354,9 +1338,8 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
   if (blockedUpdateError) throw new Error(`generic_provider_block_update: ${errorMessage(blockedUpdateError, "DB update failed")}`);
   return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
 }
-const requestedDurationFloor = isProductAdVideo ? 15 : (providerPreflight.testMode ? 5 : 15);
-    const requestedDuration = Math.max(requestedDurationFloor, Number(providerPreflight.durationSeconds) || requestedDurationFloor);
     const providerTestMode = Boolean(providerPreflight.testMode);
+    const requestedDuration = providerTestMode ? 5 : Math.min(15, Math.max(5, Number(providerPreflight.durationSeconds) || 15));
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? { ...(providerPreflight.selectedOptions as Record<string, unknown>) } : {};
     if (["drama", "studio"].includes(productionType)) {
       selectedOptions.finalRender = true;
@@ -1509,8 +1492,11 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
       renderJob,
        visualJob,
        provider: visualJob?.provider ?? renderJob?.provider ?? null,
-       providerJobId: visualJob?.id ?? renderJob?.id ?? null,
-       provider_job_id: visualJob?.id ?? renderJob?.id ?? null,
+        providerJobId: visualJob?.id ?? renderJob?.id ?? null,
+        providerTaskId: visualJob?.task_id ?? visualJob?.id ?? renderJob?.id ?? null,
+        task_id: visualJob?.task_id ?? visualJob?.id ?? renderJob?.id ?? null,
+        provider_job_id: visualJob?.id ?? renderJob?.id ?? null,
+
        visualJobs: clippingRun ? clippingRun.clipUrls.map((url, index) => ({ provider: "ffmpeg_extract", status: "succeeded", url, id: `clip-${index + 1}` })) : genericRun?.visualJobs ?? (visualJob ? [visualJob] : []),
 
       providerStatus: clippingRun ? (clippingRun.renderJob ? "video_clipping_pipeline_started" : "video_clipping_waiting_render") : !genericRun && requiresSpecialPipeline ? `${requiredPipeline}_required` : genericRun?.chainStatus ?? "demo_ready",

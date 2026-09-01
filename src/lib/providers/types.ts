@@ -41,6 +41,7 @@ export type AdPerformanceScoreResult = {
 export type ProviderJob = {
   provider: string;
   id?: string;
+  task_id?: string;
   status: string;
   url?: string;
   raw?: unknown;

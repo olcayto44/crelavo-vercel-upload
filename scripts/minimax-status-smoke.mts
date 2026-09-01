@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "../src/lib/providers/minimax-status.ts";
+import { queryMiniMaxH3VideoTask } from "../src/lib/providers/minimax.ts";
 
 const taskId = "436887923384578";
 const productionWorkspaceSource = readFileSync(new URL("../src/components/ProductionWorkspace.tsx", import.meta.url), "utf8");
@@ -13,6 +14,30 @@ assert.match(productionWorkspaceSource, /customer-preview-theater/);
 assert.match(workAssistantSource, /productionProviderProof/);
 assert.match(providerStatusSource, /queryMiniMaxH3VideoTask\(job\.id\)/);
 assert.match(automationStatusSource, /provider_job_id: effectiveProviderJobId/);
+assert.match(automationStatusSource, /finalVideoUrl: finalUrl/);
+assert.match(automationStatusSource, /preview_url: finalUrl/);
+assert.match(automationStatusSource, /startsWith\("refunded_reserved"\)/);
+assert.match(automationStatusSource, /credit_events/);
+
+const savedApiKey = process.env.MINIMAX_API_KEY;
+const savedGroupId = process.env.MINIMAX_GROUP_ID;
+const savedBaseUrl = process.env.MINIMAX_BASE_URL;
+const originalFetch = globalThis.fetch;
+let queriedUrl = "";
+process.env.MINIMAX_API_KEY = "smoke-test-key";
+process.env.MINIMAX_GROUP_ID = "smoke-test-group";
+process.env.MINIMAX_BASE_URL = "https://minimax.test";
+globalThis.fetch = (async (input) => {
+  queriedUrl = String(input);
+  return new Response(JSON.stringify({ task: { task_id: taskId, status: "submitted" } }), { status: 200 });
+}) as typeof fetch;
+await queryMiniMaxH3VideoTask(taskId);
+assert.equal(queriedUrl, `https://minimax.test/v2/query/video_generation?task_id=${taskId}`);
+globalThis.fetch = originalFetch;
+for (const [key, value] of Object.entries({ MINIMAX_API_KEY: savedApiKey, MINIMAX_GROUP_ID: savedGroupId, MINIMAX_BASE_URL: savedBaseUrl })) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+}
 
 const submitted = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "submitted" } }, taskId);
 assert.equal(submitted.provider, "minimax");
@@ -34,8 +59,8 @@ assert.equal(running.outputUrl, undefined);
 
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
 const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
-assert.equal(currentTask.status, "failed");
-assert.equal(currentTask.outputUrl, undefined);
+assert.equal(currentTask.status, "succeeded");
+assert.equal(currentTask.outputUrl, currentTaskRawUrl);
 
 const ambiguousRawUrls = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl, "https://video-product.cdn.minimax.io/other/output.mp4"] } }, taskId);
 assert.equal(ambiguousRawUrls.status, "failed");
@@ -45,7 +70,7 @@ const crossTaskRawUrl = miniMaxStatusFromResponse({ task: { task_id: "different-
 assert.equal(crossTaskRawUrl.status, "failed");
 assert.equal(crossTaskRawUrl.outputUrl, undefined);
 
-const subtitleOnly = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: { subtitle_url: "https://video-product.cdn.minimax.io/subtitles.srt" }, rawUrls: [currentTaskRawUrl] } }, taskId);
+const subtitleOnly = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: { subtitle_url: "https://video-product.cdn.minimax.io/subtitles.srt" } } }, taskId);
 assert.equal(subtitleOnly.status, "failed");
 assert.equal(subtitleOnly.outputUrl, undefined);
 

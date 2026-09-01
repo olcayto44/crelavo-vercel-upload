@@ -733,6 +733,8 @@ let outputWithRenderJob = renderBridge.renderJob
         const finalProductionState = {
           ...production,
           status: "ready",
+          provider: effectiveProvider,
+          provider_job_id: effectiveProviderJobId,
           automation_status: "completed",
           generation_status: "final_video_ready",
           preview_url: finalUrl,
@@ -1258,6 +1260,8 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
         .from("production_requests")
         .update(safeUpdate({
           status: "ready",
+          provider: effectiveProvider,
+          provider_job_id: effectiveProviderJobId,
           automation_status: "completed",
           generation_status: "final_video_ready",
           preview_url: finalUrl,

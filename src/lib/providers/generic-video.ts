@@ -12,6 +12,7 @@ import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
 import { createImageToVideoClip, createVisualVideo } from "./visuals";
+import { miniMaxProductionSettings } from "./minimax-production-settings";
 import { captureWebsiteScreenshot } from "./website-screenshot";
 
 
@@ -613,10 +614,14 @@ export async function runGenericVideoPipeline(input: {
           productionId: input.productionId,
           scenes: contextualScenes,
           productImageUrls: sourceImageUrls,
-          durationSeconds: plan.durationSeconds,
-          style: clean(input.requestMetadata?.style) || plan.title,
-          provider: plan.provider,
-          aspectRatio: plan.aspectRatio
+           durationSeconds: plan.durationSeconds,
+           style: clean(input.requestMetadata?.style) || plan.title,
+           provider: plan.provider,
+           aspectRatio: plan.aspectRatio,
+           providerPrompt: miniMaxProductionSettings({ selected: { ...(input.requestMetadata ?? {}), ...(input.inputJson ?? {}) }, prompt: input.prompt, title: input.title }).providerPrompt,
+           quality: String(input.requestMetadata?.quality ?? input.inputJson?.quality ?? input.requestMetadata?.selectedQuality ?? input.inputJson?.selectedQuality ?? ""),
+           testMode: Boolean(input.providerPreflight?.testMode)
+
         });
       visualJobs = visualJob ? [visualJob] : [];
     }

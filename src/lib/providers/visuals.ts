@@ -1,5 +1,6 @@
 import { optionalEnv, requireProviderEnv } from "./env";
 import { createMiniMaxH3VideoTask, hasMiniMaxVideoConfig, miniMaxTaskRecord } from "./minimax";
+import { miniMaxProductionSettings } from "./minimax-production-settings";
 import type { ProviderJob } from "./types";
 
 function falApiKey() {
@@ -159,7 +160,7 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
   throw new Error(`Unsupported VIDEO_PROVIDER: ${provider}`);
 }
 
-export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string }): Promise<ProviderJob> {
+export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob> {
   const requestedProvider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const provider = requestedProvider;
   if (provider === "minimax" && !hasMiniMaxVideoConfig()) {
@@ -194,16 +195,16 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
   ].filter(Boolean).join("\n");
 
   if (provider === "minimax") {
-    const resolution = miniMaxResolution(`${input.style ?? ""} ${input.scenes.join(" ")}`);
+    const settings = miniMaxProductionSettings({ durationSeconds: safeDuration, aspectRatio: requestedRatio, quality: input.quality, prompt: input.providerPrompt ?? prompt, testMode: input.testMode });
     const result = await createMiniMaxH3VideoTask({
-      content: [{ type: "text", text: prompt }],
-      resolution,
-      duration: safeDuration as 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15,
-      ratio: miniMaxRatio(requestedRatio)
+      content: [{ type: "text", text: settings.providerPrompt }],
+      resolution: settings.resolution,
+      duration: settings.duration,
+      ratio: settings.ratio
     });
     const task = miniMaxTaskRecord(result);
     if (!task.taskId) throw new Error(`MiniMax did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
-    return { provider: "minimax", id: task.taskId, status: task.status, raw: { ...result, resolution, ratio: miniMaxRatio(requestedRatio) } };
+    return { provider: "minimax", id: task.taskId, task_id: task.taskId, status: task.status, raw: { ...result, resolution: settings.resolution, ratio: settings.ratio, providerPrompt: settings.providerPrompt } };
   }
 
   if (provider === "replicate") {
