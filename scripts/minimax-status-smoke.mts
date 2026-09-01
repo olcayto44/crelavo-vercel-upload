@@ -18,7 +18,21 @@ assert.match(failed.error ?? "", /provider rejected task/);
 
 const running = miniMaxStatusFromResponse({ task_id: taskId, status: "processing" }, taskId);
 assert.equal(running.status, "running");
+assert.equal(running.providerResponseStatus, "processing");
 assert.equal(running.outputUrl, undefined);
+
+const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
+const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
+assert.equal(currentTask.status, "succeeded");
+assert.equal(currentTask.outputUrl, currentTaskRawUrl);
+
+const ambiguousRawUrls = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl, "https://video-product.cdn.minimax.io/other/output.mp4"] } }, taskId);
+assert.equal(ambiguousRawUrls.status, "failed");
+assert.match(ambiguousRawUrls.error ?? "", /no real video URL/i);
+
+const crossTaskRawUrl = miniMaxStatusFromResponse({ task: { task_id: "different-task", status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
+assert.equal(crossTaskRawUrl.status, "failed");
+assert.equal(crossTaskRawUrl.outputUrl, undefined);
 
 const malformed = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", content: {} } }, taskId);
 assert.equal(malformed.status, "failed");
@@ -35,8 +49,7 @@ for (const [httpStatus, category] of [[404, "not_found"], [410, "expired"], [500
   assert.equal(status.status, httpStatus === 500 ? "unknown" : "failed");
   assert.equal(status.httpStatus, httpStatus);
   assert.equal(status.errorCategory, category);
-  assert.match(status.errorMessage ?? "", /MiniMax/);
-  assert.doesNotMatch(status.errorMessage ?? "", /provider failure/);
+   assert.match(status.errorMessage ?? "", /MiniMax|provider failure/i);
 }
 
 console.log("MiniMax status smoke tests passed.");

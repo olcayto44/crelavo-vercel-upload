@@ -225,7 +225,7 @@ type AssistantCreditState = {
 type StartedProductionState = {
   id: string;
   detailUrl: string;
-  status: "created" | "automation_started" | "automation_warning" | "waiting_provider_config" | "already_running";
+  status: "created" | "automation_started" | "automation_warning" | "waiting_provider_config" | "already_running" | "provider_status_unavailable";
   message: string;
   providerStatus?: string;
   missingProviderKeys?: string[];
@@ -2652,15 +2652,18 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
       const providerReadiness = automationData.provider_readiness && typeof automationData.provider_readiness === "object" ? automationData.provider_readiness as Record<string, any> : null;
       const missingProviderKeys = Array.isArray(providerReadiness?.blocking) ? providerReadiness.blocking.map((item: Record<string, unknown>) => String(item.key ?? item.label ?? "provider_config")) : [];
        const returnedGenerationStatus = String(automationData.production?.generation_status ?? "");
-       const returnedProviderStatus = String(automationData.production?.output_json?.providerStatus ?? "");
-       const returnedOutput = automationData.production?.output_json && typeof automationData.production.output_json === "object" ? automationData.production.output_json as Record<string, unknown> : {};
-       const returnedVisualJob = returnedOutput.visualJob && typeof returnedOutput.visualJob === "object" ? returnedOutput.visualJob as Record<string, unknown> : {};
-       const returnedProviderJob = returnedOutput.providerJob && typeof returnedOutput.providerJob === "object" ? returnedOutput.providerJob as Record<string, unknown> : {};
-       const realProviderId = String(returnedVisualJob.id ?? returnedProviderJob.id ?? returnedOutput.providerJobId ?? "").trim();
-       const providerStarted = Boolean(automationData.provider_started && realProviderId && !realProviderId.startsWith("pending-"));
+        const returnedProviderStatus = String(automationData.production?.output_json?.providerStatus ?? "");
+        const returnedVisualStatus = String(automationData.production?.output_json?.visualStatus && typeof automationData.production.output_json.visualStatus === "object" ? (automationData.production.output_json.visualStatus as Record<string, unknown>).status ?? "" : "").toLowerCase();
+        const returnedOutput = automationData.production?.output_json && typeof automationData.production.output_json === "object" ? automationData.production.output_json as Record<string, unknown> : {};
+        const returnedVisualJob = returnedOutput.visualJob && typeof returnedOutput.visualJob === "object" ? returnedOutput.visualJob as Record<string, unknown> : {};
+        const returnedProviderJob = returnedOutput.providerJob && typeof returnedOutput.providerJob === "object" ? returnedOutput.providerJob as Record<string, unknown> : {};
+        const realProviderId = String(returnedVisualJob.id ?? returnedProviderJob.id ?? returnedOutput.providerJobId ?? "").trim();
+        const providerStatusUnavailable = /unknown|status_unavailable|http_error/i.test(`${returnedGenerationStatus} ${returnedProviderStatus} ${returnedVisualStatus}`);
+        const explicitProviderActive = /^(queued|running|processing|starting|submitted|generating|in_progress)$/.test(returnedVisualStatus) || /provider_(queued|running)|job_created/.test(returnedProviderStatus);
+        const providerStarted = Boolean(automationData.provider_started && realProviderId && !realProviderId.startsWith("pending-") && !providerStatusUnavailable && explicitProviderActive);
        const projectDeliveryReady = Boolean(automationData.project_delivery_ready);
-       const providerStartFailed = !providerStarted && !projectDeliveryReady && (Boolean(automationData.provider_started) || Boolean(automationData.provider_start_failed) || /provider_start_failed|provider_required|failed/.test(`${returnedGenerationStatus} ${returnedProviderStatus}`));
-       const waitingProviderConfig = !providerStartFailed && (Boolean(automationData.waiting_provider_config) || /waiting_provider_config|queued_for_render_slot/.test(`${returnedGenerationStatus} ${returnedProviderStatus}`));
+        const providerStartFailed = !providerStarted && !projectDeliveryReady && !providerStatusUnavailable && (Boolean(automationData.provider_start_failed) || /provider_start_failed|provider_required|failed/.test(`${returnedGenerationStatus} ${returnedProviderStatus}`));
+        const waitingProviderConfig = !providerStartFailed && !providerStatusUnavailable && (Boolean(automationData.waiting_provider_config) || /waiting_provider_config|queued_for_render_slot/.test(`${returnedGenerationStatus} ${returnedProviderStatus}`));
        const alreadyRunning = Boolean(automationData.already_running && realProviderId);
       setStartState("idle");
       setStartModalOpen(false);
@@ -2674,15 +2677,17 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
           production_type: selectedProductionType,
           package_id: selectedPackageForEstimate
         }),
-         status: providerStartFailed ? "automation_warning" : waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "automation_started",
-         message: providerStartFailed
-           ? String(automationData.error ?? "Provider start failed. Check the provider configuration and create a new production.")
-           : waitingProviderConfig
-             ? "Production record was created, but real provider execution is waiting for API/provider configuration."
-             : alreadyRunning
-               ? "Production record exists and an active provider job is already running."
-               : "Production record created and the real provider job is running.",
-         providerStatus: providerStartFailed ? "provider_start_failed" : waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "provider_started",
+          status: providerStatusUnavailable ? "provider_status_unavailable" : providerStartFailed ? "automation_warning" : waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "automation_started",
+          message: providerStatusUnavailable
+            ? "Provider durumu doğrulanamadı. Yeni üretim başlatılmadı; mevcut job durumunu production sayfasından kontrol edin."
+            : providerStartFailed
+              ? String(automationData.error ?? "Provider start failed. Check the provider configuration and create a new production.")
+              : waitingProviderConfig
+                ? "Production record was created, but real provider execution is waiting for API/provider configuration."
+                : alreadyRunning
+                  ? "Production record exists and an active provider job is already running."
+                  : "Production record created and the real provider job is running.",
+          providerStatus: providerStatusUnavailable ? "provider_status_unavailable" : providerStartFailed ? "provider_start_failed" : waitingProviderConfig ? "waiting_provider_config" : alreadyRunning ? "already_running" : "provider_started",
         missingProviderKeys,
         nextAction: waitingProviderConfig
           ? "Connect the missing provider/API keys or continue with manual/demo delivery from the production detail page."
@@ -3389,8 +3394,8 @@ async function startRawMicrophoneFallback() {
               </div>
             ) : null}
             {startedProduction ? (
-              <div className={`studio-started-card clean-completion-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "production-attention-card" : "production-live-card"}`}>
-                <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" ? "Needs attention" : "Production workspace ready"}</small>
+              <div className={`studio-started-card clean-completion-card ${startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" || startedProduction.status === "provider_status_unavailable" ? "production-attention-card" : "production-live-card"}`}>
+                <small>{startedProduction.status === "waiting_provider_config" || startedProduction.status === "automation_warning" || startedProduction.status === "provider_status_unavailable" ? "Needs attention" : "Production workspace ready"}</small>
                 <strong>{startedProduction.message}</strong>
                 <span><b>Production ID</b>{startedProduction.id}</span>
                 {startedProduction.providerStatus ? <span><b>Provider status</b>{startedProduction.providerStatus}</span> : null}

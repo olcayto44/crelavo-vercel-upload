@@ -60,6 +60,8 @@ export type NormalizedProviderStatus = {
   httpStatus?: number;
   errorCategory?: "http_error" | "not_found" | "expired" | "timeout" | "provider_error" | "unknown";
   errorMessage?: string;
+  providerResponseStatus?: string;
+  providerResponseClassification?: "queued" | "running" | "succeeded" | "failed" | "unknown";
   raw?: unknown;
 };
 

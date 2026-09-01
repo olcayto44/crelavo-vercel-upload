@@ -929,6 +929,31 @@ let outputWithRenderJob = renderBridge.renderJob
       return Response.json({ production: data, visualStatus, renderStatus, creditResolution });
     }
 
+    if (terminalStatus.status === "unknown") {
+      const diagnostic = providerStatusDiagnostics([visualStatus, renderStatus, ...alternativeStatuses]);
+      const unavailableOutput = outputWithWorkflow(production, outputWithRenderJob, {
+        visualStatus,
+        renderStatus,
+        providerStatus: `${terminalStatus.provider}_status_unavailable`,
+        providerStatusDiagnostics: diagnostic,
+        providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+        outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry
+      });
+      const { data } = await supabase
+        .from("production_requests")
+        .update(safeUpdate({
+          automation_status: "provider_status_unavailable",
+          generation_status: "provider_status_unavailable",
+          output_json: unavailableOutput,
+          admin_notes: `Provider status unavailable for ${terminalStatus.provider} job ${terminalStatus.id ?? "unknown"}. No output URL was promoted and reserved credits remain unchanged.`,
+          updated_at: new Date().toISOString()
+        }))
+        .eq("id", productionId)
+        .select("*")
+        .single();
+      return Response.json({ production: data, visualStatus, renderStatus, providerStatusDiagnostics: diagnostic, providerStatusUnavailable: true, actionRequired: true });
+    }
+
     const selectedOptions = output.providerPreflight && typeof output.providerPreflight === "object" && (output.providerPreflight as Record<string, unknown>).selectedOptions && typeof (output.providerPreflight as Record<string, unknown>).selectedOptions === "object" ? (output.providerPreflight as Record<string, Record<string, unknown>>).selectedOptions : {};
     const renderSignal = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.prompt ?? ""} ${JSON.stringify(production.request_metadata ?? {})} ${JSON.stringify(production.input_json ?? {})} ${JSON.stringify(output)}`.toLowerCase();
     const explicitNoVoiceForRender = /no\s*voice|without\s*voice|no\s*voice-?over|without\s*voice-?over|seslendirme\s*olmasın|ses\s*olmasın|seslendirme\s*yok|sessiz/.test(renderSignal);
@@ -945,8 +970,8 @@ const isHeyGenVideoAgentProvider = outputVisualJobProvider.toLowerCase() === "he
     const requiresFinalRender = !isHeyGenVideoAgentProvider && (isDroneProduction || Boolean(wantsVoiceRender || wantsSubtitleRender || wantsMusicRender || (selectedOptions.finalRender && (wantsVoiceRender || wantsSubtitleRender || wantsMusicRender))));
 const fallbackVisualUrl = String(visualStatus?.outputUrl || visualJobForUrl.url || visualJobForUrl.preview_url || visualJobForUrl.raw?.url || visualJobForUrl.raw?.output || visualJobForUrl.raw?.video || visualJobForUrl.raw?.result || "").trim();
 const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url || renderJobForUrl.raw?.url || renderJobForUrl.raw?.output || renderJobForUrl.raw?.video || renderJobForUrl.raw?.result || "").trim();
-    const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
-    const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
+     const normalizedVisualStatus = visualStatus && visualStatus.status === "succeeded" && !visualStatus.outputUrl && visualStatus.provider !== "minimax" && /^https?:\/\//i.test(fallbackVisualUrl) ? { ...visualStatus, outputUrl: fallbackVisualUrl } : visualStatus;
+     const normalizedRenderStatus = renderStatus && renderStatus.status === "succeeded" && !renderStatus.outputUrl && renderStatus.provider !== "minimax" && /^https?:\/\//i.test(fallbackRenderUrl) ? { ...renderStatus, outputUrl: fallbackRenderUrl } : renderStatus;
     const isShotstackUiMotion = String(outputVisualJobProvider || visualJobForUrl.provider || visualStatus?.provider || "").toLowerCase() === "shotstack_ui_motion";
     if (isShotstackUiMotion) {
       const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {

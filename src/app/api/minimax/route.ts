@@ -1,4 +1,4 @@
-import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, minimaxReadiness, queryMiniMaxH3VideoTask, type MiniMaxH3CreateInput } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, minimaxReadiness, MiniMaxStatusError, queryMiniMaxH3VideoTask, type MiniMaxH3CreateInput } from "@/lib/providers/minimax";
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
@@ -48,7 +48,8 @@ export async function GET(request: Request) {
 
     return Response.json({ error: `Unsupported MiniMax action: ${action}` }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: errorMessage(error, "MiniMax request failed.") }, { status: 500 });
+    const httpStatus = error instanceof MiniMaxStatusError ? error.httpStatus : 500;
+    return Response.json({ provider: "minimax", error: errorMessage(error, "MiniMax request failed."), httpStatus, responseClassification: httpStatus === 404 ? "not_found" : httpStatus === 410 ? "expired" : "http_error" }, { status: httpStatus });
   }
 }
 

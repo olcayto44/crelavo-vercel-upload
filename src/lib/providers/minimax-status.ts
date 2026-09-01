@@ -1,11 +1,11 @@
 import type { NormalizedProviderStatus } from "./types.ts";
 
 function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
-  const status = value.toLowerCase();
+  const status = value.trim().toLowerCase().replace(/[ -]+/g, "_");
   if (["succeeded", "success", "completed", "complete", "done", "ready"].includes(status)) return "succeeded";
-  if (["failed", "failure", "error", "canceled", "cancelled", "expired", "not_found", "not found"].includes(status)) return "failed";
-  if (["starting", "processing", "running", "rendering", "generating", "in_progress", "submitted"].includes(status)) return status === "submitted" ? "queued" : "running";
-  if (["queued", "pending"].includes(status)) return "queued";
+  if (["failed", "failure", "error", "canceled", "cancelled", "expired", "not_found"].includes(status)) return "failed";
+  if (["starting", "processing", "running", "rendering", "generating", "in_progress"].includes(status)) return "running";
+  if (["queued", "pending", "submitted"].includes(status)) return "queued";
   return "unknown";
 }
 
@@ -22,6 +22,14 @@ function firstUrl(value: unknown): string | undefined {
   return undefined;
 }
 
+function currentTaskOutputUrl(task: Record<string, unknown>, taskId: string) {
+  const returnedTaskId = String(task.task_id ?? task.taskId ?? task.id ?? "").trim();
+  const explicit = firstUrl(task.content) || firstUrl(task.video_url) || firstUrl(task.videoUrl) || firstUrl(task.result) || firstUrl(task.video) || firstUrl(task.videos) || firstUrl(task.output);
+  if (explicit) return explicit;
+  const rawUrls = Array.isArray(task.rawUrls) ? task.rawUrls.filter((value): value is string => typeof value === "string" && /^https?:\/\//i.test(value) && /\.mp4(?:\?|$)/i.test(value)) : [];
+  return returnedTaskId === taskId && rawUrls.length === 1 ? rawUrls[0] : undefined;
+}
+
 function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" | "height" | "durationSeconds" | "resolutionLabel"> {
   const record = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const width = Number(record.width ?? record.video_width);
@@ -36,24 +44,27 @@ function mediaMetadata(value: unknown): Pick<NormalizedProviderStatus, "width" |
 }
 
 export function miniMaxStatusFromError(error: unknown, taskId: string): NormalizedProviderStatus {
-  const httpStatus = error && typeof error === "object" && typeof (error as Record<string, unknown>).httpStatus === "number" ? Number((error as Record<string, unknown>).httpStatus) : undefined;
+  const record = error && typeof error === "object" ? error as Record<string, unknown> : {};
+  const httpStatus = typeof record.httpStatus === "number" ? Number(record.httpStatus) : undefined;
+  const providerMessage = typeof record.providerMessage === "string" ? record.providerMessage.trim() : typeof record.message === "string" ? record.message.trim() : "";
   if (httpStatus === 404 || httpStatus === 410) {
     const errorCategory = httpStatus === 404 ? "not_found" : "expired";
-    const errorMessage = httpStatus === 404 ? "MiniMax task was not found." : "MiniMax task expired.";
-    return { provider: "minimax", id: taskId, status: "failed", error: errorMessage, httpStatus, errorCategory, errorMessage, raw: { httpStatus } };
+    const errorMessage = providerMessage || (httpStatus === 404 ? "MiniMax task was not found." : "MiniMax task expired.");
+    return { provider: "minimax", id: taskId, status: "failed", error: errorMessage, httpStatus, errorCategory, errorMessage, raw: { httpStatus, providerMessage } };
   }
-  const errorMessage = httpStatus ? `MiniMax status request failed with HTTP ${httpStatus}.` : "MiniMax status request could not be completed.";
-  return { provider: "minimax", id: taskId, status: "unknown", error: errorMessage, httpStatus, errorCategory: httpStatus ? "http_error" : "unknown", errorMessage, raw: httpStatus ? { httpStatus } : undefined };
+  const errorMessage = providerMessage || (httpStatus ? `MiniMax status request failed with HTTP ${httpStatus}.` : "MiniMax status request could not be completed.");
+  return { provider: "minimax", id: taskId, status: "unknown", error: errorMessage, httpStatus, errorCategory: httpStatus ? "http_error" : "unknown", errorMessage, raw: { ...(httpStatus ? { httpStatus } : {}), providerMessage } };
 }
 
 export function miniMaxStatusFromResponse(data: unknown, taskId: string): NormalizedProviderStatus {
   const record = data && typeof data === "object" ? data as Record<string, unknown> : {};
   const envelope = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
   const task = envelope.task && typeof envelope.task === "object" ? envelope.task as Record<string, unknown> : envelope;
-  const rawStatus = String(task.status ?? envelope.status ?? record.status ?? "unknown");
+  const rawStatus = String(task.status ?? task.task_status ?? task.state ?? envelope.status ?? envelope.task_status ?? envelope.state ?? record.status ?? "unknown").trim();
   const normalized = normalizeStatus(rawStatus);
-  const outputUrl = firstUrl(task.content) || firstUrl(task.result) || firstUrl(task.video) || firstUrl(task.videos) || firstUrl(task.output) || firstUrl(task);
-  const errorValue = task.error ?? envelope.error ?? record.error;
+  const outputUrl = currentTaskOutputUrl(task, taskId);
+  const errorValue = task.error ?? task.failure ?? envelope.error ?? envelope.failure ?? record.error;
+  const responseClassification = normalizeStatus(rawStatus);
   const error = typeof errorValue === "object" && errorValue
     ? String((errorValue as Record<string, unknown>).message ?? (errorValue as Record<string, unknown>).code ?? "MiniMax task failed.")
     : typeof errorValue === "string" ? errorValue
@@ -68,6 +79,8 @@ export function miniMaxStatusFromResponse(data: unknown, taskId: string): Normal
     error,
     errorMessage: error,
     errorCategory: error ? finalStatus === "failed" && normalized !== "succeeded" ? "provider_error" : "unknown" : undefined,
+    providerResponseStatus: rawStatus,
+    providerResponseClassification: responseClassification,
     raw: data
   };
 }
