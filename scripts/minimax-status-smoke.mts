@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { miniMaxStatusFromError, miniMaxStatusFromResponse } from "../src/lib/providers/minimax-status.ts";
-import { queryMiniMaxH3VideoTask } from "../src/lib/providers/minimax.ts";
+import { miniMaxTaskRecord, queryMiniMaxH3VideoTask } from "../src/lib/providers/minimax.ts";
+import { buildOutputRegistry } from "../src/lib/output-registry.ts";
 
-const taskId = "436887923384578";
+const taskId = "437126020350238";
 const productionWorkspaceSource = readFileSync(new URL("../src/components/ProductionWorkspace.tsx", import.meta.url), "utf8");
 const automationStatusSource = readFileSync(new URL("../src/app/api/automation/status/route.ts", import.meta.url), "utf8");
 const providerStatusSource = readFileSync(new URL("../src/lib/providers/status.ts", import.meta.url), "utf8");
@@ -68,11 +69,14 @@ assert.equal(miniMaxStatusFromResponse({ data: { task_status: { status_code: "pr
 assert.equal(miniMaxStatusFromResponse({ data: { task_status: "completed", task_result: { video_url: "https://cdn.minimax.io/result.mp4" } } }, taskId).outputUrl, "https://cdn.minimax.io/result.mp4");
 assert.equal(miniMaxStatusFromResponse({ data: { status_code: "success", output_url: "https://cdn.minimax.io/result.mp4" } }, taskId).status, "succeeded");
 assert.equal(miniMaxStatusFromResponse({ data: { status_code: "success", output_url: "https://cdn.minimax.io/result.mp4" } }, taskId).outputUrl, "https://cdn.minimax.io/result.mp4");
+assert.equal(miniMaxStatusFromResponse({ data: { task_id: taskId, status: "success", video_urls: ["https://cdn.minimax.io/result.mp4"] } }, taskId).outputUrl, "https://cdn.minimax.io/result.mp4");
+assert.equal(miniMaxStatusFromResponse({ data: { task: { task_id: taskId, status: "completed", task_result: { file_url: "https://cdn.minimax.io/result.mp4" } } } }, taskId).status, "succeeded");
+assert.equal(miniMaxTaskRecord({ data: { task: { task_id: taskId, status: "processing" } } }).taskId, taskId);
 
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
 const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
-assert.equal(currentTask.status, "failed");
-assert.equal(currentTask.outputUrl, undefined);
+assert.equal(currentTask.status, "succeeded");
+assert.equal(currentTask.outputUrl, currentTaskRawUrl);
 assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawUrlCount, 1);
 assert.equal((currentTask.raw as { diagnostics: { rawUrlCount: number; rawVideoUrlCount: number } }).diagnostics.rawVideoUrlCount, 1);
 
@@ -118,5 +122,27 @@ for (const [httpStatus, category] of [[404, "not_found"], [410, "expired"], [500
 const httpPayloadError = miniMaxStatusFromError({ httpStatus: 404, message: "provider failure", payload: { error: "missing", task_id: taskId } }, taskId);
 assert.deepEqual((httpPayloadError.raw as { diagnostics: { responseKeys: string[] } }).diagnostics.responseKeys, ["error", "task_id"]);
 assert.equal(httpPayloadError.providerResponseStatus, "missing");
+
+const registry = buildOutputRegistry({
+  id: "production-437126020350238",
+  production_type: "video",
+  generation_status: "minimax_succeeded",
+  preview_url: "/api/productions/production-437126020350238/delivery?file=preview",
+  delivery_link: "/api/productions/production-437126020350238/delivery?file=manifest",
+  request_metadata: { deliveryRequirements: { formats: ["final_mp4"], wantsFinalVideo: true } },
+  output_json: {
+    finalVideoUrl: currentTaskRawUrl,
+    providerStatus: "minimax_succeeded"
+  }
+});
+const finalVideo = registry.find((item) => item.id === "final_video");
+assert.equal(finalVideo?.status, "ready");
+assert.equal(finalVideo?.url, "/api/productions/production-437126020350238/delivery?file=video");
+
+assert.match(automationStatusSource, /providerStatusDiagnostics/);
+assert.match(automationStatusSource, /No output URL was promoted/);
+const automationStartSource = readFileSync(new URL("../src/app/api/automation/start/route.ts", import.meta.url), "utf8");
+assert.match(automationStartSource, /Legal acceptance table missing; continuing without repair row/);
+assert.match(automationStartSource, /provider_job_id: providerJob.id/);
 
 console.log("MiniMax status smoke tests passed.");

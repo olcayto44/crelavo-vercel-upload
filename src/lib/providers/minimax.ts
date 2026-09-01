@@ -39,10 +39,11 @@ export function hasMiniMaxVideoConfig() {
 export function miniMaxTaskRecord(result: unknown) {
   const record = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const data = record.data && typeof record.data === "object" ? record.data as Record<string, unknown> : record;
+  const task = data.task && typeof data.task === "object" ? data.task as Record<string, unknown> : data;
   return {
     data,
-    taskId: String(data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim(),
-    status: String(data.status ?? "submitted")
+    taskId: String(task.task_id ?? task.request_id ?? task.taskId ?? task.id ?? data.task_id ?? data.request_id ?? data.taskId ?? data.id ?? "").trim(),
+    status: String(task.status ?? data.status ?? "submitted")
   };
 }
 
@@ -96,12 +97,14 @@ export type MiniMaxH3CreateResponse = {
 export class MiniMaxStatusError extends Error {
   readonly httpStatus: number;
   readonly payload: unknown;
+  readonly contentType: string;
 
-  constructor(message: string, httpStatus: number, payload?: unknown) {
+  constructor(message: string, httpStatus: number, payload?: unknown, contentType = "") {
     super(message);
     this.name = "MiniMaxStatusError";
     this.httpStatus = httpStatus;
     this.payload = payload;
+    this.contentType = contentType;
   }
 }
 
@@ -148,7 +151,7 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
         payload = { raw_text: text };
       }
     }
-    if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status, payload);
+    if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status, payload, response.headers.get("content-type") ?? "");
     return payload as T;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new Error("MiniMax request timed out after 60 seconds.");

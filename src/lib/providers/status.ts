@@ -221,7 +221,7 @@ export async function getMiniMaxStatus(job: ProviderJob): Promise<NormalizedProv
     const data = await queryMiniMaxH3VideoTask(job.id);
     return miniMaxStatusFromResponse(data, job.id);
   } catch (error) {
-    return miniMaxStatusFromError(error instanceof MiniMaxStatusError ? error : { message: error instanceof Error ? error.message : "" }, job.id);
+    return miniMaxStatusFromError(error instanceof MiniMaxStatusError ? { httpStatus: error.httpStatus, payload: error.payload, contentType: error.contentType, message: error.message } : { message: error instanceof Error ? error.message : "" }, job.id);
   }
 }
 
