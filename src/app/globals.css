@@ -11122,7 +11122,10 @@ html body .production-detail-shell .customer-preview-screen video {
   cursor: pointer;
 }
 html body .production-detail-shell .customer-preview-control {
-  display: none !important;
+  display: grid !important;
+  visibility: visible !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 html body .production-detail-shell .customer-preview-toolbar {
   cursor: default !important;
