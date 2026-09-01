@@ -237,7 +237,10 @@ function providerStatusDiagnostics(statuses: Array<NormalizedProviderStatus | nu
     httpStatus: status.httpStatus ?? null,
     normalizedStatus: status.status,
     errorCategory: status.errorCategory ?? null,
-    errorMessage: status.errorMessage ?? status.error ?? null
+    errorMessage: status.errorMessage ?? status.error ?? null,
+    providerResponseStatus: status.providerResponseStatus ?? null,
+    providerResponseClassification: status.providerResponseClassification ?? null,
+    responseDiagnostics: status.raw && typeof status.raw === "object" && "diagnostics" in status.raw ? (status.raw as Record<string, unknown>).diagnostics : null
   }));
 }
 

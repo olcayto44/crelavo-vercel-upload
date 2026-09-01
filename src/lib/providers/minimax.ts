@@ -95,11 +95,13 @@ export type MiniMaxH3CreateResponse = {
 
 export class MiniMaxStatusError extends Error {
   readonly httpStatus: number;
+  readonly payload: unknown;
 
-  constructor(message: string, httpStatus: number) {
+  constructor(message: string, httpStatus: number, payload?: unknown) {
     super(message);
     this.name = "MiniMaxStatusError";
     this.httpStatus = httpStatus;
+    this.payload = payload;
   }
 }
 
@@ -146,7 +148,7 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
         payload = { raw_text: text };
       }
     }
-    if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status);
+    if (!response.ok) throw new MiniMaxStatusError(`MiniMax request failed: ${response.status} ${text}`, response.status, payload);
     return payload as T;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new Error("MiniMax request timed out after 60 seconds.");

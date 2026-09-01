@@ -57,6 +57,18 @@ assert.equal(running.status, "running");
 assert.equal(running.providerResponseStatus, "processing");
 assert.equal(running.outputUrl, undefined);
 
+for (const status of ["queued", "submitted", "processing", "running", "rendering", "generating", "in_progress"]) {
+  const normalized = miniMaxStatusFromResponse({ data: { status } }, taskId);
+  assert.equal(normalized.status, ["queued", "submitted"].includes(status) ? "queued" : "running", `data.status ${status}`);
+  assert.equal(normalized.providerResponseStatus, status);
+}
+
+assert.equal(miniMaxStatusFromResponse({ data: { task_status: "running" } }, taskId).status, "running");
+assert.equal(miniMaxStatusFromResponse({ data: { task_status: { status_code: "processing" } } }, taskId).status, "running");
+assert.equal(miniMaxStatusFromResponse({ data: { task_status: "completed", task_result: { video_url: "https://cdn.minimax.io/result.mp4" } } }, taskId).outputUrl, "https://cdn.minimax.io/result.mp4");
+assert.equal(miniMaxStatusFromResponse({ data: { status_code: "success", output_url: "https://cdn.minimax.io/result.mp4" } }, taskId).status, "succeeded");
+assert.equal(miniMaxStatusFromResponse({ data: { status_code: "success", output_url: "https://cdn.minimax.io/result.mp4" } }, taskId).outputUrl, "https://cdn.minimax.io/result.mp4");
+
 const currentTaskRawUrl = "https://video-product.cdn.minimax.io/current/output.mp4";
 const currentTask = miniMaxStatusFromResponse({ task: { task_id: taskId, status: "succeeded", rawUrls: [currentTaskRawUrl] } }, taskId);
 assert.equal(currentTask.status, "succeeded");
@@ -82,14 +94,23 @@ const existingProviderJob = { provider: "minimax", id: taskId, status: "running"
 assert.equal(existingProviderJob.id, taskId);
 assert.equal(existingProviderJob.provider, "minimax");
 assert.equal(existingProviderJob.status, "running");
-assert.equal(miniMaxStatusFromResponse({ task: { task_id: taskId, status: "unknown" } }, taskId).status, "unknown");
+const unknownWithRawUrls = miniMaxStatusFromResponse({ data: { status: "mystery", rawUrls: [currentTaskRawUrl] } }, taskId);
+assert.equal(unknownWithRawUrls.status, "unknown");
+assert.equal(unknownWithRawUrls.outputUrl, undefined);
+assert.equal(unknownWithRawUrls.providerResponseClassification, "unknown");
+assert.equal((unknownWithRawUrls.raw as { diagnostics: { responseCategory: string; responseKeys: string[] } }).diagnostics.responseCategory, "unknown_response");
+assert.ok((unknownWithRawUrls.raw as { diagnostics: { responseKeys: string[] } }).diagnostics.responseKeys.includes("data.rawUrls"));
 
 for (const [httpStatus, category] of [[404, "not_found"], [410, "expired"], [500, "http_error"]] as const) {
   const status = miniMaxStatusFromError({ httpStatus, message: "provider failure" }, taskId);
   assert.equal(status.status, httpStatus === 500 ? "unknown" : "failed");
   assert.equal(status.httpStatus, httpStatus);
   assert.equal(status.errorCategory, category);
-   assert.match(status.errorMessage ?? "", /MiniMax|provider failure/i);
+  assert.match(status.errorMessage ?? "", /MiniMax|provider failure/i);
 }
+
+const httpPayloadError = miniMaxStatusFromError({ httpStatus: 404, message: "provider failure", payload: { error: "missing", task_id: taskId } }, taskId);
+assert.deepEqual((httpPayloadError.raw as { diagnostics: { responseKeys: string[] } }).diagnostics.responseKeys, ["error", "task_id"]);
+assert.equal(httpPayloadError.providerResponseStatus, "missing");
 
 console.log("MiniMax status smoke tests passed.");
