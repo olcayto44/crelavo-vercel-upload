@@ -11122,10 +11122,7 @@ html body .production-detail-shell .customer-preview-screen video {
   cursor: pointer;
 }
 html body .production-detail-shell .customer-preview-control {
-  display: grid !important;
-  visibility: visible !important;
-  max-height: none !important;
-  overflow: visible !important;
+  display: none !important;
 }
 html body .production-detail-shell .customer-preview-toolbar {
   cursor: default !important;
@@ -13198,109 +13195,5 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
   html body .omni-setup-options button {
     white-space: normal;
   }
-}
-
-html body .production-detail-shell.container.section {
-  width: min(100% - 32px, 1440px) !important;
-  max-width: 1440px !important;
-  padding-inline: 0 !important;
-}
-html body .production-detail-shell .production-workspace-shell,
-html body .production-detail-shell .production-workspace-main,
-html body .production-detail-shell .production-workspace-side {
-  min-height: 0 !important;
-  height: auto !important;
-}
-html body .production-detail-shell .production-workspace-shell {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 14px !important;
-  overflow: visible !important;
-}
-html body .production-detail-shell .production-workspace-main,
-html body .production-detail-shell .production-workspace-side {
-  display: grid !important;
-  gap: 14px !important;
-  align-content: start !important;
-}
-html body .production-detail-shell .production-workspace-head {
-  min-height: 0 !important;
-}
-html body .production-detail-shell .customer-preview-theater {
-  min-height: 0 !important;
-  grid-template-rows: auto auto !important;
-}
-html body .production-detail-shell .customer-preview-screen,
-html body .production-detail-shell .customer-preview-screen video,
-html body .production-detail-shell .customer-preview-screen img,
-html body .production-detail-shell .customer-preview-screen iframe,
-html body .production-detail-shell .customer-preview-placeholder {
-  min-height: 0 !important;
-  height: auto !important;
-}
-html body .production-detail-shell .customer-preview-screen {
-  min-height: clamp(240px, 42vw, 520px) !important;
-  aspect-ratio: 16 / 9;
-}
-html body .production-detail-shell .customer-preview-screen video,
-html body .production-detail-shell .customer-preview-screen img,
-html body .production-detail-shell .customer-preview-screen iframe {
-  aspect-ratio: 16 / 9;
-}
-html body .production-detail-shell .production-waiting-room {
-  min-height: 240px !important;
-  padding: clamp(18px, 3vw, 36px) !important;
-}
-html body .production-detail-shell .actionable-waiting-room {
-  min-height: 180px !important;
-  gap: 8px !important;
-}
-@media (max-width: 640px) {
-  html body .production-detail-shell.container.section {
-    width: min(100% - 20px, 1440px) !important;
-  }
-  html body .production-detail-shell .customer-preview-screen {
-    min-height: 220px !important;
-    aspect-ratio: 4 / 3;
-  }
-  html body .production-detail-shell .customer-preview-screen video,
-  html body .production-detail-shell .customer-preview-screen img,
-  html body .production-detail-shell .customer-preview-screen iframe {
-    aspect-ratio: 4 / 3;
-  }
-}
-
-html body .production-detail-shell .provider-status-alert {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  padding: 12px 14px;
-  border: 1px solid rgba(251, 191, 36, .36);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(120, 53, 15, .34), rgba(127, 29, 29, .2));
-  color: #fde68a;
-}
-html body .production-detail-shell .provider-status-alert strong {
-  color: #fff;
-  white-space: nowrap;
-}
-html body .production-detail-shell .provider-status-alert span {
-  color: #fed7aa;
-  line-height: 1.4;
-}
-html body .production-detail-shell .progress-unavailable {
-  border-color: rgba(251, 191, 36, .28);
-  background: rgba(120, 53, 15, .18);
-}
-html body .production-detail-shell .progress-unavailable strong {
-  color: #fcd34d;
-}
-html body .production-detail-shell .customer-preview-placeholder.production-waiting-room {
-  cursor: default;
-}
-html body .production-detail-shell .customer-preview-placeholder.production-waiting-room .btn:disabled {
-  cursor: not-allowed;
-  opacity: .58;
 }
 

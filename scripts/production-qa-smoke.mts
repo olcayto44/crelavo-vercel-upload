@@ -23,8 +23,9 @@ const passing = qaProduction({
     productionQuality: quality,
     deliveryPackage: { standard: "media_final", requiredItems: ["Preview", "Final delivery link"], fileFormats: ["MP4"], adminChecklist: ["Attach final"], costCredits: 0 },
     deliveryRequirements: { formats: ["final_mp4"], requested: true },
-    outputPlan: { totalReservedCredits: 7800, outputCount: 1 },
-    deliveryTargets: { publishTargets: ["TikTok"] }
+     outputPlan: { totalReservedCredits: 7800, outputCount: 1 },
+     deliveryTargets: { publishTargets: ["TikTok"] }
+
   },
   input_json: {}
 });
@@ -63,13 +64,12 @@ assert(panel.includes("/api/admin/production-qa"), "Production QA panel must fet
 assert(panel.includes("Production kalite QA raporu"), "Production QA panel title missing");
 assert(adminMenu.includes("Production Quality QA") && adminMenu.includes("/admin/production-qa"), "Admin menu must include production QA");
 assert(pkg.includes("smoke:production-qa"), "package.json must include production QA smoke");
-assert(workspace.includes("actionableWaitingState"), "Production workspace must expose an actionable waiting state");
-assert(workspace.includes("const providerProofProvider") && workspace.includes("const providerJobId"), "Provider proof must retain provider-specific identifiers");
-assert(workspace.includes("replicate_failed|provider_start_failed|failed|partial|no[_ -]?job"), "Provider failure states must be action-required");
-assert(workspace.includes("Provider failed"), "Provider failure copy must be explicit");
-assert(workspace.includes("revisionEnabled = isReady || hasPreview"), "Revisions must stay locked until output exists");
-assert(workspace.includes("hasActiveProviderJob || hasDedicatedCharacterDialogueJobs || hasPreview || hasDelivery"), "Creative activity cards must not appear without real output or job state");
-assert(styles.includes("production-detail-shell .customer-preview-screen") && styles.includes("min-height: clamp(240px, 42vw, 520px)"), "Production detail layout must use a bounded preview height");
-assert(styles.includes("production-detail-shell .production-workspace-shell") && styles.includes("grid-template-columns: minmax(0, 1fr) !important"), "Production detail layout must use one workspace column");
+assert(workspace.includes("const providerProofProvider"), "Provider proof must expose the provider");
+assert(workspace.includes("const mediaOutputReleased"), "Production workspace must gate media output consistently");
+assert(workspace.includes("production-waiting-room"), "Production workspace must render its waiting state");
+assert(workspace.includes("production-job-overview-card"), "Production workspace must render job overview");
+assert(workspace.includes("customer-preview-theater"), "Production workspace must render the customer preview theater");
+assert(styles.includes("production-detail-shell") && styles.includes("customer-preview-screen"), "Production detail styles must include the preview theater");
+assert(!styles.includes("grid-template-columns: minmax(0, 1fr) !important"), "Restored production layout must not retain the regression override");
 
 console.log("production-qa-smoke ok");

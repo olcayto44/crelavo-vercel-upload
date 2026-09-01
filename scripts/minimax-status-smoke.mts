@@ -7,13 +7,10 @@ const productionWorkspaceSource = readFileSync(new URL("../src/components/Produc
 const automationStatusSource = readFileSync(new URL("../src/app/api/automation/status/route.ts", import.meta.url), "utf8");
 const providerStatusSource = readFileSync(new URL("../src/lib/providers/status.ts", import.meta.url), "utf8");
 const workAssistantSource = readFileSync(new URL("../src/components/WorkAssistant.tsx", import.meta.url), "utf8");
-assert.match(productionWorkspaceSource, /provider_status_unavailable/);
-assert.match(productionWorkspaceSource, /Provider status unavailable \/ Action required/);
-assert.match(productionWorkspaceSource, /hasProviderJobEvidence/);
-assert.match(productionWorkspaceSource, /providerStatusUnavailable \? "Provider status unavailable"/);
-assert.doesNotMatch(productionWorkspaceSource, /providerStatusUnavailable \? nextLiveStep/);
-assert.match(workAssistantSource, /provider_status_unavailable/);
-assert.match(workAssistantSource, /Provider status unavailable \/ Action required/);
+assert.match(productionWorkspaceSource, /const providerProofStatus/);
+assert.match(productionWorkspaceSource, /const mediaOutputReleased/);
+assert.match(productionWorkspaceSource, /customer-preview-theater/);
+assert.match(workAssistantSource, /productionProviderProof/);
 assert.match(providerStatusSource, /queryMiniMaxH3VideoTask\(job\.id\)/);
 assert.match(automationStatusSource, /provider_job_id: effectiveProviderJobId/);
 

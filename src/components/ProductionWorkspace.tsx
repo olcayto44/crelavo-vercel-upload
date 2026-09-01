@@ -196,7 +196,6 @@ function workflowStageLabel(stage?: string) {
     waiting_provider_config: "Waiting provider config",
     provider_ready: "Provider ready",
     in_production: "Production running",
-    provider_status_unavailable: "Provider status unavailable / Action required",
     qa_review: "QA / approval",
     ready: "Delivery ready",
     failed: "Failed",
@@ -423,9 +422,6 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
     if (/preview\.html|manifest|readme|placeholder|generated_on_download/i.test(url)) return "";
     return /\.mp4(\?|$)|\.mov(\?|$)|\.webm(\?|$)|replicate\.delivery|fal\.media|storage\.googleapis|cloudfront|r2\.dev|supabase/i.test(url) ? url : "";
   };
-  const firstPlayableMediaUrl = (...values: unknown[]) => values.map(safePlayableMediaUrl).find(Boolean) ?? "";
-  const mediaVisualStatus = outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? outputJson.visualStatus as Record<string, any> : {};
-  const liveVisualStatus = outputJson.liveVisualStatus && typeof outputJson.liveVisualStatus === "object" ? outputJson.liveVisualStatus as Record<string, any> : {};
   const mediaDetectionText = `${production.production_type ?? ""} ${production.package_id ?? ""} ${production.title ?? ""} ${production.prompt ?? ""} ${JSON.stringify(metadata)} ${JSON.stringify(inputJson)} ${JSON.stringify(outputJson)} ${metadataProductionCards.join(" ")} ${typeLockedProductionCards.join(" ")}`.toLowerCase();
   const hasVideoProductionCard = liveProductionCards.some((card) => /video|mp4|scene|animation|voice|subtitle|music/i.test(String(card)));
   const legacyAnimationRecord = /animasyon|animation|animation video|final mp4|scene plan/.test(mediaDetectionText) && !outputJson.visualJob && !outputJson.renderJob && !outputJson.finalVideoUrl && !production.preview_url && !production.delivery_link;
@@ -447,43 +443,26 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
     || production.preview_url
     || production.delivery_link
   );
-  const rawPreviewUrl = isImageProduction ? rawImagePreviewUrl : firstPlayableMediaUrl(
-    outputJson.playbackUrl,
-    outputJson.previewUrl,
-    outputJson.preview_url,
-    outputJson.finalVideoUrl,
-    outputJson.providerFinalUrl,
-    outputJson.rawVisualPreviewUrl,
-    mediaVisualStatus.outputUrl,
-    liveVisualStatus.outputUrl,
-    production.preview_url,
-    production.delivery_link
+  const rawPreviewUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
+    outputJson.finalVideoUrl
+    || outputJson.providerFinalUrl
+    || outputJson.deliveryLink
+    || outputJson.delivery_link
   );
-  const rawDeliveryUrl = isImageProduction ? rawImagePreviewUrl : firstPlayableMediaUrl(
-    outputJson.finalVideoUrl,
-    outputJson.providerFinalUrl,
-    outputJson.playbackUrl,
-    outputJson.previewUrl,
-    outputJson.preview_url,
-    production.delivery_link
+  const rawDeliveryUrl = isImageProduction ? rawImagePreviewUrl : safePlayableMediaUrl(
+    outputJson.finalVideoUrl
+    || outputJson.providerFinalUrl
+    || production.delivery_link
   );
-  const mediaReadySignal = `${production.automation_status ?? ""} ${production.generation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalVideoUrl ?? "")} ${String(outputJson.providerFinalUrl ?? "")} ${String(outputJson.releaseSource ?? "")}`;
-  const droneRenderSignal = `${String(outputJson.renderStatus?.provider ?? "")} ${String(outputJson.renderJob?.provider ?? "")} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalAssetMirror?.providerUrl ?? "")}`.toLowerCase();
-  const isDroneRawPreviewOnly = production.production_type === "drone_video" && !droneRenderSignal.includes("shotstack");
-  const hasPlayableMediaUrl = Boolean(rawPreviewUrl || rawDeliveryUrl);
-  const confirmedMediaUrl = isDroneRawPreviewOnly ? "" : firstPlayableMediaUrl(
-    outputJson.finalVideoUrl,
-    outputJson.providerFinalUrl,
-    outputJson.playbackUrl,
-    production.preview_url,
-    production.delivery_link
-  );
-  const mediaOutputReleased = Boolean(confirmedMediaUrl);
-  const previewUrl = isMediaProduction ? confirmedMediaUrl : rawPreviewUrl;
-  const deliveryUrl = isDroneRawPreviewOnly ? "" : mediaOutputReleased ? rawDeliveryUrl : "";
+const mediaReadySignal = `${production.automation_status ?? ""} ${production.generation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalVideoUrl ?? "")} ${String(outputJson.providerFinalUrl ?? "")} ${String(outputJson.releaseSource ?? "")}`;
+const droneRenderSignal = `${String(outputJson.renderStatus?.provider ?? "")} ${String(outputJson.renderJob?.provider ?? "")} ${String(outputJson.providerStatus ?? "")} ${String(outputJson.finalAssetMirror?.providerUrl ?? "")}`.toLowerCase();
+const isDroneRawPreviewOnly = production.production_type === "drone_video" && !droneRenderSignal.includes("shotstack");
+const hasPlayableMediaUrl = Boolean(rawPreviewUrl || rawDeliveryUrl);
+const mediaOutputReleased = !isDroneRawPreviewOnly && (hasPlayableMediaUrl || /final_video_ready|provider_succeeded|completed|admin_force_ready/i.test(mediaReadySignal));
+const previewUrl = isDroneRawPreviewOnly ? rawPreviewUrl : isMediaProduction && !mediaOutputReleased ? "" : rawPreviewUrl;
+const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutputReleased ? "" : rawDeliveryUrl;
   const mediaDownloadUrl = isImageProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=png` : isMediaProduction && deliveryUrl ? `/api/productions/${production.id}/delivery?file=video` : deliveryUrl;
   const playbackUrl = (isMediaProduction || isImageProduction ? deliveryUrl : "") || previewUrl;
-
   const siteEmbedCode = playbackUrl ? `<video controls playsinline src="${playbackUrl}" style="width:100%;max-width:960px;border-radius:18px;display:block;"></video>` : "";
   const posterUrl = safeAssetUrl(
     outputJson.thumbnailUrl
@@ -550,23 +529,20 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
   const automationParts = Array.isArray(outputJson.parts) ? outputJson.parts : Array.isArray(outputJson.scenePlan) ? outputJson.scenePlan : [];
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as Record<string, any> : null;
   const minimaxProviderProof = outputJson.minimaxProviderProof && typeof outputJson.minimaxProviderProof === "object" ? outputJson.minimaxProviderProof as Record<string, any> : null;
-  const rawProviderProof = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
-  const rawProviderStatus = String(outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
-  const providerProofProvider = /minimax/i.test(rawProviderProof) || /minimax/i.test(rawProviderStatus) ? "minimax" : /replicate/i.test(rawProviderProof) || /replicate/i.test(rawProviderStatus) ? "replicate" : /heygen/i.test(rawProviderProof) || /heygen/i.test(rawProviderStatus) ? "heygen" : rawProviderProof;
+  const providerProofProvider = String(visualJob?.provider ?? outputJson.provider ?? minimaxProviderProof?.provider ?? "").trim();
   const providerIsMinimax = providerProofProvider.toLowerCase() === "minimax";
    const minimaxSessionId = providerIsMinimax ? String(outputJson.minimaxSessionId ?? minimaxProviderProof?.sessionId ?? minimaxProviderProof?.taskId ?? visualJob?.id ?? "").trim() : "";
    const minimaxVideoId = providerIsMinimax ? String(outputJson.minimaxVideoId ?? minimaxProviderProof?.videoId ?? (outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).id : "") ?? "").trim() : "";
-  const providerJobId = !providerIsMinimax ? String(visualJob?.provider === providerProofProvider && visualJob?.id ? visualJob.id : outputJson.providerJobId ?? outputJson.provider_job_id ?? "").trim() : "";
-  const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
-  const providerStatusSignal = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${providerProofStatus} ${String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).errorCategory : "") ?? "")} ${String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).errorMessage : "") ?? "")}`.toLowerCase();
+ const providerProofStatus = String((outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? (outputJson.visualStatus as Record<string, unknown>).status : "") ?? visualJob?.status ?? outputJson.providerStatus ?? production.generation_status ?? production.automation_status ?? "").trim();
   const visualJobs = Array.isArray(outputJson.visualJobs) ? outputJson.visualJobs as Record<string, any>[] : visualJob ? [visualJob] : [];
    const shotWaitingLabel = "Final video waiting";
   const voiceAudioUrl = String(outputJson.voiceAudioUrl ?? outputJson.voice_audio_url ?? "");
   const voiceJobs = Array.isArray(outputJson.voiceJobs) ? outputJson.voiceJobs : [];
   const providerStatus = String(outputJson.providerStatus ?? "");
   const realtimeProgressSteps = productionProgressSteps({ status: production.status, generationStatus: production.generation_status, automationStatus: production.automation_status, outputJson });
-   const inferredProgress = productionProgressPercent(realtimeProgressSteps);
-   const providerPreflight = outputJson.providerPreflight && typeof outputJson.providerPreflight === "object" ? outputJson.providerPreflight as Record<string, unknown> : null;
+  const inferredProgress = productionProgressPercent(realtimeProgressSteps);
+  const providerProgress = Number.isFinite(Number(outputJson.providerProgress)) ? Math.max(0, Math.min(100, Number(outputJson.providerProgress))) : inferredProgress;
+  const providerPreflight = outputJson.providerPreflight && typeof outputJson.providerPreflight === "object" ? outputJson.providerPreflight as Record<string, unknown> : null;
   const providerReadiness = outputJson.providerReadiness && typeof outputJson.providerReadiness === "object" ? outputJson.providerReadiness as Record<string, any> : null;
   const providerRequirements = Array.isArray(providerReadiness?.requirements) ? providerReadiness.requirements as Record<string, any>[] : [];
   const characterDialoguePlan = outputJson.characterDialoguePlan && typeof outputJson.characterDialoguePlan === "object" ? outputJson.characterDialoguePlan as Record<string, any> : null;
@@ -627,28 +603,18 @@ const hasDedicatedCharacterDialogueJobs = characterDialogueProviderJobs.length >
   const liveStatus = String(production.automation_status || production.generation_status || production.status || "queued");
   const productionIdShort = production.id.length > 10 ? `${production.id.slice(0, 8)}...${production.id.slice(-4)}` : production.id;
   const mediaFinalReady = !isMediaProduction || mediaOutputReleased;
-   const hasPreview = Boolean(isMediaProduction ? confirmedMediaUrl : previewUrl || (!isMediaProduction && voiceAudioUrl) || (mediaFinalReady && savedAlternatives.some((alternative: Record<string, any>) => alternative.preview_url || alternative.previewUrl || alternative.url)));
-   const hasDelivery = Boolean(deliveryUrl || (!isMediaProduction && (sourceUrl || readmeUrl)));
+  const hasPreview = Boolean(previewUrl || (!isMediaProduction && voiceAudioUrl) || (mediaFinalReady && savedAlternatives.some((alternative: Record<string, any>) => alternative.preview_url || alternative.previewUrl || alternative.url)));
+  const hasDelivery = Boolean(deliveryUrl || (!isMediaProduction && (sourceUrl || readmeUrl)));
 const automationWarningText = `${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(production.error_message ?? "")}`;
 const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not exist|42703|error/i.test(automationWarningText);
-  const failureStatusText = `${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${String(outputJson.providerStatus ?? "")}`.toLowerCase();
-  const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || /no[_ -]?job/.test(failureStatusText) || /provider_start_failed/.test(failureStatusText) && outputJson.providerJobCreated === false;
-  const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || /replicate_failed|provider_start_failed|failed|partial|no[_ -]?job/.test(failureStatusText) || liveStatus.includes("failed") || hasAutomationWarning;
+  const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || String(outputJson.providerStatus ?? "") === "provider_start_failed" && outputJson.providerJobCreated === false;
+  const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
 
   const isReady = isMediaProduction ? (mediaFinalReady && (hasDelivery || production.status === "ready" || production.automation_status === "completed")) : (production.status === "ready" || production.automation_status === "completed" || hasDelivery);
   const projectPackageReady = isProjectProduction && isReady;
   const isDedicatedPipelineRunning = dedicatedCharacterDialogueRequired && !isReady && startedI2vJobs.length > 0;
-  const hasActiveMinimaxProof = Boolean((minimaxSessionId || minimaxVideoId) && /queued|submitted|starting|processing|running|rendering|generating|in_progress/i.test(providerProofStatus));
-   const providerStatusUnavailable = /provider_status_unavailable|minimax_unknown|provider[_ -]?status[_ -]?(unavailable|unknown)|provider[_ -]?(http[_ -]?)?(unavailable|unknown)|http[_ -]?(unavailable|error)|status[_ -]?unavailable/.test(providerStatusSignal)
-     || Boolean((outputJson.visualStatus && typeof outputJson.visualStatus === "object") && /^unknown$/i.test(String((outputJson.visualStatus as Record<string, unknown>).status ?? "")))
-     || Boolean(visualJob && /^unknown$/i.test(String(visualJob.status ?? "")) && !hasActiveMinimaxProof);
-   const hasActiveProviderJob = !providerStatusUnavailable && (isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || hasActiveMinimaxProof);
-   const hasProviderJobEvidence = Boolean(visualJob || visualJobs.length > 0 || providerJobId || minimaxSessionId || minimaxVideoId || hasAlternativeJobs || hasDedicatedCharacterDialogueJobs);
-   const hasVerifiedPlayableUrl = Boolean(playbackUrl && safePlayableMediaUrl(playbackUrl));
-   const canShowRealtimeProgress = hasActiveProviderJob && !providerStatusUnavailable && !isFailed;
-   const statusRefreshAvailable = Boolean(visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired);
-
-   const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : isProjectProduction ? "Prepare Package" : "Start Production";
+    const hasActiveProviderJob = isActiveProviderJob(visualJob) || visualJobs.some((job) => isActiveProviderJob(job)) || Boolean(minimaxSessionId || minimaxVideoId);
+  const startButtonLabel = isReady ? "Ready" : providerStarting ? "Starting..." : projectPackageReady ? "Package Ready" : isDedicatedPipelineRunning ? "Auto tracking" : hasActiveProviderJob ? "Refresh provider status" : isProjectProduction ? "Prepare Package" : "Start Production";
   const startButtonDisabled = isReady || providerStarting || projectPackageReady || isDedicatedPipelineRunning;
   const providerJobMissingWhileRunning = isMediaProduction && !visualJob && !hasAlternativeJobs && !hasDedicatedCharacterDialogueJobs && !mediaFinalReady && !hasPreview && !hasDelivery && (
     hasVideoProductionCard
@@ -656,24 +622,18 @@ const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not ex
     || production.status === "in_production"
     || /running|in_production|strategy_running|provider_start_failed/.test(`${production.status ?? ""} ${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.automationStatus ?? "")} ${providerStatus}`)
   );
-  const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && hasActiveProviderJob;
-  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : providerStatusUnavailable ? "Provider status unavailable / Action required" : isFailed ? "Action required: provider failed" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
-  const statusTone = isFailed || providerStatusUnavailable ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
-   const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
-   const reservedCreditsText = providerStatusUnavailable && production.reserved_credits
-     ? `${production.reserved_credits.toLocaleString()} credits — awaiting resolution`
-     : projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
-   const creditLabel = providerStatusUnavailable ? "Reserved credits" : projectPackageReady ? "Package credits" : production.reserved_credits ? "Reserved" : production.estimated_credits ? "Estimate" : "Credits";
+  const isProviderRunning = !providerJobMissingWhileRunning && !hasAutomationWarning && (/provider_started|automation_started|in_progress|processing|running/.test(liveStatus) || Boolean(visualJob || hasAlternativeJobs));
+  const liveStatusLabel = providerJobWasNotCreated ? "Provider job was not created" : isFailed ? "Needs attention" : isReady ? "Ready" : hasPreview ? "Preview ready" : isDedicatedPipelineRunning ? "Production running" : lostOutputRecoveryNeeded ? "Output deleted — regenerate" : providerJobMissingWhileRunning ? "Provider job not attached" : isProviderRunning ? "Production running" : isQueuedForRenderSlot ? "Queued" : "Record created";
+  const statusTone = isFailed ? "failed" : isReady ? "ready" : hasPreview ? "preview" : "processing";
+  const creditAmountText = production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits` : production.estimated_credits ? `${production.estimated_credits.toLocaleString()} est.` : "Not recorded";
+  const reservedCreditsText = projectPackageReady && production.reserved_credits ? `${production.reserved_credits.toLocaleString()} credits included` : creditAmountText;
+  const creditLabel = projectPackageReady ? "Package credits" : production.reserved_credits ? "Reserved" : production.estimated_credits ? "Estimate" : "Credits";
 const previewUrlLower = playbackUrl.toLowerCase();
- const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProduction && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
+const previewKind = isImageProduction && playbackUrl ? "image" : isMediaProduction && mediaFinalReady && playbackUrl ? "video" : previewUrlLower.match(/\.(mp4|webm|mov)(\?|$)/) ? "video" : previewUrlLower.match(/\.(png|jpe?g|webp|gif|avif)(\?|$)/) ? "image" : playbackUrl ? "web" : "pending";
 const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduction ? "Open preview" : isDroneRawPreviewOnly ? "Open raw preview" : "Open final video";
   const nextLiveStep = providerJobWasNotCreated
-     ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
-     : providerStatusUnavailable
-     ? "Provider status is unavailable. Refresh provider status to check the existing job; no new production will be started."
-     : isFailed
-     ? `Provider failed${providerProofProvider ? ` (${providerProofProvider})` : ""}. Review the error and take action before treating this production as running.`
-     : hasAutomationWarning
+    ? "Provider job was not created. Reserved credits were released safely; create a new production after provider configuration is fixed."
+    : hasAutomationWarning
     ? "Automation needs attention. Provider generation has not started yet; check provider/schema setup before treating this as running."
     : isDedicatedPipelineRunning
     ? "Dedicated character-dialogue pipeline is running. The preview theater stays open while character sheets, scene images, I2V clips, voice segments and final assembly complete."
@@ -702,10 +662,6 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
   const approvalOptions = Array.isArray(production.approval_options) ? production.approval_options : [];
   const needsApproval = production.approval_status === "waiting" && Boolean(production.approval_question);
   const canCancel = !["ready", "failed", "cancelled"].includes(String(production.status ?? ""));
-   const revisionEnabled = isReady || hasPreview;
-     const canPollProvider = statusRefreshAvailable && (!isFailed || providerStatusUnavailable);
-     const actionableWaitingState = isFailed || providerStatusUnavailable || providerJobMissingWhileRunning || (!isProviderRunning && !isDedicatedPipelineRunning && !isReady && !hasPreview && !hasDelivery);
-
 
   async function submitApproval(option: { label: string; description?: string; extraCredits?: number }) {
     if (!production.user_id) {
@@ -838,9 +794,8 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
     const shouldAutoStartDrone = type === "drone_video"
       && !isReady
       && !isFailed
-       && !hasActiveProviderJob
-       && !providerStatusUnavailable
-       && !hasPreview
+      && !hasActiveProviderJob
+      && !hasPreview
       && !hasDelivery
       && !providerStarting
       && !isDedicatedPipelineRunning;
@@ -927,11 +882,11 @@ const data = await response.json().catch(() => ({}));
   }
 
   useEffect(() => {
-    if ((!visualJob && !hasAlternativeJobs && !dedicatedCharacterDialogueRequired) || providerStatusUnavailable || ["ready", "failed"].includes(String(production.status))) return;
+    if ((!visualJob && !hasAlternativeJobs && !dedicatedCharacterDialogueRequired) || ["ready", "failed"].includes(String(production.status))) return;
   const firstTimer = window.setTimeout(() => refreshProviderStatus(true), isDedicatedPipelineRunning ? 1000 : 12000);
   const timer = window.setInterval(() => refreshProviderStatus(true), isDedicatedPipelineRunning ? 15000 : 12000);
   return () => { window.clearTimeout(firstTimer); window.clearInterval(timer); };
-  }, [production.id, production.status, visualJob?.id, hasAlternativeJobs, dedicatedCharacterDialogueRequired, providerStatusUnavailable]);
+  }, [production.id, production.status, visualJob?.id, hasAlternativeJobs, dedicatedCharacterDialogueRequired]);
 
   function primeRevision(part: AssetPart, selectedAction: string) {
     setTargetPart(part.title);
@@ -1011,10 +966,62 @@ const data = await response.json().catch(() => ({}));
           </div>
         </div>
 
+        <div className="production-truth-strip" style={{ marginTop: 10 }}>
+          <div>
+            <small>Provider proof</small>
+            <strong>{providerProofProvider || "Missing"}</strong>
+          </div>
+          <div>
+            <small>Provider status</small>
+            <strong>{providerProofStatus || "Unknown"}</strong>
+          </div>
+          <div>
+            <small>Minimax session</small>
+            <strong title={minimaxSessionId || undefined}>{minimaxSessionId || "Not attached"}</strong>
+          </div>
+          <div>
+            <small>Minimax video</small>
+            <strong title={minimaxVideoId || undefined}>{minimaxVideoId || "Not attached"}</strong>
+          </div>
+        </div>
 
+        <section className="dynamic-brief-panel" style={{ marginTop: 14 }}>
+          <span className="badge">Workflow state</span>
+          <h3>{workflowStageLabel(workflowState?.stage ?? liveStatus)}</h3>
+          <p>{workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
+          <div className="production-context-grid">
+            <div><span>{projectPackageReady ? "Package credits" : "Credit reserve"}</span><strong>{Number(workflowState?.reservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0).toLocaleString()}</strong><small>{projectPackageReady ? "Included in ready package" : workflowState?.hasReservedCredits ? "Reserved" : "Not fully reserved"}</small></div>
+            <div><span>Provider</span><strong>{providerProofProvider || String(workflowProviderReadiness?.provider ?? workflowProviderReadiness?.status ?? providerStatus) || "Pending"}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
+            <div><span>Delivery</span><strong>{workflowState?.deliveryReady || hasDelivery ? "Ready" : "Waiting"}</strong><small>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Dashboard delivery"}</small></div>
+            <div><span>Revision flow</span><strong>{workflowActions.find((action) => action.key === "revision_flow")?.status ?? (isReady ? "available" : "pending")}</strong><small>{revisions.length ? `${revisions.length} request(s)` : "No revision request"}</small></div>
+          </div>
+          {workflowActions.length > 0 ? (
+            <div className="provider-job-list" style={{ marginTop: 10 }}>
+              {workflowActions.map((action) => (
+                <div className={`provider-job-chip ${workflowActionTone(action.status)}`} key={`${production.id}-workflow-${String(action.key ?? action.label)}`}>
+                  <strong>{String(action.label ?? action.key ?? "Workflow action")}</strong>
+                  <span>{String(action.status ?? "pending")}</span>
+                  {action.reason ? <small>{action.reason}</small> : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </section>
 
-          {providerStatusUnavailable ? <div className="provider-status-alert" role="alert"><strong>Provider status unavailable / Action required</strong><span>We could not verify an output. Use Refresh provider status to check the existing job; no new production will be started.</span></div> : null}
-          {isFailed && !providerStatusUnavailable ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>We could not complete this production. Refresh provider status or contact support before requesting a revision.</span></div> : null}
+        {liveProductionCards.length ? (
+          <section className="live-production-card-panel">
+            <div>
+              <span className="badge">Live production cards</span>
+              <h3>Selected features before production start</h3>
+              <p>These are the options the user selected before starting production. They are carried into preview, delivery ZIP, README and revision flow.</p>
+            </div>
+            <div className="live-production-card-grid">
+              {liveProductionCards.map((card) => <article key={card}><strong>{`${card} — ${projectPackageReady ? "Ready" : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline not started" : providerJobMissingWhileRunning ? "Provider job missing" : hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline running" : isProviderRunning ? "Producing" : "Queued"}`}</strong></article>)}
+            </div>
+          </section>
+        ) : null}
+
+        {isFailed ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{production.error_message || String(outputJson.providerError ?? "Provider or automation failed. Admin review is required before final delivery or credit resolution.")}</span></div> : null}
 
         {agentAction ? (
           <div className="production-agent-action-card">
@@ -1034,6 +1041,26 @@ const data = await response.json().catch(() => ({}));
           </div>
         ) : null}
 
+        <div className="production-live-summary">
+          <div>
+            <span className="badge">Live status</span>
+            <h2>{liveStatusLabel}</h2>
+            <p>{nextLiveStep}</p>
+          </div>
+          <div className="production-live-steps">
+            {liveSteps.map((step, index) => (
+              <span className={step.active ? "active" : ""} key={step.label}><b>{index + 1}</b>{step.label}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="production-context-grid">
+          <div><span>Production type</span><strong>{type}</strong></div>
+          <div><span>Status</span><strong>{liveStatus}</strong></div>
+          <div><span>Credits</span><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></div>
+          <div><span>Provider risk</span><strong>{String(outputPlan.providerRiskLevel ?? "low")}</strong></div>
+          <div><span>Country / city</span><strong>{[audience.targetCountry, audience.targetCity].filter(Boolean).join(" / ") || "To be defined"}</strong></div>
+        </div>
 
         {needsApproval ? (
           <section className="cost-safety-card production-decision-card production-approval-card">
@@ -1052,7 +1079,7 @@ const data = await response.json().catch(() => ({}));
           </section>
         ) : null}
 
-        {isQueuedForRenderSlot && !providerStatusUnavailable ? (
+        {isQueuedForRenderSlot ? (
           <section className="cost-safety-card">
             <span className="badge">Render queue</span>
             <h3>Queued for the next safe provider slot</h3>
@@ -1177,10 +1204,17 @@ const data = await response.json().catch(() => ({}));
                 </button>
               ))}
             </div>
-             <div className="customer-preview-actions" aria-label="Preview toolbar">
-               <span>{hasVerifiedPlayableUrl ? "Ready MP4" : "Preview waiting for a validated MP4 URL"}</span>
-             </div>
-
+            <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
+              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
+              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
+              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
+              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
+              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
+              <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
+              {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
+              {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+            </div>
           </div>
           {(!isProjectProduction || isEcommerceProduction) ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
             <h2>Share to social accounts</h2>
@@ -1196,10 +1230,10 @@ const data = await response.json().catch(() => ({}));
               ].map((platform) => <a className={`social-platform-card ${platform.tone}`} href={`/dashboard/social-export?platform=${encodeURIComponent(platform.label)}&production=${encodeURIComponent(production.id)}`} key={`top-${platform.label}`}><span className="social-platform-icon">{platform.icon}</span><strong>{platform.label}</strong><small>Prepare post</small></a>)}
             </div>
           </div> : null}
-           {(!isReady && !providerStatusUnavailable && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
+          {(!isReady && (isDedicatedPipelineRunning || providerStartNote || pollingNote)) ? <div className="customer-preview-status-strip">{isDedicatedPipelineRunning ? "Production is running automatically. The video player will unlock here when the final MP4 is ready." : pollingNote || providerStartNote}</div> : null}
           <div className="customer-preview-screen">
-             {hasVerifiedPlayableUrl ? (
-               <video src={playbackUrl} controls preload="metadata" playsInline crossOrigin="anonymous" poster={posterUrl || autoPosterUrl || undefined} onLoadedData={captureAutoPoster} />
+            {previewKind === "video" ? (
+              <video src={playbackUrl} controls playsInline crossOrigin="anonymous" poster={posterUrl || autoPosterUrl || undefined} onLoadedData={captureAutoPoster} />
             ) : previewKind === "image" ? (
               <img src={previewUrl} alt={isProjectProduction ? "Crelavo customer project preview image" : "Crelavo generated production preview image"} />
             ) : previewKind === "web" && isProjectProduction ? (
@@ -1219,46 +1253,56 @@ const data = await response.json().catch(() => ({}));
             ) : previewKind === "web" ? (
               <iframe src={previewUrl} title="Production preview" loading="lazy" />
             ) : (
-              <div className={`customer-preview-placeholder production-waiting-room${isDedicatedPipelineRunning ? " video-player-waiting" : actionableWaitingState ? " actionable-waiting-room" : ""}`}>
-                   {isDedicatedPipelineRunning ? <div className="video-player-waiting-frame">
-                    <div className="video-player-waiting-spinner" />
-                     <Film size={54} aria-hidden="true" />
-                     <h3>Video is being generated</h3>
-                    <p>The final MP4 will start playing here automatically when it is ready.</p>
-                    <span>Character sheets → scene images → image-to-video → voices → subtitles → final MP4</span>
-                  </div> : actionableWaitingState ? <>
-                    <span className="badge">{isFailed || providerStatusUnavailable || hasProviderJobEvidence ? "Action required" : "Waiting to start"}</span>
-                    <h3>{isFailed ? "Production needs attention" : providerStatusUnavailable ? "Provider status unavailable" : providerJobMissingWhileRunning ? "Provider job is missing" : "Production is ready to start"}</h3>
-                    <p>{isFailed ? "We could not complete this production. Please review the action above." : providerStatusUnavailable ? "Use Refresh provider status to check the existing job. No final output is available yet." : nextLiveStep}</p>
-                  </> : <>
-
-                 <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
-                  <Film size={44} aria-hidden="true" />
-                  <span className="badge">Preview pending</span>
-                  <h3>Preview waiting for a validated MP4 URL</h3>
-                  <p>The player will unlock when a confirmed MP4 output is available. Provider status alone does not count as a finished delivery.</p>
-                  <p className="production-waiting-assurance">You can safely leave or refresh this page. Download and revision options unlock after a real preview or final output exists.</p>
-                 </>}
-               </div>
-
+              <div className={`customer-preview-placeholder production-waiting-room${isDedicatedPipelineRunning ? " video-player-waiting" : ""}`}>
+                {isDedicatedPipelineRunning ? <div className="video-player-waiting-frame">
+                  <div className="video-player-waiting-spinner" />
+                  <PlayCircle size={54} />
+                  <h3>Video is being generated</h3>
+                  <p>The final MP4 will start playing here automatically when it is ready.</p>
+                  <span>Character sheets → scene images → image-to-video → voices → subtitles → final MP4</span>
+                </div> : <>
+                <div className="customer-preview-brand-mark"><span>C</span><strong>Crelavo</strong></div>
+                <PlayCircle size={44} />
+                <span className="badge">{waitingRoom.statusHint}</span>
+                <h3>{waitingRoom.headline}</h3>
+                <p>{waitingRoom.description}</p>
+                <div className="production-waiting-meta">
+                  <strong>Estimated delivery window</strong>
+                  <span>{waitingRoom.estimated}</span>
+                </div>
+                <div className="production-waiting-stage-grid" aria-label="Production pipeline stages">
+                  {waitingRoom.stages.map((stage, index) => (
+                    <span key={`waiting-stage-${stage}-${index}`} className={index === 0 ? "ready" : index <= 3 ? "active" : "pending"}>
+                      <small>{String(index + 1).padStart(2, "0")}</small>
+                      <b>{stage}</b>
+                    </span>
+                  ))}
+                </div>
+                <p className="production-waiting-assurance">You can safely leave or refresh this page. Production will continue in the background. When the output is ready, we will send a completion email to your account and unlock download and revision options automatically.</p>
+                </>}
+              </div>
             )}
           </div>
           <aside className="customer-preview-control">
             <span className="badge">{isProjectProduction ? "Customer project preview" : "Customer preview / playback"}</span>
             <h3>{previewUrl ? "Preview is ready to review" : "Waiting for preview output"}</h3>
             <p>{nextLiveStep}</p>
-             <div className="provider-job-list realtime-production-timeline" aria-label="Production milestones">
-               {[
-                 { label: "Preparing", state: hasProviderJobEvidence || hasPreview || hasDelivery ? "Complete" : providerStatusUnavailable ? "Needs attention" : "In progress", tone: hasProviderJobEvidence || hasPreview || hasDelivery ? "ready" : providerStatusUnavailable ? "failed" : "active" },
-                 { label: "Video generation", state: hasVerifiedPlayableUrl ? "Complete" : providerStatusUnavailable ? "Needs attention" : hasActiveProviderJob ? "In progress" : "Waiting", tone: hasVerifiedPlayableUrl ? "ready" : providerStatusUnavailable ? "failed" : hasActiveProviderJob ? "active" : "unknown" },
-                 { label: "Final delivery", state: hasVerifiedPlayableUrl && hasDelivery ? "Ready" : providerStatusUnavailable ? "Needs attention" : "Waiting for validated MP4", tone: hasVerifiedPlayableUrl && hasDelivery ? "ready" : providerStatusUnavailable ? "failed" : "unknown" }
-               ].map((step) => (
-                 <div className={`provider-job-chip ${step.tone}`} key={`milestone-${step.label}`}>
-                   <strong>{step.label}</strong>
-                   <span>{step.state}</span>
-                 </div>
-               ))}
-             </div>
+            {providerProgress !== null ? (
+              <div className="customer-progress-meter">
+                <div><span>Realtime production progress</span><strong>{providerProgress}%</strong></div>
+                <progress value={providerProgress} max={100} />
+              </div>
+            ) : null}
+            <div className="provider-job-list realtime-production-timeline" aria-label="Realtime production timeline">
+              {realtimeProgressSteps.map((step) => (
+                <div className={`provider-job-chip ${step.status === "done" ? "ready" : step.status === "running" ? "active" : step.status === "blocked" ? "failed" : "unknown"}`} key={`progress-${step.key}`}>
+                  <strong>{step.label}</strong>
+                  <span>{step.status}</span>
+                  <small>{step.detail}</small>
+                </div>
+              ))}
+            </div>
+            {providerStatus ? <p className="provider-poll-note">Provider status: {providerStatus}</p> : null}
             <div className="customer-delivery-files delivery-command-center">
               <div className="delivery-command-head">
                 <div>
@@ -1282,17 +1326,70 @@ const data = await response.json().catch(() => ({}));
               {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
               {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
               {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
-               {revisionEnabled ? <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button> : null}
-                {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
-                {canPollProvider ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}><RefreshCcw size={14} /> Refresh provider status</button> : null}
-                {!isReady && !providerStatusUnavailable && !hasActiveProviderJob && !isDedicatedPipelineRunning ? <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={restartProviderJob} disabled={startButtonDisabled}>{startButtonLabel}</button> : null}
-             </div>
-             {providerStartNote && !providerStatusUnavailable ? <p className="provider-poll-note provider-start-note">{providerStartNote}</p> : null}
-             {pollingNote && !providerStatusUnavailable ? <p className="provider-poll-note">{pollingNote}</p> : null}
+              <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
+              {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
+              {visualJob || hasAlternativeJobs || dedicatedCharacterDialogueRequired ? <button className="btn secondary" type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }}>Refresh provider status</button> : null}
+              <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>
+            </div>
+{providerPreflight ? <p className="provider-poll-note">Preflight: {isProjectProduction ? `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.aspectRatio)}` : `${String(providerPreflight.provider)} · ${String(providerPreflight.model)} · ${String(providerPreflight.durationSeconds)} sec · ${String(providerPreflight.aspectRatio)}`}</p> : null}
+{visualJobs.length ? <div className="workflow-step-grid">{visualJobs.map((job, index) => <span key={`${String(job.id ?? index)}`}><small>Shot {index + 1}</small><strong>{String(job.status ?? "queued")}</strong></span>)}</div> : null}
+
+{visualJob ? <p className="provider-job-note">Provider job: {String(visualJob.provider)} · {String(visualJob.status)} · {String(visualJob.id ?? "waiting for id")} {providerStatus ? `· ${providerStatus}` : ""}</p> : null}
+{minimaxSessionId || minimaxVideoId ? <p className="provider-job-note">Minimax proof: session {minimaxSessionId || "pending"}{minimaxVideoId ? ` · video ${minimaxVideoId}` : ""}{outputJson.minimaxLatestVideoResourceId ? ` · latest resource ${String(outputJson.minimaxLatestVideoResourceId)}` : ""}{Array.isArray(outputJson.minimaxAgentArtifacts) ? ` · artifacts ${outputJson.minimaxAgentArtifacts.length}` : ""}</p> : null}
+{providerJobMissingWhileRunning ? <p className="provider-poll-note provider-start-note">Production is marked running, but no provider job is attached yet. Press Start Production once to attach the video provider job.</p> : null}
+            {providerStartNote ? <p className="provider-poll-note provider-start-note">{providerStartNote}</p> : null}
+            {pollingNote ? <p className="provider-poll-note">{pollingNote}</p> : null}
           </aside>
         </section>
 
+        {outputRegistry.length > 0 ? (
+          <section className="cost-safety-card">
+            <span className="badge">Output registry</span>
+            <h3>Expected and generated delivery files</h3>
+            <p>Each requested output is tracked with a delivery role, status and download route when available.</p>
+            <div className="cost-note-list">
+              {outputRegistry.map((item) => <span key={`output-${String(item.id)}`}>{String(item.filename)}: {String(item.status)}</span>)}
+            </div>
+          </section>
+        ) : null}
 
+        {creativeActivityCards.length > 0 ? (
+          <section className="automation-brief-card">
+            <span className="badge">{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax Video Agent artifacts" : "Creative director live board"}</span>
+            <h3>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "Minimax agent outputs" : "Assistant is shaping the video like a creative director"}</h3>
+            <p>{Array.isArray(outputJson.minimaxAgentArtifacts) && outputJson.minimaxAgentArtifacts.length > 0 ? "This panel shows the real blueprint, visual, video, and resource outputs from the Minimax session." : "These cards mirror the right-side live activity style: concept, presenter direction, hook, A-roll, B-roll and provider status."}</p>
+            <div className="automation-part-list">
+              {creativeActivityCards.map((card, index) => (
+                <div key={`${card.title}-${index}`}>
+                  <strong>{card.title}</strong>
+                  <small>{String(card.status)}</small>
+                  {card.previewUrl && String(card.type) === "video" ? <video src={card.previewUrl} controls playsInline style={{ width: "100%", borderRadius: 12, marginTop: 8 }} /> : card.previewUrl ? <img src={card.previewUrl} alt={card.title} style={{ width: "100%", borderRadius: 12, marginTop: 8 }} /> : null}
+                  <p>{card.description}</p>
+                  {card.providerResourceId ? <small>Resource: {card.providerResourceId}</small> : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {providerReadiness ? (
+          <section className={`cost-safety-card ${String(providerReadiness.status) === "waiting_provider_config" ? "provider-missing-card" : ""}`}>
+            <span className="badge">Provider readiness</span>
+            <h3>{String(providerReadiness.status ?? "provider status")}</h3>
+            <p>{String(providerReadiness.userMessage ?? "Provider/API readiness is being checked before real production starts.")}</p>
+            {String(providerReadiness.status) === "waiting_provider_config" ? (
+              <div className="manual-delivery-path">
+                <strong>Production record is saved. Real provider execution is paused.</strong>
+                <span>Nothing is lost: the brief, credits, package settings and delivery requirements are stored in this workspace.</span>
+                <span>Until provider keys are connected, admin can prepare demo/manual delivery files and attach preview, ZIP, source files or README links here.</span>
+                <span>When provider keys are ready, use “Start real provider job” to continue from this same production record.</span>
+              </div>
+            ) : null}
+            <div className="cost-note-list">
+              {providerRequirements.map((item) => <span key={`provider-${String(item.key)}`}>{String(item.label)}: {String(item.status)}</span>)}
+            </div>
+          </section>
+        ) : null}
 
         {deliveryRequirements ? (
           <section className="cost-safety-card">
@@ -1325,6 +1422,24 @@ const data = await response.json().catch(() => ({}));
           </section>
         ) : null}
 
+        {automationScript || automationParts.length > 0 ? (
+          <section className="automation-brief-card">
+            <span className="badge">Automation output</span>
+            <h3>Script, part plan, and production direction are ready</h3>
+            {automationScript ? <pre>{automationScript}</pre> : null}
+            {automationParts.length > 0 ? (
+              <div className="automation-part-list">
+                {automationParts.map((part: Record<string, any>, index: number) => (
+                  <div key={String(part.id ?? index)}>
+                    <strong>{String(part.title ?? `Part ${index + 1}`)}</strong>
+                    <small>{String(part.status ?? "queued")}</small>
+                    <p>{String(part.description ?? "Automation part has been prepared.")}</p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         {voiceJobs.length > 0 ? (
           <section className="voice-job-card">
@@ -1433,9 +1548,9 @@ const data = await response.json().catch(() => ({}));
                   <span className="badge">{part.status}</span>
                   <h3>{part.title}</h3>
                   <p>{part.description}</p>
-                   <div className="production-part-actions">
-                     {part.actions.filter((partAction) => revisionEnabled || !/revision/i.test(partAction)).map((partAction) => <button className="btn secondary" type="button" key={partAction} onClick={() => primeRevision(part, partAction)}>{partAction}</button>)}
-                   </div>
+                  <div className="production-part-actions">
+                    {part.actions.map((partAction) => <button className="btn secondary" type="button" key={partAction} onClick={() => primeRevision(part, partAction)}>{partAction}</button>)}
+                  </div>
                 </div>
               </article>
             );
@@ -1443,22 +1558,33 @@ const data = await response.json().catch(() => ({}));
         </div>
       </section>
 
-       <aside className="production-workspace-side">
-         <div className="revision-history-card">
+      <aside className="production-workspace-side">
+        <div className="production-job-overview-card">
+          <span className="badge">Job control</span>
+          <h2>Production status</h2>
+          <div className="production-job-status-list">
+            <span><small>Status</small><strong>{liveStatus}</strong></span>
+            <span><small>Credits reserved</small><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></span>
+            <span><small>Provider</small><strong>{providerStatus || (isWaitingProviderConfig ? "Provider pending" : "Auto routing")}</strong></span>
+            <span><small>Delivery</small><strong>{hasDelivery ? "Final ready" : hasPreview ? "Preview ready" : "Preparing"}</strong></span>
+          </div>
+          <p>{hasDelivery ? "Final files are ready for customer handoff." : hasPreview ? "Preview is ready; final delivery is still being prepared." : "Production is active or waiting for provider output."}</p>
+        </div>
 
-           <form className="revision-inline-form" onSubmit={submitRevision}>
-             <h2>{revisionEnabled ? "Write a revision request" : "Revision unlocks after output"}</h2>
-             <p>{revisionEnabled ? (isImageProduction ? "Write what should change in the image here." : "Write what should change in the video here.") : "A revision can only target a real preview or delivered output."}</p>
 
+        <div className="revision-history-card">
+          <form className="revision-inline-form" onSubmit={submitRevision}>
+            <h2>Write a revision request</h2>
+            <p>{isImageProduction ? "This box is always visible. Write what should change in the image here." : "This box is always visible. Write what should change in the video here."}</p>
             <div className="revision-target-grid">
-<label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} disabled={!revisionEnabled} /></label>
-               <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} disabled={!revisionEnabled} /></label>
+              <label className="revision-field"><span>Target section</span><input aria-label="Target section" placeholder="Final MP4" value={targetPart} onChange={(event) => setTargetPart(event.target.value)} /></label>
+              <label className="revision-field"><span>Action title</span><input aria-label="Action title" placeholder="Adjust the audio and remove office people" value={action} onChange={(event) => setAction(event.target.value)} /></label>
             </div>
             <label className="revision-message-field">
               <span>Revision request</span>
-<textarea aria-label="Revision request" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write the revision request here..." disabled={!revisionEnabled} />
-             </label>
-             <button className="btn" disabled={!revisionEnabled || status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : revisionEnabled ? "Send revision request" : "Waiting for output"}</button>
+              <textarea aria-label="Revision request" rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Write the revision request here..." />
+            </label>
+            <button className="btn" disabled={status === "loading"} type="submit"><Pencil size={15} /> {status === "loading" ? "Saving..." : "Send revision request"}</button>
             {notice ? <p className={`workspace-action-note ${status === "error" ? "error" : ""}`}>{notice}</p> : null}
           </form>
           <h2>{isReady || hasPreview ? "Revision history" : "Production activity"}</h2>
@@ -1472,9 +1598,79 @@ const data = await response.json().catch(() => ({}));
                 </div>
               ))}
             </div>
-            ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : providerStatusUnavailable ? "Action required. Use the refresh action above to check the existing job; no final output is available yet." : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "The production pipeline is being prepared. Start production when the required setup is available." : providerJobMissingWhileRunning ? "Production is marked running, but no provider job is attached yet. Start production once to attach the video job." : hasDedicatedCharacterDialogueJobs ? "Production is running. The preview will unlock when the final MP4 is ready." : "Production has started. Revision actions unlock after a preview or delivery is available."}</p>}
+          ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline has not attached stage jobs yet. Press Start Production once to create the character sheets, scene images, voice segments and final assembly plan." : providerJobMissingWhileRunning ? "Production is marked running, but no real provider job is attached yet. Press Start Production once to attach the video provider job." : hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline is running. Character sheets, scene images, voice segments and image-to-video jobs are tracked before final assembly." : "Production has started. Provider/automation status is being tracked; revision actions unlock after a preview or delivery is available."}</p>}
         </div>
 
+        <div className="final-delivery-card">
+          <h2>{isProjectProduction ? "Project delivery" : "Final delivery"}</h2>
+          <p>{isProjectProduction ? "When the package is ready, preview, source files, README, and revision steps are managed here." : "When production is complete, download, revision, and distribution steps are managed here."}</p>
+          {!isProjectProduction ? (
+            <div className="workflow-step-grid">
+              {requestedDurationSeconds ? <span><small>Requested duration</small><strong>{requestedDurationSeconds} sec</strong></span> : null}
+              {actualDurationSeconds ? <span><small>Actual duration</small><strong>{actualDurationSeconds} sec</strong></span> : <span><small>Actual duration</small><strong>Waiting</strong></span>}
+              {durationDeltaPercent ? <span><small>Duration difference</small><strong>{durationDeltaSeconds > 0 ? "+" : ""}{durationDeltaSeconds} sec · {durationDeltaPercent}%</strong></span> : null}
+            </div>
+          ) : null}
+          {durationDeltaPercent > 20 ? <p className="workspace-action-note warning">The final video is outside the target duration range. You can request a revision to make it closer to the requested duration.</p> : null}
+          <div className="delivery-action-grid">
+            {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
+            {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
+            <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
+            {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
+            {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
+          </div>
+          {!isProjectProduction ? <div className="distribution-launch-grid" aria-label="Distribution options">
+            <article className="distribution-launch-card">
+              <span className="badge">Website</span>
+              <h3>Add to site</h3>
+              <p>Connect Shopify, WooCommerce, WordPress, Webflow, Wix, Magento, BigCommerce, eBay, Etsy, Amazon, Alibaba, Trendyol, Hepsiburada, N11, or a custom site and place the video or avatar in a storefront, landing page, or support widget.</p>
+              <p style={{ marginTop: 0, color: "#cbd5e1" }}>Alibaba / B2B setup: use the avatar for catalog presentation, inquiry capture, quote collection, and company profile lead generation.</p>
+              <div className="social-chip-row" aria-label="Supported site platforms">
+                {[
+                  "Shopify",
+                  "WooCommerce",
+                  "WordPress",
+                  "Webflow",
+                  "Wix",
+                  "Magento",
+                  "BigCommerce",
+                  "eBay",
+                  "Etsy",
+                  "Amazon",
+                  "Alibaba",
+                  "Trendyol",
+                  "Hepsiburada",
+                  "N11",
+                  "Custom code"
+                ].map((platform) => <span key={platform}>{platform}</span>)}
+              </div>
+              <div className="production-part-actions">
+                <a className="btn secondary" href="/dashboard/connections">Open connections</a>
+                {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank">Copy / preview</a> : <button className="btn secondary" type="button" disabled>Preview waiting</button>}
+                {siteEmbedCode ? <button className="btn" type="button" onClick={() => navigator.clipboard?.writeText(siteEmbedCode)}>Copy embed code</button> : <button className="btn" type="button" disabled>Embed waiting</button>}
+              </div>
+              {siteEmbedCode ? <pre style={{ margin: 0, padding: 12, borderRadius: 14, background: "rgba(2,6,23,.56)", color: "#e2e8f0", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45, overflowX: "auto" }}>{siteEmbedCode}</pre> : <p className="workspace-empty-note">The embed code will appear here when the final preview or delivery link is available.</p>}
+            </article>
+            <article className="distribution-launch-card">
+              <span className="badge">Social</span>
+              <h3>Share to social media</h3>
+              <p>Prepare captions, hashtags, posting notes, and platform-ready export packs for Instagram, TikTok, YouTube Shorts, LinkedIn, Facebook, and X.</p>
+              <div className="production-part-actions">
+                <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
+                <a className="btn secondary" href={`/dashboard/social-export?platform=Instagram&production=${encodeURIComponent(production.id)}`}>Open social export</a>
+              </div>
+            </article>
+            <article className="distribution-launch-card">
+              <span className="badge">Download</span>
+              <h3>Export video</h3>
+              <p>Download the final MP4 for upload to your channel, ads manager, or manual publishing workflow.</p>
+              <div className="production-part-actions">
+                {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download MP4</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download MP4</button>}
+                {deliveryUrl ? <a className="btn secondary" href={playbackUrl || deliveryUrl} target="_blank">Open video</a> : <button className="btn secondary" type="button" disabled>Open video</button>}
+              </div>
+            </article>
+          </div> : null}
+        </div>
 
         {!isProjectProduction ? <div className="social-share-card" id="social-share-panel">
           <h2>Social media sharing</h2>
