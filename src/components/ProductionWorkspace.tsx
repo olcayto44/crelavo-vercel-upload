@@ -1003,66 +1003,7 @@ const data = await response.json().catch(() => ({}));
           </div>
         </div>
 
-        <div className="production-truth-strip" style={{ marginTop: 10 }}>
-          <div>
-            <small>Provider proof</small>
-            <strong>{providerProofProvider || "Missing"}</strong>
-          </div>
-          <div>
-            <small>Provider status</small>
-            <strong>{providerProofStatus || "Unknown"}</strong>
-          </div>
-          {providerIsMinimax ? <>
-            <div>
-              <small>Minimax session/job</small>
-              <strong title={minimaxSessionId || undefined}>{minimaxSessionId || "Not attached"}</strong>
-            </div>
-            <div>
-              <small>Minimax video ID</small>
-              <strong title={minimaxVideoId || undefined}>{minimaxVideoId || "Not attached"}</strong>
-            </div>
-          </> : <div>
-            <small>{providerProofProvider ? `${providerProofProvider} job ID` : "Provider job ID"}</small>
-            <strong title={providerJobId || undefined}>{providerJobId || "Not attached"}</strong>
-          </div>}
-        </div>
 
-        <section className="dynamic-brief-panel" style={{ marginTop: 14 }}>
-          <span className="badge">Workflow state</span>
-          <h3>{workflowStageLabel(providerStatusUnavailable ? "provider_status_unavailable" : workflowState?.stage ?? liveStatus)}</h3>
-          <p>{providerStatusUnavailable ? nextLiveStep : workflowActions.find((action) => String(action.status) === "available")?.label ?? workflowActions.find((action) => String(action.status) === "blocked")?.reason ?? nextLiveStep}</p>
-          <div className="production-context-grid">
-            <div><span>{providerStatusUnavailable ? "Reserved credits" : projectPackageReady ? "Package credits" : "Credit reserve"}</span><strong>{Number(workflowState?.reservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0).toLocaleString()}</strong><small>{providerStatusUnavailable ? "Awaiting resolution" : projectPackageReady ? "Included in ready package" : workflowState?.hasReservedCredits ? "Reserved" : "Not fully reserved"}</small></div>
-            <div><span>Provider</span><strong>{providerProofProvider || String(workflowProviderReadiness?.provider ?? workflowProviderReadiness?.status ?? providerStatus) || "Pending"}</strong><small>{production.automation_status ?? production.generation_status ?? "Waiting for automation"}</small></div>
-            <div><span>Delivery</span><strong>{workflowState?.deliveryReady || hasDelivery ? "Ready" : "Waiting"}</strong><small>{deliveryRequirementFormats.length ? deliveryRequirementFormats.join(", ") : "Dashboard delivery"}</small></div>
-            <div><span>Revision flow</span><strong>{workflowActions.find((action) => action.key === "revision_flow")?.status ?? (isReady ? "available" : "pending")}</strong><small>{revisions.length ? `${revisions.length} request(s)` : "No revision request"}</small></div>
-          </div>
-          {workflowActions.length > 0 ? (
-            <div className="provider-job-list" style={{ marginTop: 10 }}>
-              {workflowActions.map((action) => (
-                <div className={`provider-job-chip ${workflowActionTone(action.status)}`} key={`${production.id}-workflow-${String(action.key ?? action.label)}`}>
-                  <strong>{String(action.label ?? action.key ?? "Workflow action")}</strong>
-                  <span>{String(action.status ?? "pending")}</span>
-                  {action.reason ? <small>{action.reason}</small> : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
-
-         {liveProductionCards.length ? (
-           <section className="live-production-card-panel">
-             <div>
-               <span className="badge">Live production cards</span>
-               <h3>Selected features before production start</h3>
-               <p>These are the options the user selected before starting production. They are carried into preview, delivery ZIP, README and revision flow.</p>
-             </div>
-             {providerStatusUnavailable ? <article className="provider-status-card"><strong>Provider status — Action required</strong><span>Feature outputs remain blocked until provider status is resolved.</span></article> : null}
-             <div className="live-production-card-grid">
-               {liveProductionCards.map((card) => <article key={card}><strong>{`${card} — ${providerStatusUnavailable ? "Blocked — awaiting provider resolution" : projectPackageReady ? "Ready" : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline not started" : providerJobMissingWhileRunning ? "Provider job missing" : hasDedicatedCharacterDialogueJobs ? "Dedicated pipeline running" : isProviderRunning ? "Producing" : "Queued"}`}</strong></article>)}
-             </div>
-           </section>
-         ) : null}
 
          {providerStatusUnavailable ? <div className="provider-status-alert" role="alert"><strong>Provider unavailable</strong><span>We could not verify the provider job. No production result is being claimed; refresh status or resolve provider configuration before continuing.</span></div> : null}
          {isFailed && !providerStatusUnavailable ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{production.error_message || String(outputJson.providerError ?? "Provider or automation failed. Admin review is required before final delivery or credit resolution.")}</span></div> : null}
@@ -1085,26 +1026,6 @@ const data = await response.json().catch(() => ({}));
           </div>
         ) : null}
 
-        <div className="production-live-summary">
-          <div>
-            <span className="badge">Live status</span>
-            <h2>{liveStatusLabel}</h2>
-            <p>{nextLiveStep}</p>
-          </div>
-          <div className="production-live-steps">
-            {liveSteps.map((step, index) => (
-              <span className={step.active ? "active" : ""} key={step.label}><b>{index + 1}</b>{step.label}</span>
-            ))}
-          </div>
-        </div>
-
-        <div className="production-context-grid">
-          <div><span>Production type</span><strong>{type}</strong></div>
-          <div><span>Status</span><strong>{providerStatusUnavailable ? "Provider status unavailable / Action required" : liveStatus}</strong></div>
-          <div><span>Credits</span><strong>{production.estimated_credits?.toLocaleString() ?? "-"}</strong></div>
-          <div><span>Provider risk</span><strong>{String(outputPlan.providerRiskLevel ?? "low")}</strong></div>
-          <div><span>Country / city</span><strong>{[audience.targetCountry, audience.targetCity].filter(Boolean).join(" / ") || "To be defined"}</strong></div>
-        </div>
 
         {needsApproval ? (
           <section className="cost-safety-card production-decision-card production-approval-card">
@@ -1248,17 +1169,10 @@ const data = await response.json().catch(() => ({}));
                 </button>
               ))}
             </div>
-            <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
-              {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
-              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
-              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
-              <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
-              <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
-               {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
-               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel"}</button> : null}
-               {providerStatusUnavailable ? <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => { setPollingNote("Checking provider status..."); refreshProviderStatus(false); }} disabled={providerStarting}><RefreshCcw size={14} /> Refresh provider status</button> : <button className="btn" style={{ fontWeight: 800 }} type="button" onClick={() => isDedicatedPipelineRunning ? (setPollingNote("Checking dedicated pipeline status..."), refreshProviderStatus(false)) : hasActiveProviderJob ? (setPollingNote("Checking provider status..."), refreshProviderStatus(false)) : restartProviderJob()} disabled={startButtonDisabled}>{startButtonLabel}</button>}
-             </div>
+            <div className="customer-preview-actions" aria-label="Preview toolbar">
+              <span>{hasVerifiedPlayableUrl ? "Playable MP4" : "Preview shell ready; playback is waiting for a validated MP4 URL."}</span>
+            </div>
+
           </div>
           {(!isProjectProduction || isEcommerceProduction) ? <div className="social-share-card priority-social-share production-visible-social-share" id="social-share-panel-top">
             <h2>Share to social accounts</h2>
@@ -1644,76 +1558,6 @@ const data = await response.json().catch(() => ({}));
            ) : <p>{isReady || hasPreview ? "No revision requests yet. Choose an action from the cards or type a direct command in the assistant area." : providerStatusUnavailable ? "Provider status unavailable / Action required. Use Refresh provider status to check the existing provider job; no new production will be started." : dedicatedCharacterDialogueRequired && !hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline has not attached stage jobs yet. Press Start Production once to create the character sheets, scene images, voice segments and final assembly plan." : providerJobMissingWhileRunning ? "Production is marked running, but no real provider job is attached yet. Press Start Production once to attach the video provider job." : hasDedicatedCharacterDialogueJobs ? "Dedicated character-dialogue pipeline is running. Character sheets, scene images, voice segments and image-to-video jobs are tracked before final assembly." : "Production has started. Provider/automation status is being tracked; revision actions unlock after a preview or delivery is available."}</p>}
         </div>
 
-        <div className="final-delivery-card">
-          <h2>{isProjectProduction ? "Project delivery" : "Final delivery"}</h2>
-          <p>{isProjectProduction ? "When the package is ready, preview, source files, README, and revision steps are managed here." : "When production is complete, download, revision, and distribution steps are managed here."}</p>
-          {!isProjectProduction ? (
-            <div className="workflow-step-grid">
-              {requestedDurationSeconds ? <span><small>Requested duration</small><strong>{requestedDurationSeconds} sec</strong></span> : null}
-              {actualDurationSeconds ? <span><small>Actual duration</small><strong>{actualDurationSeconds} sec</strong></span> : <span><small>Actual duration</small><strong>Waiting</strong></span>}
-              {durationDeltaPercent ? <span><small>Duration difference</small><strong>{durationDeltaSeconds > 0 ? "+" : ""}{durationDeltaSeconds} sec · {durationDeltaPercent}%</strong></span> : null}
-            </div>
-          ) : null}
-          {durationDeltaPercent > 20 ? <p className="workspace-action-note warning">The final video is outside the target duration range. You can request a revision to make it closer to the requested duration.</p> : null}
-          <div className="delivery-action-grid">
-            {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
-            {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
-            <button className="btn secondary" type="button" disabled={!revisionEnabled} onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
-            {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
-            {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
-          </div>
-          {!isProjectProduction ? <div className="distribution-launch-grid" aria-label="Distribution options">
-            <article className="distribution-launch-card">
-              <span className="badge">Website</span>
-              <h3>Add to site</h3>
-              <p>Connect Shopify, WooCommerce, WordPress, Webflow, Wix, Magento, BigCommerce, eBay, Etsy, Amazon, Alibaba, Trendyol, Hepsiburada, N11, or a custom site and place the video or avatar in a storefront, landing page, or support widget.</p>
-              <p style={{ marginTop: 0, color: "#cbd5e1" }}>Alibaba / B2B setup: use the avatar for catalog presentation, inquiry capture, quote collection, and company profile lead generation.</p>
-              <div className="social-chip-row" aria-label="Supported site platforms">
-                {[
-                  "Shopify",
-                  "WooCommerce",
-                  "WordPress",
-                  "Webflow",
-                  "Wix",
-                  "Magento",
-                  "BigCommerce",
-                  "eBay",
-                  "Etsy",
-                  "Amazon",
-                  "Alibaba",
-                  "Trendyol",
-                  "Hepsiburada",
-                  "N11",
-                  "Custom code"
-                ].map((platform) => <span key={platform}>{platform}</span>)}
-              </div>
-              <div className="production-part-actions">
-                <a className="btn secondary" href="/dashboard/connections">Open connections</a>
-                {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank">Copy / preview</a> : <button className="btn secondary" type="button" disabled>Preview waiting</button>}
-                {siteEmbedCode ? <button className="btn" type="button" onClick={() => navigator.clipboard?.writeText(siteEmbedCode)}>Copy embed code</button> : <button className="btn" type="button" disabled>Embed waiting</button>}
-              </div>
-              {siteEmbedCode ? <pre style={{ margin: 0, padding: 12, borderRadius: 14, background: "rgba(2,6,23,.56)", color: "#e2e8f0", whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45, overflowX: "auto" }}>{siteEmbedCode}</pre> : <p className="workspace-empty-note">The embed code will appear here when the final preview or delivery link is available.</p>}
-            </article>
-            <article className="distribution-launch-card">
-              <span className="badge">Social</span>
-              <h3>Share to social media</h3>
-              <p>Prepare captions, hashtags, posting notes, and platform-ready export packs for Instagram, TikTok, YouTube Shorts, LinkedIn, Facebook, and X.</p>
-              <div className="production-part-actions">
-                <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Prepare share plan</button>
-                <a className="btn secondary" href={`/dashboard/social-export?platform=Instagram&production=${encodeURIComponent(production.id)}`}>Open social export</a>
-              </div>
-            </article>
-            <article className="distribution-launch-card">
-              <span className="badge">Download</span>
-              <h3>Export video</h3>
-              <p>Download the final MP4 for upload to your channel, ads manager, or manual publishing workflow.</p>
-              <div className="production-part-actions">
-                {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download MP4</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download MP4</button>}
-                {deliveryUrl ? <a className="btn secondary" href={playbackUrl || deliveryUrl} target="_blank">Open video</a> : <button className="btn secondary" type="button" disabled>Open video</button>}
-              </div>
-            </article>
-          </div> : null}
-        </div>
 
         {!isProjectProduction ? <div className="social-share-card" id="social-share-panel">
           <h2>Social media sharing</h2>

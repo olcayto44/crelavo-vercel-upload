@@ -21,10 +21,13 @@ assert.match(source, /\{hasVerifiedPlayableUrl \? \(\s*<video src=\{playbackUrl\
 assert.match(source, /providerStatusUnavailable \? nextLiveStep/);
 assert.match(source, /providerStatusUnavailable \? <div className="provider-status-alert" role="alert">/);
 assert.equal((source.match(/className="provider-status-alert"/g) ?? []).length, 1, "provider warning must be rendered once");
-assert.equal((source.match(/className="provider-status-card"/g) ?? []).length, 1, "provider status card must be rendered once");
-assert.match(source, /providerStatusUnavailable \? <article className="provider-status-card">/);
+assert.equal((source.match(/className="provider-status-card"/g) ?? []).length, 0, "provider status cards must not duplicate the alert");
+assert.equal((source.match(/customer-preview-theater/g) ?? []).length, 1, "preview theater must be rendered once");
+assert.doesNotMatch(source, /customer-preview-top-actions/);
+assert.doesNotMatch(source, /final-delivery-card/);
+assert.doesNotMatch(source, /production-live-summary/);
 assert.match(workAssistantSource, /if \(providerUnavailable\) return "Provider status unavailable \/ Action required";/);
-assert.match(source, /Blocked — awaiting provider resolution/);
+assert.match(source, /No production result is being claimed/);
 assert.match(source, /providerProgress !== null/);
 assert.match(source, /Progress unavailable/);
 assert.doesNotMatch(source, /providerStatusUnavailable && isMediaProduction/);
