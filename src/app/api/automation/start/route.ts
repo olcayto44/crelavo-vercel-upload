@@ -642,7 +642,12 @@ const currentLegalId = String(currentProductionRecord.legal_acceptance_id ?? "")
       packageId,
       requestMetadata,
       inputJson,
-      videoProvider: process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "replicate",
+      videoProvider: (() => {
+        const requestedProvider = String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? "").trim().toLowerCase();
+        if (requestedProvider) return requestedProvider;
+        const configuredProvider = String(process.env.VIDEO_PROVIDER ?? process.env.GENERATION_PROVIDER ?? "").trim().toLowerCase();
+        return configuredProvider && configuredProvider !== "replicate" ? configuredProvider : "minimax";
+      })(),
        replicateModel: process.env.REPLICATE_MODEL
      });
      if (providerPreflight.preflightError) {
