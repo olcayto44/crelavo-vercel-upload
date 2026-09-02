@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { authHeaders, requireVerifiedBrowserUser } from "@/lib/auth-guards";
 import { liveSalesServicePlans } from "@/lib/data";
+import { LiveAvatarPanel } from "@/components/LiveAvatarPanel";
 
 type ChatMessage = {
   id: string;
@@ -361,9 +362,11 @@ async function saveAvatarSetup() {
     setSaveMessage(data.saved ? "Avatar setup saved. Embed code is ready." : String(data.message || "Avatar setup draft is ready; database setup is pending."));
     if (data.agent?.agent_id) setAgentIdValue(String(data.agent.agent_id));
     if (data.agent?.metadata?.avatarPreview) setAvatarPreview(data.agent.metadata.avatarPreview as AvatarPreviewRecord);
-  } catch (error) {
-    setSaveMessage(error instanceof Error ? error.message : "Could not save avatar setup.");
-  } finally {
+   } catch (error) {
+     localStorage.setItem(storageKey, JSON.stringify(state));
+     setSaveMessage(`Ayarlar bu cihazda kaydedildi. Canlı önizleme mağaza bağlantısı olmadan başlatılabilir. ${error instanceof Error ? error.message : "Sunucu kaydı şu anda tamamlanamadı."}`);
+   } finally {
+
     setSaving(false);
   }
 }
@@ -560,21 +563,13 @@ async function sendMessage() {
 
   return (
     <div className="live-sales-control-stack live-sales-avatar-layout">
-      <section className="card live-sales-avatar-stage">
+       <section className="card live-sales-avatar-stage">
+
         <div className="live-sales-avatar-frame">
             <div className="live-sales-avatar-media-stack">
               <div className="live-sales-avatar-visual">
-                {avatarPreview?.previewUrl ? (
-                  <div className="live-sales-avatar-video-frame">
-                    {isDirectVideoUrl(avatarPreview.previewUrl) ? (
-                      <video src={previewMediaUrl || avatarPreview.previewUrl} controls preload="metadata" playsInline className="live-sales-avatar-video" />
-                    ) : (
-                      <iframe src={avatarPreview.previewUrl} title="Live sales avatar preview" allow="autoplay; fullscreen" className="live-sales-avatar-video" />
-                    )}
-                  </div>
-                ) : (
-                  <div className="live-sales-avatar-face">Avatar</div>
-                )}
+                 <LiveAvatarPanel agentId={agentIdValue} language={state.language === "English" ? "en" : state.language.toLowerCase()} />
+
               </div>
               <div className="live-sales-avatar-brand-panel">
                 <div className="live-sales-avatar-brand-row">
@@ -587,7 +582,7 @@ async function sendMessage() {
                   </div>
                   <div className="live-sales-avatar-provider-pill">
                     <span className="live-sales-avatar-provider-chip">AI LIVE</span>
-                    <strong>MiniMax H3</strong>
+                    <strong>HeyGen LiveAvatar</strong>
                   </div>
                 </div>
               </div>
@@ -694,17 +689,11 @@ async function sendMessage() {
 <strong>Quick setup</strong>
                  <p>1) Save the settings. 2) Generate a preview. 3) Add the embed code to your site custom-code area. 4) Connect product, order and shipping data for more accurate answers.</p>
               </div>
-              <button className="btn secondary" type="button" onClick={generateAvatarPreview} disabled={previewingAvatar} style={{ marginTop: 10, width: "100%" }}>{previewingAvatar ? "Starting preview..." : "Generate avatar preview"}</button>
-              {previewMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{previewMessage}</p> : null}
-              {avatarPreview ? (
-                <div className="workspace-action-note" style={{ marginTop: 10 }}>
-                  <strong>Avatar preview</strong>
-                  <p>{avatarPreview.provider || "provider"} · {avatarPreview.status || "pending"}</p>
-                  {avatarPreview.sessionId ? <small>Session: {avatarPreview.sessionId}</small> : null}
-                  <button className="btn secondary" type="button" onClick={refreshAvatarPreviewStatus} disabled={previewingAvatar || !avatarPreview.sessionId} style={{ marginTop: 8 }}>{previewingAvatar ? "Checking..." : "Refresh preview status"}</button>
-                  {avatarPreview.previewUrl ? <button className="btn secondary" type="button" onClick={openAvatarPreview} style={{ marginTop: 8 }}>Open preview</button> : null}
-                </div>
-              ) : null}
+               <div className="workspace-action-note" style={{ marginTop: 10 }}>
+                 <strong>Canlı önizleme</strong>
+                 <p>Avatar ayarlarını kaydettikten sonra sol taraftaki video alanından HeyGen canlı önizlemesini başlatın. Bu işlem yeni avatar oluşturmaz ve Shopify/WooCommerce bağlantısı gerektirmez.</p>
+               </div>
+
               <div className="live-sales-accordion-list">
                 <div className="live-sales-accordion-item">
                   <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(openPreference === "Availability" ? "" : "Availability")}>
@@ -754,14 +743,13 @@ async function sendMessage() {
         <h3>Live sales assistant</h3>
          <p style={{ color: "var(--muted)" }}>Type or speak as a customer and test the assistant response.</p>
          <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
-           <strong>Session: {session?.status || "not created"}</strong>
-           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-             <button className="btn secondary" type="button" onClick={() => updateLiveSession("create")}>Create session</button>
-             <button className="btn" type="button" onClick={() => updateLiveSession("start")} disabled={!session || session.status === "live"}>Start live</button>
-             <button className="btn secondary" type="button" onClick={() => updateLiveSession("stop")} disabled={!session || session.status === "stopped"}>Stop</button>
-             <button className="btn secondary" type="button" onClick={loadCommerceCatalog}>Refresh catalog</button>
-           </div>
-           {sessionMessage ? <small style={{ color: "var(--muted)" }}>{sessionMessage}</small> : null}
+            <strong>Canlı oturum: Sol panelden yönetilir</strong>
+            <p style={{ color: "var(--muted)", margin: 0 }}>Önizleme veya canlı oturum için mağaza bağlantısı gerekmez. Shopify/WooCommerce yalnızca katalog, sipariş ve sepet işlemleri için bağlanır.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button className="btn secondary" type="button" onClick={loadCommerceCatalog}>Kataloğu yenile</button>
+            </div>
+            {sessionMessage ? <small style={{ color: "var(--muted)" }}>{sessionMessage}</small> : null}
+
            {catalogMessage ? <small style={{ color: "var(--muted)" }}>{catalogMessage}</small> : null}
            {session ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("json")}>Download JSON</button><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("md")}>Download Markdown</button></div> : null}
          </div>
