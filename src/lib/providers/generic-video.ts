@@ -475,7 +475,7 @@ export function buildGenericVideoPlan(input: {
   const preferredRouteProvider = providerLock === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(`${title} ${prompt} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`)
     ? "minimax"
     : "";
-  const provider = preferredRouteProvider || clean(providerPreflight.provider) || clean(optionalEnv("VIDEO_PROVIDER")) || "replicate";
+  const provider = preferredRouteProvider || clean(providerPreflight.provider) || clean(optionalEnv("VIDEO_PROVIDER")) || "minimax";
 const selectedVoiceProfile = clean(requestMetadata.voiceProfile) || clean(inputJson.voiceProfile) || "premium clear narrator";
 const intentText = `${title} ${prompt} ${clean(requestMetadata.productionGoal)} ${clean(inputJson.productionGoal)} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`;
 const productionTypeSignal = `${clean(requestMetadata.productionType)} ${clean(inputJson.productionType)} ${clean(requestMetadata.pipelineType)} ${clean(inputJson.pipelineType)}`.toLowerCase();
