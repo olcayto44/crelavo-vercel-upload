@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const auth = await requireVerifiedRequestUser(request, userId);
     if (!auth.ok) return auth.response;
 
-    const apiKey = clean(process.env.HEYGEN_API_KEY || process.env.HEYGEN_KEY);
+    const apiKey = clean(process.env.HEYGEN_LIVEAVATAR_API_KEY || process.env.HEYGEN_LIVE_AVATAR_API_KEY);
     const avatarId = clean(process.env.HEYGEN_LIVEAVATAR_AVATAR_ID || process.env.HEYGEN_STREAMING_AVATAR_ID);
     const contextId = clean(process.env.HEYGEN_LIVEAVATAR_CONTEXT_ID);
     const voiceId = clean(process.env.HEYGEN_LIVEAVATAR_VOICE_ID);
