@@ -90,7 +90,7 @@ function firstHttpsUrl(value: unknown): string {
 export function PreviewSupportBox() {
   const pathname = usePathname();
   const allowed = useMemo(() => canShow(pathname), [pathname]);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("LIVE · always active");
   const [loading, setLoading] = useState(false);
