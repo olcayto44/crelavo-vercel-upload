@@ -1297,17 +1297,23 @@ function animationStylePackId(prompt: string, productionType: string) {
   return undefined;
 }
 
+function isCinematicShortFilmIntent(prompt: string) {
+  const raw = prompt.toLocaleLowerCase("tr-TR");
+  return /kısa film|kisa film|short film|short-film|shortfilm|cinematic short/.test(raw);
+}
+
 function isExplicitVideoProductionIntent(prompt: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const routeText = raw
     .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
     .replace(/\b(no|not)\s+(?:a\s+)?(?:video|videos|mp4|mov)\b/g, " ");
-  return /\b(?:ai\s+)?video\b|\bvideo\s+(?:prompt|production|request|brief|ad|commercial|content)\b|\bcampaign\s+video\b|\bsocial\s+(?:media\s+)?campaign\s+video\b|\bvideo\s+ad\b|\bad\s+video\b|\bsocial\s+(?:media\s+)?video\b|\bvertical\s+9\s*[:x]\s*16\b|\bmp4\b/.test(routeText);
+  return isCinematicShortFilmIntent(prompt) || /\b(?:ai\s+)?video\b|\bvideo\s+(?:prompt|production|request|brief|ad|commercial|content)\b|\bcampaign\s+video\b|\bsocial\s+(?:media\s+)?campaign\s+video\b|\bvideo\s+ad\b|\bad\s+video\b|\bsocial\s+(?:media\s+)?video\b|\bvertical\s+9\s*[:x]\s*16\b|\bmp4\b/.test(routeText);
 }
 
 function normalizeProductionType(prompt: string, currentType: string) {
   const raw = prompt.toLocaleLowerCase("tr-TR");
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  if (isCinematicShortFilmIntent(prompt)) return "cinematic_video";
   if (isExplicitVideoProductionIntent(prompt)) return "video";
   const explicitBrandKit = /(?:image\s*type|production\s*type|category|purpose)\s*:\s*logo\s*\/\s*brand\s+kit|(?:image\s*type|production\s*type|category|purpose)\s*:\s*brand\s+kit/.test(raw);
   if (explicitBrandKit) return "brand_kit";
@@ -1383,7 +1389,7 @@ function productionTypeFromCategory(category: string) {
 }
 
 function localPlan(prompt: string, forcedProductionType = ""): StudioPlan {
-  const productionType = isExplicitVideoProductionIntent(prompt) ? "video" : forcedProductionType || normalizeProductionType(prompt, "video");
+  const productionType = isCinematicShortFilmIntent(prompt) ? "cinematic_video" : isExplicitVideoProductionIntent(prompt) ? "video" : forcedProductionType || normalizeProductionType(prompt, "video");
   const project = isProjectType(productionType);
   const visualProject = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType);
   const formats = project ? ["source_code", "readme", "dashboard_delivery"] : visualProject ? ["png", "jpg", "dashboard_delivery"] : ["final_mp4", "dashboard_delivery"];
@@ -1444,7 +1450,7 @@ function normalizePlan(plan: StudioPlan, prompt: string, forcedProductionType = 
   const promptType = normalizeProductionType(prompt, plan.production_type);
   const explicitVideoIntent = isExplicitVideoProductionIntent(prompt);
   const hardImageLock = !explicitVideoIntent && (shouldForceImageProduction(prompt) || frameExtractionRequested(prompt) || forcedProductionType === "image");
-  const productionType = hardImageLock ? "image" : isLuxuryProductCommercialPrompt(prompt) || explicitVideoIntent ? "video" : forcedProductionType || promptType;
+  const productionType = hardImageLock ? "image" : isCinematicShortFilmIntent(prompt) ? "cinematic_video" : isLuxuryProductCommercialPrompt(prompt) || explicitVideoIntent ? "video" : forcedProductionType || promptType;
   const project = isProjectType(productionType);
   const image = isImageProductionType(productionType);
   const video = isVideoLikeProductionType(productionType);
