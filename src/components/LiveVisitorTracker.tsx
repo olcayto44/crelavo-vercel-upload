@@ -90,8 +90,13 @@ export function LiveVisitorTracker() {
       if (cancelled || document.visibilityState === "hidden") return;
       const path = (pathname || "/").split("?")[0].slice(0, 500) || "/";
       const attribution = captureAttribution(searchParams, path);
-      const { data: sessionData } = await supabaseBrowser().auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      let accessToken = "";
+      try {
+        const { data: sessionData } = await supabaseBrowser().auth.getSession();
+        accessToken = sessionData.session?.access_token || "";
+      } catch {
+        // Anonymous visitors must still be tracked when auth storage is unavailable.
+      }
       await fetch("/api/analytics/heartbeat", {
         method: "POST",
         headers: {
