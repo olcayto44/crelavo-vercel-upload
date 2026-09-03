@@ -6,7 +6,7 @@ import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { freeTools } from "@/lib/free-tools";
 import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
-import { showcaseVideos } from "@/lib/showcase-videos";
+import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
 const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admin"];
 
@@ -98,17 +98,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "monthly" as const
   }));
 
-  const showcaseVideoRoutes = showcaseVideos.map((video) => ({
-    path: `/showcase/videos/${video.id}`,
-    priority: 0.82,
-    changeFrequency: "weekly" as const
-  }));
+  const configuredShowcaseVideos = await getConfiguredShowcaseVideos();
+  const showcaseVideoRoutes = configuredShowcaseVideos
+    .filter((video) => video.publishStatus === "published")
+    .map((video) => ({
+      path: `/showcase/videos/${video.id}`,
+      priority: 0.82,
+      changeFrequency: "weekly" as const,
+      lastModified: new Date(video.uploadDate || now)
+    }));
 
-  return [...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes]
+  const routes = [...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
+
+  return routes
     .filter((route) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))
     .map((route) => ({
       url: `${baseUrl}${route.path}`,
-      lastModified: now,
+      lastModified: route.lastModified ?? now,
       changeFrequency: route.changeFrequency,
       priority: route.priority
     }));

@@ -13,6 +13,7 @@ import { SplashAd } from "@/components/SplashAd";
 import { TruthfulLiveActivity } from "@/components/TruthfulLiveActivity";
 import { geoOfferFromHeaders } from "@/lib/geo-offers";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
+import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
 export const metadata: Metadata = {
@@ -424,7 +425,17 @@ const homeDeliveryTrust = [
 ];
 
 export default async function HomePage() {
-  const siteContent = await getConfiguredSiteContentConfig();
+  const [siteContent, requestHeaders, configuredShowcaseVideos] = await Promise.all([getConfiguredSiteContentConfig(), headers(), getConfiguredShowcaseVideos()]);
+  const homepageShowcaseSlides: HomeShowcaseSlide[] = configuredShowcaseVideos.map((video, index) => ({
+    title: video.title,
+    kicker: video.kicker,
+    description: video.description,
+    href: `/showcase/videos/${video.id}`,
+    tone: (["purple", "cyan", "green", "amber", "pink", "blue"] as const)[index % 6],
+    posterUrl: video.imageUrl,
+    videoUrl: video.videoUrl
+  }));
+
   const geoOffer = geoOfferFromHeaders(await headers());
   const localizedPaidGrowthFunnelCards = paidGrowthFunnelCards.map((item) => item.href.includes("team-annual-174000") ? {
     ...item,
@@ -554,7 +565,7 @@ export default async function HomePage() {
           <HomeShowcaseSlider
             title="Crelavo video showcase"
             subtitle="Real Crelavo video examples: viral visual concepts, premium motion, presenter demos and localization-ready creative."
-            slides={featuredCrelavoVideoSlides}
+            slides={homepageShowcaseSlides.length ? homepageShowcaseSlides : featuredCrelavoVideoSlides}
           />
 
           <HomeShowcaseSlider title="Explore Crelavo" subtitle="A light moving showcase for samples, assets, Omni Assistant, generation and workspace tracking." slides={appLauncherSlides} />
