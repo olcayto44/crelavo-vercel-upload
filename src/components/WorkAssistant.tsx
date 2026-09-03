@@ -775,7 +775,8 @@ function optionMatchesDuration(option: string, text: string) {
 }
 
 function requestedDurationOption(options: string[], text: string) {
-  const overall = text.match(/\b(\d+)[-\s]*(?:sn|saniye|saniyelik|sec|second|seconds|s)\b[^.!?]{0,80}\b(?:vertical|horizontal|animation|animasyon|video|cartoon|çizgi|cizgi)\b/)
+  const directDuration = text.match(/\b(\d+)[-\s]*(?:sn|saniye|saniyelik|sec|second|seconds|s)\b/);
+  const overall = directDuration ?? text.match(/\b(\d+)[-\s]*(?:sn|saniye|saniyelik|sec|second|seconds|s)\b[^.!?]{0,80}\b(?:vertical|horizontal|animation|animasyon|video|cartoon|çizgi|cizgi)\b/)
     ?? text.match(/\b(?:create|make|generate|produce|hazırla|hazirla|oluştur|olustur|yap)[^.!?]{0,80}\b(\d+)[-\s]*(?:sn|saniye|saniyelik|sec|second|seconds|s)\b/);
   const value = Number(overall?.[1]);
   if (Number.isFinite(value) && value > 0) {
@@ -969,9 +970,9 @@ selected.length = 0;
 const city = /dışarıda|disarida|outdoor|sokak|street|şehir|sehir|city/.test(text) ? group.options.find((option) => /city/i.test(option)) : undefined;
 const lifestyle = /lifestyle|creator-style|ugc|outdoor|walking|casual|natural|hareketli|uygulamalı|uygulamali/.test(text) ? group.options.find((option) => /lifestyle|home\/lifestyle/i.test(option)) : undefined;
 const brand = /brand\s*color|marka\s*rengi|crelavo\s*brand/.test(text) ? group.options.find((option) => /brand color/i.test(option)) : undefined;
-const cinematic = /cinematic\s*scene|sinematik/.test(text) ? group.options.find((option) => /cinematic scene/i.test(option)) : undefined;
+const cinematic = (isCinematicActionHint || /cinematic\s*scene|sinematik/.test(text)) ? group.options.find((option) => /cinematic scene/i.test(option)) : undefined;
 const studio = /studio/.test(text) && !/not\s*studio|avoid\s*studio|not\s*corporate\s*studio/.test(text) ? group.options.find((option) => /studio/i.test(option)) : undefined;
-const wanted = socialMediaStyle || motionGraphics || city || lifestyle || brand || cinematic || studio;
+const wanted = isCinematicActionHint ? cinematic || motionGraphics || city || lifestyle || brand || studio : socialMediaStyle || motionGraphics || city || lifestyle || brand || cinematic || studio;
       if (wanted) selected = [wanted];
     }
     if (group.id === "motion") {
