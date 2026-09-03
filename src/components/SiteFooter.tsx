@@ -109,12 +109,6 @@ export async function SiteFooter() {
         </div>
       </div>
 
-      <div className="product-hunt-footer-badge" aria-label="Crelavo on Product Hunt">
-        <a href="https://www.producthunt.com/products/crelavo?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-crelavo" target="_blank" rel="noopener noreferrer">
-          <img alt="Crelavo - AI production for ecommerce brands — try free for 24 hours | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1236961&theme=dark&t=1788138590814" />
-        </a>
-      </div>
-
       <div className="footer-commerce-shortcuts footer-commerce-row" aria-label="E-commerce campaign shortcuts">
         <HardReloadLink href="/dashboard/create?idea=Shopify%20product%20link%20ad&category=campaign&mode=commerce">Shopify campaign</HardReloadLink>
         <HardReloadLink href="/dashboard/create?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>

@@ -38,10 +38,9 @@ export function SiteStructuredData() {
            "https://www.instagram.com/crelavohq/",
            "https://www.youtube.com/@crelavohq",
            "https://x.com/crelavohq",
-           "https://www.linkedin.com/company/crelavo/",
-           "https://www.reddit.com/user/crelavo/",
-           "https://www.producthunt.com/products/crelavo"
-         ]
+            "https://www.linkedin.com/company/crelavo/",
+            "https://www.reddit.com/user/crelavo/"
+          ]
       },
       {
         "@type": "WebSite",
