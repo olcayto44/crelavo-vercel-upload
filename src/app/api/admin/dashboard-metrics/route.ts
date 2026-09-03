@@ -1,6 +1,6 @@
 import { requireAdminPermission } from "@/lib/admin-guard";
 import { findPaymentProduct } from "@/lib/data";
-import { getLiveVisitorSnapshot } from "@/lib/live-visitors";
+import { getPersistedLiveVisitorSnapshot } from "@/lib/live-visitors";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const CREDIT_VALUE = Number(process.env.CREDIT_VALUE_USD ?? 0.1);
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       safeQuery(supabase.from("subscriptions").select("user_id, plan_id, product_id, status").in("status", ["active", "trialing"]))
     ]);
 
-    const live = getLiveVisitorSnapshot();
+    const live = await getPersistedLiveVisitorSnapshot();
     const transactionRows = transactions?.data ?? [];
     const paidUserIds = new Set(transactionRows.filter((row) => row.user_id).map((row) => row.user_id as string));
     const paidToday = new Set(transactionRows.filter((row) => row.user_id && row.occurred_at >= dayStart).map((row) => row.user_id as string));

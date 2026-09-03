@@ -26,11 +26,15 @@ type AttributionPayload = {
 
 function getSessionId() {
   if (typeof window === "undefined") return "";
-  const existing = window.sessionStorage.getItem(SESSION_KEY);
-  if (existing) return existing;
-  const next = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  window.sessionStorage.setItem(SESSION_KEY, next);
-  return next;
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_KEY);
+    if (existing) return existing;
+    const next = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    window.sessionStorage.setItem(SESSION_KEY, next);
+    return next;
+  } catch {
+    return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 }
 
 function readStoredAttribution(): AttributionPayload | null {
@@ -64,7 +68,11 @@ function captureAttribution(searchParams: URLSearchParams | null, path: string):
   };
 
   if (hasCampaignParams || !stored) {
-    window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(next));
+    try {
+      window.localStorage.setItem(ATTRIBUTION_KEY, JSON.stringify(next));
+    } catch {
+      // Some mobile privacy modes block storage; heartbeat should still continue.
+    }
   }
 
   return next;

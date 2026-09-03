@@ -1,3 +1,5 @@
+import { supabaseAdmin } from "@/lib/supabase";
+
 export type LiveVisitorRecord = {
   sessionId: string;
   ip: string;
@@ -133,9 +135,8 @@ export function recordLiveVisitor(input: {
   return getLiveVisitorSnapshot();
 }
 
-export function getLiveVisitorSnapshot() {
-  cleanup();
-  const active = [...liveVisitors.values()].sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+function snapshotFromRecords(records: LiveVisitorRecord[]) {
+  const active = records.sort((a, b) => b.lastSeenAt - a.lastSeenAt);
   const grouped = new Map<string, LiveVisitorRecord[]>();
 
   for (const record of active) {
@@ -184,4 +185,44 @@ export function getLiveVisitorSnapshot() {
     updatedAt: nowIso(Date.now()),
     pages
   };
+}
+
+export function getLiveVisitorSnapshot() {
+  cleanup();
+  return snapshotFromRecords([...liveVisitors.values()]);
+}
+
+export async function getPersistedLiveVisitorSnapshot() {
+  const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS).toISOString();
+  const { data, error } = await supabaseAdmin()
+    .from("visitor_sessions")
+    .select("anonymous_id, first_seen_at, last_seen_at, current_path, current_title, first_touch_path, landing_path, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, source, country")
+    .gte("last_seen_at", cutoff)
+    .order("last_seen_at", { ascending: false })
+    .limit(MAX_RECORDS);
+
+  if (error) return getLiveVisitorSnapshot();
+
+  const records: LiveVisitorRecord[] = (data ?? []).map((row) => ({
+    sessionId: sanitizeText(row.anonymous_id),
+    ip: "persisted",
+    country: normalizeCountry(row.country),
+    path: sanitizeText(row.current_path, "/") || "/",
+    url: sanitizeText(row.current_path, "/") || "/",
+    title: sanitizeText(row.current_title, "Untitled page") || "Untitled page",
+    referrer: sanitizeText(row.referrer),
+    userAgent: "",
+    utmSource: sanitizeText(row.utm_source),
+    utmMedium: sanitizeText(row.utm_medium),
+    utmCampaign: sanitizeText(row.utm_campaign),
+    utmTerm: sanitizeText(row.utm_term),
+    utmContent: sanitizeText(row.utm_content),
+    ref: sanitizeText(row.source === "direct" ? "" : row.source),
+    firstTouchAt: sanitizeText(row.first_seen_at),
+    firstTouchPath: sanitizeText(row.first_touch_path || row.landing_path || row.current_path, "/") || "/",
+    firstSeenAt: new Date(row.first_seen_at).getTime(),
+    lastSeenAt: new Date(row.last_seen_at).getTime()
+  }));
+
+  return snapshotFromRecords(records.filter((record) => record.sessionId && Number.isFinite(record.lastSeenAt)));
 }
