@@ -43,9 +43,19 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
     const partnerCode = currentParams.get("ref") || window.localStorage.getItem(REF_CODE_KEY) || attribution?.ref || "";
     const campaign = currentParams.get("campaign") || attribution?.utmCampaign || "";
 
+    const { data: sessionData } = await supabaseBrowser().auth.getSession();
+    const accessToken = sessionData.session?.access_token ?? "";
+    if (!accessToken) {
+      window.location.href = `/auth/register?next=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+      return;
+    }
+
     const response = await fetch("/api/payments/checkout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
       body: JSON.stringify({
         productId,
         billing,

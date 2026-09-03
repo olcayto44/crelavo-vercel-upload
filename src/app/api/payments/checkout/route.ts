@@ -125,6 +125,12 @@ export async function POST(request: Request) {
   const attribution = typeof body.attribution === "object" && body.attribution ? body.attribution as Record<string, unknown> : {};
   const token = bearerTokenFromRequest(request);
   const authUser = token ? (await supabaseAdmin().auth.getUser(token).catch(() => ({ data: { user: null } }))).data.user : null;
+  if (!authUser) {
+    return Response.json({ error: "You must create an account and sign in before starting checkout.", code: "AUTH_REQUIRED", redirect: "/auth/register?next=/dashboard/payment" }, { status: 401 });
+  }
+  if (!authUser.email_confirmed_at && !authUser.confirmed_at) {
+    return Response.json({ error: "Please confirm your email address before starting checkout.", code: "EMAIL_CONFIRMATION_REQUIRED", redirect: "/auth/login?confirmed=0" }, { status: 403 });
+  }
   const sessionId = safeTrackingValue(body.sessionId, 160);
   const adAttribution = {
     utmSource: safeTrackingValue(attribution.utmSource, 80),
