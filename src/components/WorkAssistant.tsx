@@ -867,7 +867,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
       if (group.id === "extras") {
         if (wantsSubtitles) addOption(/subtitles/);
         if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
-         if (!musicDisabledByPrompt(text) && (fomoTikTokBroll || /music|müzik|muzik|background music|fon müzik|fon muzik/.test(text))) addOption(/music/);
+         if (!musicDisabledByPrompt(text) && (fomoTikTokBroll || isCinematicActionHint || /music|müzik|muzik|background music|fon müzik|fon muzik|sosyal medya|social media|hook|kanca/.test(text))) addOption(/music/);
         if (/thumbnail|cover|kapak|vitrin|showcase|social|sosyal|fomo|hook|kan[ıi]ca|kanca/.test(text)) addOption(/thumbnail/);
         if (/dashboard|panel/.test(text)) addOption(/dashboard delivery/);
         if (/revision|revizyon/.test(text)) addOption(/revision/);
@@ -931,7 +931,8 @@ selected.length = 0;
       const silent = (fomoTikTokBroll || /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice|music[-\s]*only/.test(text)) ? group.options.find((option) => /silent/i.test(option)) : undefined;
       const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !noPresenterBroll ? group.options.find((option) => /presenter/i.test(option)) : undefined;
       const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) && !noPresenterBroll ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
-      const wanted = silent || presenter || voiceOnly;
+      const cinematicBroll = isCinematicActionHint ? group.options.find((option) => /no\s*presenter\s*\/\s*b-?roll\s*only/i.test(option)) : undefined;
+      const wanted = silent || presenter || voiceOnly || cinematicBroll;
       if (wanted) selected = [wanted];
     }
     if (group.id === "duration") {
@@ -1805,7 +1806,8 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
     const initialPlanForSetup = initialEffectivePlan;
     if (!initialPlanForSetup) return {};
       const imagePlan = isImageProductionType(initialPlanForSetup.production_type) || shouldForceImageProduction(initialPrompt);
-      const rawSetup = imagePlan ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
+      const storedSetupLooksLikeImage = Boolean(storedDraft?.productionSetup && Object.prototype.hasOwnProperty.call(storedDraft.productionSetup, "imageType"));
+      const rawSetup = imagePlan || storedSetupLooksLikeImage || explicitInitialIntent ? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup) : storedDraft?.productionSetup ?? defaultSetupFor(initialPlanForSetup.production_type, initialPrompt, initialPlanForSetup);
       const sanitizedSetup = sanitizeSetupForProduction(initialPlanForSetup.production_type, rawSetup, initialPrompt, initialPlanForSetup);
       return ecommercePresetSetup(sanitizedSetup, `${initialCategory} ${initialPrompt}`, initialPlanForSetup.production_type);
   });
