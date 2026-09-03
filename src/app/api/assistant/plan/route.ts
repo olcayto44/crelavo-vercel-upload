@@ -111,6 +111,7 @@ function detectProductionType(message: string) {
     .replace(/\b(do\s+not|don't|avoid|exclude|without)\b[^.\n]*/g, " ")
     .replace(/\b(no|not)\s+(create\s+)?(a\s+)?(video|videos|mp4|mov|avatar|presenter|voice|music|heygen|video\s*agent|storefront|product\s+catalog|cart|checkout|admin\s+panel|source\s+zip|readme)\b/g, " ");
   if (isCharacterDialogueAnimationPrompt(message)) return "animation";
+  if (/kısa film|kisa film|short film|short-film|shortfilm|cinematic short/.test(text)) return "cinematic_video";
   if (/reklam puan|ad score|performance score|video reklam puan|tiktok reklam puan/.test(text)) return "ad_score_checker";
   if (/sanal model|virtual model|fashion model|moda model|model stüdyosu|model studyosu/.test(text)) return "virtual_model_studio";
   if (/kültürel yerelleştirme|kulturel yerellestirme|cultural localization|global localization|yerelleştirme|yerellestirme/.test(text)) return "cultural_localization";
