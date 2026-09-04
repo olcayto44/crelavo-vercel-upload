@@ -2016,7 +2016,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
       if (isSilent || isVoiceOnly || /no\s*presenter|b-?roll\s*only/i.test(option)) {
         setIfPresent("presenterChoice", ["No presenter / B-roll only"]);
         setIfPresent("presenterMotion", ["No presenter motions"]);
-        setIfPresent("sourceHandling", ["Prompt-only", "No people"]);
+        setIfPresent("sourceHandling", ["Prompt-only"]);
       }
       if (isSilent) {
         setIfPresent("voice", ["No voice-over"]);
