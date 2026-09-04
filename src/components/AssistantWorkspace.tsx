@@ -1017,6 +1017,8 @@ function productionFollowUpReply(message: string, language: string) {
 function detectWorkspaceIntent(message: string): WorkspaceIntent {
   const text = message.toLocaleLowerCase("tr-TR").trim();
   const normalized = text.replace(/[.!?]+$/g, "").trim();
+  const urlOnly = /^https?:\/\/[^\s]+$/.test(normalized);
+  if (urlOnly) return "production_request";
   const startOnly = /^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et|tamam başlat|tamam baslat|onaylıyorum|onayliyorum|onay veriyorum|onay verdim|evet|evet veriyorum|veriyorum|tamam veriyorum|kabul|kabul ediyorum|olur|tamam olur|tamam buyurun|buyurun sunun|sunun|üretime geç|uretime gec|evet başla|evet basla|hemen başla|hemen basla|start|start production|start production now|begin production|begin production now|confirm|confirm production|create production|create production now)$/i.test(normalized);
   const hasNewSubjectAfterHadi = /^hadi\s+\S+/.test(normalized) && !/^(hadi\s+)?(başlayalım|baslayalim|başla|basla|başlat|baslat|devam et)$/i.test(normalized);
   if (/^(selam|merhaba|hello|hi|hey|sa|slm|günaydın|gunaydin|iyi akşamlar|iyi aksamlar)\b/.test(text)) return "greeting";
