@@ -1,4 +1,5 @@
 import { optionalEnv, optionalProviderEnv, requireProviderEnv } from "./env.ts";
+import { compactMiniMaxPrompt } from "./minimax-production-settings.ts";
 import { ProviderConfigError } from "./types.ts";
 
 export type MiniMaxReadiness = {
@@ -200,6 +201,7 @@ export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
   if (!hasMiniMaxVideoConfig()) {
     throw new ProviderConfigError("MiniMax video provider requires MINIMAX_API_KEY (or MINIMAX_KEY) and MINIMAX_GROUP_ID (or MINIMAX_GID/MINIMAX_GROUPID).");
   }
+  const safeContent = input.content.map((item) => item.type === "text" ? { ...item, text: compactMiniMaxPrompt(item.text) } : item);
   return minimaxJson<MiniMaxH3CreateResponse>("/v2/video_generation", {
     method: "POST",
     body: JSON.stringify({
@@ -207,7 +209,8 @@ export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
       resolution: "768P",
       duration: 6,
       ratio: "9:16",
-      ...input
+      ...input,
+      content: safeContent
     })
   });
 }

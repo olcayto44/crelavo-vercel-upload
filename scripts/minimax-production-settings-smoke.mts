@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { miniMaxProductionSettings, miniMaxSegmentDurations } from "../src/lib/providers/minimax-production-settings.ts";
+import { compactMiniMaxPrompt, MINIMAX_SAFE_PROMPT_CHARS, miniMaxProductionSettings, miniMaxSegmentDurations } from "../src/lib/providers/minimax-production-settings.ts";
 
 const selected = { aspectRatio: "9:16", quality: "1080p", providerPrompt: "User's exact production prompt" };
 const fiveSeconds = miniMaxProductionSettings({ selected: { aspectRatio: "9:16", quality: "normal" }, durationSeconds: "5 sec" });
@@ -25,6 +25,13 @@ assert.equal(testMode.duration, 5);
 assert.equal(testMode.ratio, "9:16");
 assert.equal(testMode.resolution, "768P");
 assert.equal(testMode.providerPrompt, "Test prompt");
+const longPrompt = `CORE SCENE: ${"important scene detail. ".repeat(500)} FINAL SEGMENT BEAT: continue the action without repeating the previous segment.`;
+const compactedPrompt = compactMiniMaxPrompt(longPrompt);
+assert.ok(compactedPrompt.length <= MINIMAX_SAFE_PROMPT_CHARS, "MiniMax prompt must stay below the safe provider budget");
+assert.match(compactedPrompt, /CORE SCENE/);
+assert.match(compactedPrompt, /FINAL SEGMENT BEAT/);
+assert.match(compactedPrompt, /compacted/);
+assert.equal(miniMaxProductionSettings({ prompt: longPrompt }).providerPrompt.length <= MINIMAX_SAFE_PROMPT_CHARS, true);
 assert.deepEqual(miniMaxSegmentDurations(5), [5]);
 assert.deepEqual(miniMaxSegmentDurations(10), [10]);
 assert.deepEqual(miniMaxSegmentDurations(15), [15]);

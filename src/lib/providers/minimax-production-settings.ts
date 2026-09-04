@@ -1,3 +1,28 @@
+export const MINIMAX_MAX_PROMPT_CHARS = 7000;
+export const MINIMAX_SAFE_PROMPT_CHARS = 6400;
+
+const PROMPT_COMPACTION_MARKER = `\n[Prompt compacted to fit MiniMax's ${MINIMAX_MAX_PROMPT_CHARS}-character limit.]\n`;
+
+function boundaryBefore(value: string, limit: number) {
+  const candidate = value.slice(0, limit);
+  const boundary = Math.max(candidate.lastIndexOf("\n"), candidate.lastIndexOf(". "), candidate.lastIndexOf("; "), candidate.lastIndexOf(" "));
+  return boundary >= Math.floor(limit * 0.7) ? boundary : limit;
+}
+
+export function compactMiniMaxPrompt(value: unknown, maxChars = MINIMAX_SAFE_PROMPT_CHARS) {
+  const prompt = String(value ?? "").trim();
+  if (prompt.length <= maxChars) return prompt;
+
+  const tailChars = Math.min(1200, Math.floor(maxChars * 0.2));
+  const headChars = maxChars - tailChars - PROMPT_COMPACTION_MARKER.length;
+  const headEnd = boundaryBefore(prompt, headChars);
+  const tailStart = prompt.length - tailChars;
+  const tailOffset = prompt.indexOf("\n", tailStart);
+  const safeTailStart = tailOffset >= 0 && tailOffset < prompt.length - 1 ? tailOffset + 1 : tailStart;
+  const compacted = `${prompt.slice(0, headEnd).trimEnd()}${PROMPT_COMPACTION_MARKER}${prompt.slice(safeTailStart).trimStart()}`;
+  return compacted.length <= maxChars ? compacted : compacted.slice(0, maxChars).trimEnd();
+}
+
 export type MiniMaxProductionSettings = {
   model: "MiniMax-H3";
   duration: 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
@@ -41,6 +66,6 @@ export function miniMaxProductionSettings(input: { selected?: Record<string, unk
   const ratio = ratioFrom(input.aspectRatio ?? selectedValue(selected, ["aspectRatio", "aspect_ratio", "ratio"]));
   const quality = String(input.quality ?? selectedValue(selected, ["quality", "selectedQuality", "selected_quality", "qualityLevel"]) ?? "").trim().toLowerCase();
   const resolution = /premium|1080p/.test(quality) ? "2K" : "768P";
-  const providerPrompt = String(selectedValue(selected, ["providerPrompt", "provider_prompt", "work_prompt", "workPrompt"]) ?? input.prompt ?? input.title ?? "").trim() || String(input.title ?? "Crelavo video");
+  const providerPrompt = compactMiniMaxPrompt(String(selectedValue(selected, ["providerPrompt", "provider_prompt", "work_prompt", "workPrompt"]) ?? input.prompt ?? input.title ?? "").trim() || String(input.title ?? "Crelavo video"));
   return { model: "MiniMax-H3", duration, ratio, resolution, providerPrompt };
 }
