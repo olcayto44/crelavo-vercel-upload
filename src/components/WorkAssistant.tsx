@@ -1077,16 +1077,31 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "", allowedGro
       ? false
       : items.some((item) => noPresenterPattern.test(item))
         || /no\s*presenter|without\s*(people|presenter|human)|b-?roll\s*only|no\s*people/i.test(promptText);
+  const promptWithoutPresenterNegations = promptText.replace(/\b(?:do\s+not|don't|no|without|not)\s+(?:include\s+)?(?:an?\s+)?(?:ai\s+)?presenter(?:s)?(?:\s+video)?\b/gi, "");
+  const narrativePromptNoPresenter = /\b(?:short\s+film|horror|horror-drama|thriller|psychological|cinematic\s+short|kısa\s+film|korku|gerilim|dram)\b/i.test(promptText)
+    && !/\b(?:ai\s+presenter|female\s+presenter|male\s+presenter|with\s+(?:an?\s+)?presenter|use\s+(?:an?\s+)?presenter|include\s+(?:an?\s+)?presenter|talking\s+(?:head|host)|spokesperson)\b/i.test(promptWithoutPresenterNegations);
+  if (narrativePromptNoPresenter && !noPresenterRequested) {
+    next.videoStyle = ["No presenter / B-roll only"];
+    next.presenterChoice = ["No presenter / B-roll only"];
+    next.presenterMotion = ["No presenter motions"];
+    next.sourceHandling = ["Prompt-only"];
+  }
 
+  const preservePresenter = hasExplicitPresenter && !narrativePromptNoPresenter;
   for (const [key, values] of Object.entries(next)) {
     if (!Array.isArray(values)) continue;
-    next[key] = hasExplicitPresenter && !noPresenterRequested
+    next[key] = preservePresenter && !noPresenterRequested
       ? values.filter((item) => !noPresenterPattern.test(String(item)))
       : values.filter((item) => !presenterPattern.test(String(item)) && !/^(with presenter|ugc-style demo)$/i.test(String(item)));
     if (noSubtitles) next[key] = next[key].filter((item) => !/subtitle|caption|altyaz/i.test(String(item)));
     if (noMusic) next[key] = next[key].filter((item) => !/music|müzik|muzik/i.test(String(item)));
   }
-  if (silentMusicOnly) {
+  if (narrativePromptNoPresenter) {
+    next.videoStyle = ["No presenter / B-roll only"];
+    next.presenterChoice = ["No presenter / B-roll only"];
+    next.presenterMotion = ["No presenter motions"];
+    if (next.sourceHandling) next.sourceHandling = ["Prompt-only"];
+  } else if (silentMusicOnly) {
     next.videoStyle = ["Silent / music only"];
     next.presenterChoice = ["No presenter / B-roll only"];
     next.presenterMotion = ["No presenter motions"];
