@@ -1315,8 +1315,10 @@ function isExplicitVideoProductionIntent(prompt: string) {
 }
 
 function normalizeProductionType(prompt: string, currentType: string) {
-  const raw = prompt.toLocaleLowerCase("tr-TR");
+  const raw = prompt.toLocaleLowerCase("tr-TR").trim();
   const text = `${prompt} ${currentType}`.toLocaleLowerCase("tr-TR");
+  const urlOnly = /^https?:\/\/[^\s]+$/.test(raw);
+  if (urlOnly) return "campaign";
   if (isCinematicShortFilmIntent(prompt)) return "cinematic_video";
   if (isExplicitVideoProductionIntent(prompt)) return "video";
   const explicitBrandKit = /(?:image\s*type|production\s*type|category|purpose)\s*:\s*logo\s*\/\s*brand\s+kit|(?:image\s*type|production\s*type|category|purpose)\s*:\s*brand\s+kit/.test(raw);

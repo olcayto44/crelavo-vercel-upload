@@ -9,6 +9,12 @@ type Case = {
 
 const cases: Case[] = [
   {
+    idea: "https://ridge.com/products/ridge-wallet",
+    category: "Text-to-Campaign",
+    mode: "commerce",
+    routeIncludes: ["category=Text-to-Campaign", "mode=commerce"]
+  },
+  {
     idea: "Rakiplerimi ve fiyat değişikliklerini takip eden Growth Intelligence raporu istiyorum",
     category: "Growth Intelligence",
     mode: "project",

@@ -9,8 +9,10 @@ function includesAny(text: string, keywords: string[]) {
 }
 
 export function detectCategory(idea: string) {
-  const text = idea.toLowerCase();
+  const text = idea.toLowerCase().trim();
+  const urlOnly = /^https?:\/\/[^\s]+$/.test(text);
 
+  if (urlOnly) return "Text-to-Campaign";
   if (includesAny(text, ["shopify app", "shopify app store", "uygulama mağazası", "app store entegrasyon"])) return "SaaS";
   if (includesAny(text, ["e-ticaret sitesi", "e ticaret sitesi", "ecommerce website", "e-commerce website", "online mağaza", "online magaza", "mağaza sitesi", "magaza sitesi", "storefront", "checkout", "sepet", "ürün sayfası", "urun sayfasi"])) return "Website";
   if (includesAny(text, ["kampanya", "campaign", "text-to-campaign", "metinden kampanyaya", "ürün reklam", "urun reklam", "ürün linki", "product link", "tiktok", "instagram", "google reklam", "email newsletter", "e-posta bülteni", "çoklu mecra", "zamanla", "otomatik dağıtım"])) return "Text-to-Campaign";
@@ -78,6 +80,7 @@ export function durationForCategory(category: string, idea: string) {
 
 export function modeForSuggestion(category: string, idea: string) {
   const text = `${category} ${idea}`.toLowerCase();
+  if (/^https?:\/\/[^\s]+$/.test(idea.trim())) return "commerce";
   if (includesAny(text, ["e-ticaret sitesi", "e ticaret sitesi", "ecommerce website", "e-commerce website", "storefront", "checkout", "sepet", "mağaza sitesi", "magaza sitesi", "ürün sayfası", "urun sayfasi"])) return "project";
   if (includesAny(text, ["ürün linki", "product link", "ürün reklam", "urun reklam", "product ad", "amazon", "trendyol", "shopify reklam", "woocommerce reklam"])) return "commerce";
   if (includesAny(text, ["tiktok", "instagram", "reels", "youtube shorts", "linkedin", "x/twitter", "sosyal medya", "social", "campaign", "kampanya"])) return "social";
