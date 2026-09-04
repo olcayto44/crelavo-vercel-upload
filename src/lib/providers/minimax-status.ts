@@ -25,7 +25,18 @@ function responseKeys(value: unknown): string[] {
 }
 
 function normalizeStatus(value: unknown): NormalizedProviderStatus["status"] {
-  const status = String(value ?? "").trim().toLowerCase();
+  const status = String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const aliases: Record<string, NormalizedProviderStatus["status"]> = {
+    pending: "queued",
+    submitted: "queued",
+    processing: "running",
+    in_progress: "running",
+    success: "succeeded",
+    completed: "succeeded",
+    complete: "succeeded",
+    canceled: "cancelled"
+  };
+  if (aliases[status]) return aliases[status];
   return OFFICIAL_STATUSES.includes(status as OfficialStatus) ? status as NormalizedProviderStatus["status"] : "unknown";
 }
 
@@ -50,7 +61,7 @@ function errorText(value: unknown, fallback: string) {
 function contentVideoUrl(task: Record<string, unknown>, normalized: NormalizedProviderStatus["status"]) {
   if (normalized !== "succeeded") return undefined;
   const content = objectRecord(task.content);
-  const url = typeof content.url === "string" ? content.url.trim() : "";
+  const url = String(content.url ?? task.video_url ?? task.videoUrl ?? task.url ?? "").trim();
   if (!/^https?:\/\//i.test(url) || /\.(srt|vtt|ass|html?)(?:\?|$)/i.test(url)) return undefined;
   return url;
 }
@@ -89,11 +100,12 @@ export function miniMaxStatusFromError(error: unknown, taskId: string): Normaliz
 
 export function miniMaxStatusFromResponse(data: unknown, taskId: string): NormalizedProviderStatus {
   const record = objectRecord(data);
-  const task = objectRecord(record.task);
+  const dataRecord = objectRecord(record.data);
+  const task = Object.keys(objectRecord(record.task)).length ? objectRecord(record.task) : Object.keys(objectRecord(dataRecord.task)).length ? objectRecord(dataRecord.task) : dataRecord;
   const responseDiagnostics = record[MINI_MAX_RESPONSE_DIAGNOSTICS] as MiniMaxResponseDiagnostics | undefined;
   const requestedTaskId = String(taskId ?? "").trim();
-  const returnedTaskId = typeof task.id === "string" ? task.id.trim() : "";
-  const rawStatus = typeof task.status === "string" ? task.status.trim() : "";
+  const returnedTaskId = String(task.id ?? task.task_id ?? task.request_id ?? dataRecord.id ?? dataRecord.task_id ?? dataRecord.request_id ?? "").trim();
+  const rawStatus = String(task.status ?? dataRecord.status ?? "").trim();
   const normalized = normalizeStatus(rawStatus);
   const identityValid = Boolean(returnedTaskId && requestedTaskId && returnedTaskId === requestedTaskId);
   const outputUrl = identityValid ? contentVideoUrl(task, normalized) : undefined;
