@@ -338,6 +338,12 @@ const setupProfiles: Record<string, SetupProfile> = {
       { id: "source", title: "Product source", multi: true, options: ["Product URL", "Shopify product link", "Amazon product link", "Trendyol product link", "WooCommerce product", "Uploaded product image", "Product title only", "Bulk product list"], credit: 350 },
       { id: "assets", title: "Assets", multi: true, options: ["Product ad video", "Product image set", "Marketplace listing copy", "SEO product description", "Store banner", "Email promo", "UGC ad script", "A/B hook pack"], credit: 650 },
       { id: "channels", title: "Channels", multi: true, options: ["TikTok", "Instagram", "Meta Ads", "YouTube Shorts", "Shopify", "Amazon", "Trendyol", "WooCommerce", "Pinterest"], credit: 250 },
+      { id: "quality", title: "Quality", options: ["1080p", "1080p premium", "4K"], credit: 900 },
+      { id: "duration", title: "Target duration (maximum 15 sec per request)", options: ["5sec", "10sec", "15sec"], credit: 350 },
+      { id: "voice", title: "Voice-over", options: sharedVoiceOptions, credit: 600 },
+      { id: "subtitles", title: "Subtitles", options: sharedSubtitleOptions, credit: 300 },
+      { id: "motion", title: "Pace / transitions", multi: true, options: sharedMotionOptions, credit: 350 },
+      { id: "extras", title: "Video extras", multi: true, options: ["Background music", "Thumbnail", "Final MP4"], credit: 450 },
       { id: "delivery", title: "Delivery", multi: true, options: ["Dashboard delivery", "MP4 download", "Caption", "Hashtags", "Final ZIP", "Revision right"], credit: 350 }
     ]
   },
