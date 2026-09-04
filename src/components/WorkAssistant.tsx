@@ -839,8 +839,8 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(text);
   const isCinematicActionHint = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(text);
   const hasFemaleCharacterIntent = /kad[ıi]n|bayan|female|woman|women|young\s+woman|female\s+character|heroine|güzel\s+kad[ıi]n|guzel\s+kadin/.test(text);
-  const narrativeNoPresenter = ["cinematic_video", "drama", "studio"].includes(type)
-    && !/presenter|avatar|host|sunucu|talking\s+(head|person|character)|spokesperson|creator/i.test(text);
+  const explicitPresenterIntent = /\b(?:ai\s+presenter|female\s+presenter|male\s+presenter|with\s+(?:an?\s+)?presenter|use\s+(?:an?\s+)?presenter|include\s+(?:an?\s+)?presenter|talking\s+(?:head|host)|spokesperson|influencer\s+(?:video|host)|sunucu(?:lu|yla))\b/i.test(text);
+  const narrativeNoPresenter = ["cinematic_video", "drama", "studio"].includes(type) && !explicitPresenterIntent;
   const wantsMinimaxStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
     && !wantsNoPresenterIntent
@@ -884,7 +884,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/dashboard|panel/.test(text)) addOption(/dashboard delivery/);
         if (/revision|revizyon/.test(text)) addOption(/revision/);
       }
-      if (group.id === "presenterMotion") {
+      if (group.id === "presenterMotion" && !narrativeNoPresenter) {
         if (/enerjik|energetic|dynamic|dinamik|heyecanlı|heyecanli|ugc|creator|social/.test(text)) addOption(/energetic gestures/);
         if (/gül|gul|smile|friendly|samimi/.test(text)) addOption(/smile/);
         if (/selam|welcome|hoş geld|hos geld|wave/.test(text)) addOption(/wave/);
@@ -971,10 +971,13 @@ selected.length = 0;
         const presenter = group.options.find((option) => /with presenter/i.test(option));
         if (presenter) selected = [presenter];
       }
-      if (narrativeNoPresenter || wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz/.test(text)) {
-        const noPeople = group.options.find((option) => /no people/i.test(option));
-        if (noPeople) selected = [noPeople];
-      }
+  if (narrativeNoPresenter) {
+    const promptOnly = group.options.find((option) => /prompt-only/i.test(option));
+    if (promptOnly) selected = [promptOnly];
+  } else if (wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz/.test(text)) {
+    const noPeople = group.options.find((option) => /no people/i.test(option));
+    if (noPeople) selected = [noPeople];
+  }
     }
     if (group.id === "background") {
       const socialMediaStyle = /ugc|koc|creator|social\s+media\s+creator|real\s+social\s+media|recommendation|product\s+recommendation|tiktok|reels|influencer/.test(text) ? group.options.find((option) => /social media style/i.test(option)) : undefined;
