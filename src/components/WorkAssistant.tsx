@@ -1106,20 +1106,21 @@ function sanitizeVideoSetup(setup: ProductionSetupState, prompt = "", allowedGro
     next.videoStyle = ["Silent / music only"];
     next.presenterChoice = ["No presenter / B-roll only"];
     next.presenterMotion = ["No presenter motions"];
-    if (next.sourceHandling) next.sourceHandling = ["Prompt-only", "No people"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
+    if (next.sourceHandling) next.sourceHandling = ["Prompt-only"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
     if (next.voice) next.voice = ["No voice-over"];
     if (next.extras && !noMusic && !next.extras.includes("Background music")) next.extras = [...next.extras, "Background music"];
   } else if (voiceOverOnly) {
     next.videoStyle = ["Voice-over only"];
     next.presenterChoice = ["No presenter / B-roll only"];
     next.presenterMotion = ["No presenter motions"];
-    if (next.sourceHandling) next.sourceHandling = ["Prompt-only", "No people"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
+    if (next.sourceHandling) next.sourceHandling = ["Prompt-only"].filter((option) => !allowedGroups || allowedGroups.find((group) => group.id === "sourceHandling")?.options.includes(option));
     if (next.voice?.[0] === "No voice-over") next.voice = ["Adult neutral voice"];
   } else if (noPresenterRequested) {
     next.videoStyle = ["No presenter / B-roll only"];
-    next.presenterChoice = ["No presenter / B-roll only"];
-    next.presenterMotion = ["No presenter motions"];
-    if (Array.isArray(next.visualDirection)) {
+     next.presenterChoice = ["No presenter / B-roll only"];
+     next.presenterMotion = ["No presenter motions"];
+     if (next.sourceHandling) next.sourceHandling = ["Prompt-only"];
+     if (Array.isArray(next.visualDirection)) {
       const nonPresenterDirection = next.visualDirection.find((item) => /product close-up|lifestyle scene|clean studio background/i.test(String(item)));
       next.visualDirection = nonPresenterDirection ? [nonPresenterDirection] : next.visualDirection.filter((item) => !/with presenter|ugc-style demo/i.test(String(item)));
     }
