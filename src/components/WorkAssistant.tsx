@@ -827,11 +827,12 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const noVoice = voiceDisabledByPrompt(text);
   const noSubtitles = subtitlesDisabledByPrompt(text);
   const wantsVoice = !noVoice && voiceRequestedByPrompt(text);
-  const wantsSubtitles = !noSubtitles && subtitlesRequestedByPrompt(text);
+  const wantsSubtitles = !noSubtitles && (subtitlesRequestedByPrompt(text) || /subtitles?|altyaz[ıi]/.test(text));
   const wantsNoPeopleMotionAd = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatarlar\s*olmasın|insan\s*olmasın|avatars?/.test(text)
     && /motion\s+graphics|kinetic|typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional/.test(text);
   const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(text);
   const isCinematicActionHint = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(text);
+  const hasFemaleCharacterIntent = /kad[ıi]n|bayan|female|woman|women|young\s+woman|female\s+character|heroine|güzel\s+kad[ıi]n|guzel\s+kadin/.test(text);
   const wantsMinimaxStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
     && !wantsNoPresenterIntent
@@ -919,7 +920,7 @@ selected.length = 0;
         const noPresenter = group.options.find((option) => /no presenter\/ b-roll only/i.test(option));
         if (noPresenter) selected = [noPresenter];
       } else {
-        const female = /female\s*(presenter|creator|host|avatar)|woman\s*(presenter|creator|host|avatar)|kad[ıi]n\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /female presenter/i.test(option)) : undefined;
+        const female = hasFemaleCharacterIntent || /female\s*(presenter|creator|host|avatar)|woman\s*(presenter|creator|host|avatar)|kad[ıi]n\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /female presenter/i.test(option)) : undefined;
         const male = /male\s*(presenter|creator|host|avatar)|man\s*(presenter|creator|host|avatar)|erkek\s*(sunucu|avatar)/.test(text) ? group.options.find((option) => /male presenter/i.test(option)) : undefined;
         const ugc = /ugc|koc|creator|tiktok|reels|influencer|social\s+media\s+creator|energetic|enerjik/.test(text) ? group.options.find((option) => /energetic ugc creator|young energetic creator/i.test(option)) : undefined;
         const professional = /saas|business|professional|demo|explainer|kurumsal|profesyonel/.test(text) ? group.options.find((option) => /professional business presenter/i.test(option)) : undefined;
@@ -931,10 +932,11 @@ selected.length = 0;
     if (group.id === "videoStyle") {
       const silent = (fomoTikTokBroll || /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice|music[-\s]*only/.test(text)) ? group.options.find((option) => /silent/i.test(option)) : undefined;
       const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !noPresenterBroll ? group.options.find((option) => /presenter/i.test(option)) : undefined;
+      const femalePresenter = hasFemaleCharacterIntent && !noPresenterBroll ? group.options.find((option) => /ai\s*presenter/i.test(option)) : undefined;
       const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) && !noPresenterBroll ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
-      const cinematicBroll = isCinematicActionHint ? group.options.find((option) => /no\s*presenter\s*\/\s*b-?roll\s*only/i.test(option)) : undefined;
-      const wanted = silent || presenter || voiceOnly || cinematicBroll;
-      if (wanted) selected = [wanted];
+      const cinematicBroll = isCinematicActionHint && !hasFemaleCharacterIntent ? group.options.find((option) => /no\s*presenter\s*\/\s*b-?roll\s*only/i.test(option)) : undefined;
+  const wanted = silent || femalePresenter || presenter || voiceOnly || cinematicBroll;
+  if (wanted) selected = [wanted];
     }
     if (group.id === "duration") {
       const wanted = requestedDurationOption(group.options, text);
@@ -955,7 +957,7 @@ selected.length = 0;
       if (wanted) selected = [wanted];
     }
     if (["sourceHandling", "visualDirection"].includes(group.id)) {
-      if (wantsMinimaxStylePresenterAd || /with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi/.test(text)) {
+      if (hasFemaleCharacterIntent || wantsMinimaxStylePresenterAd || /with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi/.test(text)) {
         const presenter = group.options.find((option) => /with presenter/i.test(option));
         if (presenter) selected = [presenter];
       }
