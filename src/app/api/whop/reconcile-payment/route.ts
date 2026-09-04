@@ -145,7 +145,6 @@ async function retrieveWhopPayment(paymentIdValue: string) {
     method: "GET",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Api-Version-Date": "2026-07-08",
       Accept: "application/json"
     },
     cache: "no-store"
