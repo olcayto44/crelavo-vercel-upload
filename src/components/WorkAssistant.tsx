@@ -857,6 +857,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
         if (/revision|revizyon/.test(text)) addOption(/revision/);
       }
       if (group.id === "source") {
+        if (type === "campaign" && hasUrlIntent(text)) addOption(/product url/);
         if (/competitor|comparison|compare|alternative|position\s+crelavo|rakip|karşılaştır|karsilastir|alternatif/.test(text)) {
           addOption(/analyze competitor page/);
           addOption(/extract competitor offer/);
@@ -866,6 +867,7 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
           addOption(/safe no-copy/);
         }
       }
+      if (group.id === "assets" && type === "campaign" && hasUrlIntent(text)) addOption(/product ad video/);
       if (group.id === "extras") {
         if (wantsSubtitles) addOption(/subtitles/);
         if (/mp4|final output|assembled mp4|final mp4|video/.test(text)) addOption(/final mp4/);
