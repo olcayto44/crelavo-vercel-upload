@@ -164,11 +164,15 @@ export async function createVisualVideoSegments(input: { productionId: string; s
   const provider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const segmentDurations = provider === "minimax" ? miniMaxSegmentDurations(input.durationSeconds) : [input.durationSeconds];
   if (segmentDurations.length === 1) return [await createVisualVideo(input)];
-  return Promise.all(segmentDurations.map((durationSeconds, index) => createVisualVideo({
-    ...input,
-    durationSeconds,
-    providerPrompt: `${input.providerPrompt ?? input.scenes.join(" | ")}\nSegment ${index + 1}/${segmentDurations.length}: create a distinct consecutive 15-second beat that continues the overall production without repeating the previous beat.`
-  })));
+  const jobs = await Promise.all(segmentDurations.map(async (durationSeconds, index) => {
+    const job = await createVisualVideo({
+      ...input,
+      durationSeconds,
+      providerPrompt: `${input.providerPrompt ?? input.scenes.join(" | ")}\nSegment ${index + 1}/${segmentDurations.length}: create a distinct consecutive 15-second beat that continues the overall production without repeating the previous beat.`
+    });
+    return { ...job, segmentIndex: index + 1, order: index + 1, requestedDurationSeconds: durationSeconds };
+  }));
+  return jobs;
 }
 
 export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob> {

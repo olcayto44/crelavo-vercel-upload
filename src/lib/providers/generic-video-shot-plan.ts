@@ -51,8 +51,36 @@ export function buildGenericVideoShotPlan(scenes: string[], targetDurationSecond
   });
 }
 
-export function orderedReadyShotUrls(statuses: Array<{ status?: string | null; outputUrl?: string | null }>) {
-  return statuses.filter((status) => status.status === "succeeded" && status.outputUrl).map((status) => String(status.outputUrl));
+export function expectedMiniMaxSegmentCount(targetDurationSeconds: number) {
+  const duration = Math.round(Number(targetDurationSeconds) || 0);
+  return duration > 15 && [30, 45, 60].includes(duration) ? duration / 15 : 1;
+}
+
+export function orderedReadyShotUrls(statuses: Array<{ status?: string | null; outputUrl?: string | null; url?: string | null; segmentIndex?: number | null; order?: number | null }>) {
+  return statuses
+    .filter((status) => status.status === "succeeded" && (status.outputUrl || status.url))
+    .sort((left, right) => Number(left.order ?? left.segmentIndex ?? 0) - Number(right.order ?? right.segmentIndex ?? 0))
+    .map((status) => String(status.outputUrl ?? status.url));
+}
+
+export function multiSegmentVisualGate(input: {
+  targetDurationSeconds: number;
+  visualStatuses: Array<{ status?: string | null; outputUrl?: string | null; url?: string | null; segmentIndex?: number | null; order?: number | null }>;
+}) {
+  const expected = expectedMiniMaxSegmentCount(input.targetDurationSeconds);
+  if (expected === 1) return { required: false, passed: true, expected, reason: "single_shot" } as const;
+  const readyUrls = orderedReadyShotUrls(input.visualStatuses);
+  const indexes = input.visualStatuses
+    .filter((status) => status.status === "succeeded" && (status.outputUrl || status.url))
+    .map((status) => Number(status.segmentIndex ?? status.order ?? 0))
+    .sort((left, right) => left - right);
+  const ordered = indexes.length === expected && indexes.every((index, position) => index === position + 1);
+  return {
+    required: true,
+    passed: input.visualStatuses.length === expected && readyUrls.length === expected && ordered,
+    expected,
+    reason: input.visualStatuses.length !== expected ? "waiting_for_all_segments" : readyUrls.length !== expected ? "waiting_for_segment_urls" : !ordered ? "segment_order_invalid" : "ready"
+  } as const;
 }
 
 export function multiShotFinalGate(input: {

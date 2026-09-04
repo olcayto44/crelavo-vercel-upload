@@ -1,4 +1,4 @@
-import { advanceShotQueue, buildGenericVideoShotPlan, genericVideoShotCount, multiShotFinalGate, orderedReadyShotUrls } from "../src/lib/providers/generic-video-shot-plan.ts";
+import { advanceShotQueue, buildGenericVideoShotPlan, expectedMiniMaxSegmentCount, genericVideoShotCount, multiSegmentVisualGate, multiShotFinalGate, orderedReadyShotUrls } from "../src/lib/providers/generic-video-shot-plan.ts";
 import { createMiniMaxH3VideoShotTasks } from "../src/lib/providers/minimax.ts";
 
 function assertEqual(actual: unknown, expected: unknown, label: string) {
@@ -7,6 +7,9 @@ function assertEqual(actual: unknown, expected: unknown, label: string) {
 
 assertEqual(genericVideoShotCount(30), 6, "30 second shot count");
 assertEqual(genericVideoShotCount(5), 1, "5 second shot count");
+assertEqual(expectedMiniMaxSegmentCount(30), 2, "30 second MiniMax segment count");
+assertEqual(expectedMiniMaxSegmentCount(45), 3, "45 second MiniMax segment count");
+assertEqual(expectedMiniMaxSegmentCount(60), 4, "60 second MiniMax segment count");
 const shots = buildGenericVideoShotPlan(["Hook", "Proof", "CTA"], 30);
 assertEqual(shots.length, 6, "30 second shot plan length");
 assertEqual(new Set(shots.map((shot) => shot.prompt)).size, 6, "shot prompts are distinct");
@@ -62,4 +65,21 @@ assertEqual(noJobs.reason, "provider_start_failed_partial", "no-job provider rea
 const mergedInput = orderedReadyShotUrls(shots.map((_, index) => ({ status: "succeeded", outputUrl: `https://cdn.example/shot-${index + 1}.mp4` })));
 assertEqual(mergedInput.length, 6, "merge receives every shot");
 assertEqual(mergedInput[5], "https://cdn.example/shot-6.mp4", "merge preserves shot order");
+const segmentedReady = multiSegmentVisualGate({
+  targetDurationSeconds: 45,
+  visualStatuses: [
+    { status: "succeeded", outputUrl: "https://cdn.example/segment-3.mp4", segmentIndex: 3, order: 3 },
+    { status: "succeeded", outputUrl: "https://cdn.example/segment-1.mp4", segmentIndex: 1, order: 1 },
+    { status: "succeeded", outputUrl: "https://cdn.example/segment-2.mp4", segmentIndex: 2, order: 2 }
+  ]
+});
+assertEqual(segmentedReady.passed, true, "45 second segmented gate");
+assertEqual(orderedReadyShotUrls([
+  { status: "succeeded", outputUrl: "https://cdn.example/segment-3.mp4", segmentIndex: 3, order: 3 },
+  { status: "succeeded", outputUrl: "https://cdn.example/segment-1.mp4", segmentIndex: 1, order: 1 },
+  { status: "succeeded", outputUrl: "https://cdn.example/segment-2.mp4", segmentIndex: 2, order: 2 }
+]).join(","), "https://cdn.example/segment-1.mp4,https://cdn.example/segment-2.mp4,https://cdn.example/segment-3.mp4", "segmented URL order");
+const segmentedPartial = multiSegmentVisualGate({ targetDurationSeconds: 60, visualStatuses: [{ status: "succeeded", outputUrl: "https://cdn.example/segment-1.mp4", segmentIndex: 1, order: 1 }] });
+assertEqual(segmentedPartial.passed, false, "60 second partial gate");
+assertEqual(segmentedPartial.reason, "waiting_for_all_segments", "60 second partial reason");
 console.log("generic-video-shots-smoke ok");

@@ -16,7 +16,7 @@ import { providerJobFromValue, runProviderJobLifecycle } from "@/lib/provider-jo
 import { productionReadyGate } from "@/lib/production-ready-gate";
 import { createVoiceover, createVoiceoverSegments } from "@/lib/providers/elevenlabs";
 import { createAmbientMusicBed } from "@/lib/providers/generic-video";
-import { orderedReadyShotUrls } from "@/lib/providers/generic-video-shot-plan";
+import { expectedMiniMaxSegmentCount, multiSegmentVisualGate, orderedReadyShotUrls } from "@/lib/providers/generic-video-shot-plan";
 import { hasProviderEnv } from "@/lib/providers/env";
 import { getHeyGenV3Video } from "@/lib/providers/heygen";
 import { isAllowedMinimaxPresenterProvider, shouldForceMinimaxPresenterProvider } from "@/lib/heygen-routing";
@@ -307,10 +307,13 @@ async function maybeCreateVoiceoverAsset(productionId: string, output: Record<st
   return { ...output, voiceAudioUrl, voiceRetry: { status: "created", provider: "elevenlabs", createdAt: new Date().toISOString() } };
 }
 
-async function localFinalMux(input: { productionId: string; videoUrl: string; videoUrls?: string[]; audioUrl?: string | null; durationSeconds: number; title: string }) {
+async function localFinalMux(input: { productionId: string; videoUrl: string; videoUrls?: string[]; audioUrl?: string | null; durationSeconds: number; title: string; aspectRatio?: string }) {
   const directory = await mkdtemp(join(tmpdir(), "crelavo-final-"));
   const videoPath = join(directory, "input.mp4");
   const outputPath = join(directory, "final.mp4");
+  const targetDuration = String(Math.min(60, Math.max(5, input.durationSeconds)));
+  const normalizeVertical = String(input.aspectRatio ?? "").replace(/\s+/g, "") === "9:16";
+  const videoFilter = "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:color=black";
   try {
     const sourceUrls = Array.from(new Set([...(input.videoUrls ?? []), input.videoUrl].filter(Boolean)));
     const sourcePaths: string[] = [];
@@ -327,7 +330,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
       const concatPath = join(directory, "concat.txt");
       await writeFile(concatPath, sourcePaths.map((path) => `file '${path.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n"));
       await new Promise<void>((resolve, reject) => {
-        execFile(ffmpegBinary, ["-y", "-f", "concat", "-safe", "0", "-i", concatPath, "-t", String(Math.min(60, Math.max(5, input.durationSeconds))), "-c", "copy", "-movflags", "+faststart", videoPath], { timeout: 120000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegBinary, ["-y", "-f", "concat", "-safe", "0", "-i", concatPath, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-an", "-t", targetDuration, "-movflags", "+faststart", videoPath], { timeout: 120000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) reject(new Error(stderr || error.message));
           else resolve();
         });
@@ -347,7 +350,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
           reject(new Error("ffmpeg-static binary is not available."));
           return;
         }
-        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-filter_complex", "[1:a]apad[a]", "-map", "0:v:0", "-map", "[a]", "-t", String(Math.min(60, Math.max(5, input.durationSeconds))), "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-filter_complex", "[1:a]apad[a]", "-map", "0:v:0", "-map", "[a]", "-t", targetDuration, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-c:a", "aac", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || error.message));
             return;
@@ -361,7 +364,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
           reject(new Error("ffmpeg-static binary is not available."));
           return;
         }
-        execFile(ffmpegPath, ["-y", "-i", videoPath, "-c:v", "copy", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegPath, ["-y", "-i", videoPath, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-t", targetDuration, "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || error.message));
             return;
@@ -381,9 +384,13 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
 async function maybeCreateRenderAfterVisualReady(productionId: string, output: Record<string, unknown>, visualStatus: NormalizedProviderStatus | null, visualStatuses: NormalizedProviderStatus[] = []): Promise<{ renderJob: ProviderJob | null; renderStarted: boolean; renderError?: string; mirroredVisualUrls?: string[] }> {
   const currentRenderJob = existingRenderJob(output);
   if (currentRenderJob) return { renderJob: currentRenderJob, renderStarted: false };
-  const readyVisualUrls = visualStatuses.length ? visualStatuses.filter((status) => status.status === "succeeded" && status.outputUrl).map((status) => String(status.outputUrl)) : [];
   const renderPreflight = output.providerPreflight && typeof output.providerPreflight === "object" ? output.providerPreflight as Record<string, unknown> : {};
-  const expectedRenderShots = Number(output.expectedShotCount ?? renderPreflight.expectedShotCount ?? renderPreflight.providerJobCount ?? 1) || 1;
+  const requestedDurationSeconds = Number(output.requestedDurationSeconds ?? output.targetDurationSeconds ?? renderPreflight.durationSeconds ?? (output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? (output.genericVideoPlan as Record<string, unknown>).durationSeconds : undefined) ?? 15) || 15;
+  const derivedSegmentCount = expectedMiniMaxSegmentCount(requestedDurationSeconds);
+  const expectedRenderShots = derivedSegmentCount > 1 ? derivedSegmentCount : Number(output.expectedShotCount ?? renderPreflight.expectedShotCount ?? renderPreflight.providerJobCount ?? 1) || 1;
+  const visualGate = multiSegmentVisualGate({ targetDurationSeconds: requestedDurationSeconds, visualStatuses });
+  if (visualGate.required && !visualGate.passed) return { renderJob: null, renderStarted: false, renderError: `Final render blocked until all ${visualGate.expected} MiniMax segments succeed with ordered video URLs (${visualGate.reason}).` };
+  const readyVisualUrls = visualStatuses.length ? orderedReadyShotUrls(visualStatuses) : [];
   if (expectedRenderShots > 1 && visualStatuses.length < expectedRenderShots) return { renderJob: null, renderStarted: false };
   if (visualStatuses.length && readyVisualUrls.length !== visualStatuses.length) return { renderJob: null, renderStarted: false };
   if (!visualStatuses.length && (!visualStatus || visualStatus.status !== "succeeded" || !visualStatus.outputUrl)) return { renderJob: null, renderStarted: false };
@@ -409,7 +416,6 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
   if (wantsSubtitles && !subtitleUrl) return { renderJob: null, renderStarted: false, renderError: "Subtitles were selected but no subtitle file was created; final render is blocked." };
 
   const brain = output.brain && typeof output.brain === "object" ? output.brain as Record<string, unknown> : {};
-  const requestedDurationSeconds = Number(output.requestedDurationSeconds ?? output.targetDurationSeconds ?? 30) || 30;
   try {
     const genericPlan = output.genericVideoPlan && typeof output.genericVideoPlan === "object" ? output.genericVideoPlan as Record<string, unknown> : {};
     const subtitleLines = Array.isArray(genericPlan.subtitleLines) ? genericPlan.subtitleLines.map(String) : [];
@@ -423,9 +429,10 @@ async function maybeCreateRenderAfterVisualReady(productionId: string, output: R
     if (isMusicVideoRender && !musicVideoAudioUrl) return { renderJob: null, renderStarted: false, renderError: "Music video final render requires a real uploaded song/audio master; placeholder audio is disabled." };
      const fallbackAudioUrl = voiceAudioSegments.length ? null : (musicVideoAudioUrl || voiceAudioUrl || await createAmbientMusicBed({ productionId, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), filenameBase: "final-render-music", profile: String(selectedOptions.musicProfile ?? genericPlan.title ?? "") }));
     try {
-      const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : sourceVisualUrls, audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
+      const localFinalJob = await localFinalMux({ productionId, videoUrl: mirroredVisualUrls[0] || sourceVisualUrls[0], videoUrls: mirroredVisualUrls.length ? mirroredVisualUrls : sourceVisualUrls, audioUrl: fallbackAudioUrl, durationSeconds: Math.min(60, Math.max(5, requestedDurationSeconds)), aspectRatio: String(preflight.aspectRatio ?? genericPlan.aspectRatio ?? ""), title: String(brain.productName ?? genericPlan.title ?? "Crelavo product ad") });
       return { renderJob: localFinalJob, renderStarted: true, mirroredVisualUrls };
     } catch (localError) {
+      if (visualGate.required) return { renderJob: null, renderStarted: false, renderError: errorMessage(localError, "MiniMax segment mux failed; final delivery is blocked.") };
       if (hasProviderEnv("shotstack")) {
         try {
           const renderJob = await createShotstackRender({
@@ -491,8 +498,6 @@ export async function POST(request: Request) {
     } catch (voiceError) {
       output = { ...baseOutput, providerErrors: { ...(baseOutput.providerErrors && typeof baseOutput.providerErrors === "object" ? baseOutput.providerErrors as Record<string, unknown> : {}), voice_over: errorMessage(voiceError, "Voice-over could not be created") } };
     }
-    const visualLifecycle = await runProviderJobLifecycle(production, output.visualJob);
-    const visualStatus = visualLifecycle.normalizedStatus;
     const storedVisualJobs = Array.isArray(output.visualJobs)
       ? output.visualJobs
       : Array.isArray(output.shotJobs)
@@ -500,14 +505,29 @@ export async function POST(request: Request) {
         : output.visualJob && typeof output.visualJob === "object"
           ? [output.visualJob]
           : [];
-    let visualJobs = storedVisualJobs.filter((job) => job && typeof job === "object") as Record<string, any>[];
-    const visualStatuses = (await Promise.all(visualJobs.map((job) => runProviderJobLifecycle(production, job)))).map((life) => life.normalizedStatus).filter(Boolean) as NonNullable<typeof visualStatus>[];
-    const renderBridge = await maybeCreateRenderAfterVisualReady(productionId, output, visualStatus, visualStatuses);
-let outputWithRenderJob = renderBridge.renderJob
-  ? { ...output, renderJob: renderBridge.renderJob, renderStatus: renderBridge.renderStarted ? "render_job_created" : output.renderStatus, renderError: null, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? output.mirroredVisualUrls }
+    const visualJobs = storedVisualJobs.filter((job) => job && typeof job === "object") as Record<string, any>[];
+    const visualLifecycles = await Promise.all(visualJobs.map((job) => runProviderJobLifecycle(production, job)));
+    const visualLifecycle = visualLifecycles[0] ?? await runProviderJobLifecycle(production, null);
+    const visualStatus = visualLifecycle.normalizedStatus;
+    const visualStatuses = visualLifecycles.map((life, index) => life.normalizedStatus ? {
+      ...life.normalizedStatus,
+      segmentIndex: Number(visualJobs[index]?.segmentIndex ?? visualJobs[index]?.order ?? index + 1),
+      order: Number(visualJobs[index]?.order ?? visualJobs[index]?.segmentIndex ?? index + 1),
+      url: life.normalizedStatus.outputUrl ?? null
+    } : null).filter(Boolean) as Array<NonNullable<typeof visualStatus> & { segmentIndex: number; order: number; url: string | null }>;
+    const polledVisualJobs = visualJobs.map((job, index) => ({
+      ...job,
+      ...(visualStatuses[index] ? { status: visualStatuses[index].status, url: visualStatuses[index].outputUrl ?? job.url ?? null, visualStatus: visualStatuses[index] } : {})
+    }));
+    const polledVisualJob = polledVisualJobs[0] ?? output.visualJob;
+    const polledOutput: Record<string, any> = { ...output, visualJobs: polledVisualJobs, visualJob: polledVisualJob };
+    const renderBridge = await maybeCreateRenderAfterVisualReady(productionId, polledOutput, visualStatus, visualStatuses);
+    let outputWithRenderJob = renderBridge.renderJob
+
+  ? { ...polledOutput, renderJob: renderBridge.renderJob, renderStatus: renderBridge.renderStarted ? "render_job_created" : polledOutput.renderStatus, renderError: null, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? polledOutput.mirroredVisualUrls }
   : renderBridge.renderError
-    ? { ...output, renderStatus: "render_start_failed", renderError: renderBridge.renderError, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? output.mirroredVisualUrls }
-    : output;
+    ? { ...polledOutput, renderStatus: "render_start_failed", renderError: renderBridge.renderError, mirroredVisualUrls: renderBridge.mirroredVisualUrls ?? polledOutput.mirroredVisualUrls }
+    : polledOutput;
     const renderLifecycle = await runProviderJobLifecycle(production, outputWithRenderJob.renderJob);
      const renderStatus = renderLifecycle.normalizedStatus;
      const effectiveProviderJob = visualLifecycle.providerJob ?? renderLifecycle.providerJob;
@@ -1016,8 +1036,11 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
     const heygenAgentBridge = String(normalizedVisualStatus?.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent" ? heygenAgentArtifactsFromStatus(normalizedVisualStatus) : { artifacts: [], latestVideoArtifact: null, latestVideoUrl: "", latestVideoResourceId: "", thumbnailUrl: "" };
     const heygenVideoAgentVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || heygenAgentBridge.latestVideoUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "heygen_video_agent";
     const heygenCompletionStatus = await heygenVideoAgentCompletionOverride(outputWithRenderJob, normalizedVisualStatus, outputVisualJobProvider);
-    const isMiniMaxVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || fallbackVisualUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "minimax";
-    const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
+     const statusPreflight = outputWithRenderJob.providerPreflight && typeof outputWithRenderJob.providerPreflight === "object" ? outputWithRenderJob.providerPreflight as Record<string, unknown> : {};
+     const requestedDurationForGate = Number(outputWithRenderJob.requestedDurationSeconds ?? outputWithRenderJob.targetDurationSeconds ?? statusPreflight.durationSeconds ?? (outputWithRenderJob.genericVideoPlan && typeof outputWithRenderJob.genericVideoPlan === "object" ? (outputWithRenderJob.genericVideoPlan as Record<string, unknown>).durationSeconds : undefined) ?? 15) || 15;
+     const canonicalVisualGate = multiSegmentVisualGate({ targetDurationSeconds: requestedDurationForGate, visualStatuses });
+     const isMiniMaxVisualReady = normalizedVisualStatus?.status === "succeeded" && (normalizedVisualStatus.outputUrl || fallbackVisualUrl) && String(normalizedVisualStatus.provider ?? outputVisualJobProvider ?? "").toLowerCase() === "minimax" && canonicalVisualGate.passed;
+     const successfulStatus = normalizedRenderStatus?.status === "succeeded" && normalizedRenderStatus.outputUrl
       ? normalizedRenderStatus
       : heygenCompletionStatus
         ? heygenCompletionStatus
@@ -1028,7 +1051,22 @@ const fallbackRenderUrl = String(renderStatus?.outputUrl || renderJobForUrl.url 
             : !requiresFinalRender && normalizedVisualStatus?.status === "succeeded" && normalizedVisualStatus.outputUrl
               ? normalizedVisualStatus
               : null;
-    if (visualStatus?.status === "succeeded" && visualStatus.outputUrl && requiresFinalRender && !successfulStatus) {
+     if (renderBridge.renderError && canonicalVisualGate.required) {
+       const blockedOutput = outputWithWorkflow(production, outputWithRenderJob, {
+         visualStatus,
+         renderStatus,
+         finalVideoUrl: null,
+         providerFinalUrl: null,
+         providerStatus: "quality_gate_blocked_segment_mux_failed",
+         renderStatusLabel: "blocked",
+         qualityGate: { status: "blocked", checkedAt: new Date().toISOString(), required: ["all_minimax_segments", "final_mux"], missing: ["final_mux"], warnings: [renderBridge.renderError] },
+         providerLifecycle: { visual: visualLifecycle, render: renderLifecycle },
+         outputRegistry: visualLifecycle.outputRegistry
+       });
+       const { data } = await supabase.from("production_requests").update(safeUpdate({ status: "in_production", automation_status: "quality_blocked", generation_status: "quality_gate_blocked", preview_url: null, delivery_link: null, delivery_zip_url: null, output_json: blockedOutput, admin_notes: `Final MiniMax segment mux failed; no segment was promoted as final delivery: ${renderBridge.renderError}`, updated_at: new Date().toISOString() })).eq("id", productionId).select("*").single();
+       return Response.json({ production: data, visualStatus, renderStatus, quality_blocked: true, finalVideoUrl: null, reason: "minimax_segment_mux_failed" });
+     }
+     if (visualStatus?.status === "succeeded" && visualStatus.outputUrl && requiresFinalRender && !successfulStatus) {
       const rawVisualPreviewUrl = urlValue(visualStatus.outputUrl, visualLifecycle.outputRegistry, outputWithRenderJob.visualJob, outputWithRenderJob.visualStatus, outputWithRenderJob);
       const fallbackPatch = rawVisualPreviewUrl
         ? {

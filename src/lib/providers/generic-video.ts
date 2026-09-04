@@ -469,7 +469,7 @@ export function buildGenericVideoPlan(input: {
   const providerPreflight = input.providerPreflight ?? {};
   const title = clean(input.title) || clean(requestMetadata.title) || "Crelavo video";
   const prompt = clean(input.prompt) || clean(inputJson.prompt) || title;
-  const durationSeconds = Math.min(15, Math.max(5, Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15));
+  const durationSeconds = Math.min(60, Math.max(5, Number(providerPreflight.durationSeconds ?? requestMetadata.outputDurationSeconds ?? inputJson.outputDurationSeconds ?? 15) || 15));
   const aspectRatio = clean(providerPreflight.aspectRatio) || clean(requestMetadata.aspectRatio) || "9:16";
   const providerLock = String(clean(requestMetadata.routeLock) || clean(inputJson.routeLock) || "").toLowerCase();
   const preferredRouteProvider = providerLock === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(`${title} ${prompt} ${JSON.stringify(requestMetadata)} ${JSON.stringify(inputJson)}`)

@@ -1353,7 +1353,7 @@ if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && 
   return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
 }
     const providerTestMode = Boolean(providerPreflight.testMode);
-    const requestedDuration = providerTestMode ? 5 : Math.min(15, Math.max(5, Number(providerPreflight.durationSeconds) || 15));
+    const requestedDuration = providerTestMode ? 5 : Math.min(60, Math.max(5, Number(providerPreflight.durationSeconds) || 15));
     const selectedOptions = providerPreflight.selectedOptions && typeof providerPreflight.selectedOptions === "object" ? { ...(providerPreflight.selectedOptions as Record<string, unknown>) } : {};
     if (["drama", "studio"].includes(productionType)) {
       selectedOptions.finalRender = true;

@@ -44,6 +44,9 @@ export type ProviderJob = {
   task_id?: string;
   status: string;
   url?: string;
+  segmentIndex?: number;
+  order?: number;
+  requestedDurationSeconds?: number;
   raw?: unknown;
 };
 

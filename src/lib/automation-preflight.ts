@@ -155,7 +155,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     metadataObject(requestMetadata.ecommerceContext).targetDurationSeconds,
     metadataObject(inputJson.ecommerceContext).targetDurationSeconds
   );
-  const requestedDuration = Math.min(15, Math.max(5, explicitDuration || 5));
+  const requestedDuration = Math.min(60, Math.max(5, explicitDuration || 5));
   const selectedProviderText = textFrom(requestMetadata.selectedProviderService, inputJson.selectedProviderService, requestMetadata.provider_service, inputJson.provider_service).toLowerCase();
   const selectedVideoProvider = selectedProviderText.includes("minimax") ? "minimax" : selectedProviderText.includes("kling") ? "kling" : selectedProviderText.includes("runway") ? "runway" : selectedProviderText.includes("fal") ? "fal" : selectedProviderText.includes("replicate") ? "replicate" : "";
   const productionNeedsRealVideo = ["animation", "anime_short_film", "stickman_animation", "drone_video", "cinematic_video", "music_video", "video_clipping", "video"].includes(input.productionType);
@@ -195,7 +195,7 @@ export function buildProviderPreflight(input: AutomationPreflightInput) {
     model: guardedVideoProvider === "replicate" ? input.replicateModel || "wan-video/wan-2.2-t2v-fast" : guardedVideoProvider === "minimax" ? "MiniMax-H3" : guardedVideoProvider,
     durationSeconds: requestedDuration,
     preflightError: minimaxTestGuard && !hasMiniMaxVideoConfig() ? "MiniMax is required for the 5-second standard/social video test, but its API key and group ID are not configured. Replicate fallback is disabled." : undefined,
-    supportedDurationMaxSeconds: 15,
+    supportedDurationMaxSeconds: 60,
     aspectRatio,
     testMode: providerTestMode,
     selectedOptions: { ...featureFlags, outputIntent, sourceHandling },
