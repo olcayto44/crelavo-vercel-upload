@@ -2133,7 +2133,10 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       const timingBrief = contentDurationSeconds === 30 && /\b25\s*(?:sec|seconds|sn|saniye)\b/i.test(cleanInput)
        ? "Use approximately 25 seconds for the main content, then hold the final CTA for the remaining 5 seconds."
        : "";
-     const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief, selectedOptionFlagsForPayload.voiceOver ? "Voice-over: enabled." : "Voice-over: disabled.", selectedOptionFlagsForPayload.subtitles ? "Subtitles: enabled." : "Subtitles: disabled.", selectedOptionFlagsForPayload.music ? "Music: enabled." : "Music: disabled."].filter(Boolean).join("\n\n");
+      const campaignQualityGuard = activePlanInput.production_type === "campaign"
+        ? "Campaign quality control: use the supplied product URL as the source of truth; keep the product shape and details consistent across shots; do not invent product specs; do not render AI-generated text, fake labels, fake logos or unreadable feature cards inside the video; keep product claims in the voice-over and clean post-production graphics only."
+        : "";
+      const providerPrompt = [presenterCreative?.providerPrompt ?? cleanInput, timingBrief, campaignQualityGuard, selectedOptionFlagsForPayload.voiceOver ? "Voice-over: enabled." : "Voice-over: disabled.", selectedOptionFlagsForPayload.subtitles ? "Subtitles: enabled." : "Subtitles: disabled.", selectedOptionFlagsForPayload.music ? "Music: enabled." : "Music: disabled."].filter(Boolean).join("\n\n");
     const stylePackIdForPayload = animationStylePackId(cleanInput, activePlanInput.production_type);
       const preferredProviderForPayload = isImageProduction || project ? undefined : animationProductionIntent ? "runway_first" : undefined;
 
