@@ -1533,6 +1533,8 @@ function normalizeAssistantText(value: string) {
 
 function isProductionRequest(prompt: string) {
   const normalized = normalizeAssistantText(prompt);
+  const urlOnly = /^https?:\/\/[^\s]+$/.test(normalized);
+  if (urlOnly) return true;
   const hasLink = /https?:\/\/|www\.|\.com\b|\.net\b|\.org\b|\.io\b|\.co\b/.test(normalized);
   const productionVerb = /(yap|uret|olustur|hazirla|tasarla|kur|baslat|create|make|generate|produce|build|design|start)/.test(normalized);
   const productionNoun = /(video|reklam|tanitim|tanıtım|avatar|talking|konusan|konuşan|site|website|landing|app|uygulama|saas|admin|panel|gorsel|görsel|image|logo|poster|kampanya|campaign|seo|paket|production|uretim|üretim)/.test(normalized);
