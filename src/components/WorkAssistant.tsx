@@ -648,6 +648,7 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
      && !/no\s*presenter|without\s*presenter|b-?roll\s*only|silent\s*\/\s*music\s*only|no\s*voice|no\s*voice-?over/.test(signal);
   const isFilmAnimation = !isPresenterUgcLock && /anime|animation|animasyon|short film|kısa film|kisa film|drama|story|hikaye|scene|sahne/.test(signal);
   const isCinematicAction = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(signal);
+  const isCinematicFilm = !isPresenterUgcLock && /\bcinematic\b|short\s+film|cinematic\s+story|cinematic\s+sequence|sinematik|kısa\s+film|kisa\s+film|sinematik\s+hikaye|sinematik\s+sekans/.test(signal);
 
   if (plan.production_type === "video" && isPresenterUgcLock) {
     return {
@@ -671,13 +672,13 @@ function dynamicProfileForPlan(plan: StudioPlan, hint = ""): SetupProfile {
     };
   }
 
-    if (plan.production_type === "video" && isCinematicAction) {
+    if (plan.production_type === "video" && (isCinematicAction || isCinematicFilm)) {
     return {
-      title: "Cinematic action video setup",
-      note: "Only cinematic video choices are shown here. Presenter/avatar controls are hidden for this no-presenter action scene.",
+      title: "Cinematic film video setup",
+      note: "Only cinematic film choices are shown here. Presenter/avatar controls are hidden; story characters and ordinary people remain allowed unless the prompt explicitly forbids people.",
       groups: [
         { id: "videoStyle", title: "Video style", options: ["Silent / music only", "Voice-over only"] },
-        { id: "videoType", title: "Video type", options: ["Cinematic promo", "Social media short", "Prompt-to-video", "Script-to-video"] },
+        { id: "videoType", title: "Video type", options: ["Cinematic film", "Short film", "Prompt-to-video", "Script-to-video"] },
         { id: "quality", title: "Quality", options: ["1080p premium", "1080p", "4K"], credit: 900 },
         { id: "duration", title: "Target duration (approx.)", options: minimaxVideoDuration, credit: 350 },
         { id: "format", title: "Format", options: sharedVideoFormat, credit: 250 },
@@ -2134,10 +2135,8 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const setupCreditsForPayload = setupExtraCredits(activePlanInput.production_type, setupForPayload, activePlanInput, cleanInput) + manualMinimaxCreditsForPayload;
     const cardCreditsForPayload = productionCardCredits(productionCards);
     const totalEstimatedCreditsForPayload = baseDraftCredits(activePlanInput) + setupCreditsForPayload + cardCreditsForPayload;
-    const noPresenterStyle = selectedItemsForIntent.some((item) => /voice-over only|silent\s*\/\s*music only|sadece seslendirmeli|sessiz|no presenter|b-roll only/i.test(String(item)));
-    const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(routeSafeInput);
-    const noPeopleMotionIntent = noPresenterStyle || (/no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz|avatars?|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(routeSafeInput)
-      && /motion\s+graphics|hareketli\s+grafik|arayüz|arayuz|ui|hızlı\s+geçiş|hizli\s+gecis|dinamik|kinetic\s+typography|animated\s+text|text\s+cards|glitch|swipe\s+transitions|dynamic\s+promotional|b-?roll/i.test(routeSafeInput));
+     const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(routeSafeInput);
+ const noPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|without\s*(people|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|office\s+scene|meeting\s+room|group\s+of\s+people|background\s+people/i.test(routeSafeInput);
     const selectedMinimaxVideoAgentAutoEdit = selectedItemsForIntent.some((item) => /video agent auto edit/i.test(String(item)));
     const animationProductionIntent = ["animation", "anime_short_film", "stickman_animation", "cinematic_video"].includes(activePlanInput.production_type) || /animasyon|animation|çizgi film|cizgi film|cartoon|3d animated|3d animation|animated film|animation film|character animation|animated teaser/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsMinimaxBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedMinimaxVideoAgentAutoEdit;
