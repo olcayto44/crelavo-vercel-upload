@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { miniMaxProductionSettings } from "../src/lib/providers/minimax-production-settings.ts";
+import { miniMaxProductionSettings, miniMaxSegmentDurations } from "../src/lib/providers/minimax-production-settings.ts";
 
 const selected = { aspectRatio: "9:16", quality: "1080p", providerPrompt: "User's exact production prompt" };
 const fiveSeconds = miniMaxProductionSettings({ selected: { aspectRatio: "9:16", quality: "normal" }, durationSeconds: "5 sec" });
@@ -25,6 +25,13 @@ assert.equal(testMode.duration, 5);
 assert.equal(testMode.ratio, "9:16");
 assert.equal(testMode.resolution, "768P");
 assert.equal(testMode.providerPrompt, "Test prompt");
+assert.deepEqual(miniMaxSegmentDurations(5), [5]);
+assert.deepEqual(miniMaxSegmentDurations(10), [10]);
+assert.deepEqual(miniMaxSegmentDurations(15), [15]);
+assert.deepEqual(miniMaxSegmentDurations(30), [15, 15]);
+assert.deepEqual(miniMaxSegmentDurations(45), [15, 15, 15]);
+assert.deepEqual(miniMaxSegmentDurations(60), [15, 15, 15, 15]);
+assert.deepEqual(miniMaxSegmentDurations(35), [35]);
 
 const startSource = readFileSync(new URL("../src/app/api/automation/start/route.ts", import.meta.url), "utf8");
 const visualsSource = readFileSync(new URL("../src/lib/providers/visuals.ts", import.meta.url), "utf8");

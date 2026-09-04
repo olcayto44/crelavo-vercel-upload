@@ -87,6 +87,7 @@ export type EcommerceAdRunResult = {
   product: ProductSnapshot;
   brain: AdBrainResult;
   visualJob: ProviderJob;
+  visualJobs?: ProviderJob[];
   voiceAudioUrl: string;
   subtitleUrl: string;
   renderJob?: ProviderJob | null;

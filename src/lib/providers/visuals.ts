@@ -1,6 +1,6 @@
 import { optionalEnv, requireProviderEnv } from "./env";
 import { createMiniMaxH3VideoTask, hasMiniMaxVideoConfig, miniMaxTaskRecord } from "./minimax";
-import { miniMaxProductionSettings } from "./minimax-production-settings";
+import { miniMaxProductionSettings, miniMaxSegmentDurations } from "./minimax-production-settings";
 import type { ProviderJob } from "./types";
 
 function falApiKey() {
@@ -158,6 +158,17 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
   }
 
   throw new Error(`Unsupported VIDEO_PROVIDER: ${provider}`);
+}
+
+export async function createVisualVideoSegments(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob[]> {
+  const provider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
+  const segmentDurations = provider === "minimax" ? miniMaxSegmentDurations(input.durationSeconds) : [input.durationSeconds];
+  if (segmentDurations.length === 1) return [await createVisualVideo(input)];
+  return Promise.all(segmentDurations.map((durationSeconds, index) => createVisualVideo({
+    ...input,
+    durationSeconds,
+    providerPrompt: `${input.providerPrompt ?? input.scenes.join(" | ")}\nSegment ${index + 1}/${segmentDurations.length}: create a distinct consecutive 15-second beat that continues the overall production without repeating the previous beat.`
+  })));
 }
 
 export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob> {

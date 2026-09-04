@@ -22,6 +22,11 @@ function selectedValue(selected: Record<string, unknown>, names: string[]) {
   return undefined;
 }
 
+export function miniMaxSegmentDurations(value: unknown) {
+  const duration = Math.round(numberFrom(value) ?? 0);
+  return [30, 45, 60].includes(duration) ? Array.from({ length: duration / 15 }, () => 15) : [duration];
+}
+
 function ratioFrom(value: unknown): MiniMaxProductionSettings["ratio"] {
   const ratio = String(value ?? "").replace(/\s+/g, "").toLowerCase();
   if (ratio === "21:9" || ratio === "16:9" || ratio === "4:3" || ratio === "1:1" || ratio === "3:4" || ratio === "9:16") return ratio;

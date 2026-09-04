@@ -11,7 +11,7 @@ import { scrapeProduct } from "./scraper";
 import { createShotstackRender } from "./shotstack";
 import { createSubtitleFile } from "./subtitles";
 import type { ProviderJob } from "./types";
-import { createImageToVideoClip, createVisualVideo } from "./visuals";
+import { createImageToVideoClip, createVisualVideoSegments } from "./visuals";
 import { miniMaxProductionSettings } from "./minimax-production-settings";
 import { captureWebsiteScreenshot } from "./website-screenshot";
 
@@ -602,28 +602,30 @@ export async function runGenericVideoPipeline(input: {
       providerErrors.visual_generation = "shotstack_ui_motion fallback is disabled for production. Configure a real video provider before delivery.";
     } else {
       const isDroneSingleShot = /drone_video/.test(String(input.requestMetadata?.productionType ?? input.requestMetadata?.production_type ?? input.inputJson?.productionType ?? input.inputJson?.production_type ?? "")) || /drone|satellite|flyover|aerial/i.test(plan.title);
-      visualJob = isDroneSingleShot && sourceImageUrls[0]
-        ? await createImageToVideoClip({
+      if (isDroneSingleShot && sourceImageUrls[0]) {
+        visualJob = await createImageToVideoClip({
           imageUrl: sourceImageUrls[0],
           prompt: `Use this uploaded satellite/route/location reference as the exact source frame for a clean AI drone-style flyover. ${contextualScenes.join(" | ")}. No people, no presenters, no offices, no dashboards, no embedded text, no fake labels, no misspelled typography.`,
           durationSeconds: plan.durationSeconds,
           provider: "runway_first",
           aspectRatio: plan.aspectRatio
-        })
-        : await createVisualVideo({
+        });
+        visualJobs = visualJob ? [visualJob] : [];
+      } else {
+        visualJobs = await createVisualVideoSegments({
           productionId: input.productionId,
           scenes: contextualScenes,
           productImageUrls: sourceImageUrls,
-           durationSeconds: plan.durationSeconds,
-           style: clean(input.requestMetadata?.style) || plan.title,
-           provider: plan.provider,
-           aspectRatio: plan.aspectRatio,
-           providerPrompt: miniMaxProductionSettings({ selected: { ...(input.requestMetadata ?? {}), ...(input.inputJson ?? {}) }, prompt: input.prompt, title: input.title }).providerPrompt,
-           quality: String(input.requestMetadata?.quality ?? input.inputJson?.quality ?? input.requestMetadata?.selectedQuality ?? input.inputJson?.selectedQuality ?? ""),
-           testMode: Boolean(input.providerPreflight?.testMode)
-
+          durationSeconds: plan.durationSeconds,
+          style: clean(input.requestMetadata?.style) || plan.title,
+          provider: plan.provider,
+          aspectRatio: plan.aspectRatio,
+          providerPrompt: miniMaxProductionSettings({ selected: { ...(input.requestMetadata ?? {}), ...(input.inputJson ?? {}) }, prompt: input.prompt, title: input.title }).providerPrompt,
+          quality: String(input.requestMetadata?.quality ?? input.inputJson?.quality ?? input.requestMetadata?.selectedQuality ?? input.inputJson?.selectedQuality ?? ""),
+          testMode: Boolean(input.providerPreflight?.testMode)
         });
-      visualJobs = visualJob ? [visualJob] : [];
+        visualJob = visualJobs[0] ?? null;
+      }
     }
 } catch (error) {
   visualJob = visualJob ?? visualJobs[0] ?? null;

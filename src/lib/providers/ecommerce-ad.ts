@@ -3,7 +3,7 @@ import { createAdBrain } from "./openai";
 import { productFromBrief, scrapeProduct } from "./scraper";
 import { createSubtitleFile } from "./subtitles";
 import type { EcommerceAdRunInput, EcommerceAdRunResult } from "./types";
-import { createVisualVideo } from "./visuals";
+import { createVisualVideoSegments } from "./visuals";
 
 export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promise<EcommerceAdRunResult> {
   const product = input.productUrl
@@ -22,7 +22,7 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
     culture: input.culture
   });
 
-  const visualJob = await createVisualVideo({
+  const visualJobs = await createVisualVideoSegments({
     productionId: input.productionId,
     scenes: brain.visualScenes,
     productImageUrls: product.imageUrls,
@@ -30,6 +30,7 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
     aspectRatio: input.aspectRatio,
     style: input.style
   });
+  const visualJob = visualJobs[0];
 
   const voiceAudioUrl = await createVoiceover({
     productionId: input.productionId,
@@ -43,5 +44,5 @@ export async function runEcommerceAdPipeline(input: EcommerceAdRunInput): Promis
     durationSeconds: input.targetDurationSeconds
   });
 
-  return { product, brain, visualJob, voiceAudioUrl, subtitleUrl, renderJob: null };
+  return { product, brain, visualJob, visualJobs, voiceAudioUrl, subtitleUrl, renderJob: null };
 }

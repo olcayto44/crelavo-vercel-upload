@@ -1076,11 +1076,12 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
              render: result.renderJob ? { provider: result.renderJob.provider, jobId: result.renderJob.id ?? null, status: result.renderJob.status } : null
            },
            visualJob: result.visualJob,
-          visualJobs: result.visualJob ? [result.visualJob] : [],
+           visualJobs: result.visualJobs ?? (result.visualJob ? [result.visualJob] : []),
           voiceAudioUrl: result.voiceAudioUrl,
           subtitleUrl: result.subtitleUrl,
-          renderJob: result.renderJob ?? null,
-          renderStatus: result.renderJob ? "render_job_created" : "waiting_for_visual_output",
+           renderJob: result.renderJob ?? null,
+           expectedShotCount: result.visualJobs?.length ?? 1,
+           renderStatus: result.renderJob ? "render_job_created" : "waiting_for_visual_output",
           revisionActions: ["Change subtitle color", "Switch voice", "Change CTA", "Regenerate hook"],
           exportTargets: ["TikTok", "Meta Ads", "Instagram Reels"],
           finalVideoUrl: null
