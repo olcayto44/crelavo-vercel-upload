@@ -839,6 +839,8 @@ function defaultSetupFor(type: string, hint = "", plan?: StudioPlan | null): Pro
   const wantsNoPresenterIntent = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+to\s+camera|no\s+lip-?sync|lifestyle\s+b-?roll|homepage\s+showcase|showcase\s+loop|wow\s+video|not\s+a\s+presenter|presenter\s*değil|sunucu\s*olmasın|sunucusuz|avatar\s*olmasın|talking\s+head\s*olmasın/.test(text);
   const isCinematicActionHint = /cinematic\s+action|action\s+video|action\s+trailer|battle|battlefield|war|fighters?|fight\s+scene|savaş|savas|aksiyon|özel\s+savaş|ozel\s+savas|energy\s+shield|pulse\s+baton|tactical\s+staff|combat\s+glove|defense\s+drone|sci-fi\s+melee/.test(text);
   const hasFemaleCharacterIntent = /kad[ıi]n|bayan|female|woman|women|young\s+woman|female\s+character|heroine|güzel\s+kad[ıi]n|guzel\s+kadin/.test(text);
+  const narrativeNoPresenter = ["cinematic_video", "drama", "studio"].includes(type)
+    && !/presenter|avatar|host|sunucu|talking\s+(head|person|character)|spokesperson|creator/i.test(text);
   const wantsMinimaxStylePresenterAd = /crelavo|heygen|ugc|creator-style|one\s+natural\s+creator|realistic\s+human\s+creator|with\s+presenter|product\s+demo|promotional\s+video|tanıtım\s*videosu|tanitim\s*videosu|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi|uygulamalı|uygulamali|dışarıda|disarida|sokak|şehir|sehir|high-converting|social\s+media\s+ad|kinetic|hyperframes|motion\s+graphics/.test(text)
     && !wantsNoPeopleMotionAd
     && !wantsNoPresenterIntent
@@ -924,7 +926,7 @@ selected.length = 0;
       if (wanted) selected = [wanted];
     }
     if (group.id === "presenterChoice") {
-      if (wantsNoPresenterIntent) {
+      if (wantsNoPresenterIntent || narrativeNoPresenter) {
         const noPresenter = group.options.find((option) => /no presenter\/ b-roll only/i.test(option));
         if (noPresenter) selected = [noPresenter];
       } else {
@@ -940,9 +942,9 @@ selected.length = 0;
     if (group.id === "videoStyle") {
       const silent = (fomoTikTokBroll || /sessiz|seslendirme\s*olmas[ıi]n|ses\s*olmas[ıi]n|no\s*voice|without\s*voice|music[-\s]*only/.test(text)) ? group.options.find((option) => /silent/i.test(option)) : undefined;
       const presenter = /sunucu|presenter|avatar|konuşan\s*kişi|konusan\s*kisi|ekranda\s*bir\s*sunucu/.test(text) && !noPresenterBroll ? group.options.find((option) => /presenter/i.test(option)) : undefined;
-      const femalePresenter = hasFemaleCharacterIntent && !noPresenterBroll ? group.options.find((option) => /ai\s*presenter/i.test(option)) : undefined;
+      const femalePresenter = hasFemaleCharacterIntent && !noPresenterBroll && !narrativeNoPresenter ? group.options.find((option) => /ai\s*presenter/i.test(option)) : undefined;
       const voiceOnly = /seslendirme|voice-over|voiceover|anlatıcı|anlatici/.test(text) && !noPresenterBroll ? group.options.find((option) => /voice-over only/i.test(option)) : undefined;
-      const cinematicBroll = isCinematicActionHint && !hasFemaleCharacterIntent ? group.options.find((option) => /no\s*presenter\s*\/\s*b-?roll\s*only/i.test(option)) : undefined;
+      const cinematicBroll = (isCinematicActionHint || narrativeNoPresenter) && (!hasFemaleCharacterIntent || narrativeNoPresenter) ? group.options.find((option) => /no\s*presenter\s*\/\s*b-?roll\s*only/i.test(option)) : undefined;
   const wanted = silent || femalePresenter || presenter || voiceOnly || cinematicBroll;
   if (wanted) selected = [wanted];
     }
@@ -965,11 +967,11 @@ selected.length = 0;
       if (wanted) selected = [wanted];
     }
     if (["sourceHandling", "visualDirection"].includes(group.id)) {
-      if (hasFemaleCharacterIntent || wantsMinimaxStylePresenterAd || /with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi/.test(text)) {
+      if (!narrativeNoPresenter && (hasFemaleCharacterIntent || wantsMinimaxStylePresenterAd || /with\s*presenter|ai\s*presenter|talking\s*presenter|talking\s*avatar|realistic\s*human\s*(presenter|creator)|creator-style\s*(presenter|human|creator)|single\s*(presenter|creator)|one\s+natural\s+creator|one\s+realistic\s+human\s+creator|heygen|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|sunucu|anlattığı|anlattigi/.test(text))) {
         const presenter = group.options.find((option) => /with presenter/i.test(option));
         if (presenter) selected = [presenter];
       }
-      if (wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz/.test(text)) {
+      if (narrativeNoPresenter || wantsNoPeopleMotionAd || /no\s*people|no\s*presenter|without\s*(people|presenter|human)|ui-only|screenshot-only|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|sunucusuz/.test(text)) {
         const noPeople = group.options.find((option) => /no people/i.test(option));
         if (noPeople) selected = [noPeople];
       }
@@ -1960,7 +1962,7 @@ const totalEstimatedCredits = draftBaseCredits + setupCredits + cardCredits;
 
   function resetTypeScopedDraftState(nextType: string) {
     const currentType = plan?.production_type ?? "";
-    if (isImageProductionType(currentType) === isImageProductionType(nextType)) return;
+    if (!currentType || currentType === nextType) return;
     setSelectedProductionCards([]);
     setProductionSetup({});
     setSelectedAvatar(null);
