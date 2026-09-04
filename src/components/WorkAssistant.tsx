@@ -2127,7 +2127,7 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
       const productionTypeForPayload = isImageProduction ? "image" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
 
      const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
-       if (!isImageProduction && isVideoLikeProductionType(productionTypeForPayload) && contentDurationSeconds > 15) {
+        if (activePlanInput.production_type === "campaign" && !isImageProduction && contentDurationSeconds > 15) {
         setStarting(false);
         setStatus(statusUx("Bu provider yolu tek istekte en fazla 15 saniyeyi destekliyor. Lütfen 15 saniye veya daha kısa bir süre seç.", "This provider path supports at most 15 seconds per request. Select 15 seconds or less."));
          return null;
