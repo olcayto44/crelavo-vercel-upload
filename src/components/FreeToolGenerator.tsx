@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { FreeTool } from "@/lib/free-tools";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 function cleanInput(value: string) {
   return value.trim().replace(/\s+/g, " ");
@@ -160,7 +161,6 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
   const outputs = useMemo(() => generateOutputs(tool, input), [tool, input]);
   const activeOutput = selectedOutput || outputs[0] || "";
   const workspaceHref = assistantUrl(tool, input, activeOutput);
-  const registerHref = `/auth/register?next=${encodeURIComponent(workspaceHref)}`;
   const loginHref = `/auth/login?next=${encodeURIComponent(workspaceHref)}`;
 
   return (
@@ -205,9 +205,9 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={workspaceHref}>Start production with this result</Link>
-          {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=free-ad-score-business-free-trial">Start free Business trial from this score</Link> : null}
+          {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href={whopFreeTrialCheckoutUrl}>Start free Business trial from this score</Link> : null}
           {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href="/dashboard/payment?package=team&billing=yearly&campaign=free-ad-score-team-preview">Open Team preview path</Link> : null}
-          <Link className="btn secondary" href={registerHref}>Create account and keep this result</Link>
+          <Link className="btn secondary" href={whopFreeTrialCheckoutUrl}>Create account and start the free trial</Link>
           <Link className="btn secondary" href={loginHref}>Sign in and continue</Link>
           <Link className="btn secondary" href="/dashboard/credits">Get free credits</Link>
           <Link className="btn secondary" href="/pricing">Credit packages</Link>

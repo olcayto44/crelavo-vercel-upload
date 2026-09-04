@@ -14,6 +14,7 @@ import { TruthfulLiveActivity } from "@/components/TruthfulLiveActivity";
 import { geoOfferFromHeaders } from "@/lib/geo-offers";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
 
 export const metadata: Metadata = {
@@ -377,7 +378,7 @@ const paidGrowthFunnelCards = [
     badge: "Business free trial",
     title: "Try Business free for the first 24 hours",
     description: "Start the Whop-hosted Business trial for 24 hours, then continue with 12,000 credits/month at $79 only if you do not cancel before the trial ends.",
-    href: "/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=business-free-24h-trial",
+    href: whopFreeTrialCheckoutUrl,
     cta: "Start free 24-hour trial"
   }
 ];
@@ -451,7 +452,7 @@ export default async function HomePage() {
       <SiteStructuredData />
       <SplashAd />
       <Header navLinks={siteContent.navLinks} />
-      <HardReloadLink className="trial-top-strip" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=top-strip-business-free-trial">
+      <HardReloadLink className="trial-top-strip" href={whopFreeTrialCheckoutUrl}>
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
         <strong>$0 today</strong>
         <span className="trial-top-strip-copy">Try Crelavo Business free for 24 hours — then get 12,000 credits/month on the $79 plan unless cancelled in Whop.</span>
@@ -460,7 +461,7 @@ export default async function HomePage() {
       <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
           <aside className="ad-rail ad-rail-right trial-fomo-rail">
-            <HardReloadLink className="trial-fomo-poster" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=right-rail-business-free-trial" aria-label="Start the Business 24-hour free trial">
+            <HardReloadLink className="trial-fomo-poster" href={whopFreeTrialCheckoutUrl} aria-label="Start the Business 24-hour free trial">
               <span className="trial-fomo-flash">FLASH</span>
               <span className="trial-fomo-eyebrow">1-day Whop trial</span>
               <strong>$0 today</strong>
@@ -470,7 +471,7 @@ export default async function HomePage() {
               <span className="trial-fomo-cta">Claim trial</span>
             </HardReloadLink>
           </aside>
-          <HardReloadLink className="trial-mobile-fomo" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=mobile-business-free-trial">
+          <HardReloadLink className="trial-mobile-fomo" href={whopFreeTrialCheckoutUrl}>
             <span>FLASH: 24h free Business trial · 12,000 credits/month</span>
             <strong>$0 today</strong>
             <em>Claim now</em>
@@ -491,7 +492,7 @@ export default async function HomePage() {
               </div>
               <div className="trial-deal-divider" />
               <span className="trial-deal-after">After trial: $79/mo unless cancelled in Whop</span>
-              <HardReloadLink className="btn trial-fomo-hero-cta" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-business-free-trial">Claim the 24h free trial</HardReloadLink>
+              <HardReloadLink className="btn trial-fomo-hero-cta" href={whopFreeTrialCheckoutUrl}>Claim the 24h free trial</HardReloadLink>
             </div>
           </section>
           <CrelavoPremiumHero />

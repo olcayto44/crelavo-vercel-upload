@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LoginForm } from "@/components/LoginForm";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 type LoginSearchParams = { next?: string | string[] };
 
@@ -16,7 +17,6 @@ function safeNext(value: string) {
 export default async function LoginPage({ searchParams }: { searchParams?: Promise<LoginSearchParams> }) {
   const params = await searchParams;
   const next = safeNext(firstParam(params?.next));
-  const registerHref = next ? `/auth/register?next=${encodeURIComponent(next)}` : "/auth/register";
 
   return (
     <main className="auth-standalone-screen">
@@ -34,7 +34,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
         <div id="member-login">
           <LoginForm />
         </div>
-        <p style={{ color: "var(--muted)", marginBottom: 0 }}>Do not have an account? <Link href={registerHref}>Register</Link></p>
+        <p style={{ color: "var(--muted)", marginBottom: 0 }}>Do not have an account? <Link href={whopFreeTrialCheckoutUrl}>Start your free trial</Link></p>
       </section>
     </main>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 const heroModels = ["Video", "Product Ads", "Website", "App", "Brand Kit", "Voice", "Campaign"];
 
@@ -94,7 +95,7 @@ export function CrelavoPremiumHero() {
             <span>Live production studio</span>
             <small>{activeScene.kicker}</small>
           </div>
-          <Link className="hero-trial-fomo-card" href="/dashboard/payment?package=business_24h_free_trial&billing=monthly&campaign=hero-panel-business-free-trial" aria-label="Claim the Crelavo Business 24-hour free trial">
+          <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Claim the Crelavo Business 24-hour free trial">
             <span>FLASH TRIAL</span>
             <strong>$0 for the first 24 hours</strong>
             <small>Then 12,000 credits/month at $79 unless cancelled in Whop.</small>

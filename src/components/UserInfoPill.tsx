@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { clearAssistantWorkspaceSession } from "@/lib/assistant-session-client";
 import { supabaseBrowser } from "@/lib/supabase";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 type UserInfo = {
   email: string;
@@ -47,7 +48,7 @@ export function UserInfoPill() {
     return (
       <div className="auth-action-pills">
         <Link className="btn secondary auth-mini-btn" href="/auth/login">Sign in</Link>
-        <Link className="btn auth-mini-btn" href="/auth/register">Create account</Link>
+        <Link className="btn auth-mini-btn" href={whopFreeTrialCheckoutUrl}>Create account</Link>
       </div>
     );
   }
