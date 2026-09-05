@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type ReconcileState = "idle" | "checking" | "success" | "info" | "error";
+
+declare global {
+  interface Window {
+    dataLayer: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+const GOOGLE_ADS_CONVERSION_ID = "AW-18425668664";
+const GOOGLE_ADS_CONVERSION_LABEL = "P87ZCLrf5-4cELjIhdJE";
 
 export function WhopPaymentReconcileStatus() {
   const searchParams = useSearchParams();
@@ -11,6 +22,16 @@ export function WhopPaymentReconcileStatus() {
   const checkoutStatus = searchParams.get("checkout_status") || searchParams.get("status") || "";
   const [state, setState] = useState<ReconcileState>(paymentId ? "checking" : "idle");
   const [message, setMessage] = useState("");
+  const conversionSentRef = useRef("");
+
+  function sendPurchaseConversion() {
+    if (!paymentId || conversionSentRef.current === paymentId) return;
+    conversionSentRef.current = paymentId;
+    window.gtag?.("event", "conversion", {
+      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`,
+      transaction_id: paymentId
+    });
+  }
 
   useEffect(() => {
     if (!paymentId || !["success", "succeeded", "paid", ""].includes(checkoutStatus.toLowerCase())) return;
@@ -32,12 +53,14 @@ export function WhopPaymentReconcileStatus() {
       .then((payload) => {
         if (cancelled) return;
         if (payload.activated) {
-          setState("success");
+           sendPurchaseConversion();
+           setState("success");
           setMessage(`Payment verified. ${payload.credits ?? ""} credits were added to your Crelavo account.`.trim());
           return;
         }
         if (payload.reason === "already_processed") {
-          setState("success");
+           sendPurchaseConversion();
+           setState("success");
           setMessage("Payment verified. Credits for this payment were already applied to your account.");
           return;
         }
@@ -68,9 +91,19 @@ export function WhopPaymentReconcileStatus() {
   const color = state === "error" ? "#fca5a5" : state === "success" ? "#86efac" : "var(--muted)";
 
   return (
-    <div className="card" style={{ marginTop: 16, borderColor: state === "error" ? "rgba(248,113,113,.45)" : "rgba(148,163,184,.25)" }}>
+    <>
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_CONVERSION_ID}`} strategy="afterInteractive" />
+      <Script id="google-ads-conversion" strategy="afterInteractive">
+        {`window.dataLayer = window.dataLayer || [];
+function gtag(){window.dataLayer.push(arguments);}
+window.gtag = gtag;
+gtag('js', new Date());
+gtag('config', '${GOOGLE_ADS_CONVERSION_ID}');`}
+      </Script>
+      <div className="card" style={{ marginTop: 16, borderColor: state === "error" ? "rgba(248,113,113,.45)" : "rgba(148,163,184,.25)" }}>
       <p style={{ color, margin: 0 }}>{message || "Checking payment status..."}</p>
       <p style={{ color: "var(--muted)", margin: "8px 0 0", fontSize: 13 }}>Payment ID: {paymentId}</p>
-    </div>
+      </div>
+    </>
   );
 }
