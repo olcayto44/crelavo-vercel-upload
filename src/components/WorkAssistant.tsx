@@ -1387,7 +1387,7 @@ function normalizeProductionType(prompt: string, currentType: string) {
   if (commerceIntent) return "ecommerce";
   if (/web sitesi|website|web site|landing|site/.test(raw)) return "website";
   if (/voice clone|ses klon/.test(text)) return "voice_clone";
-  if (/talking video|talking head|avatar|spokesperson|presenter|sunucu|konuşan kişi|konusan kisi|diyalog|panel|lip[- ]?sync|self[- ]?in[- ]?video|kendi avatarım|kendi avatarim/.test(text)) return "talking_video";
+  if (/talking video|talking head|avatar|spokesperson|presenter|sunucu|konuşan kişi|konusan kisi|diyalog|panel|lip[- ]?sync|self[- ]?in[- ]?video|kendi avatarım|kendi avatarim/.test(routeText)) return "talking_video";
   if (/voice|audio|narration|podcast|seslendirme|dublaj|voice[- ]?over|voiceover|müzik|muzik|music/.test(text)) return "video";
   if (/image|logo|poster|visual|photo|görsel|gorsel/.test(text)) return "image";
   if (/seo|blog|content pack|document|doküman|dokuman/.test(text)) return "document_pack";
