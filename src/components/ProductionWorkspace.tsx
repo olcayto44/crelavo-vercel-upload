@@ -605,7 +605,8 @@ const hasDedicatedCharacterDialogueJobs = characterDialogueProviderJobs.length >
   const mediaFinalReady = !isMediaProduction || mediaOutputReleased;
   const hasPreview = Boolean(previewUrl || (!isMediaProduction && voiceAudioUrl) || (mediaFinalReady && savedAlternatives.some((alternative: Record<string, any>) => alternative.preview_url || alternative.previewUrl || alternative.url)));
   const hasDelivery = Boolean(deliveryUrl || (!isMediaProduction && (sourceUrl || readmeUrl)));
-const automationWarningText = `${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${String(production.error_message ?? "")}`;
+const providerErrorDetail = production.error_message || String(outputJson.providerError ?? (outputJson.providerErrors && typeof outputJson.providerErrors === "object" ? (outputJson.providerErrors as Record<string, unknown>).minimax ?? (outputJson.providerErrors as Record<string, unknown>).visual_generation ?? "" : ""));
+const automationWarningText = `${production.generation_status ?? ""} ${production.automation_status ?? ""} ${String(outputJson.providerStatus ?? "")} ${providerErrorDetail}`;
 const hasAutomationWarning = !hasPlayableMediaUrl && /warning|schema|does not exist|42703|error/i.test(automationWarningText);
   const providerJobWasNotCreated = production.generation_status === "provider_pending_unknown" || production.generation_status === "provider_start_failed_no_job" || String(outputJson.providerStatus ?? "") === "provider_start_failed" && outputJson.providerJobCreated === false;
   const isFailed = providerJobWasNotCreated || production.status === "failed" || production.automation_status === "failed" || liveStatus.includes("failed") || hasAutomationWarning;
@@ -1021,7 +1022,7 @@ const data = await response.json().catch(() => ({}));
           </section>
         ) : null}
 
-        {isFailed ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{production.error_message || String(outputJson.providerError ?? "Provider or automation failed. Admin review is required before final delivery or credit resolution.")}</span></div> : null}
+        {isFailed ? <div className="production-error-banner"><strong>Production needs attention.</strong><span>{providerErrorDetail || "Provider or automation failed. Admin review is required before final delivery or credit resolution."}</span></div> : null}
 
         {agentAction ? (
           <div className="production-agent-action-card">
