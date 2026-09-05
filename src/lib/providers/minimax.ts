@@ -151,8 +151,12 @@ function redactedShape(value: unknown, depth = 0): unknown {
 export async function minimaxJson<T>(path: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
+  const groupId = minimaxGroupId();
+  const requestPath = groupId
+    ? `${path}${path.includes("?") ? "&" : "?"}GroupId=${encodeURIComponent(groupId)}`
+    : path;
   try {
-    const response = await fetch(`${minimaxBaseUrl()}${path}`, {
+    const response = await fetch(`${minimaxBaseUrl()}${requestPath}`, {
       ...init,
       signal: init?.signal ?? controller.signal,
       headers: {
