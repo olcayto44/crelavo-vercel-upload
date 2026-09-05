@@ -2144,7 +2144,15 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     const wantsMinimaxBrollVideoAgent = !animationProductionIntent && noPeopleMotionIntent && selectedMinimaxVideoAgentAutoEdit;
     const heygenCategoryIntent = !animationProductionIntent && !noPeopleMotionIntent && /sunucu|presenter|avatar|konuşan|konusan|spokesperson|ürün\s*tanıt|urun\s*tanit|product\s*demo|e-?ticaret|ecommerce|saas|uygulama\s*demo|app\s*demo|mobil\s*uygulama\s*demo|eğitim|egitim|anlatım|anlatim|sosyal\s*medya\s*reklam|koc|ugc|dublaj|lokalizasyon|pitch|satış\s*sunum|satis\s*sunum|canlı\s*satış|canli\s*satis|4k|müzik\s*eşlikli|muzik\s*eslikli|lyrics/i.test(routeSafeInput + " " + selectedItemsForIntent.join(" "));
     const wantsPresenterVideo = !noPeopleMotionIntent && !wantsNoPresenterIntent && (heygenCategoryIntent || selectedItemsForIntent.some((item) => /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter/i.test(String(item))) || /with presenter|ai presenter|sales avatar|talking avatar|talking head|presenter|hareketli\s+bir\s+kişi|hareketli\s+bir\s+kisi|kişi\s+anlat|kisi\s+anlat|anlattığı|anlattigi|sunucu|uygulamalı|uygulamali/i.test(routeSafeInput));
-      const productionTypeForPayload = isImageProduction ? "image" : isLuxuryProductCommercialPrompt(cleanInput) ? "video" : wantsPresenterVideo && activePlanInput.production_type === "video" ? "talking_video" : activePlanInput.production_type;
+       const productionTypeForPayload = isImageProduction
+         ? "image"
+         : isLuxuryProductCommercialPrompt(cleanInput)
+           ? "video"
+           : wantsNoPresenterIntent && ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(activePlanInput.production_type)
+             ? "video"
+             : wantsPresenterVideo && activePlanInput.production_type === "video"
+               ? "talking_video"
+               : activePlanInput.production_type;
 
      const presenterCreative = wantsPresenterVideo && !isImageProduction ? buildPresenterCreativeBrief({ prompt: cleanInput, selectedOptions: selectedItemsForIntent, productionSetup: setupForPayload, title: activePlanInput.summary }) : null;
         if (activePlanInput.production_type === "campaign" && !isImageProduction && contentDurationSeconds > 15) {
