@@ -423,10 +423,10 @@ export async function POST(request: Request) {
   const isImageProductionRequest = ["image", "brand_kit", "visual_clone", "virtual_model_studio"].includes(productionType) || /^image_/.test(packageId);
   const directLuxuryProductCommercialRoute = String(initialRequestMetadata.routeLock ?? initialInputJson.routeLock ?? "") === "minimax_direct_luxury_product_commercial" || /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(serverRouteText);
   const sanitizedServerRouteText = sanitizeProviderRouteSignal(serverRouteText);
-  const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|no\s*presenter|avatars?|insan\s*olmasın/.test(sanitizedServerRouteText)
+  const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|without\s*(?:people|human)|insan\s*olmasın|insansız/.test(sanitizedServerRouteText)
     && /motion\s*graphics|kinetic\s*typography|animated\s*text|text\s*cards|dynamic\s*promotional/.test(sanitizedServerRouteText);
   const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
-  const serverMinimaxPresenterIntent = !directLuxuryProductCommercialRoute && !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasMinimaxPresenterIntent(`${serverRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
+  const serverMinimaxPresenterIntent = !directLuxuryProductCommercialRoute && !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasMinimaxPresenterIntent(`${sanitizedServerRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
 
 
   if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(productionType)) productionType = "talking_video";
