@@ -166,14 +166,16 @@ export async function createVisualVideoSegments(input: { productionId: string; s
   const segmentDurations = provider === "minimax" ? miniMaxSegmentDurations(input.durationSeconds) : [input.durationSeconds];
   if (provider === "minimax" && input.durationSeconds > 15) assertFfmpegAvailable();
   if (segmentDurations.length === 1) return [await createVisualVideo(input)];
-  const jobs = await Promise.all(segmentDurations.map(async (durationSeconds, index) => {
+  const jobs: ProviderJob[] = [];
+  for (let index = 0; index < segmentDurations.length; index += 1) {
+    const durationSeconds = segmentDurations[index];
     const job = await createVisualVideo({
       ...input,
       durationSeconds,
       providerPrompt: `${input.providerPrompt ?? input.scenes.join(" | ")}\nSegment ${index + 1}/${segmentDurations.length}: create a distinct consecutive 15-second beat that continues the overall production without repeating the previous beat.`
     });
-    return { ...job, segmentIndex: index + 1, order: index + 1, requestedDurationSeconds: durationSeconds };
-  }));
+    jobs.push({ ...job, segmentIndex: index + 1, order: index + 1, requestedDurationSeconds: durationSeconds });
+  }
   return jobs;
 }
 
