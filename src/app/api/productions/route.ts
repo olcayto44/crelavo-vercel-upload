@@ -432,11 +432,14 @@ export async function POST(request: Request) {
   if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(productionType)) productionType = "talking_video";
   const explicitNoPresenterSelection = /no\s+presenter|b-?roll\s+only|no\s+avatar|no\s+talking\s+head|sunucusuz|sunucu\s*olmas[ıi]n|avatar\s*olmas[ıi]n/i.test(serverRouteText)
     && !/create\s+(?:a\s+)?talking[-\s]?head|use\s+(?:a\s+)?presenter|include\s+(?:a\s+)?presenter|avatar\s+speaking|spokesperson\s+speaking|sunuculu|sunucu\s+olsun/i.test(serverRouteText);
-  if (explicitNoPresenterSelection && ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType)) productionType = "video";
+  if (explicitNoPresenterSelection && ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType)) {
+    productionType = "video";
+    if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(packageId)) packageId = "video_premium";
+  }
   if (directLuxuryProductCommercialRoute) {
     productionType = "video";
     packageId = "video_premium";
-  } else if (serverMinimaxPresenterIntent && ["video", "cinematic_video"].includes(productionType)) {
+  } else if (serverMinimaxPresenterIntent && !explicitNoPresenterSelection && ["video", "cinematic_video"].includes(productionType)) {
     productionType = "talking_video";
   }
 
