@@ -16,10 +16,7 @@ const privateRouteHeaders = [
 const nextConfig = {
   serverExternalPackages: ["ffmpeg-static"],
   outputFileTracingIncludes: {
-    "/api/automation/status": ["./node_modules/ffmpeg-static/**/*"],
-    "/api/automation/start": ["./node_modules/ffmpeg-static/**/*"],
-    "/api/video-thumbnail": ["./node_modules/ffmpeg-static/**/*"],
-    "/api/video-clipping": ["./node_modules/ffmpeg-static/**/*"]
+    "/api/**/*": ["./node_modules/ffmpeg-static/**/*"]
   },
   experimental: {
     serverActions: { allowedOrigins: [] }

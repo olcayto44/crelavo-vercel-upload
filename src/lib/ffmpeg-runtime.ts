@@ -5,8 +5,9 @@ const require = createRequire(import.meta.url);
 
 export function resolveFfmpegPath(): string | null {
   try {
-    const resolved = require.resolve("ffmpeg-static");
-    return existsSync(resolved) ? resolved : null;
+    const packageEntry = require.resolve("ffmpeg-static");
+    const resolved = require(packageEntry) as unknown;
+    return typeof resolved === "string" && existsSync(resolved) ? resolved : null;
   } catch {
     return null;
   }
