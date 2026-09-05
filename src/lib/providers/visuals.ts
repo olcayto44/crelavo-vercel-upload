@@ -192,7 +192,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
   const isDroneLocationVideo = /drone|satellite|aerial|flyover|kuşbakışı|kuş\s*bakışı|uydu|havadan|location\s*video|konum\s*videosu/i.test(promptSignal);
   const isCrelavoUiDemo = !isDroneLocationVideo && /crelavo|paste a link|get an ad|dashboard|link input|ai analysis|page analysis|linked page|product benefits|ad script|scene plan|mp4 preview|export buttons|tiktok|reels|shorts/i.test(promptSignal);
   const isNarrative = !isCrelavoUiDemo && !isDroneLocationVideo && /sahne|scene|animasyon|animation|çizgi film|cizgi film|character|karakter|dialogue|diyalog/i.test(promptSignal);
-  const strictNoPeople = !isDroneLocationVideo && /no\s*people|no\s*presenter|without\s*(people|presenter|human)|insan\s*(veya\s*)?(sunucu\s*)?olmas[ıi]n|sunucu\s*olmas[ıi]n|insans[ıi]z|sunucusuz|no office|office\s*olmas[ıi]n|ofis\s*olmas[ıi]n/i.test(promptSignal);
+  const strictNoPeople = !isDroneLocationVideo && /no\s*people|without\s*(people|human)|do\s+not\s+include\s+(?:any\s+)?(?:people|humans)|insan\s*olmas[ıi]n|kişi\s*olmas[ıi]n|kisi\s*olmas[ıi]n|insans[ıi]z|no office|office\s*olmas[ıi]n|ofis\s*olmas[ıi]n/i.test(promptSignal);
   const prompt = [
     isDroneLocationVideo
       ? "Create a geographically focused AI drone / satellite-style location flyover for the exact requested place. Use only aerial views of the supplied location and reference imagery, nearby roads, property layout and surrounding area. No presenter, no people, no office, no SaaS dashboard, no split-screen collage, no product advertisement, no Crelavo promotional content, and no generic business stock footage. Do not invent a different city or neighborhood."
