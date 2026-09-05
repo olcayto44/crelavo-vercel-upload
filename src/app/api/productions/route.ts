@@ -413,7 +413,7 @@ export async function POST(request: Request) {
   if (!isAdminRequest(request, body) && !hasValidProductionDispatch(body)) return Response.json(productionDispatchError(), { status: 409 });
   const dispatchAction = productionDispatchAction(body);
   const userId = String(body.user_id ?? "").trim();
-  const title = String(body.title ?? "").trim();
+  let title = String(body.title ?? "").trim();
   const prompt = String(body.prompt ?? "").trim();
   let productionType = String(body.production_type ?? "").trim();
   let packageId = String(body.package_id ?? "").trim();
@@ -435,6 +435,7 @@ export async function POST(request: Request) {
   if (explicitNoPresenterSelection && ["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(productionType)) {
     productionType = "video";
     if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(packageId)) packageId = "video_premium";
+    if (/talking\s+video/i.test(title)) title = title.replace(/talking\s+video/ig, "Video");
   }
   if (directLuxuryProductCommercialRoute) {
     productionType = "video";
