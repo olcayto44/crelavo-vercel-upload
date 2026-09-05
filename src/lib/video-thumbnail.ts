@@ -2,16 +2,17 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import ffmpegPath from "ffmpeg-static";
+import { resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 
 function runFfmpeg(args: string[]) {
   return new Promise<void>((resolve, reject) => {
-    if (!ffmpegPath) {
-      reject(new Error("ffmpeg-static binary is not available."));
+    const ffmpegBinary = resolveFfmpegPath();
+    if (!ffmpegBinary) {
+      reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
       return;
     }
-    execFile(ffmpegPath, args, { timeout: 30000 }, (error, _stdout, stderr) => {
+    execFile(ffmpegBinary, args, { timeout: 30000 }, (error, _stdout, stderr) => {
       if (error) {
         reject(new Error(stderr || error.message));
         return;

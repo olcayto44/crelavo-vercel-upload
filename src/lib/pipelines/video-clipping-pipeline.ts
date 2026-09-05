@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import ffmpegPath from "ffmpeg-static";
+import { resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { createShotstackRender } from "@/lib/providers/shotstack";
 import { uploadProviderAsset } from "@/lib/providers/storage";
 import { createSubtitleFile } from "@/lib/providers/subtitles";
@@ -10,11 +10,12 @@ import type { ProviderJob } from "@/lib/providers/types";
 
 function runFfmpeg(args: string[], timeoutMs = 120000) {
   return new Promise<{ stderr: string }>((resolve, reject) => {
-    if (!ffmpegPath) {
-      reject(new Error("ffmpeg-static binary is not available."));
+    const ffmpegBinary = resolveFfmpegPath();
+    if (!ffmpegBinary) {
+      reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
       return;
     }
-    execFile(ffmpegPath, args, { timeout: timeoutMs, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+    execFile(ffmpegBinary, args, { timeout: timeoutMs, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
       if (error) {
         reject(new Error(stderr || error.message));
         return;

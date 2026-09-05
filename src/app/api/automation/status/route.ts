@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import ffmpegPath from "ffmpeg-static";
+import { assertFfmpegAvailable, resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
@@ -325,7 +325,7 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
       sourcePaths.push(sourcePath);
     }
     if (sourcePaths.length > 1) {
-      const ffmpegBinary = ffmpegPath;
+      const ffmpegBinary = assertFfmpegAvailable();
       if (!ffmpegBinary) throw new Error("ffmpeg-static binary is not available.");
       const concatPath = join(directory, "concat.txt");
       await writeFile(concatPath, sourcePaths.map((path) => `file '${path.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`).join("\n"));
@@ -346,11 +346,12 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
       const audioPath = join(directory, "audio.m4a");
       await writeFile(audioPath, Buffer.from(await audioResponse.arrayBuffer()));
       await new Promise<void>((resolve, reject) => {
-        if (!ffmpegPath) {
-          reject(new Error("ffmpeg-static binary is not available."));
+        const ffmpegBinary = resolveFfmpegPath();
+        if (!ffmpegBinary) {
+          reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
           return;
         }
-        execFile(ffmpegPath, ["-y", "-i", videoPath, "-i", audioPath, "-filter_complex", "[1:a]apad[a]", "-map", "0:v:0", "-map", "[a]", "-t", targetDuration, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-c:a", "aac", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegBinary, ["-y", "-i", videoPath, "-i", audioPath, "-filter_complex", "[1:a]apad[a]", "-map", "0:v:0", "-map", "[a]", "-t", targetDuration, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-c:a", "aac", "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || error.message));
             return;
@@ -360,11 +361,12 @@ async function localFinalMux(input: { productionId: string; videoUrl: string; vi
       });
     } else {
       await new Promise<void>((resolve, reject) => {
-        if (!ffmpegPath) {
-          reject(new Error("ffmpeg-static binary is not available."));
+        const ffmpegBinary = resolveFfmpegPath();
+        if (!ffmpegBinary) {
+          reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
           return;
         }
-        execFile(ffmpegPath, ["-y", "-i", videoPath, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-t", targetDuration, "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+        execFile(ffmpegBinary, ["-y", "-i", videoPath, "-c:v", "libx264", "-pix_fmt", "yuv420p", ...(normalizeVertical ? ["-vf", videoFilter] : []), "-t", targetDuration, "-movflags", "+faststart", outputPath], { timeout: 60000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
           if (error) {
             reject(new Error(stderr || error.message));
             return;

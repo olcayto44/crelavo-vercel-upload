@@ -1,5 +1,6 @@
 import { optionalEnv, requireProviderEnv } from "./env";
 import { createMiniMaxH3VideoTask, hasMiniMaxVideoConfig, miniMaxTaskRecord } from "./minimax";
+import { assertFfmpegAvailable } from "@/lib/ffmpeg-runtime";
 import { miniMaxProductionSettings, miniMaxSegmentDurations } from "./minimax-production-settings";
 import type { ProviderJob } from "./types";
 
@@ -163,6 +164,7 @@ export async function createImageToVideoClip(input: { imageUrl: string; prompt: 
 export async function createVisualVideoSegments(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob[]> {
   const provider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const segmentDurations = provider === "minimax" ? miniMaxSegmentDurations(input.durationSeconds) : [input.durationSeconds];
+  if (provider === "minimax" && input.durationSeconds > 15) assertFfmpegAvailable();
   if (segmentDurations.length === 1) return [await createVisualVideo(input)];
   const jobs = await Promise.all(segmentDurations.map(async (durationSeconds, index) => {
     const job = await createVisualVideo({

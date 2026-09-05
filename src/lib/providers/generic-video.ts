@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import ffmpegPath from "ffmpeg-static";
+import { resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { uploadProviderAsset } from "./storage";
 import { voiceDirectionGuard } from "@/lib/voice-production-guard";
 import { createVoiceover, createVoiceoverSegments, type VoiceAudioSegment } from "./elevenlabs";
@@ -133,11 +133,12 @@ export async function extractAudioTrackFromVideoUrl(input: { productionId: strin
   try {
     await writeFile(videoPath, Buffer.from(await response.arrayBuffer()));
     await new Promise<void>((resolve, reject) => {
-      if (!ffmpegPath) {
-        reject(new Error("ffmpeg-static binary is not available."));
+      const ffmpegBinary = resolveFfmpegPath();
+      if (!ffmpegBinary) {
+        reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
         return;
       }
-      execFile(ffmpegPath, ["-y", "-i", videoPath, "-vn", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+      execFile(ffmpegBinary, ["-y", "-i", videoPath, "-vn", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
         if (error) {
           reject(new Error(stderr || error.message));
           return;
@@ -158,15 +159,16 @@ export async function createAmbientMusicBed(input: { productionId: string; durat
   const audioPath = join(directory, `${input.filenameBase}.m4a`);
   try {
     await new Promise<void>((resolve, reject) => {
-      if (!ffmpegPath) {
-        reject(new Error("ffmpeg-static binary is not available."));
+      const ffmpegBinary = resolveFfmpegPath();
+      if (!ffmpegBinary) {
+        reject(new Error("FFMPEG_RUNTIME_UNAVAILABLE: ffmpeg-static is not present in the deployed server bundle."));
         return;
       }
       const low = input.profile && /luxury|premium/i.test(input.profile) ? 174 : 196;
       const mid = input.profile && /luxury|premium/i.test(input.profile) ? 261 : 294;
       const high = input.profile && /luxury|premium/i.test(input.profile) ? 349 : 392;
       const filter = `[0:a]volume=0.05[a0];[1:a]volume=0.04[a1];[2:a]volume=0.03[a2];[a0][a1][a2]amix=inputs=3:normalize=0:dropout_transition=2,lowpass=f=1800,acompressor=threshold=-22dB:ratio=3:attack=10:release=250,aecho=0.8:0.88:1200:0.2,afade=t=in:ss=0:d=1,afade=t=out:st=${Math.max(0, durationSeconds - 1)}:d=1,volume=1.6`;
-      execFile(ffmpegPath, ["-y", "-f", "lavfi", "-i", `sine=frequency=${low}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${mid}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${high}:sample_rate=44100:duration=${durationSeconds}`, "-filter_complex", filter, "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
+      execFile(ffmpegBinary, ["-y", "-f", "lavfi", "-i", `sine=frequency=${low}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${mid}:sample_rate=44100:duration=${durationSeconds}`, "-f", "lavfi", "-i", `sine=frequency=${high}:sample_rate=44100:duration=${durationSeconds}`, "-filter_complex", filter, "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", audioPath], { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }, (error, _stdout, stderr) => {
         if (error) {
           reject(new Error(stderr || error.message));
           return;
