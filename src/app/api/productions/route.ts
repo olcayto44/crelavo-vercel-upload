@@ -11,7 +11,7 @@ import { findConfiguredProductionPackage, normalizePackageConfig, PACKAGE_CONFIG
 import { estimateProductionCost, getProductionPackage } from "@/lib/production";
 import { estimateProductionProfit } from "@/lib/production-profit";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
-import { billingAccess } from "@/lib/billing-entitlements";
+import { billingAccess, claimPreview } from "@/lib/billing-entitlements";
 import { qualityProfileForProduction } from "@/lib/production-quality";
 import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { hasCinematicActionIntent, hasMinimaxPresenterIntent, sanitizeProviderRouteSignal } from "@/lib/heygen-routing";
@@ -918,6 +918,35 @@ outputPlan,
     const billing = await billingAccess(supabase, userId);
     if (!billing.allowed) {
       return Response.json({ error: "Production is locked while your payment is past due. Update your payment method to unlock production.", code: "payment_past_due", billingStatus: billing.status, updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
+    }
+
+    const { data: trialSubscription } = await supabase
+      .from("subscriptions")
+      .select("status, product_id, plan_id")
+      .eq("user_id", userId)
+      .eq("status", "trialing")
+      .maybeSingle();
+    const trialProduct = String(trialSubscription?.product_id ?? trialSubscription?.plan_id ?? "").toLowerCase();
+    const isBusinessTrial = Boolean(trialSubscription) && /business/.test(trialProduct);
+    if (isBusinessTrial && !isImageProductionRequest && !isPreviewOnlyProduction) {
+      const trialDurationSeconds = Number(body.output_duration_seconds ?? 0) || 0;
+      if (trialDurationSeconds > 10) {
+        return Response.json({
+          error: "Ücretsiz deneme videosu en fazla 10 saniye olabilir. Daha uzun video üretimi için ücretli bir plana geçebilirsiniz.",
+          code: "trial_duration_limit",
+          maxDurationSeconds: 10,
+          upgradeUrl: "/pricing"
+        }, { status: 403 });
+      }
+      const trialEntitlement = await claimPreview(supabase, userId, "business", true);
+      if (!trialEntitlement.ok) {
+        return Response.json({
+          error: "Ücretsiz deneme hakkınız bu kampanyada bir video üretimiyle sınırlıdır. Yeni bir üretim için uygun bir Business planına geçebilirsiniz.",
+          code: "trial_production_limit_reached",
+          remaining: trialEntitlement.remaining ?? 0,
+          upgradeUrl: "/pricing"
+        }, { status: 403 });
+      }
     }
 
     const { data: recentProductions, error: recentProductionsError } = await supabase

@@ -1855,6 +1855,7 @@ export function WorkAssistant({ initialIdea = "", initialCategory = "" }: WorkAs
   const [starting, setStarting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState("");
+  const [trialLimitNotice, setTrialLimitNotice] = useState("");
   const [materials, setMaterials] = useState<UserUploadedMaterial[]>([]);
   const [activeProduction, setActiveProduction] = useState<WorkProductionCard | null>(null);
   const [avatarGallery, setAvatarGallery] = useState<MinimaxGalleryAvatar[]>([]);
@@ -2216,8 +2217,11 @@ const setupForPayload = isImageProduction ? baseSetupForPayload : {
     }).finally(() => window.clearTimeout(timeout));
     const data = await response.json().catch(() => ({}));
     if (data.duplicate_request_reused && data.production) return data.production as WorkProductionCard;
-    if (!response.ok) {
-      const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
+     if (!response.ok) {
+       if (data.code === "trial_production_limit_reached" || data.code === "trial_duration_limit") {
+         setTrialLimitNotice(String(data.error ?? "Ücretsiz deneme hakkınızın sınırına ulaştınız."));
+       }
+       const isCreditError = response.status === 402 || data.redirect === "/dashboard/credits" || /not enough credits|credits required/i.test(String(data.error ?? ""));
       if (isCreditError) {
         const required = Number(data.required ?? data.requiredCredits ?? totalEstimatedCreditsForPayload) || totalEstimatedCreditsForPayload;
         const available = Number(data.available ?? 0) || 0;
@@ -2678,7 +2682,19 @@ if (isImageStart) {
           </div>
         </aside>
 
-        {galleryMode ? <div className="omni-gallery-modal" role="dialog" aria-modal="true">
+         {trialLimitNotice ? <div className="omni-gallery-modal" role="dialog" aria-modal="true">
+           <div className="omni-gallery-card" style={{ maxWidth: 420, textAlign: "center" }}>
+             <strong>Deneme üretimi hakkında</strong>
+             <p style={{ color: "var(--muted)", lineHeight: 1.6 }}>{trialLimitNotice}</p>
+             <p style={{ color: "var(--muted)", lineHeight: 1.6 }}>Bu bir sistem arızası değil; ücretsiz deneme hakkını korumak için uygulanan kampanya sınırıdır.</p>
+             <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 16 }}>
+               <a className="btn" href="/pricing">Planları incele</a>
+               <button className="btn secondary" type="button" onClick={() => setTrialLimitNotice("")}>Kapat</button>
+             </div>
+           </div>
+         </div> : null}
+
+         {galleryMode ? <div className="omni-gallery-modal" role="dialog" aria-modal="true">
           <div className="omni-gallery-card">
             <div className="omni-gallery-head">
               <div>
