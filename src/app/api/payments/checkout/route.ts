@@ -3,7 +3,7 @@ import { findPaymentProduct } from "@/lib/data";
 import { findConfiguredCreditProduct, normalizePackageConfig, PACKAGE_CONFIG_KEY, paymentLinkForConfiguredCreditProduct } from "@/lib/package-config";
 import { createLemonSqueezyCheckout, isLemonSqueezyEnabled, lemonVariantEnvForProduct, type BillingMode } from "@/lib/payment-provider";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
-import { whopCheckoutPath, whopPlanIdForProduct, whopReturnPath } from "@/lib/whop";
+import { whopHostedCheckoutUrl, whopPlanIdForProduct } from "@/lib/whop";
 import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
 import { normalizePartnerCode } from "@/lib/partner-program";
 
@@ -199,9 +199,7 @@ export async function POST(request: Request) {
       if (!whopPlanId) {
         return Response.json({ error: `Whop plan ID is not configured for ${product.name} (${effectiveBilling}).` }, { status: 400 });
       }
-      const origin = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin || "https://www.crelavo.com";
-      const returnUrl = new URL(whopReturnPath, origin).toString();
-      const checkoutUrl = whopCheckoutPath(whopPlanId, returnUrl, { partnerCode, campaign, adAttribution });
+      const checkoutUrl = whopHostedCheckoutUrl(whopPlanId, { partnerCode, campaign });
       const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "whop", checkoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
         url: checkoutUrl,

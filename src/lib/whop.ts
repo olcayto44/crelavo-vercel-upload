@@ -34,6 +34,14 @@ export function hasWhopPlan(productId: string, billing: BillingMode) {
   return Boolean(whopPlanIdForProduct(productId, billing));
 }
 
+export function whopHostedCheckoutUrl(planId: string, metadata?: { partnerCode?: string; campaign?: string }) {
+  const params = new URLSearchParams();
+  if (metadata?.partnerCode) params.set("ref", metadata.partnerCode);
+  if (metadata?.campaign) params.set("campaign", metadata.campaign);
+  const query = params.toString();
+  return `https://whop.com/checkout/${encodeURIComponent(planId)}${query ? `?${query}` : ""}`;
+}
+
 export function whopCheckoutPath(planId: string, returnUrl: string, metadata?: { partnerCode?: string; campaign?: string; adAttribution?: Record<string, string> }) {
   const params = new URLSearchParams({ planId, returnUrl });
   if (metadata?.partnerCode) params.set("ref", metadata.partnerCode);
