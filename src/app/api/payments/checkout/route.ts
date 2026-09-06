@@ -173,11 +173,13 @@ export async function POST(request: Request) {
     const productType = isGrowthService ? "growth_intelligence_service_plan" : isLiveSalesService ? "live_sales_service_plan" : isServicePlan ? "service_subscription" : isProductionPackage || isDronePackage ? "drone_production_package" : product.planType === "topup" ? "credit_topup" : "credit_subscription";
     const checkoutEmail = cleanCheckoutEmail(body.checkoutEmail ?? body.email);
     const consentRecovery = body.consentRecovery === true;
-    const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
-    const previewPolicy = whopPreviewSummary(product, effectiveBilling);
-    const previewNote = whopPreviewNotice(product, effectiveBilling);
+     const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
+     const paymentProvider = String(process.env.PAYMENT_PROVIDER ?? "").trim().toLowerCase();
+     const whopEnabled = paymentProvider === "whop";
+     const previewPolicy = whopPreviewSummary(product, effectiveBilling);
+     const previewNote = whopPreviewNotice(product, effectiveBilling);
 
-    if (configuredDirectUrl) {
+     if (configuredDirectUrl && !whopEnabled) {
       const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "configured_direct_checkout", checkoutUrl: configuredDirectUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
       return Response.json({
         url: configuredDirectUrl,
@@ -193,8 +195,6 @@ export async function POST(request: Request) {
     }
 
     const whopPlanId = whopPlanIdForProduct(product.id, effectiveBilling);
-    const paymentProvider = String(process.env.PAYMENT_PROVIDER ?? "").trim().toLowerCase();
-    const whopEnabled = paymentProvider === "whop";
     if (whopEnabled) {
       if (!whopPlanId) {
         return Response.json({ error: `Whop plan ID is not configured for ${product.name} (${effectiveBilling}).` }, { status: 400 });
