@@ -14,7 +14,8 @@ declare global {
 }
 
 const GOOGLE_ADS_CONVERSION_ID = "AW-18425668664";
-const GOOGLE_ADS_CONVERSION_LABEL = "P87ZCLrf5-4cELjIhdJE";
+const GOOGLE_ADS_PURCHASE_LABEL = "P87ZCLrf5-4cELjIhdJE";
+const GOOGLE_ADS_FREE_TRIAL_LABEL = "9NfFCPW8gfAcELjIhdJE";
 
 export function WhopPaymentReconcileStatus() {
   const searchParams = useSearchParams();
@@ -24,13 +25,21 @@ export function WhopPaymentReconcileStatus() {
   const [message, setMessage] = useState("");
   const conversionSentRef = useRef("");
 
-  function sendPurchaseConversion() {
-    if (!paymentId || conversionSentRef.current === paymentId) return;
-    conversionSentRef.current = paymentId;
+  function sendConversion(label: string) {
+    if (!paymentId || conversionSentRef.current === `${label}:${paymentId}`) return;
+    conversionSentRef.current = `${label}:${paymentId}`;
     window.gtag?.("event", "conversion", {
-      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`,
+      send_to: `${GOOGLE_ADS_CONVERSION_ID}/${label}`,
       transaction_id: paymentId
     });
+  }
+
+  function sendPurchaseConversion() {
+    sendConversion(GOOGLE_ADS_PURCHASE_LABEL);
+  }
+
+  function sendFreeTrialConversion() {
+    sendConversion(GOOGLE_ADS_FREE_TRIAL_LABEL);
   }
 
   useEffect(() => {
@@ -65,6 +74,7 @@ export function WhopPaymentReconcileStatus() {
           return;
         }
         if (payload.reason === "free_trial_started_no_full_credits") {
+          sendFreeTrialConversion();
           setState("info");
           setMessage("Your free 24-hour Whop trial is active. Downloads stay controlled during trial; if you do not cancel within 24 hours, Whop automatically starts the monthly subscription, and full Business credits are added after the paid subscription payment is confirmed.");
           return;
