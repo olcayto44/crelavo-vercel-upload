@@ -39,10 +39,23 @@ export default async function WhopCheckoutPage({ searchParams }: { searchParams?
   const previewNotice = whopPreviewNotice(product, mappedPlan?.billing ?? "monthly");
 
   return (
-    <main className="container section pricing-page">
-      <section className="card payment-checkout-card">
-        <span className="badge">Whop secure checkout</span>
-        <h1>Crelavo checkout</h1>
+    <main className="container section pricing-page whop-embedded-checkout-page">
+      <section className="whop-checkout-header">
+        <div>
+          <span className="badge">Crelavo checkout</span>
+          <h1>Complete your order securely</h1>
+          <p>Review your plan details and complete payment without leaving Crelavo.</p>
+        </div>
+        <div className="whop-secure-mark">Whop secure checkout</div>
+      </section>
+      <section className="card payment-checkout-card whop-checkout-card">
+        <div className="whop-checkout-brand-row">
+          <div>
+            <span className="badge">Selected plan</span>
+            <h2>Crelavo</h2>
+          </div>
+          <span className="whop-secure-label">Secure payment</span>
+        </div>
         <p style={{ color: "var(--muted)" }}>
           {product && mappedPlan
             ? isSubscription
