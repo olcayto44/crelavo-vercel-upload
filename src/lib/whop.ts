@@ -5,10 +5,10 @@ export const whopReturnPath = "/checkout/complete";
 export const whopFreeTrialProductId = "pro_24h_free_trial";
 export const whopFreeTrialProductSlug = "crelavo-24-hour-trial-subscription";
 export const whopFreeTrialProductIdExternal = "prod_zwJDDxNzPytX2";
-export const whopFreeTrialCheckoutUrl = "https://whop.com/checkout/plan_ECfkkMySZHtIZ";
+export const whopFreeTrialCheckoutUrl = "https://whop.com/checkout/plan_ujLQgM3kEg0dg";
 
 export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> = {
-  pro_24h_free_trial: { monthly: "plan_ECfkkMySZHtIZ" },
+  pro_24h_free_trial: { monthly: "plan_ujLQgM3kEg0dg" },
   growth_intelligence_enterprise: { monthly: "plan_ZnbxWuOwrrFwh" },
   growth_intelligence_growth: { monthly: "plan_BCGKWVCrRakWc" },
   growth_intelligence_starter: { monthly: "plan_FlOEa6urAuKEx", yearly: "plan_5l0pLPgYyV1Zu" },
@@ -23,7 +23,7 @@ export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> =
   ultra: { monthly: "plan_UtIprGEXNEooK", yearly: "plan_apVKry7XkvOky" },
   team: { monthly: "plan_rkeOQU3gjmujh", yearly: "plan_jSBaM1LgMuaNL" },
   business: { monthly: "plan_DTxjYMeiRPBWz", yearly: "plan_R3OSfDLVHI9zi" },
-  pro: { monthly: "plan_ECfkkMySZHtIZ", yearly: "plan_A9zegHpbjxAfO" }
+  pro: { monthly: "plan_ujLQgM3kEg0dg", yearly: "plan_fiabRYr6uWY43" }
 };
 
 export function whopPlanIdForProduct(productId: string, billing: BillingMode) {
