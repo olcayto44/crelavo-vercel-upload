@@ -113,7 +113,6 @@ export function SplashAdClient({ slot, geoOffer }: { slot: AdSlotConfig; geoOffe
     <aside className="splash-ad-backdrop" aria-label={slot.name} role="dialog" aria-modal="true">
       <div className="splash-ad-modal">
         <button className="splash-ad-close" type="button" onClick={() => setVisible(false)} aria-label="Close ad">×</button>
-        <span className="ad-slot-label">Launch campaign · Daily limit 3 views</span>
         {promo ? <CampaignPromoClient {...promo} /> : <div className="ad-slot-code" dangerouslySetInnerHTML={{ __html: slot.code }} />}
       </div>
     </aside>
