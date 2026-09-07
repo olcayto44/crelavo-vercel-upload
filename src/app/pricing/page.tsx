@@ -4,7 +4,7 @@ import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
-import { packages, topUpPackages } from "@/lib/data";
+import { packages } from "@/lib/data";
 
 const publicLaunchPlans = packages.filter((plan) => plan.id === "pro");
 import { PricingStructuredData } from "@/components/PricingStructuredData";
@@ -85,10 +85,10 @@ const pricingDecisionCards = [
     cta: "Start free Pro trial"
   },
   {
-    title: "Choose Team Annual if you run many client or product tests",
-    text: "$1,300/year gives 174,000 credits, 12 simultaneous tasks and the agency bundle for bulk ecommerce video production.",
-    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
-    cta: "Start $20 Team preview"
+    title: "Save with annual",
+    text: "$0 today, then $99/year after the 24-hour free trial. Save $21 versus paying $9.99 every 30 days.",
+    href: "https://whop.com/checkout/plan_fiabRYr6uWY43",
+    cta: "Start annual trial"
   },
   {
     title: "Not ready to pay yet? Score the ad first",
@@ -117,38 +117,29 @@ export default async function PricingPage() {
             <span className="badge">Pricing & credits</span>
             <h1>Choose your Crelavo production plan</h1>
             <p className="section-lead">
-              Compare monthly and yearly credits, see estimated video output instantly, start with a paid 24-hour preview, then unlock clean export, campaign delivery, source files and client-ready handoff when the plan starts.
+              Start with a 24-hour free Pro trial. Make one trial production for $0, then continue at $9.99 every 30 days or $99 per year. Card required; cancel in Whop before the trial ends and pay nothing.
             </p>
           </div>
           <div className="promo-corner-slot pricing-promo-slot"><CampaignPromoSlot /></div>
         </section>
 
-        <CreditPlansToggle plans={publicLaunchPlans} ctaLabel="Start 24-Hour Free Trial" compact />
+        <CreditPlansToggle plans={publicLaunchPlans} ctaLabel="Start Free 24-Hour Trial" compact sideBySideAnnual />
 
-        <section className="card admin-wide-card" style={{ marginTop: 24 }}>
-          <span className="badge">Need extra credits?</span>
-          <h2>Add top-up credits</h2>
-          <p className="section-lead">Top-ups stay below the main subscriptions so the first thing visitors see is the core credit package grid.</p>
-          <div style={{ marginTop: 16 }}>
-            <CreditPlansToggle plans={topUpPackages} ctaLabel="Add top-up credits" compact />
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">24-hour paid preview</span>
-          <h2>Test the workflow before the full plan starts</h2>
-          <p className="section-lead">Preview payments keep the first step low-risk: check direction, see a watermarked sample or review notes, then unlock clean downloads and full credits only after the selected subscription starts.</p>
-          <div className="admin-info-grid" style={{ marginTop: 16 }}>
-            <div><span>Step 1</span><strong>Pay preview setup</strong><small>$5 Pro, $10 Business, $15 Ultra or $20 Team preview path.</small></div>
-            <div><span>Step 2</span><strong>Review direction</strong><small>Preview can stay watermarked and downloads remain controlled before full access.</small></div>
-            <div><span>Step 3</span><strong>Unlock clean export</strong><small>Full credits, final files and delivery options open after the subscription starts.</small></div>
-          </div>
-        </section>
+<section className="card admin-wide-card" style={{ marginTop: 28 }}>
+           <span className="badge">24-hour free trial</span>
+           <h2>Try Pro before the subscription starts</h2>
+           <p className="section-lead">Both Pro plans start at $0 today. Card required. Cancel in Whop before the trial ends and you pay nothing.</p>
+           <div className="admin-info-grid" style={{ marginTop: 16 }}>
+             <div><span>Step 1</span><strong>Start free</strong><small>Choose monthly at $9.99 every 30 days or annual at $99/year after the trial.</small></div>
+             <div><span>Step 2</span><strong>Make one production</strong><small>Use one controlled trial production during the first 24 hours.</small></div>
+             <div><span>Step 3</span><strong>Continue or cancel</strong><small>Continue in Whop or cancel before the trial ends with no charge.</small></div>
+           </div>
+         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 28 }}>
           <span className="badge">Choose faster</span>
           <h2>Pick the safest next step for your situation</h2>
-          <p className="section-lead">Use Business for one brand, Team Annual for agency-scale production, or the free ad scorer if the creative angle is not ready yet.</p>
+          <p className="section-lead">Start with Pro monthly, save with Pro annual, or use the free ad scorer if your creative angle is not ready yet.</p>
           <div className="admin-category-grid" style={{ marginTop: 18 }}>
             {pricingDecisionCards.map((item) => (
               <Link className="card admin-category-card" href={item.href} key={item.title}>

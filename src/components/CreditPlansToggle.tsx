@@ -84,20 +84,26 @@ function compactPlanHighlights(plan: CreditPlan, billingMode: "monthly" | "yearl
   ].filter(Boolean) as string[];
 }
 
-export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact = false }: { plans: CreditPlan[]; ctaLabel?: string; compact?: boolean }) {
+export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact = false, sideBySideAnnual = false }: { plans: CreditPlan[]; ctaLabel?: string; compact?: boolean; sideBySideAnnual?: boolean }) {
   const [billingMode, setBillingMode] = useState<"monthly" | "yearly">("monthly");
   const isTopUpList = plans.every((plan) => plan.planType === "topup");
+  const displayItems = sideBySideAnnual && !isTopUpList
+    ? plans.flatMap((plan) => [
+        { plan, billingOverride: "monthly" as const },
+        { plan: { ...plan, name: `${plan.name} Annual`, price: "$99/year", yearlyPriceUsd: 99, description: "Same Pro access, billed once a year after the 24-hour free trial." }, billingOverride: "yearly" as const }
+      ])
+    : plans.map((plan) => ({ plan, billingOverride: undefined }));
 
   return (
     <section className={`credit-plan-section${compact ? " compact-credit-plans" : ""}`}>
       <div className="credit-plan-head">
         <div>
           <span className="badge"><CreditCard size={14} /> {isTopUpList ? "One-time credit purchases" : "Recurring credit subscriptions"}</span>
-          <h2>{isTopUpList ? "Buy extra credits whenever you need them" : "Choose a monthly or yearly credit subscription"}</h2>
-          <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : "Start with a paid 24-hour preview. Monthly renews every subscription cycle; yearly gives 12 months of access for the price of 10 months."}</p>
+<h2>{isTopUpList ? "Buy extra credits whenever you need them" : sideBySideAnnual ? "Choose your Pro trial plan" : "Choose a monthly or yearly credit subscription"}</h2>
+           <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : sideBySideAnnual ? "Both plans start at $0 today with a 24-hour free trial. Card required; cancel in Whop before the trial ends and pay nothing." : "Start with a 24-hour free trial. Monthly renews every 30 days; yearly gives 12 months of access."}</p>
         </div>
-        {!isTopUpList ? (
-          <div>
+{!isTopUpList && !sideBySideAnnual ? (
+           <div>
             <div className="billing-toggle" aria-label="Billing period selection">
               <button className={billingMode === "monthly" ? "active" : ""} type="button" onClick={() => setBillingMode("monthly")}>Monthly</button>
               <button className={billingMode === "yearly" ? "active" : ""} type="button" onClick={() => setBillingMode("yearly")}>Yearly</button>
@@ -109,10 +115,11 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
       </div>
 
       <div className="grid credit-plan-grid" style={{ marginTop: 14 }}>
-        {plans.map((plan) => {
-          const effectiveBilling = plan.planType === "topup" ? "one_time" : billingMode;
-          const credits = plan.planType === "topup" ? plan.credits : planCredits(plan, billingMode);
-          const price = plan.planType === "topup" ? plan.price : planPrice(plan, billingMode);
+{displayItems.map(({ plan, billingOverride }) => {
+           const effectiveBilling = plan.planType === "topup" ? "one_time" : billingOverride ?? billingMode;
+const subscriptionBilling = effectiveBilling === "one_time" ? "monthly" : effectiveBilling;
+           const credits = plan.planType === "topup" ? plan.credits : planCredits(plan, subscriptionBilling);
+           const price = plan.planType === "topup" ? plan.price : planPrice(plan, subscriptionBilling);
           const productId = plan.id ?? plan.name;
           const isRecommended = plan.priceUsd === 79 || plan.name.toLowerCase() === "business";
           const normalizedPlanName = plan.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
