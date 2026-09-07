@@ -45,16 +45,16 @@ const couponHuntCards = [
 
 const freeToolPreviewOffers = [
   {
-    title: "$10 Business preview",
-    text: "Best for a single seller testing controlled 1080p ecommerce ads, product video variations and campaign assets before the $59 monthly plan continues.",
-    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
-    cta: "Start $10 preview"
+    title: "Crelavo Pro 24-hour trial",
+    text: "Start for $0 with one trial production and 2,500 credits/month after the trial. Then $9.99 every 30 days unless cancelled in Whop.",
+    href: "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
+    cta: "Start free 24-hour trial"
   },
   {
-    title: "$20 Team Annual preview",
-    text: "Best for agencies and ecommerce teams testing the 174,000-credit annual workflow, 12 simultaneous tasks and team workspace before yearly billing continues.",
-    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
-    cta: "Start $20 preview"
+    title: "Crelavo Pro Annual",
+    text: "Use the same 24-hour trial, then continue at $99/year unless cancelled in Whop.",
+    href: "https://whop.com/checkout/plan_fiabRYr6uWY43",
+    cta: "Start free 24-hour trial"
   }
 ];
 
@@ -90,7 +90,7 @@ export default async function FreeToolsPage() {
             <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script, product idea or ad score.</small></div>
             <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output or ad score is carried into Assistant Workspace.</small></div>
             <div><span>Step 3</span><strong>Start production</strong><small>Turn the result into a delivery plan, credits and final package.</small></div>
-            <div><span>Step 4</span><strong>Test with a preview</strong><small>Start with a $10 Business preview or $20 Team preview before committing to the full plan.</small></div>
+            <div><span>Step 4</span><strong>Start the Pro trial</strong><small>Start for $0, make one trial production, then continue monthly or annually unless cancelled in Whop.</small></div>
           </div>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {freeToolPreviewOffers.map((offer) => (

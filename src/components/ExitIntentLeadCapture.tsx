@@ -160,8 +160,8 @@ export function ExitIntentLeadCapture() {
       <div className="card" style={{ width: "min(560px, 100%)", border: "1px solid rgba(255,255,255,0.18)", boxShadow: "0 24px 80px rgba(0,0,0,0.35)", position: "relative" }}>
         <button type="button" onClick={() => setVisible(false)} aria-label="Close" style={{ position: "absolute", right: 14, top: 14, border: 0, borderRadius: 999, width: 34, height: 34, cursor: "pointer", background: "rgba(255,255,255,0.12)", color: "var(--text)" }}>×</button>
         <span className="badge">Free ecommerce ad guide</span>
-        <h2 style={{ marginTop: 12 }}>Not ready for the agency bundle yet?</h2>
-        <p style={{ color: "var(--muted)", fontSize: 16 }}>Get the ecommerce video ad strategy guide plus a trial credit offer by email. Use it to improve hooks, proof, CTA and product demo angles before buying a preview.</p>
+<h2 style={{ marginTop: 12 }}>Start Crelavo Pro free for 24 hours</h2>
+         <p style={{ color: "var(--muted)", fontSize: 16 }}>Card required. No charge until the trial ends. Cancel in Whop before 24 hours and you pay $0.</p>
 
         {status === "success" ? (
           <div className="workspace-action-note" style={{ marginTop: 18 }}>

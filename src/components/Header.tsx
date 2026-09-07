@@ -63,7 +63,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
       return { ...item, label };
     })
-    .filter((item, index, items) => item.label !== "Categories" && items.findIndex((candidate) => candidate.label === item.label) === index);
+    .filter((item, index, items) => !["Categories", "Credits", "Live Sales Plans", "Drone Plans"].includes(item.label) && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
     <header className="container nav site-main-nav">
       <Link className="logo" href="/">

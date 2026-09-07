@@ -1,5 +1,6 @@
 import Script from "next/script";
 import { HardReloadLink } from "@/components/HardReloadLink";
+import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 function SocialIcon({ name }: { name: "instagram" | "youtube" | "tiktok" | "x" | "linkedin" | "reddit" }) {
   if (name === "instagram") return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>;
@@ -52,7 +53,7 @@ export async function SiteFooter() {
         <div className="site-footer-group footer-core-services">
           <h3>Start here</h3>
           <nav>
-            <HardReloadLink href="/dashboard/create">Start production brief</HardReloadLink>
+            <HardReloadLink href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</HardReloadLink>
             <HardReloadLink href="/pricing">Pricing and credits</HardReloadLink>
             <HardReloadLink href="/free-tools/ad-performance-score-checker">Free AI ad scorer</HardReloadLink>
             <HardReloadLink href="/blog">AI production guides</HardReloadLink>
@@ -107,15 +108,6 @@ export async function SiteFooter() {
             <a href="https://www.reddit.com/user/crelavo/" target="_blank" rel="noopener noreferrer" aria-label="Crelavo on Reddit"><SocialIcon name="reddit" /><span>Reddit</span></a>
           </nav>
         </div>
-      </div>
-
-      <div className="footer-commerce-shortcuts footer-commerce-row" aria-label="E-commerce campaign shortcuts">
-        <HardReloadLink href="/dashboard/create?idea=Shopify%20product%20link%20ad&category=campaign&mode=commerce">Shopify campaign</HardReloadLink>
-        <HardReloadLink href="/dashboard/create?idea=Amazon%20product%20campaign&category=campaign&mode=commerce">Amazon campaign</HardReloadLink>
-        <HardReloadLink href="/dashboard/create?idea=Trendyol%20product%20video&category=campaign&mode=commerce">Trendyol video</HardReloadLink>
-        <HardReloadLink href="/dashboard/create?idea=Product%20link%20to%20ad%20video&category=campaign&mode=commerce">Product link ad</HardReloadLink>
-        <HardReloadLink href="/woocommerce-ai-product-video-plugin">WooCommerce plugin</HardReloadLink>
-        <HardReloadLink href="/tiktok-shop-ai-live-sales-agent">TikTok Shop live sales</HardReloadLink>
       </div>
 
       <div className="site-footer-brand footer-brand-bottom-copy">

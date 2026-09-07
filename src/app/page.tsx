@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { Clapperboard, Grid3X3, Plane, Smartphone, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
 import { FaqSection } from "@/components/FaqSection";
@@ -11,7 +10,6 @@ import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeSho
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { SplashAd } from "@/components/SplashAd";
 import { TruthfulLiveActivity } from "@/components/TruthfulLiveActivity";
-import { geoOfferFromHeaders } from "@/lib/geo-offers";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
@@ -19,19 +17,19 @@ import { caseStudyProofs, socialProofMetrics, testimonialProofs, trustedProofSlo
 
 export const metadata: Metadata = {
   title: "Crelavo AI Production Platform for Ecommerce Ads, Product Videos and Campaigns",
-  description: "Start with free AI ad scoring, try Crelavo Business free for 24 hours, then create ecommerce product videos, UGC ads, landing pages and campaign assets with credits.",
+  description: "Start a 24-hour Pro trial for $0, make one production, then continue at $9.99/month or $99/year unless cancelled in Whop.",
   keywords: ["AI product video generator", "AI ad scorer", "ecommerce video ads", "Shopify product video", "Amazon product video", "UGC ad scripts", "AI campaign generator"],
   alternates: { canonical: "/" },
   openGraph: {
     title: "Crelavo AI Production Platform for Ecommerce Ads and Product Videos",
-    description: "Score ads free, test a preview, then scale product videos, UGC ads and ecommerce campaign assets.",
-    url: "/",
+description: "Start a 24-hour Pro trial for $0, then continue at $9.99/month or $99/year unless cancelled in Whop.",
+   url: "/",
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
     title: "Crelavo AI Production Platform",
-    description: "Free ad scoring, low-risk preview checkout and credit-based AI production for ecommerce teams."
+    description: "24-hour Pro trial for $0, then $9.99/month or $99/year unless cancelled in Whop."
   }
 };
 
@@ -40,7 +38,7 @@ const homepageGoalWizard = [
     title: "I want to sell my product internationally",
     description: "Localize product ads, hooks, visuals and campaign direction for another country.",
     cta: "Start global campaign",
-    href: "/dashboard/create?idea=I%20want%20to%20sell%20my%20product%20internationally&category=cultural_localization&mode=media",
+    href: whopFreeTrialCheckoutUrl,
     badge: "Recommended for global sellers",
     step: "01"
   },
@@ -56,7 +54,7 @@ const homepageGoalWizard = [
     title: "I want to create from scratch",
     description: "Create a product video, website, landing page, campaign pack, virtual model visual or launch asset from one brief.",
     cta: "Start from scratch",
-    href: "/dashboard/create?idea=I%20want%20to%20create%20from%20scratch&mode=media",
+    href: whopFreeTrialCheckoutUrl,
     badge: "Best for new ideas",
     step: "03"
   }
@@ -66,7 +64,7 @@ const appLauncherSlides: HomeShowcaseSlide[] = [
   { title: "Explore", kicker: "Samples", description: "Browse large sample outputs and open dedicated detail pages.", href: "/showcase/explore-samples", tone: "cyan", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192157407622951-1783192157402.png" },
   { title: "Assets", kicker: "Materials", description: "Use images, videos, audio references and documents across productions.", href: "/showcase/assets-library", tone: "green", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192199380895416-1783192199376.png" },
   { title: "Omni", kicker: "Assistant", description: "Tell Crelavo what you want to create and let the system route the workflow.", href: "/showcase/omni-assistant", tone: "blue", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192218134042523-1783192218131.png" },
-  { title: "Generate", kicker: "Create", description: "Start video, web, app, brand file or visual production from one hub.", href: "/dashboard/create", tone: "pink", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192231039044746-1783192231031.png" },
+  { title: "Generate", kicker: "Create", description: "Start video, web, app, brand file or visual production from one hub.", href: whopFreeTrialCheckoutUrl, tone: "pink", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192231039044746-1783192231031.png" },
   { title: "Workspace", kicker: "Live tracking", description: "Track live productions, revisions, outputs and final delivery packages.", href: "/showcase/live-workspace", tone: "amber", imageUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-05-03/image/1783192247858193551-1783192247854.png" }
 ];
 
@@ -354,7 +352,7 @@ const featuredTools = [
   { title: "Free Ad Scorer", href: "/free-tools/ad-performance-score-checker", icon: Sparkles },
   { title: "Localization Brief", href: "/ai-cultural-localization", icon: Plane },
   { title: "Website / App Assets", href: "/ai-website-builder", icon: Wand2 },
-  { title: "Mobile App Production", href: "/dashboard/create?category=mobile_app&mode=project", icon: Smartphone },
+  { title: "Mobile App Production", href: whopFreeTrialCheckoutUrl, icon: Smartphone },
   { title: "Full Tools Catalog", href: "/tools", icon: Grid3X3 }
 ];
 
@@ -363,16 +361,16 @@ const paidGrowthFunnelCards = [
   {
     badge: "Free tool entry",
     title: "Score your ad before buying production credits",
-    description: "Use the free AI Ad Scorer to find weak hooks, CTA gaps and proof problems before moving into the free 24-hour Business trial or Team preview.",
+    description: "Use the free AI Ad Scorer, or start Crelavo Pro free for 24 hours. Then $9.99/month unless cancelled in Whop.",
     href: "/free-tools/ad-performance-score-checker",
     cta: "Run the free ad score"
   },
   {
-    badge: "Meta Sales hook",
-    title: "$20 Team Annual preview for agencies",
-    description: "For Shopify, Amazon FBA and WooCommerce teams: test the Team Annual workflow for 24 hours before the $1,300 yearly plan continues.",
-    href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000",
-    cta: "Start $20 team preview"
+    badge: "Annual Pro",
+    title: "Save with Crelavo Pro Annual",
+    description: "Same 24-hour trial. Then $99/year unless cancelled in Whop.",
+    href: "https://whop.com/checkout/plan_fiabRYr6uWY43",
+    cta: "Start free 24-hour trial"
   },
   {
     badge: "Pro free trial",
@@ -426,7 +424,7 @@ const homeDeliveryTrust = [
 ];
 
 export default async function HomePage() {
-  const [siteContent, requestHeaders, configuredShowcaseVideos] = await Promise.all([getConfiguredSiteContentConfig(), headers(), getConfiguredShowcaseVideos()]);
+  const [siteContent, configuredShowcaseVideos] = await Promise.all([getConfiguredSiteContentConfig(), getConfiguredShowcaseVideos()]);
   const homepageShowcaseSlides: HomeShowcaseSlide[] = configuredShowcaseVideos.map((video, index) => ({
     title: video.title,
     kicker: video.kicker,
@@ -437,14 +435,7 @@ export default async function HomePage() {
     videoUrl: video.videoUrl
   }));
 
-  const geoOffer = geoOfferFromHeaders(await headers());
-  const localizedPaidGrowthFunnelCards = paidGrowthFunnelCards.map((item) => item.href.includes("team-annual-174000") ? {
-    ...item,
-    badge: geoOffer.homepageBadge,
-    title: geoOffer.homepageTitle,
-    description: geoOffer.homepageDescription,
-    cta: "Start $20 team preview"
-  } : item);
+  const localizedPaidGrowthFunnelCards = paidGrowthFunnelCards;
 
   return (
     <>
@@ -456,7 +447,7 @@ export default async function HomePage() {
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
         <strong>$0 today</strong>
         <span className="trial-top-strip-copy">Try Crelavo Pro free for 24 hours — then get 2,500 credits/month at $9.99 unless cancelled in Whop.</span>
-        <span className="trial-top-strip-cta">Claim now</span>
+        <span className="trial-top-strip-cta">Start free 24-hour trial</span>
       </HardReloadLink>
       <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
@@ -467,14 +458,14 @@ export default async function HomePage() {
               <strong>$0 today</strong>
               <span className="trial-fomo-price">2,500 credits/month after trial</span>
               <span className="trial-fomo-copy">Most tools charge first. Crelavo gives you 24 hours free before the 2,500-credit Pro plan starts.</span>
-              <span className="trial-fomo-countdown">24h window · cancel before it ends</span>
-              <span className="trial-fomo-cta">Claim trial</span>
+              <span className="trial-fomo-countdown">Card required · no charge until trial ends</span>
+              <span className="trial-fomo-cta">Start free 24-hour trial</span>
             </HardReloadLink>
           </aside>
           <HardReloadLink className="trial-mobile-fomo" href={whopFreeTrialCheckoutUrl}>
             <span>FLASH: 24h free Pro trial · 2,500 credits/month</span>
             <strong>$0 today</strong>
-            <em>Claim now</em>
+            <em>Start free 24-hour trial</em>
           </HardReloadLink>
           <section className="container trial-fomo-hero" aria-label="Pro 24-hour free trial offer">
             <div className="trial-fomo-hero-copy">
@@ -492,7 +483,7 @@ export default async function HomePage() {
               </div>
               <div className="trial-deal-divider" />
               <span className="trial-deal-after">After trial: $9.99/mo unless cancelled in Whop</span>
-              <HardReloadLink className="btn trial-fomo-hero-cta" href={whopFreeTrialCheckoutUrl}>Claim the 24h free trial</HardReloadLink>
+              <HardReloadLink className="btn trial-fomo-hero-cta" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</HardReloadLink>
             </div>
           </section>
           <CrelavoPremiumHero />
@@ -524,8 +515,8 @@ export default async function HomePage() {
             <div className="sample-video-head">
               <div>
                 <span className="badge"><Sparkles size={15} /> Paid traffic funnel</span>
-                <h2 id="home-paid-growth-funnel-heading">Start free, test with a preview, then scale only when the creative works</h2>
-                <p className="section-lead">Crelavo is now positioned for Meta Sales traffic: free ad scoring, low-risk Whop previews and clear upgrade paths for Shopify, Amazon and agency teams.</p>
+                <h2 id="home-paid-growth-funnel-heading">Start free, then scale when the creative works</h2>
+                <p className="section-lead">Crelavo is now positioned for Meta Sales traffic: free ad scoring and a clear Pro trial path for Shopify, Amazon and agency teams.</p>
               </div>
               <HardReloadLink className="btn" href="/free-tools/ad-performance-score-checker">Open free Ad Scorer</HardReloadLink>
             </div>
@@ -548,7 +539,7 @@ export default async function HomePage() {
                 <h2>Know what happens before you spend credits</h2>
                 <p className="section-lead">Crelavo should feel safe before checkout: clear brief, visible scope, dashboard delivery and revision-ready handoff.</p>
               </div>
-              <HardReloadLink className="btn" href="/dashboard/create">Start a production brief</HardReloadLink>
+              <HardReloadLink className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</HardReloadLink>
             </div>
             <div className="admin-category-grid" style={{ marginTop: 16 }}>
               {homeDeliveryTrust.map((item) => (

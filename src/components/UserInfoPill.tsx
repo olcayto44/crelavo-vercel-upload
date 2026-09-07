@@ -48,7 +48,7 @@ export function UserInfoPill() {
     return (
       <div className="auth-action-pills">
         <Link className="btn secondary auth-mini-btn" href="/auth/login">Sign in</Link>
-        <Link className="btn auth-mini-btn" href={whopFreeTrialCheckoutUrl}>Create account</Link>
+        <Link className="btn auth-mini-btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</Link>
       </div>
     );
   }

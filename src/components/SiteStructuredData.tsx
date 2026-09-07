@@ -68,7 +68,7 @@ export function SiteStructuredData() {
         inLanguage: "en-US",
         mainEntity: { "@id": `${siteUrl}/#app` },
         potentialAction: [
-          { "@type": "CreateAction", target: `${siteUrl}/dashboard/create`, name: "Start Crelavo production" },
+          { "@type": "BuyAction", target: "https://whop.com/checkout/plan_ujLQgM3kEg0dg", name: "Start free 24-hour trial" },
           { "@type": "AssessAction", target: `${siteUrl}/free-tools/ad-performance-score-checker`, name: "Score an ad for free" },
           { "@type": "ViewAction", target: `${siteUrl}/pricing`, name: "View Crelavo pricing and credits" }
         ]
@@ -103,7 +103,7 @@ export function SiteStructuredData() {
           "Dashboard delivery packages",
           "AI + human quality assurance"
         ],
-        description: "AI-powered e-commerce product video ad generator and managed production platform for Shopify, Amazon and marketplace sellers. Crelavo supports product-link-to-video workflows, 24-hour preview checkout, credit rollover, campaign assets and AI + human QA delivery.",
+        description: "AI-powered e-commerce product video workspace. Start a 24-hour Pro trial for $0, make one production, then continue at $9.99/month or $99/year unless cancelled in Whop.",
         softwareHelp: `${siteUrl}/api-documentation`,
         screenshot: `${siteUrl}/showcase/ai-production-studio.webp`,
         offers: {
@@ -111,8 +111,9 @@ export function SiteStructuredData() {
           url: `${siteUrl}/pricing`,
           priceCurrency: "USD",
           availability: "https://schema.org/OnlineOnly",
-          lowPrice: 10,
-          offerCount: 6
+lowPrice: 9.99,
+           highPrice: 99,
+           offerCount: 2
         }
       },
       {
@@ -128,9 +129,9 @@ export function SiteStructuredData() {
           "@type": "AggregateOffer",
           url: `${siteUrl}/pricing`,
           priceCurrency: "USD",
-          lowPrice: 10,
-          highPrice: 1300,
-          offerCount: 6,
+lowPrice: 9.99,
+           highPrice: 99,
+           offerCount: 2,
           availability: "https://schema.org/OnlineOnly"
         }
       },

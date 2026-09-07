@@ -39,8 +39,8 @@ const heroScenes = [
     kicker: "AI production workspace",
     title: "Videos, websites, apps and campaign assets in one system.",
     text: "Crelavo combines AI speed with human quality assurance for source handoff, preview links, final files, revisions and campaign-ready delivery.",
-    cta: "Start production",
-    href: "/dashboard/create",
+    cta: "Start free 24-hour trial",
+    href: whopFreeTrialCheckoutUrl,
     tone: "green",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501593829539623-1784501593820.mp4",
     tags: ["Video", "Website", "Voiceover", "Final ZIP"]
@@ -76,9 +76,9 @@ export function CrelavoPremiumHero() {
           <h1>Crelavo: AI Production Studio for E-Commerce, Apps and Campaigns</h1>
           <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
           <div className="crelavo-hero-actions">
-            <Link className="btn" href="/dashboard/create">Start production <ArrowRight size={16} /></Link>
-            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score my ad for free</Link>
-            <Link className="btn secondary" href="/pricing">View pricing</Link>
+             <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial <ArrowRight size={16} /></Link>
+             <Link className="btn secondary" href="https://whop.com/checkout/plan_fiabRYr6uWY43">$99/year after 24 hours</Link>
+             <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
             {heroModels.map((item) => <span key={item}>{item}</span>)}
@@ -112,7 +112,7 @@ export function CrelavoPremiumHero() {
           </div>
           <div className="crelavo-live-output-grid">
             {livePreviewCards.map((card) => (
-              <Link href="/dashboard/create" className="crelavo-live-output-card" key={card.label}>
+              <Link href={whopFreeTrialCheckoutUrl} className="crelavo-live-output-card" key={card.label}>
                 <small>{card.meta}</small>
                 <strong>{card.label}</strong>
                 <span>{card.value}</span>
