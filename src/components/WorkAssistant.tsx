@@ -1527,15 +1527,15 @@ function assistantReply(plan: StudioPlan, language = "auto") {
   const project = isProjectType(plan.production_type);
   const image = isImageProductionType(plan.production_type);
   if (language !== "tr") {
-    if (image) return `I prepared the ${typeLabel} production setup. Review image type, output count, style, aspect ratio and PNG/JPG delivery, then press Start Production when you are ready.`;
+    if (image) return `I prepared the ${typeLabel} production setup. ${plan.summary ? `${plan.summary} ` : ""}Review image type, output count, style, aspect ratio and PNG/JPG delivery, then press Start Production when you are ready.`;
     return project
-      ? `I prepared the ${typeLabel} production setup. It will include source files, README, preview and dashboard delivery. Press Start Production when you are ready.`
-      : `I prepared the ${typeLabel} production setup. Review duration, quality, voice, subtitles, music and transition options, then press Start Production when you are ready.`;
+      ? `I prepared the ${typeLabel} production setup. ${plan.summary ? `${plan.summary} ` : ""}It will include source files, README, preview and dashboard delivery. Press Start Production when you are ready.`
+      : `I prepared the ${typeLabel} production setup. ${plan.summary ? `${plan.summary} ` : ""}Review duration, quality, voice, subtitles, music and transition options, then press Start Production when you are ready.`;
   }
-  if (image) return `${typeLabel} için üretim ayarlarını hazırladım. Görsel tipi, çıktı sayısı, stil, oran ve PNG/JPG teslimini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
+  if (image) return `${typeLabel} için üretim ayarlarını hazırladım. ${plan.summary ? `${plan.summary} ` : ""}Görsel tipi, çıktı sayısı, stil, oran ve PNG/JPG teslimini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
   return project
-    ? `${typeLabel} için üretim ayarlarını hazırladım. Kaynak kod, kurulum notu, ön izleme ve panel teslimiyle hazırlanacak. Hazırsan Üretimi başlat butonuna bas.`
-    : `${typeLabel} için üretim ayarlarını hazırladım. Süre, kalite, ses, altyazı, müzik ve geçiş seçeneklerini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
+    ? `${typeLabel} için üretim ayarlarını hazırladım. ${plan.summary ? `${plan.summary} ` : ""}Kaynak kod, kurulum notu, ön izleme ve panel teslimiyle hazırlanacak. Hazırsan Üretimi başlat butonuna bas.`
+    : `${typeLabel} için üretim ayarlarını hazırladım. ${plan.summary ? `${plan.summary} ` : ""}Süre, kalite, ses, altyazı, müzik ve geçiş seçeneklerini kontrol et; hazırsan Üretimi başlat butonuna bas.`;
 }
 
 function isStartIntent(prompt: string) {
