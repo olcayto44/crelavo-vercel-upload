@@ -116,7 +116,7 @@ function shouldAddCredits(product: Product, billing: string, payment: WhopObject
   if (product.planType !== "subscription") return { add: false, reason: "service_subscription_no_credit_balance" };
 
   const setupFeeUsd = "setupFeeUsd" in product && typeof product.setupFeeUsd === "number" ? product.setupFeeUsd : undefined;
-  const expectedRenewalUsd = billing === "yearly" ? product.priceUsd * 10 : product.priceUsd;
+  const expectedRenewalUsd = billing === "yearly" && "yearlyPriceUsd" in product && typeof product.yearlyPriceUsd === "number" ? product.yearlyPriceUsd : billing === "yearly" ? product.priceUsd * 10 : product.priceUsd;
   const renewalSizedPayment = amountMatchesUsd(amount, expectedRenewalUsd);
   const setupFeePayment = typeof setupFeeUsd === "number" && setupFeeUsd > 0 && amountMatchesUsd(amount, setupFeeUsd);
   const previewPayment = status === "trialing" || setupFeePayment || (reason === "subscription_create" && !renewalSizedPayment);

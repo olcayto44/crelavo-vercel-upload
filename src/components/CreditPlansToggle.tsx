@@ -10,6 +10,7 @@ type CreditPlan = {
   billing: string;
   price: string;
   priceUsd?: number;
+  yearlyPriceUsd?: number;
   credits: number;
   yearlyCredits?: number;
   description: string;
@@ -36,7 +37,7 @@ function formatUsd(value: number) {
 function planPrice(plan: CreditPlan, billingMode: "monthly" | "yearly") {
   if (!plan.priceUsd) return plan.price;
   const suffix = plan.name === "Team" ? "/seat" : "";
-  return billingMode === "monthly" ? `$${plan.priceUsd}${suffix}/mo` : `${formatUsd(plan.priceUsd * 10)}${suffix}/yr`;
+  return billingMode === "monthly" ? `$${plan.priceUsd}${suffix}/mo` : `${formatUsd(plan.yearlyPriceUsd ?? plan.priceUsd * 10)}${suffix}/yr`;
 }
 
 function planCredits(plan: CreditPlan, billingMode: "monthly" | "yearly") {
@@ -159,7 +160,7 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
               ) : null}
               {!compact && previewNotice ? <p className="plan-savings-line">{previewNotice}</p> : null}
               {yearlyDealLabel ? <p className="plan-savings-line flash-deal-line">{yearlyDealLabel}</p> : null}
-              {!compact && plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
+              {!compact && plan.planType !== "topup" && billingMode === "yearly" && plan.priceUsd ? <p className="plan-savings-line">Normally {formatUsd(plan.priceUsd * 12)}/yr, now {formatUsd(plan.yearlyPriceUsd ?? plan.priceUsd * 10)}/yr. 2 months free.</p> : null}
               {!compact ? (
                 <>
                   <div className="plan-value-stack compact">

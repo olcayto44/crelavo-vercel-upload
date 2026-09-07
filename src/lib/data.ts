@@ -808,6 +808,7 @@ export const packages = [
     billing: "Monthly",
     price: "$9.99/mo after 1-day free trial",
     priceUsd: 9.99,
+    yearlyPriceUsd: 99,
     setupFeeUsd: 0,
     credits: 2500,
     planType: "subscription",

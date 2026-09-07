@@ -15,6 +15,7 @@ type PreviewProductLike = {
   planType?: string;
   setupFeeUsd?: number;
   priceUsd?: number;
+  yearlyPriceUsd?: number;
 };
 
 export function isWhopFreeTrialPreview(product: PreviewProductLike | null | undefined) {
@@ -31,7 +32,7 @@ export function whopPreviewSetupFee(product: PreviewProductLike | null | undefin
 
 export function whopMainChargeUsd(product: PreviewProductLike | null | undefined, billing: string) {
   if (!hasWhopPreview(product) || typeof product?.priceUsd !== "number") return 0;
-  return billing === "yearly" ? product.priceUsd * 10 : product.priceUsd;
+  return billing === "yearly" ? product.yearlyPriceUsd ?? product.priceUsd * 10 : product.priceUsd;
 }
 
 export function whopPreviewSummary(product: PreviewProductLike | null | undefined, billing: string) {
