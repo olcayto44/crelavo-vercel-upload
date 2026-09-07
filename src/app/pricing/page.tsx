@@ -77,10 +77,10 @@ const pricingTrustPoints = [
 
 const pricingDecisionCards = [
   {
-    title: "Choose Business if you want clean exports for one brand",
-    text: "$59/month with 12,000 credits is the safer path for solo sellers, small Shopify stores and first product video tests.",
-    href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
-    cta: "Start $10 Business preview"
+    title: "Choose Pro to start with one free trial production",
+    text: "$0 for the first 24 hours, then $9.99/month with 2,500 credits unless cancelled in Whop.",
+    href: "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
+    cta: "Start free Pro trial"
   },
   {
     title: "Choose Team Annual if you run many client or product tests",

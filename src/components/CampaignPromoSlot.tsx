@@ -31,9 +31,9 @@ function parsePromoPayload(code: string): (CampaignPromoPayload & { eyebrow: str
     return {
       eyebrow: String(value.eyebrow || "Limited-time launch offer"),
       title: String(value.title || "12,000 credits are live"),
-      body: String(value.body || "Start your 24-hour preview for just $10. The Business plan now gives 12,000 credits instead of the usual 9,000."),
-      cta: String(value.cta || "Start preview for $10"),
-      href: String(value.href || "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"),
+      body: String(value.body || "Start your 24-hour Pro trial for $0. Make one trial production, then continue at $9.99/month unless cancelled through Whop."),
+      cta: String(value.cta || "Start free Pro trial"),
+      href: String(value.href || "https://whop.com/checkout/plan_ujLQgM3kEg0dg"),
       endsAt: value.endsAt ? String(value.endsAt) : undefined,
       durationDays: Number.isFinite(durationDays) ? durationDays : DEFAULT_PROMO_DAYS,
       storageKey: String(value.storageKey || "crelavo-business-12000-countdown"),

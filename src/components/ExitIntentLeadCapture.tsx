@@ -166,7 +166,7 @@ export function ExitIntentLeadCapture() {
         {status === "success" ? (
           <div className="workspace-action-note" style={{ marginTop: 18 }}>
             <p><strong>{message}</strong></p>
-            <p>Next: run the free ad score checker or start the $10 Business preview when you are ready.</p>
+            <p>Next: run the free ad score checker or start the free Pro trial when you are ready.</p>
           </div>
         ) : (
           <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, marginTop: 18 }}>
@@ -190,7 +190,7 @@ export function ExitIntentLeadCapture() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
           <Link className="secondary-button" href="/free-tools/ad-performance-score-checker" onClick={() => setVisible(false)}>Run free ad score</Link>
-          <Link className="secondary-button" href="/dashboard/payment?package=business&billing=monthly&campaign=business-12000" onClick={() => setVisible(false)}>Start $10 Business preview</Link>
+          <Link className="secondary-button" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg" onClick={() => setVisible(false)}>Start free Pro trial</Link>
         </div>
       </div>
     </div>
