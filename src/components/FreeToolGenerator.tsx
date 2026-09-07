@@ -205,7 +205,7 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={workspaceHref}>Start production with this result</Link>
-          {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href={whopFreeTrialCheckoutUrl}>Start free Business trial from this score</Link> : null}
+          {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href={whopFreeTrialCheckoutUrl}>Start free Pro trial from this score</Link> : null}
           {tool.slug === "ad-performance-score-checker" ? <Link className="btn secondary" href="/dashboard/payment?package=team&billing=yearly&campaign=free-ad-score-team-preview">Open Team preview path</Link> : null}
           <Link className="btn secondary" href={whopFreeTrialCheckoutUrl}>Create account and start the free trial</Link>
           <Link className="btn secondary" href={loginHref}>Sign in and continue</Link>

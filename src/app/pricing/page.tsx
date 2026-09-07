@@ -78,7 +78,7 @@ const pricingTrustPoints = [
 const pricingDecisionCards = [
   {
     title: "Choose Business if you want clean exports for one brand",
-    text: "$79/month with 12,000 credits is the safer path for solo sellers, small Shopify stores and first product video tests.",
+    text: "$59/month with 12,000 credits is the safer path for solo sellers, small Shopify stores and first product video tests.",
     href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000",
     cta: "Start $10 Business preview"
   },

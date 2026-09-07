@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const billing = await billingAccess(supabase, userId);
     if (!billing.allowed) return Response.json({ error: "Preview is locked while your payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
     const packageId = String(body.package_id ?? body.packageId ?? "").trim();
-    const isTrial = Boolean(body.is_trial ?? body.isTrial) || packageId === "business_24h_free_trial";
+    const isTrial = Boolean(body.is_trial ?? body.isTrial) || packageId === "pro_24h_free_trial";
     const { data: balanceForPlan } = await supabase.from("credit_balances").select("active_subscription_package").eq("user_id", userId).maybeSingle();
     const planId = (packageId || String(balanceForPlan?.active_subscription_package ?? "")).replace(/_24h_free_trial$/i, "");
     const entitlement = await claimPreview(supabase, userId, planId, isTrial);

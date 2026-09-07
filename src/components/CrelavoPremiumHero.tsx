@@ -95,10 +95,10 @@ export function CrelavoPremiumHero() {
             <span>Live production studio</span>
             <small>{activeScene.kicker}</small>
           </div>
-          <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Claim the Crelavo Business 24-hour free trial">
+          <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Claim the Crelavo Pro 24-hour free trial">
             <span>FLASH TRIAL</span>
             <strong>$0 for the first 24 hours</strong>
-            <small>Then 12,000 credits/month at $79 unless cancelled in Whop.</small>
+            <small>Then 2,500 credits/month at $9.99 unless cancelled in Whop.</small>
           </Link>
           <div className="hero-interface-main">
             <div className="hero-preview-window">

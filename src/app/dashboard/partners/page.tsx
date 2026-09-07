@@ -201,7 +201,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
           <div><span>Customer offer</span><strong>${business12000LaunchAffiliateCampaign.saleAmountUsd} / {business12000LaunchAffiliateCampaign.credits.toLocaleString()} credits</strong><small>Normal Business credit amount was {business12000LaunchAffiliateCampaign.normalCredits.toLocaleString()}</small></div>
           <div><span>Your commission</span><strong>{business12000LaunchAffiliateCampaign.commissionPercent}%</strong><small>${business12000LaunchAffiliateCampaign.commissionUsd.toFixed(2)} estimated per approved sale</small></div>
           <div><span>Payout status</span><strong>{business12000LaunchAffiliateCampaign.payoutStatus.replaceAll("_", " ")}</strong><small>30-day hold and $50 minimum payout still apply</small></div>
-          <div><span>Campaign link</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Share this link for the $79 / 12,000 credits offer</small></div>
+          <div><span>Campaign link</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Share this link for the $59 / 12,000 credits offer</small></div>
         </div>
       </section>
 
@@ -247,7 +247,7 @@ export default async function DashboardPartnersPage({ searchParams }: { searchPa
             <div><span>Main referral link</span><strong style={{ wordBreak: "break-all" }}>{primaryReferralUrl}</strong><small>General Crelavo homepage link</small></div>
             <div><span>Affiliate page link</span><strong style={{ wordBreak: "break-all" }}>{affiliateReferralUrl}</strong><small>For inviting other partners or explaining the program</small></div>
             <div><span>Growth Intelligence link</span><strong style={{ wordBreak: "break-all" }}>{growthReferralUrl}</strong><small>Best high-ticket recurring service offer</small></div>
-            <div><span>$79 / 12,000 credits campaign</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Special Business launch offer, 15% commission</small></div>
+            <div><span>$59 / 12,000 credits campaign</span><strong style={{ wordBreak: "break-all" }}>{business12000ReferralUrl}</strong><small>Special Business launch offer, 15% commission</small></div>
             <div><span>Partner slug</span><strong>{referralLink?.slug ?? partnerCode.toLowerCase()}</strong><small>{referralLink?.status.replaceAll("_", " ") ?? "ready after tracking"}</small></div>
           </div>
           <p className="workspace-action-note warning" style={{ marginTop: 12 }}>Referral links and codes are prepared here. Paid attribution is reviewed against payment records before commissions are approved.</p>

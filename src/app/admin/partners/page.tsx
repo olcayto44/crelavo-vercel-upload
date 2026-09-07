@@ -290,7 +290,7 @@ export default async function AdminPartnersPage() {
   const { commissions: adminCommissions, source: commissionLedgerSource } = await loadCommissionLedger();
   const { paymentProfiles: adminPaymentProfiles, source: paymentProfileSource } = await loadPartnerPaymentProfiles();
   const commissionExamples = [
-    { label: "$79 / 12,000 credits campaign", amount: business12000LaunchAffiliateCampaign.saleAmountUsd, category: "subscription campaign", packageName: business12000LaunchAffiliateCampaign.packageName, status: "paid" },
+    { label: "$59 / 12,000 credits campaign", amount: business12000LaunchAffiliateCampaign.saleAmountUsd, category: "subscription campaign", packageName: business12000LaunchAffiliateCampaign.packageName, status: "paid" },
     { label: "Credit / top-up", amount: 25, category: "credit", packageName: "Creator Top-up", status: "paid" },
     { label: "Standard production", amount: 199, category: "production", packageName: "Ultra monthly", status: "paid" },
     { label: "Growth Intelligence", amount: 499, category: "growth intelligence", packageName: "Growth Intelligence Agent monthly", status: "paid" },
@@ -313,7 +313,7 @@ export default async function AdminPartnersPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Special campaign commission</span>
-        <h2>$79 Business launch package pays 15% affiliate commission</h2>
+        <h2>$59 Business launch package pays 15% affiliate commission</h2>
         <p style={{ color: "var(--muted)" }}>This rule is only for the Business monthly campaign that gives 12,000 credits instead of 9,000. Admin should see every real sale in the manual commission ledger below with customer email, package, sale date, payment reference, payout window and payout status.</p>
         <div className="admin-info-grid">
           <div><span>Package sold</span><strong>{business12000LaunchAffiliateCampaign.packageName}</strong><small>Package ID: {business12000LaunchAffiliateCampaign.packageId}</small></div>
@@ -518,7 +518,7 @@ export default async function AdminPartnersPage() {
               <p><strong>Main link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.primaryPath}</span></p>
               <p><strong>Affiliate link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.affiliatePath}</span></p>
               <p><strong>Growth Intelligence link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.growthIntelligencePath}</span></p>
-              <p><strong>$79 / 12,000 credits campaign link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.business12000CampaignPath}</span></p>
+              <p><strong>$59 / 12,000 credits campaign link:</strong> <span style={{ wordBreak: "break-all" }}>{siteUrl}{link.business12000CampaignPath}</span></p>
               <p><strong>Suggested text:</strong> {link.shareText}</p>
               <p>{link.note}</p>
             </div>

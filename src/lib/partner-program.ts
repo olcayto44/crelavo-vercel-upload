@@ -28,15 +28,15 @@ export function partnerCodeLookupCandidates(value: unknown) {
 export const business12000LaunchAffiliateCampaign = {
   id: "business-12000",
   packageId: "business",
-  packageName: "Business monthly - $79 / 12,000 credits launch campaign",
-  saleAmountUsd: 79,
+  packageName: "Business monthly - $59 / 12,000 credits launch campaign",
+  saleAmountUsd: 59,
   credits: 12000,
   normalCredits: 9000,
   commissionPercent: 15,
-  commissionUsd: 11.85,
-  roundedCommissionUsd: 12,
+  commissionUsd: 8.85,
+  roundedCommissionUsd: 9,
   payoutStatus: "pending_30_day_hold",
-  payoutRule: "Only this $79 / 12,000 credits campaign uses the special 15% affiliate rate. Commission is pending for 30 days and void if refunded, cancelled, chargebacked, unpaid or fraud/abuse flagged.",
+  payoutRule: "Only this $59 / 12,000 credits campaign uses the special 15% affiliate rate. Commission is pending for 30 days and void if refunded, cancelled, chargebacked, unpaid or fraud/abuse flagged.",
   checkoutPath: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000"
 };
 
@@ -101,7 +101,7 @@ export function calculatePartnerCommission(amountUsd: number, category: string, 
 
 export const partnerPackageCommissionRules = [
   {
-    packageGroup: "$79 / 12,000 credits launch campaign",
+    packageGroup: "$59 / 12,000 credits launch campaign",
     examplePackages: [business12000LaunchAffiliateCampaign.packageName],
     marginProfile: "campaign margin protected because extra credits are included",
     defaultPercent: business12000LaunchAffiliateCampaign.commissionPercent,
@@ -639,7 +639,7 @@ export const partnerReferredMembers = [
     memberName: "Studio Owner",
     memberEmail: "studio-owner@example.com",
     signupDate: "2026-07-09",
-    sourceChannel: "$79 / 12,000 credits campaign link",
+    sourceChannel: "$59 / 12,000 credits campaign link",
     status: "paid",
     purchasedPlan: business12000LaunchAffiliateCampaign.packageName,
     packageCategory: "Business launch campaign",

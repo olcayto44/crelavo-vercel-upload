@@ -927,8 +927,8 @@ outputPlan,
       .eq("status", "trialing")
       .maybeSingle();
     const trialProduct = String(trialSubscription?.product_id ?? trialSubscription?.plan_id ?? "").toLowerCase();
-    const isBusinessTrial = Boolean(trialSubscription) && /business/.test(trialProduct);
-    if (isBusinessTrial && !isImageProductionRequest && !isPreviewOnlyProduction) {
+    const isProTrial = Boolean(trialSubscription) && /pro|pro_24h_free_trial/.test(trialProduct);
+    if (isProTrial && !isImageProductionRequest && !isPreviewOnlyProduction) {
       const trialDurationSeconds = Number(body.output_duration_seconds ?? 0) || 0;
       if (trialDurationSeconds > 10) {
         return Response.json({
@@ -938,10 +938,10 @@ outputPlan,
           upgradeUrl: "/pricing"
         }, { status: 403 });
       }
-      const trialEntitlement = await claimPreview(supabase, userId, "business", true);
+      const trialEntitlement = await claimPreview(supabase, userId, "pro", true);
       if (!trialEntitlement.ok) {
         return Response.json({
-          error: "Ücretsiz deneme hakkınız bu kampanyada bir video üretimiyle sınırlıdır. Yeni bir üretim için uygun bir Business planına geçebilirsiniz.",
+          error: "Ücretsiz deneme hakkınız bu kampanyada bir video üretimiyle sınırlıdır. Yeni bir üretim için uygun bir Pro planına geçebilirsiniz.",
           code: "trial_production_limit_reached",
           remaining: trialEntitlement.remaining ?? 0,
           upgradeUrl: "/pricing"

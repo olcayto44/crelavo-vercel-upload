@@ -7,7 +7,7 @@ export function normalizeEmail(email: string) {
 }
 
 export function previewLimitForPlan(planId: string, isTrial = false) {
-  if (isTrial && planId.toLowerCase() === "business") return 1;
+  if (isTrial && planId.toLowerCase() === "pro") return 1;
   return PREVIEW_LIMITS[planId.toLowerCase()] ?? 0;
 }
 
