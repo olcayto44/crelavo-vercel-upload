@@ -1,16 +1,16 @@
-import { getConfiguredFaqItems } from "@/lib/faq-config";
+import { publicProFaqs } from "@/lib/public-pro-faq";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
 
 export async function FaqStructuredData() {
-  const faqs = await getConfiguredFaqItems();
+  const faqs = publicProFaqs;
   const schema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "@id": `${siteUrl}/#faq`,
     url: `${siteUrl}/#faq`,
     name: "Crelavo frequently asked questions",
-    description: "Answers about Crelavo production, credits, delivery, AI tools and AI + human quality assurance workflows.",
+    description: "Answers about the Crelavo Pro 24-hour trial, billing, cancellation and production access.",
     isPartOf: { "@id": `${siteUrl}/#website` },
     about: { "@id": `${siteUrl}/#app` },
     inLanguage: "en-US",

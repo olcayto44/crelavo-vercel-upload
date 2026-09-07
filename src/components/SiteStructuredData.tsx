@@ -6,7 +6,7 @@ const coreProductionPaths = [
   { name: "AI Virtual Model Studio", url: `${siteUrl}/ai-virtual-model-studio`, description: "Create model-style ecommerce visuals for fashion, jewelry, beauty and catalog campaigns." },
   { name: "AI Cultural Localization", url: `${siteUrl}/ai-cultural-localization`, description: "Adapt hooks, scripts, CTA and buyer psychology for country-specific markets." },
   { name: "AI Website Builder", url: `${siteUrl}/ai-website-builder`, description: "Plan and deliver landing pages, websites and source handoff packages." },
-  { name: "Pricing and Credits", url: `${siteUrl}/pricing`, description: "Review credit packages, production estimates and delivery-ready pricing paths." }
+  { name: "Crelavo Pro trial", url: `${siteUrl}/pricing`, description: "Start a 24-hour Pro trial for $0, then continue at $9.99/month or $99/year unless cancelled in Whop." }
 ];
 
 export function SiteStructuredData() {
@@ -70,7 +70,7 @@ export function SiteStructuredData() {
         potentialAction: [
           { "@type": "BuyAction", target: "https://whop.com/checkout/plan_ujLQgM3kEg0dg", name: "Start free 24-hour trial" },
           { "@type": "AssessAction", target: `${siteUrl}/free-tools/ad-performance-score-checker`, name: "Score an ad for free" },
-          { "@type": "ViewAction", target: `${siteUrl}/pricing`, name: "View Crelavo pricing and credits" }
+          { "@type": "ViewAction", target: `${siteUrl}/pricing`, name: "View Crelavo Pro trial pricing" }
         ]
       },
       {
@@ -100,7 +100,7 @@ export function SiteStructuredData() {
           "AI voice-over and dubbing",
           "AI brand kit production",
           "Source ZIP, README and revision tracking",
-          "Dashboard delivery packages",
+          "Dashboard delivery and production access",
           "AI + human quality assurance"
         ],
         description: "AI-powered e-commerce product video workspace. Start a 24-hour Pro trial for $0, make one production, then continue at $9.99/month or $99/year unless cancelled in Whop.",
@@ -123,7 +123,7 @@ lowPrice: 9.99,
         brand: { "@id": `${siteUrl}/#organization` },
         category: "AI-powered e-commerce product video ad generator for Shopify and Amazon",
         image: `${siteUrl}/showcase/ai-production-studio.webp`,
-        description: "Crelavo is an AI-powered e-commerce product video ad generator for Shopify and Amazon sellers, combining product-link-to-video workflows, 24-hour preview checkout, credit rollover, campaign assets and dashboard delivery.",
+        description: "Crelavo is an AI-powered e-commerce product video workspace for Shopify and Amazon sellers, with a 24-hour Pro trial, production access and dashboard delivery.",
         audience: { "@type": "Audience", audienceType: "Shopify, Amazon, ecommerce and agency teams" },
         offers: {
           "@type": "AggregateOffer",

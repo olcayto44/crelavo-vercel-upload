@@ -8,7 +8,6 @@ import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
-import { SplashAd } from "@/components/SplashAd";
 import { TruthfulLiveActivity } from "@/components/TruthfulLiveActivity";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
@@ -441,7 +440,6 @@ export default async function HomePage() {
     <>
       <FaqStructuredData />
       <SiteStructuredData />
-      <SplashAd />
       <Header navLinks={siteContent.navLinks} />
       <HardReloadLink className="trial-top-strip" href={whopFreeTrialCheckoutUrl}>
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>

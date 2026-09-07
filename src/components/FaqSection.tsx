@@ -1,15 +1,15 @@
-import { getConfiguredFaqItems } from "@/lib/faq-config";
+import { publicProFaqs } from "@/lib/public-pro-faq";
 
 export async function FaqSection() {
-  const faqs = await getConfiguredFaqItems();
+  const faqs = publicProFaqs;
 
   return (
     <section id="faq" className="container section home-section-tight clean-feed-section faq-section">
       <div className="sample-video-head">
         <div>
           <span className="badge">Frequently Asked Questions</span>
-          <h2>Most asked questions about Crelavo</h2>
-          <p className="section-lead">Essential answers about production, credits, delivery, tools and admin management. These contents can be updated from the admin panel.</p>
+          <h2>Most asked questions about the Crelavo Pro trial</h2>
+          <p className="section-lead">Essential answers about the Pro 24-hour trial, card requirement, cancellation and Whop billing.</p>
         </div>
       </div>
       <div className="faq-grid">
