@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Clapperboard, Grid3X3, Plane, Smartphone, Sparkles, Wand2 } from "lucide-react";
 import { AdSlot } from "@/components/AdSlot";
+import { TrialCtaLink } from "@/components/GoogleAdsConversion";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
 import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
@@ -441,30 +442,30 @@ export default async function HomePage() {
       <FaqStructuredData />
       <SiteStructuredData />
       <Header navLinks={siteContent.navLinks} />
-      <HardReloadLink className="trial-top-strip" href={whopFreeTrialCheckoutUrl}>
+      <TrialCtaLink className="trial-top-strip" href={whopFreeTrialCheckoutUrl}>
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
         <strong>$0 today</strong>
         <span className="trial-top-strip-copy">Try Crelavo Pro free for 24 hours — then get 2,500 credits/month at $9.99 unless cancelled in Whop.</span>
-        <span className="trial-top-strip-cta">Start free 24-hour trial</span>
-      </HardReloadLink>
+<span className="trial-top-strip-cta">Start free 24-hour trial</span>
+       </TrialCtaLink>
       <main className="public-funnel-page public-home-page">
         <div className="page-with-rails">
           <aside className="ad-rail ad-rail-right trial-fomo-rail">
-            <HardReloadLink className="trial-fomo-poster" href={whopFreeTrialCheckoutUrl} aria-label="Start the Pro 24-hour free trial">
+            <TrialCtaLink className="trial-fomo-poster" href={whopFreeTrialCheckoutUrl} aria-label="Start the Pro 24-hour free trial">
               <span className="trial-fomo-flash">FLASH</span>
               <span className="trial-fomo-eyebrow">1-day Whop trial</span>
               <strong>$0 today</strong>
               <span className="trial-fomo-price">2,500 credits/month after trial</span>
               <span className="trial-fomo-copy">Most tools charge first. Crelavo gives you 24 hours free before the 2,500-credit Pro plan starts.</span>
               <span className="trial-fomo-countdown">Card required · no charge until trial ends</span>
-              <span className="trial-fomo-cta">Start free 24-hour trial</span>
-            </HardReloadLink>
-          </aside>
-          <HardReloadLink className="trial-mobile-fomo" href={whopFreeTrialCheckoutUrl}>
+<span className="trial-fomo-cta">Start free 24-hour trial</span>
+             </TrialCtaLink>
+           </aside>
+          <TrialCtaLink className="trial-mobile-fomo" href={whopFreeTrialCheckoutUrl}>
             <span>FLASH: 24h free Pro trial · 2,500 credits/month</span>
             <strong>$0 today</strong>
-            <em>Start free 24-hour trial</em>
-          </HardReloadLink>
+<em>Start free 24-hour trial</em>
+           </TrialCtaLink>
           <section className="container trial-fomo-hero" aria-label="Pro 24-hour free trial offer">
             <div className="trial-fomo-hero-copy">
               <span className="trial-fomo-hero-badge">FLASH LAUNCH OFFER · FIRST 24 HOURS FREE</span>
@@ -480,8 +481,8 @@ export default async function HomePage() {
                  <strong>2,500 credits/month after trial</strong>
               </div>
               <div className="trial-deal-divider" />
-              <span className="trial-deal-after">After trial: $9.99/mo unless cancelled in Whop</span>
-              <HardReloadLink className="btn trial-fomo-hero-cta" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</HardReloadLink>
+<span className="trial-deal-after">After trial: $9.99/mo unless cancelled in Whop</span>
+               <TrialCtaLink className="btn trial-fomo-hero-cta" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</TrialCtaLink>
             </div>
           </section>
           <CrelavoPremiumHero />
@@ -537,7 +538,7 @@ export default async function HomePage() {
                 <h2>Know what happens before you spend credits</h2>
                 <p className="section-lead">Crelavo should feel safe before checkout: clear brief, visible scope, dashboard delivery and revision-ready handoff.</p>
               </div>
-              <HardReloadLink className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</HardReloadLink>
+              <TrialCtaLink className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</TrialCtaLink>
             </div>
             <div className="admin-category-grid" style={{ marginTop: 16 }}>
               {homeDeliveryTrust.map((item) => (

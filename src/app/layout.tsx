@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdminFooterVisibility } from "@/components/AdminFooterVisibility";
+import { GoogleAdsTag } from "@/components/GoogleAdsConversion";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
 import { OAuthWelcomeCreditClient } from "@/components/OAuthWelcomeCreditClient";
@@ -123,6 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Suspense fallback={null}><AdminFooterVisibility /></Suspense>
         <Suspense fallback={null}><LiveVisitorTracker /></Suspense>
+        <GoogleAdsTag />
         <GoogleAnalytics />
         <Suspense fallback={null}><PartnerReferralTracker /></Suspense>
         <Suspense fallback={null}><OAuthWelcomeCreditClient /></Suspense>

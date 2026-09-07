@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrialCtaLink } from "@/components/GoogleAdsConversion";
 import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default function ProTrialPage() {
         </div>
         <p style={{ color: "var(--muted)", maxWidth: 650, margin: "0 auto 24px" }}>Card required. You are not charged until the 24-hour trial ends. Cancel in Whop before the trial ends and you pay $0. If you already used a Crelavo trial, Whop may charge the full subscription price.</p>
         <div className="hero-actions" style={{ justifyContent: "center" }}>
-          <a className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</a>
+          <TrialCtaLink className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</TrialCtaLink>
           <a className="btn secondary" href={annualCheckout}>Prefer yearly? Start $99/year trial</a>
         </div>
       </section>
