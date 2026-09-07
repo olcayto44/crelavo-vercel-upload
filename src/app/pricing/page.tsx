@@ -5,6 +5,8 @@ import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
 import { packages, topUpPackages } from "@/lib/data";
+
+const publicLaunchPlans = packages.filter((plan) => plan.id === "pro");
 import { PricingStructuredData } from "@/components/PricingStructuredData";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 
@@ -121,7 +123,7 @@ export default async function PricingPage() {
           <div className="promo-corner-slot pricing-promo-slot"><CampaignPromoSlot /></div>
         </section>
 
-        <CreditPlansToggle plans={packages} ctaLabel="Start 24-Hour Preview" compact />
+        <CreditPlansToggle plans={publicLaunchPlans} ctaLabel="Start 24-Hour Free Trial" compact />
 
         <section className="card admin-wide-card" style={{ marginTop: 24 }}>
           <span className="badge">Need extra credits?</span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { CreditCard } from "lucide-react";
 import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
+import { whopHostedCheckoutUrl, whopPlanIdForProduct } from "@/lib/whop";
 
 type CreditPlan = {
   name: string;
@@ -120,10 +121,12 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
           const yearlyDealLabel = billingMode === "yearly" && plan.yearlyDealLabel ? plan.yearlyDealLabel : "";
           const estimatedOutput = billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput;
           const videoOutput = estimatedVideoOutput(credits);
-          const positioning = planPositioning(plan, billingMode);
-          const compactHighlights = compactPlanHighlights(plan, billingMode, credits);
-          return (
-            <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`} key={plan.name}>
+const positioning = planPositioning(plan, billingMode);
+           const compactHighlights = compactPlanHighlights(plan, billingMode, credits);
+           const directWhopPlanId = plan.id ? whopPlanIdForProduct(plan.id, effectiveBilling) : "";
+           const planHref = directWhopPlanId ? whopHostedCheckoutUrl(directWhopPlanId) : `/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`;
+           return (
+             <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={planHref} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : billingMode === "monthly" ? "24-hour preview + monthly" : "24-hour preview + yearly - 2 months free"}</span>
               <h3>{plan.name}</h3>
               <p className="plan-savings-line"><b>{positioning}</b></p>
