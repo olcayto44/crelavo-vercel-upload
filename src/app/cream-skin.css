@@ -1,0 +1,63 @@
+/* Crelavo cream skin — isolated theme layer. Loaded after globals.css so rollback is one import removal. */
+:root {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-strong: #f4efe8;
+  --text: #14110e;
+  --muted: #6b645c;
+  --line: #e6ddd2;
+  --purple: #ff4d1c;
+  --cyan: #e03e12;
+  --green: #2f6b4f;
+  --orange: #ff4d1c;
+  --flame: #ff4d1c;
+  --flame-dark: #e03e12;
+  --ink: #14110e;
+  --paper: #f4efe8;
+  --mute: #6b645c;
+  --category-gradient: linear-gradient(135deg, #ffffff, #f4efe8 48%, #ffe8df);
+}
+
+html { color-scheme: light; background: #fff; scrollbar-color: #e6ddd2 transparent; }
+html body { color: #14110e !important; background: #fff !important; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif !important; }
+::selection { background: #ff4d1c; color: #fff; }
+html body h1, html body h2, html body .crelavo-hero-copy h1, html body .pricing-page h1, html body .tools-catalog-page h1, html body .category-browser h1, html body .blog-hero-panel h1, html body .contact-page h1 { font-family: "Instrument Serif", "Times New Roman", serif !important; font-weight: 400; letter-spacing: -.03em; color: #14110e !important; }
+html body .dashboard-shell h1, html body .dashboard-shell h2, html body .dashboard-shell h3, html body .admin-shell h1, html body .admin-shell h2, html body .admin-shell h3, html body .omni-studio-page h1, html body .omni-studio-page h2, html body .assistant-workspace h1, html body .assistant-workspace h2, html body .payment-dashboard-shell h1 { font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; color: #14110e !important; }
+html body p, html body small, html body li, html body td, html body th, html body label, html body .section-lead, html body .card p { color: #6b645c; }
+html body a { color: inherit; }
+html body .nav, html body .site-main-nav, html body .nav-top-row, html body .nav-main-row, html body .nav a, html body .nav-links > a, html body .primary-nav-links a, html body .header-language-links a, html body .logo { color: #14110e !important; }
+html body .logo-mark { color: #fff !important; background: linear-gradient(135deg, #ff4d1c, #e03e12) !important; }
+html body .btn, html body .clean-start-btn, html body .dashboard-primary-action { color: #fff !important; background: linear-gradient(135deg, #ff4d1c, #e03e12) !important; border-color: #ff4d1c33 !important; box-shadow: 0 18px 45px #ff4d1c24 !important; }
+html body .btn.secondary, html body .clean-upload-btn { color: #14110e !important; background: #fff !important; border: 1px solid #e6ddd2 !important; box-shadow: none !important; }
+html body .badge { color: #e03e12 !important; background: #ff4d1c14 !important; border-color: #ff4d1c47 !important; }
+html body .card, html body .production-hero-card, html body .admin-wide-card, html body .admin-category-card, html body .selected-billing-card, html body .payment-checkout-card, html body .payment-summary-card, html body .faq-card, html body .sample-card, html body .showcase-card, html body .home-goal-card, html body .tools-catalog-card, html body .public-pricing-card, html body .production-pricing-card, html body .production-decision-card, html body .production-draft-card, html body .production-ready-card, html body .category-tab-card, html body .auth-card, html body .blog-hero-panel, html body .hero-trial-fomo-card { color: #14110e !important; background: #fff !important; border: 1px solid #e6ddd2 !important; box-shadow: 0 18px 50px #14110e0f !important; backdrop-filter: none !important; }
+html body .card h1, html body .card h2, html body .card h3, html body .tools-catalog-card strong, html body .category-tab-card strong { color: #14110e !important; text-shadow: none !important; }
+html body .crelavo-premium-hero, html body .home-platform-hero, html body .clean-studio-hero, html body .production-studio-hero, html body .localized-hero, html body .compact-production-hero { background: #f4efe8 !important; border-bottom: 1px solid #e6ddd2 !important; }
+html body .crelavo-hero-bg { background: linear-gradient(135deg, #f4efe8 0%, #fff 42%, #f4efe8 100%) !important; }
+html body .crelavo-hero-video-overlay { background: linear-gradient(#f4efe855, #14110e14 46%, #f4efe8dd) !important; }
+html body .trial-top-strip { color: #fff !important; background: linear-gradient(90deg, #ff4d1c, #e03e12 55%, #14110e) !important; }
+html body .trial-top-strip strong, html body .trial-top-strip-copy { color: #fff !important; }
+html body .trial-top-strip-badge, html body .trial-top-strip-cta, html body .trial-fomo-flash, html body .trial-fomo-hero-badge { color: #14110e !important; background: #fde047 !important; }
+html body .trial-fomo-rail, html body .trial-fomo-poster, html body .trial-fomo-hero, html body .trial-mobile-fomo { background: #fff !important; border-color: #e6ddd2 !important; color: #14110e !important; box-shadow: 0 24px 70px #14110e14 !important; }
+html body .trial-fomo-price, html body .flash-deal-line { color: #e03e12 !important; }
+html body .trial-fomo-countdown { color: #fff !important; background: #e03e12 !important; border-color: #ff4d1c !important; }
+html body .trial-fomo-cta, html body .trial-fomo-hero-cta { color: #fff !important; background: linear-gradient(135deg, #ff4d1c, #e03e12) !important; }
+html body .public-side-rail { background: #fffffff2 !important; border-color: #e6ddd2 !important; box-shadow: 0 24px 70px #14110e14 !important; }
+html body .public-side-rail-link { color: #14110e !important; background: #f4efe8 !important; }
+html body .public-side-rail-link:hover, html body .public-side-rail-link.active { color: #fff !important; background: linear-gradient(135deg, #ff4d1c, #e03e12) !important; }
+html body input, html body textarea, html body select { color: #14110e !important; background: #fff !important; border-color: #e6ddd2 !important; }
+html body input::placeholder, html body textarea::placeholder { color: #6b645c !important; }
+html body .admin-shell, html body .dashboard-shell, html body .dashboard-shell-layout, html body .dashboard-postlaunch-shell, html body .dashboard-workspace, html body .admin-main-stack, html body .payment-dashboard-shell, html body .ai-dashboard-shell, html body .omni-studio-page, html body .omni-studio-shell, html body .assistant-workspace { background: #fff !important; color: #14110e !important; }
+html body .admin-menu-group a, html body .dashboard-nav-link, html body .dashboard-home-link, html body .dashboard-nav-group-head { color: #14110e !important; background: #f4efe8 !important; border-color: transparent !important; }
+html body .admin-menu-group a.active, html body .dashboard-nav-link.active, html body .dashboard-nav-link[aria-current="page"] { color: #fff !important; background: linear-gradient(135deg, #ff4d1c, #e03e12) !important; border-color: #ff4d1c !important; }
+html body .site-footer, html body .footer, html body .site-footer.clean-feed-section, html body .footer.clean-feed-section { color: #6b645c !important; background: #fff !important; border: 0 !important; border-top: 1px solid #e6ddd2 !important; border-radius: 0 !important; box-shadow: none !important; }
+html body .site-footer-grid, html body .balanced-footer-grid, html body .site-footer-group, html body .footer-core-services, html body .footer-social-group, html body .footer-help-drawer, html body .footer-help-group, html body .footer-seo-panel, html body .site-footer-brand, html body .footer-brand-bottom-copy, html body .footer-brand-bottom-right, html body .site-footer-bottom, html body .site-footer-payment { background: transparent !important; border-color: #e6ddd2 !important; color: #6b645c !important; box-shadow: none !important; }
+html body .site-footer-group h3, html body .footer-help-drawer h3, html body .site-footer-brand-link, html body .site-footer-brand-link strong { color: #14110e !important; font-family: Inter, ui-sans-serif, system-ui, sans-serif !important; }
+html body .site-footer-description, html body .clean-footer-copy, html body .site-footer-payment-label, html body .site-footer-bottom, html body .site-footer-technical-line, html body .footer-seo-panel p { color: #6b645c !important; }
+html body .site-footer-group a, html body .footer-help-drawer a, html body .footer-help-drawer button, html body .footer-help-trigger, html body .footer-seo-link { color: #6b645c !important; background: transparent !important; border: 0 !important; }
+html body .site-footer-group a:hover, html body .footer-help-drawer a:hover, html body .footer-help-drawer button:hover, html body .footer-help-trigger:hover, html body .footer-seo-link:hover { color: #e03e12 !important; text-decoration: underline; }
+html body .footer-social-links a, html body .footer-commerce-shortcuts a { color: #14110e !important; background: #f4efe8 !important; border: 1px solid #e6ddd2 !important; border-radius: 999px !important; }
+html body .footer-social-links a:hover, html body .footer-commerce-shortcuts a:hover { color: #fff !important; background: #ff4d1c !important; border-color: #ff4d1c !important; text-decoration: none; }
+html body .footer-brand-bottom-right { border-left-color: #e6ddd2 !important; }
+html body .site-footer-bottom { border-top-color: #e6ddd2 !important; }
+html body .footer-seo-panel { background: #f4efe8 !important; border: 1px solid #e6ddd2 !important; }
