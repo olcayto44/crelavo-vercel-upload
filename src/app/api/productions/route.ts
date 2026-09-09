@@ -1010,10 +1010,14 @@ outputPlan,
     if ((!balanceRow || Number(balanceRow.balance ?? 0) - Number(balanceRow.reserved ?? 0) <= 0) && verifiedEmail) {
       const { data: sameEmailProfiles, error: sameEmailProfilesError } = await supabase
         .from("profiles")
-        .select("id")
-        .ilike("email", verifiedEmail);
+        .select("id, email")
+        .limit(1000);
       if (sameEmailProfilesError) throw sameEmailProfilesError;
-      const profileIds = (sameEmailProfiles ?? []).map((profile) => String(profile.id)).filter(Boolean);
+      const normalizedVerifiedEmail = verifiedEmail.trim().toLowerCase();
+      const profileIds = (sameEmailProfiles ?? [])
+        .filter((profile) => String(profile.email ?? "").trim().toLowerCase() === normalizedVerifiedEmail)
+        .map((profile) => String(profile.id))
+        .filter(Boolean);
       if (profileIds.length) {
         const { data: legacyBalances, error: legacyBalanceError } = await supabase
           .from("credit_balances")
