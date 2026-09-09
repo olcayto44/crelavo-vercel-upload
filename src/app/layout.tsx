@@ -12,7 +12,6 @@ import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
 import "./globals.css";
-import "./live-sales-cream-preview.css";
 
 function safeSiteUrl(value?: string | null) {
   const fallback = "https://www.crelavo.com";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
 
@@ -71,13 +71,15 @@ export function CrelavoPremiumHero() {
       </div>
 
       <div className="container crelavo-premium-hero-inner">
-          <div className="crelavo-hero-copy">
-           <span className="crel-kicker">For hosts selling physical goods live</span>
-           <h1>Don’t lose live orders.</h1>
-           <p className="crel-lede">Launch Your 24/7 AI Live Sales Agent in 60 Seconds. First 24 Hours FREE!</p>
-           <div className="crelavo-hero-actions">
-              <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start 24-hour trial</Link>
-           </div>
+        <div className="crelavo-hero-copy">
+          <span className="badge"><Sparkles size={15} /> Crelavo AI Production Studio</span>
+          <h1>Crelavo: AI Production Studio for E-Commerce, Apps and Campaigns</h1>
+          <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
+          <div className="crelavo-hero-actions">
+             <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial <ArrowRight size={16} /></Link>
+             <Link className="btn secondary" href="https://whop.com/checkout/plan_fiabRYr6uWY43">$99/year after 24 hours</Link>
+             <Link className="btn secondary" href="/pricing">View pricing</Link>
+          </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
             {heroModels.map((item) => <span key={item}>{item}</span>)}
           </div>
