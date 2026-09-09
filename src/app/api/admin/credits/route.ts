@@ -32,18 +32,26 @@ export async function POST(request: Request) {
 
     if (profileError) throw profileError;
 
-    if (!profile) {
+    // Credits must always be attached to the canonical Supabase Auth UUID.
+    // Legacy profile rows can retain the same email with a stale id, which
+    // makes production requests see a zero balance for the signed-in user.
+    let authUser = null;
+    if (profile?.id) {
+      const { data: authUserData } = await supabase.auth.admin.getUserById(profile.id);
+      if (authUserData.user?.email?.toLowerCase() === email) authUser = authUserData.user;
+    }
+    if (!authUser) {
       const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
-
       if (usersError) throw usersError;
+      authUser = usersData.users.find((user) => user.email?.toLowerCase() === email) ?? null;
+    }
 
-      const authUser = usersData.users.find((user) => user.email?.toLowerCase() === email);
+    if (!authUser?.email) {
+      return Response.json({ error: "User not found. User must register first." }, { status: 404 });
+    }
 
-      if (!authUser?.email) {
-        return Response.json({ error: "User not found. User must register first." }, { status: 404 });
-      }
-
-      const { data: createdProfile, error: createProfileError } = await supabase
+    if (!profile || profile.id !== authUser.id) {
+      const { data: canonicalProfile, error: canonicalProfileError } = await supabase
         .from("profiles")
         .upsert({
           id: authUser.id,
@@ -53,8 +61,8 @@ export async function POST(request: Request) {
         .select("id, email")
         .single();
 
-      if (createProfileError) throw createProfileError;
-      profile = createdProfile;
+      if (canonicalProfileError) throw canonicalProfileError;
+      profile = canonicalProfile;
     }
 
     const { data: currentBalance, error: balanceReadError } = await supabase

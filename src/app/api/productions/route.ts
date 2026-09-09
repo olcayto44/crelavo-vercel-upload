@@ -986,22 +986,64 @@ outputPlan,
       });
     }
 
+    const verifiedEmail = String(authUser.user.email ?? body.user_email ?? "").trim().toLowerCase();
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert({ id: userId, email: String(body.user_email ?? ""), full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
+      .upsert({ id: userId, email: verifiedEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
 
     if (profileError) throw profileError;
 
     const { data: balanceRow, error: balanceError } = await supabase
       .from("credit_balances")
-      .select("balance, reserved")
+      .select("user_id, balance, reserved")
       .eq("user_id", userId)
       .maybeSingle();
 
     if (balanceError) throw balanceError;
 
-    const balance = balanceRow?.balance ?? 0;
-    const reserved = balanceRow?.reserved ?? 0;
+    // Older manual admin adjustments may have been written to a stale profile UUID
+    // even though the email belongs to the currently authenticated Auth user. If
+    // the canonical row is empty, recover the matching same-email balance rather
+    // than silently treating the account as having zero production credits.
+    let creditBalanceUserId = userId;
+    let effectiveBalanceRow = balanceRow;
+    if ((!balanceRow || Number(balanceRow.balance ?? 0) - Number(balanceRow.reserved ?? 0) <= 0) && verifiedEmail) {
+      const { data: sameEmailProfiles, error: sameEmailProfilesError } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", verifiedEmail);
+      if (sameEmailProfilesError) throw sameEmailProfilesError;
+      const profileIds = (sameEmailProfiles ?? []).map((profile) => String(profile.id)).filter(Boolean);
+      if (profileIds.length) {
+        const { data: legacyBalances, error: legacyBalanceError } = await supabase
+          .from("credit_balances")
+          .select("user_id, balance, reserved")
+          .in("user_id", profileIds);
+        if (legacyBalanceError) throw legacyBalanceError;
+        const legacyBalance = (legacyBalances ?? [])
+          .filter((row) => String(row.user_id) !== userId)
+          .sort((left, right) => (Number(right.balance ?? 0) - Number(right.reserved ?? 0)) - (Number(left.balance ?? 0) - Number(left.reserved ?? 0)))[0] ?? null;
+        if (legacyBalance) {
+          const canonicalBalance = Number(balanceRow?.balance ?? 0) || 0;
+          const canonicalReserved = Number(balanceRow?.reserved ?? 0) || 0;
+          const migratedBalance = canonicalBalance + (Number(legacyBalance.balance ?? 0) || 0);
+          const migratedReserved = canonicalReserved + (Number(legacyBalance.reserved ?? 0) || 0);
+          const { error: migrateBalanceError } = await supabase
+            .from("credit_balances")
+            .upsert({ user_id: userId, balance: migratedBalance, reserved: migratedReserved, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+          if (migrateBalanceError) throw migrateBalanceError;
+          const { error: clearLegacyBalanceError } = await supabase
+            .from("credit_balances")
+            .update({ balance: 0, reserved: 0, updated_at: new Date().toISOString() })
+            .eq("user_id", String(legacyBalance.user_id));
+          if (clearLegacyBalanceError) throw clearLegacyBalanceError;
+          effectiveBalanceRow = { user_id: userId, balance: migratedBalance, reserved: migratedReserved };
+        }
+      }
+    }
+
+    const balance = Number(effectiveBalanceRow?.balance ?? 0) || 0;
+    const reserved = Number(effectiveBalanceRow?.reserved ?? 0) || 0;
     const available = balance - reserved;
 
     if (reserveCredits > 0 && available < reserveCredits) {
@@ -1018,13 +1060,13 @@ outputPlan,
     if (reserveCredits > 0) {
       const { error: reserveError } = await supabase
         .from("credit_balances")
-        .upsert({ user_id: userId, balance, reserved: reserved + reserveCredits, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        .upsert({ user_id: creditBalanceUserId, balance, reserved: reserved + reserveCredits, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
 
       if (reserveError) throw reserveError;
 
       const { error: reserveEventError } = await supabase
         .from("credit_events")
-        .insert({ user_id: userId, type: "reserve", amount: reserveCredits, note: `Reserved for ${selectedPackage.name}: ${title}` });
+        .insert({ user_id: creditBalanceUserId, type: "reserve", amount: reserveCredits, note: `Reserved for ${selectedPackage.name}: ${title}` });
 
       if (reserveEventError) throw reserveEventError;
     }
