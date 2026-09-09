@@ -38,7 +38,7 @@ export default async function ToolsPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section tools-page tools-catalog-page public-funnel-page">
+      <main className="container section tools-page tools-catalog-page public-funnel-page cream-public-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Tools catalog</span>
           <h1>AI tools catalog for product videos, websites, apps, ecommerce campaigns and brand production</h1>

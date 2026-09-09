@@ -12,7 +12,9 @@ import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
 import "./globals.css";
+import "../styles/crelavo-cream.css";
 
+// https://crelavo.com canonical alias is retained for SEO/redirect checks; canonical output remains https://www.crelavo.com.
 function safeSiteUrl(value?: string | null) {
   const fallback = "https://www.crelavo.com";
   const candidate = (value ?? fallback).trim().replace(/\/$/, "");

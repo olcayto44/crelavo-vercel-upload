@@ -50,7 +50,7 @@ const navGroups = [
 ];
 
 export function DashboardShell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const shellClassName = ["container section dashboard-shell-layout", className].filter(Boolean).join(" ");
+  const shellClassName = ["container section dashboard-shell-layout cream-dashboard-shell", className].filter(Boolean).join(" ");
 
   return (
     <main className={shellClassName}>

@@ -17,7 +17,7 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
   const initialIdea = idea || category;
 
   return (
-    <main className="omni-work-route">
+    <main className="omni-work-route cream-assistant-route">
       <WorkspaceErrorBoundary fallback={
         <section className="omni-fallback">
           <h1>Assistant Workspace</h1>

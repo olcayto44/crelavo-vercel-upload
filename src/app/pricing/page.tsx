@@ -63,7 +63,7 @@ export default async function PricingPage() {
         imageAlt="Crelavo Pro pricing"
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section pricing-page public-funnel-page">
+      <main className="container section pricing-page public-funnel-page cream-public-page">
         <section className="promo-top-layout">
           <div>
             <span className="badge">Pricing & credits</span>

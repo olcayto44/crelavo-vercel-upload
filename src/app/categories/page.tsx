@@ -37,7 +37,7 @@ export default async function CategoriesPage() {
         pageType="CollectionPage"
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section public-funnel-page categories-funnel-page">
+      <main className="container section public-funnel-page categories-funnel-page cream-public-page">
         <section className="promo-top-layout">
           <div>
             <span className="badge">Production categories</span>
