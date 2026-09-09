@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
-import CreamHeader from "@/components/cream/Header";
+import { Header } from "@/components/Header";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { absoluteShowcaseVideoImage, type ShowcaseVideo } from "@/lib/showcase-videos";
 
@@ -51,10 +51,10 @@ export function ShowcaseVideoDetail({
 }) {
   const imageUrl = absoluteShowcaseVideoImage(video, siteUrl);
   return (
-    <main className="cream-showcase-detail">
+    <main>
       <SiteStructuredData />
       <VideoJsonLd video={video} />
-      <CreamHeader />
+      <Header />
       <section className="showcase-detail-shell">
         <Link className="btn secondary" href={backHref}><ArrowLeft size={16} /> {backLabel}</Link>
         <section className="video-showcase-hero-layout">

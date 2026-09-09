@@ -26,7 +26,7 @@ for (const plan of topUpPackages) {
 }
 
 assert(LEGAL_ACCEPTANCE_VERSION.includes("preview-setup-fee"), "legal version should include preview setup fee update");
-assert(packages.some((plan) => plan.name === "Pro" && plan.setupFeeUsd === 0), "Pro should remain $0 during the 24-hour trial");
+assert(packages.some((plan) => plan.name === "Pro" && plan.setupFeeUsd === 5), "Pro should include $5 preview setup fee");
 assert(packages.some((plan) => plan.name === "Business" && plan.setupFeeUsd === 10), "Business should include $10 preview setup fee");
 assert(packages.some((plan) => plan.name === "Ultra" && plan.setupFeeUsd === 15), "Ultra should include $15 preview setup fee");
 assert(packages.some((plan) => plan.name === "Team" && plan.setupFeeUsd === 20), "Team should include $20 preview setup fee");
@@ -38,7 +38,7 @@ const snapshot = legalAcceptanceSnapshot({ productionType: "video", packageId: "
 assert("billingTermsText" in snapshot, "legal snapshot should store billing terms");
 
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
-for (const term of ["provider: \"whop\"", "whopHostedCheckoutUrl", "whopPreviewSummary", "whopPreviewNotice", "manualActivation", "Payment provider is not set to Whop"]) {
+for (const term of ["provider: \"whop\"", "whopCheckoutPath", "whopPreviewSummary", "whopPreviewNotice", "manualActivation", "Payment provider is not set to Whop"]) {
   assert(checkoutRoute.includes(term), `checkout route missing Whop term: ${term}`);
 }
 for (const term of ["createLemonSqueezyCheckout", "provider: \"lemon_squeezy\"", "credit_subscription", "credit_topup", "lemonVariantEnvForProduct", "manualActivation"]) {
@@ -71,7 +71,9 @@ for (const term of ["providerSpendGuard", "preview_only_downloads_closed", "down
 }
 
 const paymentPage = readFileSync("src/app/dashboard/payment/page.tsx", "utf8");
-assert(paymentPage.includes("redirect(\"/pricing\")"), "payment page should preserve the pricing redirect");
+for (const term of ["Start recurring credit subscription", "Buy one-time top-up credits", "billingTermsText", "PaymentCheckoutButton", "does not renew automatically", "Whop", "24-hour preview"]) {
+  assert(paymentPage.includes(term), `payment page missing term: ${term}`);
+}
 
 const whopCheckoutPage = readFileSync("src/app/checkout/whop/page.tsx", "utf8");
 for (const term of ["Whop secure checkout", "non-refundable 24-hour preview/setup charge", "data-whop-checkout-plan-id", "data-whop-checkout-return-url"]) {

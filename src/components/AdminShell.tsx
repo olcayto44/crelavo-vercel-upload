@@ -16,7 +16,7 @@ export function AdminShell({ children, title, description }: { children: React.R
   const router = useRouter();
 
   return (
-    <main className="container section admin-shell-layout cream-admin-shell">
+    <main className="container section admin-shell-layout">
       <div className="nav" style={{ paddingTop: 0 }}>
         <Link className="logo" href="/admin"><span className="logo-mark">▶</span><span>Crelavo Admin</span></Link>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
