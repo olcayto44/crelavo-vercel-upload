@@ -10,7 +10,7 @@ export function RegisterForm() {
   const [state, setState] = useState<State>("idle");
   const [message, setMessage] = useState("");
 
-  async function continueWithProvider(provider: "google" | "facebook" | "apple") {
+  async function continueWithProvider(provider: "google") {
     setState("loading"); setMessage("");
     const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider, options: { redirectTo: `${siteUrl || window.location.origin}/dashboard/assistant-workspace` } });
     if (error) { setState("error"); setMessage(error.message); }
@@ -30,8 +30,6 @@ export function RegisterForm() {
     <form onSubmit={onSubmit}>
       <div className="auth-provider-grid">
         <button className="btn auth-google-btn" type="button" onClick={() => continueWithProvider("google")} disabled={state === "loading"}>Continue with Google</button>
-        <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("facebook")} disabled={state === "loading"}>Continue with Facebook</button>
-        <button className="btn secondary auth-google-btn" type="button" onClick={() => continueWithProvider("apple")} disabled={state === "loading"}>Continue with Apple</button>
       </div>
       <div className="auth-divider"><span>or create with email</span></div>
       <div className="field"><label>Email</label><input name="email" type="email" required placeholder="example@email.com" /></div>
