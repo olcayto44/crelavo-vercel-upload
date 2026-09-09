@@ -7,7 +7,6 @@ import { normalizePackageConfig, PACKAGE_CONFIG_KEY } from "@/lib/package-config
 import { estimateProductionCost } from "@/lib/production";
 import { packageIdFromSelection } from "@/lib/production-payload";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
-import { getClientIp, grantWelcomeAssistantCreditsOnce } from "@/lib/welcome-assistant-credits";
 
 const PLAN_CREDITS = {
   quick: 100,
@@ -441,8 +440,6 @@ export async function POST(request: Request) {
 
     const { error: profileError } = await supabase.from("profiles").upsert({ id: userId, email: userEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
     if (profileError) throw profileError;
-
-    await grantWelcomeAssistantCreditsOnce({ supabase, userId, email: userEmail, ipAddress: getClientIp(request) });
 
     const { data: assistantBalanceRow, error: assistantBalanceError } = await supabase.from("assistant_credit_balances").select("balance").eq("user_id", userId).maybeSingle();
     if (assistantBalanceError) throw assistantBalanceError;

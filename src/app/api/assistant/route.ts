@@ -1,7 +1,6 @@
 import { detectActionRoute, detectCategory, detectLanguage, detectStyle, durationForCategory } from "@/lib/assistant-routing.mts";
 import { validateProductionSafety } from "@/lib/content-safety";
 import { supabaseAdmin } from "@/lib/supabase";
-import { getClientIp, grantWelcomeAssistantCreditsOnce } from "@/lib/welcome-assistant-credits";
 
 const ASSISTANT_CREDITS = {
   quick: 100,
@@ -230,8 +229,6 @@ export async function POST(request: Request) {
       .upsert({ id: userId, email: userEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
 
     if (profileError) throw profileError;
-
-    await grantWelcomeAssistantCreditsOnce({ supabase, userId, email: userEmail, ipAddress: getClientIp(request) });
 
     if (isGeneralAssistantChat(idea)) {
       const generatedReply = await openAiGeneralReply(idea, history).catch(() => "");

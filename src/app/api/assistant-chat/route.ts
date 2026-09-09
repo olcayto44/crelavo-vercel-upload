@@ -3,7 +3,6 @@ import { buildAssistantKnowledgePrompt } from "@/lib/assistant-knowledge";
 import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib/assistant-user-context";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { validateProductionSafety } from "@/lib/content-safety";
-import { getClientIp, grantWelcomeAssistantCreditsOnce } from "@/lib/welcome-assistant-credits";
 
 const CHAT_CREDITS = {
   quick: 100,
@@ -290,8 +289,6 @@ export async function POST(request: Request) {
 
     const { error: profileError } = await supabase.from("profiles").upsert({ id: userId, email: userEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
     if (profileError) throw profileError;
-
-    await grantWelcomeAssistantCreditsOnce({ supabase, userId, email: userEmail, ipAddress: getClientIp(request) });
 
     const { data: assistantBalanceRow, error: assistantBalanceError } = await supabase.from("assistant_credit_balances").select("balance").eq("user_id", userId).maybeSingle();
     if (assistantBalanceError) throw assistantBalanceError;

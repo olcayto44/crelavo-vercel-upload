@@ -4,7 +4,6 @@ import { AdminFooterVisibility } from "@/components/AdminFooterVisibility";
 import { GoogleAdsTag } from "@/components/GoogleAdsConversion";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
-import { OAuthWelcomeCreditClient } from "@/components/OAuthWelcomeCreditClient";
 import { PartnerReferralTracker } from "@/components/PartnerReferralTracker";
 import { PreviewSupportBoxRouteGate } from "@/components/PreviewSupportBoxRouteGate";
 import { PublicSideRail } from "@/components/PublicSideRail";
@@ -127,7 +126,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GoogleAdsTag />
         <GoogleAnalytics />
         <Suspense fallback={null}><PartnerReferralTracker /></Suspense>
-        <Suspense fallback={null}><OAuthWelcomeCreditClient /></Suspense>
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PublicSideRail /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
