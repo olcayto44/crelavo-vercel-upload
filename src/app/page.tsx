@@ -5,7 +5,6 @@ import { TrialCtaLink } from "@/components/GoogleAdsConversion";
 import { FaqSection } from "@/components/FaqSection";
 import { FaqStructuredData } from "@/components/FaqStructuredData";
 import { CrelavoPremiumHero } from "@/components/CrelavoPremiumHero";
-import CreamHomeVitrin from "@/components/cream/CreamHomeVitrin";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
 import { HomeShowcaseSlider, type HomeShowcaseSlide } from "@/components/HomeShowcaseSlider";
@@ -443,7 +442,6 @@ export default async function HomePage() {
       <FaqStructuredData />
       <SiteStructuredData />
       <Header navLinks={siteContent.navLinks} />
-      <CreamHomeVitrin />
       <TrialCtaLink className="trial-top-strip" href={whopFreeTrialCheckoutUrl}>
         <span className="trial-top-strip-badge">FLASH · 24 HOURS FREE</span>
         <strong>$0 today</strong>
