@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -9,7 +9,7 @@ type Plan = {
   features: string[]; popular?: boolean; cta: string; oneTime?: boolean;
 };
 
-const checkoutBase = "https://crelavo.whop.site/checkout/";
+const checkoutBase = "https://whop.com/checkout/";
 
 const creditPlans: Plan[] = [
   { name: "Pro Credits", pill: "2,500 credits / mo", monthlyPrice: "$29", annualPrice: "$290", period: "/mo", monthlyPlan: "plan_ECfkkMySZHtIZ", annualPlan: "plan_A9zegHpbjxAfO", preview: "$5", save: "Save $58 vs monthly", cta: "Start preview", features: ["Monthly credit refill", "Studio production", "Dashboard delivery", "Cancel anytime in Whop"] },
