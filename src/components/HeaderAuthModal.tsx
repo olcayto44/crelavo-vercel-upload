@@ -64,7 +64,7 @@ export function HeaderAuthModal({ open, initialMode, onClose, onSwitch }: Header
           <button className={`auth-modal-tab${mode === "register" ? " active" : ""}`} type="button" role="tab" aria-selected={mode === "register"} onClick={() => { setMode("register"); onSwitch("register"); }}>Create account</button>
         </div>
         <form onSubmit={onSubmit} className="auth-modal-form">
-          <button className="btn auth-google-btn auth-modal-provider" type="button" onClick={continueWithGoogle} disabled={state === "loading"}>Continue with Google</button>
+          <button className="btn auth-google-btn auth-modal-provider" style={{ display: "flex", width: "100%", visibility: "visible", opacity: 1 }} type="button" onClick={continueWithGoogle} disabled={state === "loading"}><span aria-hidden="true">G</span><span>Continue with Google</span></button>
           <div className="auth-divider"><span>{mode === "register" ? "or create with email" : "or continue with email"}</span></div>
           <div className="field"><label>Email</label><input name="email" type="email" required placeholder="example@email.com" /></div>
           <button className="btn auth-modal-submit" disabled={state === "loading"} type="submit">
