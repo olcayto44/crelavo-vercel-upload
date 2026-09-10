@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
 import { ShowcaseVideoDetail } from "@/components/ShowcaseVideoDetail";
+import { ExploreSamplesBody } from "@/components/ExploreSamplesBody";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getShowcaseItem, showcaseItems } from "@/lib/showcase-items";
 
@@ -240,6 +241,11 @@ export default async function ShowcaseDetailPage({ params, searchParams }: Showc
   const selectedHomepageVideo = id === "explore-samples" ? crelavoHomepageVideos.find((video) => video.id === query.video) : undefined;
   if (selectedHomepageVideo) {
     return <ShowcaseVideoDetail video={selectedHomepageVideo} backHref="/showcase/explore-samples" backLabel="Back to samples" actionHref={`/dashboard/create?category=video&sample=${encodeURIComponent(selectedHomepageVideo.id)}`} actionLabel="Create a similar video" />;
+  }
+
+  if (id === "explore-samples") {
+    const videos = await (await import("@/lib/showcase-video-config")).getConfiguredShowcaseVideos();
+    return <><Header navLinks={siteContent.navLinks} /><ExploreSamplesBody videos={videos} /></>;
   }
 
   const keywords = buildShowcaseKeywords(item);
