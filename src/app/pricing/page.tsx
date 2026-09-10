@@ -6,7 +6,7 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
 import { packages } from "@/lib/data";
 
-const publicLaunchPlans = packages.filter((plan) => plan.id === "pro");
+const publicLaunchPlans = packages;
 import { PricingStructuredData } from "@/components/PricingStructuredData";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 
