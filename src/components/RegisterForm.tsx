@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const siteUrl = "https://www.crelavo.com";
 type State = "idle" | "loading" | "success" | "error";
 
 export function RegisterForm() {
