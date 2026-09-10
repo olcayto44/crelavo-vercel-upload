@@ -37,6 +37,16 @@ const navGroups = [
     ]
   },
   {
+    title: "Plans & Services",
+    href: "/dashboard/credits",
+    description: "Credit packages and specialist services",
+    items: [
+      ["Credit Packages", "/dashboard/credits"],
+      ["Live Sales Avatar", "/live-sales-credits"],
+      ["Drone Category & Packages", "/drone-credits"]
+    ]
+  },
+  {
     title: "Account",
     href: "/dashboard/credits",
     description: "Credits, subscription and settings",
