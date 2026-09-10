@@ -7,6 +7,7 @@ import { apiServiceGroups as defaultApiServiceGroups, type ApiServiceGroup } fro
 
 function shouldHideRail(pathname: string | null) {
   if (!pathname) return true;
+  if (pathname === "/") return true;
   return Boolean(
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard") ||
