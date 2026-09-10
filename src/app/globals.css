@@ -13429,3 +13429,38 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
 .auth-modal-message-success{color:#86efac;}
 .auth-modal-message-error{color:#fca5a5;}
 @media (max-width: 560px){.auth-modal-card{width:min(92vw,420px);padding:28px 20px;border-radius:16px 0 0 16px;}html body.has-auth-modal-open{overflow:hidden;}}
+
+/* Showcase/public navigation: keep the main nav in one horizontal row at desktop widths. */
+@media (max-width: 1180px) {
+  html body .nav.site-main-nav.container {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    align-items: center !important;
+  }
+  html body .nav.site-main-nav .primary-nav-links {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-top: 0 !important;
+    scrollbar-width: none;
+  }
+  html body .nav.site-main-nav .primary-nav-links::-webkit-scrollbar { display: none; }
+  html body .nav.site-main-nav .nav-session-bar {
+    grid-column: auto !important;
+    grid-row: auto !important;
+    white-space: nowrap !important;
+  }
+}
+@media (max-width: 720px) {
+  html body .nav.site-main-nav.container {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    padding: 12px 16px !important;
+  }
+  html body .nav.site-main-nav .primary-nav-links,
+  html body .nav.site-main-nav .nav-session-bar {
+    flex-basis: auto !important;
+    justify-content: flex-start !important;
+  }
+}
