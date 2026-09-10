@@ -61,7 +61,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
       const label = normalizeNavLabel(item.label);
       if (label === "Assistant") return { ...item, label, href: "/dashboard/assistant-workspace" };
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
-      if (label === "Credits") return { ...item, label: "Credit Packages", href: "/dashboard/credits" };
+      if (label === "Credits") return { ...item, label: "Credit Packages", href: "/pricing" };
       if (label === "Live Sales Plans") return { ...item, label: "Live Sales Avatar", href: "/live-sales-credits" };
       if (label === "Drone Plans") return { ...item, label: "Drone Packages", href: "/drone-credits" };
       return { ...item, label };
