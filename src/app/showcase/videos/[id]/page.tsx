@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { absoluteShowcaseVideoImage } from "@/lib/showcase-videos";
 import { getConfiguredShowcaseVideo, getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
+import { ShowcaseVideoDetail } from "@/components/ShowcaseVideoDetail";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "").replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
 
@@ -33,5 +34,5 @@ function AdCreativeAnglesBody({ video }: { video: { videoUrl: string; imageUrl?:
 export default async function ShowcaseVideoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const video = await getConfiguredShowcaseVideo(id); if (!video) notFound();
   const siteContent = await getConfiguredSiteContentConfig();
-  return <><Header navLinks={siteContent.navLinks} />{id === "ad-creative-angles-showcase" ? <AdCreativeAnglesBody video={video} /> : <main className="showcase-detail-page"><video controls playsInline poster={video.imageUrl} src={video.videoUrl} /></main>}</>;
+  return <><Header navLinks={siteContent.navLinks} />{id === "ad-creative-angles-showcase" ? <AdCreativeAnglesBody video={video} /> : <ShowcaseVideoDetail video={video} />}</>;
 }
