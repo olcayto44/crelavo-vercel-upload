@@ -9,6 +9,7 @@ function shouldHideRail(pathname: string | null) {
   if (!pathname) return true;
   if (pathname === "/") return true;
   if (pathname === "/categories") return true;
+  if (pathname === "/live-sales-credits") return true;
   if (pathname.startsWith("/showcase/videos")) return true;
   return Boolean(
     pathname.startsWith("/admin") ||

@@ -1,114 +1,30 @@
+import type { Metadata } from "next";
+import { Header } from "@/components/Header";
 import { LiveSalesControlCenter } from "@/components/LiveSalesControlCenter";
-import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
-import { liveSalesServicePlans } from "@/lib/data";
+import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const dynamic = "force-dynamic";
-export const metadata = {
-  title: "Live Sales Agent Plans for Social, Ecommerce and Websites | Crelavo",
-  description: "Choose Crelavo live sales agent service plans for your own social media accounts, ecommerce store and website. Plans include fair-use live hours, multilingual avatar direction and pay-as-you-go provider usage.",
-  alternates: { canonical: "/live-sales-credits" }
-};
+export const metadata: Metadata = { title: "Live Sales Agent Plans for Social, Ecommerce and Websites | Crelavo", description: "Build a branded AI live sales avatar and choose fair-use live-hour plans for social, ecommerce and websites.", alternates: { canonical: "/live-sales-credits" } };
 
-const useCases = [
-  {
-    title: "Your own social media accounts",
-    text: "Use the avatar on Instagram, TikTok, Reels or campaign landing pages to introduce products, answer questions and push people toward the offer."
-  },
-  {
-    title: "Your ecommerce store",
-    text: "Put it on product pages, store homepages or checkout support flows to explain price, shipping, bundles, size, materials and trust questions."
-  },
-  {
-    title: "Your website or funnel",
-    text: "Add a 24/7 website sales assistant that greets visitors, gives product info, collects interest and routes buyers to the right page."
-  }
+const css = `#cll{color:#f8fbff}#cll .cll-toggle{display:inline-flex;gap:6px;padding:5px;border:1px solid #ffffff22;border-radius:999px;background:#ffffff0d;margin:8px 0 6px}#cll .cll-toggle label{cursor:pointer;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:800;color:#aeb8cc}#cll .cll-bill{position:absolute;opacity:0;pointer-events:none}#cll #cll-annual:checked~* .cll-m{display:none}#cll #cll-monthly:checked~* .cll-y{display:none}#cll .cll-price{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:4px 0 8px}#cll .cll-preview{color:#7dd3fc;font-size:13px;font-weight:800;margin:0 0 8px}#cll .cll-note{color:#aeb8cc;font-size:13px;line-height:1.5}#cll .cll-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}#cll .cll-cta-row .btn{flex:1 1 auto;min-width:140px;justify-content:center;text-decoration:none}#cll .cll-use,#cll .cll-get{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}#cll .cll-get{grid-template-columns:repeat(4,minmax(0,1fr))}#cll .production-pricing-card{display:flex;flex-direction:column;min-height:100%}#cll .production-pricing-card .btn{margin-top:auto;text-align:center;text-decoration:none}#cll .cll-featured{border-color:#0ea5e966;box-shadow:0 18px 60px #0ea5e924}#cll .cll-compare-wrap{overflow-x:auto}#cll .cll-compare{width:100%;border-collapse:collapse}#cll .cll-compare th,#cll .cll-compare td{text-align:left;padding:12px 10px;border-bottom:1px solid #ffffff14;font-size:14px;vertical-align:top}#cll .cll-compare td{color:#aeb8cc}#cll details.cll-faq{border:1px solid #ffffff14;border-radius:16px;background:#ffffff0a;padding:0 16px;margin:8px 0}#cll details.cll-faq summary{cursor:pointer;font-weight:800;padding:14px 0}#cll details.cll-faq p{margin:0 0 14px;color:#aeb8cc}@media(max-width:960px){#cll .cll-use,#cll .cll-get{grid-template-columns:1fr 1fr}}@media(max-width:640px){#cll .cll-use,#cll .cll-get,#cll .production-pricing-grid{grid-template-columns:1fr!important}#cll .cll-toggle{width:100%}#cll .cll-toggle label{flex:1;text-align:center}#cll .cll-cta-row .btn{width:100%}}`;
+
+const plans = [
+  { name: "Starter Live Sales Agent", badge: "10h / month · 1 platform", preview: "$25", price: "$249/mo", id: "plan_sw8N3lkTKH1N0", rows: [["Live hours", "10h / month"], ["Platforms", "1 live platform"], ["Brief", "1 product / agent brief"], ["Credits", "None included"]] },
+  { name: "Pro Live Commerce Agent", badge: "40h / month · up to 3 platforms", preview: "$79", price: "$799/mo", id: "plan_7xBXQaBb9w0tw", rows: [["Live hours", "40h / month"], ["Platforms", "Up to 3"], ["Direction", "Voice / avatar"], ["Credits", "None included"]] },
+  { name: "Agency Autonomous Brand Agent", badge: "120h / month · white-label", preview: "$119", price: "$2,499/mo", id: "plan_G2ZGmpykTfRIE", rows: [["Live hours", "120h / month"], ["Setup", "White-label brand agent"], ["Catalog", "Product + FAQ logic"], ["Credits", "None included"]] }
 ];
 
-const buyerBenefits = [
-  "You buy the service for your own brand account, not a generic shared bot.",
-  "The avatar can present products, run promo messages, explain offers and answer sales questions.",
-  "It can also share shipping, order and delivery information based on your store setup.",
-  "Monthly fair-use live hours are included; extra provider/API usage is billed separately when needed."
-];
-
-export default function LiveSalesCreditsPage() {
-  return (
-    <main className="container section pricing-page live-sales-page">
-      <section className="promo-top-layout">
-        <div>
-          <span className="badge">Live commerce service</span>
-          <h1>Build the live sales avatar on this page, then choose the plan below</h1>
-          <p className="section-lead">This page is the full Crelavo live sales category. The visitor can read the explanation, configure the avatar here, and then choose the monthly plan for their own social media, ecommerce store or website.</p>
-        </div>
-        <div className="card selected-billing-card">
-          <span className="badge">One page flow</span>
-          <h3>No workspace hopping</h3>
-          <p>Configure the avatar here, choose a plan here, and continue with the same service page.</p>
-        </div>
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <h2>Where buyers use it</h2>
-        <div className="grid" style={{ marginTop: 12 }}>
-          {useCases.map((item) => (
-            <div className="selected-billing-card" key={item.title}>
-              <strong style={{ display: "block", marginBottom: 8 }}>{item.title}</strong>
-              <p style={{ margin: 0 }}>{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <h2>What the service gives the buyer</h2>
-        <div className="grid" style={{ marginTop: 12 }}>
-          {buyerBenefits.map((item) => (
-            <div className="selected-billing-card" key={item}>
-              <p style={{ margin: 0 }}>{item}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section style={{ marginTop: 28 }}>
-        <div className="sample-video-head">
-          <div>
-            <span className="badge">Service plans</span>
-            <h2>Choose the monthly live hours you need</h2>
-            <p className="section-lead">No included credits. These are service subscriptions built around live hours, avatar direction and sales-flow setup for the customer’s own account.</p>
-          </div>
-        </div>
-        <div className="production-pricing-grid">
-          {liveSalesServicePlans.map((plan) => (
-            <div className="card clickable-credit-card credit-sale-card" key={plan.id}>
-              <span className="badge">{plan.fairUseHours}h / month</span>
-              <h3>{plan.name}</h3>
-              <strong style={{ fontSize: 30 }}>{plan.price}</strong>
-              <p>{plan.description}</p>
-              <p><strong>{plan.platformLimit}</strong></p>
-              <ul style={{ margin: "12px 0 0", paddingLeft: 18, color: "var(--muted)", display: "grid", gap: 6 }}>
-                {plan.usage.slice(0, 4).map((item) => <li key={item}>{item}</li>)}
-              </ul>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-                <PaymentCheckoutButton productId={plan.id} billing="monthly">Checkout</PaymentCheckoutButton>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <span className="badge">Avatar creation</span>
-        <h2>Create the live sales avatar here</h2>
-        <p className="section-lead">Choose the platform, avatar type, voice, language, tone, product info, shipping rules and order support flow on the same page after you review the plans above.</p>
-        <LiveSalesControlCenter />
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-        <span className="badge">Recommended route</span>
-        <h2>Use this page when you want a live sales assistant in your own brand environment</h2>
-        <p className="section-lead">If you only need a one-off video, go to the video products. If you want a recurring sales assistant service with monthly live hours for your own channels, this is the right entry point.</p>
-      </section>
-    </main>
-  );
+export default async function LiveSalesCreditsPage() {
+  const siteContent = await getConfiguredSiteContentConfig();
+  return <><Header navLinks={siteContent.navLinks} /><main id="cll" className="container section live-sales-page"><style dangerouslySetInnerHTML={{__html:css}} />
+    <input className="cll-bill" type="radio" name="cll-bill" id="cll-monthly" defaultChecked /><input className="cll-bill" type="radio" name="cll-bill" id="cll-annual" />
+    <section className="promo-top-layout"><div><span className="badge">Live commerce service</span><h1>Build the live sales avatar on this page, then choose the plan below</h1><p className="section-lead">Configure voice, language, industry and product rules here. Start a real HeyGen LiveAvatar preview. Then buy monthly live hours for your own social, store or website. No production credits are included.</p><div className="cll-cta-row"><a className="btn" href="#cll-studio">Open avatar studio</a><a className="btn secondary" href="#cll-plans">See live-hour plans</a></div></div><div className="card selected-billing-card"><span className="badge">One page flow</span><h3>No workspace hopping</h3><p>Configure the avatar here, preview it on this page, choose a plan here, checkout on this site.</p><p className="cll-note">Starter 24h preview $25 → $249/mo. Pro $79 → $799/mo. Agency $119 → $2,499/mo.</p></div></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Where buyers use it</span><h2>One service. Three selling surfaces.</h2><div className="cll-use" style={{marginTop:14}}><div className="card"><h3>Social live and Reels</h3><p>Use the avatar on Instagram, TikTok, Reels or campaign landers to introduce products, answer questions and push the offer.</p></div><div className="card"><h3>Ecommerce store</h3><p>Put it on product pages, store home or checkout support to explain price, bundles, size, materials, shipping and trust.</p></div><div className="card"><h3>Website or funnel</h3><p>A 24/7 sales assistant that greets visitors, gives product info, captures interest and routes buyers to the right page.</p></div></div></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">What the service includes</span><h2>Hours and direction — not a credit pack</h2><div className="cll-get" style={{marginTop:14}}>{["You buy the service for your own brand account, not a generic shared bot.","The avatar presents products, runs promo lines, explains offers and answers sales questions.","It can share shipping, order and delivery info based on your store setup.","Monthly fair-use live hours are included. Extra provider/API usage is billed separately when needed."].map((x)=><div className="card" key={x}><p>{x}</p></div>)}</div></section>
+    <section className="category-browser" id="cll-plans"><div className="category-group-head main-category-head"><span className="badge">Service plans</span><h2>Choose the monthly live hours you need</h2><p>No included credits. These are service subscriptions built around live hours, avatar direction and sales-flow setup for your own account.</p><div className="cll-toggle"><label htmlFor="cll-monthly">Monthly</label><label htmlFor="cll-annual">Annual</label></div><p className="cll-note cll-m">Monthly checkout. Preview today, then the monthly rate.</p><p className="cll-note cll-y">Annual is live for Starter only. Pro and Agency stay on monthly checkout.</p></div><div className="production-pricing-grid">{plans.map((plan,index)=><div className={`card production-pricing-card ${index===1?"cll-featured":""}`} key={plan.id}><span className="badge">{plan.badge}</span><h3>{plan.name}</h3><p className="cll-preview">24h preview {plan.preview}</p><p className="cll-price">{plan.price}</p><p>{index===0?"Fair-use live hours for one live platform. Avatar host persona, voice/language setup and one product brief.":index===1?"Pro live commerce for up to three platforms with voice/avatar direction and multilingual live-chat prompts.":"Agency live-sales hours with white-label brand persona, catalog/FAQ logic and human fallback policy."}</p><div className="production-package-list">{plan.rows.map(([a,b])=><div key={a}><strong>{a}</strong><span>{b}</span></div>)}</div><a className="btn" href={`/checkout/${plan.id}`}>Start 24h preview — {plan.preview}</a></div>)}</div></section>
+    <section className="card admin-wide-card" id="cll-studio" style={{marginTop:28}}><span className="badge">Avatar creation</span><h2>Create the live sales avatar here</h2><p className="section-lead">Choose the platform, avatar type, voice, language, tone, product info, shipping rules and order support flow on this page. The live preview requires login.</p><LiveSalesControlCenter /></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Compare</span><h2>Starter vs Pro vs Agency</h2><div className="cll-compare-wrap"><table className="cll-compare"><thead><tr><th>Plan</th><th>Starter</th><th>Pro</th><th>Agency</th></tr></thead><tbody><tr><td>Fair-use live hours</td><td>10h / month</td><td>40h / month</td><td>120h / month</td></tr><tr><td>Live platforms</td><td>1</td><td>Up to 3</td><td>White-label / agency</td></tr><tr><td>24h preview</td><td>$25</td><td>$79</td><td>$119</td></tr><tr><td>Then monthly</td><td>$249/mo</td><td>$799/mo</td><td>$2,499/mo</td></tr><tr><td>Included credits</td><td>None</td><td>None</td><td>None</td></tr></tbody></table></div></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">FAQ</span><h2>Live sales agent questions</h2><details className="cll-faq" open><summary>Does this include production credits?</summary><p>No. Live Sales is a service of fair-use live hours, avatar direction and sales-flow setup. Credit packs are separate on <a href="/pricing">/pricing</a>.</p></details><details className="cll-faq"><summary>Is the live avatar preview a demo?</summary><p>No. The studio uses Crelavo live APIs and HeyGen LiveAvatar. Preview requires login.</p></details><details className="cll-faq"><summary>What is the 24-hour preview?</summary><p>Starter $25, Pro $79 and Agency $119 for 24 hours, then the selected monthly plan renews.</p></details><details className="cll-faq"><summary>Which platforms can I use?</summary><p>Social accounts, ecommerce stores and websites including Shopify, WooCommerce, Amazon, Trendyol, Alibaba and WhatsApp Business.</p></details></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Recommended route</span><h2>Use this page when you want a live sales assistant in your own brand environment</h2><p>Configure the avatar, preview with HeyGen, then pick hours. For one-off production, use <a href="/categories">production categories</a> or <a href="/pricing">credit packages</a>.</p><div className="cll-cta-row"><a className="btn" href="/checkout/plan_sw8N3lkTKH1N0">Starter preview — $25</a><a className="btn secondary" href="/checkout/plan_7xBXQaBb9w0tw">Pro preview — $79</a><a className="btn secondary" href="/contact">Contact sales</a></div></section>
+  </main></>;
 }
