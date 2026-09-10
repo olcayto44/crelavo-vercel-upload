@@ -1,95 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
-import { PageDemoVideoSection, pickPageDemoVideo } from "@/components/PageDemoVideoSection";
-import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
+import { DroneShootControlPanel } from "@/components/DroneShootControlPanel";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { dronePurchasePackages } from "@/lib/data";
 
-export const metadata = {
-  title: "Drone and Satellite Video Packages | Crelavo",
-  description: "Choose Crelavo drone and satellite video packages for route reveals, map intros, location flyovers and managed visual production briefs.",
-  alternates: { canonical: "/drone-credits" }
-};
+export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Drone and Satellite Video Packages | Crelavo", description: "One-time Crelavo drone and satellite video credit packs for route reveals, map intros and location flyovers.", alternates: { canonical: "https://www.crelavo.com/drone-credits" }, openGraph: { title: "Drone and Satellite Video Packages | Crelavo", url: "https://www.crelavo.com/drone-credits", type: "website" } };
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US")}`;
-}
+const css = `#cld{color:#f8fbff}#cld .cld-note{color:#aeb8cc;font-size:13px;line-height:1.5}#cld .cld-price{font-size:clamp(28px,4vw,40px);font-weight:800;letter-spacing:-.04em;line-height:1.05;margin:4px 0 8px}#cld .cld-cta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}#cld .cld-cta-row .btn{flex:1 1 auto;min-width:140px;justify-content:center;text-decoration:none}#cld .production-pricing-card{display:flex;flex-direction:column;min-height:100%}#cld .production-pricing-card .btn{margin-top:auto;text-align:center;text-decoration:none}#cld .cld-featured{border-color:#0ea5e966;box-shadow:0 18px 60px #0ea5e924}#cld .cld-get{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}#cld details.cld-faq{border:1px solid #ffffff14;border-radius:16px;background:#ffffff0a;padding:0 16px;margin:8px 0}#cld details.cld-faq summary{cursor:pointer;font-weight:800;padding:14px 0}#cld details.cld-faq p{margin:0 0 14px;color:#aeb8cc}@media(max-width:980px){#cld .promo-top-layout{grid-template-columns:1fr!important}#cld .cld-get{grid-template-columns:1fr 1fr}}@media(max-width:640px){#cld .cld-get,#cld .production-pricing-grid{grid-template-columns:1fr!important}#cld .cld-cta-row .btn{width:100%}}`;
 
 export default async function DroneCreditsPage() {
-  const [siteContent, sampleVideos] = await Promise.all([
-    getConfiguredSiteContentConfig(),
-    getConfiguredSampleVideos()
-  ]);
-  const droneDemo = pickPageDemoVideo(sampleVideos, ["drone-page-demo", "drone_video", "drone", "satellite"]);
-
-  return (
-    <>
-      <Header navLinks={siteContent.navLinks} />
-      <main className="container section pricing-page">
-        <section className="promo-top-layout">
-          <div>
-            <span className="badge">Drone / Satellite Video packages</span>
-            <h1>Separate purchase page for drone and satellite video</h1>
-            <p className="section-lead">
-              Drone / Satellite Video is sold from its own package page instead of being mixed into the normal credit purchase page. Customers choose a drone credit pack, then continue to the same credit payment flow used by other credit packs.
-            </p>
-          </div>
-          <div className="card selected-billing-card">
-            <span className="badge">Drone credit pack</span>
-            <h3>What the customer prepares</h3>
-              <p>Location/address, coordinate lookup, route/path, marked map or satellite area, camera angle, camera movement, narration language, subtitles, music style and optional satellite, route and location reference files.</p>
-          </div>
-        </section>
-
-          <PageDemoVideoSection
-           sample={droneDemo}
-           badge="Drone demo video"
-           title="Drone / Satellite video example"
-           description="Use this left-side text area to explain the drone route, satellite intro, camera movement and delivery style. The actual demo video will appear on the right after admin adds a video URL."
-           fallbackFeatures={["Map or satellite intro", "Route reveal", "Drone-style flyover", "Camera movement preview", "Admin-managed demo video URL"]}
-           ctaHref="/dashboard/drone-shoot"
-           ctaLabel="Start drone shoot"
-           secondaryHref="/dashboard/drone-shoot"
-           secondaryLabel="Prepare drone brief"
-           adminHint="Admin setup: open /admin/sample-videos and create or edit a sample with category drone_video or id drone-page-demo. Add Video URL and Thumbnail URL there."
-         />
-
-        <section style={{ marginTop: 28 }}>
-          <div className="sample-video-head">
-            <div>
-              <span className="badge">Choose a drone package</span>
-              <h2>Drone credit packs stay on a separate page</h2>
-              <p className="section-lead">These packages use the same credit logic as other one-time top-ups; the only difference is that Drone has its own purchase page.</p>
-            </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <Link className="btn" href="/dashboard/drone-shoot">Start drone shoot</Link>
-              <Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Drone%20satellite%20route%20video&category=drone_video&mode=media">Prepare drone brief</Link>
-            </div>
-          </div>
-          <div className="production-pricing-grid">
-            {dronePurchasePackages.map((plan) => (
-              <div className="card clickable-credit-card credit-sale-card" key={plan.id}>
-                <span className="badge">One-time drone credit pack</span>
-                <h3>{plan.name}</h3>
-                <strong style={{ fontSize: 30 }}>{plan.price}</strong>
-                {"setupFeeUsd" in plan ? <p><strong>Drone Preview — {formatUsd(Number(plan.setupFeeUsd))}</strong> setup fee for preview access. Includes watermarked preview access; downloads stay closed until full one-time package access is confirmed.</p> : null}
-                <p><strong>{plan.credits.toLocaleString()} credits</strong> will be added after payment confirmation.</p>
-                <p>{plan.description}</p>
-                <div className="plan-feature-groups">
-                  <div>
-                    <b>Package scope</b>
-                    {plan.usage.map((item) => <small key={item}>{item}</small>)}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-                  <Link className="btn" href={`/dashboard/payment?package=${encodeURIComponent(plan.id)}&billing=one_time`}>Start drone preview</Link>
-                  <Link className="btn secondary" href="/dashboard/drone-shoot">Start drone shoot</Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </>
-  );
+  const siteContent = await getConfiguredSiteContentConfig();
+  return <><Header navLinks={siteContent.navLinks} /><main id="cld" className="container section pricing-page"><style dangerouslySetInnerHTML={{__html:css}} />
+    <section className="promo-top-layout"><div><span className="badge">Drone / Satellite Video</span><h1>Location flyovers, route reveals, satellite intros</h1><p className="section-lead">One-time credit packs for AI drone-style video. Set the address, confirm coordinates, attach map or style references, then start production. Checkout stays on this site.</p><div className="cld-cta-row"><a className="btn" href="#cld-plans">See drone packs</a><a className="btn secondary" href="#cld-studio">Open shoot studio</a></div><p className="cld-note" style={{marginTop:10}}>Drone Location $299 · 2,600 credits. Satellite + Drone $699 · 6,800 credits. No monthly renewal.</p></div><div className="production-hero-card clean-feed-section"><span className="badge">What you prepare</span><h2>Brief before render</h2><p>Location or coordinates, route, camera angle, narration language, subtitles, music and optional map or style files. The studio geocodes the pin and pulls a satellite still before render.</p></div></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Included in both packs</span><div className="cld-get" style={{marginTop:14}}><div className="card"><strong>Coordinates</strong><p className="cld-note">Address lookup, then confirm the pin</p></div><div className="card"><strong>Satellite still</strong><p className="cld-note">Auto map / satellite still from the location</p></div><div className="card"><strong>Route plan</strong><p className="cld-note">Flyover path, marked area, camera move</p></div><div className="card"><strong>Delivery</strong><p className="cld-note">MP4, thumbnail, revision path in dashboard</p></div></div></section>
+    <section className="category-browser" id="cld-plans"><div className="category-group-head main-category-head"><span className="badge">One-time credit packs</span><h2>Buy credits, then shoot</h2><p className="section-lead">Credits are added after payment confirmation. These packs do not renew. They are not Live Sales hours and not Crelavo Pro software access.</p></div><div className="production-pricing-grid"><div className="card production-pricing-card production-tone-video cld-featured"><span className="badge">One-time</span><h3>Drone Location Video</h3><p className="cld-price">$299</p><p>2,600 credits added after payment. Location, property, route or travel spot with camera-angle and reference-file brief.</p><div className="production-package-list"><div><strong>Credits</strong><span>2,600</span></div><div><strong>Renewal</strong><span>None</span></div><div><strong>Scope</strong><span>Address / coordinates, route, aerial scene</span></div><div><strong>Voice</strong><span>Voice-over + subtitle direction</span></div></div><a className="btn" href="/checkout/plan_Sm0chNhnmVKBG">Buy Drone Location — $299</a></div><div className="card production-pricing-card production-tone-cinematic_video"><span className="badge">One-time</span><h3>Satellite + Drone Story</h3><p className="cld-price">$699</p><p>6,800 credits added after payment. Map/satellite intro, marked area, route reveal, narration and social delivery pack.</p><div className="production-package-list"><div><strong>Credits</strong><span>6,800</span></div><div><strong>Renewal</strong><span>None</span></div><div><strong>Scope</strong><span>Satellite intro + drone flyover</span></div><div><strong>Output</strong><span>Final delivery package planning</span></div></div><a className="btn" href="/checkout/plan_ENiXR71BMaqB2">Buy Satellite + Drone — $699</a></div></div></section>
+    <section className="card admin-wide-card" id="cld-studio" style={{marginTop:28}}><span className="badge">Shoot studio</span><h2>Create the drone brief here</h2><p className="section-lead">Find coordinates, pull a satellite still, upload references, then start production. Login is required to upload and to start a job. Buying credits is a separate checkout on this site.</p><DroneShootControlPanel /></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">FAQ</span><h2>Drone pack questions</h2><details className="cld-faq" open><summary>Is this a real drone operator?</summary><p>No. This is AI drone-style / satellite video from a location brief. It is not a physical UAV flight.</p></details><details className="cld-faq"><summary>Do these packs renew?</summary><p>No. $299 and $699 are one-time credit purchases. Checkout: <a href="/checkout/plan_Sm0chNhnmVKBG">Drone Location</a> and <a href="/checkout/plan_ENiXR71BMaqB2">Satellite + Drone</a>.</p></details><details className="cld-faq"><summary>When can I start the shoot?</summary><p>After credits land. Find coordinates, confirm the satellite still, upload references if you have them, then start the shoot. Login: <a href="/?auth=register">/?auth=register</a>.</p></details><details className="cld-faq"><summary>Is this the same as monthly credits or Live Sales?</summary><p>No. Monthly credit plans are on <a href="/pricing">/pricing</a>. Live Sales hours are on <a href="/live-sales-credits">/live-sales-credits</a>. This page is only the two drone one-time packs.</p></details></section>
+    <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Recommended route</span><h2>Prepare the location, then start the AI drone-style production</h2><p>Use the studio above to confirm the map reference and submit the brief. For other production types, visit <a href="/categories">production categories</a>.</p><div className="cld-cta-row"><a className="btn" href="/checkout/plan_Sm0chNhnmVKBG">Drone Location — $299</a><a className="btn secondary" href="/checkout/plan_ENiXR71BMaqB2">Satellite + Drone — $699</a><Link className="btn secondary" href="/contact">Contact sales</Link></div></section>
+  </main></>;
 }
