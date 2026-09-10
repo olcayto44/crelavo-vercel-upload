@@ -41,20 +41,22 @@ export function ShowcaseVideoDetail({
   backHref = "/#video-showcase",
   backLabel = "Back to showcase videos",
   actionHref = `/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`,
-  actionLabel = "Create a similar video"
+  actionLabel = "Create a similar video",
+  showHeader = true
 }: {
   video: ShowcaseVideoDetailVideo;
   backHref?: string;
   backLabel?: string;
   actionHref?: string;
   actionLabel?: string;
+  showHeader?: boolean;
 }) {
   const imageUrl = absoluteShowcaseVideoImage(video, siteUrl);
   return (
     <main>
       <SiteStructuredData />
       <VideoJsonLd video={video} />
-      <Header />
+      {showHeader ? <Header /> : null}
       <section className="showcase-detail-shell">
         <Link className="btn secondary" href={backHref}><ArrowLeft size={16} /> {backLabel}</Link>
         <section className="video-showcase-hero-layout">

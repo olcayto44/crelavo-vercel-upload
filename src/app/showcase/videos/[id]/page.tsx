@@ -34,5 +34,5 @@ function AdCreativeAnglesBody({ video }: { video: { videoUrl: string; imageUrl?:
 export default async function ShowcaseVideoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const video = await getConfiguredShowcaseVideo(id); if (!video) notFound();
   const siteContent = await getConfiguredSiteContentConfig();
-  return <><Header navLinks={siteContent.navLinks} />{id === "ad-creative-angles-showcase" ? <AdCreativeAnglesBody video={video} /> : <ShowcaseVideoDetail video={video} />}</>;
+  return <><Header navLinks={siteContent.navLinks} />{id === "ad-creative-angles-showcase" ? <AdCreativeAnglesBody video={video} /> : <ShowcaseVideoDetail video={video} showHeader={false} />}</>;
 }
