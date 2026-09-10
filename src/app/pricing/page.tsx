@@ -4,11 +4,9 @@ import { CampaignPromoSlot } from "@/components/CampaignPromoSlot";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { CreditPlansToggle } from "@/components/CreditPlansToggle";
-import { packages, topUpPackages, dronePurchasePackages } from "@/lib/data";
+import { packages } from "@/lib/data";
 
 const publicLaunchPlans = packages;
-const publicTopUpPlans = topUpPackages;
-const publicDronePlans = dronePurchasePackages;
 import { PricingStructuredData } from "@/components/PricingStructuredData";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 
@@ -78,20 +76,6 @@ export default async function PricingPage() {
         </section>
 
         <CreditPlansToggle plans={publicLaunchPlans} ctaLabel="Start Free 24-Hour Trial" compact sideBySideAnnual />
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Top-up credits</span>
-          <h2>Buy extra credits whenever you need them</h2>
-          <p className="section-lead">One-time credit refills do not renew automatically and can be purchased repeatedly.</p>
-          <CreditPlansToggle plans={publicTopUpPlans} ctaLabel="Buy credits" compact />
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Drone packages</span>
-          <h2>Drone and satellite credit packages</h2>
-          <p className="section-lead">Special drone and satellite credit packs with separate credit balance and delivery style.</p>
-          <CreditPlansToggle plans={publicDronePlans} ctaLabel="Choose drone package" compact />
-        </section>
 
 <section className="card admin-wide-card" style={{ marginTop: 28 }}>
            <span className="badge">24-hour free trial</span>
