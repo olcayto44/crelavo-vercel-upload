@@ -39,7 +39,7 @@ export function HeaderAuthModal({ open, initialMode, onClose, onSwitch }: Header
 
   async function continueWithGoogle() {
     setState("loading"); setMessage("");
-    const redirectTo = `${siteUrl || window.location.origin}/dashboard/assistant-workspace`;
+    const redirectTo = `${siteUrl || window.location.origin}`;
     const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     if (error) { setState("error"); setMessage(error.message); }
   }
@@ -48,7 +48,7 @@ export function HeaderAuthModal({ open, initialMode, onClose, onSwitch }: Header
     event.preventDefault(); setState("loading"); setMessage("");
     const email = String(new FormData(event.currentTarget).get("email") ?? "").trim().toLowerCase();
     if (!email) { setState("error"); setMessage("Enter your email address."); return; }
-    const redirectTo = `${siteUrl || window.location.origin}/dashboard/assistant-workspace`;
+    const redirectTo = `${siteUrl || window.location.origin}`;
     const { error } = await supabaseBrowser().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: redirectTo } });
     if (error) { setState("error"); setMessage(error.message); return; }
     setState("success");
