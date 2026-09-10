@@ -5,14 +5,15 @@ import { Header } from "@/components/Header";
 import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 
-type LocalizedPageProps = { params: Promise<{ locale: string; slug: string }> };
+type LocalizedPageProps = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return localizedEuropePages.map((page) => ({ locale: page.locale, slug: page.slug }));
+  return localizedEuropePages.filter((page) => page.locale === "de").map((page) => ({ slug: page.slug }));
 }
 
 export async function generateMetadata({ params }: LocalizedPageProps): Promise<Metadata> {
-  const { locale, slug } = await params;
+  const { slug } = await params;
+  const locale = "de";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) return { title: "Localized Crelavo page" };
 
@@ -61,7 +62,8 @@ function LocalizedStructuredData({ page }: { page: (typeof localizedEuropePages)
 }
 
 export default async function LocalizedEuropePage({ params }: LocalizedPageProps) {
-  const { locale, slug } = await params;
+  const { slug } = await params;
+  const locale = "de";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) notFound();
 

@@ -36,6 +36,10 @@ export function UserInfoPill() {
       }
     };
     cleanAuthHash();
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)) {
+      setLoaded(true);
+      return () => { active = false; };
+    }
     supabaseBrowser().auth.getUser().then(({ data }) => {
       if (!active) return;
       if (data.user) {

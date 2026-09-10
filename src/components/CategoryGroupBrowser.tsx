@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+
 import { AppWindow, AudioWaveform, Bot, Clapperboard, FileText, Globe2, Image, LayoutDashboard, Megaphone, MonitorSmartphone, Music2, Palette, Pencil, Radio, ScrollText, Scissors, Sparkles, UsersRound, UserRound, Video, Wand2 } from "lucide-react";
 import { HardReloadLink } from "@/components/HardReloadLink";
 
@@ -163,66 +163,44 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
           </div>
         ))}
       </div>
-      <HardReloadLink className="btn" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
+      <div className="clc-btn-row">
+        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
+        {type.id === "ad_score_checker" ? <HardReloadLink className="btn secondary" href="/free-tools/ad-performance-score-checker">Free score tool</HardReloadLink> : null}
+        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
+      </div>
     </div>
   );
 }
 
 export function CategoryGroupBrowser() {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>("build");
-  const [packageCatalog, setPackageCatalog] = useState<ProductionPackage[]>(productionPackages);
-  const selectedGroup = categoryGroups.find((group) => group.id === selectedGroupId);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/packages")
-      .then((response) => response.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (Array.isArray(data.config?.productionPackages) && data.config.productionPackages.length) setPackageCatalog(data.config.productionPackages);
-      })
-      .catch(() => undefined);
-    return () => { cancelled = true; };
-  }, []);
-
   return (
     <section className="category-browser">
       <div className="category-group-head main-category-head">
         <span className="badge">Main categories</span>
-        <h2>Choose one main Crelavo category</h2>
-        <p>These groups are built from the production types in the codebase, so users see the real main paths without the old full-page category dump.</p>
+        <h2>All Crelavo production categories</h2>
+        <p>Jump to a group. Every production type is listed below — nothing is hidden behind tabs.</p>
       </div>
       <div className="category-tab-grid">
-        {categoryGroups.map((group) => {
-          const isActive = selectedGroupId === group.id;
-          return (
-            <button className={`category-tab-card category-tone-${group.id}${isActive ? " active" : ""}`} key={group.id} type="button" onClick={() => setSelectedGroupId(group.id)}>
-              <span>{group.typeIds.length} categories</span>
-              <strong>{group.title}</strong>
-              <small>{group.description}</small>
-            </button>
-          );
-        })}
+        {categoryGroups.map((group) => (
+          <HardReloadLink className={`category-tab-card category-tone-${group.id}`} href={`#clc-${group.id}`} key={group.id}>
+            <span>{group.typeIds.length} categories</span>
+            <strong>{group.title}</strong>
+            <small>{group.description}</small>
+          </HardReloadLink>
+        ))}
       </div>
-
-      {!selectedGroup ? (
-        <div className="category-empty-state">
-          <span className="badge">Choose a production group</span>
-          <h2>Select a heading above to view its categories</h2>
-          <p>The page stays simple: choose one production group, then only that set of categories appears below.</p>
-        </div>
-      ) : (
-        <section className="category-group-section">
+      {categoryGroups.map((group) => (
+        <section className="category-group-section" id={`clc-${group.id}`} key={group.id}>
           <div className="category-group-head">
-            <span className="badge">Selected production group</span>
-            <h2>{selectedGroup.title}</h2>
-            <p>{selectedGroup.description}</p>
+            <span className="badge">Production group</span>
+            <h2>{group.title}</h2>
+            <p>{group.description}</p>
           </div>
           <div className="production-pricing-grid compact-category-grid">
-            {selectedGroup.typeIds.map((typeId) => renderCategoryCard(typeId, packageCatalog))}
+            {group.typeIds.map((typeId) => renderCategoryCard(typeId, productionPackages))}
           </div>
         </section>
-      )}
+      ))}
     </section>
   );
 }

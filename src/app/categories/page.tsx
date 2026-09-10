@@ -37,7 +37,8 @@ export default async function CategoriesPage() {
         pageType="CollectionPage"
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section public-funnel-page categories-funnel-page">
+      <main id="clc" className="container section public-funnel-page categories-funnel-page">
+        <style>{`.public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important}.page-with-rails{padding-left:0!important;padding-right:0!important}html{scroll-behavior:smooth}#clc a.category-tab-card{text-decoration:none;color:inherit}#clc .clc-btn-row{display:flex;gap:10px;flex-wrap:wrap}#clc .clc-btn-row .btn{flex:1 1 auto}`}</style>
         <section className="promo-top-layout">
           <div>
             <span className="badge">Production categories</span>
