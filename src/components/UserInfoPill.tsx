@@ -29,6 +29,13 @@ export function UserInfoPill() {
 
   useEffect(() => {
     let active = true;
+
+    const cleanAuthHash = () => {
+      if (window.location.hash.includes("access_token=") || window.location.hash.includes("error=")) {
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+      }
+    };
+    cleanAuthHash();
     supabaseBrowser().auth.getUser().then(({ data }) => {
       if (!active) return;
       if (data.user) {
