@@ -61,9 +61,12 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
       const label = normalizeNavLabel(item.label);
       if (label === "Assistant") return { ...item, label, href: "/dashboard/assistant-workspace" };
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
+      if (label === "Credits") return { ...item, label: "Credit Packages", href: "/dashboard/credits" };
+      if (label === "Live Sales Plans") return { ...item, label: "Live Sales Avatar", href: "/live-sales-credits" };
+      if (label === "Drone Plans") return { ...item, label: "Drone Packages", href: "/drone-credits" };
       return { ...item, label };
     })
-    .filter((item, index, items) => !["Categories", "Credits", "Live Sales Plans", "Drone Plans"].includes(item.label) && items.findIndex((candidate) => candidate.label === item.label) === index);
+    .filter((item, index, items) => item.label !== "Categories" && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
     <header className="container nav site-main-nav">
       <Link className="logo" href="/">
