@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import type { ConfiguredShowcaseVideo } from "@/lib/showcase-video-config";
 
 type Filter = "all" | "product" | "ugc" | "fashion" | "cinematic" | "pets";
@@ -31,19 +32,8 @@ export function ExploreSamplesBody({ videos }: { videos: ConfiguredShowcaseVideo
   const [filter, setFilter] = useState<Filter>("all");
   const filters: { id: Filter; label: string }[] = [{ id: "all", label: `All ${videos.length}` }, { id: "product", label: "Product ads" }, { id: "ugc", label: "UGC" }, { id: "fashion", label: "Fashion" }, { id: "cinematic", label: "Cinematic" }, { id: "pets", label: "Pets" }];
 
-  useEffect(() => {
-    const header = document.querySelector("header.site-main-nav");
-    if (!header || header.querySelector(".cl-mnav")) return;
-    const links = header.querySelector(".primary-nav-links") || header.querySelector(".nav-links");
-    const button = document.createElement("button");
-    button.type = "button"; button.className = "cl-mnav"; button.setAttribute("aria-label", "Open menu"); button.setAttribute("aria-expanded", "false"); button.textContent = "Menu";
-    button.addEventListener("click", () => { if (!links) return; const open = links.classList.toggle("is-open"); button.textContent = open ? "Close" : "Menu"; button.setAttribute("aria-expanded", open ? "true" : "false"); });
-    const logo = header.querySelector(".logo"); if (logo) logo.insertAdjacentElement("afterend", button); else header.appendChild(button);
-    return () => button.remove();
-  }, []);
-
   const visible = filter === "all" ? videos : videos.filter((video) => categoryFor(video) === filter);
-  return <><style dangerouslySetInnerHTML={{ __html: css }} /><section id="cle"><div className="wrap">
+  return <><InnerMobileNav /><style dangerouslySetInnerHTML={{ __html: css }} /><section id="cle"><div className="wrap">
     <a className="back" href="/">← Back to homepage</a>
     <div className="hero"><div className="intro"><span className="kicker">Sample output feed</span><h1>Explore samples</h1><p className="lede">Watch real Crelavo productions. Open any card for the full example, then start a similar video or a 24-hour Pro preview.</p><div className="cta-row"><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="/dashboard/assistant-workspace">Open assistant</a><a className="btn btn-ghost" href="/pricing">View pricing</a></div></div><div className="hero-art"><img src={fallbackPoster} alt="Crelavo sample production wall" /></div></div>
     <div className="cats">{categories.map(([label, image]) => <article className="cat" key={label}><img src={image} alt={`${label} still`} /><span>{label}</span></article>)}</div>

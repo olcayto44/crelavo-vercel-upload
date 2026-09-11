@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -37,6 +38,7 @@ export default async function CategoriesPage() {
         pageType="CollectionPage"
       />
       <Header navLinks={siteContent.navLinks} />
+      <InnerMobileNav />
       <main id="clc" className="container section public-funnel-page categories-funnel-page">
         <style>{`.public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important}.page-with-rails{padding-left:0!important;padding-right:0!important}html{scroll-behavior:smooth}#clc a.category-tab-card{text-decoration:none;color:inherit}#clc .clc-btn-row{display:flex;gap:10px;flex-wrap:wrap}#clc .clc-btn-row .btn{flex:1 1 auto}`}</style>
         <section className="promo-top-layout">
