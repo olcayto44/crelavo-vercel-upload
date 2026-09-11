@@ -158,10 +158,14 @@ const menuScript = `
   function pause(v){try{v.pause();}catch(e){}}
   if(hero){prep(hero);hero.preload='metadata';}
   films.forEach(function(v){prep(v);v.preload='none';pause(v);});
-  var current=null;
   if('IntersectionObserver' in window){
     if(hero){new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)play(hero);else pause(hero);});},{threshold:0.6}).observe(hero);}
-    var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){if(current&&current!==e.target)pause(current);current=e.target;play(e.target);}else if(current===e.target){pause(e.target);current=null;}});},{threshold:0.6});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting) play(e.target);
+        else pause(e.target);
+      });
+    },{threshold:0.25});
     films.forEach(function(v){io.observe(v);});
   }
 })();
