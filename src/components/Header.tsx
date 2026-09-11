@@ -70,11 +70,11 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, sho
     .filter((item, index, items) => item.label !== "Categories" && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
     <header className="container nav site-main-nav">
+      {showMobileMenu && <button type="button" className="cl-mnav" data-cl-mnav-trigger aria-label="Menüyü aç" aria-expanded="false"><span /><span /><span /></button>}
       <Link className="logo" href="/">
         <span className="logo-mark"><Clapperboard size={18} /></span>
         <span>Crelavo</span>
       </Link>
-      {showMobileMenu && <button type="button" className="cl-mnav" data-cl-mnav-trigger aria-label="Open menu" aria-expanded="false">Menu</button>}
       <nav className="nav-links primary-nav-links">
         <div className="tools-mega-wrap create-mega-wrap">
           <LocalizedNavLink className="tools-mega-trigger" href="/categories" label="Create" languageOverride={languageOverride} />
@@ -107,6 +107,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, sho
           </div>
         ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} languageOverride={languageOverride} />)}
       </nav>
+      {showMobileMenu && <div className="cl-mobile-actions"><Link href="/?auth=register">Ücretsiz Başla</Link><Link href="/?auth=login">Giriş Yap</Link></div>}
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">
           {localizedEuropePages.map((page) => <Link href={page.path} key={page.path}>{page.locale.toUpperCase()}</Link>)}
