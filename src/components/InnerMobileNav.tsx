@@ -37,10 +37,23 @@ html body:has(main.omni-work-route) .cl-sticky{display:none!important}
 html body .auth-modal-card{width:100%!important;left:0!important;right:0!important;border-radius:0!important}
 }
 @media(min-width:981px){#cl-inner-nav,#cl-mnav-toggle,label.cl-mnav,#cl-mnav-sheet,.cl-sticky,.cl-fallback-bar{display:none!important}}
+html.cl-authed .cl-sticky a.gin,html.cl-authed .cl-sticky a.uye,html.cl-authed #cl-mnav-sheet .auth{display:none!important}
+.cl-sticky a.cikis,#cl-mnav-sheet a.cikis{display:none!important;flex:1!important;align-items:center!important;justify-content:center!important;height:44px!important;border-radius:999px!important;font:650 14px/1 Inter,system-ui,sans-serif!important;text-decoration:none!important;background:rgba(255,255,255,.08)!important;color:#f8fbff!important;border:1px solid rgba(255,255,255,.16)!important;cursor:pointer!important}
+@media(max-width:980px){
+html.cl-authed .cl-sticky a.cikis,html.cl-authed #cl-mnav-sheet a.cikis{display:flex!important}
+#cl-mnav-sheet a.cikis{margin-top:16px!important}
+}
 `;
+
+type InnerAuthWindow = Window & { __clInnerAuth?: boolean };
 
 export function InnerMobileNav() {
   useEffect(() => {
+    const authWindow = window as InnerAuthWindow;
+    if (authWindow.__clInnerAuth) return;
+    authWindow.__clInnerAuth = true;
+    const home = "https://www.crelavo.com/";
+    const sawHash = /access_token=|error=/.test(window.location.hash || "");
     const pin = () => {
       const source = document.getElementById("cl-inner-nav-css");
       if (!source) return;
@@ -55,25 +68,58 @@ export function InnerMobileNav() {
       const modal = document.querySelector(".auth-modal-backdrop");
       if (modal && modal.parentNode !== document.body) document.body.appendChild(modal);
     };
-    const run = () => { pin(); scrub(); promoteAuth(); };
-    run();
-    const timers = [80, 400].map((delay) => window.setTimeout(run, delay));
-    const observer = new MutationObserver(promoteAuth);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    const authed = () => Boolean(document.querySelector(".signed-in-actions,.user-info-pill"));
+    const hashPending = () => {
+      const hash = window.location.hash || "";
+      return hash.includes("access_token=") || hash.includes("error=");
+    };
+    const goHomeAfterAuth = () => {
+      if (hashPending()) return;
+      const auth = new URLSearchParams(window.location.search).get("auth");
+      if (sawHash || auth === "login" || auth === "register") window.location.replace(home);
+    };
+    const sync = () => {
+      if (authed()) {
+        document.documentElement.classList.add("cl-authed");
+        goHomeAfterAuth();
+      } else {
+        document.documentElement.classList.remove("cl-authed");
+      }
+    };
+    const nativeSignOut = () => {
+      const nodes = document.querySelectorAll<HTMLButtonElement>(".signed-in-actions button.auth-mini-btn");
+      for (const node of nodes) {
+        if (/sign out|çıkış/i.test((node.textContent || "").trim())) {
+          node.click();
+          return;
+        }
+      }
+      nodes[0]?.click();
+    };
     const onClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
-      const link = target?.closest('a[href*="auth=login"],a[href*="auth=register"]') as HTMLAnchorElement | null;
+      const link = target?.closest("a.cikis");
       if (!link) return;
       event.preventDefault();
-      const url = new URL(window.location.href);
-      url.searchParams.set("auth", link.href.includes("register") ? "register" : "login");
-      window.location.assign(`${url.pathname}${url.search}${url.hash}`);
+      nativeSignOut();
     };
-    document.addEventListener("click", onClick, true);
+    const run = () => { pin(); scrub(); promoteAuth(); sync(); };
+    run();
+    const timers = [80, 400, 1200].map((delay) => window.setTimeout(run, delay));
+    if (sawHash) timers.push(window.setTimeout(() => { if (!hashPending() && authed()) window.location.replace(home); }, 800));
+    const authRoot = document.querySelector(".nav-session-bar") || document.querySelector("header.site-main-nav") || document.body;
+    const authObserver = new MutationObserver(sync);
+    authObserver.observe(authRoot, { childList: true, subtree: true });
+    const modalObserver = new MutationObserver(promoteAuth);
+    modalObserver.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener("click", onClick);
     return () => {
       timers.forEach(window.clearTimeout);
-      observer.disconnect();
-      document.removeEventListener("click", onClick, true);
+      authObserver.disconnect();
+      modalObserver.disconnect();
+      document.removeEventListener("click", onClick);
+      document.documentElement.classList.remove("cl-authed");
+      authWindow.__clInnerAuth = false;
     };
   }, []);
 
@@ -87,8 +133,9 @@ export function InnerMobileNav() {
         <a href="/categories">Create</a><a href="/">Home</a><a href="/tools">Tools</a><a href="/pricing">Credit Packages</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/growth-intelligence">Growth</a><a href="/affiliate">Affiliate</a><a href="/dashboard/productions">Productions</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
         <div className="langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
         <div className="auth"><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a></div>
+        <a className="cikis" href="#" role="button">Çıkış</a>
       </nav>
     </div>
-    <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a></div>
+    <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
   </>;
 }

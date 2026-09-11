@@ -109,13 +109,26 @@ html body header.container.nav.site-main-nav,html body header.nav.site-main-nav,
 html body header.site-main-nav .nav-session-bar{display:block!important;visibility:visible!important;pointer-events:auto!important;position:static!important;width:0!important;height:0!important;margin:0!important;padding:0!important;overflow:visible!important;border:0!important;max-height:none!important;max-width:none!important}
 html body header.site-main-nav .nav-session-bar>:not(.auth-modal-backdrop){position:absolute!important;left:-9999px!important;width:1px!important;height:1px!important;overflow:hidden!important;max-height:none!important}
 html body .auth-modal-card{width:100%!important;left:0!important;right:0!important;border-radius:0!important}
-}`;
+}
+.cl-sticky a.cikis,#cl-mnav-sheet a.cikis{display:none!important;flex:1!important;align-items:center!important;justify-content:center!important;height:44px!important;border-radius:999px!important;font:650 14px/1 Inter,system-ui,sans-serif!important;text-decoration:none!important;background:rgba(255,255,255,.08)!important;color:#f8fbff!important;border:1px solid rgba(255,255,255,.16)!important;cursor:pointer!important}
+html.cl-authed .cl-sticky a.cikis,html.cl-authed #cl-mnav-sheet a.cikis{display:flex!important}
+`;
 
 const menuScript = `
 (function(){
   function pin(){var src=document.getElementById('clh-css');if(!src)return;var old=document.getElementById('clh-css-head');if(old)old.parentNode.removeChild(old);var style=document.createElement('style');style.id='clh-css-head';style.textContent=src.textContent;document.head.appendChild(style);}
   function scrub(){var nodes=document.querySelectorAll('#cl-mnav-panel,nav#cl-mnav-panel');for(var i=0;i<nodes.length;i++){if(nodes[i]&&nodes[i].parentNode)nodes[i].parentNode.removeChild(nodes[i]);}}
   pin();scrub();setTimeout(function(){pin();scrub();},80);setTimeout(function(){pin();scrub();},400);
+  document.addEventListener("click",function(e){
+    var el=e.target&&e.target.closest&&e.target.closest("a.cikis");
+    if(!el)return;
+    e.preventDefault();
+    var nodes=document.querySelectorAll(".signed-in-actions button.auth-mini-btn");
+    for(var i=0;i<nodes.length;i++){
+      if(/sign out|çıkış/i.test((nodes[i].textContent||"").trim())){nodes[i].click();return;}
+    }
+    if(nodes[0])nodes[0].click();
+  });
   (function(){
     var HOME="https://www.crelavo.com/";
     function authed(){return !!document.querySelector(".nav-session-bar .signed-in-actions,.nav-session-bar .user-info-pill");}
@@ -165,7 +178,7 @@ export default async function HomePage() {
         <nav id="cl-mnav-sheet" aria-label="Mobil menü">
           <a href="/categories">Create</a><a href="/">Home</a><a href="/tools">Tools</a><a href="/pricing">Credit Packages</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/growth-intelligence">Growth</a><a href="/affiliate">Affiliate</a><a href="/dashboard/productions">Productions</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
           <div className="langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
-          <div className="auth"><a className="gin" href="/?auth=login">Giriş</a><a className="uye" href="/?auth=register">Üye ol</a></div>
+          <div className="auth"><a className="gin" href="/?auth=login">Giriş</a><a className="uye" href="/?auth=register">Üye ol</a></div><a className="cikis" href="#" role="button">Çıkış</a>
         </nav>
       </div>
       <section id="clh">
@@ -175,7 +188,7 @@ export default async function HomePage() {
         <div className="wrap packs-head"><span className="kicker">Packages</span><h2>Four ways in. Prices match live checkout.</h2><div className="packs"><a className="pack" href="/pricing"><span>Credits</span><strong>from $29/mo</strong><p>Pro Credits 2,500/mo after preview. One-time packs from $10.</p></a><a className="pack" href="/live-sales-credits"><span>Live Sales</span><strong>from $249/mo</strong><p>Starter 10 hours / 1 platform. Service hours, not credits.</p></a><a className="pack" href="/drone-credits"><span>Drone</span><strong>from $299</strong><p>Drone Location 2,600 credits one-time.</p></a><a className="pack" href="/growth-intelligence"><span>Growth</span><strong>from $179/mo</strong><p>Starter: 1 competitor, weekly PDF. Intelligence service.</p></a></div></div>
         <div className="final"><h2>24 hours to see the studio. Then $9.99/month unless you cancel.</h2><p>Card required. No charge until the preview ends. Annual Pro is $99/year after the same 24-hour window.</p><div className="cta-row" style={{justifyContent:"center"}}><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="https://whop.com/checkout/plan_fiabRYr6uWY43">Annual Pro — $99/yr</a></div></div>
       </section>
-      <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="/?auth=login">Giriş</a><a className="uye" href="/?auth=register">Üye ol</a></div>
+      <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="/?auth=login">Giriş</a><a className="uye" href="/?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
       <script dangerouslySetInnerHTML={{ __html: menuScript }} />
     </main>
   </>;
