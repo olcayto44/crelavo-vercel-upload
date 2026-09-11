@@ -10,7 +10,6 @@ import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-co
 type HeaderProps = {
   navLinks?: PublicNavLink[];
   languageOverride?: string;
-  showMobileMenu?: boolean;
 };
 
 const canonicalNavLabels: Record<string, string> = {
@@ -54,7 +53,7 @@ const createGroups = [
   { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/dashboard/assistant-workspace?mode=commerce&category=ad_score_checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }] }
 ];
 
-export function Header({ navLinks = defaultPublicNavLinks, languageOverride, showMobileMenu = false }: HeaderProps) {
+export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
   const activeNavLinks = navLinks
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
@@ -70,7 +69,6 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, sho
     .filter((item, index, items) => item.label !== "Categories" && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
     <header className="container nav site-main-nav">
-      {showMobileMenu && <button type="button" className="cl-mnav" data-cl-mnav-trigger aria-label="Menüyü aç" aria-expanded="false"><span /><span /><span /></button>}
       <Link className="logo" href="/">
         <span className="logo-mark"><Clapperboard size={18} /></span>
         <span>Crelavo</span>
@@ -107,7 +105,6 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, sho
           </div>
         ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} languageOverride={languageOverride} />)}
       </nav>
-      {showMobileMenu && <div className="cl-mobile-actions"><Link href="/?auth=register">Ücretsiz Başla</Link><Link href="/?auth=login">Giriş Yap</Link></div>}
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">
           {localizedEuropePages.map((page) => <Link href={page.path} key={page.path}>{page.locale.toUpperCase()}</Link>)}
