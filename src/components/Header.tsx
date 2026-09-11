@@ -10,6 +10,7 @@ import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-co
 type HeaderProps = {
   navLinks?: PublicNavLink[];
   languageOverride?: string;
+  showMobileMenu?: boolean;
 };
 
 const canonicalNavLabels: Record<string, string> = {
@@ -53,7 +54,7 @@ const createGroups = [
   { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/dashboard/assistant-workspace?mode=commerce&category=ad_score_checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }] }
 ];
 
-export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
+export function Header({ navLinks = defaultPublicNavLinks, languageOverride, showMobileMenu = false }: HeaderProps) {
   const activeNavLinks = navLinks
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
@@ -73,6 +74,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
         <span className="logo-mark"><Clapperboard size={18} /></span>
         <span>Crelavo</span>
       </Link>
+      {showMobileMenu && <button type="button" className="cl-mnav" data-cl-mnav-trigger aria-label="Open menu" aria-expanded="false">Menu</button>}
       <nav className="nav-links primary-nav-links">
         <div className="tools-mega-wrap create-mega-wrap">
           <LocalizedNavLink className="tools-mega-trigger" href="/categories" label="Create" languageOverride={languageOverride} />
