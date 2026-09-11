@@ -11,12 +11,15 @@ export const metadata: Metadata = {
 };
 
 const fallbackPoster = "/showcase/ai-production-studio.webp";
+const landscapeFilmIds = new Set(["product-link-to-video-showcase", "ad-creative-angles-showcase", "lower-ad-costs-showcase", "crelavo-shot-montage-road", "crelavo-action-film-final"]);
+
 const films = showcaseVideos.map((video) => ({
   href: `/showcase/videos/${video.id}`,
   kicker: video.kicker,
   title: video.title,
   poster: video.imageUrl || fallbackPoster,
-  video: video.videoUrl
+  video: video.videoUrl,
+  landscape: landscapeFilmIds.has(video.id)
 }));
 
 const css = `
@@ -60,26 +63,52 @@ label.cl-mnav span{display:block;width:19px;height:2px;border-radius:2px;backgro
 [aria-label="Open Crelavo live avatar"]{transform:translateY(-64px)}
 }
 @media(min-width:981px){#cl-mnav-toggle,label.cl-mnav,#cl-mnav-sheet,.cl-sticky{display:none!important}}
-@media(max-width:680px){#clh .films{grid-template-columns:repeat(2,minmax(0,1fr))!important}#clh .grid-3,#clh .packs{grid-template-columns:1fr!important}#clh .stage-bg video{object-position:center 24%!important}}`;
+@media(max-width:680px){#clh .films{grid-template-columns:repeat(2,minmax(0,1fr))!important}#clh .grid-3,#clh .packs{grid-template-columns:1fr!important}#clh .stage-bg video{object-position:center 24%!important}}#cl-mnav-panel{display:none!important;visibility:hidden!important;height:0!important;max-height:0!important;overflow:hidden!important;position:absolute!important;left:-9999px!important;width:0!important;pointer-events:none!important}
+html body #clh .stage{position:relative!important;min-height:min(92vh,860px)!important;overflow:hidden!important;display:flex!important;align-items:flex-end!important;background:#020617!important}
+html body #clh .stage-bg{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;margin:0!important}
+html body #clh .stage-bg video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center 28%!important;display:block!important}
+html body #clh .films{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;align-items:start!important;height:auto!important}
+html body #clh a.film{position:relative!important;display:block!important;width:100%!important;height:0!important;padding:0!important;padding-top:177.777%!important;aspect-ratio:unset!important;min-height:0!important;max-height:none!important;overflow:hidden!important;border-radius:22px!important}
+html body #clh a.film video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;display:block!important;pointer-events:none!important}
+html body #clh a.film.ls video{object-position:center 32%!important}
+@media(max-width:980px){
+html body header.container.nav.site-main-nav,html body header.nav.site-main-nav,html body header.site-main-nav{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;min-height:56px!important;padding:8px 12px!important;overflow:hidden!important;background:#070b18!important;position:sticky!important;top:0!important;z-index:80!important}
+html body header.site-main-nav .logo{display:flex!important;flex:0 0 auto!important;visibility:visible!important;z-index:3!important}
+html body header.site-main-nav nav,html body header.site-main-nav .nav-links,html body header.site-main-nav .primary-nav-links,html body header.site-main-nav .tools-mega-wrap,html body header.site-main-nav .tools-mega-menu,html body header.site-main-nav .nav-session-bar,html body header.site-main-nav .header-language-links,html body header.site-main-nav .cl-mobile-actions,html body header.site-main-nav button.cl-mnav,html body header.site-main-nav [data-cl-mnav-trigger]{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;overflow:hidden!important;max-height:0!important}
+label.cl-mnav{display:inline-flex!important;position:fixed!important;top:10px!important;right:12px!important;z-index:300!important;align-items:center!important;justify-content:center!important;min-width:72px!important;height:34px!important;padding:0 12px!important;margin:0!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:8px!important;background:#070b18!important;color:#f8fbff!important;font:650 12px/1 Inter,system-ui,sans-serif!important;cursor:pointer!important}
+label.cl-mnav span{display:none!important}
+#cl-mnav-sheet{display:none!important;position:fixed!important;inset:0!important;z-index:299!important;background:rgba(7,11,24,.97)!important;flex-direction:column!important;gap:4px!important;padding:72px 20px 96px!important;overflow:auto!important}
+#cl-mnav-toggle:checked ~ #cl-mnav-sheet{display:flex!important}
+#cl-mnav-sheet>a{display:block!important;padding:12px 4px!important;border-bottom:1px solid rgba(255,255,255,.08)!important;color:#f8fbff!important;font:600 16px/1.3 Inter,system-ui,sans-serif!important}
+#cl-mnav-sheet .langs{display:flex!important;gap:16px!important;padding-top:16px!important}
+#cl-mnav-sheet .langs a{color:#f8fbff!important;text-decoration:none!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:999px!important;padding:8px 14px!important}
+.cl-sticky{display:flex!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:250!important;gap:8px!important;padding:10px 12px calc(10px + env(safe-area-inset-bottom))!important;background:rgba(7,11,24,.94)!important;border-top:1px solid rgba(255,255,255,.1)!important}
+.cl-sticky a{flex:1!important;display:flex!important;align-items:center!important;justify-content:center!important;height:44px!important;border-radius:999px!important;font:650 14px/1 Inter,system-ui,sans-serif!important;text-decoration:none!important}
+.cl-sticky a.pro{background:linear-gradient(180deg,#38bdf8,#0284c7)!important;color:#04203a!important}
+.cl-sticky a.gin{background:rgba(255,255,255,.08)!important;color:#f8fbff!important;border:1px solid rgba(255,255,255,.16)!important}
+html body #clh .films,html body #clh .grid-3{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body #clh .packs{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html body #clh .stage{min-height:min(86vh,720px)!important}
+}
+@media(max-width:680px){html body #clh .grid-3,html body #clh .packs{grid-template-columns:1fr!important}html body #clh .stage{min-height:78vh!important}}`;
 
 const menuScript = `
 (function(){
-  var root=document.getElementById('clh'); if(!root) return;
-  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var hero=root.querySelector('.stage-bg video');
-  var films=[].slice.call(root.querySelectorAll('.films video'));
+  function pin(){var src=document.getElementById('clh-css');if(!src)return;var old=document.getElementById('clh-css-head');if(old)old.parentNode.removeChild(old);var style=document.createElement('style');style.id='clh-css-head';style.textContent=src.textContent;document.head.appendChild(style);}
+  pin();setTimeout(pin,80);setTimeout(pin,400);
+  var root=document.getElementById('clh');if(!root)return;
+  var hero=root.querySelector('.stage-bg video');var films=[].slice.call(root.querySelectorAll('.films video'));
   function prep(v){try{v.muted=true;v.defaultMuted=true;v.playsInline=true;v.loop=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.removeAttribute('autoplay');v.removeAttribute('autoPlay');}catch(e){}}
-  function play(v){if(reduce)return;prep(v);try{var p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}}
+  function play(v){prep(v);try{var p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}}
   function pause(v){try{v.pause();}catch(e){}}
   if(hero){prep(hero);hero.preload='metadata';}
   films.forEach(function(v){prep(v);v.preload='none';pause(v);});
-  var filmLive=null;
-  function startFilm(v){if(filmLive&&filmLive!==v)pause(filmLive);filmLive=v;play(v);}
-  function stopFilm(v){pause(v);if(filmLive===v)filmLive=null;}
+  var current=null;
   if('IntersectionObserver' in window){
-    var io=new IntersectionObserver(function(entries){entries.forEach(function(e){var v=e.target;if(v===hero){if(e.isIntersecting)play(hero);else pause(hero);return;}if(e.isIntersecting)startFilm(v);else stopFilm(v);});},{threshold:0.6,rootMargin:'0px'});
-    if(hero)io.observe(hero);films.forEach(function(v){io.observe(v);});
-  }else if(hero)play(hero);
+    if(hero){new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)play(hero);else pause(hero);});},{threshold:0.6}).observe(hero);}
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){if(current&&current!==e.target)pause(current);current=e.target;play(e.target);}else if(current===e.target){pause(e.target);current=null;}});},{threshold:0.6});
+    films.forEach(function(v){io.observe(v);});
+  }
 })();
 `;
 
@@ -88,23 +117,23 @@ export default async function HomePage() {
   return <>
     <Header navLinks={siteContent.navLinks} />
     <input type="checkbox" id="cl-mnav-toggle" aria-hidden="true" />
-    <label htmlFor="cl-mnav-toggle" className="cl-mnav" aria-label="Menü"><span /><span /><span /></label>
+    <label htmlFor="cl-mnav-toggle" className="cl-mnav" aria-label="Menu">Menu</label>
     <nav id="cl-mnav-sheet" aria-label="Mobil menü">
       <a href="/categories">Create</a><a href="/">Home</a><a href="/tools">Tools</a><a href="/pricing">Credit Packages</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/growth-intelligence">Growth</a><a href="/affiliate">Affiliate</a><a href="/dashboard/productions">Productions</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
-      <div className="cl-langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
+      <div className="langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
     </nav>
     <nav id="cl-mnav-panel" aria-label="Mobile menu">
       <a href="/categories">Create</a><a href="/">Home</a><a href="/tools">Tools</a><a href="/pricing">Credit Packages</a><a href="/live-sales-credits">Live Sales Avatar</a><a href="/drone-credits">Drone Packages</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/growth-intelligence">Growth Intelligence</a><a href="/affiliate">Affiliate</a><a href="/dashboard/productions">Productions</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog / Content</a><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a>
     </nav>
-    <main className="public-home-page"><style dangerouslySetInnerHTML={{ __html: css }} />
+    <main className="public-home-page"><style id="clh-css" dangerouslySetInnerHTML={{ __html: css }} />
       <section id="clh">
-        <div className="stage"><a className="stage-bg" href="/showcase/videos/crelavo-wow-reel" aria-label="Open Crelavo Wow Reel"><video muted loop playsInline preload="metadata" poster={fallbackPoster} src="https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4" /></a><div className="stage-veil" /><div className="stage-grain" /><div className="stage-copy"><div className="inner"><span className="live"><i /> Crelavo AI production studio</span><h1>Make the feed look <em>expensive.</em></h1><p className="lede">Cinematic product ads, UGC, live-commerce and drone films — from one brief. Scope is visible before credits move. Pro is $9.99/month after a 24-hour preview.</p><div className="cta-row"><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="#clh-films">Watch the films</a><a className="btn btn-ghost" href="/pricing">View pricing</a></div><div className="proof"><span><b>24h</b> preview</span><span><b>$9.99</b> / month after</span><span><b>32</b> showcase films</span><span><b>$99</b> / year</span></div></div></div></div>
-        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className="film" href={film.href} key={film.href}><video muted loop playsInline preload="none" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
+        <div className="stage"><a className="stage-bg" href="/showcase/videos/crelavo-wow-reel" aria-label="Open Crelavo Wow Reel"><video muted loop playsInline preload="metadata" src="https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4" /></a><div className="stage-veil" /><div className="stage-grain" /><div className="stage-copy"><div className="inner"><span className="live"><i /> Crelavo AI production studio</span><h1>Make the feed look <em>expensive.</em></h1><p className="lede">Cinematic product ads, UGC, live-commerce and drone films — from one brief. Scope is visible before credits move. Pro is $9.99/month after a 24-hour preview.</p><div className="cta-row"><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="#clh-films">Watch the films</a><a className="btn btn-ghost" href="/pricing">View pricing</a></div><div className="proof"><span><b>24h</b> preview</span><span><b>$9.99</b> / month after</span><span><b>32</b> showcase films</span><span><b>$99</b> / year</span></div></div></div></div>
+        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className={film.landscape ? "film ls" : "film"} href={film.href} key={film.href}><video muted loop playsInline preload="none" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
         <div className="wrap paths"><span className="kicker">Start with one outcome</span><h2>Pick the job. The studio opens the path.</h2><p className="sub">Omni Assistant is the production door. Credits only move after scope is visible.</p><div className="grid-3"><a className="card" href="/dashboard/assistant-workspace?idea=Sell+internationally&category=video"><span>01</span><h3>Sell internationally</h3><p>Localize hooks, visuals and campaign direction for another market before you buy more traffic.</p></a><a className="card" href="/free-tools/ad-performance-score-checker"><span>02</span><h3>Test an existing ad</h3><p>Run the free AI Ad Scorer on hook, CTA and proof before you spend production credits.</p></a><a className="card" href="/dashboard/assistant-workspace?idea=video&category=video"><span>03</span><h3>Create from scratch</h3><p>Product video, landing page, campaign pack or launch asset from one brief.</p></a></div></div>
         <div className="wrap packs-head"><span className="kicker">Packages</span><h2>Four ways in. Prices match live checkout.</h2><div className="packs"><a className="pack" href="/pricing"><span>Credits</span><strong>from $29/mo</strong><p>Pro Credits 2,500/mo after preview. One-time packs from $10.</p></a><a className="pack" href="/live-sales-credits"><span>Live Sales</span><strong>from $249/mo</strong><p>Starter 10 hours / 1 platform. Service hours, not credits.</p></a><a className="pack" href="/drone-credits"><span>Drone</span><strong>from $299</strong><p>Drone Location 2,600 credits one-time.</p></a><a className="pack" href="/growth-intelligence"><span>Growth</span><strong>from $179/mo</strong><p>Starter: 1 competitor, weekly PDF. Intelligence service.</p></a></div></div>
         <div className="final"><h2>24 hours to see the studio. Then $9.99/month unless you cancel.</h2><p>Card required. No charge until the preview ends. Annual Pro is $99/year after the same 24-hour window.</p><div className="cta-row" style={{justifyContent:"center"}}><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="https://whop.com/checkout/plan_fiabRYr6uWY43">Annual Pro — $99/yr</a></div></div>
       </section>
-      <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro — $9.99/mo</a><a className="login" href="/?auth=login">Giriş</a></div>
+      <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="/?auth=login">Giriş</a></div>
       <script dangerouslySetInnerHTML={{ __html: menuScript }} />
     </main>
   </>;
