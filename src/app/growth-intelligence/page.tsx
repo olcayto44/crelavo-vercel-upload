@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { PageDemoVideoSection, pickPageDemoVideo } from "@/components/PageDemoVideoSection";
 import { growthIntelligencePlans } from "@/lib/data";
 import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
@@ -64,7 +65,7 @@ export default async function GrowthIntelligencePage() {
 
   return (
     <>
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section pricing-page">
         <section className="promo-top-layout">
           <div>

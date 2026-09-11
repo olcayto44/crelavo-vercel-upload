@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { ContactForm } from "@/components/ContactForm";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -35,7 +36,7 @@ export default async function ContactPage() {
 
   return (
     <>
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section">
         <section className="blog-hero-panel">
           <span className="badge">Contact</span>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { footerGroups } from "@/lib/site-content";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
@@ -37,7 +38,7 @@ export default async function ToolsPage() {
 
   return (
     <>
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section tools-page tools-catalog-page public-funnel-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Tools catalog</span>

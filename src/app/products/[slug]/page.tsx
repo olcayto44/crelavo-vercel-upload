@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { footerInfoPageMap, footerInfoPages } from "@/lib/footer-info-pages";
 import { CampaignWorkspaceBody } from "@/components/CampaignWorkspaceBody";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 
 export function generateStaticParams() {
   return footerInfoPages.map((page) => ({ slug: page.slug }));
@@ -37,10 +38,12 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
   const page = footerInfoPageMap.get(slug);
   if (!page) notFound();
 
-  if (slug === "text-to-campaign") return <CampaignWorkspaceBody />;
+  if (slug === "text-to-campaign") return <><InnerMobileNav /><CampaignWorkspaceBody /></>;
 
   return (
-    <main className="container section product-detail-page">
+    <>
+      <InnerMobileNav />
+      <main className="container section product-detail-page">
       <section className="production-hero-card admin-overview-hero">
         <span className="badge">{page.badge}</span>
         <h1>{page.title}</h1>
@@ -85,6 +88,7 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
             ))}
           </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
 import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
 import { organicKeywordCoverage } from "@/lib/organic-directory";
@@ -113,7 +114,7 @@ export default async function BlogPage() {
 
   return (
     <>
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section blog-article-page">
         <section className="blog-hero-panel">
           <span className="badge">Blog / Content</span>

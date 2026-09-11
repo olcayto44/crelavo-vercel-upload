@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { LiveSalesControlCenter } from "@/components/LiveSalesControlCenter";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -16,7 +17,7 @@ const plans = [
 
 export default async function LiveSalesCreditsPage() {
   const siteContent = await getConfiguredSiteContentConfig();
-  return <><Header navLinks={siteContent.navLinks} /><main id="cll" className="container section live-sales-page"><style dangerouslySetInnerHTML={{__html:css}} />
+  return <><Header navLinks={siteContent.navLinks} /><InnerMobileNav /><main id="cll" className="container section live-sales-page"><style dangerouslySetInnerHTML={{__html:css}} />
     <input className="cll-bill" type="radio" name="cll-bill" id="cll-monthly" defaultChecked /><input className="cll-bill" type="radio" name="cll-bill" id="cll-annual" />
     <section className="promo-top-layout"><div><span className="badge">Live commerce service</span><h1>Build the live sales avatar on this page, then choose the plan below</h1><p className="section-lead">Configure voice, language, industry and product rules here. Start a real HeyGen LiveAvatar preview. Then buy monthly live hours for your own social, store or website. No production credits are included.</p><div className="cll-cta-row"><a className="btn" href="#cll-studio">Open avatar studio</a><a className="btn secondary" href="#cll-plans">See live-hour plans</a></div></div><div className="card selected-billing-card"><span className="badge">One page flow</span><h3>No workspace hopping</h3><p>Configure the avatar here, preview it on this page, choose a plan here, checkout on this site.</p><p className="cll-note">Starter 24h preview $25 → $249/mo. Pro $79 → $799/mo. Agency $119 → $2,499/mo.</p></div></section>
     <section className="production-hero-card clean-feed-section" style={{marginTop:24}}><span className="badge">Where buyers use it</span><h2>One service. Three selling surfaces.</h2><div className="cll-use" style={{marginTop:14}}><div className="card"><h3>Social live and Reels</h3><p>Use the avatar on Instagram, TikTok, Reels or campaign landers to introduce products, answer questions and push the offer.</p></div><div className="card"><h3>Ecommerce store</h3><p>Put it on product pages, store home or checkout support to explain price, bundles, size, materials, shipping and trust.</p></div><div className="card"><h3>Website or funnel</h3><p>A 24/7 sales assistant that greets visitors, gives product info, captures interest and routes buyers to the right page.</p></div></div></section>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { PartnerApplicationForm } from "@/components/PartnerApplicationForm";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { partnerAssets, partnerAudienceSegments, partnerCommissionDefaults, partnerCreatorAssetPack, partnerLaunchChecklist, partnerPackageCommissionRules, partnerProgramPolicy, partnerWhopOptimizationPlan, partnerWorkflowStages } from "@/lib/partner-program";
@@ -51,7 +52,7 @@ export default async function AffiliatePage() {
   return (
     <>
       <PartnerStructuredData />
-      <Header navLinks={siteContent.navLinks} />
+      <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section tools-page affiliate-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Partner Program</span>

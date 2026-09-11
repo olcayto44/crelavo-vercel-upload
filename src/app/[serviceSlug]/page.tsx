@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ServicePageView } from "@/components/ServicePageView";
+import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { servicePages } from "@/lib/service-pages";
 import { getConfiguredServicePage } from "@/lib/service-pages-loader";
 
@@ -34,5 +35,5 @@ export default async function DynamicServicePage({ params }: { params: Promise<{
   const { serviceSlug } = await params;
   const page = await getConfiguredServicePage(serviceSlug);
   if (!page || page.status === "draft") notFound();
-  return <ServicePageView page={page} />;
+  return <><InnerMobileNav /><ServicePageView page={page} /></>;
 }
