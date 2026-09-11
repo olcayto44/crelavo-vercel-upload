@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { footerInfoPageMap, footerInfoPages } from "@/lib/footer-info-pages";
+import { CampaignWorkspaceBody } from "@/components/CampaignWorkspaceBody";
 
 export function generateStaticParams() {
   return footerInfoPages.map((page) => ({ slug: page.slug }));
@@ -35,6 +36,8 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const page = footerInfoPageMap.get(slug);
   if (!page) notFound();
+
+  if (slug === "text-to-campaign") return <CampaignWorkspaceBody />;
 
   return (
     <main className="container section product-detail-page">
