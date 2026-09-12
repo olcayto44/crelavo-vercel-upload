@@ -199,6 +199,12 @@ function patchAssistantScript(script: string) {
   }
 
 `;
+  const clippingUi = `  EX.clipping=[
+    {title:"Hook cuts",img:"https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=900&q=80",chips:{input:"clip",format:"9:16",duration:"8s"},prompt:"Clip this footage into 8s hooks. Keep the strongest faces and the payoff."},
+    {title:"Recap clips",img:"https://images.unsplash.com/photo-1611162616475-46b635cb6868?auto=format&fit=crop&w=900&q=80",chips:{input:"clip",format:"9:16",duration:"15s"},prompt:"Cut a 15s recap from this clip: opening hook, 3 beats, end on the CTA."}
+  ];
+
+`;
   const dock = `  function renderDock(){
     var dock=document.getElementById("cl-dock"); if(!dock)return;
     var est=estimate(), h="";
@@ -223,7 +229,6 @@ function patchAssistantScript(script: string) {
       for(var key in options) state.chips[key]=options[key];
     }
     state.view="chat";
-    state.messages=[];
     state.messages.push({role:"user", text:text||"Use the attached file."});
     state.messages.push({role:"bot", text:ackText()});
     state.messages.push({role:"bot", text:"Starting production here with these options.", thumb:poster()});
@@ -248,10 +253,12 @@ function patchAssistantScript(script: string) {
       }`;
   return script
     .replace('    view:"groups",','    view:"empty",')
-    .replace('  function selectType(id, fromQuery){',inference+'  function selectType(id, fromQuery){')
+    .replace('  function selectType(id, fromQuery){',inference+clippingUi+'  function selectType(id, fromQuery){')
     .replace(/  function renderDock\(\)\{[\s\S]*?\n  \}\n  function renderSheet/,dock+'\n  function renderSheet')
     .replace(/  function send\(\)\{[\s\S]*?\n  \}\n\n  function findSignOut/,send+'\n\n  function findSignOut')
     .replace('      h+=\'<div class="cl-chat">\';','      h+=\'<div class="cl-chat\'+(state.production?" has-output":"")+\'">\';')
+    .replace('var ex=EX[famOf()]||EX.video;','var ex=EX[state.type]||EX[famOf()]||EX.video;')
+    .replace('var pack=(EX[famOf()]||EX.video)[+btn.getAttribute("data-i")];','var pack=(EX[state.type]||EX[famOf()]||EX.video)[+btn.getAttribute("data-i")];')
     .replace(oldReady,newReady)
     .replace('    } else {\n      state.view="groups";\n    }\n    bind();','    } else {\n      state.view="empty";\n    }\n    bind();');
 }
