@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AssistantWorkspaceAuthBridge } from "@/components/AssistantWorkspaceAuthBridge";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export const dynamic = "force-dynamic";
@@ -92,8 +93,9 @@ html.cl-assistant-page,html.cl-assistant-page body{background:#070b18!important}
 .cl-apply{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;background:#0b1220;padding:12px 0 4px}
 .cl-apply button{appearance:none;border:0;background:var(--cyan);color:#fff;border-radius:999px;padding:12px 22px;font:700 14px Inter,sans-serif;cursor:pointer;margin-left:auto}
 .cl-out-item{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;font-size:13px}
+.cl-ready .pri{display:block;color:#fff}.cl-top .cl-out{color:var(--cyan);font-size:12px}
 @media(min-width:900px){.cl-groups{grid-template-columns:1fr 1fr 1fr}.cl-ex img{height:150px}.cl-player[data-fmt="9:16"]{width:240px}}`;
-const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
+const SCRIPT_BLOCK: string = `
 (function(){
   if (window.__clAssistantBound) return;
   window.__clAssistantBound = true;
@@ -398,12 +400,48 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
     return "Got it. "+bits.join(", ")+".";
   }
 
-  function goToAssistant(){
-    var t=typeById(state.type); if(!t) return;
-    var q=new URLSearchParams();
-    q.set("category", t.cat);
-    if(state.draft) q.set("idea", state.draft);
-    location.href="/dashboard/assistant-workspace?mode=project&"+q.toString();
+  function authReady(){
+    if(window.__clUserId && window.__clAccessToken) return Promise.resolve({userId:window.__clUserId,token:window.__clAccessToken});
+    if(window.__clAuthError) return Promise.reject(new Error(window.__clAuthError));
+    return new Promise(function(resolve,reject){
+      var timer=setTimeout(function(){reject(new Error("Session verification timed out."));},10000);
+      window.addEventListener("cl-auth-ready",function done(){
+        clearTimeout(timer); window.removeEventListener("cl-auth-ready",done);
+        if(window.__clUserId && window.__clAccessToken) resolve({userId:window.__clUserId,token:window.__clAccessToken});
+        else reject(new Error(window.__clAuthError||"You must sign in before starting production."));
+      });
+    });
+  }
+  function apiHeaders(token){ return {"Content-Type":"application/json","Authorization":"Bearer "+token}; }
+  function productionUrl(p){
+    var o=p&&p.output_json&&typeof p.output_json==="object"?p.output_json:{};
+    var vals=[p&&p.delivery_link,p&&p.delivery_zip_url,p&&p.preview_url,p&&p.source_files_url,o.finalVideoUrl,o.final_video_url,o.providerFinalUrl,o.deliveryUrl,o.previewUrl,o.sourceFilesUrl];
+    for(var i=0;i<vals.length;i++) if(/^https?:\/\//i.test(String(vals[i]||""))) return String(vals[i]);
+    return "";
+  }
+  function pollProduction(auth,id,attempt){
+    fetch("/api/automation/status",{method:"POST",headers:apiHeaders(auth.token),body:JSON.stringify({production_id:id,user_id:auth.userId,auto:true})})
+      .then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||"Status refresh failed.");return j;});})
+      .then(function(j){
+        state.production=j.production||j; persist(); render();
+        var status=String(state.production.status||"").toLowerCase();
+        if(status==="ready"){state.busy=false;state.messages.push({role:"bot",text:"Ready. Your production can be downloaded below."});persist();render();loadCredits();return;}
+        if(status==="failed"||status==="cancelled"){state.busy=false;state.messages.push({role:"bot",text:"Production "+status+". "+String(state.production.admin_notes||"")});persist();render();return;}
+        if(attempt<40)setTimeout(function(){pollProduction(auth,id,attempt+1);},6000);
+        else {state.busy=false;state.messages.push({role:"bot",text:"Production is still running. You can refresh its status here."});persist();render();}
+      }).catch(function(e){state.busy=false;state.messages.push({role:"bot",text:e.message});persist();render();});
+  }
+  function goToAssistant(promptText){
+    var t=typeById(state.type); if(!t||state.busy) return;
+    state.busy=true; state.messages.push({role:"bot",text:"Creating the production and starting the real provider…"}); persist(); render();
+    authReady().then(function(auth){
+      var c=state.chips||{}; var duration=parseInt(String(c.duration||"15"),10)||15;
+      var dispatch=t.family==="image"?"generate_image":"start_production";
+      var payload={user_id:auth.userId,title:(t.label+" — "+promptText).slice(0,120),prompt:promptText,project_details:promptText+"\n\nSelected options: "+JSON.stringify(c),production_type:t.cat,package_id:t.package_id,output_duration_seconds:duration,aspect_ratio:c.format||undefined,delivery_requirements:{requested:true,status:"pending",formats:c.delivery||[]},request_metadata:{source:"assistant_workspace",selectedOptions:c},legal_acceptance:true,dispatch_action:dispatch,confirmation:{confirmed:true,source:"assistant_workspace_send"}};
+      return fetch("/api/productions",{method:"POST",headers:apiHeaders(auth.token),body:JSON.stringify(payload)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||"Production could not be created.");return {auth:auth,data:j};});});
+    }).then(function(result){
+      state.production=result.data.production||{}; state.messages.push({role:"bot",text:"Production created. Live status: "+String(state.production.status||"queued")+"."});persist();render();pollProduction(result.auth,state.production.id,0);
+    }).catch(function(e){state.busy=false;state.messages.push({role:"bot",text:"Could not start: "+e.message});persist();render();});
   }
 
   function renderApp(){
@@ -448,6 +486,13 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
         h+='<div class="cl-msg '+msg.role+'">'+esc(msg.text);
         if(msg.thumb) h+='<img class="th" alt="" src="'+esc(msg.thumb)+'">';
         h+="</div>";
+      }
+      if(state.production){
+        var ps=String(state.production.status||"queued").toLowerCase(); var readyUrl=productionUrl(state.production);
+        h+='<div class="cl-ready" id="cl-current-output"><div class="hd"><span class="cl-badge">'+(ps==="ready"?"READY":"LIVE")+'</span>'+esc(ps.replace(/_/g," "))+'</div>';
+        if(readyUrl) h+='<div class="cl-dl"><a class="pri" href="'+esc(readyUrl)+'" target="_blank" rel="noreferrer" download style="text-align:center;text-decoration:none">Download</a></div>';
+        else h+='<div class="cl-dlnote">'+(state.busy?"Production is running…":"Output is not ready yet.")+'</div><div class="cl-dl"><button type="button" class="ghost" data-act="refresh">Refresh</button></div>';
+        h+='</div>';
       }
       h+="</div>";
     }
@@ -500,10 +545,10 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
     state.messages=[];
     state.messages.push({role:"user", text:text||"Use the attached file."});
     state.messages.push({role:"bot", text:ackText()});
-    state.messages.push({role:"bot", text:"Routing to the production workspace with these options.", thumb: poster()});
+    state.messages.push({role:"bot", text:"Starting production here with these options.", thumb: poster()});
     state.draft="";
     persist(); render();
-    goToAssistant();
+    goToAssistant(text||"Use the attached file.");
   }
 
   function onClick(ev){
@@ -532,6 +577,8 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
     }
     if(act==="attach"){ var f=document.getElementById("cl-file"); if(f) f.click(); }
     if(act==="send") send();
+    if(act==="outputs"){ state.view="chat"; render(); setTimeout(function(){var x=document.getElementById("cl-current-output");if(x)x.scrollIntoView({behavior:"smooth",block:"center"});},0); }
+    if(act==="refresh" && state.production && state.production.id){ authReady().then(function(a){state.busy=true;render();pollProduction(a,state.production.id,40);}).catch(function(e){state.messages.push({role:"bot",text:e.message});render();}); }
   }
 
   function bind(){
@@ -562,9 +609,9 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
   }
 
   function loadCredits(){
-    var u=window.__clUserId;
-    if(!u) return Promise.resolve();
-    return fetch("/api/credits?user_id="+encodeURIComponent(u), {credentials:"include"}).then(function(r){return r.ok?r.json():null;}).then(function(j){
+    return authReady().then(function(a){
+      return fetch("/api/credits?user_id="+encodeURIComponent(a.userId),{headers:apiHeaders(a.token),cache:"no-store"});
+    }).then(function(r){return r.ok?r.json():null;}).then(function(j){
       if(j && typeof j.balance==="number"){ state.credits=j.balance; saveCredits(); return; }
     }).catch(function(){});
   }
@@ -587,7 +634,7 @@ const SCRIPT_BLOCK: string = `<script id="cl-assistant-js">
 
   function render(){ renderApp(); }
   boot();
-})();</script>
+})();
 `;
 export default async function AssistantWorkspacePage({ searchParams }: { searchParams?: Promise<AssistantWorkspaceSearchParams> }) {
   await searchParams;
@@ -595,11 +642,13 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
+      <AssistantWorkspaceAuthBridge />
       <style id="cl-assistant-css" dangerouslySetInnerHTML={{ __html: STYLE_BLOCK }} />
       <main id="cl-assistant" className="cl-assistant-root">
         <div className="cl-top">
           <button type="button" className="cl-back" data-act="back" aria-label="Back">‹</button>
           <div className="cl-ttl" id="cl-ttl">Crelavo</div>
+          <button type="button" className="cl-out" data-act="outputs">Outputs</button>
           <div className="cl-cred" id="cl-cred" title="Credits">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.2L12 16.8 5.7 20.8 8 13.6 2 9.2h7.6z"/></svg>
             <span id="cl-cred-n">0</span>
