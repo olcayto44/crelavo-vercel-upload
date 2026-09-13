@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { PartnerApplicationForm } from "@/components/PartnerApplicationForm";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { partnerAssets, partnerAudienceSegments, partnerCommissionDefaults, partnerCreatorAssetPack, partnerLaunchChecklist, partnerPackageCommissionRules, partnerProgramPolicy, partnerWhopOptimizationPlan, partnerWorkflowStages } from "@/lib/partner-program";
+import { partnerAssets, partnerCommissionDefaults, partnerCreatorAssetPack, partnerPackageCommissionRules, partnerProgramPolicy, partnerWorkflowStages } from "@/lib/partner-program";
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com";
 
@@ -13,6 +13,37 @@ const affiliateEarningExamples = [
   { plan: "Standard production package", price: "$199", commission: "25%", estimated: "$49.75 pending for 30 days" },
   { plan: "Growth Intelligence plan", price: "$499", commission: "30%", estimated: "$149.70 pending for 30 days" }
 ];
+
+const partnerAudienceCopy = [
+  { title: "AI tool reviewers", text: "Creators who review AI tools and production studios, and whose audience wants faster video, website, and campaign output." },
+  { title: "No-code educators", text: "Educators who teach no-code, websites, or apps and want a studio their students can actually ship from." },
+  { title: "TikTok AI creators", text: "Short-form creators who demo AI products, ads, and ecommerce workflows on TikTok." },
+  { title: "YouTube Shorts creators", text: "Shorts creators who show product demos, AI workflows, and launch recaps." },
+  { title: "SaaS and startup creators", text: "Founders and SaaS creators who need product videos, landing pages, and launch assets." },
+  { title: "Ecommerce growth creators", text: "Ecommerce creators who turn products into ads, UGC-style clips, and store campaigns." },
+  { title: "Agency owners and consultants", text: "Agencies that want an AI production layer for client videos, sites, apps, and brand kits." }
+];
+
+const publicPartnerPackageCommissionRules = partnerPackageCommissionRules.map((rule) => ({
+  ...rule,
+  packageGroup: rule.packageGroup.replaceAll("12,000 credits", "9,000 credits"),
+  examplePackages: rule.examplePackages.map((item) => item.replaceAll("12,000 credits", "9,000 credits")),
+  note: rule.note
+    .replaceAll("12,000 credits", "9,000 credits")
+    .replace("Highest launch default is 30%. Recurring is off at launch; admin can manually review Growth Intelligence recurring later.", "Highest partner rate is 30% on Growth Intelligence. Commission stays pending for 30 days.")
+    .replace("High delivery-cost packages need lower commission or manual approval to protect margin; refund/cancel always voids commission.", "Custom and high-delivery packages may use 15% or manual approval. Refunds and cancellations void commission.")
+}));
+
+const publicPartnerAssets = partnerAssets.map((asset) => ({
+  ...asset,
+  status: asset.status === "API-ready placeholder" ? "Included" : asset.status === "Waiting for final percent" ? "Published rates" : asset.status,
+  detail: asset.detail === "Each approved partner will receive a unique referral code/link once tracking is connected."
+    ? "Each approved partner receives a unique referral code to share on Crelavo pages."
+    : asset.detail === "The structure is ready; final public percent is set when payout/API provider is selected."
+      ? "15% credits, 25% production, 30% Growth Intelligence. Pending 30 days."
+      : asset.detail
+}));
+
 
 export const metadata: Metadata = {
   title: "Crelavo Partner Program — Affiliate and Creator Rewards",
@@ -57,7 +88,7 @@ export default async function AffiliatePage() {
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Partner Program</span>
           <h1>Earn by introducing creators and businesses to Crelavo</h1>
-          <p>Apply for early partner access if you create AI, no-code, SaaS, ecommerce, agency or creator economy content. The active launch path uses Whop payment references, partner referral codes and a controlled manual commission ledger before payout automation.</p>
+          <p>Apply for early partner access if you create AI, no-code, SaaS, ecommerce, agency or creator economy content. Approved partners share Crelavo with a referral code. Commission is reviewed against paid Whop purchases after a 30-day hold.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
             <Link className="btn" href="/auth/register?next=%2Faffiliate">Apply for early access</Link>
             <Link className="btn secondary" href="/pricing">View pricing</Link>
@@ -66,24 +97,21 @@ export default async function AffiliatePage() {
         </section>
 
         <section className="admin-info-grid" style={{ marginTop: 20 }}>
-          <div className="affiliate-tone-warm"><span>Draft commission</span><strong>{partnerCommissionDefaults.plannedRange}</strong><small>Final percent set before launch</small></div>
+          <div className="affiliate-tone-warm"><span>Commission</span><strong>15-30% by product</strong><small>Credits 15%. Production 25%. Growth Intelligence 30%.</small></div>
           <div className="affiliate-tone-cyan"><span>Launch mode</span><strong>Early access</strong><small>Applications first; 30-day hold before payout review</small></div>
           <div className="affiliate-tone-purple"><span>Best channels</span><strong>TikTok + YouTube</strong><small>AI, no-code and product content</small></div>
-          <div className="affiliate-tone-blue"><span>Tracking</span><strong>Whop + ledger</strong><small>Referral codes, Whop references and 30-day hold</small></div>
+          <div className="affiliate-tone-blue"><span>Tracking</span><strong>Whop tracking</strong><small>Referral codes, Whop references and 30-day hold</small></div>
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-          <span className="badge">Whop launch path</span>
-          <h2>Partner tracking starts with Whop references and a manual ledger</h2>
-          <p style={{ color: "var(--muted)" }}>Crelavo is using Whop as the active payment path. Partner payouts are reviewed manually after the 30-day hold; Lemon is not part of the current partner launch.</p>
+          <span className="badge">How it works</span>
+          <h2>Partner tracking uses Whop payments and your referral code</h2>
+          <p style={{ color: "var(--muted)" }}>Crelavo checks out on Whop. After a paid purchase, commission stays pending for 30 days. Eligible payouts are then reviewed. Minimum payout is $50.</p>
           <div className="admin-category-grid">
-            {partnerWhopOptimizationPlan.slice(0, 4).map((item) => (
-              <div className="card admin-category-card" key={item.title}>
-                <span className="badge">{item.status.replaceAll("_", " ")}</span>
-                <h3>{item.title}</h3>
-                <p>{item.action}</p>
-              </div>
-            ))}
+            <div className="card admin-category-card"><span className="badge">Share</span><h3>Referral code</h3><p>Approved partners share Crelavo pages with a unique referral code.</p></div>
+            <div className="card admin-category-card"><span className="badge">Paid</span><h3>Whop purchase</h3><p>Commission is tied to a paid Whop payment, not a signup.</p></div>
+            <div className="card admin-category-card"><span className="badge">Pages</span><h3>Where to share</h3><p>Home, pricing, free tools, and Growth Intelligence work well with your code.</p></div>
+            <div className="card admin-category-card"><span className="badge">Assets</span><h3>Creator pack</h3><p>Approved partners get hooks, demo scripts, landing URLs, and offer copy.</p></div>
           </div>
         </section>
 
@@ -132,7 +160,7 @@ export default async function AffiliatePage() {
           <span className="badge">Eligibility rules</span>
           <h2>What partners must know before promoting Crelavo</h2>
           <p style={{ color: "var(--muted)" }}>{partnerProgramPolicy.partnerFacingSummary}</p>
-          <ul>{partnerProgramPolicy.payoutEligibility.map((item) => <li key={item}>{item}</li>)}</ul>
+          <ul>{partnerProgramPolicy.payoutEligibility.map((item) => <li key={item}>{item === "Admin/finance can manually pause, reject or override a commission before payout." ? "Crelavo may pause or reject a commission if the sale is unpaid, refunded, or flagged for abuse." : item}</li>)}</ul>
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 20 }}>
@@ -140,7 +168,7 @@ export default async function AffiliatePage() {
           <h2>Commission changes by package margin and delivery cost</h2>
           <p style={{ color: "var(--muted)" }}>Affiliate commission is not one fixed rate for every product. Lower-cost or high-margin recurring services can receive stronger rates, while custom or high production-cost packages may use lower commission or manual approval.</p>
           <div className="admin-category-grid">
-            {partnerPackageCommissionRules.map((rule) => (
+            {publicPartnerPackageCommissionRules.map((rule) => (
               <div className="card admin-category-card" key={rule.packageGroup}>
                 <span className="badge">{rule.defaultPercent}% default</span>
                 <h3>{rule.packageGroup}</h3>
@@ -152,20 +180,20 @@ export default async function AffiliatePage() {
         </section>
 
         <section className="admin-category-grid" style={{ marginTop: 20 }}>
-          {partnerAudienceSegments.map((segment, index) => (
-            <div className={`card admin-category-card affiliate-card-tone-${index % 5}`} key={segment}>
+          {partnerAudienceCopy.map((segment, index) => (
+            <div className={`card admin-category-card affiliate-card-tone-${index % 5}`} key={segment.title}>
               <span className="badge">Ideal partner</span>
-              <h2>{segment}</h2>
-              <p>Creators with an audience that wants faster websites, apps, ecommerce assets, AI videos, brand kits, Growth Intelligence reports or production-ready delivery packages.</p>
+              <h2>{segment.title}</h2>
+              <p>{segment.text}</p>
             </div>
           ))}
         </section>
 
         <section className="card admin-wide-card" style={{ marginTop: 20 }}>
           <span className="badge">What partners will get</span>
-          <h2>Prepared now, activated after tracking and payout API setup</h2>
+          <h2>What approved partners receive</h2>
           <div className="admin-category-grid">
-            {partnerAssets.map((asset, index) => (
+            {publicPartnerAssets.map((asset, index) => (
               <div className={`card admin-category-card affiliate-card-tone-${(index + 2) % 5}`} key={asset.title}>
                 <span className="badge">{asset.status}</span>
                 <h3>{asset.title}</h3>
@@ -180,7 +208,7 @@ export default async function AffiliatePage() {
           <h2>Partner journey from application to commission review</h2>
           <div className="admin-info-grid">
             {partnerWorkflowStages.map((stage, index) => (
-              <div className={`affiliate-card-tone-${index % 5}`} key={stage}><span>Step {index + 1}</span><strong>{stage}</strong><small>{index < 4 ? "Ready before API" : "Activated after tracking/payout setup"}</small></div>
+              <div className={`affiliate-card-tone-${index % 5}`} key={stage}><span>Step {index + 1}</span><strong>{stage}</strong><small>{index < 4 ? "Open now" : "After approval"}</small></div>
             ))}
           </div>
         </section>
@@ -188,14 +216,8 @@ export default async function AffiliatePage() {
         <section className="card admin-wide-card" id="apply" style={{ marginTop: 20 }}>
           <span className="badge">Apply</span>
           <h2>Apply for early partner access</h2>
-          <p style={{ color: "var(--muted)" }}>This form is ready for intake. Email delivery starts after Resend/env setup. Commission payout starts only after tracking and payout provider testing.</p>
+          <p style={{ color: "var(--muted)" }}>Send your channel details. We email an approval or rejection after review. Payouts start after the 30-day hold and a $50 minimum.</p>
           <PartnerApplicationForm />
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-          <span className="badge">Before live launch</span>
-          <h2>What remains after this page is ready</h2>
-          <ul>{partnerLaunchChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
         </section>
       </main>
     </>

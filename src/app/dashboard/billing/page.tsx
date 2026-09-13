@@ -29,7 +29,7 @@ export default function BillingPage() {
           <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_rkeOQU3gjmujh">Checkout</a></article>
           <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_UtIprGEXNEooK">Checkout</a></article>
         </div>
-        <p className="note" style={{ marginTop: 18 }}>Need help? <a href="/contact">Contact</a>. Do not use /dashboard/payment.</p>
+        <p className="note" style={{ marginTop: 18 }}>Need help? <a href="/contact">Contact</a>.</p>
       </div>
     </main>
   );

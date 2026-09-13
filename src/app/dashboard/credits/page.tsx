@@ -20,12 +20,12 @@ export default function CreditsPage() {
         <p className="lead">Card required. No charge until the preview ends. Download locks spend in the assistant. Live sales and drone stay on their own pages.</p>
         <div className="grid g2">
           <article className="card"><span className="kicker">INTRO</span><h3>Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><p className="note">24-hour preview, then $9.99/month unless cancelled.</p><a className="cta" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start Pro · $9.99/mo</a></article>
-          <article className="card"><span className="kicker">2,500 / mo</span><h3>Pro Credits</h3><p className="price">$29 <span>/mo</span></p><p className="note">24h preview · $5 today</p><a className="cta" href="https://whop.com/checkout/plan_ECfkkMySZHtIZ">Start preview</a></article>
+          <article className="card"><span className="kicker">2,500 / mo</span><h3>Pro Credits</h3><p className="price">$29 <span>/mo</span></p><p className="note">24h preview, then $29/month unless cancelled.</p><a className="cta" href="https://whop.com/checkout/plan_ECfkkMySZHtIZ">Start preview</a></article>
         </div>
         <div className="grid g3" style={{ marginTop: 14 }}>
-          <article className="card"><span className="kicker">9,000 / mo</span><h3>Business</h3><p className="price">$59 <span>/mo</span></p><p className="note">24h preview · $10 today</p><a className="cta" href="https://whop.com/checkout/plan_DTxjYMeiRPBWz">Start preview</a></article>
-          <article className="card"><span className="kicker">12,000 / seat</span><h3>Team</h3><p className="price">$130 <span>/mo</span></p><p className="note">24h preview · $20 today</p><a className="cta" href="https://whop.com/checkout/plan_rkeOQU3gjmujh">Start preview</a></article>
-          <article className="card"><span className="kicker">25,000 / mo</span><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><p className="note">24h preview · $15 today</p><a className="cta" href="https://whop.com/checkout/plan_UtIprGEXNEooK">Start preview</a></article>
+          <article className="card"><span className="kicker">9,000 / mo</span><h3>Business</h3><p className="price">$59 <span>/mo</span></p><p className="note">24h preview, then $59/month unless cancelled.</p><a className="cta" href="https://whop.com/checkout/plan_DTxjYMeiRPBWz">Start preview</a></article>
+          <article className="card"><span className="kicker">12,000 / seat</span><h3>Team</h3><p className="price">$130 <span>/mo</span></p><p className="note">24h preview, then $130/month unless cancelled.</p><a className="cta" href="https://whop.com/checkout/plan_rkeOQU3gjmujh">Start preview</a></article>
+          <article className="card"><span className="kicker">25,000 / mo</span><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><p className="note">24h preview, then $199/month unless cancelled.</p><a className="cta" href="https://whop.com/checkout/plan_UtIprGEXNEooK">Start preview</a></article>
         </div>
         <h1 style={{ fontSize: 28, marginTop: 36 }}>One-time packs</h1>
         <p className="lead">Added after payment. Does not renew.</p>
@@ -34,7 +34,7 @@ export default function CreditsPage() {
           <article className="card"><h3>Creator Pack</h3><p className="price">$25</p><p>2,500 credits</p><a className="cta" href="https://whop.com/checkout/plan_Q0fJdHNnKGPd6">Buy pack</a></article>
           <article className="card"><h3>Business Pack</h3><p className="price">$60</p><p>7,000 credits</p><a className="cta" href="https://whop.com/checkout/plan_kkn9PeDilHc1q">Buy pack</a></article>
         </div>
-        <p className="note" style={{ marginTop: 18 }}><a href="/dashboard/billing">Billing</a> · <a href="/live-sales-credits">Live Sales</a> · <a href="/drone-credits">Drone</a> · Annual Pro $99/yr: <a href="https://whop.com/checkout/plan_fiabRYr6uWY43">plan_fiabRYr6uWY43</a></p>
+        <p className="note" style={{ marginTop: 18 }}><a href="/dashboard/billing">Billing</a> · <a href="/live-sales-credits">Live Sales</a> · <a href="/drone-credits">Drone</a> · Annual Pro · <a href="https://whop.com/checkout/plan_fiabRYr6uWY43">$99/yr</a></p>
       </div>
     </main>
   );

@@ -74,7 +74,7 @@ export function PartnerApplicationForm() {
         </div>
       </div>
       <div className="field"><label>How would you promote Crelavo?</label><textarea name="promotion_idea" required minLength={20} rows={5} placeholder="Tell us your content angle, audience and how you would explain Crelavo." /></div>
-      <p className="workspace-action-note warning">After review, Crelavo will email you an approval or rejection decision. If approved, payout bank details are added inside your partner dashboard before your first Monday payout. If you later need to change IBAN or bank details, you must email Crelavo finance so the update can be verified before payout.</p>
+      <p className="workspace-action-note warning">After review, Crelavo emails an approval or rejection. If approved, add payout details in your partner dashboard before the first payout.</p>
       <div className="field"><label>Security check: type CRELAVO</label><input name="verification" required placeholder="CRELAVO" /><small>To confirm you are a real person, type CRELAVO exactly.</small></div>
       <input aria-hidden="true" autoComplete="off" className="hidden-honeypot" name="website" tabIndex={-1} />
       <button className="btn" disabled={state === "loading"} type="submit">{state === "loading" ? "Submitting..." : "Apply for early partner access"}</button>

@@ -25,36 +25,18 @@ export const metadata: Metadata = {
   }
 };
 
-const couponHuntCards = [
-  {
-    title: "Hidden preview code campaign",
-    text: "On real campaign days, Crelavo can hide limited preview promo codes inside the Free AI Ad Scorer results. The campaign must be time-boxed and codes must actually exist before this copy is promoted.",
-    href: "/free-tools/ad-performance-score-checker"
-  },
-  {
-    title: "Use the score before checkout",
-    text: "The user gets a useful ad score first, then sees the preview path only after understanding which hook, proof point or CTA should be improved.",
-    href: "/free-tools/ad-performance-score-checker"
-  },
-  {
-    title: "Safe FOMO guardrail",
-    text: "Use wording like 'campaign-day hidden codes' or 'up to 50% off when active'. Do not show invented scarcity, expired codes or permanent daily resets.",
-    href: "/admin/growth"
-  }
-];
-
 const freeToolPreviewOffers = [
   {
-    title: "Crelavo Pro 24-hour trial",
-    text: "Start for $0 with one trial production and 2,500 credits/month after the trial. Then $9.99 every 30 days unless cancelled in Whop.",
+    title: "Crelavo Pro",
+    text: "24-hour preview, then $9.99/month unless cancelled. Card required. No charge until the preview ends.",
     href: "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
-    cta: "Start free 24-hour trial"
+    cta: "Start Pro · $9.99/mo"
   },
   {
     title: "Crelavo Pro Annual",
-    text: "Use the same 24-hour trial, then continue at $99/year unless cancelled in Whop.",
+    text: "24-hour preview, then $99/year unless cancelled. Card required. No charge until the preview ends.",
     href: "https://whop.com/checkout/plan_fiabRYr6uWY43",
-    cta: "Start free 24-hour trial"
+    cta: "Start annual Pro · $99/yr"
   }
 ];
 
@@ -71,7 +53,7 @@ export default async function FreeToolsPage() {
         pageType="CollectionPage"
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section tools-page free-tools-page">
+      <main className="container section tools-page free-tools-page"><style id="cl-leak-3">{"/* CL-LEAK 3 */body:has(.free-tools-page) .public-side-rail{display:none!important}"}</style>
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Free AI tools</span>
           <h1>Free AI tools for ad references, TikTok hooks, product descriptions, prompts, ecommerce ads and landing page copy</h1>
@@ -90,7 +72,7 @@ export default async function FreeToolsPage() {
             <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script, product idea or ad score.</small></div>
             <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output or ad score is carried into Assistant Workspace.</small></div>
             <div><span>Step 3</span><strong>Start production</strong><small>Turn the result into a delivery plan, credits and final package.</small></div>
-            <div><span>Step 4</span><strong>Start the Pro trial</strong><small>Start for $0, make one trial production, then continue monthly or annually unless cancelled in Whop.</small></div>
+            <div><span>Step 4</span><strong>Start the Pro trial</strong><small>Start a 24-hour preview, then $9.99/month unless cancelled in Whop. Card required.</small></div>
           </div>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {freeToolPreviewOffers.map((offer) => (
@@ -99,21 +81,6 @@ export default async function FreeToolsPage() {
                 <h3>{offer.title}</h3>
                 <p>{offer.text}</p>
                 <span className="text-link">{offer.cta}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-          <span className="badge">Campaign-day Coupon Hunt</span>
-          <h2>Turn the Free AI Ad Scorer into a high-intent preview funnel</h2>
-          <p style={{ color: "var(--muted)" }}>When a real Whop promo campaign is active, the Free AI Ad Scorer can tease hidden preview codes after users generate useful ad feedback. This keeps visitors engaged without pretending a fake discount exists.</p>
-          <div className="admin-category-grid" style={{ marginTop: 16 }}>
-            {couponHuntCards.map((item) => (
-              <Link className="card admin-category-card" href={item.href} key={item.title}>
-                <span className="badge">Controlled FOMO</span>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
               </Link>
             ))}
           </div>
