@@ -1,98 +1,36 @@
-import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
-import { packages, topUpPackages } from "@/lib/data";
+const CLW_CSS = "#clw{grid-column:1/-1;width:100%;--line:rgba(255,255,255,.08);--muted:#9aa8c0;--text:#f8fbff;--cyan:#22d3ee;color:var(--text);font-family:Inter,system-ui,sans-serif;max-width:1180px;margin:0 auto;padding:24px 20px 72px}\n#clw *{box-sizing:border-box}#clw a{text-decoration:none}\n#clw .path{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}\n#clw .path a{color:#d7e3f5;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:8px 12px;font:650 13px Inter,sans-serif}\n#clw .path a.on{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032;border:0}\n#clw .kicker{display:inline-flex;height:28px;align-items:center;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:#c9d6ea;font:600 12px Inter,sans-serif}\n#clw h1{margin:12px 0 8px;font-size:clamp(28px,4vw,44px);letter-spacing:-.03em}\n#clw .lead{margin:0 0 22px;max-width:640px;color:var(--muted);font-size:15px;line-height:1.55}\n#clw .grid{display:grid;gap:14px}#clw .g2{grid-template-columns:repeat(2,minmax(0,1fr))}#clw .g3{grid-template-columns:repeat(3,minmax(0,1fr))}#clw .g4{grid-template-columns:repeat(4,minmax(0,1fr))}\n#clw .card{padding:20px;border-radius:18px;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.94));border:1px solid var(--line);display:flex;flex-direction:column;min-height:100%}\n#clw .card h3{margin:0 0 6px;font-size:18px}#clw .card p,#clw .note{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.5}\n#clw .price{font-size:32px;letter-spacing:-.03em;margin:0 0 8px}#clw .price span{font-size:14px;color:var(--muted);font-weight:600}\n#clw .cta,#clw .ghost{display:flex;align-items:center;justify-content:center;height:42px;border-radius:999px;font:700 14px Inter,sans-serif;margin-top:auto}\n#clw .cta{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032}\n#clw .ghost{border:1px solid rgba(34,211,238,.45);color:#d7fbff}\n@media(max-width:900px){#clw .g2,#clw .g3,#clw .g4{grid-template-columns:1fr}}";
 
-export default async function BillingPage({ searchParams }: { searchParams?: Promise<{ package?: string }> }) {
-  const params = await searchParams;
-  const selectedPackageName = params?.package;
-  const selectedPackage = [...packages, ...topUpPackages].find((plan) => plan.id === selectedPackageName || plan.name === selectedPackageName);
-
+export default function BillingPage() {
   return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <div className="production-hero-card compact-production-hero">
-        <span className="badge">Billing</span>
-        <h2>Subscriptions and credit top-ups</h2>
-        <p>
-          Start a monthly or yearly credit subscription, or buy one-time top-up credits whenever a production needs extra balance.
-        </p>
-        <div className="url-action-center">
-          <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Cancel Preview / Subscription</a>
-          <Link className="btn secondary" href="/whop-billing">How cancellation works</Link>
-          <Link className="btn secondary" href="/dashboard/credits">View credit balance</Link>
-          <Link className="btn secondary" href="/dashboard/payment">Open payment page</Link>
-          <Link className="btn secondary" href="/dashboard/contact">Need billing help?</Link>
+    <main className="container section dashboard-shell-layout dashboard-postlaunch-shell">
+      <style id="clw-css">{CLW_CSS}</style>
+      <div id="clw">
+        <nav className="path" aria-label="Studio">
+          <a className="" href="/dashboard">Overview</a>
+          <a className="" href="/dashboard/credits">Credits</a>
+          <a className="on" href="/dashboard/billing">Billing</a>
+          <a className="" href="/dashboard/productions">Productions</a>
+          <a className="" href="/dashboard/assistant-workspace">Assistant</a>
+          <a className="" href="/growth-intelligence">Growth Intelligence</a>
+          <a className="" href="/dashboard/partners">Partners</a>
+          <a className="" href="/pricing">Pricing</a>
+        </nav>
+        <span className="kicker">Billing</span>
+        <h1>Billing</h1>
+        <p className="lead">Subscriptions and packs check out on Whop. Cancel in Whop before the 24-hour preview ends if you do not want the plan to start.</p>
+        <div className="grid g2">
+          <article className="card"><h3>Cancel in Whop</h3><p>Preview and renewal are managed in your Whop billing hub.</p><a className="cta" href="https://whop.com/hub">Open Whop hub</a></article>
+          <article className="card"><h3>Credit balance</h3><p>Plans and one-time packs live on Credits.</p><a className="ghost" href="/dashboard/credits">View credits</a></article>
         </div>
+        <h1 style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
+        <div className="grid g4">
+          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Checkout</a></article>
+          <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_DTxjYMeiRPBWz">Checkout</a></article>
+          <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_rkeOQU3gjmujh">Checkout</a></article>
+          <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_UtIprGEXNEooK">Checkout</a></article>
+        </div>
+        <p className="note" style={{ marginTop: 18 }}>Need help? <a href="/contact">Contact</a>. Do not use /dashboard/payment.</p>
       </div>
-
-      <section className="payment-trust-flow" aria-label="Billing trust flow" style={{ marginTop: 18 }}>
-        <div><strong>1. Choose package</strong><span>Select subscription or one-time top-up before checkout.</span></div>
-        <div><strong>2. Payment confirmation</strong><span>Credits or service access are activated after payment/admin confirmation.</span></div>
-        <div><strong>3. Clear cancellation</strong><span>Preview and subscription cancellation stays visible here and in Whop.</span></div>
-        <div><strong>4. Support path</strong><span>Billing questions route through credits, payment and contact pages.</span></div>
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 18 }}>
-        <span className="badge">Cancel preview / subscription</span>
-        <h2>Need to stop before renewal?</h2>
-        <p style={{ color: "var(--muted)" }}>
-          If you are inside the 24-hour preview window and do not want the main subscription to start, cancel from Whop before the preview ends. The preview/setup fee remains non-refundable, but the main monthly or yearly subscription will not continue after a successful Whop cancellation.
-        </p>
-        <div className="url-action-center">
-          <a className="btn" href="https://whop.com/hub" target="_blank" rel="noreferrer">Open Whop to cancel</a>
-          <Link className="btn secondary" href="/whop-billing">Read cancellation steps</Link>
-        </div>
-      </section>
-
-      {selectedPackage ? (
-        <div className="card selected-billing-card">
-          <span className="badge">Selected package</span>
-          <h3>{selectedPackage.name}</h3>
-          <strong>{selectedPackage.price}</strong>
-          <p>{selectedPackage.credits.toLocaleString()} credits will be added after payment confirmation.</p>
-          <p>{selectedPackage.planType === "topup" ? "This is a one-time top-up and does not renew automatically." : "This subscription renews automatically according to the selected billing cycle."}</p>
-          <Link className="btn" href={`/dashboard/payment?package=${encodeURIComponent(selectedPackage.id)}&billing=${selectedPackage.planType === "topup" ? "one_time" : "monthly"}`}>Open payment page</Link>
-        </div>
-      ) : null}
-
-      <section style={{ marginTop: 18 }}>
-        <h2>Recurring subscriptions</h2>
-        <div className="grid" style={{ marginTop: 14 }}>
-          {packages.map((plan) => (
-            <Link className={`card clickable-credit-card ${selectedPackageName === plan.id ? "active-billing-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(plan.id)}&billing=monthly`} key={plan.id}>
-              <span className="badge">Monthly / yearly subscription</span>
-              <h3>{plan.name}</h3>
-              <strong style={{ fontSize: 34 }}>{plan.price}</strong>
-              <p>{plan.credits.toLocaleString()} credits per month</p>
-              <p>{plan.description}</p>
-              <span className="btn">Select subscription</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section style={{ marginTop: 18 }}>
-        <h2>One-time top-up credits</h2>
-        <div className="grid" style={{ marginTop: 14 }}>
-          {topUpPackages.map((plan) => (
-            <Link className={`card clickable-credit-card ${selectedPackageName === plan.id ? "active-billing-plan" : ""}`} href={`/dashboard/payment?package=${encodeURIComponent(plan.id)}&billing=one_time`} key={plan.id}>
-              <span className="badge">One-time top-up</span>
-              <h3>{plan.name}</h3>
-              <strong style={{ fontSize: 34 }}>{plan.price}</strong>
-              <p>{plan.credits.toLocaleString()} credits</p>
-              <p>{plan.description}</p>
-              <span className="btn">Buy top-up</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <div className="card" style={{ marginTop: 18 }}>
-        <h3>Payment status</h3>
-        <p style={{ color: "var(--muted)" }}>
-          Whop or active payment provider receipts and invoices are sent after checkout. During early launch, credits are activated after admin review and you will receive a Crelavo credits activated email when the balance is updated.
-        </p>
-        <Link className="btn secondary" href="/dashboard/credits">Back to credits</Link>
-      </div>
-    </DashboardShell>
+    </main>
   );
 }

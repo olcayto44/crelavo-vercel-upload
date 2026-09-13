@@ -1,209 +1,52 @@
-import Link from "next/link";
 import { Header } from "@/components/Header";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
-import { PageDemoVideoSection, pickPageDemoVideo } from "@/components/PageDemoVideoSection";
-import { growthIntelligencePlans } from "@/lib/data";
-import { getConfiguredSampleVideos } from "@/lib/sample-video-config";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { hasWhopPlan } from "@/lib/whop";
 
 export const metadata = {
   title: "AI Growth Intelligence Agent | Crelavo",
-  description: "Monitor competitors, price changes, public ads, landing pages and market signals with an autonomous AI growth intelligence agent and weekly executive PDF reports.",
+  description: "Monitor competitors, price changes, public ads, landing pages and market signals with weekly executive PDF reports.",
   alternates: { canonical: "/growth-intelligence" }
 };
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US")}`;
-}
-
-const workflowSteps = [
-  { title: "Add competitors", body: "Enter your own website, competitor URLs, public ad library links, product pages and target market notes." },
-  { title: "n8n monitors public signals", body: "The workflow checks public pricing pages, landing pages, public ad libraries and review sources on a schedule, then stores change events for review." },
-  { title: "AI creates the strategy report", body: "Claude/OpenAI-style reasoning turns raw signals into a weekly executive PDF with risks, opportunities and lawful market response recommendations." },
-  { title: "Launch the response inside Crelavo", body: "Use the report to brief ad videos, landing pages, product campaigns, social post packs or email campaign ideas inside Crelavo." }
-];
-
-const automationArchitecture = [
-  {
-    title: "n8n data collection agent",
-    body: "Scheduled n8n workflows can use HTTP Request, approved scraper nodes and platform-provided APIs to monitor only publicly available pages, pricing tables, landing pages, source-code changes visible to any visitor and public ad library entries."
-  },
-  {
-    title: "Strategic AI analysis bridge",
-    body: "Collected changes are packaged for Claude 3.5 Sonnet, OpenAI o3-style reasoning or another approved LLM to summarize what changed, why it matters and which lawful growth actions the customer can consider."
-  },
-  {
-    title: "Report packaging and delivery",
-    body: "n8n can convert the AI analysis into a branded Weekly Intelligence Report PDF, send it by email and trigger critical Slack, Telegram or SMS alerts when public pricing, offer or availability signals change."
-  }
-];
-
-const complianceSafeguards = [
-  "This platform analyzes only publicly available data for market research purposes. It does not perform cyber attacks, credential abuse, unauthorized access, hidden data extraction or confidential data breaches.",
-  "Customers are responsible for using competitor information in compliance with applicable competition, privacy, advertising, data protection and platform terms of service rules in their markets.",
-  "Monitoring must not bypass logins, paywalls, captchas, rate limits, robots restrictions, private APIs or any technical access control.",
-  "Reports are business intelligence outputs, not legal advice. Customers should consult qualified counsel before using insights for regulated, sensitive or high-risk competitive actions.",
-  "Recommended actions should focus on lawful market responses such as pricing review, campaign positioning, landing page improvements, retention offers and customer communication."
-];
-
-const intelligenceSignals = [
-  "Public competitor website and pricing changes",
-  "Landing page and offer message changes",
-  "Public ad library creative and copy signals",
-  "Review, complaint and reputation trend summaries",
-  "Weekly executive PDF report and action plan",
-  "Optional Slack/email opportunity alerts on higher plans"
-];
+const CLW_CSS = "#clw{grid-column:1/-1;width:100%;--line:rgba(255,255,255,.08);--muted:#9aa8c0;--text:#f8fbff;--cyan:#22d3ee;color:var(--text);font-family:Inter,system-ui,sans-serif;max-width:1180px;margin:0 auto;padding:24px 20px 72px}\n#clw *{box-sizing:border-box}#clw a{text-decoration:none}\n#clw .path{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}\n#clw .path a{color:#d7e3f5;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:8px 12px;font:650 13px Inter,sans-serif}\n#clw .path a.on{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032;border:0}\n#clw .kicker{display:inline-flex;height:28px;align-items:center;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:#c9d6ea;font:600 12px Inter,sans-serif}\n#clw h1{margin:12px 0 8px;font-size:clamp(28px,4vw,44px);letter-spacing:-.03em}\n#clw .lead{margin:0 0 22px;max-width:640px;color:var(--muted);font-size:15px;line-height:1.55}\n#clw .grid{display:grid;gap:14px}#clw .g2{grid-template-columns:repeat(2,minmax(0,1fr))}#clw .g3{grid-template-columns:repeat(3,minmax(0,1fr))}#clw .g4{grid-template-columns:repeat(4,minmax(0,1fr))}\n#clw .card{padding:20px;border-radius:18px;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.94));border:1px solid var(--line);display:flex;flex-direction:column;min-height:100%}\n#clw .card h3{margin:0 0 6px;font-size:18px}#clw .card p,#clw .note{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.5}\n#clw .price{font-size:32px;letter-spacing:-.03em;margin:0 0 8px}#clw .price span{font-size:14px;color:var(--muted);font-weight:600}\n#clw .cta,#clw .ghost{display:flex;align-items:center;justify-content:center;height:42px;border-radius:999px;font:700 14px Inter,sans-serif;margin-top:auto}\n#clw .cta{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032}\n#clw .ghost{border:1px solid rgba(34,211,238,.45);color:#d7fbff}\n@media(max-width:900px){#clw .g2,#clw .g3,#clw .g4{grid-template-columns:1fr}}";
 
 export default async function GrowthIntelligencePage() {
-  const [siteContent, sampleVideos] = await Promise.all([
-    getConfiguredSiteContentConfig(),
-    getConfiguredSampleVideos()
-  ]);
-  const growthDemo = pickPageDemoVideo(sampleVideos, ["growth-intelligence-page-demo", "growth_intelligence", "competitor intelligence", "market intelligence"]);
-
+  const siteContent = await getConfiguredSiteContentConfig();
   return (
     <>
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
       <main className="container section pricing-page">
-        <section className="promo-top-layout">
-          <div>
-            <span className="badge">AI Growth Intelligence</span>
-            <h1>Autonomous competitor and market intelligence agent</h1>
-            <p className="section-lead">
-              Monitor competitors, price changes, public ad signals, landing page updates and customer complaint trends. Every week, eligible users receive an executive strategy report as a dashboard PDF/file that explains what changed and what to do next.
-            </p>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-              <Link className="btn" href="/auth/register?next=%2Fgrowth-intelligence">View intelligence plans</Link>
-              <Link className="btn secondary" href="/dashboard/growth-intelligence">Prepare intelligence brief</Link>
-            </div>
+        <style id="clw-css">{CLW_CSS}</style>
+        <div id="clw">
+          <nav className="path" aria-label="Studio">
+          <a className="" href="/dashboard">Overview</a>
+          <a className="" href="/dashboard/credits">Credits</a>
+          <a className="" href="/dashboard/billing">Billing</a>
+          <a className="" href="/dashboard/productions">Productions</a>
+          <a className="" href="/dashboard/assistant-workspace">Assistant</a>
+          <a className="on" href="/growth-intelligence">Growth Intelligence</a>
+          <a className="" href="/dashboard/partners">Partners</a>
+          <a className="" href="/pricing">Pricing</a>
+        </nav>
+          <span className="kicker">Service subscription</span>
+          <h1>Growth Intelligence</h1>
+          <p className="lead">Public competitor and offer monitoring. Weekly PDF on the dashboard. This is not a credit top-up. Public sources only.</p>
+          <div className="grid g2"><a className="cta" href="#gi-plans">View plans</a><a className="ghost" href="/dashboard/assistant-workspace">Prepare brief</a></div>
+          <h1 style={{ fontSize: 28, marginTop: 36 }}>How it works</h1>
+          <div className="grid g4">
+            <article className="card"><h3>1. Add competitors</h3><p>Your site, public competitor URLs, product pages, market notes.</p></article>
+            <article className="card"><h3>2. Watch public pages</h3><p>Pricing, landing, public ads and review summaries on a schedule.</p></article>
+            <article className="card"><h3>3. Weekly PDF</h3><p>What changed, risks, lawful next actions. Dashboard file.</p></article>
+            <article className="card"><h3>4. Produce in Crelavo</h3><p>Turn the brief into ads, pages or campaigns in Assistant.</p></article>
           </div>
-          <div className="card selected-billing-card">
-            <span className="badge">Service subscription</span>
-            <h3>Not a credit top-up</h3>
-            <p>Growth Intelligence is a monthly monitoring and reporting service. It does not add normal production credits; it creates recurring competitor intelligence and delivers the finished report as a dashboard PDF/file for users with active entitlement or enough credits.</p>
+          <h1 id="gi-plans" style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
+          <div className="grid g3">
+            <article className="card"><span className="kicker">1 competitor</span><h3>Starter</h3><p className="price">$179 <span>/mo</span></p><p className="note">24h preview · $15 today</p><a className="cta" href="https://whop.com/checkout/plan_FlOEa6urAuKEx">Start monthly preview</a></article>
+            <article className="card"><span className="kicker">Up to 3</span><h3>Growth</h3><p className="price">$499 <span>/mo</span></p><p className="note">24h preview · $29 today</p><a className="cta" href="https://whop.com/checkout/plan_BCGKWVCrRakWc">Start monthly preview</a></article>
+            <article className="card"><span className="kicker">5–10</span><h3>Enterprise</h3><p className="price">$1,999 <span>/mo</span></p><p className="note">24h preview · $79 today</p><a className="cta" href="https://whop.com/checkout/plan_ZnbxWuOwrrFwh">Start monthly preview</a></article>
           </div>
-        </section>
-
-        <PageDemoVideoSection
-          sample={growthDemo}
-          badge="Growth Intelligence demo video"
-          title="Competitor intelligence workflow preview"
-          description="Use this area to show how a company enters competitor URLs, the agents monitor public signals, the AI creates a strategy PDF and the user launches response campaigns from Crelavo."
-          fallbackFeatures={["Competitor URL monitoring", "Public ad signal tracking", "Price and offer change detection", "Weekly CEO PDF report", "Crelavo campaign response actions"]}
-          ctaHref="/auth/register?next=%2Fgrowth-intelligence"
-          ctaLabel="View plans"
-          secondaryHref="/dashboard/growth-intelligence"
-          secondaryLabel="Prepare intelligence brief"
-          adminHint="Admin setup: open /admin/sample-videos and create or edit a sample with category growth_intelligence or id growth-intelligence-page-demo. Add Video URL and Thumbnail URL there."
-        />
-
-        <section style={{ marginTop: 28 }}>
-          <div className="sample-video-head">
-            <div>
-              <span className="badge">How it works</span>
-              <h2>From market monitoring to campaign action</h2>
-              <p className="section-lead">This workflow is not video generation. It is an autonomous service workflow: collect public signals, analyze them, deliver a gated dashboard PDF/file report and turn insights into Crelavo production actions.</p>
-            </div>
-          </div>
-          <div className="admin-info-grid">
-            {workflowSteps.map((step, index) => (
-              <div key={step.title}>
-                <span>Step {index + 1}</span>
-                <strong>{step.title}</strong>
-                <small>{step.body}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Monitored signals</span>
-          <h2>What the intelligence agent watches</h2>
-          <div className="plan-feature-groups">
-            <div>
-              <b>Public market signals</b>
-              {intelligenceSignals.map((item) => <small key={item}>{item}</small>)}
-            </div>
-          </div>
-          <p style={{ color: "var(--muted)" }}>The system should monitor public sources only. It should not bypass logins, captchas, private data, platform restrictions or confidential competitor systems.</p>
-        </section>
-
-        <section style={{ marginTop: 28 }}>
-          <div className="sample-video-head">
-            <div>
-              <span className="badge">Automation architecture</span>
-              <h2>n8n collection, AI analysis and executive delivery</h2>
-              <p className="section-lead">The production version can connect n8n, public data sources, LLM analysis and automated report delivery without crossing into unauthorized access or hidden data extraction.</p>
-            </div>
-          </div>
-          <div className="admin-info-grid">
-            {automationArchitecture.map((step, index) => (
-              <div key={step.title}>
-                <span>Automation step {index + 1}</span>
-                <strong>{step.title}</strong>
-                <small>{step.body}</small>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Legal and responsible use</span>
-          <h2>Public-data-only market research policy</h2>
-          <p className="section-lead">Growth Intelligence is designed for lawful market research and executive decision support, not unauthorized access, cyber activity or confidential data collection.</p>
-          <div className="plan-feature-groups">
-            <div>
-              <b>Compliance safeguards</b>
-              {complianceSafeguards.map((item) => <small key={item}>{item}</small>)}
-            </div>
-          </div>
-        </section>
-
-        <section className="card admin-wide-card" style={{ marginTop: 28 }}>
-          <span className="badge">Affiliate opportunity</span>
-          <h2>Growth Intelligence is a strong recurring partner offer</h2>
-          <p className="section-lead">Creators, agencies and consultants can promote this service as a higher-ticket monthly plan. At a 35% draft commission, one active $499/mo Growth Intelligence customer could represent about $174.65/mo in estimated partner commission before final payout rules.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <Link className="btn" href="/affiliate">Open affiliate program</Link>
-            <Link className="btn secondary" href="/dashboard/partners">View partner dashboard</Link>
-          </div>
-        </section>
-
-        <section id="growth-plans" style={{ marginTop: 28 }}>
-          <div className="sample-video-head">
-            <div>
-              <span className="badge">Choose a plan</span>
-              <h2>Growth Intelligence subscription plans</h2>
-              <p className="section-lead">Monthly service plans for competitor monitoring, market signal summaries and executive PDF reports.</p>
-            </div>
-          </div>
-          <div className="production-pricing-grid">
-            {growthIntelligencePlans.map((plan) => (
-              <div className="card clickable-credit-card credit-sale-card" key={plan.id}>
-                <span className="badge">{plan.competitorLimit}</span>
-                <h3>{plan.name}</h3>
-                <strong style={{ fontSize: 30 }}>{plan.price}</strong>
-                <p><strong>Yearly: {formatUsd(plan.priceUsd * 10)}/yr</strong> · 2 months free</p>
-                {"setupFeeUsd" in plan ? <p><strong>Start 24-Hour Preview — {formatUsd(Number(plan.setupFeeUsd))}</strong> non-refundable setup fee today. Includes one 10-second watermarked preview; downloads stay closed during preview.</p> : null}
-                <p><strong>{plan.monitoringFrequency}</strong></p>
-                <p>{plan.description}</p>
-                <div className="plan-feature-groups">
-                  <div>
-                    <b>Included intelligence scope</b>
-                    {plan.usage.map((item) => <small key={item}>{item}</small>)}
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-                  <Link className="btn" href={`/dashboard/payment?package=${encodeURIComponent(plan.id)}&billing=monthly`}>Start monthly preview</Link>
-                  {hasWhopPlan(plan.id, "yearly") ? <Link className="btn secondary" href={`/dashboard/payment?package=${encodeURIComponent(plan.id)}&billing=yearly`}>Start yearly preview</Link> : <span className="workspace-action-note warning">Yearly checkout is not active for this plan yet.</span>}
-                  <Link className="btn secondary" href="/dashboard/growth-intelligence">Prepare brief</Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+          <p className="note" style={{ marginTop: 18 }}>Public data only. No login bypass. Reports are not legal advice. <a href="/affiliate">Affiliate</a> · <a href="/dashboard/partners">Partners</a></p>
+        </div>
       </main>
     </>
   );

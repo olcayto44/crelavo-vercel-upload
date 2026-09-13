@@ -1,54 +1,37 @@
-import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
-import { RequestsTable } from "@/components/RequestsTable";
-import { SignOutButton } from "@/components/SignOutButton";
-import { CreditBalanceCard } from "@/components/CreditBalanceCard";
-import { dashboardNextBestActions } from "@/lib/retention-growth";
-
-const dashboardConversionShortcuts = [
-  { title: "I need the cheapest safe test", text: "Use the free ad score first, then start the free 24-hour Business trial if the hook is strong enough.", href: "/free-tools/ad-performance-score-checker", cta: "Score ad free" },
-  { title: "I am ready to test one brand", text: "Open the Business preview path for 12,000 credits and one focused ecommerce production test.", href: "/dashboard/payment?package=business&billing=monthly&campaign=business-12000", cta: "Start Business preview" },
-  { title: "I need agency-scale output", text: "Open the Team Annual preview path for 174,000 credits, 12 simultaneous tasks and bulk client/product workflows.", href: "/dashboard/payment?package=team&billing=yearly&campaign=team-annual-174000", cta: "Start Team preview" }
-];
-
-const workflowStarters = [
-  ["Website builder", "AI Website Builder", "Plan a landing page, business site, SaaS page or full website package with source files, README, setup guide and ZIP handoff.", "/ai-website-builder", "Open website builder"],
-  ["App builder", "AI App Builder", "Start a mobile app, web app, admin panel or SaaS launch plan with modules, screens, source package and delivery tracking.", "/ai-app-builder", "Open app builder"],
-  ["Commerce builder", "AI Ecommerce Builder", "Create store pages, product ad kits, product descriptions, offer assets, checkout notes and e-commerce delivery files.", "/ai-ecommerce-builder", "Open ecommerce builder"],
-  ["Video generator", "AI Video Generator", "Prepare short videos, product clips, multi-format exports, captions, ratios, thumbnail notes and provider-ready video jobs.", "/ai-video-generator", "Open video generator"],
-  ["Live sales", "Live Sales Control Center", "Start or stop avatar live sales sessions, select extra setup features, and track remaining fair-use live hours.", "/dashboard/live-sales-agent", "Open live control"],
-  ["Drone shoot", "Drone Shoot Panel", "Prepare the purchased drone package with location, route, map area, camera movement and start the drone production request.", "/dashboard/drone-shoot", "Open drone shoot"],
-  ["Social media", "AI Social Media AI", "Build social posts, captions, short-video plans, campaign angles, platform export notes and share-ready delivery packages.", "/ai-social-media-ai", "Open social media AI"],
-  ["Export pack", "Social Media Export Pack", "Prepare platform-ready captions, hashtags, cover text, CTA notes and manual publishing guardrails.", "/dashboard/social-export", "Open export pack"],
-  ["Shorts growth", "TikTok / YouTube Shorts Growth", "Use proof clips, free tool hooks and founder posts as the safe organic short-form launch system.", "/dashboard/shorts-growth", "Open shorts plan"],
-  ["Share loop", "Viral Share-to-Earn", "Review manual reward rules for approved shares, invites, case studies and paid referral activation.", "/dashboard/share-to-earn", "Open share loop"],
-  ["Brand kit", "AI Brand Kit Builder", "Prepare brand voice, visual direction, content kit, reusable assets and dashboard delivery notes for a launch package.", "/dashboard/brand-kit", "Open brand kit"],
-  ["Bulk tools", "AI Bulk Content Builder", "Plan batch content, CSV-driven production, multi-item exports and post-launch bulk automation preparation.", "/dashboard/bulk", "Open bulk builder"],
-  ["Voice / dubbing", "AI Dubbing & Voice", "Prepare voiceover, dubbing, localization notes and audio-ready delivery workflows for managed production handoff.", "/dashboard/dubbing", "Open dubbing"],
-  ["Ads planning", "AI Ads Planner", "Prepare paid ad campaign structure, ROAS notes, creative angles and post-launch ad workflow planning.", "/dashboard/ads", "Open ads planner"],
-  ["Custom agents", "Custom Agents", "Prepare reusable brand, ecommerce, live sales and growth intelligence agents without unsafe autonomous actions.", "/dashboard/custom-agents", "Open agents"],
-  ["Premium expansion", "Localization / Competitor Analyzer", "Open premium localization, competitor ad analysis and global growth intelligence modules with safety rules.", "/dashboard/premium-expansion", "Open premium modules"],
-  ["Connections", "AI Channel Connections", "Prepare Meta, TikTok, Shopify, Amazon, Trendyol and store connection targets for export and campaign handoff.", "/dashboard/connections", "Open connections"],
-  ["Growth", "AI Growth Rewards", "Review share-to-earn, referral prep, watermark rules and organic growth loops for launch readiness.", "/dashboard/growth", "Open growth"],
-  ["Partners", "Partner Program", "Prepare referral links, creator assets, commission review and partner rewards from one dashboard area.", "/dashboard/partners", "Open partners"],
-  ["Delivery center", "Production Delivery Center", "Open all production requests, delivery statuses, preview links, source packages, README files and revision paths.", "/dashboard/productions", "Open deliveries"],
-  ["Credits", "Credits & Billing", "Check credit balance, top-up flow, billing status and payment readiness before live production spend.", "/dashboard/credits", "Open credits"],
-  ["Billing", "Billing & Account Help", "Open credit packages, payment confirmation guidance, cancellation help and account support from the dashboard billing flow.", "/dashboard/billing", "Open billing"],
-  ["Provider test", "Provider Smoke Test", "Run a controlled 10-second / 1080p provider smoke test before committing to a full production.", "/dashboard/assistant-workspace?providerTest=1", "Run smoke test"]
-] as const;
+const CLW_CSS = "#clw{grid-column:1/-1;width:100%;--line:rgba(255,255,255,.08);--muted:#9aa8c0;--text:#f8fbff;--cyan:#22d3ee;color:var(--text);font-family:Inter,system-ui,sans-serif;max-width:1180px;margin:0 auto;padding:24px 20px 72px}\n#clw *{box-sizing:border-box}#clw a{text-decoration:none}\n#clw .path{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}\n#clw .path a{color:#d7e3f5;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:8px 12px;font:650 13px Inter,sans-serif}\n#clw .path a.on{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032;border:0}\n#clw .kicker{display:inline-flex;height:28px;align-items:center;padding:0 12px;border-radius:999px;border:1px solid var(--line);color:#c9d6ea;font:600 12px Inter,sans-serif}\n#clw h1{margin:12px 0 8px;font-size:clamp(28px,4vw,44px);letter-spacing:-.03em}\n#clw .lead{margin:0 0 22px;max-width:640px;color:var(--muted);font-size:15px;line-height:1.55}\n#clw .grid{display:grid;gap:14px}#clw .g2{grid-template-columns:repeat(2,minmax(0,1fr))}#clw .g3{grid-template-columns:repeat(3,minmax(0,1fr))}#clw .g4{grid-template-columns:repeat(4,minmax(0,1fr))}\n#clw .card{padding:20px;border-radius:18px;background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(2,6,23,.94));border:1px solid var(--line);display:flex;flex-direction:column;min-height:100%}\n#clw .card h3{margin:0 0 6px;font-size:18px}#clw .card p,#clw .note{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.5}\n#clw .price{font-size:32px;letter-spacing:-.03em;margin:0 0 8px}#clw .price span{font-size:14px;color:var(--muted);font-weight:600}\n#clw .cta,#clw .ghost{display:flex;align-items:center;justify-content:center;height:42px;border-radius:999px;font:700 14px Inter,sans-serif;margin-top:auto}\n#clw .cta{background:linear-gradient(90deg,#38bdf8,#22d3ee);color:#082032}\n#clw .ghost{border:1px solid rgba(34,211,238,.45);color:#d7fbff}\n@media(max-width:900px){#clw .g2,#clw .g3,#clw .g4{grid-template-columns:1fr}}";
 
 export default function DashboardPage() {
-  const vipAgencyHubUrl = process.env.NEXT_PUBLIC_VIP_AGENCY_HUB_URL?.trim();
   return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", marginBottom: 20 }}><div><h1 style={{ margin: 0 }}>Dashboard</h1><p style={{ color: "var(--muted)", margin: "8px 0 0" }}>Production planning, live stage tracking, dashboard delivery and post-launch social/e-commerce export preparation.</p></div><SignOutButton /></div>
-      <div className="kpi"><CreditBalanceCard /><div className="card"><span>Next step</span><strong>Brief</strong><p>Start one focused request before provider work begins.</p></div><div className="card"><span>Safety check</span><strong>Confirm</strong><p>Review scope and credit reserve before production starts.</p></div><div className="card"><span>Delivery</span><strong>Files</strong><p>Track previews, source packages, README notes and final outputs.</p></div></div>
-      <section className="card" style={{ marginTop: 20 }}><span className="badge">Conversion shortcuts</span><h2>Choose the next action without searching the dashboard</h2><p style={{ color: "var(--muted)" }}>These three paths match the main launch funnel: free score, Business preview or Team Annual preview.</p><div className="admin-category-grid" style={{ marginTop: 16 }}>{dashboardConversionShortcuts.map((item) => <Link className="card admin-category-card" href={item.href} key={item.title}><h3>{item.title}</h3><p>{item.text}</p><span className="text-link">{item.cta}</span></Link>)}</div></section>
-      <section className="card" style={{ marginTop: 20 }}><span className="badge">VIP Agency Hub</span><h2>Get first-video feedback and prompt tips after preview checkout</h2><p style={{ color: "var(--muted)" }}>Preview buyers can use the private agency hub for ecommerce ad examples, prompt direction, launch notes and first-output optimization. If the hub URL is not configured yet, request an invite from support.</p><div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>{vipAgencyHubUrl ? <a className="btn" href={vipAgencyHubUrl} target="_blank" rel="noreferrer">Open VIP Agency Hub</a> : <Link className="btn" href="/dashboard/contact">Request invite</Link>}<Link className="btn secondary" href="/community-showcase">View community showcase</Link><Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score an ad first</Link></div></section>
-      <section className="card" style={{ marginTop: 20 }}><span className="badge">Viral credits</span><h2>Need more credits? Invite a friend.</h2><p style={{ color: "var(--muted)" }}>Bring another ecommerce seller or agency owner to Crelavo. Planned launch reward: +100 credits for both verified users, then +2,000 bonus credits for you when the invited user becomes a paid Business or Team subscriber. Rewards stay manually reviewed until automated anti-abuse checks are connected.</p><div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}><Link className="btn" href="/dashboard/share-to-earn">Open share-to-earn</Link><Link className="btn secondary" href="/dashboard/credits">View credit rewards</Link><Link className="btn secondary" href="/dashboard/partners">Partner area</Link></div></section>
-      <section className="card" style={{ marginTop: 20 }}><span className="badge">Next best actions</span><h2>Keep building from where users usually drop off</h2><div className="admin-info-grid">{dashboardNextBestActions.map((action) => <div key={action.href}><span>{action.reason}</span><strong>{action.label}</strong><small><Link href={action.href}>{action.href}</Link></small></div>)}</div></section>
-      <section className="dashboard-workflow-starters" style={{ marginTop: 20 }}><div className="sample-video-head"><div><span className="badge">AI builder launchpad</span><h2>Choose the AI builder you want to open</h2><p className="section-lead">Website, app, ecommerce, video, social media, brand kit, bulk content, dubbing and provider smoke-test flows all open their own ready-start path.</p></div><Link className="btn secondary" href="/dashboard/productions">View productions</Link></div><div className="dashboard-workflow-grid">{workflowStarters.map(([badge, title, text, href, cta]) => <Link className="card clickable-credit-card dashboard-workflow-card" href={href} key={title}><span className="badge">{badge}</span><h3>{title}</h3><p>{text}</p><span className="btn">{cta}</span></Link>)}</div></section>
-      <div className="card" style={{ marginTop: 20 }}><h2>Recent video requests</h2><RequestsTable /><div style={{ marginTop: 18 }}><Link className="btn" href="/dashboard/create">Start live production</Link></div></div>
-    </DashboardShell>
+    <main className="container section dashboard-shell-layout dashboard-postlaunch-shell">
+      <style id="clw-css">{CLW_CSS}</style>
+      <div id="clw">
+        <nav className="path" aria-label="Studio">
+          <a className="on" href="/dashboard">Overview</a>
+          <a className="" href="/dashboard/credits">Credits</a>
+          <a className="" href="/dashboard/billing">Billing</a>
+          <a className="" href="/dashboard/productions">Productions</a>
+          <a className="" href="/dashboard/assistant-workspace">Assistant</a>
+          <a className="" href="/growth-intelligence">Growth Intelligence</a>
+          <a className="" href="/dashboard/partners">Partners</a>
+          <a className="" href="/pricing">Pricing</a>
+        </nav>
+        <span className="kicker">Studio</span>
+        <h1>Dashboard</h1>
+        <p className="lead">Production, credits, billing and partners in one place. Sign in to load your balance. Checkout stays on Whop.</p>
+        <div className="grid g4">
+          <article className="card"><h3>Assistant</h3><p>Start a video, site, campaign or file production.</p><a className="cta" href="/dashboard/assistant-workspace">Open assistant</a></article>
+          <article className="card"><h3>Credits</h3><p>INTRO $9.99, credit plans and one-time packs.</p><a className="cta" href="/dashboard/credits">View credits</a></article>
+          <article className="card"><h3>Billing</h3><p>Preview, renewal and cancel in Whop.</p><a className="cta" href="/dashboard/billing">Open billing</a></article>
+          <article className="card"><h3>Productions</h3><p>Previews, files and delivery status.</p><a className="cta" href="/dashboard/productions">Open productions</a></article>
+        </div>
+        <div className="grid g4" style={{ marginTop: 14 }}>
+          <article className="card"><h3>Growth Intelligence</h3><p>Monthly competitor reports. Not a credit top-up.</p><a className="ghost" href="/growth-intelligence">View plans</a></article>
+          <article className="card"><h3>Partners</h3><p>Apply and share Crelavo. No sample ledger.</p><a className="ghost" href="/dashboard/partners">Open partners</a></article>
+          <article className="card"><h3>Live Sales</h3><p>Service hours, not production credits.</p><a className="ghost" href="/live-sales-credits">Live plans</a></article>
+          <article className="card"><h3>Drone</h3><p>One-time location and satellite packs.</p><a className="ghost" href="/drone-credits">Drone packs</a></article>
+        </div>
+        <p className="note" style={{ marginTop: 18 }}>Not signed in? <a className="ghost" href="/?auth=login" style={{ display: "inline-flex", height: 36, padding: "0 14px" }}>Sign in</a></p>
+      </div>
+    </main>
   );
 }
