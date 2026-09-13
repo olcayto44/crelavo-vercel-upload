@@ -24,7 +24,7 @@ export default function DashboardGrowthPage() {
       <section className="card" style={{ marginTop: 20 }}>
         <span className="badge">Viral Growth Command Center</span>
         <h2>Use every happy user as a safe growth channel</h2>
-        <p style={{ color: "var(--muted)" }}>This is the dashboard-level map for referral, watermark, affiliate and showcase loops. Tracking and review records can be prepared now, while real credit awards stay blocked until fraud, payment and final live E2E checks pass.</p>
+        <p style={{ color: "var(--muted)" }}>This is the dashboard-level map for referral, watermark, affiliate and showcase loops. Tracking and review records can be prepared now. Rewards remain unavailable until Whop payment and fraud checks are confirmed.</p>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>
           {viralGrowthCommandCards.map((item) => (
             <div className="card admin-category-card" key={item.title}>
@@ -49,7 +49,7 @@ export default function DashboardGrowthPage() {
             <div key={action.href}>
               <span>{action.reason}</span>
               <strong>{action.label}</strong>
-              <small><Link href={action.href}>{action.href}</Link></small>
+              <small><Link href={action.href}>Open</Link></small>
             </div>
           ))}
         </div>
@@ -88,7 +88,7 @@ export default function DashboardGrowthPage() {
         <div className="admin-category-grid">
           {lifecycleNudges.map((nudge) => (
             <div className="card admin-category-card" key={nudge.stage}>
-              <span className="badge">{nudge.status.replaceAll("_", " ")}</span>
+              <span className="badge">{nudge.status === "connected_pending_live_e2e" ? "Payment confirmation pending" : nudge.status.replaceAll("_", " ")}</span>
               <h3>{nudge.stage}</h3>
               <p><strong>Trigger:</strong> {nudge.trigger}</p>
               <p>{nudge.message}</p>

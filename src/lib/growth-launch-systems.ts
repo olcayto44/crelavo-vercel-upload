@@ -10,7 +10,6 @@ export const socialExportPack = [
 export const shortFormGrowthSystem = [
   { stage: "Daily proof clip", cadence: "1-2/day", idea: "Show before/after production result, builder flow or delivery package.", ownerAction: "Pick one existing output and convert it into TikTok/Shorts hook." },
   { stage: "Free tool hook", cadence: "3/week", idea: "Turn a free tool result into a short educational or ecommerce angle.", ownerAction: "Use /free-tools and send users to Assistant Workspace." },
-  { stage: "Founder build-in-public", cadence: "2/week", idea: "Show Crelavo launch progress, payment guardrails and provider readiness honestly.", ownerAction: "Post manual update with no paid ad spend." },
   { stage: "Customer-style demo", cadence: "2/week", idea: "Demonstrate Shopify/product link to ad, website/app plan or Growth Intelligence use case.", ownerAction: "Use safe sample data; do not expose user files." }
 ];
 

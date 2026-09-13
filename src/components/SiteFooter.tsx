@@ -61,7 +61,7 @@ export function SiteFooter() {
       </div>
       <div className="site-footer-bottom">
         <a className="site-footer-brand-link" href="/"><strong>Crelavo</strong></a>
-        <span>? 2026 Crelavo. All rights reserved.</span>
+        <span>© 2026 Crelavo. All rights reserved.</span>
       </div>
     </footer>
   );

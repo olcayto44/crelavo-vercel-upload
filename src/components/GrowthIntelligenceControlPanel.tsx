@@ -37,6 +37,12 @@ type GrowthState = {
 
 const storageKey = "clipora-growth-intelligence-control-v1";
 
+const checkoutUrls = [
+  "https://whop.com/checkout/plan_FlOEa6urAuKEx",
+  "https://whop.com/checkout/plan_BCGKWVCrRakWc",
+  "https://whop.com/checkout/plan_ZnbxWuOwrrFwh"
+];
+
 const reportFrequencyOptions = [
   "Daily executive PDF",
   "Every 3 days executive PDF",
@@ -197,7 +203,7 @@ export function GrowthIntelligenceControlPanel() {
           <div>
             <span className="badge">Growth Intelligence Control</span>
             <h2>Competitor monitoring setup</h2>
-            <p style={{ color: "var(--muted)" }}>Use this provider-ready dashboard to prepare the competitor intelligence brief. DataForSEO, Apify, Google Maps and LLM report prep can read the same structure: competitors, public sources, report language, frequency and alert channel. The finished report should be delivered as a dashboard PDF/file only when the user has active service entitlement or enough credits.</p>
+            <p style={{ color: "var(--muted)" }}>Prepare the competitor intelligence brief with competitors, public sources, report language, frequency and alert channel. The finished report is delivered as a dashboard PDF/file only when the user has active service entitlement or enough credits.</p>
           </div>
         </div>
         <div className="admin-info-grid">
@@ -205,7 +211,7 @@ export function GrowthIntelligenceControlPanel() {
           <div><span>Competitors entered</span><strong>{competitorCount}</strong><p>URLs or brand names from the textarea</p></div>
           <div><span>Report delivery</span><strong>{state.reportFrequency}</strong><p>{state.reportLanguage} · {state.alertChannel}</p></div>
           <div><span>File access</span><strong>Entitlement / credits gated</strong><p>PDF/report file appears in dashboard after eligibility check</p></div>
-            <div><span>Latest status</span><strong>{state.jobs[0] ? statusText(state.jobs[0]) : "Not started"}</strong><p>{state.jobs[0]?.entitlementStatus ? `Access: ${state.jobs[0].entitlementStatus.replaceAll("_", " ")}` : "Provider-ready monitoring job state"}</p></div>
+            <div><span>Latest status</span><strong>{state.jobs[0] ? statusText(state.jobs[0]) : "Not started"}</strong><p>{state.jobs[0]?.entitlementStatus ? `Access: ${state.jobs[0].entitlementStatus.replaceAll("_", " ")}` : "Waiting for a monitoring request"}</p></div>
         </div>
         <div className="workspace-action-note warning" style={{ marginTop: 14 }}>
           <strong>Responsible use notice:</strong> Monitor only public sources that can be lawfully reviewed for market research. Do not enter private dashboards, restricted data, bypassed pages or sources that violate platform terms. The customer is responsible for using competitor insights in compliance with competition, privacy, advertising and data protection rules.
@@ -213,14 +219,16 @@ export function GrowthIntelligenceControlPanel() {
       </div>
 
       <div className="grid">
-        {growthIntelligencePlans.map((plan) => (
-          <button className={`card clickable-credit-card credit-sale-card ${state.planId === plan.id ? "active-billing-plan" : ""}`} type="button" onClick={() => setState((current) => ({ ...current, planId: plan.id }))} key={plan.id}>
+        {growthIntelligencePlans.map((plan, index) => (
+          <a className="card clickable-credit-card credit-sale-card" href={checkoutUrls[index]} key={plan.id}>
             <span className="badge">{plan.competitorLimit}</span>
             <h3>{plan.name}</h3>
             <strong>{plan.price}</strong>
             <p>{plan.monitoringFrequency}</p>
-          </button>
+            <span className="btn">{index === 0 ? "Starter \u00B7 $179/mo" : index === 1 ? "Growth \u00B7 $499/mo" : "Enterprise \u00B7 $1,999/mo"}</span>
+          </a>
         ))}
+        <a className="btn secondary" href="/growth-intelligence">View public plans</a>
       </div>
 
       <div className="card admin-wide-card">

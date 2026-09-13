@@ -274,7 +274,7 @@ export const rewardCreditRules = [
   { action: "Share a Crelavo preview output", credits: 100, limit: "2 approved rewards per day" },
   { action: "Invite a new user who signs up", credits: 250, limit: "5 approved rewards per week" },
   { action: "Submit a public case study", credits: 750, limit: "Manual admin approval" },
-  { action: "Affiliate referred user starts first production", credits: 1000, limit: "Pending Lemon Squeezy conversion rules" }
+  { action: "Affiliate referred user starts first production", credits: 1000, limit: "After Whop payment is confirmed" }
 ];
 
 export const watermarkPolicy = [

@@ -4,7 +4,7 @@ export const retentionGrowthSummary = {
   title: "Retention and growth operating system",
   mode: "Whop + provider-aware growth flows connected",
   promise: "Bring users back, push them toward first production, and guide them to Whop packages while tracking conversion, delivery and reward readiness.",
-  guardrail: "Lead capture, Whop-aware checkout and referral records can be prepared now; rewards, partner payouts and paid spend still require manual review until final live E2E validation."
+  guardrail: "Lead capture, Whop checkout and referral records can be prepared now; rewards, partner payouts and paid spend require confirmed payment and manual review."
 };
 
 export const lifecycleNudges = [
