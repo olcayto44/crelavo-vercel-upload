@@ -1,26 +1,8 @@
-import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
-import { GrowthIntelligenceControlPanel } from "@/components/GrowthIntelligenceControlPanel";
+import { DashboardEightShell } from "@/components/DashboardEightShell";
 
 export default function DashboardGrowthIntelligencePage() {
-  return (
-    <DashboardShell className="dashboard-standalone-service-page">
-      <section className="promo-top-layout dashboard-service-hero">
-        <div>
-          <span className="badge">Growth Intelligence</span>
-          <h1>AI competitor monitoring control center</h1>
-          <p className="section-lead">Prepare competitor URLs, public market sources, report settings and alert channels for the market intelligence workflow.</p>
-        </div>
-        <div className="card selected-billing-card">
-          <span className="badge">Service workflow</span>
-          <h3>{"Monitoring \u2192 report \u2192 campaign action"}</h3>
-          <p>Prepare the customer-side brief here. Final report delivery stays entitlement and review gated.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <Link className="btn" href="/growth-intelligence">View public plans</Link>
-          </div>
-        </div>
-      </section>
-      <GrowthIntelligenceControlPanel />
-    </DashboardShell>
-  );
+  return <DashboardEightShell active="gi" kicker="Public sources only" title="Growth Intelligence" lead="Monthly competitor reports from public pages, ad libraries and reviews. Not a credit top-up. No private dashboards, logins or paywall bypass. Checkout stays on the public plans page." columns={2} growthIntelligencePrimary>
+    <article className="card"><h3>View plans</h3><p>{"Starter $179/mo \u00B7 Growth $499/mo \u00B7 Enterprise $1,999/mo. Reports after entitlement."}</p><a className="cta" href="/growth-intelligence">Open GI plans</a></article>
+    <article className="card"><h3>Studio home</h3><p>Credits, billing and productions stay on the main dashboard.</p><a className="ghost" href="/dashboard">Back to dashboard</a></article>
+  </DashboardEightShell>;
 }

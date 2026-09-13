@@ -1,69 +1,8 @@
-import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
-import { referralRewardAutomationGuard } from "@/lib/launch-completion-controls";
-import { shareToEarnLoop } from "@/lib/growth-launch-systems";
-
-const viralLoopSteps = [
-  { title: "Invite a friend", reward: "+100 credits each", text: "Share Crelavo with a verified ecommerce seller or agency contact. Both sides can receive starter credits after signup review." },
-  { title: "Bring a paid upgrade", reward: "+2,000 bonus credits", text: "When the invited user becomes a paid Business or Team subscriber, the inviter can receive bonus credits after payment and fraud review." },
-  { title: "Share a watermarked preview", reward: "Credit review", text: "Users can share approved Made with Crelavo AI preview outputs. Share records can be prepared now; credit release stays behind review." },
-  { title: "Submit a public case study", reward: "Higher review priority", text: "Approved before/after stories, community showcase assets or client-safe examples can unlock additional manual reward review." }
-];
-
-const viralGuardrails = [
-  "No self-referrals, duplicate accounts or disposable-email reward abuse.",
-  "No automatic credits before email verification, payment confirmation and review.",
-  "No rewards for spam comments, fake reviews, misleading competitor claims or trademark abuse.",
-  "Paid upgrade rewards require Whop/payment idempotency and cancellation/chargeback checks."
-];
+import { DashboardEightShell } from "@/components/DashboardEightShell";
 
 export default function DashboardShareToEarnPage() {
-  return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <section className="production-hero-card compact-production-hero">
-        <span className="badge">Viral / share-to-earn loop</span>
-        <h2>Turn happy users into safe distribution channels</h2>
-        <p>Invite friends, share approved preview outputs and submit case studies for manual reward review. No automatic credit minting from unverified social activity.</p>
-        <div className="url-action-center"><Link className="btn" href="/dashboard/partners">Open partners</Link><Link className="btn secondary" href="/dashboard/credits">Open credits</Link><Link className="btn secondary" href="/community-showcase">View showcase</Link></div>
-      </section>
-
-      <section className="card admin-wide-card" style={{ marginTop: 20 }}>
-        <span className="badge">Invite-friend credit loop</span>
-        <h2>Need more credits? Start with a reviewed invite</h2>
-        <p style={{ color: "var(--muted)" }}>This is the connected-but-review-gated version of the referral loop. It explains the reward logic, prepares reviewable records and keeps real credit release blocked until referral tracking, payment and fraud checks pass final live validation.</p>
-        <div className="admin-category-grid" style={{ marginTop: 16 }}>
-          {viralLoopSteps.map((step) => (
-            <div className="card admin-category-card" key={step.title}>
-              <span className="badge">{step.reward}</span>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="admin-category-grid share-earn-grid" style={{ marginTop: 20 }}>
-        {shareToEarnLoop.map((item) => (
-          <div className="card admin-category-card share-earn-card" key={item.action}>
-            <span className="badge">{item.reward.toLocaleString()} credits</span>
-            <h3>{item.action}</h3>
-            <div className="social-export-detail-list">
-              <span><small>Reward</small><strong>{item.reward.toLocaleString()} credits</strong></span>
-              <span><small>Cap</small><strong>{item.cap}</strong></span>
-              <span><small>Review rule</small><strong>{item.review}</strong></span>
-              <span><small>Safety status</small><strong>Manual review only; no automatic credit minting from unverified social activity.</strong></span>
-            </div>
-          </div>
-        ))}
-      </section>
-      <section className="card" style={{ marginTop: 20 }}>
-        <span className="badge">Abuse guard</span>
-        <h2>Reward rules stay strict until automation is ready</h2>
-        <p style={{ color: "var(--muted)" }}>{referralRewardAutomationGuard.guardrail}</p>
-        <ul className="feature-list">
-          {[...viralGuardrails, ...referralRewardAutomationGuard.abuseControls].map((rule) => <li key={rule}>{rule}</li>)}
-        </ul>
-      </section>
-    </DashboardShell>
-  );
+  return <DashboardEightShell active="share" kicker="Manual review" title="Share" lead="Share an approved preview or apply as a partner. This page does not mint credits from likes, comments or unverified posts." columns={2}>
+    <article className="card"><h3>Partner program</h3><p>Referral links and commission rules live on Partners. Empty stats until you apply.</p><a className="cta" href="/dashboard/partners">Open partners</a></article>
+    <article className="card"><h3>Make something to share</h3><p>Produce in Assistant, then download from Productions.</p><a className="ghost" href="/dashboard/assistant-workspace">Open assistant</a></article>
+  </DashboardEightShell>;
 }

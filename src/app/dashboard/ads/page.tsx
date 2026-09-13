@@ -1,46 +1,8 @@
-import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
-import { AdsRoasPanel } from "@/components/AdsRoasPanel";
-
-const socialTargets = [
-  "Facebook / Meta Ads",
-  "Instagram Reels",
-  "TikTok",
-  "YouTube Shorts",
-  "LinkedIn",
-  "X / Twitter"
-];
+import { DashboardEightShell } from "@/components/DashboardEightShell";
 
 export default function AdsPage() {
-  return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <div className="production-hero-card compact-production-hero">
-        <span className="badge">Post-launch social export</span>
-        <h2>Social export and ads planning center</h2>
-        <p>Prepare platform-ready captions, hashtags, formats, campaign notes and account handoff details from one clean workspace.</p>
-        <div className="url-action-center">
-          <Link className="btn" href="/dashboard/connections">Connect social account</Link>
-          <Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Produce%20social%20campaign">Produce social campaign</Link>
-          <Link className="btn secondary" href="/dashboard/productions">Open ready productions</Link>
-        </div>
-      </div>
-
-      <section className="card" style={{ marginTop: 12 }}>
-        <span className="badge">Supported social targets</span>
-        <h3>Not a single channel, a multi-channel publishing center</h3>
-        <div className="admin-info-grid ads-target-grid">
-          {socialTargets.map((target) => (
-            <div key={target}>
-              <span>Platform</span>
-              <strong>{target}</strong>
-              <small>Connection / publishing / ad target</small>
-              <small>Export notes, creative specs and approval steps stay organized here.</small>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <AdsRoasPanel />
-    </DashboardShell>
-  );
+  return <DashboardEightShell active="ads" kicker="Creative only" title="Ads" lead="Score a concept and write a campaign in Assistant. Crelavo does not connect ad accounts, set daily budgets or spend media from this page." columns={2}>
+    <article className="card"><h3>Ad score</h3><p>Hook, offer and proof check before you produce.</p><a className="cta" href="/dashboard/assistant-workspace?type=ad_score">Open ad score in Assistant</a></article>
+    <article className="card"><h3>Campaign file</h3><p>Primary text, headline and CTA notes. You launch the ad yourself.</p><a className="ghost" href="/dashboard/assistant-workspace?type=campaign">Open campaign in Assistant</a></article>
+  </DashboardEightShell>;
 }
