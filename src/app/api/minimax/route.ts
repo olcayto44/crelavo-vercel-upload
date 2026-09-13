@@ -1,4 +1,5 @@
-import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, minimaxReadiness, MiniMaxStatusError, queryMiniMaxH3VideoTask, type MiniMaxH3CreateInput } from "@/lib/providers/minimax";
+import { createMiniMaxH3VideoTask, listMiniMaxH3VideoTasks, MiniMaxStatusError, queryMiniMaxH3VideoTask, type MiniMaxH3CreateInput } from "@/lib/providers/minimax";
+import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 
 function clean(value: unknown) {
   return String(value ?? "").trim();
@@ -19,17 +20,20 @@ function safeRatio(value: unknown) {
   return (["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const).includes(ratio as never) ? ratio as "21:9" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16" : "9:16";
 }
 
+async function requireSession(request: Request) {
+  const token = bearerTokenFromRequest(request);
+  if (!token) return Response.json({ error: "Authenticated session is required." }, { status: 401 });
+  const { data, error } = await supabaseAdmin().auth.getUser(token);
+  if (error || !data.user) return Response.json({ error: "Authenticated session is required." }, { status: 401 });
+  return null;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const action = clean(searchParams.get("action") || "readiness").toLowerCase();
 
-    if (action === "readiness") {
-      return Response.json({
-        minimax: minimaxReadiness(),
-        note: "Secrets are not returned. This endpoint only confirms whether MINIMAX_API_KEY and MINIMAX_GROUP_ID are visible to the backend."
-      });
-    }
+    if (action === "readiness") return Response.json({ ok: true });
 
     if (action === "query") {
       const taskId = clean(searchParams.get("task_id"));
@@ -39,6 +43,8 @@ export async function GET(request: Request) {
     }
 
     if (action === "list") {
+      const denied = await requireSession(request);
+      if (denied) return denied;
       const pageNum = Math.max(1, Math.round(Number(searchParams.get("page_num") || 1)));
       const pageSize = Math.min(20, Math.max(1, Math.round(Number(searchParams.get("page_size") || 10))));
       const status = clean(searchParams.get("status"));

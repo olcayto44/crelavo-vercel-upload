@@ -806,7 +806,7 @@ export const packages = [
     id: "pro",
     name: "Pro",
     billing: "Monthly",
-    price: "$9.99/mo after 1-day free trial",
+    price: "$9.99/mo after 24-hour preview",
     priceUsd: 9.99,
     yearlyPriceUsd: 99,
     setupFeeUsd: 0,
@@ -903,7 +903,7 @@ export const packages = [
 export const whopTrialProducts = [
   {
     id: "pro_24h_free_trial",
-    name: "Pro 24-Hour Free Trial",
+    name: "Pro 24-Hour Preview",
     billing: "Monthly",
     price: "$9.99/mo after 1-day free trial",
     priceUsd: 9.99,
@@ -912,17 +912,17 @@ export const whopTrialProducts = [
     planType: "subscription",
     monthlyStripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_PRO_YEARLY",
-    description: "Whop-hosted 1-day free trial for the Pro monthly plan. The first 24 hours are free; if not cancelled in Whop before the trial ends, the $9.99 monthly Pro subscription starts.",
-    estimatedOutput: "Use the first 24 hours to review the Crelavo workflow, dashboard, brief direction and preview access before the Pro subscription starts.",
-    videoSpec: "Trial access includes one controlled 10-second Pro production; clean final export and recurring 2,500 credits follow the confirmed Pro subscription payment.",
-    mediaIncluded: "Pro workflow preview, dashboard access and one controlled production during the 24-hour trial.",
+    description: "Whop-hosted 24-hour preview for the Pro monthly plan. Card required. No charge until the preview ends; then the $9.99 monthly Pro subscription starts unless cancelled.",
+    estimatedOutput: "Use the first 24 hours to review the Crelavo workflow, dashboard and brief direction before the Pro subscription starts.",
+    videoSpec: "Production and downloads stay closed during the preview; access and recurring 2,500 credits follow confirmed Pro subscription payment.",
+    mediaIncluded: "Pro workflow and dashboard preview; production starts only after the preview ends and payment is confirmed.",
     modelAccess: ["Pro workflow preview", "Standard video/image/editing access after paid subscription starts"],
     automationAccess: ["Trial-to-Pro checkout", "Whop cancellation before trial end", "Payment verification before credits"],
     concurrentTasks: 4,
-    relaxMode: "Trial access includes one controlled Pro production; recurring 2,500 credits are activated only after paid subscription confirmation.",
+    relaxMode: "Preview access does not include production; recurring 2,500 credits are activated only after paid subscription confirmation.",
     renderQueue: "Pro queue after subscription starts",
     teamFeatures: ["Single user Pro workflow preview"],
-    usage: ["First 24 hours free through Whop", "One controlled trial production is included", "Cancel in Whop before the trial ends to stop the monthly subscription", "$9.99/month starts after the free trial if not cancelled", "No full recurring credits are added until the paid subscription payment is confirmed", "Downloads and clean exports remain controlled during trial"]
+    usage: ["24-hour preview with card required", "No charge until the preview ends", "No production or downloads during the preview", "Cancel in Whop before the preview ends to stop the monthly subscription", "$9.99/month starts after the preview if not cancelled", "Recurring credits are added only after payment is confirmed"]
   }
 ];
 

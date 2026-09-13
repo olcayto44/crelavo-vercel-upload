@@ -61,7 +61,7 @@ export function whopPreviewNotice(product: PreviewProductLike | null | undefined
   if (!summary.enabled) return "";
   const main = summary.mainChargeUsd ? `$${summary.mainChargeUsd.toLocaleString("en-US")}` : "the selected plan amount";
   if (summary.freeTrial) {
-    return `The first 24 hours are free through Whop. Downloads stay controlled during trial. If not cancelled within 24 hours, Whop automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
+    return `24-hour preview through Whop. Card required. No charge, production or downloads until the preview ends. If not cancelled within 24 hours, Whop automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
   }
   const setup = `$${summary.setupFeeUsd.toLocaleString("en-US")}`;
   return `${setup} is charged today as a non-refundable 24-hour preview/setup fee. Downloads stay closed during preview. If not cancelled within 24 hours, Whop automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;

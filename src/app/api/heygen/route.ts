@@ -1,10 +1,25 @@
 import { createHeyGenTalkingVideo, createHeyGenVideoAgentSession, getHeyGenAvatars, getHeyGenV3Video, getHeyGenVideoAgentSession, getHeyGenVideoStatus, getHeyGenVoices, getHeyGenVoicesV3, listHeyGenAvatarLooks, listHeyGenAvatarLooksExpanded, listHeyGenVideoAgentStyles, searchHeyGenSounds } from "@/lib/providers/heygen";
+import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
+
+async function requireSession(request: Request) {
+  const token = bearerTokenFromRequest(request);
+  if (!token) return Response.json({ error: "Authenticated session is required." }, { status: 401 });
+  const { data, error } = await supabaseAdmin().auth.getUser(token);
+  if (error || !data.user) return Response.json({ error: "Authenticated session is required." }, { status: 401 });
+  return null;
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const action = url.searchParams.get("action") || "avatars";
+  const action = url.searchParams.get("action") || "readiness";
 
   try {
+    if (action === "readiness") return Response.json({ ok: true });
+    const publicStatusActions = new Set(["brand_avatar_proxy", "status", "v3_video_status", "video_agent_status"]);
+    if (!publicStatusActions.has(action)) {
+      const denied = await requireSession(request);
+      if (denied) return denied;
+    }
 if (action === "brand_avatar_proxy") {
   const directUrl = "https://files2.heygen.ai/aws_pacific/avatar_tmp/7d64cde279b94a299de0eb0a02ea72e4/v05da9514522743039a8c4e8b76c19522/b0578cda37b142c3bcc882bb97efec8d.mp4?response-content-disposition=attachment%3B+filename%2A%3DUTF-8%27%27Crelavo%2520Brand%2520Face%2520-%2520Digital%2520Solution%2520Expert.mp4%3B&x-s=vp&Expires=1787416123&Signature=NYYNfFkNxyNB5OYfOFvmr7f8oqL~4wXHRcpdprqO1zORRpu4tCVJftvmYPNOrc6iqbEiG0xgMGeTuediqqkTjcmgvj9fRHDFMeOQchyb1F4lr0yzo8JGlQUKGOcPSf4fjVg3tempXA10pNUYrXT3bbUrcmhXPieBpzLCRrj4nMwjAG18OupY6WjvcLNYnvp5arzUKaLkBN5zfstwjmO8bWYRUoftdWCiy-Odq~AINifnRmIuxnfHZL1NYlmYDh99EoKKW~ZxkbTp7cFiwyRIjO~hdZUwjGSO~cSC-14GyW~VHe1yIMIRdTbDowX-Qtg96Vrl3TVzmGtuLYDLsb14ql__&Key-Pair-Id=K38HBHX5LX3X2H";
   const videoResponse = await fetch(directUrl, { cache: "no-store" });
@@ -78,7 +93,8 @@ if (action === "brand_avatar_proxy") {
       if (!videoId) return Response.json({ error: "video_id is required." }, { status: 400 });
       return Response.json({ action, result: await getHeyGenVideoStatus(videoId) });
     }
-    return Response.json({ action: "avatars", result: await getHeyGenAvatars() });
+    if (action === "avatars") return Response.json({ action: "avatars", result: await getHeyGenAvatars() });
+    return Response.json({ error: `Unsupported HeyGen action: ${action}` }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "HeyGen request failed.";
     return Response.json({ error: message }, { status: 500 });

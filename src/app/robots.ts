@@ -1,46 +1,21 @@
 import type { MetadataRoute } from "next";
 
-function canonicalSiteUrl() {
-  const configured = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "");
-  return configured.replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
-}
+const privateDisallow = ["/admin", "/api", "/dashboard"];
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = canonicalSiteUrl();
-
-  const privateDisallow = ["/admin", "/api", "/wp-admin"];
-  // Dashboard/auth pages carry X-Robots-Tag: noindex from next.config.
-  // Do not block them in robots.txt; Google must be allowed to crawl them once to see noindex and drop old parameter URLs from the index.
-
   return {
     rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-        disallow: privateDisallow
-      },
-      {
-        userAgent: "GPTBot",
-        allow: "/",
-        disallow: privateDisallow
-      },
-      {
-        userAgent: "ClaudeBot",
-        allow: "/",
-        disallow: privateDisallow
-      },
-      {
-        userAgent: "PerplexityBot",
-        allow: "/",
-        disallow: privateDisallow
-      },
-      {
-        userAgent: "Google-Extended",
-        allow: "/",
-        disallow: privateDisallow
-      }
+      { userAgent: "*", allow: "/", disallow: [...privateDisallow, "/wp-admin"] },
+      { userAgent: "GPTBot", allow: "/", disallow: privateDisallow },
+      { userAgent: "ChatGPT-User", allow: "/", disallow: privateDisallow },
+      { userAgent: "ClaudeBot", allow: "/", disallow: privateDisallow },
+      { userAgent: "Anthropic-AI", allow: "/", disallow: privateDisallow },
+      { userAgent: "PerplexityBot", allow: "/", disallow: privateDisallow },
+      { userAgent: "Google-Extended", allow: "/", disallow: privateDisallow },
+      { userAgent: "Applebot-Extended", allow: "/", disallow: privateDisallow },
+      { userAgent: "CCBot", allow: "/", disallow: privateDisallow }
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
-    host: baseUrl
+    host: "https://www.crelavo.com",
+    sitemap: "https://www.crelavo.com/sitemap.xml"
   };
 }

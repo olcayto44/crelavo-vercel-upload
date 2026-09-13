@@ -7,7 +7,18 @@ export const metadata: Metadata = {
   title: "Crelavo AI Production Studio for Ecommerce",
   description: "Product videos, campaigns and live-commerce from one AI production studio.",
   alternates: { canonical: "/" },
-  openGraph: { title: "Crelavo AI Production Studio for Ecommerce", description: "Product videos, campaigns and live-commerce from one AI production studio.", url: "/", type: "website" }
+  openGraph: { title: "Crelavo AI Production Studio for Ecommerce", description: "Product videos, campaigns and live-commerce from one AI production studio.", url: "/", type: "website", images: [{ url: "https://www.crelavo.com/showcase/ai-production-studio.webp", width: 1792, height: 1024, alt: "Crelavo AI production studio" }] }
+};
+
+const softwareApplicationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Crelavo",
+  url: "https://www.crelavo.com/",
+  applicationCategory: "MultimediaApplication",
+  operatingSystem: "Web",
+  offers: { "@type": "Offer", price: "9.99", priceCurrency: "USD", url: "https://whop.com/checkout/plan_ujLQgM3kEg0dg" },
+  publisher: { "@type": "Organization", name: "Crelavo", url: "https://www.crelavo.com/" }
 };
 
 const fallbackPoster = "/showcase/ai-production-studio.webp";
@@ -284,6 +295,7 @@ const menuScript = `
 export default async function HomePage() {
   const siteContent = await getConfiguredSiteContentConfig();
   return <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }} />
     <Header navLinks={siteContent.navLinks} />
     <main className="public-home-page"><style id="clh-css" dangerouslySetInnerHTML={{ __html: css }} />
       <div id="cl-home-nav">

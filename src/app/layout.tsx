@@ -25,17 +25,14 @@ function safeSiteUrl(value?: string | null) {
 const siteUrl = safeSiteUrl(process.env.NEXT_PUBLIC_APP_URL);
 const siteName = "Crelavo";
 const title = "Crelavo | AI Video Generator & Live Streaming for Shopify Stores";
-const description = "Convert product links into high-quality AI video ads and launch 24/7 AI live streaming agents for ecommerce workflows, with a 24-hour $0 trial and $59/month after the trial unless cancelled.";
+const description = "Convert product links into AI video ads and ecommerce production assets. Pro includes a 24-hour preview, then costs $9.99/month; card required, with no charge until the preview ends.";
 const socialTitle = "Crelavo | AI Video Ads & Live Commerce Automation";
 const socialDescription = "Turn Shopify, Amazon and marketplace product information into high-quality video ads, campaign assets and AI live commerce experiences.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   applicationName: siteName,
-  title: {
-    default: title,
-    template: `%s | ${siteName}`
-  },
+  title,
   description,
   keywords: [
     "AI production studio",
@@ -65,13 +62,6 @@ export const metadata: Metadata = {
   creator: siteName,
   publisher: siteName,
   category: "AI production studio",
-  alternates: {
-    canonical: "/",
-    languages: {
-      "en-US": "/",
-      "x-default": "/"
-    }
-  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -112,7 +102,7 @@ export const metadata: Metadata = {
     "msvalidate.01": "B09A1EA26FA6A860ED1A8E4217D2320E",
     "ai-agent-intent": "product-service-discovery",
     "ai-agent-category": "E-commerce software as a service (SaaS), artificial intelligence video production",
-    "ai-agent-pricing": "24-hour fully accessible Pro trial for $0, then $9.99/month unless cancelled through Whop",
+    "ai-agent-pricing": "24-hour Pro preview, then $9.99/month. Card required. No charge until the preview ends.",
     "ai-agent-value-proposition": "Turns product links and ecommerce briefs into AI video ads, campaign assets, websites, app assets and live commerce workflows"
   }
 };
