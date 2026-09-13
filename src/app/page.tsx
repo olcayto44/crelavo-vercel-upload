@@ -125,6 +125,58 @@ html.cl-authed .cl-sticky a.cikis,html.cl-authed #cl-mnav-sheet a.cikis{display:
 .cl-sticky a.gin{flex:0 0 auto!important;min-width:76px!important;padding:0 14px!important;height:40px!important;font-size:12px!important}
 .cl-sticky a.pro{flex:1 1 auto!important}
 #clh .pack.intro strong{color:#22d3ee}
+/* CL-CHROME 1 */
+@media (min-width: 981px) {
+  header.site-main-nav,
+  .site-main-nav.nav {
+    overflow: visible !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+  }
+  header.site-main-nav .nav-links {
+    overflow: visible !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    gap: 18px !important;
+  }
+  .primary-nav-links > a[href="/"],
+  .primary-nav-links > a[href="/live-sales-credits"],
+  .primary-nav-links > a[href="/drone-credits"],
+  .primary-nav-links > a[href="/growth-intelligence"],
+  .primary-nav-links > a[href="/affiliate"],
+  .primary-nav-links > a[href="/dashboard/productions"],
+  .primary-nav-links > a[href="/contact"],
+  .primary-nav-links > a[href="/blog"] {
+    display: none !important;
+  }
+}
+@media (max-width: 980px) {
+  html body:has(header.site-main-nav):not(:has(main.dashboard-shell-layout)):not(:has(main.omni-work-route)) header.site-main-nav {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 56px !important;
+    z-index: 200 !important;
+    overflow: visible !important;
+    background: #070b18 !important;
+  }
+  html body:has(header.site-main-nav):not(:has(main.dashboard-shell-layout)):not(:has(main.omni-work-route)) {
+    padding-top: 56px !important;
+  }
+  label.cl-mnav {
+    position: fixed !important;
+    top: 11px !important;
+    right: 12px !important;
+    z-index: 201 !important;
+  }
+  [aria-label="Open Crelavo live avatar"],
+  html body [style*="right:14px"][style*="bottom:14px"] {
+    display: none !important;
+  }
+}
 `;
 
 const menuScript = `
@@ -193,7 +245,7 @@ export default async function HomePage() {
         <input type="checkbox" id="cl-mnav-toggle" aria-hidden="true" />
         <label htmlFor="cl-mnav-toggle" className="cl-mnav" aria-label="Menu">Menu</label>
         <nav id="cl-mnav-sheet" aria-label="Mobil menü">
-          <a href="/categories">Create</a><a href="/">Home</a><a href="/tools">Tools</a><a href="/pricing">Credit Packages</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/growth-intelligence">Growth</a><a href="/affiliate">Affiliate</a><a href="/dashboard/productions">Productions</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
+          <a href="/categories">Create</a><a href="/tools">Tools</a><a href="/pricing">Pricing</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
           <div className="langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
           <div className="auth"><a className="gin" href="/?auth=login">Giriş</a><a className="uye" href="/?auth=register">Üye ol</a></div><a className="cikis" href="#" role="button">Çıkış</a>
         </nav>
