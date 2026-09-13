@@ -95,6 +95,63 @@ html.cl-authed .cl-sticky a.cikis,html.cl-authed #cl-mnav-sheet a.cikis{display:
     display: none !important;
   }
 }
+/* CL-SPLIT 4 */
+body:has(main.categories-funnel-page) [aria-label="Open Crelavo live avatar"],
+body:has(main.categories-funnel-page) [style*="right:14px"][style*="bottom:14px"],
+body:has(main.tools-page) [aria-label="Open Crelavo live avatar"],
+body:has(main.tools-page) [style*="right:14px"][style*="bottom:14px"],
+body:has(main.blog-article-page) [aria-label="Open Crelavo live avatar"],
+body:has(main.blog-article-page) [style*="right:14px"][style*="bottom:14px"] {
+  display: none !important;
+}
+#clc > section.production-hero-card:has(a[href="/live-sales-credits"]) {
+  display: none !important;
+}
+#clc .production-pricing-card > svg.lucide {
+  display: none !important;
+}
+#clc .category-option-row {
+  display: none !important;
+}
+#clc .category-visual-panel strong,
+#clc .category-visual-panel small {
+  display: none !important;
+}
+main.tools-page > section.production-hero-card:has(.delivery-step-grid),
+main.tools-page > section.production-hero-card:has(a[href="/ai-tool-launch-distribution-plan"]),
+main.tools-page > section.admin-category-grid {
+  display: none !important;
+}
+main.tools-page .feature-visual-metrics {
+  display: none !important;
+}
+body:has(main.blog-article-page) .blog-topic-stack {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+body:has(main.blog-article-page) .blog-topic-card {
+  overflow: hidden;
+  min-height: 0;
+}
+body:has(main.blog-article-page) .blog-topic-copy > p:not(.blog-topic-summary),
+body:has(main.blog-article-page) .blog-linked-keywords,
+body:has(main.blog-article-page) .blog-article-cta-banner,
+body:has(main.blog-article-page) .blog-topic-media,
+body:has(main.blog-article-page) .blog-topic-video-slot {
+  display: none !important;
+}
+body:has(main.blog-article-page) .blog-topic-summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@media (max-width: 800px) {
+  body:has(main.blog-article-page) .blog-topic-stack {
+    grid-template-columns: 1fr;
+  }
+}
 `;
 
 type InnerAuthWindow = Window & { __clInnerAuth?: boolean };

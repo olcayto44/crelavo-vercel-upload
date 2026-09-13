@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
-import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
-import { phaseOneFeaturePages } from "@/lib/feature-phase-one";
-import { organicKeywordCoverage } from "@/lib/organic-directory";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 const smokeGuardIdeaTerms = "AI%20website%20production AI%20app%20production Product%20link%20to%20ad%20video Text%20to%20video Image%20to%20video Script%20to%20video Brand%20kit%20production";
@@ -110,7 +107,6 @@ export default async function BlogPage() {
   const siteContent = await getConfiguredSiteContentConfig();
   const activeTopics = siteContent.blogTopics.filter((topic) => topic.active).sort((a, b) => a.order - b.order);
   const heroLinkedKeywords = new Set<string>();
-  const coverageLinkedKeywords = new Set<string>();
 
   return (
     <>
@@ -177,96 +173,13 @@ export default async function BlogPage() {
             );
           })}
         </section>
-
         <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
           <span className="badge">Next step</span>
-          <h2>Turn any guide into a dashboard production brief</h2>
-          <p>
-            Blog traffic should not stop at reading. Use the next step links to move from a guide into pricing, a product-link workflow or dashboard/create with a clearer production brief.
-          </p>
+          <h2>Ready to produce?</h2>
+          <p>Pick a guide above, then open the assistant with a brief.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-            <Link className="btn" href="/dashboard/create?idea=Turn%20this%20Crelavo%20guide%20into%20a%20production%20brief">Start from a guide</Link>
-            <Link className="btn secondary" href="/pricing">Check pricing</Link>
-            <Link className="btn secondary" href="/free-tools/ad-performance-score-checker">Score an ad free</Link>
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Ecommerce integration guides</span>
-          <h2>Shopify, Amazon, Trendyol and product-page-to-video SEO guides</h2>
-          <p>
-            These blog guides target practical 3-4 word ecommerce searches such as Shopify product video, Amazon product ad video, Trendyol product video, product page to video and AI ecommerce campaign.
-          </p>
-          <div className="admin-category-grid">
-            {ecommerceIntegrationGuides.map((guide) => (
-              <Link className="card admin-category-card" href={`/blog/${guide.slug}`} key={guide.slug}>
-                <span className="badge">{guide.platform}</span>
-                <h3>{guide.title}</h3>
-                <p>{guide.summary}</p>
-                <small>Main keyword: {guide.primaryKeyword}</small>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">New feature SEO guides</span>
-          <h2>High-intent pages for feature demand</h2>
-          <p>
-            Crelavo now has public pages for AI ad scoring, virtual model production, cultural localization, campaign calendars, education content and community proof. These pages support organic discovery and route qualified users into credit-based dashboard delivery.
-          </p>
-          <div className="admin-category-grid">
-            {phaseOneFeaturePages.map((page) => (
-              <Link className="card admin-category-card" href={`/${page.slug}`} key={page.slug}>
-                <span className="badge">{page.badge}</span>
-                <h3>{page.title}</h3>
-                <p>{page.summary}</p>
-                <small>Main keyword: {page.primaryKeyword}</small>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Programmatic SEO landing pages</span>
-          <h2>Niche landing page engine for product, platform and use-case searches</h2>
-          <p>
-            Crelavo can scale organic acquisition by combining platform keywords, production types and buyer intent into focused landing pages. Each page should answer one search need, link to the right category, include a free tool or checklist, and move qualified users into Assistant Workspace or Pricing.
-          </p>
-          <div className="admin-info-grid">
-            <div><span>Template A</span><strong>Platform + product video</strong><small>Shopify, Amazon, Trendyol, WooCommerce and marketplace-specific product video pages.</small></div>
-            <div><span>Template B</span><strong>Industry + campaign asset</strong><small>Beauty, fashion, SaaS, local service, real estate and education campaign pages.</small></div>
-            <div><span>Template C</span><strong>Country + localization</strong><small>German, Gulf, Japan, USA or Turkey market adaptation pages.</small></div>
-            <div><span>Template D</span><strong>Problem + free tool</strong><small>Ad hook score, product description, caption, landing page copy and campaign checklist searches.</small></div>
-          </div>
-          <div className="admin-category-grid" style={{ marginTop: 16 }}>
-            <Link className="card admin-category-card" href="/shopify-ai-product-video-app"><span className="badge">Platform page</span><h3>Shopify AI product video app</h3><p>Product URL to ad video demand for Shopify sellers.</p></Link>
-            <Link className="card admin-category-card" href="/woocommerce-ai-product-video-plugin"><span className="badge">Plugin page</span><h3>WooCommerce AI product video plugin</h3><p>WordPress store owners looking for product video automation.</p></Link>
-            <Link className="card admin-category-card" href="/ai-cultural-localization"><span className="badge">Localization page</span><h3>Country-specific campaign localization</h3><p>Market adaptation proof, hooks and production brief CTAs.</p></Link>
-          </div>
-        </section>
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Launch distribution guide</span>
-          <h2>AI tool launch plan, SaaS launch distribution and organic traffic plan</h2>
-          <p>
-            Use the launch distribution plan after content pages, alternatives, free tools, samples and ecommerce workflows are live. It organizes AI directory submission, founder launch posts, Product Hunt launch timing, Reddit/community feedback and UTM tracking.
-          </p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-            <Link className="btn secondary" href="/ai-tool-launch-distribution-plan">Open AI tool launch distribution plan</Link>
-            <Link className="btn secondary" href="/ai-social-media-launch-plan">Open social media launch plan</Link>
-            <Link className="btn secondary" href="/pinterest-youtube-visual-distribution-plan">Open Pinterest + YouTube plan</Link>
-          </div>
-        </section>
-
-        <section className="blog-keyword-panel">
-          <span className="badge">Production coverage</span>
-          <h2>What Crelavo covers</h2>
-          <p>
-            {renderLinkedText("The content hub connects practical search intent with real production categories: AI production studio, AI marketing campaigns, AI e-commerce campaign generator, product link to ad video, AI video ads, AI website production, AI app production, brand kit production, AI avatar video, self-in-video, multi-person talking video, regional clothing, local accent, dialect voice, AI voice-over, motion graphics, 2D animation, 3D animation, stickman animation, anime short film, short drama, cinematic video, drone satellite video, map to video, route flyover video, AI image generation, visual style clone, free AI tools, Growth Intelligence and AI + human QA delivery.", coverageLinkedKeywords)}
-          </p>
-          <div className="category-option-row" aria-label="Organic keyword coverage">
-            {organicKeywordCoverage.map((keyword) => <small key={keyword}>{keyword}</small>)}
+            <Link className="btn" href="/dashboard/assistant-workspace">Start production</Link>
+            <Link className="btn secondary" href="/categories">View categories</Link>
           </div>
         </section>
       </main>
