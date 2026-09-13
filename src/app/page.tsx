@@ -177,6 +177,50 @@ html.cl-authed .cl-sticky a.cikis,html.cl-authed #cl-mnav-sheet a.cikis{display:
     display: none !important;
   }
 }
+/* CL-SHOWCASE 2 */
+html body #clh a.film .meta{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  z-index:2!important;
+  padding:78px 14px 14px!important;
+  background:linear-gradient(180deg,transparent 0%,rgba(7,11,24,.72) 38%,#070b18 86%)!important;
+  pointer-events:none!important;
+}
+html body #clh a.film .meta small{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+html body #clh a.film .meta h3{
+  font-size:15px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+  overflow:hidden!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  word-break:break-word!important;
+  margin:0!important;
+}
+html body #clh a.film.still video{
+  object-fit:cover!important;
+  object-position:center 12%!important;
+}
+html body #clh .films a.film{display:none!important;}
+html body #clh .films a.film[href*="product-link-to-video-showcase"],
+html body #clh .films a.film[href*="ad-creative-angles-showcase"],
+html body #clh .films a.film[href*="ugc-style-ad-showcase"],
+html body #clh .films a.film[href*="lower-ad-costs-showcase"],
+html body #clh .films a.film[href*="cinematic-battle-concept-showcase"],
+html body #clh .films a.film[href*="crelavo-midnight-fomo-reel"],
+html body #clh .films a.film[href*="crelavo-3d-fomo-final"],
+html body #clh .films a.film[href*="crelavo-dog-dental-care"],
+html body #clh .films a.film[href*="crelavo-relationship-cards"]{
+  display:block!important;
+}
 `;
 
 const menuScript = `
@@ -227,6 +271,7 @@ const menuScript = `
     if(hero){new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)play(hero);else pause(hero);});},{threshold:0.6}).observe(hero);}
     var io=new IntersectionObserver(function(entries){
       entries.forEach(function(e){
+        if(e.target.closest&&e.target.closest("a.film.still")) return;
         if(e.isIntersecting) play(e.target);
         else pause(e.target);
       });
@@ -252,7 +297,7 @@ export default async function HomePage() {
       </div>
       <section id="clh">
         <div className="stage"><a className="stage-bg" href="/showcase/videos/crelavo-wow-reel" aria-label="Open Crelavo Wow Reel"><video muted loop playsInline preload="metadata" src="https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4" /></a><div className="stage-veil" /><div className="stage-grain" /><div className="stage-copy"><div className="inner"><span id="clh-strip">24h preview · then $9.99/mo</span><p id="clh-miss">Don&apos;t miss the package</p><p id="clh-price"><b>$9.99</b><span>/mo after 24h</span></p><h1>Make the feed look <em>expensive.</em></h1><p className="lede">Card required. No charge until the preview ends.</p><div className="cta-row"><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start Pro · $9.99/mo</a><a className="btn btn-ghost gin" href="/?auth=login">Sign in</a></div></div></div></div>
-        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className={film.landscape ? "film ls" : "film"} href={film.href} key={film.href}><video muted loop playsInline preload="none" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
+        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className={film.href.endsWith("/lower-ad-costs-showcase") ? "film still" : film.landscape ? "film ls" : "film"} href={film.href} key={film.href}><video muted loop playsInline preload="none" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
         <div className="wrap paths"><span className="kicker">Start with one outcome</span><h2>Pick the job. The studio opens the path.</h2><p className="sub">Omni Assistant is the production door. Credits only move after scope is visible.</p><div className="grid-3"><a className="card" href="/dashboard/assistant-workspace?idea=Sell+internationally&category=video"><span>01</span><h3>Sell internationally</h3><p>Localize hooks, visuals and campaign direction for another market before you buy more traffic.</p></a><a className="card" href="/free-tools/ad-performance-score-checker"><span>02</span><h3>Test an existing ad</h3><p>Run the free AI Ad Scorer on hook, CTA and proof before you spend production credits.</p></a><a className="card" href="/dashboard/assistant-workspace?idea=video&category=video"><span>03</span><h3>Create from scratch</h3><p>Product video, landing page, campaign pack or launch asset from one brief.</p></a></div></div>
         <div className="wrap packs-head"><span className="kicker">Packages</span><h2>Four ways in. Prices match live checkout.</h2><div className="packs"><a className="pack intro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg"><span>INTRO</span><strong>$9.99/mo</strong><p>24h preview, then $9.99. Card required. No charge until the preview ends.</p></a><a className="pack" href="/live-sales-credits"><span>Live Sales</span><strong>from $249/mo</strong><p>Starter 10 hours / 1 platform. Service hours, not credits.</p></a><a className="pack" href="/drone-credits"><span>Drone</span><strong>from $299</strong><p>Drone Location 2,600 credits one-time.</p></a><a className="pack" href="/growth-intelligence"><span>Growth</span><strong>from $179/mo</strong><p>Starter: 1 competitor, weekly PDF. Intelligence service.</p></a></div></div>
         <div className="final"><h2>24 hours to see the studio. Then $9.99/month unless you cancel.</h2><p>Card required. No charge until the preview ends. Annual Pro is $99/year after the same 24-hour window.</p><div className="cta-row" style={{justifyContent:"center"}}><a className="btn btn-cyan" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start 24-hour Pro preview — $9.99/mo</a><a className="btn btn-ghost" href="https://whop.com/checkout/plan_fiabRYr6uWY43">Annual Pro — $99/yr</a></div></div>
