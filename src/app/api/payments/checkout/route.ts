@@ -1,3 +1,4 @@
+import { Polar } from "@polar-sh/sdk";
 import { normalizeCouponCampaign } from "@/lib/coupon-campaign-guard";
 import { findPaymentProduct } from "@/lib/data";
 import { findConfiguredCreditProduct, normalizePackageConfig, PACKAGE_CONFIG_KEY, paymentLinkForConfiguredCreditProduct } from "@/lib/package-config";
@@ -171,18 +172,62 @@ export async function POST(request: Request) {
     const successPath = isGrowthService ? "/growth-intelligence?subscription=success" : isLiveSalesService ? "/live-sales-credits?subscription=success" : isServicePlan ? "/dashboard?subscription=success" : isProductionPackage || isDronePackage ? "/drone-credits?success=true" : checkoutMode === "subscription" ? "/dashboard/credits?subscription=success" : "/dashboard/credits?success=true";
     const cancelPath = isGrowthService ? "/growth-intelligence?subscription=cancelled" : isLiveSalesService ? "/live-sales-credits?subscription=cancelled" : isServicePlan ? "/dashboard?subscription=cancelled" : isProductionPackage || isDronePackage ? "/drone-credits?cancelled=true" : checkoutMode === "subscription" ? "/dashboard/credits?subscription=cancelled" : "/dashboard/credits?cancelled=true";
     const productType = isGrowthService ? "growth_intelligence_service_plan" : isLiveSalesService ? "live_sales_service_plan" : isServicePlan ? "service_subscription" : isProductionPackage || isDronePackage ? "drone_production_package" : product.planType === "topup" ? "credit_topup" : "credit_subscription";
-    const checkoutEmail = cleanCheckoutEmail(body.checkoutEmail ?? body.email);
+    const checkoutEmail = cleanCheckoutEmail(authUser.email);
     const consentRecovery = body.consentRecovery === true;
      const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
      const paymentProvider = String(process.env.PAYMENT_PROVIDER ?? "").trim().toLowerCase();
      const polarProCheckoutUrl = (process.env.POLAR_PRO_CHECKOUT_URL || "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7").trim();
+     const polarAccessToken = String(process.env.POLAR_ACCESS_TOKEN ?? "").trim();
+     const polarProProductId = String(process.env.POLAR_PRO_PRODUCT_ID ?? "").trim();
+     const polarWebhookReady = Boolean(String(process.env.POLAR_WEBHOOK_SECRET ?? "").trim());
      const isPolarProCheckout = product.id === "pro_24h_free_trial" && effectiveBilling === "monthly";
      const whopEnabled = false;
      const previewPolicy = whopPreviewSummary(product, effectiveBilling);
      const previewNote = whopPreviewNotice(product, effectiveBilling);
      if (isPolarProCheckout) {
-      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "polar", checkoutUrl: polarProCheckoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
-      return Response.json({ url: polarProCheckoutUrl, mode: checkoutMode, product: product.name, provider: "polar", directCheckoutUrl: true, manualActivation: true, previewPolicy, checkoutIntentResult, note: "Polar hosted checkout is active. Verify the Polar subscription before activating access." });
+      let checkoutUrl = polarProCheckoutUrl;
+      let serverCheckout = false;
+      let checkoutReference = "";
+
+      if (polarAccessToken && polarProProductId && checkoutEmail) {
+        try {
+          const polar = new Polar({ accessToken: polarAccessToken });
+          const checkout = await polar.checkouts.create({
+            products: [polarProProductId],
+            allowTrial: true,
+            externalCustomerId: authUser.id,
+            customerEmail: checkoutEmail,
+            metadata: {
+              crelavo_user_id: authUser.id,
+              crelavo_product_id: product.id,
+              crelavo_billing: effectiveBilling,
+              campaign: campaign || "direct"
+            },
+            successUrl: "https://www.crelavo.com/dashboard?checkout_id={CHECKOUT_ID}",
+            returnUrl: "https://www.crelavo.com/pricing"
+          });
+          checkoutUrl = checkout.url;
+          checkoutReference = checkout.id;
+          serverCheckout = true;
+        } catch (error) {
+          console.error("Polar server checkout creation failed; using the approved hosted checkout link.", error);
+        }
+      }
+
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "polar", checkoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+      return Response.json({
+        url: checkoutUrl,
+        mode: checkoutMode,
+        product: product.name,
+        provider: "polar",
+        directCheckoutUrl: !serverCheckout,
+        serverCheckout,
+        checkoutReference: checkoutReference || null,
+        manualActivation: !polarWebhookReady,
+        previewPolicy,
+        checkoutIntentResult,
+        note: polarWebhookReady ? "Polar webhook verification is configured for automatic subscription access." : "Polar hosted checkout is active. Verify the Polar subscription manually until POLAR_WEBHOOK_SECRET is configured."
+      });
      }
 
      if (configuredDirectUrl && !whopEnabled) {

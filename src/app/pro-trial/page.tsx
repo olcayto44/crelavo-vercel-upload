@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { TrialCtaLink } from "@/components/GoogleAdsConversion";
-import { whopFreeTrialCheckoutUrl } from "@/lib/whop";
+import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 
 export const metadata: Metadata = {
   title: "Crelavo Pro 24-Hour Free Trial",
@@ -26,7 +25,7 @@ export default function ProTrialPage() {
         </div>
         <p style={{ color: "var(--muted)", maxWidth: 650, margin: "0 auto 24px" }}>Card required. You are not charged until the 24-hour trial ends. Cancel in the customer portal before the trial ends and you pay $0. If you already used a Crelavo trial, the checkout may charge the full subscription price.</p>
         <div className="hero-actions" style={{ justifyContent: "center" }}>
-          <TrialCtaLink className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial</TrialCtaLink>
+          <PaymentCheckoutButton productId="pro_24h_free_trial" billing="monthly">Start free 24-hour trial</PaymentCheckoutButton>
           <a className="btn secondary" href={annualCheckout}>Annual plan coming soon</a>
         </div>
       </section>

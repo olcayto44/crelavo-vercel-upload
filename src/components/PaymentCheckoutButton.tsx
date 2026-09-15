@@ -82,8 +82,8 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
   return (
     <div className="checkout-button-stack">
       <label className="workspace-action-note" style={{ display: "grid", gap: 8 }}>
-        <span>Email for receipt and follow-up</span>
-        <input value={checkoutEmail} onChange={(event) => setCheckoutEmail(event.target.value)} placeholder="you@example.com" type="email" />
+        <span>Crelavo account email for payment matching</span>
+        <input value={checkoutEmail} readOnly placeholder="Sign in to continue" type="email" />
       </label>
       <label className="workspace-action-note" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <input checked={consentRecovery} onChange={(event) => setConsentRecovery(event.target.checked)} type="checkbox" style={{ marginTop: 3 }} />

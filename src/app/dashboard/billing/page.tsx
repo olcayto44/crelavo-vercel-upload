@@ -24,7 +24,7 @@ export default function BillingPage() {
         </div>
         <h1 style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
         <div className="grid g4">
-          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7">Checkout</a></article>
+          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="/pro-trial">Checkout</a></article>
           <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
           <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
           <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>

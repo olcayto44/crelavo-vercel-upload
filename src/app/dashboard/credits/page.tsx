@@ -19,7 +19,7 @@ export default function CreditsPage() {
         <h1>Credit plans</h1>
         <p className="lead">Card required. No charge until the preview ends. Download locks spend in the assistant. Live sales and drone stay on their own pages.</p>
         <div className="grid g2">
-          <article className="card"><span className="kicker">INTRO</span><h3>Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><p className="note">24-hour preview, then $9.99/month unless cancelled.</p><a className="cta" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7">Start Pro · $9.99/mo</a></article>
+          <article className="card"><span className="kicker">INTRO</span><h3>Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><p className="note">24-hour preview, then $9.99/month unless cancelled.</p><a className="cta" href="/pro-trial">Start Pro · $9.99/mo</a></article>
           <article className="card"><span className="kicker">2,500 / mo</span><h3>Pro Credits</h3><p className="price">$29 <span>/mo</span></p><p className="note">24h preview, then $29/month unless cancelled.</p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Start preview</a></article>
         </div>
         <div className="grid g3" style={{ marginTop: 14 }}>

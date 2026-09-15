@@ -19,7 +19,7 @@ export function CampaignPromoClient({
   title = "Try Crelavo Pro for $0 today",
   body = "Card required. You are not charged until the 24-hour trial ends. Then $9.99 every 30 days unless you cancel in the customer portal. If you already used a Crelavo trial, you pay full price.",
   cta = "Start free 24-hour trial",
-  href = "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
+  href = "/pro-trial",
   priceBadge = "$0 TODAY",
   kicker = "Pro · $0 first 24 hours · then $9.99/month",
   bonusPrimary = "1 trial production",

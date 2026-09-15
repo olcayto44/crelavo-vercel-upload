@@ -38,13 +38,17 @@ const snapshot = legalAcceptanceSnapshot({ productionType: "video", packageId: "
 assert("billingTermsText" in snapshot, "legal snapshot should store billing terms");
 
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
-for (const term of ["provider: \"polar\"", "POLAR_PRO_CHECKOUT_URL", "pro_24h_free_trial", "CHECKOUT_TEMPORARILY_UNAVAILABLE", "manualActivation"]) {
+for (const term of ["provider: \"polar\"", "POLAR_PRO_CHECKOUT_URL", "POLAR_ACCESS_TOKEN", "POLAR_PRO_PRODUCT_ID", "externalCustomerId: authUser.id", "pro_24h_free_trial", "CHECKOUT_TEMPORARILY_UNAVAILABLE", "manualActivation"]) {
   assert(checkoutRoute.includes(term), `checkout route missing Polar migration term: ${term}`);
 }
 for (const term of ["createLemonSqueezyCheckout", "provider: \"lemon_squeezy\"", "credit_subscription", "credit_topup", "lemonVariantEnvForProduct", "manualActivation"]) {
   assert(checkoutRoute.includes(term), `checkout route missing parked Lemon fallback term: ${term}`);
 }
 
+const polarWebhookRoute = readFileSync("src/app/api/webhooks/polar/route.ts", "utf8");
+for (const term of ["Webhooks", "POLAR_WEBHOOK_SECRET", "payment_provider_events", "subscription.active", "subscription.canceled", "subscription.revoked", "order.paid", "order.refunded", "active_canceling", "crelavo_user_not_found", "clearSubscriptionCreditBuckets"]) {
+  assert(polarWebhookRoute.includes(term), `Polar webhook missing required lifecycle term: ${term}`);
+}
 const whopWebhookRoute = readFileSync("src/app/api/webhooks/whop/route.ts", "utf8");
 for (const term of ["payment.succeeded", "membership.deactivated", "WHOP_WEBHOOK_SECRET", "preview_setup_payment_no_full_credits", "subscription_renewal_credits", "subscription_create", "trialing", "amountMatchesUsd(amount, setupFeeUsd)", "amountMatchesUsd(amount, expectedRenewalUsd)"]) {
   assert(whopWebhookRoute.includes(term), `Whop webhook missing preview/subscription guard term: ${term}`);
@@ -81,11 +85,16 @@ for (const term of ["redirect", "/checkout/unavailable"]) {
 }
 
 const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
-assert(creditsPage.includes("buy.polar.sh/polar_cl_"), "credits page should expose the approved Polar Pro checkout");
+assert(creditsPage.includes("/pro-trial"), "credits page should route through the authenticated Pro trial flow");
 assert(creditsPage.includes("/checkout/unavailable"), "credits page should disable packages not yet mapped to Polar");
 
+const proTrialPage = readFileSync("src/app/pro-trial/page.tsx", "utf8");
+for (const term of ["PaymentCheckoutButton", "pro_24h_free_trial", "billing=\"monthly\""]) {
+  assert(proTrialPage.includes(term), `Pro trial page missing authenticated checkout term: ${term}`);
+}
+
 const envExample = readFileSync(".env.example", "utf8");
-for (const term of ["PAYMENT_PROVIDER=polar", "POLAR_PRO_CHECKOUT_URL", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
+for (const term of ["PAYMENT_PROVIDER=polar", "POLAR_PRO_CHECKOUT_URL", "POLAR_PRO_PRODUCT_ID", "POLAR_ACCESS_TOKEN", "POLAR_WEBHOOK_SECRET", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
   assert(envExample.includes(term), `.env.example missing ${term}`);
 }
 

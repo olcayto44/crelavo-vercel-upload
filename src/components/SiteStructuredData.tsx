@@ -68,7 +68,7 @@ export function SiteStructuredData() {
         inLanguage: "en-US",
         mainEntity: { "@id": `${siteUrl}/#app` },
         potentialAction: [
-          { "@type": "BuyAction", target: "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7", name: "Start free 24-hour trial" },
+          { "@type": "BuyAction", target: "/pro-trial", name: "Start free 24-hour trial" },
           { "@type": "AssessAction", target: `${siteUrl}/free-tools/ad-performance-score-checker`, name: "Score an ad for free" },
           { "@type": "ViewAction", target: `${siteUrl}/pricing`, name: "View Crelavo Pro trial pricing" }
         ]

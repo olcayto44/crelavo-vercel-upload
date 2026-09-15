@@ -29,7 +29,7 @@ const freeToolPreviewOffers = [
   {
     title: "Crelavo Pro",
     text: "24-hour preview, then $9.99/month unless cancelled. Card required. No charge until the preview ends.",
-    href: "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
+    href: "/pro-trial",
     cta: "Start Pro · $9.99/mo"
   },
   {

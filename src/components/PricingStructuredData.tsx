@@ -9,7 +9,7 @@ export function PricingStructuredData() {
       price: 9.99,
       priceCurrency: "USD",
       availability: "https://schema.org/OnlineOnly",
-      url: "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
+      url: "/pro-trial",
       category: "Subscription",
       priceSpecification: { "@type": "PriceSpecification", price: 9.99, priceCurrency: "USD", billingDuration: "P30D" }
     }
