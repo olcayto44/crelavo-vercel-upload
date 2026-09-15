@@ -62,6 +62,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
   const planId = annualActive ? plan.annualPlan! : plan.monthlyPlan;
   const price = annualActive ? plan.annualPrice : plan.monthlyPrice;
   const cta = annualActive && plan.name.includes("Intelligence") ? "Start yearly preview" : plan.cta;
+  const canCheckout = Boolean(PLAN_PRODUCT_IDS[plan.name]) && !annualActive;
   return <article className={`clp-card${plan.popular ? " is-popular" : ""}`}>
     {plan.popular ? <span className="clp-pop">Popular</span> : null}
     <span className="clp-pill">{plan.pill}</span>
@@ -70,7 +71,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
     <p className="clp-note">{plan.oneTime ? "One-time · no renewal" : `24h preview · ${plan.preview} today`}</p>
     {annualActive && plan.save ? <p className="clp-save">{plan.save}</p> : null}
     {unavailableAnnual ? <p className="clp-only">Yearly checkout is not active for this plan yet.</p> : null}
-    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>     {PLAN_PRODUCT_IDS[plan.name] ? <PaymentCheckoutButton productId={PLAN_PRODUCT_IDS[plan.name]} billing={plan.oneTime ? "one_time" : annualActive ? "yearly" : "monthly"}>{cta}</PaymentCheckoutButton> : <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>}
+    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>     {canCheckout ? <PaymentCheckoutButton productId={PLAN_PRODUCT_IDS[plan.name]} billing={plan.oneTime ? "one_time" : annualActive ? "yearly" : "monthly"}>{cta}</PaymentCheckoutButton> : <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>}
   </article>;
 }
 
