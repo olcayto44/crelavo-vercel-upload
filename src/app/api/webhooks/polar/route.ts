@@ -141,6 +141,7 @@ async function updateSubscription(payload: PolarPayload) {
   const now = new Date().toISOString();
   const customerId = clean(data.customerId || customer.id);
   const membershipId = clean(data.id);
+  const billing = clean(data.recurringInterval).toLowerCase() === "year" ? "yearly" : INTERNAL_BILLING;
 
   if (!profile) {
     return {
@@ -161,7 +162,7 @@ async function updateSubscription(payload: PolarPayload) {
     customer_id: customerId || null,
     plan_id: polarProductId(data) || null,
     product_id: INTERNAL_PRODUCT_ID,
-    billing_interval: clean(data.recurringInterval) || INTERNAL_BILLING,
+    billing_interval: clean(data.recurringInterval) || billing,
     status: subscriptionStatus,
     trial_started_at: iso(data.trialStart),
     trial_ends_at: iso(data.trialEnd),
@@ -197,7 +198,7 @@ async function updateSubscription(payload: PolarPayload) {
         subscription_status: status,
         billing_cycle_ends_at: iso(data.currentPeriodEnd),
         active_subscription_package: INTERNAL_PRODUCT_ID,
-        active_subscription_billing: INTERNAL_BILLING,
+        active_subscription_billing: billing,
         updated_at: now
       }
     : {

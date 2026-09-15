@@ -176,15 +176,21 @@ export async function POST(request: Request) {
     const consentRecovery = body.consentRecovery === true;
      const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
      const paymentProvider = String(process.env.PAYMENT_PROVIDER ?? "").trim().toLowerCase();
-     const polarProCheckoutUrl = (process.env.POLAR_PRO_CHECKOUT_URL || "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7").trim();
+     const polarMonthlyCheckoutUrl = (process.env.POLAR_PRO_CHECKOUT_URL || "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7").trim();
+     const polarAnnualCheckoutUrl = String(process.env.POLAR_PRO_ANNUAL_CHECKOUT_URL ?? "").trim();
      const polarAccessToken = String(process.env.POLAR_ACCESS_TOKEN ?? "").trim();
-     const polarProProductId = String(process.env.POLAR_PRO_PRODUCT_ID ?? "").trim();
+     const polarProProductId = String(effectiveBilling === "yearly" ? process.env.POLAR_PRO_ANNUAL_PRODUCT_ID : process.env.POLAR_PRO_PRODUCT_ID).trim();
+     const polarProCheckoutUrl = effectiveBilling === "yearly" ? polarAnnualCheckoutUrl : polarMonthlyCheckoutUrl;
      const polarWebhookReady = Boolean(String(process.env.POLAR_WEBHOOK_SECRET ?? "").trim());
-     const isPolarProCheckout = product.id === "pro_24h_free_trial" && effectiveBilling === "monthly";
+     const isPolarProCheckout = product.id === "pro_24h_free_trial" && (effectiveBilling === "monthly" || effectiveBilling === "yearly");
      const whopEnabled = false;
      const previewPolicy = whopPreviewSummary(product, effectiveBilling);
      const previewNote = whopPreviewNotice(product, effectiveBilling);
      if (isPolarProCheckout) {
+      if (effectiveBilling === "yearly" && (!polarAccessToken || !polarProProductId) && !polarProCheckoutUrl) {
+        return Response.json({ error: "Annual Pro checkout is not configured yet.", code: "CHECKOUT_TEMPORARILY_UNAVAILABLE" }, { status: 503 });
+      }
+
       let checkoutUrl = polarProCheckoutUrl;
       let serverCheckout = false;
       let checkoutReference = "";
