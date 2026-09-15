@@ -77,7 +77,7 @@ export function CrelavoPremiumHero() {
           <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
           <div className="crelavo-hero-actions">
              <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial <ArrowRight size={16} /></Link>
-             <Link className="btn secondary" href="https://whop.com/checkout/plan_fiabRYr6uWY43">$99/year after 24 hours</Link>
+             <Link className="btn secondary" href="https://www.crelavo.com/checkout/unavailable">Annual plan coming soon</Link>
              <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">
@@ -98,7 +98,7 @@ export function CrelavoPremiumHero() {
           <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Claim the Crelavo Pro 24-hour free trial">
             <span>FLASH TRIAL</span>
             <strong>$0 for the first 24 hours</strong>
-            <small>Then 2,500 credits/month at $9.99 unless cancelled in Whop.</small>
+            <small>Then $9.99/month for workspace access unless cancelled in the customer portal. Usage credits are sold separately.</small>
           </Link>
           <div className="hero-interface-main">
             <div className="hero-preview-window">

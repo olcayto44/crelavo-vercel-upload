@@ -5,7 +5,7 @@ export const whopReturnPath = "/checkout/complete";
 export const whopFreeTrialProductId = "pro_24h_free_trial";
 export const whopFreeTrialProductSlug = "crelavo-24-hour-trial-subscription";
 export const whopFreeTrialProductIdExternal = "prod_zwJDDxNzPytX2";
-export const whopFreeTrialCheckoutUrl = "https://whop.com/checkout/plan_ujLQgM3kEg0dg";
+export const whopFreeTrialCheckoutUrl = "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7";
 
 export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> = {
   pro_24h_free_trial: { monthly: "plan_ujLQgM3kEg0dg" },

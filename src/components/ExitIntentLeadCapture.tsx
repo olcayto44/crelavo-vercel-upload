@@ -161,7 +161,7 @@ export function ExitIntentLeadCapture() {
         <button type="button" onClick={() => setVisible(false)} aria-label="Close" style={{ position: "absolute", right: 14, top: 14, border: 0, borderRadius: 999, width: 34, height: 34, cursor: "pointer", background: "rgba(255,255,255,0.12)", color: "var(--text)" }}>×</button>
         <span className="badge">Free ecommerce ad guide</span>
 <h2 style={{ marginTop: 12 }}>Start Crelavo Pro free for 24 hours</h2>
-         <p style={{ color: "var(--muted)", fontSize: 16 }}>Card required. No charge until the trial ends. Cancel in Whop before 24 hours and you pay $0.</p>
+         <p style={{ color: "var(--muted)", fontSize: 16 }}>Card required. No charge until the trial ends. Cancel in the customer portal before 24 hours and you pay $0.</p>
 
         {status === "success" ? (
           <div className="workspace-action-note" style={{ marginTop: 18 }}>
@@ -190,7 +190,7 @@ export function ExitIntentLeadCapture() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
           <Link className="secondary-button" href="/free-tools/ad-performance-score-checker" onClick={() => setVisible(false)}>Run free ad score</Link>
-          <Link className="secondary-button" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg" onClick={() => setVisible(false)}>Start free Pro trial</Link>
+          <Link className="secondary-button" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7" onClick={() => setVisible(false)}>Start free Pro trial</Link>
         </div>
       </div>
     </div>

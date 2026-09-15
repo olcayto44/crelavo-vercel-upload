@@ -9,13 +9,11 @@ type Plan = {
   features: string[]; popular?: boolean; cta: string; oneTime?: boolean;
 };
 
-const checkoutBase = "https://whop.com/checkout/";
-
 const creditPlans: Plan[] = [
-  { name: "Pro Credits", pill: "2,500 credits / mo", monthlyPrice: "$29", annualPrice: "$290", period: "/mo", monthlyPlan: "plan_ECfkkMySZHtIZ", annualPlan: "plan_A9zegHpbjxAfO", preview: "$5", save: "Save $58 vs monthly", cta: "Start preview", features: ["Monthly credit refill", "Studio production", "Dashboard delivery", "Cancel anytime in Whop"] },
-  { name: "Business Credits", pill: "9,000 credits / mo", monthlyPrice: "$59", annualPrice: "$590", period: "/mo", monthlyPlan: "plan_DTxjYMeiRPBWz", annualPlan: "plan_R3OSfDLVHI9zi", preview: "$10", save: "Save $118 vs monthly", cta: "Start preview", features: ["Monthly credit refill", "Higher production volume", "Dashboard delivery", "Cancel anytime in Whop"] },
-  { name: "Team Credits", pill: "12,000 credits / seat", monthlyPrice: "$130", annualPrice: "$1,300", period: "/mo", monthlyPlan: "plan_rkeOQU3gjmujh", annualPlan: "plan_jSBaM1LgMuaNL", preview: "$20", save: "Save $260 vs monthly", cta: "Start preview", features: ["Per-seat monthly refill", "Team production volume", "Dashboard delivery", "Cancel anytime in Whop"] },
-  { name: "Ultra Credits", pill: "25,000 credits / mo", monthlyPrice: "$199", annualPrice: "$1,990", period: "/mo", monthlyPlan: "plan_UtIprGEXNEooK", annualPlan: "plan_apVKry7XkvOky", preview: "$15", save: "Save $398 vs monthly", cta: "Start preview", features: ["Highest monthly refill", "Heavy production volume", "Dashboard delivery", "Cancel anytime in Whop"] }
+  { name: "Pro Credits", pill: "2,500 credits / mo", monthlyPrice: "$29", annualPrice: "$290", period: "/mo", monthlyPlan: "plan_ECfkkMySZHtIZ", annualPlan: "plan_A9zegHpbjxAfO", preview: "$5", save: "Save $58 vs monthly", cta: "Start preview", features: ["Monthly credit refill", "Studio production", "Dashboard delivery", "Cancel anytime in the customer portal"] },
+  { name: "Business Credits", pill: "9,000 credits / mo", monthlyPrice: "$59", annualPrice: "$590", period: "/mo", monthlyPlan: "plan_DTxjYMeiRPBWz", annualPlan: "plan_R3OSfDLVHI9zi", preview: "$10", save: "Save $118 vs monthly", cta: "Start preview", features: ["Monthly credit refill", "Higher production volume", "Dashboard delivery", "Cancel anytime in the customer portal"] },
+  { name: "Team Credits", pill: "12,000 credits / seat", monthlyPrice: "$130", annualPrice: "$1,300", period: "/mo", monthlyPlan: "plan_rkeOQU3gjmujh", annualPlan: "plan_jSBaM1LgMuaNL", preview: "$20", save: "Save $260 vs monthly", cta: "Start preview", features: ["Per-seat monthly refill", "Team production volume", "Dashboard delivery", "Cancel anytime in the customer portal"] },
+  { name: "Ultra Credits", pill: "25,000 credits / mo", monthlyPrice: "$199", annualPrice: "$1,990", period: "/mo", monthlyPlan: "plan_UtIprGEXNEooK", annualPlan: "plan_apVKry7XkvOky", preview: "$15", save: "Save $398 vs monthly", cta: "Start preview", features: ["Highest monthly refill", "Heavy production volume", "Dashboard delivery", "Cancel anytime in the customer portal"] }
 ];
 
 const packPlans: Plan[] = [
@@ -56,7 +54,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
     {annualActive && plan.save ? <p className="clp-save">{plan.save}</p> : null}
     {unavailableAnnual ? <p className="clp-only">Yearly checkout is not active for this plan yet.</p> : null}
     <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-    <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href={`${checkoutBase}${planId}`}>{cta}</a>
+    <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/checkout/unavailable">{cta}</a>
   </article>;
 }
 
@@ -79,7 +77,7 @@ export function PricingPageBody() {
     `}</style>
     <header className="clp-hero"><span className="clp-kicker">Start with Pro.</span><h1>Start with Pro.</h1><p className="clp-lead">Credit subscriptions, one-time packs, drone, live-sales hours and growth intelligence on one page. Subscriptions start with a 24-hour preview.</p><nav className="clp-jump" aria-label="Pricing sections"><a href="#clp-credits">Credits</a><a href="#clp-packs">One-time packs</a><a href="#clp-drone">Drone</a><a href="#clp-live">Live sales</a><a href="#clp-growth">Growth intelligence</a></nav></header>
     <div className="clp-toggle-wrap"><div className="clp-toggle" role="group" aria-label="Billing cycle"><button type="button" onClick={() => setCycle("monthly")} aria-pressed={cycle === "monthly"}>Monthly</button><button type="button" onClick={() => setCycle("annual")} aria-pressed={cycle === "annual"}>Annual</button></div></div>
-    <article className="clp-card clp-intro"><span className="clp-pill">INTRO</span><h3>Pro</h3><div className="clp-price"><b>$9.99</b><span>/mo after 24h</span></div><p className="clp-note">Card required. No charge until the preview ends.</p><ul><li>24-hour preview</li><li>Then $9.99/month unless cancelled</li><li>Annual Pro $99/year</li></ul><a className="clp-cta fill" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start Pro · $9.99/mo</a></article>
+    <article className="clp-card clp-intro"><span className="clp-pill">INTRO</span><h3>Pro</h3><div className="clp-price"><b>$9.99</b><span>/mo after 24h</span></div><p className="clp-note">Card required. No charge until the preview ends.</p><ul><li>24-hour preview</li><li>Then $9.99/month unless cancelled</li><li>Annual Pro coming soon</li></ul><a className="clp-cta fill" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7">Start Pro · $9.99/mo</a></article>
     <PlanSection id="clp-credits" title="Production credits" subtitle="Monthly refill. 24-hour preview today, then the listed price unless cancelled." plans={creditPlans} columns={4} cycle={cycle} />
     <PlanSection id="clp-packs" title="One-time credit packs" subtitle="Credits added after payment. Does not renew." plans={packPlans} columns={3} cycle={cycle} />
     <PlanSection id="clp-drone" title="Drone / Satellite" subtitle="One-time packs. Credits are added after payment confirmation." plans={dronePlans} columns={2} cycle={cycle} />

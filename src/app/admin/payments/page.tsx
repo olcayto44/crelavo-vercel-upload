@@ -30,7 +30,7 @@ export default function AdminPaymentsPage() {
         <span className="badge">Current launch mode</span>
         <h2>Whop checkout + controlled credit activation</h2>
         <p style={{ color: "var(--muted)" }}>
-          Early launch accepts payments through Whop checkout. Whop is the current source of record for payment IDs, receipts, memberships and subscriptions. Crelavo can reconcile Whop payments automatically where supported, while admin manual activation remains available as a safe fallback.
+          Crelavo Pro uses the approved Polar checkout. Legacy Whop checkout is disabled, and other packages remain unavailable until their Polar products are mapped.
         </p>
         <div className="admin-info-grid" style={{ marginTop: 14 }}>
           <div><span>Payment collection</span><strong>Whop checkout</strong><small>Configured from Whop plan IDs and PAYMENT_PROVIDER=whop</small></div>

@@ -17,13 +17,13 @@ type CampaignPromoProps = {
 export function CampaignPromoClient({
   eyebrow = "24-HOUR FREE TRIAL",
   title = "Try Crelavo Pro for $0 today",
-  body = "Card required. You are not charged until the 24-hour trial ends. Then $9.99 every 30 days unless you cancel in Whop. If you already used a Crelavo trial, you pay full price.",
+  body = "Card required. You are not charged until the 24-hour trial ends. Then $9.99 every 30 days unless you cancel in the customer portal. If you already used a Crelavo trial, you pay full price.",
   cta = "Start free 24-hour trial",
-  href = "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
+  href = "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
   priceBadge = "$0 TODAY",
   kicker = "Pro · $0 first 24 hours · then $9.99/month",
   bonusPrimary = "1 trial production",
-  bonusSecondary = "2,500 credits/month after trial"
+  bonusSecondary = "Usage credits sold separately"
 }: CampaignPromoProps) {
   return (
     <aside className="campaign-promo-card" aria-label="Crelavo Pro 24-hour free trial">
@@ -44,8 +44,8 @@ export function CampaignPromoClient({
         <small>Card required. No charge until the 24-hour trial ends.</small>
       </div>
       <Link className="btn campaign-promo-cta" href={href}>{cta}</Link>
-      <Link className="campaign-promo-secondary-link" href="https://whop.com/checkout/plan_fiabRYr6uWY43">
-        Prefer yearly? Start $99/year trial
+      <Link className="campaign-promo-secondary-link" href="https://www.crelavo.com/checkout/unavailable">
+        Annual plan coming soon
       </Link>
     </aside>
   );

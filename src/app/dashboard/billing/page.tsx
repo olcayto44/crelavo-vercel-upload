@@ -17,17 +17,17 @@ export default function BillingPage() {
         </nav>
         <span className="kicker">Billing</span>
         <h1>Billing</h1>
-        <p className="lead">Subscriptions and packs check out on Whop. Cancel in Whop before the 24-hour preview ends if you do not want the plan to start.</p>
+        <p className="lead">Subscriptions and packs check out on Whop. Cancel in the customer portal before the 24-hour preview ends if you do not want the plan to start.</p>
         <div className="grid g2">
           <article className="card"><h3>Cancel in Whop</h3><p>Preview and renewal are managed in your Whop billing hub.</p><a className="cta" href="https://whop.com/hub">Open Whop hub</a></article>
           <article className="card"><h3>Credit balance</h3><p>Plans and one-time packs live on Credits.</p><a className="ghost" href="/dashboard/credits">View credits</a></article>
         </div>
         <h1 style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
         <div className="grid g4">
-          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Checkout</a></article>
-          <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_DTxjYMeiRPBWz">Checkout</a></article>
-          <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_rkeOQU3gjmujh">Checkout</a></article>
-          <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://whop.com/checkout/plan_UtIprGEXNEooK">Checkout</a></article>
+          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7">Checkout</a></article>
+          <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
+          <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
+          <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
         </div>
         <p className="note" style={{ marginTop: 18 }}>Need help? <a href="/contact">Contact</a>.</p>
       </div>

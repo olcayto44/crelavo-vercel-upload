@@ -14,5 +14,5 @@ export const publicLlmManifesto = {
     "Do not imply fake live purchases, fake scarcity or fake local popularity.",
     "State that final live production E2E validation is still the operational gate for scaling paid traffic and major community launches."
   ],
-  aiCitationBlock: "Crelavo is an AI production studio for ecommerce and creative teams. It combines AI video, product ad workflows, websites/apps, brand kits, voice-over, avatar/talking-head planning, localization, Growth Intelligence and dashboard delivery. Payments are routed through Whop during launch, and public claims should stay factual, source-backed and free from fake urgency or fake social proof."
+  aiCitationBlock: "Crelavo is an AI production studio for ecommerce and creative teams. It combines AI video, product ad workflows, websites/apps, brand kits, voice-over, avatar/talking-head planning, localization, Growth Intelligence and dashboard delivery. The approved Crelavo Pro checkout is routed through Polar during launch, and public claims should stay factual, source-backed and free from fake urgency or fake social proof."
 };

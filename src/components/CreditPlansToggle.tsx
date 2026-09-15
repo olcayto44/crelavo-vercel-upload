@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { CreditCard } from "lucide-react";
 import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
-import { whopHostedCheckoutUrl, whopPlanIdForProduct } from "@/lib/whop";
 
 type CreditPlan = {
   name: string;
@@ -74,7 +73,7 @@ function compactPlanHighlights(plan: CreditPlan, billingMode: "monthly" | "yearl
   const mainCharge = summary.mainChargeUsd ? `$${summary.mainChargeUsd.toLocaleString("en-US")}` : plan.price;
   const previewLine = plan.planType === "topup"
     ? "One-time purchase; credits are added after payment confirmation."
-    : `${summary.setupFeeUsd <= 0 ? "Free" : `$${summary.setupFeeUsd}`} 24-hour free trial, then ${mainCharge} ${summary.billingInterval} unless cancelled in Whop.`;
+    : `${summary.setupFeeUsd <= 0 ? "Free" : `$${summary.setupFeeUsd}`} 24-hour free trial, then ${mainCharge} ${summary.billingInterval} unless cancelled in the customer portal.`;
   return [
     plan.estimatedOutput ? `Output: ${billingMode === "yearly" && plan.yearlyEstimatedOutput ? plan.yearlyEstimatedOutput : plan.estimatedOutput}` : `Credits: ${credits.toLocaleString("en-US")} total credits`,
     plan.videoSpec ? `Video: ${plan.videoSpec}` : null,
@@ -100,7 +99,7 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
         <div>
           <span className="badge"><CreditCard size={14} /> {isTopUpList ? "One-time credit purchases" : "Recurring credit subscriptions"}</span>
 <h2>{isTopUpList ? "Buy extra credits whenever you need them" : sideBySideAnnual ? "Choose your Pro trial plan" : "Choose a monthly or yearly credit subscription"}</h2>
-           <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : sideBySideAnnual ? "Both plans start at $0 today with a 24-hour free trial. Card required; cancel in Whop before the trial ends and pay nothing." : "Start with a 24-hour free trial. Monthly renews every 30 days; yearly gives 12 months of access."}</p>
+           <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : sideBySideAnnual ? "Both plans start at $0 today with a 24-hour free trial. Card required; cancel in the customer portal before the trial ends and pay nothing." : "Start with a 24-hour free trial. Monthly renews every 30 days; yearly gives 12 months of access."}</p>
         </div>
 {!isTopUpList && !sideBySideAnnual ? (
            <div>
@@ -130,8 +129,7 @@ const subscriptionBilling = effectiveBilling === "one_time" ? "monthly" : effect
           const videoOutput = estimatedVideoOutput(credits);
 const positioning = planPositioning(plan, billingMode);
            const compactHighlights = compactPlanHighlights(plan, subscriptionBilling, credits);
-           const directWhopPlanId = plan.id ? whopPlanIdForProduct(plan.id, effectiveBilling) : "";
-           const planHref = directWhopPlanId ? whopHostedCheckoutUrl(directWhopPlanId) : `/dashboard/payment?package=${encodeURIComponent(productId)}&billing=${effectiveBilling}`;
+           const planHref = "/checkout/unavailable";
            return (
              <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={planHref} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : effectiveBilling === "monthly" ? "24-hour free trial + monthly" : "24-hour free trial + yearly"}</span>

@@ -5,24 +5,13 @@ export function PricingStructuredData() {
     {
       "@type": "Offer",
       name: "Crelavo Pro monthly",
-      description: "24-hour free trial, then $9.99 every 30 days unless cancelled in Whop.",
+      description: "24-hour free trial, then $9.99 every 30 days unless cancelled in the customer portal.",
       price: 9.99,
       priceCurrency: "USD",
       availability: "https://schema.org/OnlineOnly",
-      url: "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
+      url: "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
       category: "Subscription",
       priceSpecification: { "@type": "PriceSpecification", price: 9.99, priceCurrency: "USD", billingDuration: "P30D" }
-    },
-    {
-      "@type": "Offer",
-      name: "Crelavo Pro annual",
-      description: "24-hour free trial, then $99 per year unless cancelled in Whop.",
-      price: 99,
-      priceCurrency: "USD",
-      availability: "https://schema.org/OnlineOnly",
-      url: "https://whop.com/checkout/plan_fiabRYr6uWY43",
-      category: "Subscription",
-      priceSpecification: { "@type": "PriceSpecification", price: 99, priceCurrency: "USD", billingDuration: "P1Y" }
     }
   ];
 
@@ -34,7 +23,7 @@ export function PricingStructuredData() {
         "@id": `${siteUrl}/pricing#webpage`,
         url: `${siteUrl}/pricing`,
         name: "Crelavo Pro pricing",
-        description: "24-hour Pro trial for $0, then $9.99/month or $99/year unless cancelled in Whop.",
+        description: "24-hour Pro trial for $0, then $9.99/month unless cancelled in the customer portal.",
         isPartOf: { "@id": `${siteUrl}/#website` },
         about: { "@id": `${siteUrl}/#app` },
         inLanguage: "en-US"
@@ -45,8 +34,8 @@ export function PricingStructuredData() {
         name: "Crelavo Pro plans",
         url: `${siteUrl}/pricing`,
         lowPrice: 9.99,
-        highPrice: 99,
-        offerCount: 2,
+        highPrice: 9.99,
+        offerCount: 1,
         priceCurrency: "USD",
         itemListElement: offers
       }

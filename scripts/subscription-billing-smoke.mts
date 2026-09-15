@@ -26,7 +26,7 @@ for (const plan of topUpPackages) {
 }
 
 assert(LEGAL_ACCEPTANCE_VERSION.includes("preview-setup-fee"), "legal version should include preview setup fee update");
-assert(packages.some((plan) => plan.name === "Pro" && plan.setupFeeUsd === 5), "Pro should include $5 preview setup fee");
+assert(packages.some((plan) => plan.name === "Pro" && plan.setupFeeUsd === 0), "Pro should use the approved free preview configuration");
 assert(packages.some((plan) => plan.name === "Business" && plan.setupFeeUsd === 10), "Business should include $10 preview setup fee");
 assert(packages.some((plan) => plan.name === "Ultra" && plan.setupFeeUsd === 15), "Ultra should include $15 preview setup fee");
 assert(packages.some((plan) => plan.name === "Team" && plan.setupFeeUsd === 20), "Team should include $20 preview setup fee");
@@ -38,8 +38,8 @@ const snapshot = legalAcceptanceSnapshot({ productionType: "video", packageId: "
 assert("billingTermsText" in snapshot, "legal snapshot should store billing terms");
 
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
-for (const term of ["provider: \"whop\"", "whopCheckoutPath", "whopPreviewSummary", "whopPreviewNotice", "manualActivation", "Payment provider is not set to Whop"]) {
-  assert(checkoutRoute.includes(term), `checkout route missing Whop term: ${term}`);
+for (const term of ["provider: \"polar\"", "POLAR_PRO_CHECKOUT_URL", "pro_24h_free_trial", "CHECKOUT_TEMPORARILY_UNAVAILABLE", "manualActivation"]) {
+  assert(checkoutRoute.includes(term), `checkout route missing Polar migration term: ${term}`);
 }
 for (const term of ["createLemonSqueezyCheckout", "provider: \"lemon_squeezy\"", "credit_subscription", "credit_topup", "lemonVariantEnvForProduct", "manualActivation"]) {
   assert(checkoutRoute.includes(term), `checkout route missing parked Lemon fallback term: ${term}`);
@@ -71,20 +71,21 @@ for (const term of ["providerSpendGuard", "preview_only_downloads_closed", "down
 }
 
 const paymentPage = readFileSync("src/app/dashboard/payment/page.tsx", "utf8");
-for (const term of ["Start recurring credit subscription", "Buy one-time top-up credits", "billingTermsText", "PaymentCheckoutButton", "does not renew automatically", "Whop", "24-hour preview"]) {
-  assert(paymentPage.includes(term), `payment page missing term: ${term}`);
+for (const term of ["redirect", "/pricing"]) {
+  assert(paymentPage.includes(term), `payment page should route to active pricing: ${term}`);
 }
 
 const whopCheckoutPage = readFileSync("src/app/checkout/whop/page.tsx", "utf8");
-for (const term of ["Whop secure checkout", "non-refundable 24-hour preview/setup charge", "data-whop-checkout-plan-id", "data-whop-checkout-return-url"]) {
-  assert(whopCheckoutPage.includes(term), `Whop checkout page missing term: ${term}`);
+for (const term of ["redirect", "/checkout/unavailable"]) {
+  assert(whopCheckoutPage.includes(term), `Legacy Whop checkout should redirect safely: ${term}`);
 }
 
 const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
-assert(creditsPage.includes("topUpPackages"), "credits page should render top-up packages");
+assert(creditsPage.includes("buy.polar.sh/polar_cl_"), "credits page should expose the approved Polar Pro checkout");
+assert(creditsPage.includes("/checkout/unavailable"), "credits page should disable packages not yet mapped to Polar");
 
 const envExample = readFileSync(".env.example", "utf8");
-for (const term of ["PAYMENT_PROVIDER=whop", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
+for (const term of ["PAYMENT_PROVIDER=polar", "POLAR_PRO_CHECKOUT_URL", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
   assert(envExample.includes(term), `.env.example missing ${term}`);
 }
 

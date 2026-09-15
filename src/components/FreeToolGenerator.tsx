@@ -213,7 +213,7 @@ export function FreeToolGenerator({ tool }: { tool: FreeTool }) {
           <Link className="btn secondary" href="/pricing">Credit packages</Link>
           <Link className="btn secondary" href="/free-tools">All free tools</Link>
         </div>
-        <small style={{ color: "var(--muted)", display: "block", marginTop: 10 }}>The Assistant Workspace will open with your input and selected result already included. If you buy credits through Whop checkout or another active payment provider, use the same email as your Crelavo account.</small>
+        <small style={{ color: "var(--muted)", display: "block", marginTop: 10 }}>The Assistant Workspace will open with your input and selected result already included. If you purchase through an active checkout, use the same email as your Crelavo account.</small>
       </div>
     </section>
   );

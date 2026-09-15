@@ -38,9 +38,9 @@ type GrowthState = {
 const storageKey = "clipora-growth-intelligence-control-v1";
 
 const checkoutUrls = [
-  "https://whop.com/checkout/plan_FlOEa6urAuKEx",
-  "https://whop.com/checkout/plan_BCGKWVCrRakWc",
-  "https://whop.com/checkout/plan_ZnbxWuOwrrFwh"
+  "https://www.crelavo.com/checkout/unavailable",
+  "https://www.crelavo.com/checkout/unavailable",
+  "https://www.crelavo.com/checkout/unavailable"
 ];
 
 const reportFrequencyOptions = [

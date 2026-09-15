@@ -6,7 +6,7 @@ export const whopPreviewPolicy = {
   watermarkRequired: true,
   setupFeeRefundable: false,
   cancellationRule: "If the customer cancels within 24 hours, the main subscription will not start, but the setup fee remains non-refundable.",
-  activationRule: "If the customer does not cancel within 24 hours, Whop automatically charges the selected monthly or yearly plan.",
+  activationRule: "If the customer does not cancel within 24 hours, the checkout automatically charges the selected monthly or yearly plan.",
   renewalRule: "After the main plan starts, monthly plans renew every subscription cycle until cancelled; yearly plans renew yearly until cancelled.",
   yearlyBenefit: "Yearly plans charge 10 months for 12 months of access, shown as 2 months free."
 } as const;
@@ -61,8 +61,8 @@ export function whopPreviewNotice(product: PreviewProductLike | null | undefined
   if (!summary.enabled) return "";
   const main = summary.mainChargeUsd ? `$${summary.mainChargeUsd.toLocaleString("en-US")}` : "the selected plan amount";
   if (summary.freeTrial) {
-    return `24-hour preview through Whop. Card required. No charge, production or downloads until the preview ends. If not cancelled within 24 hours, Whop automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
+    return `24-hour preview through the active checkout. Card required. No charge, production or downloads until the preview ends. If not cancelled within 24 hours, the checkout automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
   }
   const setup = `$${summary.setupFeeUsd.toLocaleString("en-US")}`;
-  return `${setup} is charged today as a non-refundable 24-hour preview/setup fee. Downloads stay closed during preview. If not cancelled within 24 hours, Whop automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
+  return `${setup} is charged today as a non-refundable 24-hour preview/setup fee. Downloads stay closed during preview. If not cancelled within 24 hours, the checkout automatically charges ${main} for the selected ${summary.billingInterval} plan and renews it until cancelled.`;
 }

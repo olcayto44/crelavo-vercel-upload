@@ -175,9 +175,15 @@ export async function POST(request: Request) {
     const consentRecovery = body.consentRecovery === true;
      const configuredDirectUrl = configuredProduct ? paymentLinkForConfiguredCreditProduct(configuredProduct, effectiveBilling).trim() : "";
      const paymentProvider = String(process.env.PAYMENT_PROVIDER ?? "").trim().toLowerCase();
-     const whopEnabled = paymentProvider === "whop";
+     const polarProCheckoutUrl = (process.env.POLAR_PRO_CHECKOUT_URL || "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7").trim();
+     const isPolarProCheckout = product.id === "pro_24h_free_trial" && effectiveBilling === "monthly";
+     const whopEnabled = false;
      const previewPolicy = whopPreviewSummary(product, effectiveBilling);
      const previewNote = whopPreviewNotice(product, effectiveBilling);
+     if (isPolarProCheckout) {
+      const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "polar", checkoutUrl: polarProCheckoutUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
+      return Response.json({ url: polarProCheckoutUrl, mode: checkoutMode, product: product.name, provider: "polar", directCheckoutUrl: true, manualActivation: true, previewPolicy, checkoutIntentResult, note: "Polar hosted checkout is active. Verify the Polar subscription before activating access." });
+     }
 
      if (configuredDirectUrl && !whopEnabled) {
       const checkoutIntentResult = await recordCheckoutIntent({ email: checkoutEmail, consent: consentRecovery, productId: product.id, productName: product.name, billing: effectiveBilling, provider: "configured_direct_checkout", checkoutUrl: configuredDirectUrl, campaign, pageUrl: body.pageUrl, referrer: body.referrer, attribution, sessionId, userId: authUser?.id ?? null, couponCampaign }).catch((error) => ({ skipped: true, reason: error instanceof Error ? error.message : "Checkout intent could not be recorded." }));
@@ -193,8 +199,11 @@ export async function POST(request: Request) {
         note: previewNote || "Configured direct checkout URL is active. Admin should reconcile the payment provider order/subscription before activating credits or service access."
       });
     }
+     if (paymentProvider === "whop" || paymentProvider === "polar") {
+      return Response.json({ error: "This package is temporarily unavailable while its Polar checkout is being prepared.", code: "CHECKOUT_TEMPORARILY_UNAVAILABLE" }, { status: 503 });
+     }
 
-    const whopPlanId = whopPlanIdForProduct(product.id, effectiveBilling);
+     const whopPlanId = whopPlanIdForProduct(product.id, effectiveBilling);
     if (whopEnabled) {
       if (!whopPlanId) {
         return Response.json({ error: `Whop plan ID is not configured for ${product.name} (${effectiveBilling}).` }, { status: 400 });

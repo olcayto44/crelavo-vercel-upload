@@ -3,7 +3,7 @@ export const publicProFaqs = [
     id: "pro-trial-price",
     category: "Pro trial",
     question: "How much does the Crelavo Pro trial cost?",
-    answer: "The first 24 hours cost $0. A payment card is required. If you do not cancel in Whop before the trial ends, the monthly plan continues at $9.99 every 30 days."
+    answer: "The first 24 hours cost $0. A payment card is required. If you do not cancel in the customer portal before the trial ends, the monthly plan continues at $9.99 every 30 days."
   },
   {
     id: "pro-trial-included",
@@ -21,7 +21,7 @@ export const publicProFaqs = [
     id: "pro-trial-annual",
     category: "Billing",
     question: "Is there an annual Pro option?",
-    answer: "Yes. The annual option starts with the same 24-hour trial and then continues at $99 per year unless cancelled in Whop."
+    answer: "The annual option is temporarily unavailable while its Polar product is prepared."
   },
   {
     id: "pro-trial-credits",

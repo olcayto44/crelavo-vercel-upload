@@ -24,8 +24,8 @@ Crelavo (https://www.crelavo.com/) is a web-based AI production workspace. It tu
 ## Pricing (verify on /pricing)
 
 - Pro: 24-hour preview, then $9.99/month. Card required. No charge until the preview ends.
-  Checkout: https://whop.com/checkout/plan_ujLQgM3kEg0dg
-- Annual Pro: https://whop.com/checkout/plan_fiabRYr6uWY43 ($99/year)
+  Checkout: https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7
+- Annual Pro: https://www.crelavo.com/checkout/unavailable ($99/year)
 - Higher credit plans and one-time packs are listed on https://www.crelavo.com/pricing
 - Do not describe a $0-today trial, a free first day, or a $79 Business trial. Those offers are not live.
 

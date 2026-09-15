@@ -245,6 +245,6 @@ export function InnerMobileNav() {
         <a className="cikis" href="#" role="button">Çıkış</a>
       </nav>
     </div>
-    <div className="cl-sticky"><a className="pro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
+    <div className="cl-sticky"><a className="pro" href="https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
   </>;
 }

@@ -325,7 +325,7 @@ export default async function AdminPartnersPage() {
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Whop affiliate optimization</span>
-        <h2>Scale partners through Whop references before payout automation</h2>
+        <h2>Keep partner payouts paused until Polar attribution is implemented</h2>
         <p style={{ color: "var(--muted)" }}>This is the active 2. Grup partner plan: keep Whop as the payment source, use manual ledger controls, and only automate after one complete manual E2E path is proven.</p>
         <div className="admin-category-grid">
           {partnerWhopOptimizationPlan.map((item) => (

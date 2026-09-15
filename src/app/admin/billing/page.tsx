@@ -7,7 +7,7 @@ export default function AdminBillingPage() {
       <section className="card admin-billing-card">
         <span className="badge">Billing center</span>
         <h2>Subscription and payment management</h2>
-        <p style={{ color: "var(--muted)" }}>Monthly and yearly credit packages renew through Whop. One-time top-up packages can be purchased repeatedly and do not renew automatically.</p>
+        <p style={{ color: "var(--muted)" }}>Legacy Whop checkout is disabled. Credit subscriptions and one-time top-ups remain unavailable until their Polar products are mapped.</p>
         <div className="admin-info-grid">
           <div><span>Checkout</span><strong>/dashboard/payment</strong><small>User payment screen</small></div>
           <div><span>Subscriptions</span><strong>Automatic renewal</strong><small>Monthly/yearly Whop subscription payments</small></div>

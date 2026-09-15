@@ -29,13 +29,13 @@ const freeToolPreviewOffers = [
   {
     title: "Crelavo Pro",
     text: "24-hour preview, then $9.99/month unless cancelled. Card required. No charge until the preview ends.",
-    href: "https://whop.com/checkout/plan_ujLQgM3kEg0dg",
+    href: "https://buy.polar.sh/polar_cl_Cm9e4bRp1FUCfYqQTzVSxq6w8jPVckCfb8VH21Z5ul7",
     cta: "Start Pro · $9.99/mo"
   },
   {
     title: "Crelavo Pro Annual",
-    text: "24-hour preview, then $99/year unless cancelled. Card required. No charge until the preview ends.",
-    href: "https://whop.com/checkout/plan_fiabRYr6uWY43",
+    text: "Annual Pro checkout is temporarily unavailable while its Polar product is prepared.",
+    href: "https://www.crelavo.com/checkout/unavailable",
     cta: "Start annual Pro · $99/yr"
   }
 ];
@@ -72,7 +72,7 @@ export default async function FreeToolsPage() {
             <div><span>Step 1</span><strong>Use a free tool</strong><small>Create a hook, prompt, caption, ad script, product idea or ad score.</small></div>
             <div><span>Step 2</span><strong>Select the best result</strong><small>The selected output or ad score is carried into Assistant Workspace.</small></div>
             <div><span>Step 3</span><strong>Start production</strong><small>Turn the result into a delivery plan, credits and final package.</small></div>
-            <div><span>Step 4</span><strong>Start the Pro trial</strong><small>Start a 24-hour preview, then $9.99/month unless cancelled in Whop. Card required.</small></div>
+            <div><span>Step 4</span><strong>Start the Pro trial</strong><small>Start a 24-hour preview, then $9.99/month unless cancelled in the customer portal. Card required.</small></div>
           </div>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {freeToolPreviewOffers.map((offer) => (
