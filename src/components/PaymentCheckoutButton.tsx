@@ -25,7 +25,6 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
   const [checkoutEmail, setCheckoutEmail] = useState("");
-  const [consentRecovery, setConsentRecovery] = useState(false);
 
   useEffect(() => {
     supabaseBrowser().auth.getUser().then(({ data }) => {
@@ -63,7 +62,7 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
         campaign,
         attribution,
         checkoutEmail,
-        consentRecovery,
+        consentRecovery: false,
         pageUrl: window.location.href,
         referrer: document.referrer
       })
@@ -81,14 +80,6 @@ export function PaymentCheckoutButton({ productId, billing, children }: PaymentC
 
   return (
     <div className="checkout-button-stack">
-      <label className="workspace-action-note" style={{ display: "grid", gap: 8 }}>
-        <span>Crelavo account email for payment matching</span>
-        <input value={checkoutEmail} readOnly placeholder="Sign in to continue" type="email" />
-      </label>
-      <label className="workspace-action-note" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-        <input checked={consentRecovery} onChange={(event) => setConsentRecovery(event.target.checked)} type="checkbox" style={{ marginTop: 3 }} />
-        <span>Send me a reminder if I leave checkout unfinished or my 24-hour preview is close to ending.</span>
-      </label>
       <button className="btn" type="button" onClick={startCheckout} disabled={state === "loading"}>
         {state === "loading" ? "Opening secure checkout..." : children}
       </button>
