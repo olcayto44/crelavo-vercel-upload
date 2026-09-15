@@ -22,7 +22,7 @@ export default function DashboardPartnersPage() {
         <p className="lead">Share Crelavo. Commission is reviewed against real Whop payments. Sign in after approval to see your code. This page does not show sample customers or bank details.</p>
         <div className="grid g3">
           <article className="card"><h3>Apply</h3><p>Public program, terms and application.</p><a className="cta" href="/affiliate">Open affiliate</a></article>
-          <article className="card"><h3>Share INTRO</h3><p>24h preview, then $9.99/mo. Card required.</p><a className="ghost" href="/pro-trial">Pro checkout</a></article>
+          <article className="card"><h3>Share INTRO</h3><p>24h preview, then $9.99/mo. Card required.</p><a className="ghost" href="/pricing#clp">Pro checkout</a></article>
           <article className="card"><h3>Share Growth Intelligence</h3><p>Monthly monitoring service, not credits.</p><a className="ghost" href="/growth-intelligence">Growth page</a></article>
         </div>
         <div className="card" style={{ marginTop: 14 }}>

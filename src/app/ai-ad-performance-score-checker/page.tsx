@@ -32,8 +32,8 @@ export default function AiAdPerformanceScoreCheckerPage() {
             <p className="section-lead">This page is the low-friction ad entry point for Shopify, Amazon FBA and WooCommerce sellers. Score the creative first, then start Crelavo Pro for $0 for 24 hours through Polar.</p>
           </div>
           <div className="category-option-row">
-            <Link className="btn" href="/pro-trial">Start free 24-hour trial</Link>
-            <Link className="btn secondary" href="https://www.crelavo.com/checkout/unavailable">Annual plan coming soon</Link>
+            <Link className="btn" href="/pricing#clp">Start free 24-hour trial</Link>
+            <Link className="btn secondary" href="/pricing">Annual plan coming soon</Link>
           </div>
         </div>
         <div className="admin-category-grid" style={{ marginTop: 16 }}>

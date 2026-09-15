@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { allCreditProducts, packages, topUpPackages } from "../src/lib/data.ts";
 import { billingTermsText, LEGAL_ACCEPTANCE_VERSION, legalAcceptanceSnapshot } from "../src/lib/legal.ts";
 import { lemonVariantEnvForProduct } from "../src/lib/payment-provider.ts";
@@ -80,7 +80,7 @@ for (const term of ["redirect", "/pricing"]) {
 }
 
 const whopCheckoutPage = readFileSync("src/app/checkout/whop/page.tsx", "utf8");
-for (const term of ["redirect", "/checkout/unavailable"]) {
+for (const term of ["redirect", "/pricing"]) {
   assert(whopCheckoutPage.includes(term), `Legacy Whop checkout should redirect safely: ${term}`);
 }
 
@@ -88,12 +88,11 @@ const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
 const pricingPage = readFileSync("src/components/PricingPageBody.tsx", "utf8");
 assert(pricingPage.includes("PaymentCheckoutButton"), "pricing Pro card should open the authenticated checkout directly");
 assert(pricingPage.includes("productId=\"pro_24h_free_trial\""), "pricing Pro card should target the active Polar product");
-assert(creditsPage.includes("/checkout/unavailable"), "credits page should disable packages not yet mapped to Polar");
+assert(pricingPage.includes("billing=\"monthly\""), "pricing Pro card should use monthly billing");
+assert(!creditsPage.includes("/checkout/unavailable"), "credits page must not link to removed unavailable route");
 
-const proTrialPage = readFileSync("src/app/pro-trial/page.tsx", "utf8");
-for (const term of ["PaymentCheckoutButton", "pro_24h_free_trial", "billing=\"monthly\""]) {
-  assert(proTrialPage.includes(term), `Pro trial page missing authenticated checkout term: ${term}`);
-}
+assert(!existsSync("src/app/pro-trial/page.tsx"), "legacy pro-trial route must be removed");
+assert(!existsSync("src/app/checkout/unavailable/page.tsx"), "legacy unavailable route must be removed");
 
 const envExample = readFileSync(".env.example", "utf8");
 for (const term of ["PAYMENT_PROVIDER=polar", "POLAR_PRO_CHECKOUT_URL", "POLAR_PRO_PRODUCT_ID", "POLAR_ACCESS_TOKEN", "POLAR_WEBHOOK_SECRET", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {

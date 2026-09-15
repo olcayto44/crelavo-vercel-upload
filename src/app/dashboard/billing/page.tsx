@@ -24,10 +24,10 @@ export default function BillingPage() {
         </div>
         <h1 style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
         <div className="grid g4">
-          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="/pro-trial">Checkout</a></article>
-          <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
-          <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
-          <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Checkout</a></article>
+          <article className="card"><h3>INTRO Pro</h3><p className="price">$9.99 <span>/mo after 24h</span></p><a className="cta" href="/pricing#clp">Checkout</a></article>
+          <article className="card"><h3>Business</h3><p className="price">$59 <span>/mo</span></p><a className="cta" href="/pricing">Checkout</a></article>
+          <article className="card"><h3>Team</h3><p className="price">$130 <span>/mo</span></p><a className="cta" href="/pricing">Checkout</a></article>
+          <article className="card"><h3>Ultra</h3><p className="price">$199 <span>/mo</span></p><a className="cta" href="/pricing">Checkout</a></article>
         </div>
         <p className="note" style={{ marginTop: 18 }}>Need help? <a href="/contact">Contact</a>.</p>
       </div>

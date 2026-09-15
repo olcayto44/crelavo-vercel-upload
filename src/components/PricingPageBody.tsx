@@ -55,7 +55,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
     {annualActive && plan.save ? <p className="clp-save">{plan.save}</p> : null}
     {unavailableAnnual ? <p className="clp-only">Yearly checkout is not active for this plan yet.</p> : null}
     <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-    <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/checkout/unavailable">{cta}</a>
+    <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>
   </article>;
 }
 

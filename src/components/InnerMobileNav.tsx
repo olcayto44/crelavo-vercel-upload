@@ -245,6 +245,6 @@ export function InnerMobileNav() {
         <a className="cikis" href="#" role="button">Çıkış</a>
       </nav>
     </div>
-    <div className="cl-sticky"><a className="pro" href="/pro-trial">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
+    <div className="cl-sticky"><a className="pro" href="/pricing#clp">Pro $9.99</a><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a><a className="cikis" href="#" role="button">Çıkış</a></div>
   </>;
 }

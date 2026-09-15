@@ -77,7 +77,7 @@ export function CrelavoPremiumHero() {
           <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
           <div className="crelavo-hero-actions">
              <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial <ArrowRight size={16} /></Link>
-             <Link className="btn secondary" href="https://www.crelavo.com/checkout/unavailable">Annual plan coming soon</Link>
+             <Link className="btn secondary" href="/pricing">Annual plan coming soon</Link>
              <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
           <div className="crelavo-hero-model-strip" aria-label="Crelavo production capabilities">

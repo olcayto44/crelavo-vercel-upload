@@ -129,7 +129,7 @@ const subscriptionBilling = effectiveBilling === "one_time" ? "monthly" : effect
           const videoOutput = estimatedVideoOutput(credits);
 const positioning = planPositioning(plan, billingMode);
            const compactHighlights = compactPlanHighlights(plan, subscriptionBilling, credits);
-           const planHref = "/checkout/unavailable";
+           const planHref = "/pricing";
            return (
              <Link className={`card clickable-credit-card credit-sale-card credit-plan-tone-${planTone}${isRecommended ? " recommended-credit-plan" : ""}`} href={planHref} key={plan.name}>
               <span className="badge">{isRecommended ? "Recommended credit plan" : plan.planType === "topup" ? "One-time credit purchase" : effectiveBilling === "monthly" ? "24-hour free trial + monthly" : "24-hour free trial + yearly"}</span>

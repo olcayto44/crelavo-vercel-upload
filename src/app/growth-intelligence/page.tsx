@@ -41,9 +41,9 @@ export default async function GrowthIntelligencePage() {
           </div>
           <h1 id="gi-plans" style={{ fontSize: 28, marginTop: 36 }}>Plans</h1>
           <div className="grid g3">
-            <article className="card"><span className="kicker">1 competitor</span><h3>Starter</h3><p className="price">$179 <span>/mo</span></p><p className="note">24h preview · $15 today</p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Start monthly preview</a></article>
-            <article className="card"><span className="kicker">Up to 3</span><h3>Growth</h3><p className="price">$499 <span>/mo</span></p><p className="note">24h preview · $29 today</p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Start monthly preview</a></article>
-            <article className="card"><span className="kicker">5–10</span><h3>Enterprise</h3><p className="price">$1,999 <span>/mo</span></p><p className="note">24h preview · $79 today</p><a className="cta" href="https://www.crelavo.com/checkout/unavailable">Start monthly preview</a></article>
+            <article className="card"><span className="kicker">1 competitor</span><h3>Starter</h3><p className="price">$179 <span>/mo</span></p><p className="note">24h preview · $15 today</p><a className="cta" href="/pricing">Start monthly preview</a></article>
+            <article className="card"><span className="kicker">Up to 3</span><h3>Growth</h3><p className="price">$499 <span>/mo</span></p><p className="note">24h preview · $29 today</p><a className="cta" href="/pricing">Start monthly preview</a></article>
+            <article className="card"><span className="kicker">5–10</span><h3>Enterprise</h3><p className="price">$1,999 <span>/mo</span></p><p className="note">24h preview · $79 today</p><a className="cta" href="/pricing">Start monthly preview</a></article>
           </div>
           <p className="note" style={{ marginTop: 18 }}>Public data only. No login bypass. Reports are not legal advice. <a href="/affiliate">Affiliate</a> · <a href="/dashboard/partners">Partners</a></p>
         </div>

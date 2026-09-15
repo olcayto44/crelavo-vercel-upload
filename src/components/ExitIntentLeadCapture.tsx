@@ -190,7 +190,7 @@ export function ExitIntentLeadCapture() {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 16 }}>
           <Link className="secondary-button" href="/free-tools/ad-performance-score-checker" onClick={() => setVisible(false)}>Run free ad score</Link>
-          <Link className="secondary-button" href="/pro-trial" onClick={() => setVisible(false)}>Start free Pro trial</Link>
+          <Link className="secondary-button" href="/pricing#clp" onClick={() => setVisible(false)}>Start free Pro trial</Link>
         </div>
       </div>
     </div>

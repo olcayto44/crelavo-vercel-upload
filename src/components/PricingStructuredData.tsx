@@ -9,7 +9,7 @@ export function PricingStructuredData() {
       price: 9.99,
       priceCurrency: "USD",
       availability: "https://schema.org/OnlineOnly",
-      url: "/pro-trial",
+      url: "/pricing#clp",
       category: "Subscription",
       priceSpecification: { "@type": "PriceSpecification", price: 9.99, priceCurrency: "USD", billingDuration: "P30D" }
     }

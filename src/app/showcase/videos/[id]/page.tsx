@@ -26,8 +26,8 @@ const INFO_TITLE: Record<string, string> = {
   "Delivery purpose": "Crelavo workflow",
 };
 const INFO_FALLBACK = ["What this video shows", "Best use case", "Crelavo workflow"];
-const PRO_MO = "/pro-trial";
-const PRO_YR = "https://www.crelavo.com/checkout/unavailable";
+const PRO_MO = "/pricing#clp";
+const PRO_YR = "/pricing";
 const POSTER_FALLBACK = "https://www.crelavo.com/showcase/ai-production-studio.webp";
 
 function ideaHref(title: string) {
