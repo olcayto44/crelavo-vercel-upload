@@ -40,6 +40,22 @@ const growthPlans: Plan[] = [
   { name: "Enterprise Intelligence Agent", pill: "5–10 competitors", monthlyPrice: "$1,999", period: "/mo", monthlyPlan: "plan_ZnbxWuOwrrFwh", preview: "$79", cta: "Start monthly preview", features: ["Hourly critical-page checks", "Slack / email opportunity alerts", "Executive PDF strategy report", "Agency / client workspace ready"] }
 ];
 
+const PLAN_PRODUCT_IDS: Record<string, string> = {
+  "Business Credits": "business",
+  "Team Credits": "team",
+  "Ultra Credits": "ultra",
+  "Starter Live Sales Agent": "live_sales_agent_starter",
+  "Pro Live Commerce Agent": "live_commerce_stream_pack",
+  "Agency Autonomous Brand Agent": "autonomous_brand_agent",
+  "Starter Intelligence Agent": "growth_intelligence_starter",
+  "Growth Intelligence Agent": "growth_intelligence_growth",
+  "Enterprise Intelligence Agent": "growth_intelligence_enterprise",
+  "Starter Pack": "topup_starter",
+  "Creator Pack": "topup_creator",
+  "Business Pack": "topup_business",
+  "Drone Location Video": "drone_location_video",
+  "Satellite + Drone Story": "drone_satellite_story"
+};
 function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
   const annualActive = cycle === "annual" && Boolean(plan.annualPlan) && !plan.oneTime;
   const unavailableAnnual = cycle === "annual" && !plan.annualPlan && !plan.oneTime;
@@ -54,8 +70,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
     <p className="clp-note">{plan.oneTime ? "One-time · no renewal" : `24h preview · ${plan.preview} today`}</p>
     {annualActive && plan.save ? <p className="clp-save">{plan.save}</p> : null}
     {unavailableAnnual ? <p className="clp-only">Yearly checkout is not active for this plan yet.</p> : null}
-    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-    <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>
+    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>     {PLAN_PRODUCT_IDS[plan.name] ? <PaymentCheckoutButton productId={PLAN_PRODUCT_IDS[plan.name]} billing={plan.oneTime ? "one_time" : annualActive ? "yearly" : "monthly"}>{cta}</PaymentCheckoutButton> : <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>}
   </article>;
 }
 

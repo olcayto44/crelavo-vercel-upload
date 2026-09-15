@@ -7,6 +7,7 @@ import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { whopHostedCheckoutUrl, whopPlanIdForProduct } from "@/lib/whop";
 import { whopPreviewNotice, whopPreviewSummary } from "@/lib/whop-preview-policy";
 import { normalizePartnerCode } from "@/lib/partner-program";
+import { polarProductIdFor } from "@/lib/polar-products";
 
 function normalizeBilling(value: unknown): BillingMode {
   if (value === "yearly") return "yearly";
@@ -200,7 +201,7 @@ export async function POST(request: Request) {
           const polar = new Polar({ accessToken: polarAccessToken });
           const checkout = await polar.checkouts.create({
             products: [polarProProductId],
-            allowTrial: true,
+            allowTrial: billing !== "one_time",
             externalCustomerId: authUser.id,
             customerEmail: checkoutEmail,
             metadata: {
