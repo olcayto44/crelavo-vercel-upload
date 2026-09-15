@@ -85,7 +85,9 @@ for (const term of ["redirect", "/checkout/unavailable"]) {
 }
 
 const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
-assert(creditsPage.includes("/pro-trial"), "credits page should route through the authenticated Pro trial flow");
+const pricingPage = readFileSync("src/components/PricingPageBody.tsx", "utf8");
+assert(pricingPage.includes("PaymentCheckoutButton"), "pricing Pro card should open the authenticated checkout directly");
+assert(pricingPage.includes("productId=\"pro_24h_free_trial\""), "pricing Pro card should target the active Polar product");
 assert(creditsPage.includes("/checkout/unavailable"), "credits page should disable packages not yet mapped to Polar");
 
 const proTrialPage = readFileSync("src/app/pro-trial/page.tsx", "utf8");
