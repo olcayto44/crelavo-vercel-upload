@@ -1,31 +1,33 @@
 import Link from "next/link";
-import { DashboardShell } from "@/components/DashboardShell";
+import { DashboardToolLayout } from "@/components/DashboardToolLayout";
 import { customAgentSystem, launchBlockedNotes } from "@/lib/growth-launch-systems";
 
 export default function DashboardCustomAgentsPage() {
   return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <section className="production-hero-card compact-production-hero">
-        <span className="badge">Custom agents</span>
-        <h2>Reusable agent plans without unsafe autonomous actions</h2>
-        <p>Custom agents are prepared as reusable brief, approval and workflow plans so brand, ecommerce, live sales and growth requests stay safe and reviewable.</p>
-        <div className="url-action-center"><Link className="btn" href="/dashboard/ai-agents">Create social content package</Link><Link className="btn secondary" href="/admin/agents">Open admin agents</Link><Link className="btn secondary" href="/dashboard/assistant-workspace?idea=Custom%20AI%20agent">Plan custom agent</Link></div>
-      </section>
-      <section className="admin-category-grid custom-agent-grid" style={{ marginTop: 20 }}>
+    <DashboardToolLayout id="custom-agents">
+      <span className="badge">Custom agents</span>
+      <h1>Reusable agent plans without unsafe autonomous actions</h1>
+      <p className="lead">Prepare reusable brief, approval and workflow plans for brand, ecommerce, live sales and growth requests.</p>
+      <div className="btns">
+        <Link className="btn" href="/dashboard/ai-agents">Create social content package</Link>
+        <Link className="btn btn-out" href="/admin/agents">Open admin agents</Link>
+        <Link className="btn btn-out" href="/dashboard/create?type=AI%20Video&category=ai_agent">Plan custom agent</Link>
+      </div>
+      <section className="grid" style={{ marginTop: 20 }}>
         {customAgentSystem.map((item) => (
-          <div className="card admin-category-card custom-agent-card" key={item.agent}>
+          <article className="card" key={item.agent}>
             <span className="badge">{item.status}</span>
             <h3>{item.agent}</h3>
-            <div className="social-export-detail-list">
-              <span><small>Purpose</small><strong>{item.purpose}</strong></span>
-              <span><small>Inputs</small><strong>{item.inputs}</strong></span>
-              <span><small>Status</small><strong>{item.status}</strong></span>
-              <span><small>Safety rule</small><strong>Every agent keeps human review, approval steps and clear delivery boundaries before execution.</strong></span>
-            </div>
-          </div>
+            <p><strong>Purpose:</strong> {item.purpose}</p>
+            <p><strong>Inputs:</strong> {item.inputs}</p>
+            <p className="note">Every agent keeps human review, approval steps and clear delivery boundaries before execution.</p>
+          </article>
         ))}
+        <article className="card wide">
+          <span className="badge">Blocked until ready</span>
+          <ul className="list">{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+        </article>
       </section>
-      <section className="card" style={{ marginTop: 20 }}><span className="badge">Blocked until ready</span><ul>{launchBlockedNotes.map((note) => <li key={note}>{note}</li>)}</ul></section>
-    </DashboardShell>
+    </DashboardToolLayout>
   );
 }

@@ -1,15 +1,13 @@
-import { DashboardShell } from "@/components/DashboardShell";
 import { BulkGenerationPanel } from "@/components/BulkGenerationPanel";
+import { DashboardToolLayout } from "@/components/DashboardToolLayout";
 
 export default function BulkPage() {
   return (
-    <DashboardShell className="dashboard-postlaunch-shell">
-      <div className="production-hero-card compact-production-hero">
-        <span className="badge">Bulk workspace</span>
-        <h2>Bulk production queue planning</h2>
-        <p>Validate CSV structure, separate each item, review batch inputs and prepare clean production queues before any large delivery run starts.</p>
-      </div>
+    <DashboardToolLayout id="bulk">
+      <span className="badge">Bulk workspace</span>
+      <h1>Bulk production queue planning</h1>
+      <p className="lead">Validate CSV structure, review batch inputs and prepare clean production queues before a large delivery run.</p>
       <BulkGenerationPanel />
-    </DashboardShell>
+    </DashboardToolLayout>
   );
 }
