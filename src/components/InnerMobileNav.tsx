@@ -239,7 +239,7 @@ export function InnerMobileNav() {
       <input type="checkbox" id="cl-mnav-toggle" aria-hidden="true" />
       <label htmlFor="cl-mnav-toggle" className="cl-mnav" aria-label="Menu">Menu</label>
       <nav id="cl-mnav-sheet" aria-label="Mobil menü">
-        <a href="/categories">Create</a><a href="/tools">Tools</a><a href="/pricing">Pricing</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/assistant-workspace">Assistant</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
+        <a href="/categories">Create</a><a href="/tools">Tools</a><a href="/pricing">Pricing</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
         <div className="langs"><a href="/de/ki-video-generator">DE</a><a href="/fr/generateur-video-ia">FR</a><a href="/tr/yapay-zeka-video-uretici">TR</a></div>
         <div className="auth"><a className="gin" href="?auth=login">Giriş</a><a className="uye" href="?auth=register">Üye ol</a></div>
         <a className="cikis" href="#" role="button">Çıkış</a>

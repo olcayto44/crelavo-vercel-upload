@@ -23,7 +23,7 @@ export default async function GrowthIntelligencePage() {
           <a className="" href="/dashboard/credits">Credits</a>
           <a className="" href="/dashboard/billing">Billing</a>
           <a className="" href="/dashboard/productions">Productions</a>
-          <a className="" href="/dashboard/assistant-workspace">Assistant</a>
+          <a className="" href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
           <a className="on" href="/growth-intelligence">Growth Intelligence</a>
           <a className="" href="/dashboard/partners">Partners</a>
           <a className="" href="/pricing">Pricing</a>
@@ -31,7 +31,7 @@ export default async function GrowthIntelligencePage() {
           <span className="kicker">Service subscription</span>
           <h1>Growth Intelligence</h1>
           <p className="lead">Public competitor and offer monitoring. Weekly PDF on the dashboard. This is not a credit top-up. Public sources only.</p>
-          <div className="grid g2"><a className="cta" href="#gi-plans">View plans</a><a className="ghost" href="/dashboard/assistant-workspace">Prepare brief</a></div>
+          <div className="grid g2"><a className="cta" href="#gi-plans">View plans</a><a className="ghost" href="/dashboard/create?type=AI%20Video&category=video">Prepare brief</a></div>
           <h1 style={{ fontSize: 28, marginTop: 36 }}>How it works</h1>
           <div className="grid g4">
             <article className="card"><h3>1. Add competitors</h3><p>Your site, public competitor URLs, product pages, market notes.</p></article>
