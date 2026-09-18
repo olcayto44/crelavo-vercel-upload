@@ -1,5 +1,4 @@
 import { Header } from "@/components/Header";
-import { SiteFooter } from "@/components/SiteFooter";
 import { AssistantWorkspaceAuthBridge } from "@/components/AssistantWorkspaceAuthBridge";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
@@ -26,7 +25,6 @@ export default async function AssistantWorkspacePage({ searchParams }: { searchP
       <style id="cl-assistant-css" dangerouslySetInnerHTML={{ __html: STYLE_BLOCK }} />
       <main id="cl-assistant" className="cl-assistant-root" dangerouslySetInnerHTML={{ __html: MAIN_BLOCK }} />
       <script id="cl-assistant-js" dangerouslySetInnerHTML={{ __html: SCRIPT_BLOCK }} />
-      <SiteFooter />
     </>
   );
 }

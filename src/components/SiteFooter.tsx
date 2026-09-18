@@ -72,7 +72,7 @@ export function SiteFooter() {
         </div>
         <div className="site-footer-bottom">
           <a className="site-footer-brand-link" href="/"><strong>Crelavo</strong></a>
-          <span>{"\u00A9 2028 Crelavo. All rights reserved."}</span>
+          <span>© {new Date().getFullYear()} Crelavo. All rights reserved.</span>
         </div>
       </footer>
     </>
