@@ -51,7 +51,7 @@ export default async function ToolsPage() {
           <h1>Crelavo tools</h1>
           <p>Score ads, plan campaigns, localize creative, and open production from here. Full production types stay on Categories.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace">Start production</Link>
+            <Link className="btn" href="/dashboard/create?type=AI%20Video&category=video">Start production</Link>
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/pricing">View credits</Link>
           </div>
