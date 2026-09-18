@@ -120,6 +120,57 @@ const LIVE_SALES_AGENT_CSS = `
 @media (max-width: 1100px) {
   .cdx-lsa-grid { grid-template-columns: 1fr; }
 }
+
+/* Kit 6 — live sales leftovers only */
+.cdx .cdx-kv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 8px;
+  row-gap: 2px;
+  min-width: 0;
+}
+.cdx .cdx-kv-label {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.cdx .cdx-kv-val {
+  white-space: nowrap;
+  margin-left: auto;
+  text-align: right;
+  min-width: 0;
+}
+
+.cdx .cdx-hours {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+}
+.cdx .cdx-hours a {
+  color: inherit;
+  text-decoration: underline;
+}
+.cdx .cdx-hours .cdx-hours-extra {
+  display: none;
+}
+
+.cdx .cdx-lsa-log:empty,
+.cdx .cdx-lsa-log.is-empty {
+  display: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+}
+.cdx .cdx-lsa-hint {
+  margin: 8px 0 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
 `;
 
 export function LiveSalesAgentStyles() {

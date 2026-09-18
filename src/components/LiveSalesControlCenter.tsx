@@ -145,6 +145,7 @@ export function LiveSalesControlCenter() {
   const [saveMessage, setSaveMessage] = useState("");
   const [agentIdValue, setAgentIdValue] = useState(agentId);
   const [accountAgentId, setAccountAgentId] = useState("");
+  const [accountPlanId, setAccountPlanId] = useState("");
   const [authenticatedUserId, setAuthenticatedUserId] = useState("");
  const [conversationId, setConversationId] = useState("");
 const [openPreference, setOpenPreference] = useState("Industry");
@@ -193,6 +194,7 @@ const [openPreference, setOpenPreference] = useState("Industry");
         if (!agent || cancelled) return;
         setAgentIdValue(agent.agent_id || agentId);
         setAccountAgentId(agent.agent_id || "");
+        setAccountPlanId(agent.plan_id || "");
          setAvatarPreview(agent.metadata?.avatarPreview ?? null);
          setSession((agent.metadata?.liveSalesSession as LiveSalesSession | undefined) ?? null);
          setState((current) => ({
@@ -292,6 +294,8 @@ const [openPreference, setOpenPreference] = useState("Industry");
     { label: "Role", value: state.role, options: roleOptions, key: "role" as const },
     { label: "Platform", value: state.platform, options: platformOptions, key: "platform" as const }
   ], [state.voice, state.language, state.tone, state.industry, state.avatarSource, state.role, state.platform]);
+
+  const accountLiveHours = useMemo(() => liveSalesServicePlans.find((plan) => plan.id === accountPlanId)?.fairUseHours ?? 0, [accountPlanId]);
 
 function setPreference(key: keyof Pick<WorkspaceState, "voice" | "language" | "tone" | "industry" | "avatarSource" | "role" | "platform">, value: string) {
   setState((current) => ({ ...current, [key]: value }));
@@ -585,8 +589,13 @@ async function sendMessage() {
               <div className="live-sales-avatar-provider-pill"><span className="live-sales-avatar-provider-chip">AI LIVE</span><strong>HeyGen LiveAvatar</strong></div>
             </div>
           </div>
-          <div className="cdx-plan cdx-guest-only">Sign in to load your live hours <a href="/?auth=login">Sign in</a></div>
-          <div className="cdx-plan cdx-user-only"><span data-live-plan>No live hours yet</span><a href="/live-sales-credits">View live plans</a></div>
+          {authenticatedUserId ? (
+            <p className="cdx-hours">
+              {accountLiveHours ? `${accountLiveHours} live hours` : <>No live hours yet&nbsp; <a href="/live-sales-credits">Get live hours</a></>}
+            </p>
+          ) : (
+            <p className="cdx-hours"><a href="/?auth=login">Sign in to load your live hours</a></p>
+          )}
           <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
             <span className="badge">Where to use</span>
             <h3 style={{ margin: "6px 0 0" }}>Avatar video targets</h3>
@@ -603,7 +612,7 @@ async function sendMessage() {
                 const isOpen = openPreference === group.label;
                 return (
                   <div className="live-sales-accordion-item" key={group.label}>
-                    <button className="live-sales-accordion-head cdx-kv" type="button" onClick={() => setOpenPreference(isOpen ? "" : group.label)}><span className="k">{group.label}</span><strong className="v">{group.value}</strong></button>
+                    <button className="live-sales-accordion-head cdx-kv" type="button" onClick={() => setOpenPreference(isOpen ? "" : group.label)}><span className="k cdx-kv-label">{group.label}</span><strong className="v cdx-kv-val">{group.value}</strong></button>
                     {isOpen ? <div className="live-sales-option-panel">{group.options.map((option) => <button key={option} type="button" className={`live-sales-option-chip ${group.value === option ? "active" : ""}`} onClick={() => setPreference(group.key, option)}>{option}</button>)}</div> : null}
                   </div>
                 );
@@ -663,7 +672,8 @@ async function sendMessage() {
             {catalogMessage ? <small style={{ color: "var(--muted)" }}>{catalogMessage}</small> : null}
             {session ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("json")}>Download JSON</button><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("md")}>Download Markdown</button></div> : null}
           </div>
-          <div className="live-sales-chat-window" ref={chatWindowRef}>{state.chatMessages.map((message) => <div className={`chat-bubble${message.role === "user" ? " user" : ""}`} key={message.id}>{message.text}</div>)}{sending ? <div className="chat-bubble typing-indicator" aria-live="polite"><span className="typing-label">Live assistant is thinking...</span><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span></div> : null}</div>
+          <div className={`live-sales-chat-window cdx-lsa-log${state.chatMessages.length || sending ? "" : " is-empty"}`} ref={chatWindowRef}>{state.chatMessages.map((message) => <div className={`chat-bubble${message.role === "user" ? " user" : ""}`} key={message.id}>{message.text}</div>)}{sending ? <div className="chat-bubble typing-indicator" aria-live="polite"><span className="typing-label">Live assistant is thinking...</span><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span></div> : null}</div>
+          {state.chatMessages.length || sending ? null : <p className="cdx-lsa-hint">No customer messages yet. Start the HeyGen preview on the left, then type below.</p>}
           {chatActions.length ? <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Suggested actions</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{chatActions.map((action, index) => action.product_id ? <button key={`${action.type}-${action.product_id}-${index}`} className="live-sales-option-chip active" type="button" onClick={() => executeCommerceAction(action.type === "checkout_intent" ? "checkout" : "add_to_cart", action.product_id || "")}>{action.type === "checkout_intent" ? "Confirm checkout" : action.type === "add_to_cart_intent" ? "Confirm add to cart" : `Show ${action.title || "product"}`}</button> : null)}</div></div> : null}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{["How do I connect this?", "What can it do?", "How many hours can it run?", "How do I use it on Shopify?", "How do I use it on social media?"].map((label) => <button key={label} type="button" className="btn secondary" style={{ padding: "8px 12px", fontSize: 12 }} onClick={() => setState((current) => ({ ...current, draftMessage: label }))}>{label}</button>)}</div>
           <div style={{ display: "grid", gap: 10 }}>
