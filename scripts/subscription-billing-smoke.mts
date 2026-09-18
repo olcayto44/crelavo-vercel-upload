@@ -38,8 +38,8 @@ const snapshot = legalAcceptanceSnapshot({ productionType: "video", packageId: "
 assert("billingTermsText" in snapshot, "legal snapshot should store billing terms");
 
 const checkoutRoute = readFileSync("src/app/api/payments/checkout/route.ts", "utf8");
-for (const term of ["provider: \"polar\"", "POLAR_PRO_CHECKOUT_URL", "POLAR_ACCESS_TOKEN", "POLAR_PRO_PRODUCT_ID", "POLAR_PRO_ANNUAL_PRODUCT_ID", "POLAR_PRO_ANNUAL_CHECKOUT_URL", "externalCustomerId: authUser.id", "pro_24h_free_trial", "CHECKOUT_TEMPORARILY_UNAVAILABLE", "manualActivation"]) {
-  assert(checkoutRoute.includes(term), `checkout route missing Polar migration term: ${term}`);
+for (const term of ["provider: \"whop\"", "paymentProvider === \"whop\"", "whopHostedCheckoutUrl", "WHOP_PLAN_NOT_CONFIGURED", "provider: \"polar\"", "POLAR_PRO_CHECKOUT_URL", "POLAR_ACCESS_TOKEN", "POLAR_PRO_ANNUAL_PRODUCT_ID", "POLAR_PRO_ANNUAL_CHECKOUT_URL", "externalCustomerId: authUser.id", "pro_24h_free_trial", "manualActivation"]) {
+  assert(checkoutRoute.includes(term), `checkout route missing Whop-first or Polar-fallback term: ${term}`);
 }
 for (const term of ["createLemonSqueezyCheckout", "provider: \"lemon_squeezy\"", "credit_subscription", "credit_topup", "lemonVariantEnvForProduct", "manualActivation"]) {
   assert(checkoutRoute.includes(term), `checkout route missing parked Lemon fallback term: ${term}`);
@@ -86,16 +86,19 @@ for (const term of ["redirect", "/pricing"]) {
 
 const creditsPage = readFileSync("src/app/dashboard/credits/page.tsx", "utf8");
 const pricingPage = readFileSync("src/components/PricingPageBody.tsx", "utf8");
-assert(pricingPage.includes("PaymentCheckoutButton"), "pricing Pro card should open the authenticated checkout directly");
-assert(pricingPage.includes("productId=\"pro_24h_free_trial\""), "pricing Pro card should target the active Polar product");
-assert(pricingPage.includes("billing={cycle === \"annual\" ? \"yearly\" : \"monthly\"}"), "pricing Pro card should follow the billing toggle");
+for (const term of ["https://whop.com/checkout/plan_ujLQgM3kEg0dg", "https://whop.com/checkout/plan_fiabRYr6uWY43", "plan_ECfkkMySZHtIZ", "plan_A9zegHpbjxAfO", "plan_DTxjYMeiRPBWz", "plan_kmGVCrQu90NBV", "plan_Sm0chNhnmVKBG", "plan_sw8N3lkTKH1N0", "plan_FlOEa6urAuKEx"]) {
+  assert(pricingPage.includes(term), `pricing page missing active Whop checkout: ${term}`);
+}
+for (const forbidden of ["plan_0cO4lRH3SPCr0", "plan_P4wNAjXMzdlyo", "plan_U2ciwAEatfoxB", "plan_twCf4uEpgALAS"]) {
+  assert(!pricingPage.includes(forbidden), `pricing page must not include inactive Whop plan: ${forbidden}`);
+}
 assert(!creditsPage.includes("/checkout/unavailable"), "credits page must not link to removed unavailable route");
 
 assert(!existsSync("src/app/pro-trial/page.tsx"), "legacy pro-trial route must be removed");
 assert(!existsSync("src/app/checkout/unavailable/page.tsx"), "legacy unavailable route must be removed");
 
 const envExample = readFileSync(".env.example", "utf8");
-for (const term of ["PAYMENT_PROVIDER=polar", "POLAR_PRO_CHECKOUT_URL", "POLAR_PRO_PRODUCT_ID", "POLAR_PRO_ANNUAL_PRODUCT_ID", "POLAR_PRO_ANNUAL_CHECKOUT_URL", "POLAR_ACCESS_TOKEN", "POLAR_WEBHOOK_SECRET", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
+for (const term of ["PAYMENT_PROVIDER=whop", "POLAR_PRO_CHECKOUT_URL", "POLAR_PRO_ANNUAL_PRODUCT_ID", "POLAR_PRO_ANNUAL_CHECKOUT_URL", "POLAR_ACCESS_TOKEN", "POLAR_WEBHOOK_SECRET", "WHOP_API_KEY", "WHOP_WEBHOOK_SECRET", "LEMON_SQUEEZY_API_KEY", "LEMON_SQUEEZY_STORE_ID", "LEMON_SQUEEZY_WEBHOOK_SECRET", "LEMON_VARIANT_PRO_MONTHLY", "LEMON_VARIANT_PRO_YEARLY", "LEMON_VARIANT_TOPUP_STARTER_ONE_TIME", "LEMON_VARIANT_TOPUP_CREATOR_ONE_TIME", "LEMON_VARIANT_TOPUP_BUSINESS_ONE_TIME"]) {
   assert(envExample.includes(term), `.env.example missing ${term}`);
 }
 

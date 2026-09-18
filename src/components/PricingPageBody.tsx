@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { PaymentCheckoutButton } from "@/components/PaymentCheckoutButton";
 
 type Cycle = "monthly" | "annual";
 type Plan = {
@@ -40,29 +39,11 @@ const growthPlans: Plan[] = [
   { name: "Enterprise Intelligence Agent", pill: "5–10 competitors", monthlyPrice: "$1,999", period: "/mo", monthlyPlan: "plan_ZnbxWuOwrrFwh", preview: "$79", cta: "Start monthly preview", features: ["Hourly critical-page checks", "Slack / email opportunity alerts", "Executive PDF strategy report", "Agency / client workspace ready"] }
 ];
 
-const PLAN_PRODUCT_IDS: Record<string, string> = {
-  "Business Credits": "business",
-  "Team Credits": "team",
-  "Ultra Credits": "ultra",
-  "Starter Live Sales Agent": "live_sales_agent_starter",
-  "Pro Live Commerce Agent": "live_commerce_stream_pack",
-  "Agency Autonomous Brand Agent": "autonomous_brand_agent",
-  "Starter Intelligence Agent": "growth_intelligence_starter",
-  "Growth Intelligence Agent": "growth_intelligence_growth",
-  "Enterprise Intelligence Agent": "growth_intelligence_enterprise",
-  "Starter Pack": "topup_starter",
-  "Creator Pack": "topup_creator",
-  "Business Pack": "topup_business",
-  "Drone Location Video": "drone_location_video",
-  "Satellite + Drone Story": "drone_satellite_story"
-};
 function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
   const annualActive = cycle === "annual" && Boolean(plan.annualPlan) && !plan.oneTime;
-  const unavailableAnnual = cycle === "annual" && !plan.annualPlan && !plan.oneTime;
   const planId = annualActive ? plan.annualPlan! : plan.monthlyPlan;
   const price = annualActive ? plan.annualPrice : plan.monthlyPrice;
   const cta = annualActive && plan.name.includes("Intelligence") ? "Start yearly preview" : plan.cta;
-  const canCheckout = Boolean(PLAN_PRODUCT_IDS[plan.name]) && !annualActive;
   return <article className={`clp-card${plan.popular ? " is-popular" : ""}`}>
     {plan.popular ? <span className="clp-pop">Popular</span> : null}
     <span className="clp-pill">{plan.pill}</span>
@@ -70,8 +51,7 @@ function PlanCard({ plan, cycle }: { plan: Plan; cycle: Cycle }) {
     <div className="clp-price"><b>{price}</b><span>{annualActive ? "/yr" : plan.period ?? ""}</span></div>
     <p className="clp-note">{plan.oneTime ? "One-time · no renewal" : `24h preview · ${plan.preview} today`}</p>
     {annualActive && plan.save ? <p className="clp-save">{plan.save}</p> : null}
-    {unavailableAnnual ? <p className="clp-only">Yearly checkout is not active for this plan yet.</p> : null}
-    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>     {canCheckout ? <PaymentCheckoutButton productId={PLAN_PRODUCT_IDS[plan.name]} billing={plan.oneTime ? "one_time" : annualActive ? "yearly" : "monthly"}>{cta}</PaymentCheckoutButton> : <a className={`clp-cta${plan.popular || plan.oneTime ? " fill" : ""}`} href="/pricing">{cta}</a>}
+    <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>     <a className="clp-cta" href={`https://whop.com/checkout/${planId}`}>{cta}</a>
   </article>;
 }
 
@@ -94,7 +74,7 @@ export function PricingPageBody() {
     `}</style>
     <header className="clp-hero"><span className="clp-kicker">Start with Pro.</span><h1>Start with Pro.</h1><p className="clp-lead">Credit subscriptions, one-time packs, drone, live-sales hours and growth intelligence on one page. Subscriptions start with a 24-hour preview.</p><nav className="clp-jump" aria-label="Pricing sections"><a href="#clp-credits">Credits</a><a href="#clp-packs">One-time packs</a><a href="#clp-drone">Drone</a><a href="#clp-live">Live sales</a><a href="#clp-growth">Growth intelligence</a></nav></header>
     <div className="clp-toggle-wrap"><div className="clp-toggle" role="group" aria-label="Billing cycle"><button type="button" onClick={() => setCycle("monthly")} aria-pressed={cycle === "monthly"}>Monthly</button><button type="button" onClick={() => setCycle("annual")} aria-pressed={cycle === "annual"}>Annual</button></div></div>
-    <article className="clp-card clp-intro"><span className="clp-pill">INTRO</span><h3>Pro</h3><div className="clp-price"><b>{cycle === "annual" ? "$99" : "$9.99"}</b><span>{cycle === "annual" ? "/yr" : "/mo after 24h"}</span></div><p className="clp-note">Card required. No charge until the preview ends.</p><ul><li>24-hour preview</li><li>{cycle === "annual" ? "$99/year after the preview" : "$9.99/month after the preview"} unless cancelled</li><li>{cycle === "annual" ? "Save 17% vs monthly" : "Cancel anytime in the customer portal"}</li></ul><PaymentCheckoutButton productId="pro_24h_free_trial" billing={cycle === "annual" ? "yearly" : "monthly"}>{cycle === "annual" ? "Start Pro · $99/yr" : "Start Pro · $9.99/mo"}</PaymentCheckoutButton></article>
+    <article className="clp-card clp-intro"><span className="clp-pill">INTRO</span><h3>Pro</h3><div className="clp-price"><b>{cycle === "annual" ? "$99" : "$9.99"}</b><span>{cycle === "annual" ? "/yr" : "/mo after 24h"}</span></div><p className="clp-note">Card required. No charge until the preview ends.</p><ul><li>24-hour preview</li><li>{cycle === "annual" ? "$99/year after the preview" : "$9.99/month after the preview"} unless cancelled</li><li>{cycle === "annual" ? "Save 17% vs monthly" : "Cancel anytime in the customer portal"}</li></ul><a className="clp-cta" href={cycle === "annual" ? "https://whop.com/checkout/plan_fiabRYr6uWY43" : "https://whop.com/checkout/plan_ujLQgM3kEg0dg"}>{cycle === "annual" ? "Start Pro · $99/yr" : "Start Pro · $9.99/mo"}</a></article>
     <PlanSection id="clp-credits" title="Production credits" subtitle="Monthly refill. 24-hour preview today, then the listed price unless cancelled." plans={creditPlans} columns={4} cycle={cycle} />
     <PlanSection id="clp-packs" title="One-time credit packs" subtitle="Credits added after payment. Does not renew." plans={packPlans} columns={3} cycle={cycle} />
     <PlanSection id="clp-drone" title="Drone / Satellite" subtitle="One-time packs. Credits are added after payment confirmation." plans={dronePlans} columns={2} cycle={cycle} />

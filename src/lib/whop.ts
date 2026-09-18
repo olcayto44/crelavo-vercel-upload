@@ -8,7 +8,7 @@ export const whopFreeTrialProductIdExternal = "prod_zwJDDxNzPytX2";
 export const whopFreeTrialCheckoutUrl = "/pricing#clp";
 
 export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> = {
-  pro_24h_free_trial: { monthly: "plan_ujLQgM3kEg0dg" },
+  pro_24h_free_trial: { monthly: "plan_ujLQgM3kEg0dg", yearly: "plan_fiabRYr6uWY43" },
   growth_intelligence_enterprise: { monthly: "plan_ZnbxWuOwrrFwh" },
   growth_intelligence_growth: { monthly: "plan_BCGKWVCrRakWc" },
   growth_intelligence_starter: { monthly: "plan_FlOEa6urAuKEx", yearly: "plan_5l0pLPgYyV1Zu" },
@@ -23,7 +23,7 @@ export const whopPlanIds: Record<string, Partial<Record<BillingMode, string>>> =
   ultra: { monthly: "plan_UtIprGEXNEooK", yearly: "plan_apVKry7XkvOky" },
   team: { monthly: "plan_rkeOQU3gjmujh", yearly: "plan_jSBaM1LgMuaNL" },
   business: { monthly: "plan_DTxjYMeiRPBWz", yearly: "plan_R3OSfDLVHI9zi" },
-  pro: { monthly: "plan_ujLQgM3kEg0dg", yearly: "plan_fiabRYr6uWY43" }
+  pro: { monthly: "plan_ECfkkMySZHtIZ", yearly: "plan_A9zegHpbjxAfO" }
 };
 
 export function whopPlanIdForProduct(productId: string, billing: BillingMode) {

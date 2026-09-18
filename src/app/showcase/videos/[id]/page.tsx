@@ -26,8 +26,8 @@ const INFO_TITLE: Record<string, string> = {
   "Delivery purpose": "Crelavo workflow",
 };
 const INFO_FALLBACK = ["What this video shows", "Best use case", "Crelavo workflow"];
-const PRO_MO = "/pricing#clp";
-const PRO_YR = "/pricing";
+const PRO_MO = "https://whop.com/checkout/plan_ujLQgM3kEg0dg";
+const PRO_YR = "https://whop.com/checkout/plan_fiabRYr6uWY43";
 const POSTER_FALLBACK = "https://www.crelavo.com/showcase/ai-production-studio.webp";
 const FIRST_FRAME_VIDEO_IDS = new Set(["ad-creative-angles-showcase", "crelavo-wow-reel", "crelavo-energy-system", "crelavo-product-story", "phoenix-awakening", "origami-dragon-meteor", "turkish-avatar-hook"]);
 
