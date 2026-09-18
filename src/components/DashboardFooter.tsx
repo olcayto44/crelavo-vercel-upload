@@ -24,20 +24,24 @@ export function DashboardFooter() {
 }
 .cdx-foot-links a:hover { color: rgb(215, 251, 255); }
 
-/* Kit 12 — dashboard background only. */
+/* Kit 12 — dashboard layered background only. */
 html:has(.cdx),
-body:has(.cdx),
-#__next:has(.cdx),
-#root:has(.cdx),
-#app:has(.cdx) {
-  background: #020617 !important;
+html:has(.cdx) body,
+html:has(.cdx) #__next,
+html:has(.cdx) #root,
+html:has(.cdx) #app {
   background-color: #020617 !important;
   color-scheme: dark;
 }
 .cdx {
-  background: #020617 !important;
-  background-color: #020617 !important;
   min-height: 100vh;
+  color-scheme: dark;
+  background-color: #020617 !important;
+  background-image:
+    radial-gradient(900px 520px at 12% -8%, rgba(56, 189, 248, 0.22), transparent 58%),
+    radial-gradient(820px 480px at 88% -12%, rgba(129, 90, 255, 0.20), transparent 55%),
+    radial-gradient(70% 45% at 50% 100%, rgba(12, 74, 110, 0.28), transparent 70%);
+  background-repeat: no-repeat;
 }
 `}</style>
       <footer className="cdx-foot" role="contentinfo">
