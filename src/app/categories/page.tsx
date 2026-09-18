@@ -53,7 +53,7 @@ export default async function CategoriesPage() {
             <span className="badge">Simple flow</span>
             <h2>Category → brief → production</h2>
             <p>Choose a category, describe what you need, and continue inside the Crelavo workspace.</p>
-            <Link className="btn" href="/dashboard/assistant-workspace">Open Work</Link>
+            <Link className="btn" href="/dashboard/create?type=AI%20Video&category=video">Open Work</Link>
           </div>
         </section>
 
@@ -64,7 +64,7 @@ export default async function CategoriesPage() {
           <h2>Use one of the categories above or open Work directly</h2>
           <p>The category page stays focused on choosing the production type. Credit packages and checkout stay on the credits page.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace">Open Work</Link>
+            <Link className="btn" href="/dashboard/create?type=AI%20Video&category=video">Open Work</Link>
             <Link className="btn secondary" href="/dashboard/credits">Open credits</Link>
           </div>
         </section>
