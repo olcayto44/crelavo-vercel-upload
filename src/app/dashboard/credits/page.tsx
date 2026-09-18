@@ -10,7 +10,7 @@ export default function CreditsPage() {
           <a className="on" href="/dashboard/credits">Credits</a>
           <a className="" href="/dashboard/billing">Billing</a>
           <a className="" href="/dashboard/productions">Productions</a>
-          <a className="" href="/dashboard/assistant-workspace">Assistant</a>
+          <a className="" href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
           <a className="" href="/growth-intelligence">Growth Intelligence</a>
           <a className="" href="/dashboard/partners">Partners</a>
           <a className="" href="/pricing">Pricing</a>
