@@ -29,6 +29,7 @@ const INFO_FALLBACK = ["What this video shows", "Best use case", "Crelavo workfl
 const PRO_MO = "/pricing#clp";
 const PRO_YR = "/pricing";
 const POSTER_FALLBACK = "https://www.crelavo.com/showcase/ai-production-studio.webp";
+const FIRST_FRAME_VIDEO_IDS = new Set(["ad-creative-angles-showcase", "crelavo-wow-reel", "crelavo-energy-system", "crelavo-product-story", "phoenix-awakening", "origami-dragon-meteor", "turkish-avatar-hook"]);
 
 function ideaHref(title: string) {
   const base = /video/i.test(title) ? title : `${title} video`;
@@ -45,7 +46,7 @@ function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
     title: INFO_TITLE[row.title] || row.title || INFO_FALLBACK[i],
     text: row.text || "",
   }));
-  const poster = video.imageUrl || POSTER_FALLBACK;
+  const poster = FIRST_FRAME_VIDEO_IDS.has(video.id) ? undefined : video.imageUrl || POSTER_FALLBACK;
 
   return (
     <>
@@ -69,7 +70,7 @@ function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
             <div className="player">
               <video
                 controls muted loop playsInline autoPlay preload="auto"
-                poster={poster}
+                {...(poster ? { poster } : {})}
                 aria-label={`${video.title} Crelavo AI video showcase`}
               >
                 <source src={video.videoUrl} type="video/mp4" />
