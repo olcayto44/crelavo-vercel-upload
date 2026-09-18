@@ -44,15 +44,14 @@ html:has(.cdx) #app {
   background-repeat: no-repeat;
 }
 /* Kit 13: page shell is transparent. Cards keep their own fill. */
-.cdx .cdx-shell {
+.cdx-shell {
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
-  border: 0 !important;
+  border: none !important;
   border-radius: 0 !important;
   max-width: none !important;
   width: 100% !important;
-  min-height: 0 !important;
 }
 `}</style>
       <footer className="cdx-foot" role="contentinfo">

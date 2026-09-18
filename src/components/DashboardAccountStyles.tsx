@@ -14,7 +14,7 @@ const DASHBOARD_ACCOUNT_CSS = `
   min-height: 100vh;
   box-sizing: border-box;
 }
-.cdx .cdx-shell-inner {
+.cdx .cdx-shell > .mx-auto {
   width: 100%;
   max-width: 72rem;
   margin: 0 auto;

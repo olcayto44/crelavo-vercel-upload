@@ -555,8 +555,8 @@ async function sendMessage() {
 
   return (
     <div className={`cdx cdx-lsa${authenticatedUserId ? " is-signed-in" : ""}`}>
-      <div className="cdx-shell w-full" style={{ background: "transparent" }}>
-        <div className="cdx-shell-inner mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <div className="cdx-shell">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
       <nav className="cdx-nav" aria-label="Dashboard">
         <a href="/dashboard">Overview</a>
         <a href="/dashboard/credits">Credits</a>

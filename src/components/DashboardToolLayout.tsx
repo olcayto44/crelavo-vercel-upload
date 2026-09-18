@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 const CDX_CSS = `
 .cdx{font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617;max-width:1120px;margin:0 auto;padding:20px 20px 72px}
-.cdx.cdx-edge-to-edge{max-width:none;margin:0;padding:0}
-.cdx.cdx-edge-to-edge .cdx-shell-inner{width:100%;max-width:72rem;margin:0 auto;padding:20px 20px 72px}
+.cdx.cdx-full-bleed{max-width:none;margin:0;padding:0}
+.cdx.cdx-full-bleed .cdx-shell>.mx-auto{width:100%;max-width:72rem;margin:0 auto;padding:20px 20px 72px}
 .cdx .cdx-top{display:flex;justify-content:flex-end;margin:0 0 16px}
 .cdx .cdx-top a{color:#67e8f9;text-decoration:none;font-size:13px}
 .cdx .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 28px}
@@ -35,7 +35,7 @@ const CDX_CSS = `
 @media(max-width:800px){.cdx .grid,.cdx .row{grid-template-columns:1fr}}
 `;
 
-export function DashboardToolLayout({ id, children, edgeToEdge = false }: { id: string; children: ReactNode; edgeToEdge?: boolean }) {
+export function DashboardToolLayout({ id, children, fullBleed = false }: { id: string; children: ReactNode; fullBleed?: boolean }) {
   const content = (
     <>
       <div className="cdx-top"><a href="/?auth=login">Sign in</a></div>
@@ -56,10 +56,10 @@ export function DashboardToolLayout({ id, children, edgeToEdge = false }: { id: 
   return (
     <main className="container section dashboard-postlaunch-shell">
       <style>{CDX_CSS}</style>
-      <div className={`cdx${edgeToEdge ? " cdx-edge-to-edge" : ""}`} id={id}>
-        {edgeToEdge ? (
-          <div className="cdx-shell w-full" style={{ background: "transparent" }}>
-            <div className="cdx-shell-inner mx-auto w-full max-w-6xl px-4 sm:px-6">{content}</div>
+      <div className={`cdx${fullBleed ? " cdx-full-bleed" : ""}`} id={id}>
+        {fullBleed ? (
+          <div className="cdx-shell">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{content}</div>
           </div>
         ) : content}
       </div>
