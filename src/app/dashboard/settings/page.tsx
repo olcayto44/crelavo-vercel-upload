@@ -1,4 +1,5 @@
 import { DashboardAccountStyles } from "@/components/DashboardAccountStyles";
+import { SettingsAccountPanel } from "@/components/SettingsAccountPanel";
 
 export default function SettingsPage() {
   return (
@@ -23,7 +24,7 @@ export default function SettingsPage() {
 
         <div className="cdx-chip">Settings</div>
         <h1>Account and production settings</h1>
-        <p className="cdx-lead">Brand, production, credits and support from one place. Email, password and 2FA are not on this page yet.</p>
+        <p className="cdx-lead">Brand, production, credits and support from one place. Email, password, 2FA, language, notifications and team stay on this page.</p>
 
         <div className="cdx-grid">
           <article className="cdx-card">
@@ -48,18 +49,7 @@ export default function SettingsPage() {
           </article>
         </div>
 
-        <aside className="cdx-note">
-          <h2>Not on this page</h2>
-          <p>This screen does not change login or workspace preferences. These controls are not built yet:</p>
-          <ul>
-            <li>Email</li>
-            <li>Password</li>
-            <li>Two-factor authentication</li>
-            <li>Language</li>
-            <li>Notifications</li>
-            <li>Team members</li>
-          </ul>
-        </aside>
+        <SettingsAccountPanel />
       </div>
     </main>
   );
