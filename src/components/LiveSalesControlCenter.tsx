@@ -561,7 +561,7 @@ async function sendMessage() {
         <a href="/dashboard/billing">Billing</a>
         <a href="/dashboard/productions">Productions</a>
         <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
-        <a href="/growth-intelligence">Growth Intelligence</a>
+        <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
         <a href="/dashboard/partners">Partners</a>
         <a href="/pricing">Pricing</a>
       </nav>

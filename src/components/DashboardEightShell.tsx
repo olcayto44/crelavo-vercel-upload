@@ -29,7 +29,7 @@ export function DashboardEightShell({ active, kicker, title, lead, columns, chil
       <style id="cl-dash8-css">{dashEightCss}</style>
       <div id="cld8">
         <nav className="path" aria-label="Studio">
-          <a href="/dashboard">Overview</a><a href="/dashboard/credits">Credits</a><a href="/dashboard/billing">Billing</a><a href="/dashboard/productions">Productions</a><a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a><a className={growthIntelligencePrimary ? "on" : undefined} href="/growth-intelligence">Growth Intelligence</a><a href="/dashboard/partners">Partners</a><a href="/pricing">Pricing</a>
+          <a href="/dashboard">Overview</a><a href="/dashboard/credits">Credits</a><a href="/dashboard/billing">Billing</a><a href="/dashboard/productions">Productions</a><a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a><a className={growthIntelligencePrimary ? "on" : undefined} href="/dashboard/growth-intelligence">Growth Intelligence</a><a href="/dashboard/partners">Partners</a><a href="/pricing">Pricing</a>
         </nav>
         <nav className="path" aria-label="Studio tools">
           {tools.map(([label, href, key]) => <a className={active === key ? "on" : undefined} href={href} key={key}>{label}</a>)}

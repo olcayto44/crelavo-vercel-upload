@@ -13,7 +13,7 @@ export default function DashboardPartnersPage() {
           <a className="" href="/dashboard/billing">Billing</a>
           <a className="" href="/dashboard/productions">Productions</a>
           <a className="" href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
-          <a className="" href="/growth-intelligence">Growth Intelligence</a>
+          <a className="" href="/dashboard/growth-intelligence">Growth Intelligence</a>
           <a className="on" href="/dashboard/partners">Partners</a>
           <a className="" href="/pricing">Pricing</a>
         </nav>
