@@ -234,7 +234,7 @@ export function SettingsAccountPanel() {
   const message = (key: string) => <p className={`cdx-set-msg${messages[key]?.error ? " is-err" : ""}`} data-cdx-msg={key} hidden={!messages[key]?.text}>{messages[key]?.text}</p>;
 
   return (
-    <section className={`cdx cdx-settings${authLoaded && !user ? " is-guest" : ""}`} data-cdx="settings-account">
+    <section className={`cdx-settings${authLoaded && !user ? " is-guest" : ""}`} data-cdx="settings-account">
       <style id="cdx-settings-account-css">{SETTINGS_CSS}</style>
       {authLoaded && !user ? <p className="cdx-set-auth" data-cdx-auth-guest>Not signed in? <a href="/?auth=login">Sign in</a> to change login, language, notifications or team.</p> : null}
 

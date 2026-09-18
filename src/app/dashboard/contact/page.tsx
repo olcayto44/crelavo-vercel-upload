@@ -5,6 +5,8 @@ export default function DashboardContactPage() {
     <main className="container section dashboard-postlaunch-shell">
       <DashboardAccountStyles />
       <div className="cdx">
+        <div className="cdx-shell w-full" style={{ background: "transparent" }}>
+          <div className="cdx-shell-inner mx-auto w-full max-w-6xl px-4 sm:px-6">
         <nav className="cdx-pills" aria-label="Dashboard">
           <a href="/dashboard">Overview</a>
           <a href="/dashboard/credits">Credits</a>
@@ -57,6 +59,8 @@ export default function DashboardContactPage() {
             </div>
           </div>
         </aside>
+          </div>
+        </div>
       </div>
     </main>
   );

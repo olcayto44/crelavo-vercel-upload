@@ -3,7 +3,7 @@ import { DashboardToolLayout } from "@/components/DashboardToolLayout";
 
 export default function BrandKitPage() {
   return (
-    <DashboardToolLayout id="brand-kit">
+    <DashboardToolLayout id="brand-kit" edgeToEdge>
       <span className="badge">Brand kit planning</span>
       <h1>Brand assets for production templates</h1>
       <p className="lead">Collect logo, color, font and brand direction so videos, websites, ads and social export packs can reuse the same visual identity.</p>

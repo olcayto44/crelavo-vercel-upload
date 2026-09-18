@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 const CDX_CSS = `
 .cdx{font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617;max-width:1120px;margin:0 auto;padding:20px 20px 72px}
+.cdx.cdx-edge-to-edge{max-width:none;margin:0;padding:0}
+.cdx.cdx-edge-to-edge .cdx-shell-inner{width:100%;max-width:72rem;margin:0 auto;padding:20px 20px 72px}
 .cdx .cdx-top{display:flex;justify-content:flex-end;margin:0 0 16px}
 .cdx .cdx-top a{color:#67e8f9;text-decoration:none;font-size:13px}
 .cdx .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:0 0 28px}
@@ -33,23 +35,33 @@ const CDX_CSS = `
 @media(max-width:800px){.cdx .grid,.cdx .row{grid-template-columns:1fr}}
 `;
 
-export function DashboardToolLayout({ id, children }: { id: string; children: ReactNode }) {
+export function DashboardToolLayout({ id, children, edgeToEdge = false }: { id: string; children: ReactNode; edgeToEdge?: boolean }) {
+  const content = (
+    <>
+      <div className="cdx-top"><a href="/?auth=login">Sign in</a></div>
+      <nav className="pills" aria-label="Dashboard">
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/credits">Credits</a>
+        <a href="/dashboard/billing">Billing</a>
+        <a href="/dashboard/productions">Productions</a>
+        <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
+        <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
+        <a href="/dashboard/partners">Partners</a>
+        <a href="/pricing">Pricing</a>
+      </nav>
+      {children}
+    </>
+  );
+
   return (
     <main className="container section dashboard-postlaunch-shell">
       <style>{CDX_CSS}</style>
-      <div className="cdx" id={id}>
-        <div className="cdx-top"><a href="/?auth=login">Sign in</a></div>
-        <nav className="pills" aria-label="Dashboard">
-          <a href="/dashboard">Overview</a>
-          <a href="/dashboard/credits">Credits</a>
-          <a href="/dashboard/billing">Billing</a>
-          <a href="/dashboard/productions">Productions</a>
-          <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
-          <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
-          <a href="/dashboard/partners">Partners</a>
-          <a href="/pricing">Pricing</a>
-        </nav>
-        {children}
+      <div className={`cdx${edgeToEdge ? " cdx-edge-to-edge" : ""}`} id={id}>
+        {edgeToEdge ? (
+          <div className="cdx-shell w-full" style={{ background: "transparent" }}>
+            <div className="cdx-shell-inner mx-auto w-full max-w-6xl px-4 sm:px-6">{content}</div>
+          </div>
+        ) : content}
       </div>
     </main>
   );

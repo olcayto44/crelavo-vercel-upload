@@ -7,11 +7,18 @@ const DASHBOARD_ACCOUNT_CSS = `
   --cdx-line: rgba(255, 255, 255, 0.08);
   font-family: Inter, system-ui, sans-serif;
   color: #f8fbff;
-  max-width: 1120px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+.cdx .cdx-shell-inner {
+  width: 100%;
+  max-width: 72rem;
   margin: 0 auto;
   padding: 24px 20px 72px;
-  min-height: 70vh;
-  box-sizing: border-box;
 }
 .cdx *,
 .cdx *::before,
