@@ -24,19 +24,65 @@ export function DashboardFooter() {
 }
 .cdx-foot-links a:hover { color: rgb(215, 251, 255); }
 
-/* KIT 10 — dashboard shell: no empty viewport */
-.cdx {
+/* Kit 12 .cdx — transparent page + collapse extra viewport
+   Dashboard only. Do not add to homepage or /pricing. */
+html {
+  background: transparent !important;
+  background-color: transparent !important;
   min-height: 0 !important;
   height: auto !important;
 }
-.cdx main,
-.cdx .cdx-main {
+body {
+  background: transparent !important;
+  background-color: transparent !important;
   min-height: 0 !important;
+  height: auto !important;
+}
+#__next,
+#root,
+#app {
+  background: transparent !important;
+  background-color: transparent !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.cdx {
+  background: transparent !important;
+  background-color: transparent !important;
+  min-height: 0 !important;
+  height: auto !important;
+  display: flex;
+  flex-direction: column;
+}
+.cdx.min-h-screen,
+.cdx.h-screen,
+.cdx.min-h-full,
+.cdx.h-full,
+.cdx.min-h-dvh,
+.cdx.min-h-svh,
+.cdx.min-h-\\[100vh\\],
+.cdx.min-h-\\[100dvh\\] {
+  min-height: 0 !important;
+  height: auto !important;
+}
+.cdx > main,
+.cdx main {
   flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
 }
 .cdx footer,
-.cdx .cdx-footer {
-  margin-top: 48px !important;
+.cdx .cdx-foot {
+  flex: 0 0 auto !important;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+}
+.cdx::before,
+.cdx::after {
+  display: none !important;
+  content: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
 }
 `}</style>
       <footer className="cdx-foot" role="contentinfo">
