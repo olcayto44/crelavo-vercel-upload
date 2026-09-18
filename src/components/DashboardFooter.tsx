@@ -24,65 +24,20 @@ export function DashboardFooter() {
 }
 .cdx-foot-links a:hover { color: rgb(215, 251, 255); }
 
-/* Kit 12 .cdx — transparent page + collapse extra viewport
-   Dashboard only. Do not add to homepage or /pricing. */
-html {
-  background: transparent !important;
-  background-color: transparent !important;
-  min-height: 0 !important;
-  height: auto !important;
-}
-body {
-  background: transparent !important;
-  background-color: transparent !important;
-  min-height: 0 !important;
-  height: auto !important;
-}
-#__next,
-#root,
-#app {
-  background: transparent !important;
-  background-color: transparent !important;
-  min-height: 0 !important;
-  height: auto !important;
+/* Kit 12 — dashboard background only. */
+html:has(.cdx),
+body:has(.cdx),
+#__next:has(.cdx),
+#root:has(.cdx),
+#app:has(.cdx) {
+  background: #020617 !important;
+  background-color: #020617 !important;
+  color-scheme: dark;
 }
 .cdx {
-  background: transparent !important;
-  background-color: transparent !important;
-  min-height: 0 !important;
-  height: auto !important;
-  display: flex;
-  flex-direction: column;
-}
-.cdx.min-h-screen,
-.cdx.h-screen,
-.cdx.min-h-full,
-.cdx.h-full,
-.cdx.min-h-dvh,
-.cdx.min-h-svh,
-.cdx.min-h-\\[100vh\\],
-.cdx.min-h-\\[100dvh\\] {
-  min-height: 0 !important;
-  height: auto !important;
-}
-.cdx > main,
-.cdx main {
-  flex: 0 0 auto !important;
-  min-height: 0 !important;
-  height: auto !important;
-}
-.cdx footer,
-.cdx .cdx-foot {
-  flex: 0 0 auto !important;
-  margin-top: 2rem;
-  margin-bottom: 1.25rem;
-}
-.cdx::before,
-.cdx::after {
-  display: none !important;
-  content: none !important;
-  min-height: 0 !important;
-  height: 0 !important;
+  background: #020617 !important;
+  background-color: #020617 !important;
+  min-height: 100vh;
 }
 `}</style>
       <footer className="cdx-foot" role="contentinfo">
