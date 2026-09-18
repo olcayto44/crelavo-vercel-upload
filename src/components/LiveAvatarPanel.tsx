@@ -12,7 +12,7 @@ type Props = {
 export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
   const sessionRef = useRef<LiveAvatarSession | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState("Önizleme hazır");
+  const [status, setStatus] = useState("Preview ready");
   const [message, setMessage] = useState("");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,7 +27,7 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
     if (busy || started) return;
     setBusy(true);
     setMessage("");
-    setStatus("Oturum hazırlanıyor...");
+    setStatus("Preparing session...");
     try {
       const auth = await requireVerifiedBrowserUser();
       if (!auth.ok) throw new Error(auth.message);
@@ -37,25 +37,25 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
         body: JSON.stringify({ user_id: auth.user.id, agent_id: agentId, language })
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(String(data.error || "Canlı avatar önizlemesi başlatılamadı."));
+      if (!response.ok) throw new Error(String(data.error || "Live avatar preview could not be started."));
 
       const liveSession = new LiveAvatarSession(String(data.session_token), { voiceChat: true });
       sessionRef.current = liveSession;
       liveSession.on(SessionEvent.SESSION_STATE_CHANGED, (value) => setStatus(String(value)));
       liveSession.on(SessionEvent.SESSION_STREAM_READY, () => {
-        setStatus("Canlı önizleme hazır");
+        setStatus("Preview ready");
         setStarted(true);
         if (videoRef.current) void liveSession.attach(videoRef.current);
       });
       await liveSession.start();
       setStarted(true);
       if (videoRef.current) void liveSession.attach(videoRef.current);
-      setStatus("Canlı önizleme bağlandı");
+      setStatus("Live preview connected");
     } catch (error) {
       sessionRef.current = null;
       setStarted(false);
-      setStatus("Önizleme başlatılamadı");
-      setMessage(error instanceof Error ? error.message : "Canlı avatar önizlemesi başlatılamadı.");
+      setStatus("Preview could not be started");
+      setMessage(error instanceof Error ? error.message : "Live avatar preview could not be started.");
     } finally {
       setBusy(false);
     }
@@ -68,7 +68,7 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
       sessionRef.current = null;
       setStarted(false);
       setVoiceActive(false);
-      setStatus("Önizleme durduruldu");
+      setStatus("Preview stopped");
     }
   }
 
@@ -78,9 +78,9 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
     try {
       await sessionRef.current.message(text);
       setInput("");
-      setMessage("Mesaj canlı avatara gönderildi.");
+      setMessage("Message sent to the live avatar.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Mesaj gönderilemedi.");
+      setMessage(error instanceof Error ? error.message : "Message could not be sent.");
     }
   }
 
@@ -90,14 +90,14 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
       if (voiceActive) {
         await sessionRef.current.voiceChat.stop();
         setVoiceActive(false);
-        setStatus("Canlı önizleme açık, mikrofon kapalı");
+        setStatus("Live preview active, microphone off");
       } else {
         await sessionRef.current.voiceChat.start();
         setVoiceActive(true);
-        setStatus("Canlı önizleme açık, mikrofon aktif");
+        setStatus("Live preview active, microphone on");
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Mikrofon başlatılamadı.");
+      setMessage(error instanceof Error ? error.message : "Microphone could not be started.");
     }
   }
 
@@ -107,22 +107,22 @@ export function LiveAvatarPanel({ agentId, language = "en" }: Props) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "0 10px" }}>
         {!started ? (
           <button className="btn" type="button" onClick={startPreview} disabled={busy}>
-            {busy ? "Hazırlanıyor..." : "Canlı avatar önizlemesini başlat"}
+            {busy ? "Preparing..." : "Start live avatar preview"}
           </button>
         ) : (
           <>
-            <button className="btn secondary" type="button" onClick={toggleVoice}>{voiceActive ? "Mikrofonu kapat" : "Mikrofonu aç"}</button>
-            <button className="btn secondary" type="button" onClick={stopPreview}>Önizlemeyi kapat</button>
+            <button className="btn secondary" type="button" onClick={toggleVoice}>{voiceActive ? "Turn microphone off" : "Turn microphone on"}</button>
+            <button className="btn secondary" type="button" onClick={stopPreview}>Stop preview</button>
           </>
         )}
       </div>
       {started ? (
         <div style={{ display: "flex", gap: 8, padding: "0 10px 10px" }}>
-          <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void sendText(); }} placeholder="Canlı avatara test mesajı yazın" />
-          <button className="btn" type="button" onClick={sendText}>Gönder</button>
+          <input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void sendText(); }} placeholder="Type a test message for the live avatar" />
+          <button className="btn" type="button" onClick={sendText}>Send</button>
         </div>
       ) : null}
-      <small style={{ padding: "0 10px 10px", color: "var(--muted)" }}>Durum: {status}</small>
+      <small style={{ padding: "0 10px 10px", color: "var(--muted)" }}>Status: {status}</small>
       {message ? <small style={{ padding: "0 10px 10px", color: "var(--muted)" }}>{message}</small> : null}
     </div>
   );

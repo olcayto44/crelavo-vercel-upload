@@ -78,15 +78,13 @@ const platformGroups = [
 ];
 const platformOptions = platformGroups.flatMap((group) => group.options);
 const availabilityOptions = ["Always active", "Business hours only", "Custom schedule", "Manual start / stop"];
-const agentId = process.env.NEXT_PUBLIC_LIVE_SALES_AGENT_ID || "agent_demo_live_sales_001";
+const agentId = "";
 const publicChatEndpoint = "/api/live-sales-agent-chat";
 const agentConfigEndpoint = "/api/live-sales-agents";
 const avatarPreviewEndpoint = "/api/live-sales-agents/avatar-preview";
 
 
-const starterMessages: ChatMessage[] = [
-  { id: "m1", role: "assistant", text: "Hi, ask me how to connect this avatar to your website, store, or social channel, what it can do, or how many hours it can run." }
-];
+const starterMessages: ChatMessage[] = [];
 
 function initialState(): WorkspaceState {
   return {
@@ -106,13 +104,6 @@ function initialState(): WorkspaceState {
     draftMessage: "",
     chatMessages: starterMessages
   };
-}
-
-function formatMinutes(totalMinutes: number) {
-  const safeMinutes = Math.max(0, Math.round(totalMinutes));
-  const hours = Math.floor(safeMinutes / 60);
-  const minutes = safeMinutes % 60;
-  return `${hours}h ${minutes}m`;
 }
 
 function isDirectVideoUrl(url: string) {
@@ -153,6 +144,7 @@ export function LiveSalesControlCenter() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [agentIdValue, setAgentIdValue] = useState(agentId);
+  const [accountAgentId, setAccountAgentId] = useState("");
   const [authenticatedUserId, setAuthenticatedUserId] = useState("");
  const [conversationId, setConversationId] = useState("");
 const [openPreference, setOpenPreference] = useState("Industry");
@@ -200,6 +192,7 @@ const [openPreference, setOpenPreference] = useState("Industry");
         const agent = data.agent as LiveSalesAgentRecord | null | undefined;
         if (!agent || cancelled) return;
         setAgentIdValue(agent.agent_id || agentId);
+        setAccountAgentId(agent.agent_id || "");
          setAvatarPreview(agent.metadata?.avatarPreview ?? null);
          setSession((agent.metadata?.liveSalesSession as LiveSalesSession | undefined) ?? null);
          setState((current) => ({
@@ -264,11 +257,6 @@ const [openPreference, setOpenPreference] = useState("Industry");
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (error) { setPreviewMessage(error instanceof Error ? error.message : "Could not open avatar preview."); }
   }
-
-  const activePlan = liveSalesServicePlans.find((plan) => plan.id === state.planId) ?? liveSalesServicePlans[0];
-  const includedMinutes = (activePlan?.fairUseHours ?? 10) * 60;
-  const usedMinutes = 0;
-  const remainingMinutes = Math.max(0, includedMinutes - usedMinutes);
 
   useEffect(() => {
     chatWindowRef.current?.scrollTo({ top: chatWindowRef.current.scrollHeight, behavior: "smooth" });
@@ -358,13 +346,13 @@ async function saveAvatarSetup() {
      });
      const data = await response.json().catch(() => ({}));
      if (!response.ok) throw new Error(String(data.error || "Could not save avatar setup."));
-    if (data.agent_id) setAgentIdValue(String(data.agent_id));
+    if (data.agent_id) { setAgentIdValue(String(data.agent_id)); setAccountAgentId(String(data.agent_id)); }
     setSaveMessage(data.saved ? "Avatar setup saved. Embed code is ready." : String(data.message || "Avatar setup draft is ready; database setup is pending."));
-    if (data.agent?.agent_id) setAgentIdValue(String(data.agent.agent_id));
+    if (data.agent?.agent_id) { setAgentIdValue(String(data.agent.agent_id)); setAccountAgentId(String(data.agent.agent_id)); }
     if (data.agent?.metadata?.avatarPreview) setAvatarPreview(data.agent.metadata.avatarPreview as AvatarPreviewRecord);
    } catch (error) {
      localStorage.setItem(storageKey, JSON.stringify(state));
-     setSaveMessage(`Ayarlar bu cihazda kaydedildi. Canlı önizleme mağaza bağlantısı olmadan başlatılabilir. ${error instanceof Error ? error.message : "Sunucu kaydı şu anda tamamlanamadı."}`);
+     setSaveMessage(`Settings were saved on this device. Live preview can start without a store connection. ${error instanceof Error ? error.message : "The server record could not be completed right now."}`);
    } finally {
 
     setSaving(false);
@@ -562,261 +550,128 @@ async function sendMessage() {
 }
 
   return (
-    <div className="live-sales-control-stack live-sales-avatar-layout">
-       <section className="card live-sales-avatar-stage">
+    <div className={`cdx cdx-lsa${authenticatedUserId ? " is-signed-in" : ""}`}>
+      <nav className="cdx-nav" aria-label="Dashboard">
+        <a href="/dashboard">Overview</a>
+        <a href="/dashboard/credits">Credits</a>
+        <a href="/dashboard/billing">Billing</a>
+        <a href="/dashboard/productions">Productions</a>
+        <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
+        <a href="/growth-intelligence">Growth Intelligence</a>
+        <a href="/dashboard/partners">Partners</a>
+        <a href="/pricing">Pricing</a>
+      </nav>
 
-        <div className="live-sales-avatar-frame">
-            <div className="live-sales-avatar-media-stack">
-              <div className="live-sales-avatar-visual">
-                 <LiveAvatarPanel agentId={agentIdValue} language={state.language === "English" ? "en" : state.language.toLowerCase()} />
+      <div className="cdx-sub">
+        <span className="cdx-chip is-active">Live Sales</span>
+      </div>
 
+      <header className="cdx-head">
+        <h1>Live sales agent</h1>
+        <p>HeyGen live avatar for your site, store, or social channel. Preview starts from the left panel. Sign in to publish and load remaining hours.</p>
+      </header>
+
+      <div className="cdx-lsa-grid">
+        <section className="card live-sales-avatar-stage live-sales-avatar-media-stack">
+          <div className="live-sales-avatar-visual">
+            <LiveAvatarPanel agentId={agentIdValue} language={state.language === "English" ? "en" : state.language.toLowerCase()} />
+          </div>
+          <div className="live-sales-avatar-brand-panel">
+            <div className="live-sales-avatar-brand-row">
+              <div className="live-sales-avatar-brand-bar">
+                <div className="live-sales-avatar-brand-mark">C</div>
+                <div className="live-sales-avatar-brand-copy"><strong>Crelavo</strong><span>Live sales assistant</span></div>
               </div>
-              <div className="live-sales-avatar-brand-panel">
-                <div className="live-sales-avatar-brand-row">
-                  <div className="live-sales-avatar-brand-bar">
-                    <div className="live-sales-avatar-brand-mark">C</div>
-                    <div className="live-sales-avatar-brand-copy">
-                      <strong>Crelavo</strong>
-                      <span>Live sales assistant</span>
-                    </div>
+              <div className="live-sales-avatar-provider-pill"><span className="live-sales-avatar-provider-chip">AI LIVE</span><strong>HeyGen LiveAvatar</strong></div>
+            </div>
+          </div>
+          <div className="cdx-plan cdx-guest-only">Sign in to load your live hours <a href="/?auth=login">Sign in</a></div>
+          <div className="cdx-plan cdx-user-only"><span data-live-plan>No live hours yet</span><a href="/live-sales-credits">View live plans</a></div>
+          <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
+            <span className="badge">Where to use</span>
+            <h3 style={{ margin: "6px 0 0" }}>Avatar video targets</h3>
+            <p style={{ color: "var(--muted)", margin: 0 }}>Add the avatar video or widget to websites, stores, marketplaces, or B2B lead pages. Alibaba / B2B works best for catalog presentation, inquiry capture, quote collection, and company profile leads.</p>
+            <div className="social-chip-row" aria-label="Supported avatar destinations">{["Own website", "Shopify", "WooCommerce", "WordPress", "Webflow", "Wix", "Magento", "BigCommerce", "eBay", "Etsy", "Amazon", "Alibaba", "Trendyol", "Hepsiburada", "N11", "TikTok Shop", "Instagram / YouTube", "LinkedIn", "X", "WhatsApp Business"].map((platform) => <span key={platform}>{platform}</span>)}</div>
+          </div>
+        </section>
+
+        <section className="live-sales-avatar-copy">
+          <div className="card selected-billing-card live-sales-preferences-card">
+            <span className="badge">Preferences</span>
+            <div className="live-sales-accordion-list">
+              {preferenceGroups.map((group) => {
+                const isOpen = openPreference === group.label;
+                return (
+                  <div className="live-sales-accordion-item" key={group.label}>
+                    <button className="live-sales-accordion-head cdx-kv" type="button" onClick={() => setOpenPreference(isOpen ? "" : group.label)}><span className="k">{group.label}</span><strong className="v">{group.value}</strong></button>
+                    {isOpen ? <div className="live-sales-option-panel">{group.options.map((option) => <button key={option} type="button" className={`live-sales-option-chip ${group.value === option ? "active" : ""}`} onClick={() => setPreference(group.key, option)}>{option}</button>)}</div> : null}
                   </div>
-                  <div className="live-sales-avatar-provider-pill">
-                    <span className="live-sales-avatar-provider-chip">AI LIVE</span>
-                    <strong>HeyGen LiveAvatar</strong>
-                  </div>
-                </div>
-              </div>
-              <div className="live-sales-plan-strip compact live-sales-avatar-plan-inline">
-                <strong>{activePlan?.name}</strong>
-                <span>{activePlan?.price}</span>
-                <span>{formatMinutes(remainingMinutes)} remaining</span>
-              </div>
-
-              <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
-                <span className="badge">Where to use</span>
-                <h3 style={{ margin: "6px 0 0" }}>Avatar video targets</h3>
-                <p style={{ color: "var(--muted)", margin: 0 }}>Add the avatar video or widget to websites, stores, marketplaces, or B2B lead pages. Alibaba / B2B works best for catalog presentation, inquiry capture, quote collection, and company profile leads.</p>
-                <div className="social-chip-row" aria-label="Supported avatar destinations">
-                  {[
-                    "Own website",
-                    "Shopify",
-                    "WooCommerce",
-                    "WordPress",
-                    "Webflow",
-                    "Wix",
-                    "Magento",
-                    "BigCommerce",
-                    "eBay",
-                    "Etsy",
-                    "Amazon",
-                    "Alibaba",
-                    "Trendyol",
-                    "Hepsiburada",
-                    "N11",
-                    "TikTok Shop",
-                    "Instagram / YouTube",
-                    "LinkedIn",
-                    "X",
-                    "WhatsApp Business"
-                  ].map((platform) => <span key={platform}>{platform}</span>)}
-                </div>
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-
-          <div className="live-sales-avatar-copy">
-            <div className="card selected-billing-card live-sales-preferences-card">
-              <span className="badge">Preferences</span>
-              <div className="live-sales-accordion-list">
-                {preferenceGroups.map((group) => {
-                  const isOpen = openPreference === group.label;
-                  return (
-                    <div className="live-sales-accordion-item" key={group.label}>
-                      <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(isOpen ? "" : group.label)}>
-                        <span>{group.label}</span>
-                        <strong>{group.value}</strong>
-                      </button>
-                      {isOpen ? (
-                        <div className="live-sales-option-panel">
-                          {group.options.map((option) => (
-                            <button
-                              key={option}
-                              type="button"
-                              className={`live-sales-option-chip ${group.value === option ? "active" : ""}`}
-                              onClick={() => setPreference(group.key, option)}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="card selected-billing-card live-sales-preferences-card">
+            <span className="badge">Business knowledge</span>
+            <div className="live-sales-accordion-list">
+              {[{ label: "Product / offer", value: state.productInfo, key: "productInfo" as const }, { label: "Shipping / delivery policy", value: state.shippingInfo, key: "shippingInfo" as const }, { label: "Order support flow", value: state.orderInfo, key: "orderInfo" as const }].map((item) => {
+                const isOpen = openPreference === item.label;
+                return <div className="live-sales-accordion-item" key={item.label}><button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(isOpen ? "" : item.label)}><span>{item.label}</span></button>{isOpen ? <div className="live-sales-option-panel"><textarea rows={3} value={item.value} onChange={(event) => setState((current) => ({ ...current, [item.key]: event.target.value }))} style={{ width: "100%", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "inherit", padding: 12 }} /></div> : null}</div>;
+              })}
             </div>
+          </div>
 
-            <div className="card selected-billing-card live-sales-preferences-card">
-              <span className="badge">Business knowledge</span>
-              <div className="live-sales-accordion-list">
-                {[
-                  { label: "Product / offer", value: state.productInfo, key: "productInfo" as const },
-                  { label: "Shipping / delivery policy", value: state.shippingInfo, key: "shippingInfo" as const },
-                  { label: "Order support flow", value: state.orderInfo, key: "orderInfo" as const }
-                ].map((item) => {
-                  const isOpen = openPreference === item.label;
-                  return (
-                    <div className="live-sales-accordion-item" key={item.label}>
-                      <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(isOpen ? "" : item.label)}>
-                        <span>{item.label}</span>
-                      </button>
-                      {isOpen ? (
-                        <div className="live-sales-option-panel">
-                          <textarea rows={3} value={item.value} onChange={(event) => setState((current) => ({ ...current, [item.key]: event.target.value }))} style={{ width: "100%", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "inherit", padding: 12 }} />
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="card selected-billing-card live-sales-preferences-card">
-              <span className="badge">Publish / Integration</span>
+          <div className="card selected-billing-card live-sales-preferences-card">
+            <section className="cdx-guest-only">
+              <h2>Publish / Integration</h2>
+              <p>Sign in to save this setup, publish, and copy your embed code.</p>
+              <a href="/?auth=login">Sign in</a>
+            </section>
+            <section className="cdx-user-only">
+              <h2>Publish / Integration</h2>
               <button className="btn" type="button" onClick={saveAvatarSetup} disabled={saving} style={{ marginTop: 10, width: "100%" }}>{saving ? "Saving..." : "Save avatar setup"}</button>
               {saveMessage ? <p style={{ color: "var(--muted)", margin: "8px 0 0" }}>{saveMessage}</p> : null}
-              <div className="workspace-action-note" style={{ marginTop: 10 }}>
-<strong>Quick setup</strong>
-                 <p>1) Save the settings. 2) Generate a preview. 3) Add the embed code to your site custom-code area. 4) Connect product, order and shipping data for more accurate answers.</p>
-              </div>
-               <div className="workspace-action-note" style={{ marginTop: 10 }}>
-                 <strong>Canlı önizleme</strong>
-                 <p>Avatar ayarlarını kaydettikten sonra sol taraftaki video alanından HeyGen canlı önizlemesini başlatın. Bu işlem yeni avatar oluşturmaz ve Shopify/WooCommerce bağlantısı gerektirmez.</p>
-               </div>
-
+              <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Quick setup</strong><p>1) Save the settings. 2) Start the preview from the left panel. 3) Add the embed code to your site custom-code area. 4) Connect product, order and shipping data for more accurate answers.</p></div>
+              <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Live preview</strong><p>After you save settings, start the HeyGen live preview from the video panel on the left. This does not create a new avatar and does not need a Shopify/WooCommerce connection.</p></div>
               <div className="live-sales-accordion-list">
                 <div className="live-sales-accordion-item">
-                  <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(openPreference === "Availability" ? "" : "Availability")}>
-                    <span>Availability</span>
-                    <strong>{state.availability}</strong>
-                  </button>
-                  {openPreference === "Availability" ? (
-                    <div className="live-sales-option-panel">
-                      {availabilityOptions.map((option) => (
-                        <button key={option} type="button" className={`live-sales-option-chip ${state.availability === option ? "active" : ""}`} onClick={() => setState((current) => ({ ...current, availability: option }))}>{option}</button>
-                      ))}
-                      {state.availability === "Custom schedule" ? <textarea rows={2} value={state.customSchedule} onChange={(event) => setState((current) => ({ ...current, customSchedule: event.target.value }))} style={{ width: "100%", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "inherit", padding: 12 }} /> : null}
-                    </div>
-                  ) : null}
+                  <button className="live-sales-accordion-head cdx-kv" type="button" onClick={() => setOpenPreference(openPreference === "Availability" ? "" : "Availability")}><span className="k">Availability</span><strong className="v">{state.availability}</strong></button>
+                  {openPreference === "Availability" ? <div className="live-sales-option-panel">{availabilityOptions.map((option) => <button key={option} type="button" className={`live-sales-option-chip ${state.availability === option ? "active" : ""}`} onClick={() => setState((current) => ({ ...current, availability: option }))}>{option}</button>)}{state.availability === "Custom schedule" ? <textarea rows={2} value={state.customSchedule} onChange={(event) => setState((current) => ({ ...current, customSchedule: event.target.value }))} style={{ width: "100%", borderRadius: 16, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "inherit", padding: 12 }} /> : null}</div> : null}
                 </div>
                 <div className="live-sales-accordion-item">
-                  <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(openPreference === "Platform guide" ? "" : "Platform guide")}>
-                    <span>Platform guide</span>
-                    <strong>{state.platform}</strong>
-                  </button>
-                  {openPreference === "Platform guide" ? (
-                    <div className="live-sales-option-panel">
-                      <p style={{ color: "var(--muted)", margin: 0 }}>{platformGuide(state.platform)}</p>
-                    </div>
-                  ) : null}
+                  <button className="live-sales-accordion-head cdx-kv" type="button" onClick={() => setOpenPreference(openPreference === "Platform guide" ? "" : "Platform guide")}><span className="k">Platform guide</span><strong className="v">{state.platform}</strong></button>
+                  {openPreference === "Platform guide" ? <div className="live-sales-option-panel"><p style={{ color: "var(--muted)", margin: 0 }}>{platformGuide(state.platform)}</p></div> : null}
                 </div>
                 <div className="live-sales-accordion-item">
-                  <button className="live-sales-accordion-head" type="button" onClick={() => setOpenPreference(openPreference === "Embed code" ? "" : "Embed code")}>
-                    <span>Embed code</span>
-                    <strong>{agentIdValue}</strong>
-                  </button>
-                  {openPreference === "Embed code" ? (
-                    <div className="live-sales-option-panel">
-                      <pre className="live-sales-code-block">{embedCode(state.platform, agentIdValue)}</pre>
-                      <button className="live-sales-option-chip active" type="button" onClick={() => navigator.clipboard?.writeText(embedCode(state.platform, agentIdValue))}>Copy code</button>
-                    </div>
-                  ) : null}
+                  <div className="cdx-kv cdx-user-only"><span className="k">Embed code</span><span className="v cdx-embed-val" id="live-embed-id">{accountAgentId}</span></div>
+                  {accountAgentId ? <div className="live-sales-option-panel"><pre className="live-sales-code-block">{embedCode(state.platform, accountAgentId)}</pre><button className="live-sales-option-chip active" type="button" onClick={() => navigator.clipboard?.writeText(embedCode(state.platform, accountAgentId))}>Copy code</button></div> : null}
                 </div>
               </div>
-            </div>
+            </section>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <aside className="card live-sales-assistant-rail">
-        <span className="badge">Assistant</span>
-        <h3>Live sales assistant</h3>
-         <p style={{ color: "var(--muted)" }}>Type or speak as a customer and test the assistant response.</p>
-         <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
-            <strong>Canlı oturum: Sol panelden yönetilir</strong>
-            <p style={{ color: "var(--muted)", margin: 0 }}>Önizleme veya canlı oturum için mağaza bağlantısı gerekmez. Shopify/WooCommerce yalnızca katalog, sipariş ve sepet işlemleri için bağlanır.</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button className="btn secondary" type="button" onClick={loadCommerceCatalog}>Kataloğu yenile</button>
-            </div>
+        <aside className="card live-sales-assistant-rail">
+          <span className="badge">Customer test</span>
+          <h3>Test as a customer</h3>
+          <p style={{ color: "var(--muted)" }}>Type or speak as a customer. The live avatar session is the HeyGen panel on the left.</p>
+          <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+            <strong>Live session: managed from the left panel</strong>
+            <p style={{ color: "var(--muted)", margin: 0 }}>Store connection is not required for preview or a live session. Shopify/WooCommerce are only for catalog, order, and cart actions.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="btn secondary" type="button" onClick={loadCommerceCatalog}>Refresh catalog</button></div>
             {sessionMessage ? <small style={{ color: "var(--muted)" }}>{sessionMessage}</small> : null}
-
-           {catalogMessage ? <small style={{ color: "var(--muted)" }}>{catalogMessage}</small> : null}
-           {session ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("json")}>Download JSON</button><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("md")}>Download Markdown</button></div> : null}
-         </div>
-
-        <div className="live-sales-chat-window" ref={chatWindowRef}>
-          {state.chatMessages.map((message) => (
-            <div className={`chat-bubble${message.role === "user" ? " user" : ""}`} key={message.id}>
-              {message.text}
-            </div>
-          ))}
-          {sending ? (
-            <div className="chat-bubble typing-indicator" aria-live="polite">
-              <span className="typing-label">Live assistant is thinking...</span>
-              <span className="typing-dots" aria-hidden="true"><i /><i /><i /></span>
-            </div>
-          ) : null}
-         </div>
-         {chatActions.length ? <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Suggested actions</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{chatActions.map((action, index) => action.product_id ? <button key={`${action.type}-${action.product_id}-${index}`} className="live-sales-option-chip active" type="button" onClick={() => executeCommerceAction(action.type === "checkout_intent" ? "checkout" : "add_to_cart", action.product_id || "")}>{action.type === "checkout_intent" ? "Confirm checkout" : action.type === "add_to_cart_intent" ? "Confirm add to cart" : `Show ${action.title || "product"}`}</button> : null)}</div></div> : null}
-
-         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[
-            "How do I connect this?",
-            "What can it do?",
-            "How many hours can it run?",
-            "How do I use it on Shopify?",
-            "How do I use it on social media?"
-          ].map((label) => (
-            <button
-              key={label}
-              type="button"
-              className="btn secondary"
-              style={{ padding: "8px 12px", fontSize: 12 }}
-              onClick={() => setState((current) => ({ ...current, draftMessage: label }))}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "grid", gap: 10 }}>
-          <textarea
-            value={state.draftMessage}
-            onChange={(event) => setState((current) => ({ ...current, draftMessage: event.target.value }))}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-              }
-            }}
-            placeholder="Ask as a customer about product, price, order or shipping..."
-            rows={4}
-            style={{
-              width: "100%",
-              resize: "vertical",
-              borderRadius: 18,
-              border: "1px solid rgba(255,255,255,.12)",
-              background: "rgba(255,255,255,.04)",
-              color: "inherit",
-              padding: 14
-            }}
-          />
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button className="btn" type="button" onClick={sendMessage} disabled={sending}>{sending ? "Thinking..." : "Send"}</button>
-            <button className="btn secondary" type="button">Microphone</button>
+            {catalogMessage ? <small style={{ color: "var(--muted)" }}>{catalogMessage}</small> : null}
+            {session ? <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("json")}>Download JSON</button><button className="live-sales-option-chip" type="button" onClick={() => sessionTranscript("md")}>Download Markdown</button></div> : null}
           </div>
-        </div>
-      </aside>
+          <div className="live-sales-chat-window" ref={chatWindowRef}>{state.chatMessages.map((message) => <div className={`chat-bubble${message.role === "user" ? " user" : ""}`} key={message.id}>{message.text}</div>)}{sending ? <div className="chat-bubble typing-indicator" aria-live="polite"><span className="typing-label">Live assistant is thinking...</span><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span></div> : null}</div>
+          {chatActions.length ? <div className="workspace-action-note" style={{ marginTop: 10 }}><strong>Suggested actions</strong><div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>{chatActions.map((action, index) => action.product_id ? <button key={`${action.type}-${action.product_id}-${index}`} className="live-sales-option-chip active" type="button" onClick={() => executeCommerceAction(action.type === "checkout_intent" ? "checkout" : "add_to_cart", action.product_id || "")}>{action.type === "checkout_intent" ? "Confirm checkout" : action.type === "add_to_cart_intent" ? "Confirm add to cart" : `Show ${action.title || "product"}`}</button> : null)}</div></div> : null}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{["How do I connect this?", "What can it do?", "How many hours can it run?", "How do I use it on Shopify?", "How do I use it on social media?"].map((label) => <button key={label} type="button" className="btn secondary" style={{ padding: "8px 12px", fontSize: 12 }} onClick={() => setState((current) => ({ ...current, draftMessage: label }))}>{label}</button>)}</div>
+          <div style={{ display: "grid", gap: 10 }}>
+            <textarea value={state.draftMessage} onChange={(event) => setState((current) => ({ ...current, draftMessage: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} placeholder="Ask as a customer about product, price, order or shipping..." rows={4} style={{ width: "100%", resize: "vertical", borderRadius: 18, border: "1px solid rgba(255,255,255,.12)", background: "rgba(255,255,255,.04)", color: "inherit", padding: 14 }} />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn" type="button" onClick={sendMessage} disabled={sending}>{sending ? "Thinking..." : "Send"}</button><button className="btn secondary" type="button">Microphone</button></div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
