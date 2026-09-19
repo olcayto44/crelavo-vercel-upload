@@ -1,3 +1,13 @@
+import type { ReactNode } from "react";
+
+export const CDX_GLOW = {
+  backgroundColor: "#020617",
+  minHeight: "100vh",
+  backgroundImage:
+    "radial-gradient(900px 520px at 12% -8%, rgba(56, 189, 248, 0.22), transparent 58%), radial-gradient(820px 480px at 88% -12%, rgba(129, 90, 255, 0.20), transparent 55%), radial-gradient(70% 45% at 50% 100%, rgba(12, 74, 110, 0.28), transparent 70%)",
+  backgroundRepeat: "no-repeat" as const,
+};
+
 const DASHBOARD_ACCOUNT_CSS = `
 .cdx {
   --cdx-cyan: #22d3ee;
@@ -190,6 +200,16 @@ const DASHBOARD_ACCOUNT_CSS = `
 }
 `;
 
-export function DashboardAccountStyles() {
-  return <style>{DASHBOARD_ACCOUNT_CSS}</style>;
+export function DashboardAccountStyles({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
+  return (
+    <>
+      <style>{DASHBOARD_ACCOUNT_CSS}</style>
+      <div className="cdx" style={CDX_GLOW}>
+        <div className="cdx-shell">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">{children}</div>
+        </div>
+        {footer}
+      </div>
+    </>
+  );
 }

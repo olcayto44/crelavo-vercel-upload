@@ -1,12 +1,10 @@
 import { DashboardAccountStyles } from "@/components/DashboardAccountStyles";
+import { DashboardFooter } from "@/components/DashboardFooter";
 
 export default function DashboardContactPage() {
   return (
     <main className="container section dashboard-postlaunch-shell">
-      <DashboardAccountStyles />
-      <div className="cdx">
-        <div className="cdx-shell">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <DashboardAccountStyles footer={<DashboardFooter />}>
         <nav className="cdx-pills" aria-label="Dashboard">
           <a href="/dashboard">Overview</a>
           <a href="/dashboard/credits">Credits</a>
@@ -59,9 +57,7 @@ export default function DashboardContactPage() {
             </div>
           </div>
         </aside>
-          </div>
-        </div>
-      </div>
+      </DashboardAccountStyles>
     </main>
   );
 }

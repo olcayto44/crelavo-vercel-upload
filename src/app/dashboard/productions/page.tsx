@@ -1,4 +1,5 @@
 import { DashboardAccountStyles } from "@/components/DashboardAccountStyles";
+import { DashboardFooter } from "@/components/DashboardFooter";
 
 const PRODUCTIONS_CSS = `
 .cdx-nav a {
@@ -116,11 +117,8 @@ const PRODUCTIONS_CSS = `
 export default function MyProductionsPage() {
   return (
     <main className="container section">
-      <DashboardAccountStyles />
       <style id="kit-5-productions-css">{PRODUCTIONS_CSS}</style>
-      <div className="cdx">
-        <div className="cdx-shell">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <DashboardAccountStyles footer={<DashboardFooter />}>
         <nav className="cdx-nav" aria-label="Dashboard">
           <a href="/dashboard">Overview</a>
           <a href="/dashboard/credits">Credits</a>
@@ -165,9 +163,7 @@ export default function MyProductionsPage() {
             <a className="cdx-btn-ghost" href="/dashboard/credits">View credits</a>
           </article>
         </div>
-          </div>
-        </div>
-      </div>
+      </DashboardAccountStyles>
     </main>
   );
 }

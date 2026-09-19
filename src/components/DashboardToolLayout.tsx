@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { CDX_GLOW } from "@/components/DashboardAccountStyles";
+import { DashboardFooter } from "@/components/DashboardFooter";
 
 const CDX_CSS = `
 .cdx{font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617;max-width:1120px;margin:0 auto;padding:20px 20px 72px}
@@ -53,16 +55,24 @@ export function DashboardToolLayout({ id, children, fullBleed = false }: { id: s
     </>
   );
 
+  if (fullBleed) {
+    return (
+      <main className="container section dashboard-postlaunch-shell">
+        <style>{CDX_CSS}</style>
+        <div className="cdx cdx-full-bleed" id={id} style={CDX_GLOW}>
+          <div className="cdx-shell w-full">
+            <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">{content}</div>
+          </div>
+          <DashboardFooter />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="container section dashboard-postlaunch-shell">
       <style>{CDX_CSS}</style>
-      <div className={`cdx${fullBleed ? " cdx-full-bleed" : ""}`} id={id}>
-        {fullBleed ? (
-          <div className="cdx-shell">
-            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{content}</div>
-          </div>
-        ) : content}
-      </div>
+      <div className="cdx" id={id}>{content}</div>
     </main>
   );
 }

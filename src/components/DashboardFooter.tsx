@@ -43,15 +43,19 @@ html:has(.cdx) #app {
     radial-gradient(70% 45% at 50% 100%, rgba(12, 74, 110, 0.28), transparent 70%);
   background-repeat: no-repeat;
 }
-/* Kit 13: page shell is transparent. Cards keep their own fill. */
+/* Kit 13 — siyah sütun. Kit 12 glow kalsın. */
 .cdx-shell {
   background: transparent !important;
+  background-color: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
-  border: none !important;
+  border: 0 !important;
   border-radius: 0 !important;
   max-width: none !important;
   width: 100% !important;
+  min-height: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 `}</style>
       <footer className="cdx-foot" role="contentinfo">
