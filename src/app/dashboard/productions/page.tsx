@@ -116,7 +116,7 @@ const PRODUCTIONS_CSS = `
 
 export default function MyProductionsPage() {
   return (
-    <main className="container section">
+    <main className="cdx-full-page">
       <style id="kit-5-productions-css">{PRODUCTIONS_CSS}</style>
       <DashboardAccountStyles footer={<DashboardFooter />}>
         <nav className="cdx-nav" aria-label="Dashboard">

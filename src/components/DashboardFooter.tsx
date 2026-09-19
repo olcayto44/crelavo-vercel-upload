@@ -57,6 +57,13 @@ html:has(.cdx) #app {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
+html body main.cdx-full-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: clip !important;
+}
 `}</style>
       <footer className="cdx-foot" role="contentinfo">
         <p className="cdx-foot-copy">© {new Date().getFullYear()} Crelavo. All rights reserved.</p>

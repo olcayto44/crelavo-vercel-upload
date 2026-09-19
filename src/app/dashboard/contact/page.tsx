@@ -3,7 +3,7 @@ import { DashboardFooter } from "@/components/DashboardFooter";
 
 export default function DashboardContactPage() {
   return (
-    <main className="container section dashboard-postlaunch-shell">
+    <main className="cdx-full-page">
       <DashboardAccountStyles footer={<DashboardFooter />}>
         <nav className="cdx-pills" aria-label="Dashboard">
           <a href="/dashboard">Overview</a>

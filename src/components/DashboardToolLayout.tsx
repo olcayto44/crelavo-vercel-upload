@@ -57,7 +57,7 @@ export function DashboardToolLayout({ id, children, fullBleed = false }: { id: s
 
   if (fullBleed) {
     return (
-      <main className="container section dashboard-postlaunch-shell">
+      <main className="cdx-full-page">
         <style>{CDX_CSS}</style>
         <div className="cdx cdx-full-bleed" id={id} style={CDX_GLOW}>
           <div className="cdx-shell w-full">
