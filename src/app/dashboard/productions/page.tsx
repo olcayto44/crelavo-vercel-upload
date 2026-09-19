@@ -43,10 +43,10 @@ const PRODUCTIONS_CSS = `
 .cdx {
   display: block !important;
   width: 100% !important;
-  max-width: 1120px !important;
+  max-width: none !important;
   min-width: 0 !important;
-  margin: 0 auto !important;
-  padding: 12px 24px 64px !important;
+  margin: 0 !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
   float: none !important;
   grid-column: 1 / -1 !important;
