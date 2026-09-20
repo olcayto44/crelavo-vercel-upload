@@ -1,358 +1,308 @@
-"use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useSearchParams } from 'next/navigation';
+
+const BUILD = 'aw4';
+const ROOT_ID = 'crelavo-aw-thread';
+const JOB_KEYS = ['crelavo-aw-last-v2', 'crelavo-aw-last-v3', 'crelavo-aw-last', 'crelavo-aw-selected'];
+
 type CreditState =
-  | { kind: "loading" }
-  | { kind: "signed_out" }
-  | { kind: "unknown" }
-  | { kind: "number"; value: number };
-type BoardItem = { n: string; status: string; kicker: string; title: string; body: string; tone: string };
-const VIDEO_BOARD: BoardItem[] = [
-  { n: "01", status: "READY", kicker: "SCENE 01 / SELECTED", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", tone: "linear-gradient(180deg,#c4a06a 0%,#6a4a28 42%,#1a120c 100%)" },
-  { n: "02", status: "REVISING", kicker: "SCENE 02 / SELECTED", title: "Close-up turn, warm rim light on the label", body: "Product rotates. Glass catches a highlight. Hold on the mark.", tone: "linear-gradient(180deg,#d7b48a 0%,#8a5a32 40%,#140e0a 100%)" },
-  { n: "03", status: "RENDERING", kicker: "SCENE 03 / SELECTED", title: "Hands sleeve the product in kraft paper", body: "Fingers fold. Tape press. Small pause before the lift.", tone: "linear-gradient(180deg,#b08968 0%,#5c3d2a 44%,#100c09 100%)" },
-  { n: "04", status: "QUEUED", kicker: "SCENE 04 / SELECTED", title: "Night counter, one lamp, slow pullback", body: "Practical light only. Room falls off. End on the silhouette.", tone: "linear-gradient(180deg,#8a6a4a 0%,#3a281c 46%,#0b0907 100%)" },
+  | { kind: 'loading' }
+  | { kind: 'signed_out' }
+  | { kind: 'unknown' }
+  | { kind: 'value'; n: number };
+
+type Item = { id: string; kicker: string; title: string; body: string; chip: string };
+
+const VIDEO: Item[] = [
+  { id: '1', kicker: 'SCENE 01 / SELECTED', title: 'Morning window, product on a pale oak shelf', body: 'Soft sidelight. Dust in the beam. Hold, then a slow push.', chip: '01 READY' },
+  { id: '2', kicker: 'SCENE 02 / SELECTED', title: 'Counter close-up, steam and ceramic', body: 'Hands enter frame. Cut on the pour.', chip: '02 REVISING' },
+  { id: '3', kicker: 'SCENE 03 / SELECTED', title: 'Night street, storefront neon', body: 'Slow dolly. Reflections on wet stone.', chip: '03 RENDERING' },
+  { id: '4', kicker: 'SCENE 04 / SELECTED', title: 'Pack shot, black cyc', body: 'Rotate, then hold for the mark.', chip: '04 QUEUED' },
 ];
-const WEBSITE_BOARD: BoardItem[] = [
-  { n: "01", status: "HOME", kicker: "PAGE 01 / HOME", title: "Home", body: "Hero, proof, and one clear start.", tone: "linear-gradient(180deg,#c4a06a 0%,#6a4a28 42%,#1a120c 100%)" },
-  { n: "02", status: "CATALOG", kicker: "PAGE 02 / CATALOG", title: "Catalog", body: "Grid of products, price, one add action.", tone: "linear-gradient(180deg,#d7b48a 0%,#8a5a32 40%,#140e0a 100%)" },
-  { n: "03", status: "STORY", kicker: "PAGE 03 / STORY", title: "Story", body: "Brand proof, materials, why it exists.", tone: "linear-gradient(180deg,#b08968 0%,#5c3d2a 44%,#100c09 100%)" },
-  { n: "04", status: "CHECKOUT", kicker: "PAGE 04 / CHECKOUT", title: "Checkout", body: "Order summary, pay, confirmation.", tone: "linear-gradient(180deg,#8a6a4a 0%,#3a281c 46%,#0b0907 100%)" },
+
+const WEB: Item[] = [
+  { id: '1', kicker: 'PAGE 01 / HOME', title: 'Home', body: 'Hero, proof, and one clear start.', chip: '01 HOME' },
+  { id: '2', kicker: 'PAGE 02 / CATALOG', title: 'Catalog', body: 'Grid of offers, one tap to a product.', chip: '02 CATALOG' },
+  { id: '3', kicker: 'PAGE 03 / STORY', title: 'Story', body: 'Why it exists, in a short scroll.', chip: '03 STORY' },
+  { id: '4', kicker: 'PAGE 04 / CHECKOUT', title: 'Checkout', body: 'Price, promise, pay.', chip: '04 CHECKOUT' },
 ];
-const JWT_RE = /eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/;
-const BALANCE_KEYS = ["balance", "credits", "credit_balance", "available_credits", "remaining_credits", "available", "remaining"];
+
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
 }
-function isJwt(value: unknown): value is string { return typeof value === "string" && JWT_RE.test(value); }
-function pickJwt(value: unknown): string | null {
-  if (isJwt(value)) { const found = value.match(JWT_RE); return found ? found[0] : null; }
-  return null;
-}
-function decodeMaybe(raw: string): string {
-  let value = raw;
-  try { value = decodeURIComponent(value); } catch { /* keep */ }
-  if (value.startsWith("base64-")) { try { value = atob(value.slice(7)); } catch { /* keep */ } }
-  return value;
-}
-function tokenFromUnknown(input: unknown, depth = 0): string | null {
-  if (input == null || depth > 6) return null;
-  const jwt = pickJwt(input);
-  if (jwt) return jwt;
-  if (typeof input === "string") {
-    const trimmed = decodeMaybe(input).trim();
-    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-      try { return tokenFromUnknown(JSON.parse(trimmed), depth + 1); } catch { return pickJwt(trimmed); }
+
+function forgetOldScene() {
+  if (typeof window === 'undefined') return;
+  try {
+    for (const k of JOB_KEYS) {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
     }
-    return pickJwt(trimmed);
+  } catch { /* ignore */ }
+}
+
+function findJwt(input: unknown, depth = 0): string | null {
+  if (depth > 6 || input == null) return null;
+  if (typeof input === 'string') {
+    const s = input.trim();
+    if (s.split('.').length === 3 && s.startsWith('eyJ')) return s;
+    if ((s.startsWith('{') || s.startsWith('[')) && s.length > 10) {
+      try { return findJwt(JSON.parse(s), depth + 1); } catch { return null; }
+    }
+    try { return findJwt(JSON.parse(decodeURIComponent(s)), depth + 1); } catch { return null; }
   }
   if (Array.isArray(input)) {
-    for (const item of input) { const found = tokenFromUnknown(item, depth + 1); if (found) return found; }
+    for (const x of input) { const t = findJwt(x, depth + 1); if (t) return t; }
     return null;
   }
-  if (typeof input === "object") {
-    const rec = input as Record<string, unknown>;
-    for (const key of ["access_token", "accessToken", "token"]) {
-      if (key in rec) { const found = tokenFromUnknown(rec[key], depth + 1); if (found) return found; }
+  if (typeof input === 'object') {
+    const o = input as Record<string, unknown>;
+    for (const k of ['access_token', 'accessToken', 'token']) {
+      const t = findJwt(o[k], depth + 1);
+      if (t) return t;
     }
-    if (rec.currentSession) { const found = tokenFromUnknown(rec.currentSession, depth + 1); if (found) return found; }
-    if (rec.session) { const found = tokenFromUnknown(rec.session, depth + 1); if (found) return found; }
-    for (const value of Object.values(rec)) { const found = tokenFromUnknown(value, depth + 1); if (found) return found; }
+    for (const v of Object.values(o)) {
+      const t = findJwt(v, depth + 1);
+      if (t) return t;
+    }
   }
   return null;
 }
-function readStorageStores(): Array<Storage | null> {
-  try { return [window.localStorage, window.sessionStorage]; } catch { return []; }
-}
-function readAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  for (const store of readStorageStores()) {
-    if (!store) continue;
-    for (let i = 0; i < store.length; i += 1) {
-      const key = store.key(i);
-      if (!key) continue;
-      if (!/sb-.*auth|supabase|access.token|crelavo.*auth|auth-token/i.test(key) && !key.includes("auth-token")) {
-        if (!key.startsWith("sb-")) continue;
-      }
-      try { const found = tokenFromUnknown(store.getItem(key)); if (found) return found; } catch { /* next */ }
-    }
-  }
+
+async function readAccessToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
   try {
-    const cookieMap = new Map<string, string[]>();
-    for (const part of document.cookie.split(";")) {
-      const idx = part.indexOf("=");
-      if (idx < 0) continue;
-      const name = part.slice(0, idx).trim();
-      const value = part.slice(idx + 1).trim();
-      if (!name) continue;
-      const list = cookieMap.get(name) || [];
-      list.push(value);
-      cookieMap.set(name, list);
+    const w = window as Window & { supabase?: { auth?: { getSession?: () => Promise<unknown> } } };
+    if (w.supabase?.auth?.getSession) {
+      const res = (await w.supabase.auth.getSession()) as { data?: { session?: { access_token?: string } } };
+      const t = res?.data?.session?.access_token;
+      if (t && t.split('.').length === 3) return t;
     }
-    const names = Array.from(cookieMap.keys()).sort();
-    const joined = new Map<string, string>();
-    for (const name of names) {
-      const chunk = name.match(/^(.*-auth-token)\.(\d+)$/);
-      if (chunk) {
-        const base = chunk[1];
-        joined.set(base, (joined.get(base) || "") + (cookieMap.get(name)?.[0] || ""));
+  } catch { /* ignore */ }
+  try {
+    for (const store of [localStorage, sessionStorage]) {
+      const chunkMap = new Map<string, string[]>();
+      for (let i = 0; i < store.length; i += 1) {
+        const k = store.key(i);
+        if (!k) continue;
+        const v = store.getItem(k);
+        if (!v || v.length > 400000) continue;
+        const m = k.match(/^(.*auth-token)\.(\d+)$/i);
+        if (m) {
+          const arr = chunkMap.get(m[1]) || [];
+          arr[Number(m[2])] = v;
+          chunkMap.set(m[1], arr);
+          continue;
+        }
+        const t = findJwt(v);
+        if (t) return t;
+      }
+      for (const arr of chunkMap.values()) {
+        const t = findJwt(arr.join(''));
+        if (t) return t;
       }
     }
-    for (const [name, values] of cookieMap) {
-      if (!/sb-|supabase|auth-token|access/i.test(name)) continue;
-      for (const value of values) { const found = tokenFromUnknown(value); if (found) return found; }
+    const cookie = document.cookie;
+    if (cookie) {
+      for (const part of cookie.split(';')) {
+        const val = decodeURIComponent(part.trim().split('=').slice(1).join('='));
+        const t = findJwt(val);
+        if (t) return t;
+      }
     }
-    for (const value of joined.values()) { const found = tokenFromUnknown(value); if (found) return found; }
-  } catch { /* ignore cookie parse */ }
+  } catch { /* ignore */ }
   return null;
 }
-function isCatalogPayload(data: unknown): boolean {
-  if (!data || typeof data !== "object") return false;
-  const rec = data as Record<string, unknown>;
-  if (Array.isArray(rec.plans) || Array.isArray(rec.products) || Array.isArray(rec.packs)) return true;
-  if (Array.isArray(rec.prices) || rec.catalog || rec.pricing) return true;
+
+function sessionHint(): boolean {
+  try {
+    if (/sb-|supabase|auth-token|access_token/i.test(document.cookie)) return true;
+    for (const store of [localStorage, sessionStorage]) {
+      for (let i = 0; i < store.length; i += 1) {
+        const k = store.key(i) || '';
+        if (/sb-|supabase|auth-token|access_token/i.test(k)) return true;
+      }
+    }
+  } catch { /* ignore */ }
   return false;
 }
-function isSignedOutPayload(data: unknown, status?: number): boolean {
-  if (status === 401 || status === 403) return true;
-  if (!data || typeof data !== "object") return false;
-  const rec = data as Record<string, unknown>;
-  const blob = `${rec.error || ""} ${rec.message || ""} ${rec.code || ""}`.toLowerCase();
-  if (blob.includes("session") || blob.includes("sign_in") || blob.includes("sign in")) return true;
-  if (blob.includes("unauthorized") || blob.includes("unauthenticated")) return true;
-  if (rec.ok === false && String(rec.code) === "sign_in") return true;
-  return false;
-}
-function pickBalance(data: unknown): number | null {
-  if (typeof data === "number" && Number.isFinite(data)) return data;
-  if (typeof data === "string" && data.trim() !== "" && Number.isFinite(Number(data))) return Number(data);
-  if (!data || typeof data !== "object") return null;
-  if (Array.isArray(data) || isCatalogPayload(data)) return null;
-  const rec = data as Record<string, unknown>;
-  for (const key of BALANCE_KEYS) {
-    if (!(key in rec)) continue;
-    const value = rec[key];
-    if (typeof value === "number" && Number.isFinite(value)) return value;
-    if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+
+function parseCredits(data: unknown): number | null {
+  if (!data || typeof data !== 'object') return null;
+  const o = data as Record<string, unknown>;
+  if (o.error) return null;
+  if (Array.isArray(o.plans) || Array.isArray(o.products) || Array.isArray(o.packs) || Array.isArray(o.items) || o.catalog) return null;
+  const bag: unknown[] = [o, o.data, o.credits, o.balance, o.user, o.account, o.credit_balances];
+  for (const b of bag) {
+    if (typeof b === 'number' && Number.isFinite(b)) return b;
+    if (!b || typeof b !== 'object' || Array.isArray(b)) continue;
+    const rec = b as Record<string, unknown>;
+    for (const k of ['balance', 'credits', 'amount', 'remaining', 'available', 'total', 'value']) {
+      const n = rec[k];
+      if (typeof n === 'number' && Number.isFinite(n)) return n;
+      if (typeof n === 'string' && n.trim() !== '' && Number.isFinite(Number(n))) return Number(n);
+    }
   }
   return null;
 }
-function parseCredits(data: unknown, status?: number): CreditState {
-  if (isSignedOutPayload(data, status)) return { kind: "signed_out" };
-  if (isCatalogPayload(data)) return { kind: "unknown" };
-  const roots = [data, data && typeof data === "object" ? (data as Record<string, unknown>).data : null, data && typeof data === "object" ? (data as Record<string, unknown>).result : null];
-  for (const root of roots) { const n = pickBalance(root); if (n != null) return { kind: "number", value: n }; }
-  return { kind: "unknown" };
-}
-function formatCredits(value: number): string { return new Intl.NumberFormat("en-US").format(value); }
-function boardKindFromLocation(): "video" | "website" {
-  if (typeof window === "undefined") return "video";
-  const query = new URLSearchParams(window.location.search);
-  const type = `${query.get("type") || ""} ${query.get("category") || ""}`.toLowerCase();
-  if (type.includes("website") || type.includes("site")) return "website";
-  return "video";
-}
-function forgetStoredSceneTwo() {
-  for (const store of readStorageStores()) {
-    if (!store) continue;
-    for (const key of ["crelavo-aw-last-v2", "crelavo-aw-last", "crelavo-aw-selected"]) {
-      try {
-        const raw = store.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") {
-          delete parsed.selected;
-          delete parsed.selectedIndex;
-          delete parsed.scene;
-          delete parsed.sceneIndex;
-          store.setItem(key, JSON.stringify(parsed));
-        }
-      } catch { /* leave */ }
-    }
-  }
-}
-async function loadCredits(): Promise<CreditState> {
-  const token = readAccessToken();
-  const headers: Record<string, string> = { Accept: "application/json" };
+
+async function fetchCredits(token: string | null): Promise<number | null> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const urls = ["/api/credits/balance", "/api/credits"];
-  let sawSignedOut = false;
-  let sawUnknown = false;
-  for (const url of urls) {
+  for (const url of ['/api/credits/balance', '/api/credits']) {
     try {
-      const res = await fetch(url, { method: "GET", credentials: "same-origin", headers, cache: "no-store" });
-      let data: unknown = null;
+      const res = await fetch(url, { method: 'GET', headers, credentials: 'include', cache: 'no-store' });
       const text = await res.text();
-      try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-      const parsed = parseCredits(data, res.status);
-      if (parsed.kind === "number") return parsed;
-      if (parsed.kind === "signed_out") sawSignedOut = true;
-      if (parsed.kind === "unknown") sawUnknown = true;
-    } catch { sawUnknown = true; }
+      let data: unknown = null;
+      try { data = JSON.parse(text); } catch { continue; }
+      const n = parseCredits(data);
+      if (typeof n === 'number') return n;
+    } catch { /* never show Failed to fetch */ }
   }
-  if (token && sawUnknown) return { kind: "unknown" };
-  if (sawSignedOut && !token) return { kind: "signed_out" };
-  if (sawSignedOut && token) return { kind: "unknown" };
-  if (token) return { kind: "unknown" };
-  return { kind: "signed_out" };
+  return null;
 }
+
 export default function AssistantPage() {
-  const [kind, setKind] = useState<"video" | "website">("video");
+  const sp = useSearchParams();
+  const website = useMemo(() => {
+    const t = `${sp.get('type') || ''} ${sp.get('category') || ''}`.toLowerCase();
+    return t.includes('website') || t.includes('site');
+  }, [sp]);
+  const [items, setItems] = useState<Item[]>(website ? WEB : VIDEO);
   const [selected, setSelected] = useState(0);
-  const [draft, setDraft] = useState("");
-  const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
-  const [goOpen, setGoOpen] = useState(false);
-  const [narrow, setNarrow] = useState(false);
-  const [notes, setNotes] = useState<Record<number, string>>({});
-  const [frame, setFrame] = useState({ width: 0, height: 0, fill: false });
-  const shellRef = useRef<HTMLDivElement | null>(null);
-  const slotRef = useRef<HTMLDivElement | null>(null);
-  const board = kind === "website" ? WEBSITE_BOARD : VIDEO_BOARD;
-  const item = board[selected] ?? board[0];
-  const measure = useCallback(() => {
-    const slot = slotRef.current;
-    const width = typeof window !== "undefined" ? window.innerWidth : 1440;
-    const isNarrow = width < 720;
-    setNarrow(isNarrow);
-    if (!slot) return;
-    const sw = slot.clientWidth;
-    const sh = slot.clientHeight;
-    if (sw < 8 || sh < 8) return;
-    if (isNarrow) { setFrame({ width: sw, height: sh, fill: true }); return; }
-    const byWidth = sw;
-    const byHeight = sh * (16 / 9);
-    const frameW = Math.max(1, Math.min(byWidth, byHeight));
-    const frameH = frameW * (9 / 16);
-    setFrame({ width: frameW, height: Math.min(frameH, sh), fill: false });
-  }, []);
-  useEffect(() => { setKind(boardKindFromLocation()); setSelected(0); forgetStoredSceneTwo(); }, []);
+  const [draft, setDraft] = useState('');
+  const [go, setGo] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [vp, setVp] = useState({ w: 0, h: 0 });
+  const [credits, setCredits] = useState<CreditState>({ kind: 'loading' });
+
+  useEffect(() => { setItems(website ? WEB : VIDEO); setSelected(0); }, [website]);
   useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    const hidden: Array<{ el: HTMLElement; v: string }> = [];
-    document.querySelectorAll("footer").forEach((el) => {
-      hidden.push({ el: el as HTMLElement, v: (el as HTMLElement).style.visibility });
-      (el as HTMLElement).style.visibility = "hidden";
-    });
+    forgetOldScene();
+    setMounted(true);
+    const apply = () => {
+      const w = window.visualViewport?.width ?? window.innerWidth;
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      setVp({ w, h });
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      document.body.style.overscrollBehavior = 'none';
+    };
+    apply();
+    window.visualViewport?.addEventListener('resize', apply);
+    window.addEventListener('resize', apply);
     return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-      hidden.forEach(({ el, v }) => { el.style.visibility = v; });
+      window.visualViewport?.removeEventListener('resize', apply);
+      window.removeEventListener('resize', apply);
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.overscrollBehavior = '';
     };
   }, []);
-  useEffect(() => {
-    measure();
-    const slot = slotRef.current;
-    const ro = slot ? new ResizeObserver(() => measure()) : null;
-    if (slot && ro) ro.observe(slot);
-    const onResize = () => measure();
-    window.addEventListener("resize", onResize);
-    window.visualViewport?.addEventListener("resize", onResize);
-    return () => { ro?.disconnect(); window.removeEventListener("resize", onResize); window.visualViewport?.removeEventListener("resize", onResize); };
-  }, [measure]);
-  useEffect(() => {
-    let alive = true;
-    const run = async () => { const next = await loadCredits(); if (alive) setCredits(next); };
-    run();
-    const id = window.setInterval(run, 15000);
-    const onVis = () => { if (document.visibilityState === "visible") run(); };
-    document.addEventListener("visibilitychange", onVis);
-    return () => { alive = false; window.clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+
+  const loadCredits = useCallback(async () => {
+    setCredits({ kind: 'loading' });
+    await new Promise((r) => setTimeout(r, 60));
+    let token = await readAccessToken();
+    if (!token) {
+      await new Promise((r) => setTimeout(r, 280));
+      token = await readAccessToken();
+    }
+    const n = await fetchCredits(token);
+    if (typeof n === 'number') { setCredits({ kind: 'value', n }); return; }
+    if (token || sessionHint()) setCredits({ kind: 'unknown' });
+    else setCredits({ kind: 'signed_out' });
   }, []);
-  const creditLabel = useMemo(() => {
-    if (credits.kind === "loading") return "...";
-    if (credits.kind === "signed_out") return "SIGN IN";
-    if (credits.kind === "unknown") return "--";
-    return formatCredits(credits.value);
-  }, [credits]);
-  const creditHref = credits.kind === "signed_out" ? "/?auth=login" : "/pricing";
-  function onSend() {
+
+  useEffect(() => {
+    if (!mounted) return;
+    void loadCredits();
+    const onVis = () => { if (document.visibilityState === 'visible') void loadCredits(); };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onVis);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onVis);
+    };
+  }, [mounted, loadCredits]);
+
+  const onSend = () => {
     const text = draft.trim();
     if (!text) return;
-    setNotes((prev) => ({ ...prev, [selected]: text }));
-    setDraft("");
-  }
-  return (
-    <div id="crelavo-aw-thread" ref={shellRef} style={S.shell}>
-      <header style={S.header}>
-        <div style={S.headerLeft}>
-          <a href="/" style={S.home}>&lt; Home</a>
-          <a href="/" style={S.nav}>CRELAVO</a>
-          <a href="/dashboard" style={S.nav}>DASHBOARD</a>
-          <a href="/pricing" style={S.nav}>CREDITS</a>
-          <a href="/dashboard/productions" style={S.nav}>PRODUCTIONS</a>
+    setItems((prev) => prev.map((it, i) => (i === selected ? { ...it, body: text } : it)));
+    setDraft('');
+  };
+
+  const current = items[selected] || items[0];
+  const creditLabel = credits.kind === 'loading' ? '...' : credits.kind === 'signed_out' ? 'SIGN IN' : credits.kind === 'unknown' ? '--' : String(credits.n);
+  const creditHref = credits.kind === 'signed_out' ? '/?auth=login' : '/pricing';
+
+  const shell = (
+    <div id={ROOT_ID} data-aw-build={BUILD} className="aw4-root" style={{ position: 'fixed', inset: 0, zIndex: 2147483000, width: vp.w ? `${vp.w}px` : '100vw', height: vp.h ? `${vp.h}px` : '100dvh', overflow: 'hidden', background: '#070605', color: '#f4eee6', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .aw4-root, .aw4-root * { box-sizing: border-box; }
+        .aw4-root a { color: inherit; text-decoration: none; }
+        .aw4-nav { display: flex; gap: 18px; align-items: center; }
+        .aw4-go { display: none; }
+        .aw4-live { display: flex; }
+        @media (max-width: 720px) {
+          .aw4-nav { display: none !important; }
+          .aw4-go { display: flex !important; }
+          .aw4-live { display: none !important; }
+        }
+        .aw4-pill { border: 1px solid rgba(244,238,230,0.22); border-radius: 999px; padding: 6px 12px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; background: transparent; color: #f4eee6; white-space: nowrap; }
+        .aw4-chip { flex: 1; border: 1px solid rgba(244,238,230,0.18); background: transparent; color: rgba(244,238,230,0.55); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 10px 8px; cursor: pointer; }
+        .aw4-chip.on { background: rgba(244,238,230,0.12); color: #f4eee6; }
+        .aw4-input { flex: 1; background: transparent; border: 1px solid rgba(244,238,230,0.18); border-radius: 999px; color: #f4eee6; padding: 10px 16px; outline: none; font-size: 14px; }
+        .aw4-send { border: 0; border-radius: 999px; background: #f4eee6; color: #070605; font-size: 11px; letter-spacing: 0.12em; font-weight: 600; padding: 12px 16px; cursor: pointer; }
+      `}</style>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <a href="/" className="aw4-pill">{'< Home'}</a>
+          <nav className="aw4-nav" style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.8 }}>
+            <a href="/dashboard">Crelavo</a><a href="/dashboard">Dashboard</a><a href="/pricing">Credits</a><a href="/dashboard/productions">Productions</a>
+          </nav>
         </div>
-        <div style={S.headerRight}>
-          {narrow ? <button type="button" style={S.go} onClick={() => setGoOpen(true)}>GO</button> : null}
-          <a href={creditHref} style={S.sign}>{creditLabel}</a>
-          <span style={S.live}>LIVE · PRO $9.99/MO</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <a href={creditHref} className="aw4-pill">{creditLabel}</a>
+          <span className="aw4-live" style={{ fontSize: 11, letterSpacing: '0.12em', opacity: 0.7 }}>LIVE &middot; PRO $9.99/MO</span>
+          <button type="button" className="aw4-pill aw4-go" onClick={() => setGo(true)}>GO</button>
         </div>
       </header>
-      <div ref={slotRef} style={S.slot}>
-        <div key={`${kind}-${item.n}`} style={{ ...S.stage, width: frame.width || "100%", height: frame.height || "100%", background: item.tone, borderRadius: frame.fill ? 0 : 2 }}>
-          <div style={S.stageCopy}>
-            <div style={S.kicker}>{item.kicker}</div>
-            <div style={S.title}>{item.title}</div>
-            <div style={S.body}>{notes[selected] || item.body}</div>
-          </div>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, #c4a574 0%, #6b4a28 52%, #140c08 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '28px 24px' }}>
+          <div style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.7 }}>{current.kicker}</div>
+          <div style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(22px, 3vw, 34px)', marginTop: 8 }}>{current.title}</div>
+          <div style={{ fontSize: 14, opacity: 0.8, marginTop: 6, maxWidth: 640 }}>{current.body}</div>
         </div>
       </div>
-      <div style={S.dock}>
-        <div style={S.reviseLabel}>REVISE THIS SCENE / PRODUCTION CONTINUES</div>
-        <div style={S.strip}>
-          {board.map((entry, index) => (
-            <button key={entry.n} type="button" onClick={() => setSelected(index)} style={{ ...S.stripBtn, background: index === selected ? "#2a2a2a" : "transparent" }}>{entry.n} {entry.status}</button>
-          ))}
+      <div style={{ flexShrink: 0, padding: '8px 12px 12px', background: '#070605' }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.55, marginBottom: 8 }}>Revise this scene / production continues</div>
+        <div style={{ display: 'flex', gap: 0, marginBottom: 10 }}>
+          {items.map((it, i) => <button key={it.id} type="button" className={`aw4-chip${i === selected ? ' on' : ''}`} onClick={() => setSelected(i)}>{it.chip}</button>)}
         </div>
-        <div style={S.composer}>
-          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") onSend(); }} placeholder="Make this part like this?" style={S.input} />
-          <button type="button" onClick={onSend} style={S.send}>SEND</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input className="aw4-input" value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') onSend(); }} placeholder="Make this part like this?" />
+          <button type="button" className="aw4-send" onClick={onSend}>SEND</button>
         </div>
       </div>
-      {goOpen ? (
-        <div style={S.sheet} onClick={() => setGoOpen(false)}>
-          <div style={S.sheetCard} onClick={(e) => e.stopPropagation()}>
-            <a href="/" style={S.sheetLink}>Home</a>
-            <a href="/dashboard" style={S.sheetLink}>Dashboard</a>
-            <a href="/pricing" style={S.sheetLink}>Credits</a>
-            <a href="/dashboard/productions" style={S.sheetLink}>Productions</a>
-            <a href={creditHref} style={S.sheetLink}>{creditLabel}</a>
-            <button type="button" style={S.sheetClose} onClick={() => setGoOpen(false)}>Close</button>
-          </div>
+      {go ? (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(7,6,5,0.92)', zIndex: 2, display: 'flex', flexDirection: 'column', padding: 24, gap: 18 }}>
+          <button type="button" className="aw4-pill" onClick={() => setGo(false)} style={{ alignSelf: 'flex-end' }}>Close</button>
+          <a href="/" onClick={() => setGo(false)}>Home</a>
+          <a href="/dashboard" onClick={() => setGo(false)}>Dashboard</a>
+          <a href="/pricing" onClick={() => setGo(false)}>Credits</a>
+          <a href="/dashboard/productions" onClick={() => setGo(false)}>Productions</a>
+          <a href={creditHref} onClick={() => setGo(false)}>{creditLabel}</a>
         </div>
       ) : null}
     </div>
   );
+
+  if (!mounted) return <div style={{ position: 'fixed', inset: 0, background: '#070605' }} />;
+  return createPortal(shell, document.body);
 }
-const S: Record<string, React.CSSProperties> = {
-  shell: { position: "fixed", inset: 0, zIndex: 2147483000, display: "flex", flexDirection: "column", background: "#070605", color: "#f4eee6", overflow: "hidden", fontFamily: "Inter, system-ui, sans-serif" },
-  header: { height: 52, flex: "0 0 52px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", borderBottom: "1px solid rgba(244,238,230,0.08)", gap: 12 },
-  headerLeft: { display: "flex", alignItems: "center", gap: 14, minWidth: 0 },
-  headerRight: { display: "flex", alignItems: "center", gap: 10, flexShrink: 0 },
-  home: { display: "inline-flex", alignItems: "center", height: 28, padding: "0 10px", borderRadius: 999, border: "1px solid rgba(244,238,230,0.14)", color: "#f4eee6", textDecoration: "none", fontSize: 12 },
-  nav: { color: "rgba(244,238,230,0.72)", textDecoration: "none", fontSize: 11, letterSpacing: "0.12em" },
-  sign: { display: "inline-flex", alignItems: "center", height: 28, padding: "0 12px", borderRadius: 999, border: "1px solid rgba(244,238,230,0.18)", color: "#f4eee6", textDecoration: "none", fontSize: 11, letterSpacing: "0.08em" },
-  live: { fontSize: 10, letterSpacing: "0.12em", color: "rgba(244,238,230,0.55)" },
-  go: { height: 28, padding: "0 10px", borderRadius: 999, border: "1px solid rgba(244,238,230,0.18)", background: "transparent", color: "#f4eee6", fontSize: 11, letterSpacing: "0.12em" },
-  slot: { flex: "1 1 auto", minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  stage: { position: "relative", overflow: "hidden", boxShadow: "inset 0 0 0 1px rgba(244,238,230,0.08)" },
-  stageCopy: { position: "absolute", left: 24, right: 24, bottom: 24, color: "#f4eee6" },
-  kicker: { fontSize: 11, letterSpacing: "0.18em", opacity: 0.7, marginBottom: 8 },
-  title: { fontFamily: "Georgia, Times, serif", fontSize: 28, lineHeight: 1.15, marginBottom: 6 },
-  body: { fontSize: 14, opacity: 0.82, maxWidth: 640 },
-  dock: { flex: "0 0 auto", borderTop: "1px solid rgba(244,238,230,0.08)", padding: "8px 12px 12px" },
-  reviseLabel: { fontSize: 10, letterSpacing: "0.16em", color: "rgba(244,238,230,0.45)", marginBottom: 8 },
-  strip: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, marginBottom: 10 },
-  stripBtn: { height: 36, border: "1px solid rgba(244,238,230,0.12)", color: "rgba(244,238,230,0.8)", fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" },
-  composer: { display: "flex", gap: 8, alignItems: "center" },
-  input: { flex: 1, height: 40, borderRadius: 999, border: "1px solid rgba(244,238,230,0.16)", background: "transparent", color: "#f4eee6", padding: "0 16px", fontSize: 14, outline: "none" },
-  send: { height: 40, padding: "0 16px", borderRadius: 999, border: "none", background: "#f4eee6", color: "#140e0a", fontSize: 12, letterSpacing: "0.12em", cursor: "pointer" },
-  sheet: { position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-end", justifyContent: "center" },
-  sheetCard: { width: "100%", background: "#120e0c", padding: 16, display: "flex", flexDirection: "column", gap: 8 },
-  sheetLink: { color: "#f4eee6", textDecoration: "none", padding: "10px 4px", borderBottom: "1px solid rgba(244,238,230,0.08)" },
-  sheetClose: { marginTop: 8, height: 40, borderRadius: 999, border: "1px solid rgba(244,238,230,0.18)", background: "transparent", color: "#f4eee6" },
-};
