@@ -1,308 +1,316 @@
 "use client";
 
-import { useEffect } from "react";
-import { supabaseBrowser } from "@/lib/supabase";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { usePathname } from "next/navigation";
 
+const MARK = "aw-boot-route-v4-noleak";
 const STORE = "crelavo-aw-last-v2";
-const OVERLAY_ID = "crelavo-aw-overlay";
-const THREAD_ID = "crelavo-aw-thread";
 const FILL = "rgb(7, 11, 24)";
-const Z = "2147483000";
-const SKIP_RE = /ugc lipstick|16:9 product hero|coffee landing|studio site|does not start production|download html|400 credits|pro \$9\.99/i;
+const THREAD = "crelavo-aw-thread";
 
-type WorkJob = {
-  brief?: string;
-  type?: string;
-  category?: string;
-  json?: any;
-  html?: string;
-  localNote?: string;
-  accent?: string;
-  layout?: "stack" | "grid";
-};
-
-function qparams() {
-  const p = new URLSearchParams(location.search);
-  return { type: p.get("type") || p.get("idea") || "AI Video", category: p.get("category") || "video" };
+function isAssistantPath(pathname: string) {
+  const p = (pathname || "").split("?")[0];
+  return p === "/dashboard/create" || p.startsWith("/dashboard/create/") || p === "/dashboard/assistant-workspace" || p.startsWith("/dashboard/assistant-workspace/");
 }
-function readStore(): WorkJob | null {
+function loadLast(): any | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(STORE) || localStorage.getItem(STORE) || "";
-    if (!raw) return null;
-    const v = JSON.parse(raw);
-    return v && typeof v === "object" ? v : null;
+    const raw = sessionStorage.getItem(STORE) || localStorage.getItem(STORE);
+    return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
-function writeStore(job: WorkJob) {
+function saveLast(job: any) {
   try {
-    const s = JSON.stringify(job);
-    sessionStorage.setItem(STORE, s);
-    localStorage.setItem(STORE, s);
+    const raw = JSON.stringify(job);
+    sessionStorage.setItem(STORE, raw);
+    localStorage.setItem(STORE, raw);
   } catch { /* ignore quota */ }
 }
-function textOf(el: EventTarget | null) {
-  if (!el || !(el as HTMLElement).closest) return "";
-  const n = el as HTMLElement;
-  return (n.innerText || n.getAttribute("aria-label") || n.getAttribute("title") || "").replace(/\s+/g, " ").trim();
+function getType() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get("type") || p.get("idea") || "";
 }
-function closestText(el: EventTarget | null) {
-  let n = el as HTMLElement | null;
-  const parts: string[] = [];
-  while (n && n !== document.body) { parts.push(textOf(n)); n = n.parentElement; }
-  return parts.join(" ");
+function getCategory() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get("category") || "";
 }
-function isLiveEl(el: Element) {
-  const t = (el as HTMLElement).innerText?.replace(/\s+/g, " ").trim() || "";
-  return t === "LIVE" || t === "Live";
+function getComposerField(): HTMLTextAreaElement | HTMLInputElement | HTMLElement | null {
+  const ta = document.querySelector("textarea");
+  if (ta instanceof HTMLTextAreaElement) return ta;
+  const nodes = Array.from(document.querySelectorAll("input, [contenteditable='true']")) as HTMLElement[];
+  return nodes.find((el) => /describe what to make/i.test(el.getAttribute("placeholder") || el.getAttribute("aria-label") || "")) || null;
 }
-function escapeHtml(s: string) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-function escapeAttr(s: string) { return escapeHtml(s).replace(/"/g, "&quot;"); }
-function btnStyle() { return "background:#0b1220;color:#e8eef8;border:0;border-radius:999px;padding:8px 12px;font-size:12px;cursor:pointer"; }
-function downloadBlob(data: string, filename: string, type: string) {
-  const blob = new Blob([data], { type });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+function readComposer() {
+  const el = getComposerField();
+  if (!el) return "";
+  if ("value" in el) return String((el as HTMLTextAreaElement).value || "").trim();
+  return String(el.textContent || "").trim();
+}
+function clearComposer() {
+  const el = getComposerField();
+  if (!el) return;
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+    const proto = Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype, "value");
+    proto?.set?.call(el, "");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+  el.textContent = "";
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
+function restoreCollector() {
+  document.querySelectorAll("[data-aw-hide]").forEach((node) => {
+    const el = node as HTMLElement;
+    el.style.visibility = el.dataset.awVis || "";
+    el.style.pointerEvents = el.dataset.awPe || "";
+    delete el.dataset.awHide;
+    delete el.dataset.awVis;
+    delete el.dataset.awPe;
+  });
+}
+function hideCollector() {
+  const hideRe = /what should we make|coffee landing|studio site|ugc lipstick|16:9 product hero|does not start production|pick options, then send a message/i;
+  const keepRe = /describe what to make|pro \$9\.99|^live$/i;
+  const all = Array.from(document.querySelectorAll("body *")) as HTMLElement[];
+  for (const el of all) {
+    if (el.id === THREAD || el.closest("#" + THREAD)) continue;
+    if (el.closest("textarea, input, [contenteditable='true']")) continue;
+    if (el.querySelector("textarea, input, [contenteditable='true']")) continue;
+    const t = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (!t || t.length > 180 || !hideRe.test(t) || keepRe.test(t)) continue;
+    if (!el.dataset.awHide) {
+      el.dataset.awHide = "1";
+      el.dataset.awVis = el.style.visibility || "";
+      el.dataset.awPe = el.style.pointerEvents || "";
+    }
+    el.style.visibility = "hidden";
+    el.style.pointerEvents = "none";
+  }
+}
+function measureBox() {
+  let top = 108, bottom = 156;
+  const outputs = Array.from(document.querySelectorAll("a,button,span,div")).find((el) => (el.textContent || "").trim() === "Outputs" && el.getBoundingClientRect().height < 48 && el.getBoundingClientRect().top < 140);
+  if (outputs) {
+    let bar: HTMLElement | null = outputs as HTMLElement;
+    for (let i = 0; i < 6 && bar; i++) {
+      const h = bar.getBoundingClientRect().height;
+      if (h > 36 && h < 96) break;
+      bar = bar.parentElement;
+    }
+    if (bar) top = Math.max(64, Math.round(bar.getBoundingClientRect().bottom));
+  }
+  const field = getComposerField();
+  if (field) {
+    const wrap = field.closest("form") || field.parentElement?.parentElement || field.parentElement;
+    const r = (wrap || field).getBoundingClientRect();
+    bottom = Math.max(96, Math.round(window.innerHeight - r.top));
+  }
+  return { top, bottom };
+}
+function labelOf(el: Element) {
+  return `${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.replace(/\s+/g, " ").trim();
+}
+function skipTarget(el: Element) {
+  const t = labelOf(el);
+  if (/coffee landing|studio site|ugc lipstick|16:9 product hero|does not start production|download html|400 credits|pro \$9\.99/i.test(t)) return true;
+  if (/^live$/i.test(t) || (/live/i.test(t) && t.length <= 8)) return true;
+  return false;
+}
+function isLiveFab(el: Element) {
+  const r = el.getBoundingClientRect();
+  if (/^live$/i.test((el.textContent || "").trim())) return true;
+  return r.right > window.innerWidth - 92 && r.bottom > window.innerHeight - 240 && r.width <= 80 && r.height <= 80;
+}
+function isSendControl(el: Element) {
+  const btn = el.closest("button");
+  if (!btn || skipTarget(btn) || isLiveFab(btn) || /pro\s*\$9\.99/i.test(labelOf(btn))) return false;
+  const label = labelOf(btn);
+  if (/send|submit/i.test(label) || (/[??]/.test(label) && label.length < 8)) return true;
+  const r = btn.getBoundingClientRect();
+  return r.bottom > window.innerHeight - 200 && r.width <= 56 && r.height <= 56 && r.left > 40 && r.right < window.innerWidth - 92;
+}
+function fromServer(json: any, userText: string) {
+  const d = json?.data ?? json?.result ?? json ?? {};
+  const scenes = d.scenes || d.storyboard?.scenes || (Array.isArray(d.storyboard) ? d.storyboard : null);
+  const signIn = json?.code === "sign_in" || d.code === "sign_in" ? json?.message || d.message || "Sign in to start production." : "";
+  return {
+    userText,
+    assistantText: signIn || d.message || d.assistantText || d.text || d.output || "",
+    html: d.html || d.previewHtml || d.preview || "",
+    scenes: Array.isArray(scenes) ? scenes : null,
+    charged: d.charged ?? d.charge ?? json?.charged ?? 0,
+    available: d.available ?? d.balance ?? json?.available ?? null,
+    http: json?.http || d.http || json?.status || 200,
+    warning: d.warning || signIn || "",
+    raw: d,
+    busy: false,
+  };
+}
+async function api(body: any) {
+  const res = await fetch("/api/assistant-work", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  let json: any = null;
+  try { json = await res.json(); } catch { json = { ok: false, message: "Bad response" }; }
+  return { ok: res.ok, status: res.status, json };
+}
+function sceneText(scene: any, i: number) {
+  if (typeof scene === "string") return { title: `SCENE ${i + 1}`, body: scene };
+  return { title: scene.title || scene.heading || scene.name || `SCENE ${i + 1}`, body: scene.text || scene.body || scene.content || scene.description || "" };
 }
 
 export default function AssistantWorkBoot() {
+  const pathname = usePathname() || "";
+  const onAssistant = isAssistantPath(pathname);
+  const [mounted, setMounted] = useState(false);
+  const [job, setJob] = useState<any>(null);
+  const [box, setBox] = useState({ top: 108, bottom: 156 });
+  const jobRef = useRef<any>(null);
+  const busyRef = useRef(false);
+  jobRef.current = job;
+
   useEffect(() => {
-    let job: WorkJob | null = readStore();
-    let overlay: HTMLDivElement | null = null;
-    let hideTimer: number | null = null;
-    const origFetch = window.fetch.bind(window);
-    let posting = false;
-
-    function ensureOverlay() {
-      overlay = document.getElementById(OVERLAY_ID) as HTMLDivElement | null;
-      if (overlay) return overlay;
-      overlay = document.createElement("div");
-      overlay.id = OVERLAY_ID;
-      overlay.setAttribute("data-aw-boot", "hide-v3-fullbleed");
-      overlay.style.cssText = [
-        "position:fixed", "left:0", "right:0", "top:108px", "bottom:156px", `background:${FILL}`,
-        `z-index:${Z}`, "overflow:auto", "border:none", "border-radius:0", "box-shadow:none", "color:#e8eef8",
-        "font-family:Inter,ui-sans-serif,system-ui,sans-serif", "display:none",
-      ].join(";");
-      const thread = document.createElement("div");
-      thread.id = THREAD_ID;
-      thread.style.cssText = "min-height:280px;padding:18px 22px 28px;";
-      overlay.appendChild(thread);
-      document.body.appendChild(overlay);
-      return overlay;
+    setMounted(true);
+    document.querySelectorAll("#" + THREAD).forEach((n) => { if (n.getAttribute("data-aw-react") !== "1") n.remove(); });
+  }, []);
+  useEffect(() => {
+    if (!onAssistant) {
+      restoreCollector();
+      document.querySelectorAll("#" + THREAD).forEach((n) => n.remove());
+      return;
     }
-    function raiseLive() {
-      for (const el of Array.from(document.querySelectorAll<HTMLElement>("button,a,div"))) {
-        if (overlay?.contains(el) || !isLiveEl(el)) continue;
-        const btn = (el.closest("button,a") as HTMLElement) || el;
-        btn.style.zIndex = "2147483001";
-        if (getComputedStyle(btn).position === "static") btn.style.position = "relative";
-      }
-    }
-    function place() {
-      const ov = ensureOverlay();
-      let top = 108, bottom = 156;
-      for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
-        if (ov.contains(el)) continue;
-        const t = (el.innerText || "").replace(/\s+/g, " ").trim();
-        if (t === "Outputs" || t === "AI Video") {
-          const r = el.getBoundingClientRect();
-          if (r.bottom > 40 && r.bottom < 160) top = Math.max(top, Math.round(r.bottom));
-        }
-        if (/^Describe what to make/i.test(t) && t.length < 80) {
-          const r = el.getBoundingClientRect();
-          if (r.top > 200) bottom = Math.max(120, Math.round(innerHeight - r.top));
-        }
-      }
-      const ta = document.querySelector("textarea");
-      if (ta) {
-        const r = ta.getBoundingClientRect();
-        if (r.top > 200) bottom = Math.max(120, Math.round(innerHeight - r.top + 8));
-      }
-      Object.assign(ov.style, { top: `${top}px`, bottom: `${bottom}px`, left: "0", right: "0", border: "none", borderRadius: "0", boxShadow: "none", background: FILL });
-      raiseLive();
-    }
-    function hideCollector() {
-      const ov = document.getElementById(OVERLAY_ID) as HTMLDivElement | null;
-      if (!ov || ov.style.display === "none") {
-        document.querySelectorAll("[data-aw-hid]").forEach((n) => {
-          const el = n as HTMLElement;
-          el.style.visibility = ""; el.style.pointerEvents = ""; el.removeAttribute("data-aw-hid");
-        });
-        return;
-      }
-      const band = ov.getBoundingClientRect();
-      for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("body *"))) {
-        if (el === document.body || el === document.documentElement || el.id === OVERLAY_ID || ov.contains(el)) continue;
-        if (el.id === "crelavo-aw-boot-copy" || ["SCRIPT", "STYLE", "LINK"].includes(el.tagName) || el.closest?.(`#${OVERLAY_ID}`)) continue;
-        let keep = false, p: HTMLElement | null = el;
-        while (p && p !== document.body) { if (isLiveEl(p)) keep = true; p = p.parentElement; }
-        if (keep) continue;
-        const r = el.getBoundingClientRect();
-        if (r.width < 2 || r.height < 2 || r.bottom <= band.top + 2 || r.top >= band.bottom - 2) continue;
-        if (r.top >= band.top - 4 && r.bottom <= band.bottom + 4) {
-          el.setAttribute("data-aw-hid", "1"); el.style.visibility = "hidden"; el.style.pointerEvents = "none";
-        }
-      }
-      raiseLive();
-    }
-    function showOverlay() { const ov = ensureOverlay(); ov.style.display = "block"; place(); hideCollector(); }
-    function jobIdOf(json: any) { return json?.jobId || json?.id || json?.workId || json?.work_id || ""; }
-    function htmlOf(json: any) { return json?.html || json?.resultHtml || json?.previewHtml || ""; }
-    function scenesOf(json: any) { return json?.scenes || json?.storyboard || json?.result?.scenes || null; }
-
-    function renderJob(next: WorkJob, statusLine?: string) {
-      job = next; writeStore(next);
-      const ov = ensureOverlay();
-      const thread = ov.querySelector(`#${THREAD_ID}`) as HTMLDivElement;
-      if (!thread) return;
-      const json = next.json || {}, html = next.html || htmlOf(json), scenes = scenesOf(json);
-      const msg = json.message || json.result || json.text || json.assistant || (typeof json.output === "string" ? json.output : "");
-      const charged = json.charged ?? json.charge ?? json.spent, available = json.available ?? json.balance, http = json.http || json.status;
-      const accent = next.accent || "rgba(34,211,238,.9)", layout = next.layout || "grid";
-      const userBubble = next.brief ? `<div style="display:flex;justify-content:flex-end;margin:0 0 14px"><div style="max-width:72%;background:#10243a;color:#f8fbff;border-radius:16px;padding:10px 14px;font-size:14px;line-height:1.45">${escapeHtml(next.brief)}</div></div>` : "";
-      let body = "";
-      if (html) body = `<iframe title="preview" style="width:100%;min-height:360px;border:0;background:#fff;margin-top:8px" srcdoc="${escapeAttr(html)}"></iframe>`;
-      else if (Array.isArray(scenes)) {
-        const cards = scenes.map((s: any, i: number) => `<div style="background:#0b1220;padding:12px 14px;margin:0 0 10px"><div style="font-size:11px;letter-spacing:.06em;color:${accent};margin:0 0 6px">${escapeHtml(s.title || s.name || `SCENE ${i + 1}`)}</div><div style="font-size:14px;line-height:1.45;color:#e8eef8">${escapeHtml(s.text || s.body || s.description || JSON.stringify(s))}</div></div>`).join("");
-        body = `<div style="margin:8px 0 0;display:${layout === "grid" ? "grid" : "block"};grid-template-columns:1fr 1fr;gap:10px">${cards}</div>`;
-      } else if (msg) body = `<div style="font-size:14px;line-height:1.55;color:#e8eef8;white-space:pre-wrap;margin-top:8px">${escapeHtml(String(msg))}</div>`;
-      else body = `<div style="font-size:14px;line-height:1.55;color:#aeb8cc;margin-top:8px">Final media uses the engine adapter when connected.</div>`;
-      const note = next.localNote ? `<div style="margin-top:10px;font-size:12px;color:#fbbf24">${escapeHtml(next.localNote)}</div>` : "";
-      const meta = [http != null ? `http ${http}` : "", charged != null ? `charged ${charged}` : "", available != null ? `available ${available}` : "", statusLine || ""].filter(Boolean).join(" ? ");
-      thread.innerHTML = `${userBubble}<div style="font-size:13px;line-height:1.55;color:#e8eef8">${msg && html ? escapeHtml(String(msg)) : ""}</div>${body}${note}<div style="margin-top:14px;font-size:12px;color:#aeb8cc">${escapeHtml(meta)}</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px"><button data-aw-act="copy" type="button" style="${btnStyle()}">Copy ? Free</button><button data-aw-act="layout" type="button" style="${btnStyle()}">Layout ? Free</button><button data-aw-act="color" type="button" style="${btnStyle()}">Color ? Free</button><button data-aw-act="download" type="button" style="${btnStyle()}">Download files</button></div>`;
-      showOverlay();
-    }
-    function composerField(): HTMLTextAreaElement | HTMLInputElement | null {
-      return document.querySelector("textarea") as HTMLTextAreaElement | null || document.querySelector('input[placeholder*="Describe" i]') as HTMLInputElement | null;
-    }
-    function grabText() { return (composerField()?.value || "").trim(); }
-    function clearText() {
-      const f = composerField(); if (!f) return;
-      const proto = f.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(f, "");
-      f.value = ""; f.dispatchEvent(new Event("input", { bubbles: true })); f.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    function shouldSkipTarget(t: EventTarget | null) {
-      const blob = `${textOf(t)} ${closestText(t)}`.toLowerCase();
-      return SKIP_RE.test(blob) || (/\blive\b/.test(blob) && blob.length < 24) || !!(overlay && t && overlay.contains(t as Node));
-    }
-    function isSendButton(t: EventTarget | null) {
-      if (!t || !(t as HTMLElement).closest) return false;
-      const el = t as HTMLElement; if (overlay?.contains(el)) return false;
-      const btn = el.closest("button,a,[role=button]") as HTMLElement | null; if (!btn) return false;
-      const label = textOf(btn); if (label === "?" || label === "?" || /send/i.test(label)) return true;
-      const r = btn.getBoundingClientRect(), f = composerField(); if (!f) return false;
-      const cr = f.getBoundingClientRect();
-      return Math.abs(r.left - cr.right) < 80 && Math.abs(r.top - cr.top) < 48 && r.width < 64 && r.height < 64 && r.width > 28;
-    }
-    async function postWork(body: Record<string, unknown>) {
-      const headers: Record<string, string> = { "content-type": "application/json" };
-      const { data } = await supabaseBrowser().auth.getSession();
-      if (data.session?.access_token) headers.authorization = `Bearer ${data.session.access_token}`;
-      const res = await origFetch("/api/assistant-work", { method: "POST", credentials: "include", headers, body: JSON.stringify(body) });
-      let json: any = {}; try { json = await res.clone().json(); } catch { json = {}; }
-      json.http = res.status; return { res, json };
-    }
-    async function sendProduce(brief: string) {
-      if (!brief || posting || SKIP_RE.test(brief)) return;
-      posting = true;
-      const { type, category } = qparams();
-      const pending: WorkJob = { brief, type, category, json: { message: "Working?" }, accent: job?.accent, layout: job?.layout };
-      renderJob(pending); clearText();
-      try {
-        const { json } = await postWork({ action: "produce", type, category, brief, message: brief });
-        renderJob({ brief, type, category, json, html: htmlOf(json), accent: pending.accent, layout: pending.layout });
-      } catch { renderJob({ ...pending, json: { message: "Request failed. Previous result kept if any.", http: 0 } }); }
-      finally { posting = false; }
-    }
-    async function revise(kind: "copy" | "layout" | "color") {
-      if (!job) return;
-      const next: WorkJob = { ...job };
-      if (kind === "copy") next.localNote = "Copy preview ? Free";
-      if (kind === "layout") { next.layout = job.layout === "stack" ? "grid" : "stack"; next.localNote = "Layout preview ? Free"; }
-      if (kind === "color") { next.accent = job.accent?.includes("251,191,36") ? "rgba(34,211,238,.9)" : "rgba(251,191,36,.95)"; next.localNote = "Color preview ? Free"; }
-      renderJob(next);
-      try {
-        const { json } = await postWork({ action: "revise", jobId: jobIdOf(job.json), kind, part: kind, message: `${kind}: free ${kind} update`, free: true, charge: false });
-        const charged = Number(json.charged ?? json.charge ?? json.spent ?? 0);
-        if (charged > 0) { renderJob({ ...next, localNote: "Server tried to charge. Local free preview kept." }); return; }
-        renderJob({ ...next, json: { ...job.json, ...json, charged: 0 }, html: htmlOf(json) || next.html, localNote: next.localNote });
-      } catch { renderJob({ ...next, localNote: "Local free preview kept." }); }
-    }
-    async function deliver() {
-      if (!job) return;
-      const html = job.html || htmlOf(job.json), name = (job.type || "crelavo").replace(/\s+/g, "-").toLowerCase();
-      if (html) downloadBlob(html, `${name}.html`, "text/html");
-      else downloadBlob(JSON.stringify(job.json || job, null, 2), `${name}-storyboard.json`, "application/json");
-      try {
-        const { json } = await postWork({ action: "deliver", jobId: jobIdOf(job.json), free: true, charge: false });
-        const charged = Number(json.charged ?? json.charge ?? json.spent ?? 0);
-        if (charged === 0 && typeof json.zip === "string") downloadBlob(json.zip, `${name}.zip`, "application/zip");
-        if (charged === 0 && json.zipUrl) window.location.href = json.zipUrl;
-      } catch { /* local download already done */ }
-    }
-    function onClick(e: MouseEvent) {
-      const t = e.target as HTMLElement | null;
-      if (t && overlay?.contains(t)) {
-        const kind = t.closest("[data-aw-act]")?.getAttribute("data-aw-act");
-        if (kind === "copy" || kind === "layout" || kind === "color") void revise(kind);
-        if (kind === "download") void deliver();
-        return;
-      }
-      if (shouldSkipTarget(t)) {
-        if (SKIP_RE.test(textOf(t) + closestText(t))) { e.preventDefault(); e.stopPropagation(); }
-        return;
-      }
-      if (!isSendButton(t)) return;
-      const brief = grabText(); if (!brief) return;
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); void sendProduce(brief);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key !== "Enter" || e.shiftKey || shouldSkipTarget(e.target)) return;
-      const brief = grabText(); if (!brief) return;
-      const f = composerField();
-      if (f && e.target !== f && !f.contains(e.target as Node)) {
-        const tag = (e.target as HTMLElement)?.tagName;
-        if (tag !== "TEXTAREA" && tag !== "INPUT") return;
-      }
-      e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); void sendProduce(brief);
-    }
-
-    window.addEventListener("click", onClick, true);
-    window.addEventListener("keydown", onKey, true);
+    const last = loadLast();
+    if (last) setJob(last);
+  }, [onAssistant]);
+  useEffect(() => {
+    if (!onAssistant || !job) { restoreCollector(); return; }
+    hideCollector();
+    const place = () => setBox(measureBox());
+    place();
     window.addEventListener("resize", place);
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      const res = await origFetch(input, init);
-      try {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-        const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
-        if (method === "POST" && /\/api\/assistant-work/.test(url)) {
-          const json = await res.clone().json().catch(() => null);
-          if (json && job && !posting) {
-            const charged = Number(json.charged ?? json.charge ?? json.spent ?? 0);
-            renderJob({ ...job, json: { ...json, http: res.status }, html: htmlOf(json) || job.html, localNote: charged > 0 && json.free ? "Server tried to charge. Local free preview kept." : job.localNote });
-          }
-        }
-      } catch { /* ignore */ }
-      return res;
+    const tick = window.setInterval(place, 800);
+    return () => { window.removeEventListener("resize", place); window.clearInterval(tick); };
+  }, [onAssistant, job]);
+  useEffect(() => {
+    const sweep = () => {
+      if (isAssistantPath(window.location.pathname)) return;
+      restoreCollector();
+      document.querySelectorAll("#" + THREAD).forEach((n) => n.remove());
     };
-    const mo = new MutationObserver(() => {
-      if (hideTimer) clearTimeout(hideTimer);
-      hideTimer = window.setTimeout(() => { place(); if (job && overlay?.style.display !== "none") hideCollector(); }, 80);
-    });
-    mo.observe(document.body, { childList: true, subtree: true });
-    ensureOverlay(); place();
-    if (job && (job.brief || job.json || job.html)) renderJob(job);
+    const id = window.setInterval(sweep, 300);
+    window.addEventListener("popstate", sweep);
     return () => {
-      window.removeEventListener("click", onClick, true);
-      window.removeEventListener("keydown", onKey, true);
-      window.removeEventListener("resize", place);
-      window.fetch = origFetch; mo.disconnect(); if (hideTimer) clearTimeout(hideTimer);
+      window.clearInterval(id);
+      window.removeEventListener("popstate", sweep);
+      restoreCollector();
+      document.querySelectorAll("#" + THREAD).forEach((n) => { if (!isAssistantPath(window.location.pathname)) n.remove(); });
     };
   }, []);
+  useEffect(() => {
+    if (!onAssistant) return;
+    const produce = async (text: string) => {
+      if (busyRef.current) return;
+      const brief = text.trim();
+      if (!brief) return;
+      busyRef.current = true;
+      const next = { userText: brief, assistantText: "", html: "", scenes: null, charged: 0, available: jobRef.current?.available ?? null, http: 0, warning: "", busy: true, raw: null };
+      setJob(next); saveLast(next); clearComposer();
+      try {
+        const { status, json } = await api({ action: "produce", op: "produce", text: brief, brief, type: getType(), category: getCategory(), idea: getType() });
+        const rendered = fromServer(json, brief); rendered.http = status; setJob(rendered); saveLast(rendered);
+      } catch (err: any) {
+        const fail = { ...next, busy: false, warning: String(err?.message || err || "Network error"), assistantText: "Could not reach production." };
+        setJob(fail); saveLast(fail);
+      } finally { busyRef.current = false; }
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!isAssistantPath(window.location.pathname)) return;
+      const t = e.target;
+      if (!(t instanceof Element) || t.closest("#" + THREAD) || skipTarget(t) || !isSendControl(t)) return;
+      const text = readComposer(); if (!text) return;
+      e.preventDefault(); e.stopPropagation(); (e as any).stopImmediatePropagation?.(); void produce(text);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (!isAssistantPath(window.location.pathname) || e.key !== "Enter" || e.shiftKey) return;
+      const t = e.target;
+      if (!(t instanceof Element) || t.closest("#" + THREAD)) return;
+      const field = getComposerField();
+      if (!field || (!field.contains(t) && t !== field)) return;
+      const text = readComposer(); if (!text) return;
+      e.preventDefault(); e.stopPropagation(); (e as any).stopImmediatePropagation?.(); void produce(text);
+    };
+    window.addEventListener("click", onClick, true);
+    window.addEventListener("keydown", onKey, true);
+    return () => { window.removeEventListener("click", onClick, true); window.removeEventListener("keydown", onKey, true); };
+  }, [onAssistant]);
 
-  return <span id="crelavo-aw-boot-copy" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>Sign in to start production. Copy ? Free Layout ? Free Color ? Free Download files Production overlay ready on Create ? last job restores automatically ? do not send a new brief aw-boot-hide-v3-fullbleed</span>;
+  async function revise(kind: "copy" | "layout" | "color") {
+    const current = jobRef.current;
+    if (!current || busyRef.current) return;
+    const local = { ...current, warning: `${kind[0].toUpperCase()}${kind.slice(1)} ? Free applied locally` };
+    setJob(local); saveLast(local);
+    try {
+      const { json } = await api({ action: "revise", op: "revise", kind, free: true, charge: false });
+      const charged = json?.charged ?? json?.data?.charged ?? 0;
+      if (charged > 0) {
+        const warned = { ...local, warning: "Server tried to charge. Local free preview kept." };
+        setJob(warned); saveLast(warned); return;
+      }
+      if (json && (json.html || json.scenes || json.message || json.data)) {
+        const next = fromServer(json, current.userText);
+        next.charged = 0; next.warning = `${kind[0].toUpperCase()}${kind.slice(1)} ? Free`;
+        setJob(next); saveLast(next);
+      }
+    } catch { /* keep local */ }
+  }
+  function downloadLocal(j: any) {
+    const html = j?.html, name = html ? "crelavo-production.html" : "crelavo-storyboard.json";
+    const blob = new Blob([html || JSON.stringify(j?.raw || j?.scenes || j, null, 2)], { type: html ? "text/html" : "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  }
+  async function deliver() {
+    const j = jobRef.current; if (!j) return;
+    downloadLocal(j);
+    try {
+      const { json } = await api({ action: "deliver", op: "deliver" });
+      const charged = json?.charged ?? json?.data?.charged ?? 0;
+      if (charged === 0) {
+        const url = json?.zip || json?.data?.zip || json?.url || json?.data?.url;
+        if (typeof url === "string" && url) window.open(url, "_self");
+      }
+    } catch { /* local file already saved */ }
+  }
+
+  const marker = <span data-aw-boot="route-v4-noleak" style={{ display: "none" }}>{MARK} Sign in to start production. Copy ? Free Layout ? Free Color ? Free Download files</span>;
+  if (!mounted || !onAssistant || !job) return marker;
+  const scenes = Array.isArray(job.scenes) ? job.scenes : [];
+  const overlay = (
+    <div id={THREAD} data-aw-react="1" data-aw-boot="route-v4-noleak" style={{ position: "fixed", left: 0, right: 0, top: box.top, bottom: box.bottom, zIndex: 2147483000, background: FILL, overflow: "auto", color: "#e8eefc", fontFamily: "Inter, system-ui, sans-serif", border: "none", borderRadius: 0, boxShadow: "none" }}>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "20px 24px 32px" }}>
+        {job.userText ? <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}><div style={{ maxWidth: "72%", background: "rgba(34,211,238,.16)", color: "#e8fbff", borderRadius: 16, padding: "10px 14px", whiteSpace: "pre-wrap", lineHeight: 1.45 }}>{job.userText}</div></div> : null}
+        <div style={{ marginBottom: 16, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{job.busy ? "Working?" : job.assistantText || (scenes.length ? "Final media uses the engine adapter when connected." : "")}</div>
+        {job.html ? <iframe title="preview" srcDoc={job.html} sandbox="allow-same-origin" style={{ width: "100%", minHeight: 320, border: "none", background: "#fff", display: "block" }} /> : null}
+        {scenes.map((scene: any, i: number) => { const s = sceneText(scene, i); return <div key={i} style={{ padding: "12px 0", marginBottom: 4 }}><div style={{ fontSize: 12, letterSpacing: 0.6, color: "#7dd3fc" }}>{s.title}</div><div style={{ marginTop: 4, whiteSpace: "pre-wrap" }}>{s.body}</div></div>; })}
+        <div style={{ marginTop: 18, fontSize: 12, color: "#94a3b8" }}>{job.busy ? "" : `http ${job.http || 200}${job.charged || job.charged === 0 ? ` - charged ${job.charged}` : ""}${job.available != null ? ` - available ${job.available}` : ""}`}{job.warning ? ` ? ${job.warning}` : ""}</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
+          <button type="button" onClick={() => void revise("copy")} style={btnStyle}>Copy ? Free</button>
+          <button type="button" onClick={() => void revise("layout")} style={btnStyle}>Layout ? Free</button>
+          <button type="button" onClick={() => void revise("color")} style={btnStyle}>Color ? Free</button>
+          <button type="button" onClick={() => void deliver()} style={btnStyle}>Download files</button>
+        </div>
+      </div>
+    </div>
+  );
+  return <>{marker}{createPortal(overlay, document.body)}</>;
 }
+
+const btnStyle: React.CSSProperties = {
+  background: "transparent",
+  color: "#67e8f9",
+  border: "1px solid rgba(34,211,238,.35)",
+  borderRadius: 999,
+  padding: "6px 12px",
+  cursor: "pointer",
+  fontSize: 13,
+};
