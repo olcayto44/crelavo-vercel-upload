@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const STORE_KEY = "crelavo-aw-last-v2";
-const GOLD = "#d7b07a";
-const BG = "#0b0a09";
-const INK = "#f4eee6";
 
 export function CinemaRouteGuard() {
   useEffect(() => {
@@ -17,19 +14,13 @@ export function CinemaRouteGuard() {
       /* ignore */
     }
     window.onbeforeunload = null;
-    const block = (event: BeforeUnloadEvent) => {
-      event.stopImmediatePropagation();
-      event.stopPropagation();
-    };
-    window.addEventListener("beforeunload", block, true);
     const htmlBg = document.documentElement.style.background;
     const bodyBg = document.body.style.background;
     const overflow = document.body.style.overflow;
-    document.documentElement.style.background = BG;
-    document.body.style.background = BG;
+    document.documentElement.style.background = "#0b0a09";
+    document.body.style.background = "#0b0a09";
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("beforeunload", block, true);
       document.documentElement.style.background = htmlBg;
       document.body.style.background = bodyBg;
       document.body.style.overflow = overflow;
@@ -38,154 +29,217 @@ export function CinemaRouteGuard() {
   return null;
 }
 
-type SceneStatus = "queued" | "rendering" | "ready" | "revising";
-type Scene = { id: string; index: number; headline: string; sub: string; status: SceneStatus };
-type WorkResponse = {
-  error?: string;
-  message?: string;
-  scenes?: Array<{ id?: string; index?: number; status?: string; title?: string; headline?: string; direction?: string; prompt?: string; sub?: string }>;
-  result?: { scenes?: WorkResponse["scenes"] };
-};
+type SceneStatus = "ready" | "revising" | "rendering" | "queued";
+type Scene = { id: string; status: SceneStatus; title: string; action: string; note: string };
 
-const INITIAL_SCENES: Scene[] = [
-  { id: "scene-1", index: 1, headline: "Wide on the street at dusk", sub: "Storefront lights warm up.", status: "ready" },
-  { id: "scene-2", index: 2, headline: "Storefront at dusk, ceramic mug in warm tungsten", sub: "Slow push-in. Hands enter frame. Steam rises.", status: "revising" },
-  { id: "scene-3", index: 3, headline: "Hands enter frame", sub: "Steam rises. Keep the tungsten.", status: "rendering" },
-  { id: "scene-4", index: 4, headline: "Hold on the mark", sub: "Soft fade. End on the mug.", status: "queued" },
+const INITIAL: Scene[] = [
+  { id: "01", status: "ready", title: "Morning tabletop, soft window light", action: "Hold. Product centered. No hands yet.", note: "" },
+  { id: "02", status: "revising", title: "Storefront at dusk, ceramic mug in warm tungsten", action: "Slow push-in. Hands enter frame. Steam rises.", note: "Warmer tungsten. Slower push-in. Less steam." },
+  { id: "03", status: "rendering", title: "Close-up pour, steam and glaze", action: "Macro pour. Catch the highlight on ceramic.", note: "" },
+  { id: "04", status: "queued", title: "End card, quiet shelf", action: "Hold logo. Fade the room tone.", note: "" },
 ];
 
-function statusLabel(status: SceneStatus) {
-  if (status === "ready") return "READY";
-  if (status === "revising") return "REVISING";
-  if (status === "rendering") return "IN PROGRESS";
-  return "QUEUED";
-}
+const STATUS_LABEL: Record<SceneStatus, string> = { ready: "READY", revising: "REVISING", rendering: "RENDERING", queued: "QUEUED" };
 
-function normalizeScenes(raw: WorkResponse["scenes"], fallback: Scene[]): Scene[] | null {
-  if (!raw || !Array.isArray(raw) || raw.length === 0) return null;
-  return raw.slice(0, 4).map((item, i) => {
-    const statusRaw = String(item.status || "");
-    const status: SceneStatus = statusRaw === "queued" || statusRaw === "rendering" || statusRaw === "ready" || statusRaw === "revising" ? statusRaw : fallback[i]?.status || "ready";
-    return {
-      id: String(item.id || `scene-${i + 1}`),
-      index: Number(item.index || i + 1),
-      headline: item.headline || item.title || item.direction || fallback[i]?.headline || `Scene ${i + 1}`,
-      sub: item.sub || item.prompt || fallback[i]?.sub || "",
-      status,
-    };
-  });
-}
-
-async function postWork(payload: Record<string, unknown>): Promise<WorkResponse> {
-  const res = await fetch("/api/assistant-work", {
-    method: "POST",
-    credentials: "include",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = (await res.json().catch(() => ({}))) as WorkResponse;
-  if (!res.ok) throw new Error(data.error || data.message || `Request failed (${res.status})`);
-  return data;
+function pickBalance(data: unknown): number | null {
+  if (!data || typeof data !== "object") return null;
+  const o = data as Record<string, unknown>;
+  for (const key of ["balance", "credits", "credit_balance", "available"]) {
+    const value = o[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  if (o.data && typeof o.data === "object") return pickBalance(o.data);
+  return null;
 }
 
 export default function AssistantPage() {
-  const searchParams = useSearchParams();
-  const type = searchParams.get("type") || "AI Video";
-  const category = searchParams.get("category") || "video";
+  const [scenes, setScenes] = useState<Scene[]>(INITIAL);
+  const [selectedId, setSelectedId] = useState("02");
   const [draft, setDraft] = useState("");
-  const [scenes, setScenes] = useState<Scene[]>(INITIAL_SCENES);
-  const [selectedId, setSelectedId] = useState("scene-2");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number | null>(null);
+  const [creditsReady, setCreditsReady] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const creditsRef = useRef<number | null>(null);
+  const selected = scenes.find((s) => s.id === selectedId) ?? scenes[1];
 
-  useEffect(() => {
-    try {
-      sessionStorage.removeItem(STORE_KEY);
-      localStorage.removeItem(STORE_KEY);
-    } catch {
-      /* ignore */
+  const applyCredits = useCallback((next: number | null) => {
+    if (next == null) return;
+    const prev = creditsRef.current;
+    creditsRef.current = next;
+    setCredits(next);
+    if (prev != null && next < prev) {
+      setFlash(true);
+      window.setTimeout(() => setFlash(false), 900);
     }
-    window.onbeforeunload = null;
   }, []);
 
-  const selected = useMemo(() => scenes.find((scene) => scene.id === selectedId) || scenes[1] || scenes[0], [scenes, selectedId]);
-
-  async function onSend() {
-    const text = draft.trim();
-    if (!text || busy || !selected) return;
-    setBusy(true);
-    setError(null);
-    setScenes((prev) => prev.map((scene) => scene.id === selected.id ? { ...scene, status: "revising" } : scene));
+  const readCredits = useCallback(async () => {
     try {
-      const data = await postWork({ action: "revise", brief: text, prompt: text, instruction: text, scene_id: selected.id, sceneId: selected.id, index: selected.index, type, category });
-      const updated = normalizeScenes(data.scenes || data.result?.scenes, scenes);
-      if (updated) setScenes(updated);
-      else setScenes((prev) => prev.map((scene) => scene.id === selected.id ? { ...scene, headline: text, sub: "Revised in place. Production continues.", status: "ready" } : scene));
+      const res = await fetch("/api/assistant-work", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "balance" }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      applyCredits(pickBalance(data));
+    } catch {
+      /* engine may be disconnected; do not spend */
+    } finally {
+      setCreditsReady(true);
+    }
+  }, [applyCredits]);
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlHeight = html.style.height;
+    const prevBodyHeight = body.style.height;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.height = "100%";
+    body.style.height = "100%";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      html.style.height = prevHtmlHeight;
+      body.style.height = prevBodyHeight;
+    };
+  }, []);
+
+  useEffect(() => {
+    void readCredits();
+    const onFocus = () => void readCredits();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, [readCredits]);
+
+  async function sendRevise() {
+    const prompt = draft.trim();
+    if (!prompt || busy) return;
+    setBusy(true);
+    setNotice("");
+    const applyLocal = () => {
+      setScenes((prev) => prev.map((scene) => scene.id === selectedId ? { ...scene, status: "revising", note: prompt } : scene));
       setDraft("");
-    } catch (err) {
-      setScenes((prev) => prev.map((scene) => scene.id === selected.id ? { ...scene, headline: text, sub: "Revised in place. Production continues.", status: "ready" } : scene));
-      setDraft("");
-      setError(err instanceof Error ? err.message : null);
+    };
+    try {
+      const res = await fetch("/api/assistant-work", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revise", sceneId: selectedId, prompt }),
+      });
+      const data = await res.json().catch(() => null);
+      const next = pickBalance(data);
+      if (next != null) applyCredits(next);
+      if (data && typeof data === "object" && (data as { error?: string }).error === "insufficient") {
+        setNotice("Not enough credits to run the engine.");
+        setBusy(false);
+        return;
+      }
+      applyLocal();
+    } catch {
+      applyLocal();
     } finally {
       setBusy(false);
+      inputRef.current?.focus();
     }
   }
 
+  function selectScene(id: string) {
+    setSelectedId(id);
+    setNavOpen(false);
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }
+
+  const creditLabel = !creditsReady ? "..." : credits == null ? "--" : String(credits);
+
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 2147483000, background: BG, color: INK, fontFamily: "Georgia, 'Iowan Old Style', Palatino, serif", overflow: "auto" }}>
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "22px 28px 28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-          <div style={{ letterSpacing: "0.42em", fontSize: 11, color: GOLD, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>CRELAVO</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid rgba(215,176,122,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 10, letterSpacing: "0.18em", color: GOLD }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#e23d3d", display: "inline-block" }} />LIVE
-            </span>
-            <a href="/pricing" style={{ borderRadius: 999, padding: "6px 12px", fontSize: 11, background: GOLD, color: "#1a140c", fontWeight: 600, textDecoration: "none" }}>Pro $9.99/mo</a>
-          </div>
+    <div className="aw-shell">
+      <style>{CSS}</style>
+      <header className="aw-bar">
+        <div className="aw-left">
+          <Link href="/" className="aw-home">&lt; Home</Link>
+          <Link href="/" className="aw-brand">CRELAVO</Link>
+          <nav className="aw-desk-nav" aria-label="Studio">
+            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/dashboard/credits">Credits</Link>
+            <Link href="/dashboard/productions">Productions</Link>
+          </nav>
         </div>
-
-        <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(215,176,122,0.45), transparent)", marginBottom: 28 }} />
-
-        <div style={{ aspectRatio: "16 / 9", background: "#120e0a", border: `1px solid ${GOLD}`, position: "relative", overflow: "hidden", marginBottom: 16 }}>
-          <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 26, background: "#000" }} />
-          <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 26, background: "#000" }} />
-          <div style={{ position: "absolute", inset: "26px 0", background: "linear-gradient(135deg,#3a2414 0%,#1a120c 42%,#6a3a1c 100%)" }} />
-          <div style={{ position: "absolute", left: 28, top: 42, fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 10, letterSpacing: "0.24em", color: GOLD }}>SCENE {String(selected?.index || 2).padStart(2, "0")} ? SELECTED</div>
-          <div style={{ position: "absolute", left: 28, right: 28, top: 88 }}>
-            <div style={{ fontSize: 30, lineHeight: 1.15 }}>{selected?.headline}</div>
-            <div style={{ marginTop: 8, fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 12, color: "#cbb9a4" }}>{selected?.sub}</div>
-            {error ? <div style={{ marginTop: 10, color: "#e8b4b4", fontSize: 14 }}>{error}</div> : null}
-          </div>
-          <div style={{ position: "absolute", left: 20, right: 20, bottom: 36, background: "rgba(11,10,9,0.88)", border: "1px solid rgba(215,176,122,0.35)", padding: "12px 14px" }}>
-            <div style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 10, letterSpacing: "0.2em", color: GOLD, marginBottom: 6 }}>REVISE THIS SCENE ? PRODUCTION CONTINUES</div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div style={{ fontSize: 16, color: draft.trim() ? INK : "#7d746a" }}>{draft.trim() || "Warmer tungsten. Slower push-in. Less steam."}</div>
-              <button type="button" onClick={onSend} disabled={busy || !draft.trim()} style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 11, letterSpacing: "0.14em", background: GOLD, color: "#1a140c", padding: "8px 14px", fontWeight: 700, border: 0, cursor: busy ? "wait" : "pointer" }}>APPLY</button>
-            </div>
-          </div>
+        <div className="aw-right">
+          <Link href="/dashboard/credits" className={"aw-credits" + (flash ? " drop" : "")}>CREDITS <b>{creditLabel}</b></Link>
+          <span className="aw-live"><i />LIVE</span>
+          <Link href="/pricing" className="aw-pro">Pro $9.99/mo</Link>
+          <button type="button" className="aw-go" onClick={() => setNavOpen((v) => !v)} aria-expanded={navOpen}>Go</button>
         </div>
+      </header>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
-          {scenes.map((item) => {
-            const active = item.id === selected?.id;
-            return (
-              <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} style={{ flex: 1, textAlign: "left", background: active ? "#1a140c" : "#161310", border: active ? `1px solid ${GOLD}` : item.status === "queued" ? "1px dashed rgba(215,176,122,0.16)" : "1px solid rgba(244,238,230,0.12)", padding: 8, color: INK, cursor: "pointer", opacity: item.status === "queued" ? 0.7 : 1 }}>
-                <div style={{ height: 52, background: item.status === "rendering" || item.status === "queued" ? "#0f0d0b" : "linear-gradient(135deg,#3a2414,#6a3a1c)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 9, letterSpacing: "0.18em", color: GOLD }}>{item.status === "rendering" ? "RENDERING" : ""}</div>
-                <div style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 9, letterSpacing: "0.16em", color: active ? GOLD : "#b9aea0", marginTop: 6 }}>{String(item.index).padStart(2, "0")} ? {statusLabel(item.status)}</div>
-              </button>
-            );
-          })}
+      {navOpen ? (
+        <div className="aw-sheet" role="dialog" aria-label="Go to">
+          <Link href="/" onClick={() => setNavOpen(false)}>Home</Link>
+          <Link href="/dashboard" onClick={() => setNavOpen(false)}>Dashboard</Link>
+          <Link href="/dashboard/credits" onClick={() => setNavOpen(false)}>Credits</Link>
+          <Link href="/dashboard/productions" onClick={() => setNavOpen(false)}>Productions</Link>
+          <Link href="/pricing" onClick={() => setNavOpen(false)}>Pricing</Link>
+          <button type="button" onClick={() => setNavOpen(false)}>Close</button>
         </div>
-        <div style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 10, letterSpacing: "0.22em", color: "#8a7f72", textAlign: "center", marginBottom: 22 }}>CLICK A SCENE TO REVISE IT WITHOUT RESTARTING THE JOB</div>
+      ) : null}
 
-        <div style={{ background: "#14110e", border: "1px solid rgba(215,176,122,0.2)", padding: "16px 18px" }}>
-          <div style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 10, letterSpacing: "0.22em", color: GOLD, marginBottom: 8 }}>DIRECT THE SELECTED SCENE</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <input value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void onSend(); } }} placeholder="Make this part like this?" disabled={busy} style={{ flex: 1, background: "transparent", border: 0, outline: "none", color: INK, fontSize: 18, fontFamily: "Georgia, Palatino, serif" }} />
-            <button type="button" onClick={onSend} disabled={busy || !draft.trim()} style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 12, letterSpacing: "0.16em", background: GOLD, color: "#1a140c", padding: "10px 16px", fontWeight: 700, border: 0, cursor: busy ? "wait" : "pointer" }}>{busy ? "WORKING" : "SEND"}</button>
+      <div className="aw-stage-wrap">
+        <div className="aw-stage">
+          <div className="aw-meta">SCENE {selected.id} / SELECTED</div>
+          <h1 className="aw-title">{selected.title}</h1>
+          <p className="aw-action">{selected.action}</p>
+          <div className="aw-dock">
+            <div>REVISE THIS SCENE / PRODUCTION CONTINUES</div>
+            {selected.note ? <p>{selected.note}</p> : null}
           </div>
         </div>
       </div>
+
+      <div className="aw-strip">
+        {scenes.map((scene) => (
+          <button key={scene.id} type="button" className={"aw-thumb" + (scene.id === selectedId ? " on" : "") + (scene.status === "rendering" ? " rendering" : "") + (scene.status === "queued" ? " queued" : "")} onClick={() => selectScene(scene.id)}>
+            {scene.status === "rendering" ? <span className="aw-thumb-status">RENDERING</span> : null}
+            <span className="aw-cap">{scene.id} {STATUS_LABEL[scene.status]}</span>
+          </button>
+        ))}
+      </div>
+
+      <p className="aw-hint">CLICK A SCENE TO REVISE IT WITHOUT RESTARTING THE JOB</p>
+
+      <form className="aw-composer" onSubmit={(e) => { e.preventDefault(); void sendRevise(); }}>
+        <label className="aw-direct" htmlFor="aw-draft">DIRECT THE SELECTED SCENE</label>
+        <div className="aw-row">
+          <textarea id="aw-draft" ref={inputRef} rows={1} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendRevise(); } }} />
+          <button type="submit" disabled={busy || !draft.trim()}>SEND</button>
+        </div>
+        {notice ? <p className="aw-notice">{notice}</p> : null}
+      </form>
     </div>
   );
 }
+
+const CSS = `
+.aw-shell{position:fixed;inset:0;z-index:2147483001;height:100dvh;height:100svh;display:flex;flex-direction:column;background:#0b0a09;color:#f4eee6;overflow:hidden;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.aw-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid #2a2118;min-height:48px}
+.aw-left,.aw-right{display:flex;align-items:center;gap:10px;min-width:0}.aw-home{flex:0 0 auto;font-size:11px;letter-spacing:.08em;color:#d7b07a;text-decoration:none;border:1px solid #5a4630;border-radius:999px;padding:5px 10px}.aw-brand{font-size:11px;letter-spacing:.28em;color:#e8dcc8;text-decoration:none}.aw-desk-nav{display:flex;gap:12px}.aw-desk-nav a{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#b9aea0;text-decoration:none}
+.aw-credits{display:inline-flex;align-items:center;gap:8px;border:1px solid #d7b07a;background:#1a140c;color:#f4eee6;border-radius:999px;padding:5px 11px;font-size:10px;letter-spacing:.14em;text-decoration:none}.aw-credits b{color:#d7b07a;font-weight:600;font-variant-numeric:tabular-nums}.aw-credits.drop{animation:aw-flash .85s ease}@keyframes aw-flash{0%{box-shadow:0 0 0 0 rgba(215,176,122,.55)}100%{box-shadow:0 0 0 14px rgba(215,176,122,0)}}
+.aw-live{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.14em;border:1px solid #3a2e22;border-radius:999px;padding:4px 8px;color:#e8dcc8}.aw-live i{width:6px;height:6px;border-radius:99px;background:#c04545;display:block}.aw-pro{background:#e6d3b0;color:#1a140c;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:600;text-decoration:none}.aw-go{display:none;background:transparent;color:#d7b07a;border:1px solid #5a4630;border-radius:999px;padding:5px 10px;font-size:11px;letter-spacing:.12em;cursor:pointer}
+.aw-sheet{position:absolute;top:48px;right:10px;z-index:3;display:flex;flex-direction:column;min-width:180px;background:#14110c;border:1px solid #3a2e22;padding:8px;gap:4px}.aw-sheet a,.aw-sheet button{color:#e8dcc8;text-decoration:none;background:transparent;border:0;text-align:left;padding:8px 10px;font-size:13px;cursor:pointer}
+.aw-stage-wrap{flex:1 1 0%;min-height:0;container-type:size;position:relative;margin:8px 16px 0}.aw-stage{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(100cqw,calc(100cqh * 16 / 9));height:min(100cqh,calc(100cqw * 9 / 16));border:1px solid #d7b07a;background:linear-gradient(180deg,#3a2414 0%,#1a100a 62%,#0d0b09 100%);overflow:hidden;display:flex;flex-direction:column;padding:14px 16px 12px}.aw-meta{flex:0 0 auto;font-size:10px;letter-spacing:.2em;color:#d7b07a}.aw-title{flex:0 0 auto;margin:10px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(16px,2.4cqw,28px);font-weight:400;line-height:1.2}.aw-action{flex:1 1 auto;min-height:0;margin:6px 0 0;font-size:13px;color:#cbbba8}.aw-dock{flex:0 0 auto;margin-top:8px;background:rgba(10,8,6,.72);border:1px solid #3a2e22;padding:8px 10px;font-size:9px;letter-spacing:.16em;color:#d7b07a}.aw-dock p{margin:4px 0 0;letter-spacing:0;font-size:12px;color:#e8dcc8;text-transform:none}
+.aw-strip{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:min(1100px,calc(100% - 32px));margin:8px auto 0}.aw-thumb{position:relative;height:56px;border:1px solid #3a2e22;background:#16110c;color:#b9aea0;cursor:pointer;padding:0}.aw-thumb.on{border-color:#d7b07a;background:linear-gradient(180deg,#5a3a20,#2a1810)}.aw-thumb.rendering{background:#12100e}.aw-thumb.queued{background:#0d0c0b;border-style:dashed}.aw-thumb-status{position:absolute;inset:0 0 16px;display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:.16em;color:#d7b07a}.aw-cap{position:absolute;left:6px;bottom:5px;font-size:9px;letter-spacing:.1em}.aw-hint{flex:0 0 auto;margin:6px 16px 0;text-align:center;font-size:9px;letter-spacing:.16em;color:#7d7368}
+.aw-composer{flex:0 0 auto;width:min(1100px,calc(100% - 32px));margin:6px auto 0;margin-bottom:calc(10px + env(safe-area-inset-bottom));border:1px solid #3a2e22;background:#14110c;padding:8px 10px 10px}.aw-direct{display:block;font-size:9px;letter-spacing:.18em;color:#d7b07a;margin-bottom:6px}.aw-row{display:flex;align-items:center;gap:10px}.aw-row textarea{flex:1 1 auto;min-width:0;resize:none;height:36px;background:transparent;border:0;outline:none;color:#f4eee6;font-family:Georgia,"Times New Roman",serif;font-size:16px;line-height:36px;padding:0}.aw-row button{flex:0 0 auto;background:#e6d3b0;color:#1a140c;border:0;padding:8px 14px;font-size:11px;letter-spacing:.16em;font-weight:600;cursor:pointer}.aw-row button:disabled{opacity:.45;cursor:default}.aw-notice{margin:6px 0 0;font-size:12px;color:#d7b07a}
+@media(max-width:860px){.aw-desk-nav,.aw-live,.aw-pro{display:none}.aw-go{display:inline-flex}.aw-thumb{height:44px}.aw-title{font-size:16px}.aw-action{display:none}}@media(max-height:700px){.aw-hint{display:none}.aw-thumb{height:40px}.aw-action{display:none}}
+`;
