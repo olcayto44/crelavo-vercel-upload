@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AdminFooterVisibility } from "@/components/AdminFooterVisibility";
+import CrelavoSessionBridge from "@/components/CrelavoSessionBridge";
 import { GoogleAdsTag } from "@/components/GoogleAdsConversion";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
@@ -111,6 +112,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <CrelavoSessionBridge />
         <Suspense fallback={null}><AdminFooterVisibility /></Suspense>
         <Suspense fallback={null}><LiveVisitorTracker /></Suspense>
         <GoogleAdsTag />
