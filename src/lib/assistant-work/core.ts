@@ -1,4 +1,5 @@
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
+import { ledgerRead, ledgerSpend } from "./ledger";
 
 export type PreviewKind = "html" | "video" | "audio" | "image" | "pdf" | "calendar" | "persona" | "live_sales";
 export type Cat = { title: string; group: string; from: number; preview: PreviewKind; deliver: "zip" | "mp4" | "wav" | "png_zip" | "pdf" | "live_sales"; packs: Record<string, number> };
@@ -44,18 +45,30 @@ const COPY_RE=/\b(copy|layout|color|colour|text|font|heading|headline|section|pa
 const ENGINE_RE=/\b(voice|ses|environment|ortam|product|ürün|scene|sahne|face|yüz|wardrobe|kıyafet|duration|süre|music|müzik|character|karakter)\b/i;
 export type WorkFile={name:string;mime:string;text:string};
 export type Job={id:string;userId:string;category:string;typeName:string;chips:string[];brief:string;revisions:string[];status:"previewing"|"halted_empty"|"delivered";chargedTotal:number;previewKind:PreviewKind;previewHtml:string;files:WorkFile[]};
-const globals=globalThis as unknown as {__cawWallets?:Map<string,number>;__cawJobs?:Map<string,Job>};
-globals.__cawWallets??=new Map(); globals.__cawJobs??=new Map();
-const wallets=globals.__cawWallets; const jobs=globals.__cawJobs;
+const globals=globalThis as unknown as {__cawJobs?:Map<string,Job>};
+globals.__cawJobs??=new Map();
+const jobs=globals.__cawJobs;
 
 export async function getWorkUserId(req:Request):Promise<string|null>{
   const token=bearerTokenFromRequest(req); if(!token)return null;
   try{const {data,error}=await supabaseAdmin().auth.getUser(token); return error?null:data.user?.id??null;}catch{return null;}
 }
-export async function ledgerRead(_userId:string):Promise<number|null>{return null;}
-export async function ledgerWrite(_userId:string,_balance:number):Promise<void>{}
-async function readBalance(userId:string){const db=await ledgerRead(userId);if(typeof db==="number")return db;if(!wallets.has(userId)){const seed=Number(process.env.ASSISTANT_WORK_SEED_CREDITS||0);wallets.set(userId,Number.isFinite(seed)?seed:0)}return wallets.get(userId)||0}
-async function writeBalance(userId:string,balance:number){const safe=Math.max(0,balance);wallets.set(userId,safe);await ledgerWrite(userId,safe)}
+export async function chargeCredits(
+  userId: string,
+  amount: number,
+  note: string
+): Promise<
+  | { ok: true; available: number }
+  | { ok: false; code: string; available: number; message?: string }
+> {
+  if (!Number.isFinite(amount) || amount < 0) {
+    return { ok: false, code: "invalid_amount", available: await ledgerRead(userId) };
+  }
+  if (amount === 0) return { ok: true, available: await ledgerRead(userId) };
+  const result = await ledgerSpend(userId, Math.trunc(amount), note);
+  if (!result.ok) return { ok: false, code: result.code, available: result.available, message: result.message };
+  return { ok: true, available: result.available };
+}
 export function detectPack(category:string,chips:string[]){const j=chips.join(" ").toLowerCase();if(category==="website"){if(/e-?commerce|store/.test(j))return"ecommerce";if(/business/.test(j))return"business";if(/landing/.test(j))return"landing"}if(category==="video"){if(/\b30s\b/.test(j))return"30s";if(/\b15s\b/.test(j))return"15s";if(/\b8s\b/.test(j))return"8s"}return""}
 export function quote(category:string,chips:string[],mode:"produce"|"revise",instruction=""){const cat=CATEGORIES[category]||CATEGORIES.video;if(cat.preview==="live_sales")return{credits:0,engine:false,reason:"live_sales"};if(mode==="revise"){const engine=ENGINE_RE.test(instruction)||!COPY_RE.test(instruction);return engine?{credits:Math.max(100,Math.round(cat.from*.15)),engine:true,reason:"part"}:{credits:0,engine:false,reason:"copy"}}const pack=detectPack(category,chips);const credits=pack&&cat.packs[pack]!=null?cat.packs[pack]:cat.from;return{credits,engine:credits>0,reason:pack||"from"}}
 function esc(s:string){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c] as string))}
@@ -67,13 +80,31 @@ export async function runMediaEngine(_job:Job):Promise<{url?:string}|null>{retur
 function crc32(buf:Uint8Array){let c=~0>>>0;for(const v of buf){c^=v;for(let k=0;k<8;k++)c=(c>>>1)^(0xedb88320&-(c&1))}return ~c>>>0}function u16(n:number){const b=new Uint8Array(2);new DataView(b.buffer).setUint16(0,n,true);return b}function u32(n:number){const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,n,true);return b}
 export function zipFiles(files:{name:string;text:string}[]){const enc=new TextEncoder(),locals:Uint8Array[]=[],centrals:Uint8Array[]=[];let offset=0;for(const f of files){const name=enc.encode(f.name),data=enc.encode(f.text),crc=crc32(data),local=new Uint8Array(30+name.length+data.length);local.set([80,75,3,4,20],0);local.set(u32(crc),14);local.set(u32(data.length),18);local.set(u32(data.length),22);local.set(u16(name.length),26);local.set(name,30);local.set(data,30+name.length);locals.push(local);const central=new Uint8Array(46+name.length);central.set([80,75,1,2,20,0,20],0);central.set(u32(crc),16);central.set(u32(data.length),20);central.set(u32(data.length),24);central.set(u16(name.length),28);central.set(u32(offset),42);central.set(name,46);centrals.push(central);offset+=local.length}const centralSize=centrals.reduce((n,x)=>n+x.length,0),end=new Uint8Array(22);end.set([80,75,5,6],0);end.set(u16(files.length),8);end.set(u16(files.length),10);end.set(u32(centralSize),12);end.set(u32(offset),16);const out=new Uint8Array(offset+centralSize+22);let p=0;for(const x of [...locals,...centrals]){out.set(x,p);p+=x.length}out.set(end,p);return out}
 function publicJob(job:Job,balance:number,charged:number,warning:string|null){return{ok:true,balance,charged,warning,job:{id:job.id,category:job.category,typeName:job.typeName,status:job.status,chargedTotal:job.chargedTotal,previewKind:job.previewKind,previewHtml:job.previewHtml,files:job.files,liveSalesHref:job.category==="live_sales_agent"?"/dashboard/live-sales-agent":null}}}
-async function charge(userId:string,amount:number){const balance=await readBalance(userId);if(amount<=0)return{ok:true as const,balance,charged:0,emptied:false};if(balance<=0)return{ok:false as const,code:"credits_empty" as const,balance,need:amount};if(balance<amount)return{ok:false as const,code:"credits_insufficient" as const,balance,need:amount};const next=balance-amount;await writeBalance(userId,next);return{ok:true as const,balance:next,charged:amount,emptied:next===0}}
+async function charge(userId: string, amount: number, note: string) {
+  let available: number;
+  try {
+    available = await ledgerRead(userId);
+  } catch (error) {
+    return { ok: false as const, code: "schema" as const, balance: 0, need: amount, message: error instanceof Error ? error.message : "Ledger read failed." };
+  }
+  if (amount <= 0) return { ok: true as const, balance: available, charged: 0, emptied: available === 0 };
+  if (available <= 0) return { ok: false as const, code: "empty" as const, balance: available, need: amount };
+  if (available < amount) return { ok: false as const, code: "insufficient" as const, balance: available, need: amount };
+  const result = await chargeCredits(userId, amount, note);
+  if (!result.ok) return { ok: false as const, code: result.code, balance: result.available, need: amount, message: result.message };
+  return { ok: true as const, balance: result.available, charged: amount, emptied: result.available === 0 };
+}
 export async function handleAssistantWork(req: Request, body: Record<string, unknown>) {
   const userId = await getWorkUserId(req);
   const action = String(body.action || "");
   if (!userId) return { status: 401, payload: { ok: false, code: "sign_in", message: "Sign in to start production." } };
 
-  const balance = await readBalance(userId);
+  let balance: number;
+  try {
+    balance = await ledgerRead(userId);
+  } catch (error) {
+    return { status: 500, payload: { ok: false, code: "schema", balance: 0, message: error instanceof Error ? error.message : "Ledger read failed." } };
+  }
   if (action === "balance") return { status: 200, payload: { ok: true, balance } };
 
   const category = String(body.category || "video");
@@ -88,9 +119,9 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
 
   if (action === "produce") {
     const q = quote(category, chips, "produce", message);
-    const paid = await charge(userId, q.credits);
+    const paid = await charge(userId, q.credits, `assistant_produce:${category}:${q.reason}`);
     if (!paid.ok) {
-      return { status: 402, payload: { ok: false, code: paid.code, balance: paid.balance, need: paid.need, message: paid.code === "credits_empty" ? "Credits empty. Production stopped." : `Need ${paid.need} credits. Balance ${paid.balance}.` } };
+      return { status: paid.code === "schema" || paid.code === "rpc_error" ? 500 : 402, payload: { ok: false, code: paid.code, balance: paid.balance, need: paid.need, message: paid.message || (paid.code === "empty" || paid.code === "insufficient" ? `Not enough credits. Need ${paid.need}. Balance ${paid.balance}.` : "Production could not start.") } };
     }
     const built = buildFiles(category, message, chips);
     const job: Job = {
@@ -106,13 +137,13 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
   if (!job || job.userId !== userId) return { status: 404, payload: { ok: false, code: "job_missing" } };
 
   if (action === "revise") {
-    if (job.status === "halted_empty" && await readBalance(userId) <= 0) {
+    if (job.status === "halted_empty" && await ledgerRead(userId) <= 0) {
       return { status: 402, payload: { ok: false, code: "credits_empty", balance: 0, message: "Credits empty. Production stopped." } };
     }
-    const paid = await charge(userId, quote(job.category, job.chips, "revise", message).credits);
+    const paid = await charge(userId, quote(job.category, job.chips, "revise", message).credits, `assistant_revise:${job.category}`);
     if (!paid.ok) {
-      if (paid.code === "credits_empty") job.status = "halted_empty";
-      return { status: 402, payload: { ok: false, code: paid.code, balance: paid.balance, need: paid.need, message: paid.code === "credits_empty" ? "Credits empty. Production stopped." : `Need ${paid.need} credits. Balance ${paid.balance}.`, job: publicJob(job, paid.balance, 0, "Credits empty. Production stopped.").job } };
+      if (paid.code === "empty" || paid.code === "insufficient") job.status = "halted_empty";
+      return { status: paid.code === "schema" || paid.code === "rpc_error" ? 500 : 402, payload: { ok: false, code: paid.code, balance: paid.balance, need: paid.need, message: paid.message || (paid.code === "empty" || paid.code === "insufficient" ? `Not enough credits. Need ${paid.need}. Balance ${paid.balance}.` : "Revision could not start."), job: publicJob(job, paid.balance, 0, "Production stopped.").job } };
     }
     job.revisions.push(message);
     const built = buildFiles(job.category, job.brief, job.chips, job.revisions.map((r, i) => `Change ${i + 1}: ${r}`).join("\n"));
@@ -125,7 +156,7 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
   }
 
   if (action === "resume") {
-    const current = await readBalance(userId);
+    const current = await ledgerRead(userId);
     if (current <= 0) return { status: 402, payload: { ok: false, code: "credits_empty", balance: current, message: "Credits empty. Production stopped." } };
     job.status = "previewing";
     return { status: 200, payload: publicJob(job, current, 0, null) };
@@ -133,7 +164,7 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
 
   if (action === "deliver") {
     job.status = "delivered";
-    const current = await readBalance(userId);
+    const current = await ledgerRead(userId);
     const zip = zipFiles(job.files.length ? job.files : [{ name: "README.md", text: readme(job.category, job.typeName || job.category) }]);
     return { status: 200, payload: { ...publicJob(job, current, 0, null), zipName: (job.category || "crelavo") + ".zip", zipB64: Buffer.from(zip).toString("base64") } };
   }
