@@ -1,40 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+type Mode = "video" | "website";
+type CreditState = { signedIn: boolean; credits: number | null; loading: boolean };
 
 const JOB_KEY = "crelavo-aw-last-v2";
-const OVERLAY_ID = "crelavo-aw-thread";
+const INK = "#f4eee6";
+const MUTED = "#aeb8cc";
+const LINE = "rgba(244,238,230,0.16)";
 
-type Scene = {
-  id: string;
-  status: string;
-  label: string;
-  title: string;
-  shot: string;
-  dock: string;
-  gradient: string;
-  kind?: string;
-};
-
-const VIDEO_SCENES: Scene[] = [
-  { id: "01", status: "READY", label: "SCENE 01 / SELECTED", title: "Dawn street, neon pharmacy window", shot: "Locked-off wide. Rain on glass. A figure passes.", dock: "Cooler blue. Hold the wide. Keep the rain.", gradient: "radial-gradient(120% 80% at 50% 0%, #1a3a58 0%, #0b1016 42%, #070605 100%)" },
-  { id: "02", status: "REVISING", label: "SCENE 02 / SELECTED", title: "Storefront at dusk, ceramic mug in warm tungsten", shot: "Slow push-in. Hands enter frame. Steam rises.", dock: "Warmer tungsten. Slower push-in. Less steam.", gradient: "radial-gradient(120% 80% at 50% 0%, #8a5a22 0%, #1a1008 42%, #070605 100%)" },
-  { id: "03", status: "RENDERING", label: "SCENE 03 / SELECTED", title: "Overhead pass, packed shipping table", shot: "Top-down glide. Tape pulls. Labels land.", dock: "Tighter overhead. Faster hands. Less clutter.", gradient: "radial-gradient(120% 80% at 50% 0%, #3d4a38 0%, #10140e 42%, #070605 100%)" },
-  { id: "04", status: "QUEUED", label: "SCENE 04 / SELECTED", title: "Night checkout, card tap on black counter", shot: "Macro insert. LED blinks. Receipt peeks.", dock: "Closer macro. Softer LED. Hold the tap.", gradient: "radial-gradient(120% 80% at 50% 0%, #2a3348 0%, #0c0e14 42%, #070605 100%)" },
+const VIDEO_SCENES = [
+  { id: 1, status: "READY", title: "Dawn street, storefront lights warming up", shot: "Wide hold. Pedestrians pass. Sign flickers.", note: "Keep the street quiet. Let the sign come on last.", wash: "radial-gradient(120% 80% at 50% 0%, #3a2a18 0%, #070605 62%)" },
+  { id: 2, status: "REVISING", title: "Storefront at dusk, ceramic mug in warm tungsten", shot: "Slow push-in. Hands enter frame. Steam rises.", note: "Warmer tungsten. Slower push-in. Less steam.", wash: "radial-gradient(120% 80% at 50% 0%, #8a5a22 0%, #1a0e06 58%)" },
+  { id: 3, status: "RENDERING", title: "Close-up of glaze, steam in sidelight", shot: "Macro drift. Condensation on ceramic.", note: "Less shine on the rim. Hold steam in the left third.", wash: "radial-gradient(120% 80% at 40% 20%, #6a3a16 0%, #0b0704 64%)" },
+  { id: 4, status: "QUEUED", title: "Hands wrapping the mug, dusk window", shot: "Over-shoulder. Pack, leave frame.", note: "Keep the window in the background. Do not cut the hands.", wash: "radial-gradient(120% 80% at 70% 10%, #2a3344 0%, #070605 60%)" },
 ];
 
-const WEB_PAGES: Scene[] = [
-  { id: "01", status: "READY", label: "PAGE 01 / SELECTED", title: "Home — hero, offer, start here", shot: "Full-width hero. Price in the first screen. One primary button.", dock: "Larger type. Shorter hero. Keep one button.", gradient: "radial-gradient(120% 80% at 50% 0%, #16324d 0%, #0b1220 50%, #070605 100%)", kind: "home" },
-  { id: "02", status: "REVISING", label: "PAGE 02 / SELECTED", title: "Catalog — product grid and filters", shot: "Four-up grid. Price on the card. Filter row on top.", dock: "Three-up grid. Bigger cards. Filters stay.", gradient: "radial-gradient(120% 80% at 50% 0%, #1b3a36 0%, #0b1413 50%, #070605 100%)", kind: "shop" },
-  { id: "03", status: "RENDERING", label: "PAGE 03 / SELECTED", title: "Story — proof, process, FAQ", shot: "Two-column story. Quotes. Short FAQ.", dock: "One column on mobile. Fewer quotes.", gradient: "radial-gradient(120% 80% at 50% 0%, #3a2a1b 0%, #14100c 50%, #070605 100%)", kind: "about" },
-  { id: "04", status: "QUEUED", label: "PAGE 04 / SELECTED", title: "Checkout — order summary and pay", shot: "Summary left. Pay right. No extra steps.", dock: "Single column. Summary above pay.", gradient: "radial-gradient(120% 80% at 50% 0%, #2a2038 0%, #100c16 50%, #070605 100%)", kind: "checkout" },
-];
-
-const NAV = [
-  { href: "/", label: "CRELAVO" },
-  { href: "/dashboard", label: "DASHBOARD" },
-  { href: "/pricing", label: "CREDITS" },
-  { href: "/dashboard/productions", label: "PRODUCTIONS" },
+const WEB_PAGES = [
+  { id: 1, status: "READY", title: "Home — hero, offer, start here", shot: "Full-width hero. Price in the first screen. One primary button.", note: "Larger type. Shorter hero. Keep one button.", path: "crelavo.site / home" },
+  { id: 2, status: "REVISING", title: "Catalog — product grid, price on cards", shot: "Four products. Price on every card. One filter row.", note: "Fewer products. Bigger price. Keep the grid.", path: "crelavo.site / catalog" },
+  { id: 3, status: "RENDERING", title: "Story — brand, materials, slow mornings", shot: "One photo. Short copy. No extra sections.", note: "Cut the second paragraph. Keep the photo full width.", path: "crelavo.site / story" },
+  { id: 4, status: "QUEUED", title: "Checkout — one offer, pay, confirm", shot: "One line item. Total visible. One pay button.", note: "Show the total above the button. No extra fields.", path: "crelavo.site / checkout" },
 ];
 
 export function CinemaRouteGuard() {
@@ -44,325 +32,310 @@ export function CinemaRouteGuard() {
   return null;
 }
 
-function readQuery() {
-  if (typeof window === "undefined") return { type: "", category: "" };
-  const q = new URLSearchParams(window.location.search);
-  return { type: q.get("type") || "", category: q.get("category") || "" };
+function isJwt(s: string) {
+  return /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(s);
 }
 
-function isWebsiteMode(type: string, category: string) {
-  const n = `${type} ${category}`.toLowerCase();
-  if (/video/.test(n) && !/website/.test(n)) return false;
-  return /website|web\s*page|landing|\bsite\b/.test(n);
-}
-
-function isJwt(value: string) {
-  return /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/.test(value.trim());
-}
-
-function pickToken(node: unknown, depth = 0): string | null {
-  if (depth > 8 || node == null) return null;
-  if (typeof node === "string") {
-    const s = node.trim();
-    if (isJwt(s)) return s;
-    if (s.startsWith("{") || s.startsWith("[")) {
-      try { return pickToken(JSON.parse(s), depth + 1); } catch { return null; }
+function walkToken(v: unknown, depth = 0): string | null {
+  if (v == null || depth > 8) return null;
+  if (typeof v === "string") {
+    if (isJwt(v)) return v;
+    if (v.startsWith("{") || v.startsWith("[")) {
+      try { return walkToken(JSON.parse(v), depth + 1); } catch { return null; }
     }
     return null;
   }
-  if (Array.isArray(node)) {
-    for (const item of node) { const found = pickToken(item, depth + 1); if (found) return found; }
+  if (Array.isArray(v)) {
+    for (const item of v) { const found = walkToken(item, depth + 1); if (found) return found; }
     return null;
   }
-  if (typeof node !== "object") return null;
-  const rec = node as Record<string, unknown>;
-  for (const key of ["access_token", "accessToken", "token"]) { const found = pickToken(rec[key], depth + 1); if (found) return found; }
-  for (const key of ["currentSession", "session", "data", "user", "auth"]) { const found = pickToken(rec[key], depth + 1); if (found) return found; }
-  for (const value of Object.values(rec)) { const found = pickToken(value, depth + 1); if (found) return found; }
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    for (const k of ["access_token", "accessToken"]) {
+      if (typeof o[k] === "string" && isJwt(o[k] as string)) return o[k] as string;
+    }
+    for (const val of Object.values(o)) { const found = walkToken(val, depth + 1); if (found) return found; }
+  }
   return null;
 }
 
-function readAccessToken(): string | null {
+function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  const stores: Storage[] = [];
-  try { stores.push(window.localStorage); } catch { /* ignore */ }
-  try { stores.push(window.sessionStorage); } catch { /* ignore */ }
-  for (const store of stores) {
-    for (let i = 0; i < store.length; i += 1) {
-      const key = store.key(i);
-      if (!key) continue;
-      let raw = "";
-      try { raw = store.getItem(key) || ""; } catch { continue; }
-      if (!raw) continue;
-      if (isJwt(raw)) return raw.trim();
-      try { const found = pickToken(JSON.parse(raw)); if (found) return found; } catch { /* ignore */ }
+  try {
+    for (const store of [localStorage, sessionStorage]) {
+      for (let i = 0; i < store.length; i += 1) {
+        const key = store.key(i);
+        if (!key) continue;
+        const raw = store.getItem(key);
+        if (!raw) continue;
+        let parsed: unknown = raw;
+        try { parsed = JSON.parse(raw); } catch { parsed = raw; }
+        const found = walkToken(parsed);
+        if (found) return found;
+      }
     }
-  }
-  const cookies = document.cookie.split(";").map((p) => p.trim());
-  for (const part of cookies) {
-    const eq = part.indexOf("=");
-    if (eq < 0) continue;
-    const name = part.slice(0, eq);
-    const value = decodeURIComponent(part.slice(eq + 1));
-    if (/sb-access-token|access_token|auth-token/i.test(name)) {
-      if (isJwt(value)) return value.trim();
-      try { const found = pickToken(JSON.parse(value)); if (found) return found; } catch { /* ignore */ }
+    for (const part of document.cookie.split(";")) {
+      const raw = decodeURIComponent(part.split("=").slice(1).join("=").trim());
+      const found = walkToken(raw.startsWith("{") || raw.startsWith("[") ? JSON.parse(raw) : raw);
+      if (found) return found;
     }
-  }
+  } catch { return null; }
   return null;
 }
 
-function pickBalance(node: unknown, depth = 0): number | null {
-  if (depth > 8 || node == null) return null;
-  if (typeof node === "number" && Number.isFinite(node)) return node;
-  if (typeof node === "string" && node.trim() !== "" && Number.isFinite(Number(node))) return Number(node);
-  if (typeof node !== "object") return null;
-  const rec = node as Record<string, unknown>;
-  for (const key of ["balance", "credits", "amount", "credit_balance", "available", "remaining", "total"]) {
-    if (key in rec) { const found = pickBalance(rec[key], depth + 1); if (found != null) return found; }
-  }
-  for (const key of ["data", "user", "account", "result", "payload"]) {
-    if (key in rec) { const found = pickBalance(rec[key], depth + 1); if (found != null) return found; }
-  }
+function asInt(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return Math.trunc(v);
+  if (typeof v === "string" && /^-?\d+(\.0+)?$/.test(v.trim())) return parseInt(v.trim(), 10);
   return null;
 }
 
-function isSignInError(node: unknown) {
-  if (!node || typeof node !== "object") return false;
-  const rec = node as Record<string, unknown>;
-  const code = String(rec.code || rec.error || rec.message || "").toLowerCase();
-  return /sign[_\s-]?in|unauth|session is required|not signed/.test(code);
+function looksCatalog(o: Record<string, unknown>) {
+  return Boolean(o.plans || o.packages || o.catalog || o.products || o.pricing || (Array.isArray(o.data) && o.data.length > 0 && typeof o.data[0] === "object" && o.data[0] !== null && "price" in (o.data[0] as object)));
 }
 
-async function loadCredits(token: string | null): Promise<{ amount: number | null; signIn: boolean }> {
-  const headers = new Headers({ Accept: "application/json" });
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-  const opts: RequestInit = { method: "GET", headers, credentials: "include", cache: "no-store" };
-  const urls = ["/api/credits", "/api/credits/balance"];
-  let signIn = false;
-  let amount: number | null = null;
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, opts);
-      const data = await res.json().catch(() => null);
-      const found = pickBalance(data);
-      if (found != null) amount = found;
-      if (isSignInError(data) || res.status === 401) signIn = true;
-    } catch { /* ignore */ }
+function isSignInPayload(o: Record<string, unknown>) {
+  const blob = `${o.error || ""} ${o.message || ""} ${o.code || ""}`;
+  return /session is required|sign[_\s-]?in|unauthori[sz]ed|unauthenticated|not authenticated/i.test(blob);
+}
+
+function parseCredits(payload: unknown): "signed_out" | "unknown" | { value: number } {
+  if (payload == null) return "unknown";
+  if (typeof payload === "number" && Number.isFinite(payload)) return { value: Math.trunc(payload) };
+  if (typeof payload !== "object") return "unknown";
+  const o = payload as Record<string, unknown>;
+  if (isSignInPayload(o)) return "signed_out";
+  if (looksCatalog(o)) return "unknown";
+  const reserved = asInt(o.reserved);
+  const keys = ["available_credits", "availableCredits", "remaining_credits", "remainingCredits", "credits_available", "credit_balance", "creditBalance", "current_credits", "credits", "available", "remaining", "balance"];
+  for (const k of keys) {
+    if (!(k in o)) continue;
+    const n = asInt(o[k]);
+    if (n == null) continue;
+    if (k === "balance" && reserved != null) return { value: Math.max(0, n - reserved) };
+    return { value: n };
   }
-  return { amount, signIn };
+  for (const nest of [o.data, o.result, o.payload, o.user]) {
+    if (nest && typeof nest === "object" && nest !== o) {
+      const inner = parseCredits(nest);
+      if (inner !== "unknown") return inner;
+    }
+  }
+  return "unknown";
 }
 
-function WebsiteMock({ scene }: { scene: Scene }) {
-  const kind = scene.kind || "home";
-  return (
-    <div className="aw-browser">
-      <div className="aw-browser-bar"><span className="aw-dot" /><span className="aw-dot" /><span className="aw-dot" /><div className="aw-url">crelavo.site / {kind}</div></div>
-      <div className="aw-browser-body">
-        <div className="aw-site-nav"><b>NORTH &amp; CO</b><span>Home</span><span>Shop</span><span>Story</span><span>Pay</span></div>
-        {kind === "home" && <div className="aw-hero"><div className="aw-kicker">NEW DROP</div><div className="aw-hero-title">Ceramic tableware for slow mornings</div><div className="aw-hero-sub">One offer. One button. Price on the first screen.</div><div className="aw-cta">Start here</div></div>}
-        {kind === "shop" && <div className="aw-grid">{["Mug", "Bowl", "Plate", "Set"].map((name) => <div key={name} className="aw-card"><div className="aw-swatch" /><div>{name}</div><div className="aw-price">$28</div></div>)}</div>}
-        {kind === "about" && <div className="aw-story"><div><div className="aw-kicker">PROCESS</div><p>Thrown, fired, packed. Short proof next to the product, not a long about page.</p></div><div><div className="aw-kicker">FAQ</div><p>Shipping, returns, care. Three answers. No extra columns on mobile.</p></div></div>}
-        {kind === "checkout" && <div className="aw-pay"><div className="aw-sum"><div>Mug × 1</div><div>Total $28</div></div><div className="aw-cta">Pay</div></div>}
-      </div>
-    </div>
-  );
+function readMode(): Mode {
+  if (typeof window === "undefined") return "video";
+  const t = (new URLSearchParams(window.location.search).get("type") || "").toLowerCase();
+  if (t.includes("website") || t.includes("site") || t === "web") return "website";
+  return "video";
 }
+
+function pad(n: number) { return n < 10 ? `0${n}` : String(n); }
 
 export default function AssistantPage() {
-  const [{ type, category }, setQuery] = useState(readQuery);
-  const website = isWebsiteMode(type, category);
-  const board = website ? WEB_PAGES : VIDEO_SCENES;
-  const [selected, setSelected] = useState(website ? 0 : 1);
+  const [mode] = useState<Mode>(readMode);
+  const items = mode === "website" ? WEB_PAGES : VIDEO_SCENES;
+  const [selected, setSelected] = useState(mode === "website" ? 1 : 2);
   const [draft, setDraft] = useState("");
-  const [goOpen, setGoOpen] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [creditsKnown, setCreditsKnown] = useState(false);
-  const shellRef = useRef<HTMLDivElement | null>(null);
-  const scene = board[Math.min(selected, board.length - 1)] || board[0];
+  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [go, setGo] = useState(false);
+  const [portal, setPortal] = useState<HTMLElement | null>(null);
+  const [vw, setVw] = useState(1440);
+  const [vh, setVh] = useState(900);
+  const [credit, setCredit] = useState<CreditState>({ signedIn: false, credits: null, loading: true });
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const [slot, setSlot] = useState({ w: 0, h: 0 });
+  const current = items.find((s) => s.id === selected) || items[0];
 
-  const lockViewport = useCallback(() => {
+  useEffect(() => {
+    let host = document.getElementById("crelavo-aw-thread");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "crelavo-aw-thread";
+      document.body.appendChild(host);
+    }
+    setPortal(host);
     const html = document.documentElement;
-    const body = document.body;
-    const prev = { htmlOverflow: html.style.overflow, bodyOverflow: body.style.overflow, htmlHeight: html.style.height, bodyHeight: body.style.height, bodyOverscroll: body.style.overscrollBehavior };
+    const prevH = html.style.overflow;
+    const prevB = document.body.style.overflow;
     html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    html.style.height = "100%";
-    body.style.height = "100%";
-    body.style.overscrollBehavior = "none";
-    const sync = () => {
-      const h = window.visualViewport?.height || window.innerHeight;
-      if (shellRef.current) { shellRef.current.style.height = `${Math.round(h)}px`; shellRef.current.style.width = `${window.innerWidth}px`; }
-    };
-    sync();
-    window.visualViewport?.addEventListener("resize", sync);
-    window.visualViewport?.addEventListener("scroll", sync);
-    window.addEventListener("resize", sync);
-    return () => {
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-      html.style.height = prev.htmlHeight;
-      body.style.height = prev.bodyHeight;
-      body.style.overscrollBehavior = prev.bodyOverscroll;
-      window.visualViewport?.removeEventListener("resize", sync);
-      window.visualViewport?.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
-    };
+    document.body.style.overflow = "hidden";
+    return () => { html.style.overflow = prevH; document.body.style.overflow = prevB; };
   }, []);
 
   useEffect(() => {
-    setQuery(readQuery());
-    const q = readQuery();
-    setSelected(isWebsiteMode(q.type, q.category) ? 0 : 1);
+    const sync = () => {
+      const vv = window.visualViewport;
+      setVw(Math.round(vv?.width ?? window.innerWidth));
+      setVh(Math.round(vv?.height ?? window.innerHeight));
+    };
+    sync();
+    window.visualViewport?.addEventListener("resize", sync);
+    window.addEventListener("resize", sync);
+    return () => { window.visualViewport?.removeEventListener("resize", sync); window.removeEventListener("resize", sync); };
   }, []);
 
-  useEffect(() => lockViewport(), [lockViewport]);
+  useEffect(() => {
+    const el = slotRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setSlot({ w: el.clientWidth, h: el.clientHeight }));
+    ro.observe(el);
+    setSlot({ w: el.clientWidth, h: el.clientHeight });
+    return () => ro.disconnect();
+  }, [portal, vw, vh]);
+
+  const loadCredits = useCallback(async (signal?: AbortSignal) => {
+    const token = getAccessToken();
+    if (!token) { setCredit({ signedIn: false, credits: null, loading: false }); return; }
+    setCredit((prev) => ({ ...prev, signedIn: true, loading: prev.credits == null }));
+    const headers: Record<string, string> = { Accept: "application/json", Authorization: `Bearer ${token}` };
+    let value: number | null = null;
+    for (const url of ["/api/credits/balance", "/api/credits"]) {
+      try {
+        const res = await fetch(url, { method: "GET", headers, credentials: "include", cache: "no-store", signal });
+        const text = await res.text();
+        let json: unknown = text;
+        try { json = JSON.parse(text); } catch { json = text; }
+        const parsed = parseCredits(json);
+        if (typeof parsed === "object") { value = parsed.value; break; }
+      } catch { /* next */ }
+    }
+    setCredit({ signedIn: true, credits: value, loading: false });
+  }, []);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    loadCredits(ac.signal);
+    const onSession = () => loadCredits();
+    const onVis = () => { if (document.visibilityState === "visible") loadCredits(); };
+    window.addEventListener("crelavo-session", onSession);
+    document.addEventListener("visibilitychange", onVis);
+    const t = window.setInterval(() => loadCredits(), 20000);
+    return () => { ac.abort(); window.removeEventListener("crelavo-session", onSession); document.removeEventListener("visibilitychange", onVis); window.clearInterval(t); };
+  }, [loadCredits]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(JOB_KEY) || sessionStorage.getItem(JOB_KEY);
       if (!raw) {
-        const payload = JSON.stringify({ type, category, selected, t: Date.now() });
-        localStorage.setItem(JOB_KEY, payload);
-        sessionStorage.setItem(JOB_KEY, payload);
+        const seed = JSON.stringify({ mode, selected, at: Date.now() });
+        localStorage.setItem(JOB_KEY, seed);
+        sessionStorage.setItem(JOB_KEY, seed);
       }
     } catch { /* ignore */ }
-  }, [type, category, selected]);
+  }, [mode, selected]);
 
-  const refreshCredits = useCallback(async () => {
-    const nextToken = readAccessToken();
-    setToken(nextToken);
-    const result = await loadCredits(nextToken);
-    if (result.amount != null) { setCredits(result.amount); setCreditsKnown(true); return; }
-    setCreditsKnown(true);
-    if (!nextToken && result.signIn) setCredits(null);
-  }, []);
+  const mobile = vw < 720;
+  const frame = useMemo(() => {
+    const maxW = Math.max(0, slot.w);
+    const maxH = Math.max(0, slot.h);
+    if (mobile) return { w: maxW, h: maxH };
+    let w = maxW;
+    let h = (w * 9) / 16;
+    if (h > maxH) { h = maxH; w = (h * 16) / 9; }
+    return { w, h };
+  }, [slot, mobile]);
 
-  useEffect(() => {
-    let alive = true;
-    const run = () => { if (alive) refreshCredits(); };
-    run();
-    const id = window.setInterval(run, 20000);
-    window.addEventListener("focus", run);
-    window.addEventListener("crelavo-session", run);
-    return () => { alive = false; window.clearInterval(id); window.removeEventListener("focus", run); window.removeEventListener("crelavo-session", run); };
-  }, [refreshCredits]);
-
-  const signedIn = Boolean(token);
-  const creditLabel = !creditsKnown && signedIn ? "CREDITS …" : signedIn ? `CREDITS ${(credits ?? 0).toLocaleString("en-US")}` : "SIGN IN";
-
-  const applyLocal = (text: string) => {
-    const next = board.map((item, index) => index === selected ? { ...item, dock: text, status: "REVISING" } : item);
-    board.splice(0, board.length, ...next);
-  };
-
-  const onSend = async () => {
+  const send = (e: React.FormEvent) => {
+    e.preventDefault();
     const text = draft.trim();
     if (!text) return;
-    applyLocal(text);
+    setNotes((prev) => ({ ...prev, [selected]: text }));
     setDraft("");
-    if ((credits ?? 0) === 0) return;
-    try {
-      const headers = new Headers({ "Content-Type": "application/json", Accept: "application/json" });
-      if (token) headers.set("Authorization", `Bearer ${token}`);
-      await fetch("/api/assistant-work", { method: "POST", headers, credentials: "include", body: JSON.stringify({ action: "revise", scene: scene.id, prompt: text, type: website ? "Website" : "AI Video" }) });
-    } catch { /* local revise already applied; engine stays disconnected */ }
+    if (credit.credits === 0 || credit.credits == null) return;
   };
 
-  const goLinks = useMemo(() => NAV, []);
+  const creditLabel = !credit.signedIn ? "SIGN IN" : credit.loading && credit.credits == null ? "..." : credit.credits == null ? "--" : credit.credits.toLocaleString("en-US");
+  const nav = [
+    { href: "/", label: "CRELAVO" },
+    { href: "/dashboard", label: "DASHBOARD" },
+    { href: "/pricing", label: "CREDITS" },
+    { href: "/dashboard/productions", label: "PRODUCTIONS" },
+  ];
 
-  return (
-    <div id={OVERLAY_ID} ref={shellRef} className="aw-shell">
-      <style>{`
-        .aw-shell{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;width:100vw;height:100dvh;max-height:100dvh;overflow:hidden;background:#070605;color:#f4eee6;font-family:Inter,system-ui,sans-serif;overscroll-behavior:none;}
-        .aw-shell *{box-sizing:border-box;}
-        .aw-top{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:48px;border-bottom:1px solid rgba(244,238,230,.12);}
-        .aw-home{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:1px solid rgba(244,238,230,.22);border-radius:999px;color:#f4eee6;text-decoration:none;font-size:11px;letter-spacing:.06em;}
-        .aw-nav{display:flex;gap:14px;flex:1;min-width:0;}
-        .aw-nav a{color:rgba(244,238,230,.72);text-decoration:none;font-size:11px;letter-spacing:.14em;}
-        .aw-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-        .aw-chip{display:inline-flex;align-items:center;height:28px;padding:0 10px;border:1px solid rgba(244,238,230,.22);border-radius:999px;color:#f4eee6;text-decoration:none;font-size:11px;letter-spacing:.08em;background:transparent;}
-        .aw-live{font-size:10px;letter-spacing:.16em;color:rgba(244,238,230,.6);}
-        .aw-pro{font-size:10px;letter-spacing:.14em;color:#d7b07a;}
-        .aw-go{display:none;}
-        .aw-stage{flex:1 1 auto;min-height:0;position:relative;margin:8px 10px 0;border:1px solid rgba(215,176,122,.28);overflow:hidden;}
-        .aw-stage-bg{position:absolute;inset:0;}
-        .aw-stage-copy{position:absolute;left:18px;right:18px;top:16px;z-index:1;}
-        .aw-kicker{font-size:10px;letter-spacing:.16em;color:rgba(244,238,230,.55);margin-bottom:8px;}
-        .aw-title{font-family:Georgia,serif;font-size:clamp(18px,2.4vw,28px);line-height:1.2;margin:0 0 8px;}
-        .aw-shot{font-size:13px;color:rgba(244,238,230,.72);margin:0;}
-        .aw-dock{flex:0 0 auto;margin:8px 10px 0;border:1px solid rgba(244,238,230,.16);padding:8px 10px;}
-        .aw-dock-k{font-size:9px;letter-spacing:.14em;color:rgba(244,238,230,.45);margin-bottom:4px;}
-        .aw-dock-t{font-size:13px;}
-        .aw-strip{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 10px 0;}
-        .aw-cell{height:36px;border:1px solid rgba(244,238,230,.16);background:#0c0a08;color:rgba(244,238,230,.7);font-size:10px;letter-spacing:.12em;cursor:pointer;}
-        .aw-cell.on{border-color:#d7b07a;color:#f4eee6;}
-        .aw-hint{display:none;margin:4px 10px 0;font-size:9px;letter-spacing:.12em;color:rgba(244,238,230,.4);}
-        .aw-composer{flex:0 0 auto;display:flex;align-items:center;gap:8px;margin:8px 10px 10px;padding:18px 8px 8px;border:1px solid rgba(244,238,230,.16);position:relative;}
-        .aw-composer[data-mode="web"]::before{content:"DIRECT THE SELECTED PAGE";}
-        .aw-composer[data-mode="video"]::before{content:"DIRECT THE SELECTED SCENE";}
-        .aw-composer::before{position:absolute;left:8px;top:4px;font-size:9px;letter-spacing:.12em;color:rgba(244,238,230,.45);}
-        .aw-composer-k{position:absolute;width:1px;height:1px;overflow:hidden;}
-        .aw-input{flex:1;min-width:0;height:36px;background:transparent;border:0;color:#f4eee6;font-size:16px;outline:none;}
-        .aw-send{height:32px;padding:0 14px;border:0;border-radius:999px;background:#f4eee6;color:#070605;font-size:11px;letter-spacing:.12em;cursor:pointer;}
-        .aw-sheet{position:absolute;inset:48px 10px auto;z-index:5;background:#0c0a08;border:1px solid rgba(244,238,230,.2);padding:10px;display:flex;flex-direction:column;gap:8px;}
-        .aw-sheet a{color:#f4eee6;text-decoration:none;font-size:12px;letter-spacing:.12em;padding:8px 0;border-bottom:1px solid rgba(244,238,230,.08);}
-        .aw-browser{position:absolute;inset:72px 16px 16px;display:flex;flex-direction:column;border:1px solid rgba(244,238,230,.18);background:rgba(7,6,5,.35);min-height:0;}
-        .aw-browser-bar{display:flex;align-items:center;gap:6px;padding:8px;border-bottom:1px solid rgba(244,238,230,.12);}
-        .aw-dot{width:8px;height:8px;border-radius:99px;background:rgba(244,238,230,.28);}
-        .aw-url{margin-left:8px;font-size:11px;letter-spacing:.08em;color:rgba(244,238,230,.55);}
-        .aw-browser-body{flex:1;min-height:0;overflow:hidden;padding:12px;}
-        .aw-site-nav{display:flex;gap:12px;font-size:11px;letter-spacing:.12em;margin-bottom:12px;color:rgba(244,238,230,.7);}
-        .aw-hero-title{font-family:Georgia,serif;font-size:22px;margin:6px 0;}
-        .aw-hero-sub{font-size:12px;color:rgba(244,238,230,.65);margin-bottom:12px;}
-        .aw-cta{display:inline-flex;align-items:center;height:28px;padding:0 12px;border:1px solid rgba(244,238,230,.3);font-size:11px;letter-spacing:.12em;}
-        .aw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-        .aw-card{border:1px solid rgba(244,238,230,.14);padding:8px;font-size:12px;}
-        .aw-swatch{height:44px;margin-bottom:8px;background:linear-gradient(180deg,rgba(244,238,230,.2),rgba(244,238,230,.04));}
-        .aw-price{color:#d7b07a;margin-top:4px;}
-        .aw-story{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;line-height:1.45;}
-        .aw-pay{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;}
-        .aw-sum{font-size:13px;}
-        @media (max-width: 820px){
-          .aw-nav,.aw-live,.aw-pro,.aw-dock,.aw-shot,.aw-hint{display:none;}
-          .aw-go{display:inline-flex;}
-          .aw-title{font-size:18px;}
-          .aw-grid{grid-template-columns:repeat(2,1fr);}
-          .aw-story{grid-template-columns:1fr;}
-          .aw-browser{inset:64px 10px 10px;}
-          .aw-cell{height:32px;font-size:9px;letter-spacing:.08em;}
-        }
-      `}</style>
-
-      <header className="aw-top">
-        <a className="aw-home" href="/">&lt; Home</a>
-        <nav className="aw-nav">{NAV.map((item) => <a key={item.href + item.label} href={item.href}>{item.label}</a>)}</nav>
-        <div className="aw-right">
-          {signedIn ? <a className="aw-chip" href="/pricing">{creditLabel}</a> : <a className="aw-chip" href="/?auth=login">SIGN IN</a>}
-          <span className="aw-live">LIVE</span><span className="aw-pro">PRO $9.99/MO</span>
-          <button type="button" className="aw-chip aw-go" onClick={() => setGoOpen((v) => !v)}>GO</button>
+  const shell = (
+    <div style={{ position: "fixed", inset: 0, width: vw, height: vh, background: "#070605", color: INK, overflow: "hidden", zIndex: 2147483000, display: "flex", flexDirection: "column", fontFamily: "Inter, system-ui, sans-serif" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 12, padding: mobile ? "8px 10px" : "8px 16px", borderBottom: `1px solid ${LINE}`, flex: "0 0 auto" }}>
+        <a href="/" style={pill()}>{"< Home"}</a>
+        {!mobile && nav.map((n) => <a key={n.href} href={n.href} style={navLink()}>{n.label}</a>)}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <a href={credit.signedIn ? "/pricing" : "/?auth=login"} style={pill()}>{creditLabel}</a>
+          {!mobile && <span style={tiny()}>LIVE</span>}
+          {!mobile && <span style={tiny()}>PRO $9.99/MO</span>}
+          {mobile && <button type="button" onClick={() => setGo(true)} style={pillBtn()}>GO</button>}
         </div>
       </header>
 
-      {goOpen && <div className="aw-sheet">{goLinks.map((item) => <a key={item.href + item.label} href={item.href} onClick={() => setGoOpen(false)}>{item.label}</a>)}</div>}
+      <div ref={slotRef} style={{ flex: "1 1 auto", minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", padding: mobile ? 8 : 12 }}>
+        <div style={{ width: frame.w, height: frame.h, border: `1px solid ${LINE}`, position: "relative", overflow: "hidden", background: mode === "video" ? (current as (typeof VIDEO_SCENES)[number]).wash : "linear-gradient(180deg, #12344d 0%, #070605 55%)" }}>
+          <div style={{ position: "absolute", inset: 16, pointerEvents: "none" }}>
+            <div style={{ ...tiny(), letterSpacing: "0.12em" }}>{mode === "website" ? "PAGE" : "SCENE"} {pad(current.id)} / SELECTED</div>
+            <h1 style={{ fontFamily: "Georgia, serif", fontSize: mobile ? 22 : 32, fontWeight: 500, margin: "8px 0 6px", color: INK }}>{current.title}</h1>
+            {!mobile && <p style={{ margin: 0, color: MUTED, fontSize: 13 }}>{current.shot}</p>}
+            {mode === "website" && (
+              <div style={{ marginTop: 18, pointerEvents: "none" }}>
+                <div style={{ ...tiny(), letterSpacing: "0.14em" }}>{(current as (typeof WEB_PAGES)[number]).path}</div>
+                <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 12, color: MUTED }}><b style={{ color: INK, letterSpacing: "0.08em" }}>NORTH & CO</b><span>Home</span><span>Shop</span><span>Story</span><span>Pay</span></div>
+                <div style={{ ...tiny(), marginTop: 16 }}>NEW DROP</div>
+                <div style={{ fontFamily: "Georgia, serif", fontSize: mobile ? 22 : 28, marginTop: 6 }}>Ceramic tableware for slow mornings</div>
+                <div style={{ color: MUTED, fontSize: 13, marginTop: 6 }}>One offer. One button. Price on the first screen.</div>
+                <div style={{ marginTop: 14, display: "inline-block", border: `1px solid ${LINE}`, padding: "8px 12px", fontSize: 12 }}>Start here</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-      <section className="aw-stage">
-        <div className="aw-stage-bg" style={{ background: scene.gradient }} />
-        <div className="aw-stage-copy"><div className="aw-kicker">{scene.label}</div><h1 className="aw-title">{scene.title}</h1><p className="aw-shot">{scene.shot}</p></div>
-        {website ? <WebsiteMock scene={scene} /> : null}
-      </section>
+      {!mobile && (
+        <div style={{ padding: "6px 12px 0", borderTop: `1px solid ${LINE}` }}>
+          <div style={{ ...tiny(), letterSpacing: "0.12em" }}>REVISE THIS {mode === "website" ? "PAGE" : "SCENE"} / PRODUCTION CONTINUES</div>
+          <div style={{ fontSize: 13, margin: "4px 0 8px" }}>{notes[selected] || current.note}</div>
+        </div>
+      )}
 
-      <div className="aw-dock"><div className="aw-dock-k">{website ? "REVISE THIS PAGE / PRODUCTION CONTINUES" : "REVISE THIS SCENE / PRODUCTION CONTINUES"}</div><div className="aw-dock-t">{scene.dock}</div></div>
+      <div style={{ display: "flex", gap: 0, padding: "0 8px", flex: "0 0 auto" }}>
+        {items.map((s) => {
+          const on = s.id === selected;
+          return <button key={s.id} type="button" onClick={() => setSelected(s.id)} style={{ flex: 1, background: "transparent", color: on ? INK : MUTED, border: `1px solid ${on ? INK : LINE}`, padding: mobile ? "8px 4px" : "10px 8px", fontSize: 11, letterSpacing: "0.08em", cursor: "pointer" }}>{pad(s.id)} {s.status}</button>;
+        })}
+      </div>
 
-      <div className="aw-strip">{board.map((item, index) => <button key={item.id} type="button" className={index === selected ? "aw-cell on" : "aw-cell"} onClick={() => setSelected(index)}>{item.id} {item.status}</button>)}</div>
-      <div className="aw-hint">{website ? "CLICK A PAGE TO REVISE IT WITHOUT RESTARTING THE JOB" : "CLICK A SCENE TO REVISE IT WITHOUT RESTARTING THE JOB"}</div>
-
-      <form className="aw-composer" data-mode={website ? "web" : "video"} onSubmit={(e) => { e.preventDefault(); onSend(); }}>
-        <label className="aw-composer-k" htmlFor="aw-dir">direction</label>
-        <input id="aw-dir" className="aw-input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={website ? "Make this page like this?" : "Make this part like this?"} autoComplete="off" />
-        <button className="aw-send" type="submit">SEND</button>
+      <form onSubmit={send} style={{ display: "flex", alignItems: "center", gap: 8, padding: 8, flex: "0 0 auto" }}>
+        <label style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ ...tiny(), display: "block", marginBottom: 4 }}>DIRECT THE SELECTED {mode === "website" ? "PAGE" : "SCENE"}</span>
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={mode === "website" ? "Make this page like this?" : "Make this part like this?"} style={{ width: "100%", background: "transparent", border: `1px solid ${LINE}`, color: INK, padding: "10px 12px", outline: "none", fontSize: 14 }} />
+        </label>
+        <button type="submit" style={{ ...pillBtn(), background: INK, color: "#070605" }}>SEND</button>
       </form>
+
+      {go && mobile && (
+        <div style={{ position: "absolute", inset: 0, background: "rgba(7,6,5,0.92)", zIndex: 2, padding: 24 }}>
+          <button type="button" onClick={() => setGo(false)} style={pillBtn()}>CLOSE</button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 24 }}>
+            {nav.map((n) => <a key={n.href} href={n.href} style={{ color: INK, textDecoration: "none", letterSpacing: "0.08em" }}>{n.label}</a>)}
+            <a href="/?auth=login" style={{ color: INK, textDecoration: "none", letterSpacing: "0.08em" }}>SIGN IN</a>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  if (!portal) return null;
+  return createPortal(shell, portal);
+}
+
+function pill(): React.CSSProperties {
+  return { display: "inline-flex", alignItems: "center", border: `1px solid ${LINE}`, borderRadius: 999, padding: "6px 12px", color: INK, textDecoration: "none", fontSize: 11, letterSpacing: "0.08em" };
+}
+
+function pillBtn(): React.CSSProperties {
+  return { ...pill(), background: "transparent", cursor: "pointer" };
+}
+
+function navLink(): React.CSSProperties {
+  return { color: MUTED, textDecoration: "none", fontSize: 11, letterSpacing: "0.12em" };
+}
+
+function tiny(): React.CSSProperties {
+  return { color: MUTED, fontSize: 10, letterSpacing: "0.14em" };
 }
