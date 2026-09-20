@@ -1,39 +1,169 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 
-const API="/api/assistant-work",ROOT_ID="crelavo-awb";
-const FREE_PARTS=["copy","layout","color"] as const;
-const PAID_PARTS=["voice","environment","product","scene","face","wardrobe"] as const;
-type Part=(typeof FREE_PARTS)[number]|(typeof PAID_PARTS)[number];
-type FileOut={name:string;content?:string;text?:string;mime?:string;url?:string};
-type ApiData={ok?:boolean;code?:string;message?:string;need?:number;required?:number;balance?:number;credits?:number;creditsRemaining?:number;charged?:number;cost?:number;spent?:number;jobId?:string;id?:string;workId?:string;previewHtml?:string;html?:string;files?:FileOut[];zipBase64?:string;zipB64?:string;zipName?:string;halted?:boolean;warning?:string;job?:{id?:string;status?:string;previewHtml?:string;files?:FileOut[]}};
-function isCreatePath(){return location.pathname==="/dashboard/create"||location.pathname==="/dashboard/assistant-workspace"}
-function num(v:unknown){const n=typeof v==="number"?v:Number(v);return Number.isFinite(n)?n:undefined}
-function normalize(d:ApiData){const job=d.job;return{...d,jobId:d.jobId||d.id||d.workId||job?.id,previewHtml:d.previewHtml||d.html||job?.previewHtml,files:d.files||job?.files,zipBase64:d.zipBase64||d.zipB64,halted:d.halted||job?.status==="halted_empty",message:d.message||d.warning}}
-function jobIdOf(d:ApiData){return String(d.jobId||d.id||d.workId||"")}
-function balanceOf(d:ApiData){return num(d.balance??d.creditsRemaining??d.credits)}
-function chargedOf(d:ApiData){return num(d.charged??d.cost??d.spent)}
-function htmlOf(d:ApiData){if(d.previewHtml)return d.previewHtml;if(d.html)return d.html;const f=(d.files||[]).find(x=>/html?$/i.test(x.name||"")||(x.mime||"").includes("html"));return f?.content||f?.text||""}
-function findComposer():HTMLElement|null{const nodes=Array.from(document.querySelectorAll<HTMLElement>("textarea,input,[contenteditable='true']"));for(const n of nodes){if(n.closest(`#${ROOT_ID}`))continue;const ph=(n.getAttribute("placeholder")||"").toLowerCase();if(ph.includes("describe")||ph.includes("what to make")||ph.includes("message"))return n}const visible=nodes.filter(n=>{if(n.closest(`#${ROOT_ID}`))return false;const r=n.getBoundingClientRect();return r.width>120&&r.height>16&&r.bottom>0});visible.sort((a,b)=>b.getBoundingClientRect().top-a.getBoundingClientRect().top);return visible[0]||null}
-function readValue(el:HTMLElement){return el instanceof HTMLTextAreaElement||el instanceof HTMLInputElement?(el.value||"").trim():(el.innerText||"").trim()}
-function isExampleTarget(target:EventTarget|null){const node=target instanceof Element?target:null;if(!node)return false;const block=node.closest("a,button,article,[role='button']");const text=((block as HTMLElement|null)?.innerText||"").toLowerCase();if(/coffee landing|studio site/.test(text))return true;for(const h of Array.from(document.querySelectorAll("h1,h2,h3,p,span,div"))){if((h.textContent||"").trim().toUpperCase()!=="EXAMPLES")continue;const root=h.parentElement;if(root&&root.contains(node)&&node!==h)return true}return false}
-function isSendButton(el:Element|null){const btn=el?.closest("button,[role='button']") as HTMLElement|null;if(!btn||btn.closest(`#${ROOT_ID}`))return false;const text=(btn.innerText||"").replace(/\s+/g," ").trim();if(/landing|business|ecommerce|english|outputs|sign in|create account|coffee|studio|pro \$/i.test(text)||text==="+")return false;if(text.length>2&&!/send|submit/i.test(text))return false;const aria=(btn.getAttribute("aria-label")||"").toLowerCase();if(/attach|upload|plus|add file/.test(aria))return false;const composer=findComposer();if(!composer)return false;const a=btn.getBoundingClientRect(),b=composer.getBoundingClientRect();const same=Math.abs((a.top+a.bottom-b.top-b.bottom)/2)<40,toRight=a.left>=b.right-12&&a.left-b.right<96;return /send|submit/.test(aria)?same:same&&toRight}
-function selectedChips(){const chips:string[]=[];for(const b of Array.from(document.querySelectorAll<HTMLElement>("button,[role='button']"))){if(b.closest(`#${ROOT_ID}`))continue;const t=(b.innerText||"").replace(/\s+/g," ").trim();if(!t||t.length>24||/^pro \$/i.test(t)||["LIVE","+","Outputs"].includes(t))continue;const m=getComputedStyle(b).backgroundColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);const cyan=!!m&&+m[3]>170&&+m[2]>130&&+m[1]<90;const pressed=b.getAttribute("aria-pressed")==="true"||b.getAttribute("data-state")==="on"||b.getAttribute("aria-selected")==="true";if(cyan||pressed)chips.push(t)}return chips}
-function routeMeta(){const q=new URLSearchParams(location.search),chips=selectedChips();return{type:q.get("type")||"",category:q.get("category")||"",language:chips.find(c=>/english|turkish|deutsch|français|german|french/i.test(c))||"English",option:chips.find(c=>/landing|business|ecommerce|e-commerce/i.test(c)),chips}}
-async function api(method:"GET"|"POST",body?:Record<string,unknown>):Promise<ApiData>{const {data}=await supabaseBrowser().auth.getSession();const headers:Record<string,string>={};if(data.session?.access_token)headers.authorization=`Bearer ${data.session.access_token}`;if(method==="POST")headers["content-type"]="application/json";const res=await fetch(API,{method,credentials:"include",cache:"no-store",headers,body:method==="POST"?JSON.stringify(body||{}):undefined});const text=await res.text();try{return normalize(JSON.parse(text) as ApiData)}catch{return{ok:false,message:text||`HTTP ${res.status}`}}}
-function hideOldLies(){for(const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))){if(el.closest(`#${ROOT_ID}`)||el.children.length)continue;const t=(el.textContent||"").trim();if(t==="Uses 0 credits"||/Download (locks|will use).*credits/i.test(t))el.style.display="none"}}
-function saveText(content:string,name:string,mime:string){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function saveB64(b64:string,name:string){const bin=atob(b64),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([bytes]));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+type WorkResponse = { ok?: boolean; code?: string; message?: string };
 
-export default function AssistantWorkBoot(){
- const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[status,setStatus]=useState(""),[error,setError]=useState(""),[html,setHtml]=useState(""),[files,setFiles]=useState<FileOut[]>([]),[zip,setZip]=useState<{b64:string;name:string}|null>(null),[balance,setBalance]=useState<number>(),[charged,setCharged]=useState<number>(),[part,setPart]=useState<Part>("copy"),[halted,setHalted]=useState(false),[need,setNeed]=useState<number>();
- const jobId=useRef(""),busyRef=useRef(false);
- const applyResult=useCallback((raw:ApiData,kind:string)=>{const d=normalize(raw);if(d.ok===false){setError(d.message||"Production did not start.");const b=balanceOf(d);if(b!==undefined)setBalance(b);const j=jobIdOf(d);if(j)jobId.current=j;const n=num(d.need??d.required);if(d.code==="credits_empty"||d.code==="credits_insufficient"||d.code==="insufficient"||n!==undefined){setHalted(true);setNeed(n);setStatus(`Insufficient credits. Need ${n??"—"}. Balance ${b??0}.`)}else if(d.code==="sign_in")setStatus("Sign in to start production.");return}const j=jobIdOf(d);if(j)jobId.current=j;const b=balanceOf(d),c=chargedOf(d),h=htmlOf(d);if(b!==undefined)setBalance(b);if(c!==undefined)setCharged(c);if(h)setHtml(h);if(d.files?.length)setFiles(d.files);if(d.zipBase64)setZip({b64:d.zipBase64,name:d.zipName||"crelavo.zip"});if(d.halted||b===0){setHalted(true);setStatus("Production stopped. Credits are 0. Engine is locked.")}else{setHalted(false);setStatus(kind==="produce"?`Charged ${c??0} credits. Remaining ${b??"—"}. Preview is on this page. Download does not use credits.`:kind==="revise"?(c&&c>0?`Part charged ${c} credits. Remaining ${b??"—"}.`:`Copy / layout / color is free. Remaining ${b??"—"}.`):kind==="resume"?`Resumed. Remaining ${b??"—"}.`:status)}setError("")},[status]);
- const run=useCallback(async(prompt:string)=>{if(busyRef.current||!isCreatePath()||!prompt.trim())return;busyRef.current=true;setBusy(true);setError("");const meta=routeMeta();try{if(!jobId.current){setStatus("Starting production.");applyResult(await api("POST",{action:"produce",type:meta.type,typeName:meta.type,category:meta.category,option:meta.option,language:meta.language,chips:meta.chips,prompt:prompt.trim(),message:prompt.trim(),path:location.pathname+location.search}),"produce")}else if(halted){setStatus("Resuming from where it stopped.");applyResult(await api("POST",{action:"resume",jobId:jobId.current,prompt:prompt.trim(),message:prompt.trim()}),"resume")}else{setStatus(FREE_PARTS.includes(part as typeof FREE_PARTS[number])?"Applying a free in-place change.":"Applying an in-place engine change. This part uses credits.");applyResult(await api("POST",{action:"revise",jobId:jobId.current,part,prompt:prompt.trim(),message:`${part}: ${prompt.trim()}`,type:meta.type,typeName:meta.type,category:meta.category}),"revise")}}catch(e){setError(e instanceof Error?e.message:"Network error")}finally{busyRef.current=false;setBusy(false)}},[applyResult,halted,part]);
- useEffect(()=>{if(!isCreatePath()||document.documentElement.getAttribute("data-crelavo-awb")==="1")return;document.documentElement.setAttribute("data-crelavo-awb","1");setReady(true);hideOldLies();const obs=new MutationObserver(hideOldLies);obs.observe(document.body,{childList:true,subtree:true});api("GET").then(d=>{const b=balanceOf(d);if(b!==undefined)setBalance(b);if(d.code==="sign_in")setStatus("Sign in to start production.")}).catch(()=>{});const onClick=(ev:MouseEvent)=>{const t=ev.target as Element|null;if(!isCreatePath()||!t||t.closest(`#${ROOT_ID}`)||isExampleTarget(t)||!isSendButton(t))return;ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();const c=findComposer();run(c?readValue(c):"")};const onKey=(ev:KeyboardEvent)=>{if(!isCreatePath()||ev.key!=="Enter"||ev.shiftKey||ev.isComposing)return;const t=ev.target as HTMLElement|null,c=findComposer();if(!t||t.closest(`#${ROOT_ID}`)||!c||(t!==c&&!c.contains(t)))return;ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();run(readValue(c))};window.addEventListener("click",onClick,true);window.addEventListener("keydown",onKey,true);return()=>{obs.disconnect();window.removeEventListener("click",onClick,true);window.removeEventListener("keydown",onKey,true);document.documentElement.removeAttribute("data-crelavo-awb")}},[run]);
- async function download(){const meta=routeMeta();if(meta.category.toLowerCase()==="live_sales_agent"){location.href="/dashboard/live-sales-agent";return}if(jobId.current){try{const d=await api("POST",{action:"deliver",jobId:jobId.current});applyResult(d,"deliver");if(d.zipBase64){saveB64(d.zipBase64,d.zipName||"crelavo.zip");return}if(d.files?.length){for(const f of d.files){if(f.url){const a=document.createElement("a");a.href=f.url;a.download=f.name;a.click()}else if(f.content||f.text)saveText(f.content||f.text||"",f.name,f.mime||"text/plain")}return}const h=htmlOf(d);if(h){saveText(h,"index.html","text/html");return}}catch{}}if(zip){saveB64(zip.b64,zip.name);return}for(const f of files)if(f.content||f.text)saveText(f.content||f.text||"",f.name,f.mime||"text/plain");if(!files.length&&html)saveText(html,"index.html","text/html")}
- if(!ready)return null;const live=routeMeta().category.toLowerCase()==="live_sales_agent",show=!!(html||files.length||status||error||halted);return createPortal(<div id={ROOT_ID} style={{position:"fixed",top:64,left:0,right:0,bottom:132,zIndex:40,pointerEvents:"none",fontFamily:"Inter,system-ui,sans-serif"}}>{show?<div style={{pointerEvents:"auto",height:"100%",display:"flex",flexDirection:"column",padding:"12px 24px 8px",boxSizing:"border-box",background:"#070b18"}}><div style={{display:"flex",gap:8,color:"#dbeafe",fontSize:13,marginBottom:8}}>{balance!==undefined?<span>Balance {balance}</span>:null}{charged!==undefined?<span>Charged {charged}</span>:null}{busy?<span>Working…</span>:null}</div>{status?<div style={{color:"#e2e8f0",fontSize:13,marginBottom:6}}>{status}</div>:null}{error?<div style={{color:"#fca5a5",fontSize:13,marginBottom:6}}>{error}</div>:null}{halted?<a href="/dashboard/credits" style={{color:"#38bdf8",fontSize:13,marginBottom:8}}>Add credits to continue from here. Production does not reset.{need?` Need ${need}.`:""}</a>:null}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>{[...FREE_PARTS,...PAID_PARTS].map(p=><button key={p} type="button" onClick={()=>setPart(p)} style={{border:"1px solid rgba(56,189,248,.35)",background:part===p?"#0ea5e9":"transparent",color:part===p?"#fff":"#dbeafe",borderRadius:999,padding:"4px 10px",fontSize:12,cursor:"pointer",textTransform:"capitalize"}}>{p}{FREE_PARTS.includes(p as typeof FREE_PARTS[number])?" · free":""}</button>)}</div><div style={{flex:1,minHeight:0,borderRadius:12,overflow:"hidden"}}>{html?<iframe title="Preview" sandbox="allow-scripts" srcDoc={html} style={{width:"100%",height:"100%",border:"1px solid rgba(148,163,184,.25)",borderRadius:12,background:"#fff"}}/>:null}</div><div style={{marginTop:8}}>{live?<a href="/dashboard/live-sales-agent" style={{color:"#38bdf8",fontSize:13}}>Open Live Sales Agent</a>:<button type="button" onClick={download} disabled={!html&&!files.length&&!zip&&!jobId.current} style={{background:"#0ea5e9",color:"#fff",border:0,borderRadius:999,padding:"8px 14px",fontSize:13,cursor:"pointer"}}>Download files</button>}</div></div>:null}</div>,document.body)
+function inAuthUi(el: EventTarget | null): boolean {
+  if (!(el instanceof Element)) return false;
+  return Boolean(el.closest('[role="dialog"], [data-auth], form[action*="login"], form[action*="sign"]'));
+}
+
+function isComposerField(el: EventTarget | null): el is HTMLElement {
+  if (!(el instanceof HTMLElement) || inAuthUi(el)) return false;
+  if (el instanceof HTMLTextAreaElement) return true;
+  if (el instanceof HTMLInputElement) {
+    const t = (el.type || "text").toLowerCase();
+    return t === "text" || t === "search" || t === "";
+  }
+  return el.isContentEditable;
+}
+
+function composerNear(from?: EventTarget | null): HTMLElement | null {
+  if (from && isComposerField(from)) return from;
+  if (from instanceof Element) {
+    const bar = from.closest("form, footer") || from.parentElement;
+    const found = bar?.querySelector<HTMLElement>('textarea, input[type="text"], input:not([type]), [contenteditable="true"]');
+    if (found && isComposerField(found)) return found;
+  }
+  const nodes = Array.from(document.querySelectorAll<HTMLElement>('textarea, input[placeholder], input[type="text"], [contenteditable="true"]')).filter((n) => isComposerField(n));
+  const described = nodes.find((n) => /describe what to make/i.test((n as HTMLInputElement).placeholder || n.getAttribute("aria-label") || ""));
+  return described || nodes.at(-1) || null;
+}
+
+function readText(el: HTMLElement | null): string {
+  if (!el) return "";
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) return el.value.trim();
+  return (el.textContent || "").trim();
+}
+
+function clearText(el: HTMLElement | null) {
+  if (!el) return;
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {
+    const desc = Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value");
+    desc?.set?.call(el, "");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+  el.textContent = "";
+}
+
+function isExampleClick(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  const host = target.closest("button, a, [role='button'], article, figure, li");
+  const t = (host?.textContent || "").toLowerCase();
+  return /coffee landing|studio site/.test(t);
+}
+
+function isSendButton(target: EventTarget | null): boolean {
+  if (!(target instanceof Element) || inAuthUi(target)) return false;
+  const btn = target.closest<HTMLElement>("button, [role='button']");
+  if (!btn || btn.closest("[data-aw-boot]")) return false;
+  const text = `${btn.textContent || ""} ${btn.getAttribute("aria-label") || ""} ${btn.getAttribute("title") || ""}`;
+  if (/pro\s*\$|sign in|create account|giriş|üye ol|outputs|coffee|studio|\blive\b/i.test(text)) return false;
+  const compact = text.replace(/\s/g, "");
+  if (compact === "+" || /attach|upload/i.test(text)) return false;
+  if (/↑|⬆|send|gönder|submit|arrow.?up/i.test(text)) return true;
+  const field = composerNear(btn);
+  if (!field) return false;
+  const bar = field.closest("form") || field.parentElement?.parentElement;
+  if (!bar || !bar.contains(btn)) return false;
+  const buttons = Array.from(bar.querySelectorAll<HTMLElement>("button, [role='button']")).filter((b) => {
+    const tx = (b.textContent || "").trim();
+    return tx !== "+" && !/pro/i.test(tx);
+  });
+  return buttons.at(-1) === btn;
+}
+
+export default function AssistantWorkBoot() {
+  const busy = useRef(false);
+  const [banner, setBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    const submit = async (text: string, el: HTMLElement | null) => {
+      if (busy.current) return;
+      busy.current = true;
+      setBanner("Starting production…");
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const { data: sessionData } = await supabaseBrowser().auth.getSession();
+        const token = sessionData.session?.access_token;
+        const headers: Record<string, string> = { "content-type": "application/json" };
+        if (token) headers.authorization = `Bearer ${token}`;
+        const type = params.get("type") || "Website";
+        const res = await fetch("/api/assistant-work", {
+          method: "POST",
+          headers,
+          credentials: "same-origin",
+          body: JSON.stringify({
+            action: "produce",
+            brief: text,
+            message: text,
+            type,
+            typeName: type,
+            category: params.get("category") || "website",
+          }),
+        });
+        let data: WorkResponse = {};
+        try {
+          data = (await res.json()) as WorkResponse;
+        } catch {
+          data = { ok: false, message: `HTTP ${res.status}` };
+        }
+        if (!res.ok || data.ok === false) {
+          setBanner(data.message || (data.code === "sign_in" ? "Sign in to start production." : data.code) || `HTTP ${res.status}`);
+          return;
+        }
+        clearText(el);
+        setBanner("Production started.");
+      } catch (err) {
+        setBanner(err instanceof Error ? err.message : "Send failed");
+      } finally {
+        busy.current = false;
+      }
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.keyCode === 229) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!isComposerField(e.target)) return;
+      const el = composerNear(e.target);
+      const text = readText(el);
+      if (!text) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      void submit(text, el);
+    };
+
+    const onClick = (e: MouseEvent) => {
+      if (isExampleClick(e.target) || !isSendButton(e.target)) return;
+      const el = composerNear(e.target);
+      const text = readText(el);
+      if (!text) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      void submit(text, el);
+    };
+
+    window.addEventListener("keydown", onKey, true);
+    window.addEventListener("click", onClick, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("click", onClick, true);
+    };
+  }, []);
+
+  return (
+    <div data-aw-boot style={{ position: "fixed", left: 16, bottom: 120, zIndex: 30, maxWidth: 280, pointerEvents: "none", color: "#94a3b8", fontSize: 11, lineHeight: 1.45 }}>
+      <div>Sign in to start production.</div>
+      <div>Copy · Free · Layout · Free · Color · Free</div>
+      <div>Voice · Environment · Product · Scene · Face · Wardrobe</div>
+      <div>Download files</div>
+      {banner ? <div style={{ color: "#7dd3fc", marginTop: 8, pointerEvents: "auto" }}>{banner}</div> : null}
+    </div>
+  );
 }
