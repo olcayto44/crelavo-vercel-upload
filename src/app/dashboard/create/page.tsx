@@ -1,31 +1,10 @@
-import { redirect } from "next/navigation";
-import { DashboardShell } from "@/components/DashboardShell";
-import { ProductionStudio } from "@/components/ProductionStudio";
+import { Suspense } from "react";
+import AssistantPage from "@/components/assistant-work/AssistantPage";
 
-type PageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-function firstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] ?? "" : value ?? "";
-}
-
-export default async function CreateProductionPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const initialIdea = firstParam(params?.idea);
-  const initialCategory = firstParam(params?.category);
-  const initialType = firstParam(params?.type) || initialCategory || "AI Video";
-  const advancedMode = firstParam(params?.advanced) === "1" || firstParam(params?.mode) === "advanced";
-  if (!advancedMode) {
-    const query = new URLSearchParams();
-    query.set("idea", initialIdea || initialType);
-    query.set("category", initialCategory || initialType);
-    redirect(`/dashboard/assistant-workspace${query.toString() ? `?${query.toString()}` : ""}`);
-  }
-
+export default function CreatePage() {
   return (
-    <DashboardShell className="dashboard-postlaunch-shell production-create-shell">
-      <ProductionStudio initialIdea={initialIdea} initialType={initialType} />
-    </DashboardShell>
+    <Suspense fallback={null}>
+      <AssistantPage />
+    </Suspense>
   );
 }
