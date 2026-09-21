@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chargeCredits, handleAssistantWork, quote } from "@/lib/assistant-work/core";
+import { handleAssistantWork, quote } from "@/lib/assistant-work/core";
+import { GET as creditsGet } from "@/app/api/credits/route";
+import { POST as creditsSpend } from "@/app/api/credits/spend/route";
 import {
   isLocalCategory,
   isCopyLayoutColorOnly as isLocalCopyOnly,
@@ -67,8 +69,13 @@ export async function POST(req: NextRequest) {
     }
 
     const priced = quote(category, [], "revise", prompt);
-    const balanceResult = await handleAssistantWork(req, { action: "balance" });
-    const available = Number((balanceResult.payload as Record<string, unknown>).balance ?? 0);
+    const creditUrl = new URL(req.url);
+    creditUrl.pathname = "/api/credits";
+    creditUrl.search = "user_id=" + encodeURIComponent(user.id);
+    const creditResponse = await creditsGet(new Request(creditUrl.toString(), { headers: req.headers }));
+    const creditData = await creditResponse.json().catch(() => ({})) as Record<string, unknown>;
+    if (!creditResponse.ok) return NextResponse.json({ ok: false, spend: false, code: "credit_read_failed", message: String(creditData.error || "Credit balance could not be read.") }, { status: creditResponse.status });
+    const available = Number(creditData.available ?? creditData.balance ?? creditData.credits ?? 0);
     if (priced.credits > 0 && available < priced.credits) {
       return NextResponse.json({ ok: false, spend: false, code: "insufficient", message: `Not enough credits. Need ${priced.credits}. Balance ${available}.`, balance: available, need: priced.credits }, { status: 402 });
     }
@@ -87,10 +94,17 @@ export async function POST(req: NextRequest) {
     let charged = 0;
     const providerTaskId = "taskId" in result ? result.taskId : undefined;
     if (result.spend && priced.credits > 0) {
-      const paid = await chargeCredits(user.id, priced.credits, `assistant_revise:${category}:${providerTaskId ?? scene}`);
-      if (!paid.ok) return NextResponse.json({ ok: false, spend: false, code: paid.code, message: paid.message || "Credit charge failed.", balance: paid.available, providerTaskId: providerTaskId ?? null }, { status: paid.code === "insufficient" ? 402 : 500 });
-      balance = paid.available;
-      charged = priced.credits;
+      const spendHeaders = new Headers(req.headers);
+      spendHeaders.set("Content-Type", "application/json");
+      const spendResponse = await creditsSpend(new Request(new URL("/api/credits/spend", req.url), {
+        method: "POST",
+        headers: spendHeaders,
+        body: JSON.stringify({ user_id: user.id, amount: priced.credits, session: providerTaskId ?? `assistant-${category}-${scene}-${Date.now()}`, type: category }),
+      }));
+      const paid = await spendResponse.json().catch(() => ({})) as Record<string, unknown>;
+      if (!spendResponse.ok || paid.ok === false) return NextResponse.json({ ok: false, spend: false, code: String(paid.code || "credit_charge_failed"), message: String(paid.error || paid.message || "Credit charge failed."), balance: Number(paid.available ?? paid.balance ?? available), providerTaskId: providerTaskId ?? null }, { status: spendResponse.status || 500 });
+      balance = Number(paid.available ?? paid.balance ?? available - priced.credits);
+      charged = Number(paid.spent ?? priced.credits);
     }
     return NextResponse.json({ ...result, balance, charged });
   }
