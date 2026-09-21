@@ -40,12 +40,23 @@ export async function POST(req: NextRequest) {
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
 
-    if (isLocalCategory(category)) {
-      const produced = await runLocalEngine({ prompt, type, category, scene, action });
-      if (!produced.ok) {
-        return NextResponse.json(produced, { status: 400 });
+    if (isLocalCategory(category, type)) {
+      const local = await runLocalEngine({ action, prompt, type, category, scene });
+      if (!local.ok) {
+        return NextResponse.json(local, { status: 400 });
       }
-      if (produced.spend) {
+
+      if (local.spend) {
+        const balanceResult = await handleAssistantWork(req, { action: "balance" });
+        const balancePayload = balanceResult.payload as Record<string, unknown>;
+        const balance = Number(balancePayload.balance || 0);
+        if (balanceResult.status !== 200 || !Number.isFinite(balance) || balance <= 0) {
+          return NextResponse.json(
+            { ok: false, spend: false, code: "insufficient_credits", message: "Not enough credits." },
+            { status: 402 },
+          );
+        }
+
         const spent = await supabase.rpc("assistant_work_spend", {
           p_user_id: user.id,
           p_category: category,
@@ -58,7 +69,8 @@ export async function POST(req: NextRequest) {
           );
         }
       }
-      return NextResponse.json(produced);
+
+      return NextResponse.json(local);
     }
 
     const result = await runMediaEngine({ category, type, prompt, scene });

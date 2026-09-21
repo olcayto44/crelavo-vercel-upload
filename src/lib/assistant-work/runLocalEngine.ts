@@ -1,62 +1,100 @@
-export const LOCAL_CATEGORIES = ["website", "saas", "mobile_app", "admin_project", "video_clipping", "ad_score_checker", "campaign_calendar", "document_pack"] as const;
+export const LOCAL_CATEGORIES = [
+  "website",
+  "saas",
+  "mobile_app",
+  "admin_project",
+  "video_clipping",
+  "ad_score_checker",
+  "campaign_calendar",
+  "document_pack",
+] as const;
+
 export type LocalCategory = (typeof LOCAL_CATEGORIES)[number];
-export type LocalFile = { path: string; content: string; mime: string };
-export type LocalEngineInput = { prompt: string; type?: string; category: string; scene?: string; action?: string };
-export type LocalEngineResult = { ok: boolean; spend: boolean; engine: "local"; code?: string; message?: string; category?: string; scene?: string; title?: string; body?: string; media?: null; files?: LocalFile[]; downloadName?: string };
-const SCENE_IDS = ["01", "02", "03", "04"] as const;
-type SceneId = (typeof SCENE_IDS)[number];
-type BoardPage = { id: SceneId; kicker: string; title: string; body: string; file: string };
-export function isLocalCategory(value: string): value is LocalCategory { return (LOCAL_CATEGORIES as readonly string[]).includes(value); }
-export function getCategoryEngine(category: string): "local" | "other" { return isLocalCategory(category) ? "local" : "other"; }
-export async function runLocalEngine(input: LocalEngineInput): Promise<LocalEngineResult> {
-  const category = String(input.category || "").trim(); const prompt = String(input.prompt || "").trim(); const scene = normalizeScene(input.scene);
-  if (!isLocalCategory(category)) return fail("not_local", "This category is not a local file engine.");
-  if (!prompt) return fail("empty_prompt", "Write what to produce first.");
-  if (isCopyLayoutColorOnly(prompt)) return { ok: true, spend: false, engine: "local", category, scene, title: clip(prompt, 80), body: prompt, media: null, files: [] };
-  const brand = brandFrom(prompt); const slug = slugify(brand); const tr = isTurkish(prompt); const pages = buildBoard(category, brand, prompt, tr); const files = buildFiles(category, brand, slug, prompt, pages, tr); const current = pages.find((page) => page.id === scene) || pages[0];
-  return { ok: true, spend: true, engine: "local", category, scene: current.id, title: current.title, body: current.body, media: null, files, downloadName: `${slug}-${category}.zip` };
+export type LocalEngineFile = { path: string; content: string; mime: string };
+export type LocalEngineInput = { prompt?: string; type?: string; category?: string; scene?: string | number; action?: string };
+export type LocalEngineResult = { ok: boolean; spend: boolean; engine: "local"; category: string; code?: string; message?: string; title: string; body: string; files: LocalEngineFile[]; media: null };
+const LOCAL_SET = new Set<string>(LOCAL_CATEGORIES);
+
+export function normalizeCategory(raw?: string): string {
+  return String(raw || "").trim().toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
-function fail(code: string, message: string): LocalEngineResult { return { ok: false, spend: false, engine: "local", code, message, media: null, files: [] }; }
-function normalizeScene(value?: string): SceneId { const raw = String(value || "01").replace(/\D/g, "").padStart(2, "0").slice(-2); return (SCENE_IDS as readonly string[]).includes(raw) ? (raw as SceneId) : "01"; }
-function isCopyLayoutColorOnly(prompt: string) {
-  const p = prompt.toLowerCase();
-  const copyHits = ["copy", "headline", "subhead", "text only", "layout", "spacing", "padding", "margin", "color", "colour", "palette", "font", "yazı", "başlık", "renk"];
-  const produceHits = ["zip", "source", "html", "pdf", "produce", "generate", "build", "file", "üret", "dosya", "kod", "sayfa", "app", "calendar", "score", "clip"];
-  return copyHits.some((hit) => p.includes(hit)) && !produceHits.some((hit) => p.includes(hit));
+export function isLocalCategory(category?: string, type?: string): boolean {
+  const cat = normalizeCategory(category); if (LOCAL_SET.has(cat)) return true;
+  return LOCAL_SET.has(normalizeCategory(type));
 }
-function isTurkish(text: string) { return /[\u00e7\u011f\u0131\u00f6\u015f\u00fc\u00c7\u011e\u0130\u00d6\u015e\u00dc]/.test(text) || /\b(ve|ile|için|bir|bu)\b/i.test(text); }
-function brandFrom(prompt: string) { const line = prompt.split(/[\n.|]/)[0] || "Studio"; const words = line.replace(/[^a-zA-Z0-9\u00e7\u011f\u0131\u00f6\u015f\u00fc\u00c7\u011e\u0130\u00d6\u015e\u00dc\s]/g, " ").trim().split(/\s+/).filter(Boolean).slice(0, 3); return words.join(" ") || "Studio"; }
-function slugify(value: string) { return value.toLowerCase().replace(/\u00e7/g, "c").replace(/\u011f/g, "g").replace(/\u0131/g, "i").replace(/\u00f6/g, "o").replace(/\u015f/g, "s").replace(/\u00fc/g, "u").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "studio"; }
-function clip(value: string, max: number) { const clean = value.replace(/\s+/g, " ").trim(); return clean.length <= max ? clean : `${clean.slice(0, max - 1).trim()}\u2026`; }
-function page(id: SceneId, kicker: string, title: string, body: string, file: string): BoardPage { return { id, kicker, title, body, file }; }
-function buildBoard(category: LocalCategory, brand: string, prompt: string, tr: boolean): BoardPage[] {
-  const brief = clip(prompt, 160);
-  switch (category) {
-    case "website": return [page("01", tr ? "SAYFA 01 / HOME" : "PAGE 01 / HOME", tr ? `${brand} ana sayfa` : `${brand} home`, tr ? "Kahraman, kanıt ve tek net başlangıç." : "Hero, proof, and one clear start.", "index.html"), page("02", tr ? "SAYFA 02 / CATALOG" : "PAGE 02 / CATALOG", tr ? `${brand} katalog` : `${brand} catalog`, tr ? "Ürünler, fiyat net, tek CTA." : "Products, clear price, one CTA.", "catalog.html"), page("03", tr ? "SAYFA 03 / STORY" : "PAGE 03 / STORY", tr ? `${brand} hikaye` : `${brand} story`, brief, "story.html"), page("04", tr ? "SAYFA 04 / CHECKOUT" : "PAGE 04 / CHECKOUT", tr ? `${brand} ödeme` : `${brand} checkout`, tr ? "Kısa form, güven satırı, tek satın al." : "Short form, trust line, one buy.", "checkout.html")];
-    case "saas": return [page("01", "SCREEN 01 / DASHBOARD", `${brand} dashboard`, tr ? "Bugünün işi, gelir, tek sonraki adım." : "Today’s work, revenue, one next action.", "dashboard.html"), page("02", "SCREEN 02 / AUTH", `${brand} sign in`, tr ? "Google ve e-posta. Şifre yok." : "Google and email. No password field.", "auth.html"), page("03", "SCREEN 03 / BILLING", `${brand} billing`, tr ? "Plan, dönem, fatura geçmişi." : "Plan, period, invoice history.", "billing.html"), page("04", "SCREEN 04 / CUSTOMERS", `${brand} customers`, brief, "customers.html")];
-    case "mobile_app": return [page("01", "SCREEN 01 / HOME", `${brand} home`, tr ? "İlk bakışta ne satıldığı belli." : "The offer is obvious on first glance.", "home.html"), page("02", "SCREEN 02 / CATALOG", `${brand} catalog`, tr ? "Kaydır, seç, sepete al." : "Scroll, pick, add.", "catalog.html"), page("03", "SCREEN 03 / ACCOUNT", `${brand} account`, brief, "account.html"), page("04", "SCREEN 04 / CHECKOUT", `${brand} checkout`, tr ? "Tek düğme, kapıda özet." : "One button, summary on the way out.", "checkout.html")];
-    case "admin_project": return [page("01", "SCREEN 01 / OVERVIEW", `${brand} overview`, tr ? "Kayıt sayısı, açık iş, uyarılar." : "Counts, open work, alerts.", "overview.html"), page("02", "SCREEN 02 / RECORDS", `${brand} records`, tr ? "Liste, ara, düzenle, sil." : "List, search, edit, delete.", "records.html"), page("03", "SCREEN 03 / ROLES", `${brand} roles`, brief, "roles.html"), page("04", "SCREEN 04 / SETTINGS", `${brand} settings`, tr ? "Kurulum notu. Crelavo barındırmaz." : "Setup notes. Crelavo does not host this.", "settings.html")];
-    case "video_clipping": return [page("01", "CUT 01 / HOOK", tr ? "İlk 3 saniye" : "First 3 seconds", tr ? "Yüz, ürün, vaat. Bekletme." : "Face, product, promise. No wait.", "cuts/01-hook.md"), page("02", "CUT 02 / PEAK", tr ? "En yüksek an" : "Peak moment", brief, "cuts/02-peak.md"), page("03", "CUT 03 / PROOF", tr ? "Kanıt kesiti" : "Proof cut", tr ? "Yorum, sonuç veya önce/sonra." : "Review, result, or before/after.", "cuts/03-proof.md"), page("04", "CUT 04 / CTA", tr ? "Kapanış CTA" : "Close CTA", tr ? "Ne yapılsın, nereye gidilsin." : "What to do, where to go.", "cuts/04-cta.md")];
-    case "ad_score_checker": return scoreBoard(brand, prompt, tr);
-    case "campaign_calendar": return [page("01", "WEEK 01 / NOW", tr ? "Bu hafta" : "This week", tr ? `${brand} için 7 g?nl?k kanca plan?.` : `7-day hook plan for ${brand}.`, "calendar/week-01.md"), page("02", "WEEK 02 / LAUNCH", tr ? "Lansman" : "Launch", brief, "calendar/week-02.md"), page("03", "WEEK 03 / PEAK", tr ? "Yoğun satış" : "Peak sales", tr ? "Sosyal, e-posta, canlı. Aynı teklif." : "Social, email, live. Same offer.", "calendar/week-03.md"), page("04", "WEEK 04 / FOLLOW", tr ? "Takip" : "Follow-up", tr ? "Kalan stok, yorum, yeniden hedefleme notu." : "Remainders, reviews, retarget note.", "calendar/week-04.md")];
-    case "document_pack": return [page("01", "DOC 01 / COVER", tr ? `${brand} kapak` : `${brand} cover`, tr ? "Tek cümlelik teklif." : "One-sentence offer.", "docs/cover.md"), page("02", "DOC 02 / OFFER", tr ? "Teklif" : "Offer", brief, "docs/offer.md"), page("03", "DOC 03 / PROOF", tr ? "Kanıt" : "Proof", tr ? "Sayı, alıntı, teslim listesi." : "Number, quote, delivery list.", "docs/proof.md"), page("04", "DOC 04 / NEXT", tr ? "Sonraki adım" : "Next step", tr ? "Dosyayı al, sen barındır." : "Take the files. You host them.", "docs/next.md")];
-  }
+export function isCopyLayoutColorOnly(prompt?: string): boolean {
+  const p = String(prompt || "").trim().toLowerCase();
+  if (!p || p.length > 180) return false;
+  const produce = /\b(build|create|generate|produce|full|website|saas|app|admin|calendar|score|clip|document|pitch|proposal|pack|page)\b/;
+  if (produce.test(p)) return false;
+  return /\b(copy|headline|title|subtitle|text|wording|rename|rewrite this line)\b/.test(p) || /\b(layout|spacing|padding|margin|align|grid|stack|move)\b/.test(p) || /\b(color|colour|background|font|dark|light|blue|red|gold|black|white)\b/.test(p);
 }
-function scoreBoard(brand: string, prompt: string, tr: boolean): BoardPage[] { const score = scoreAd(prompt); return [page("01", "SCORE 01 / TOTAL", `${brand} ${score.total}/100`, score.summary, "report/score.md"), page("02", "SCORE 02 / STRONG", tr ? "Güçlü yan" : "Strong", score.strong, "report/strong.md"), page("03", "SCORE 03 / FIX", tr ? "Önce bunu düzelt" : "Fix first", score.fix, "report/fix.md"), page("04", "SCORE 04 / SCRIPT", tr ? "Geliştirilmiş kanca" : "Improved hook", score.script, "report/script.md")]; }
-function scoreAd(prompt: string) { const text = prompt.toLowerCase(); let total = 58; const hasCta = /(buy|shop|order|get|start|now|al|sipariş|başla)/.test(text); const hasProof = /(review|result|before|after|guarantee|yorum|sonuç|kanıt|%|\d+)/.test(text); const hasHook = /^(stop|wait|you|don't|secret|dur|bekle|sen|bak)\b/.test(text.trim()); const len = prompt.trim().length; if (hasCta) total += 12; if (hasProof) total += 12; if (hasHook) total += 8; if (len >= 40 && len <= 400) total += 8; if (len < 20) total -= 10; total = Math.max(32, Math.min(94, total)); return { total, summary: `Hook, CTA and proof scored from the brief. ${total}/100.`, strong: hasProof ? "The brief already has a proof point. Keep it in the first 3 seconds." : "The product angle is clear enough to explain quickly.", fix: hasCta ? "Put the main benefit in the first 3 seconds and show the CTA on screen." : "Add one visible CTA and one proof shot (review, result, or before/after).", script: hasCta ? clip(`Stop scrolling. ${clip(prompt, 70)} Get it now.`, 140) : clip(`Stop scrolling. ${clip(prompt, 70)} Tap to get it.`, 140) }; }
-function buildFiles(category: LocalCategory, brand: string, slug: string, prompt: string, pages: BoardPage[], tr: boolean): LocalFile[] {
-  const readme = file("README.txt", [`${brand} / ${category}`, "", "Crelavo does not host, deploy, or do domain/server/app-store setup.", "Take these files and host them yourself.", "", `Brief: ${clip(prompt, 300)}`, "", ...pages.map((p) => `${p.id} ${p.title} -> ${p.file}`)].join("\n"), "text/plain");
-  const css = file("styles.css", cinemaCss(), "text/css"); const htmlPages = pages.map((p) => file(p.file.endsWith(".html") ? p.file : p.file.replace(/\.md$/, ".html"), htmlShell(brand, p, pages, tr), "text/html"));
-  if (["website", "saas", "mobile_app", "admin_project"].includes(category)) return [readme, css, ...pages.map((p) => file(p.file, htmlShell(brand, p, pages, tr), "text/html"))];
-  if (category === "video_clipping") return [readme, file("cuts/edl.txt", clippingEdl(brand, pages), "text/plain"), file("cuts/captions.srt", clippingSrt(pages), "application/x-subrip"), ...pages.map((p) => file(p.file, `# ${p.title}\n\n${p.body}\n`, "text/markdown"))];
-  if (category === "ad_score_checker") { const score = scoreAd(prompt); return [readme, file("report/ad-score.md", [`# ${brand} ad score`, "", `Total: ${score.total}/100`, "", score.summary, "", `Strong: ${score.strong}`, "", `Fix first: ${score.fix}`, "", `Script: ${score.script}`, ""].join("\n"), "text/markdown"), ...pages.map((p) => file(p.file, `# ${p.title}\n\n${p.body}\n`, "text/markdown"))]; }
-  if (category === "campaign_calendar") return [readme, file("calendar/28-days.md", calendarMd(brand, prompt, tr), "text/markdown"), ...pages.map((p) => file(p.file, `# ${p.title}\n\n${p.body}\n`, "text/markdown"))];
-  return [readme, file("docs/pitch.html", htmlShell(brand, pages[0], pages, tr), "text/html"), css, ...pages.map((p) => file(p.file, `# ${p.title}\n\n${p.body}\n\n${clip(prompt, 400)}\n`, "text/markdown")), ...htmlPages.slice(0, 1)];
+function brandFromPrompt(prompt: string): string { const line = String(prompt || "").trim().split(/\n/)[0] || "Crelavo Project"; const cleaned = line.replace(/["']/g, "").slice(0, 48).trim(); return cleaned || "Crelavo Project"; }
+function sceneIndex(scene?: string | number): number { const n = parseInt(String(scene ?? "1"), 10); if (!Number.isFinite(n) || n < 1) return 1; return Math.min(4, n); }
+function file(path: string, content: string, mime = "text/plain"): LocalEngineFile { return { path, content, mime }; }
+function ok(category: string, title: string, body: string, files: LocalEngineFile[], spend: boolean): LocalEngineResult { return { ok: true, spend, engine: "local", category, title, body, files, media: null }; }
+function css(): string { return `*{box-sizing:border-box}html,body{margin:0;font-family:Inter,system-ui,sans-serif;background:#07080f;color:#eef3ff}
+a{color:inherit;text-decoration:none}img{max-width:100%}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 20px}
+.nav{display:flex;gap:16px;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #1c2438}
+.btn{display:inline-block;padding:12px 18px;border-radius:999px;background:linear-gradient(90deg,#7c5cff,#22d3ee);color:#071018;font-weight:700}
+.card{background:#101627;border:1px solid #243049;border-radius:18px;padding:20px;margin:12px 0}
+h1{font-size:42px;line-height:1.1;margin:12px 0}p{color:#c6d0e4;line-height:1.6}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}`; }
+function htmlPage(title: string, inner: string): string { return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${title}</title><link rel="stylesheet" href="./styles.css"/></head><body>${inner}</body></html>`; }
+
+function websitePack(prompt: string, scene: number): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const brief = prompt.trim() || `${brand} landing, catalog, story and checkout.`;
+  const nav = `<header class="nav"><strong>${brand}</strong><nav><a href="./index.html">Home</a><a href="./catalog.html">Catalog</a><a href="./story.html">Story</a><a href="./checkout.html">Checkout</a></nav></header>`;
+  const pages = [
+    { title: "Home", file: "index.html", body: "Hero, proof, and one clear start.", inner: `${nav}<main class="wrap"><p>PAGE 01 / HOME</p><h1>${brand}</h1><p>${brief}</p><a class="btn" href="./catalog.html">Start here</a></main>` },
+    { title: "Catalog", file: "catalog.html", body: "Products, offers, and the next click.", inner: `${nav}<main class="wrap"><p>PAGE 02 / CATALOG</p><h1>Catalog</h1><div class="grid"><div class="card"><h3>Offer 01</h3><p>${brief}</p></div><div class="card"><h3>Offer 02</h3><p>Proof, price, and a short reason to buy.</p></div><div class="card"><h3>Offer 03</h3><p>Bundle or refill path.</p></div></div></main>` },
+    { title: "Story", file: "story.html", body: "Why it exists, who it is for.", inner: `${nav}<main class="wrap"><p>PAGE 03 / STORY</p><h1>Story</h1><div class="card"><p>${brief}</p><p>Keep the promise visible. One customer, one result, one next step.</p></div></main>` },
+    { title: "Checkout", file: "checkout.html", body: "Buy path. Host this yourself.", inner: `${nav}<main class="wrap"><p>PAGE 04 / CHECKOUT</p><h1>Checkout</h1><div class="card"><p>Connect your own payments on the host you choose. Crelavo delivers files only.</p><p>${brief}</p></div></main>` },
+  ];
+  const selected = pages[scene - 1] || pages[0];
+  const files = [file("styles.css", css(), "text/css"), ...pages.map((p) => file(p.file, htmlPage(`${brand} · ${p.title}`, p.inner), "text/html")), file("README.md", `# ${brand} website\n\nCrelavo delivers source files. You host them.\n\nOpen index.html, catalog.html, story.html, checkout.html.\nDo not wait on MiniMax or HeyGen.\n`, "text/markdown")];
+  return ok("website", selected.title, selected.body, files, true);
 }
-function file(path: string, content: string, mime: string): LocalFile { return { path, content, mime }; }
-function cinemaCss() { return `html,body{margin:0;background:#070605;color:#f4eee6;font-family:Inter,system-ui,sans-serif}\na{color:inherit;text-decoration:none}\n.wrap{min-height:100vh;display:flex;flex-direction:column}\n.hero{flex:1;padding:28px 24px 120px;background:linear-gradient(180deg,#c4a574 0%,#3a2214 55%,#070605 100%)}\nnav,footer{display:flex;gap:16px;padding:16px 24px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}\nh1{font-family:Georgia,serif;font-size:44px;margin:0 0 12px}\np{max-width:52ch;line-height:1.5;opacity:.86}\n.cta{display:inline-block;margin-top:24px;padding:12px 18px;border-radius:999px;background:#f4eee6;color:#070605}\nform{display:grid;gap:10px;max-width:360px} input,button{padding:12px;border-radius:10px;border:0}\nbutton{background:#f4eee6;color:#070605}`; }
-function htmlShell(brand: string, current: BoardPage, pages: BoardPage[], tr: boolean) { const nav = pages.map((p) => `<a href="${p.file.endsWith(".html") ? p.file.split("/").pop() : "index.html"}">${p.id} ${clip(p.title, 22)}</a>`).join(""); return `<!doctype html>\n<html lang="${tr ? "tr" : "en"}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${escapeHtml(current.title)}</title><link rel="stylesheet" href="${current.file.includes("/") ? "../styles.css" : "styles.css"}"/></head><body><div class="wrap"><nav><strong>${escapeHtml(brand)}</strong>${nav}</nav><main class="hero"><p>${escapeHtml(current.kicker)}</p><h1>${escapeHtml(current.title)}</h1><p>${escapeHtml(current.body)}</p><a class="cta" href="${pages[pages.length - 1].file.endsWith(".html") ? pages[pages.length - 1].file.split("/").pop() : "index.html"}">${tr ? "Başla" : "Start here"}</a></main><footer><span>${escapeHtml(brand)}</span><span>${tr ? "Dosyayı al, sen barındır." : "Take the files. You host them."}</span></footer></div></body></html>`; }
-function escapeHtml(value: string) { return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
-function clippingEdl(brand: string, pages: BoardPage[]) { const times = [["00:00:00:00", "00:00:03:00"], ["00:00:08:12", "00:00:14:00"], ["00:00:18:00", "00:00:23:10"], ["00:00:26:00", "00:00:30:00"]]; return [`TITLE: ${brand} clips`, "FCM: NON-DROP FRAME", "", ...pages.map((p, i) => { const [a, b] = times[i]; return `${String(i + 1).padStart(3, "0")}  AX       AA/V  C        ${a} ${b} ${a} ${b}\n* FROM CLIP NAME: ${p.title}`; }), "", "Replace timestamps after you drop the source video. Crelavo does not render or host the master."].join("\n"); }
-function clippingSrt(pages: BoardPage[]) { const stamps = [["00:00:00,000", "00:00:03,000"], ["00:00:08,400", "00:00:14,000"], ["00:00:18,000", "00:00:23,400"], ["00:00:26,000", "00:00:30,000"]]; return pages.map((p, i) => `${i + 1}\n${stamps[i][0]} --> ${stamps[i][1]}\n${p.body}\n`).join("\n"); }
-function calendarMd(brand: string, prompt: string, tr: boolean) { const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]; const hooks = tr ? ["Sorun", "Kanıt", "Teklif", "UGC", "Canlı", "Stok", "Kapanış"] : ["Problem", "Proof", "Offer", "UGC", "Live", "Stock", "Close"]; const lines = ["# " + brand + " campaign calendar", "", clip(prompt, 240), "", "| Day | Hook | Asset |", "| --- | --- | --- |"]; for (let week = 1; week <= 4; week += 1) days.forEach((day, i) => lines.push(`| W${week} ${day} | ${hooks[i]} | ${tr ? "Kopya + kesit notu" : "Copy + cut note"} |`)); return lines.join("\n") + "\n"; }
+function saasPack(prompt: string, scene: number): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const screens = [{ title: "Dashboard", body: "Home metrics and the next action." }, { title: "Auth", body: "Sign in and session gate." }, { title: "Billing", body: "Plan, invoice, and portal." }, { title: "Settings", body: "Workspace and members." }]; const selected = screens[scene - 1] || screens[0];
+  const files = [file("src/pages/Dashboard.tsx", `export default function Dashboard(){return (<main><h1>${brand} Dashboard</h1><p>${prompt}</p></main>);}`, "text/plain"), file("src/pages/Auth.tsx", `export default function Auth(){return (<main><h1>Sign in</h1><p>Use your existing auth. Crelavo does not host this app.</p></main>);}`, "text/plain"), file("src/pages/Billing.tsx", `export default function Billing(){return (<main><h1>Billing</h1><p>Keep payments on the platform you already use.</p></main>);}`, "text/plain"), file("src/pages/Settings.tsx", `export default function Settings(){return (<main><h1>Settings</h1><p>Workspace, members, brand.</p></main>);}`, "text/plain"), file("README.md", `# ${brand} SaaS starter\n\nFiles only. You host and deploy.\nScreens: Dashboard, Auth, Billing, Settings.\n`, "text/markdown")];
+  return ok("saas", selected.title, selected.body, files, true);
+}
+function mobilePack(prompt: string, scene: number): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const screens = [{ title: "Home", body: "First screen after open." }, { title: "Catalog", body: "List and product cards." }, { title: "Story", body: "Brand story screen." }, { title: "Checkout", body: "Order review screen." }]; const selected = screens[scene - 1] || screens[0];
+  const files = [file("App.tsx", `import { Text, View } from "react-native";\nexport default function App(){return (<View style={{flex:1,justifyContent:"center",padding:24}}><Text>${brand}</Text><Text>${prompt}</Text></View>);}`, "text/plain"), file("screens/Home.tsx", `import { Text, View } from "react-native";\nexport default function Home(){return (<View><Text>Home</Text></View>);}`, "text/plain"), file("screens/Catalog.tsx", `import { Text, View } from "react-native";\nexport default function Catalog(){return (<View><Text>Catalog</Text></View>);}`, "text/plain"), file("README.md", `# ${brand} mobile starter\n\nExpo / React Native files. You run and publish the app store build yourself.\nCrelavo does not do app-store setup.\n`, "text/markdown")];
+  return ok("mobile_app", selected.title, selected.body, files, true);
+}
+function adminPack(prompt: string, scene: number): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const screens = [{ title: "Admin home", body: "CRUD entry and counts." }, { title: "Records", body: "List, search, edit." }, { title: "Roles", body: "Owner, admin, support." }, { title: "Setup", body: "Host this yourself." }]; const selected = screens[scene - 1] || screens[0];
+  const files = [file("schema.sample.sql", `-- Sample customer schema. Do not run against Crelavo credit tables.\ncreate table if not exists records (\n  id text primary key,\n  title text not null,\n  status text not null default 'draft',\n  created_at timestamptz default now()\n);\n`, "text/plain"), file("src/AdminHome.tsx", `export default function AdminHome(){return (<main><h1>${brand} Admin</h1><p>${prompt}</p></main>);}`, "text/plain"), file("SETUP.md", `# ${brand} admin setup\n\nYou host the panel and the database.\nCrelavo does not deploy servers or domains.\n`, "text/markdown")];
+  return ok("admin_project", selected.title, selected.body, files, true);
+}
+function clippingPack(prompt: string): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const clips = [1,2,3,4,5,6,7,8].map((n) => ({ id: `clip_${String(n).padStart(2,"0")}`, in: `${(n-1)*45}`, out: `${(n-1)*45+18}`, title: `${brand} clip ${n}`, hook: n === 1 ? prompt.slice(0,120) : `Moment ${n}: keep the peak, cut the wait.` }));
+  const files = [file("clips.json", JSON.stringify({ brief: prompt, clips }, null, 2), "application/json"), file("captions.vtt", `WEBVTT\n\n${clips.map((c,i) => `${i+1}\n00:00:${String(i*3).padStart(2,"0")}.000 --> 00:00:${String(i*3+2).padStart(2,"0")}.000\n${c.hook}\n`).join("\n")}`, "text/vtt"), file("CLIP-PLAN.md", `# ${brand} clip plan\n\nLocal file plan. No MiniMax. No HeyGen.\nPaste this into your editor and cut the source video yourself.\n\n${clips.map((c) => `- ${c.id} ${c.in}s-${c.out}s · ${c.title}`).join("\n")}\n`, "text/markdown")];
+  return ok("video_clipping", "Clip plan ready", "Eight cut points, captions, and an editor list. Source video stays with you.", files, true);
+}
+function adScorePack(prompt: string): LocalEngineResult {
+  const text = prompt.trim(); let score = 40; if (/https?:|shopify|amazon|trendyol/i.test(text)) score += 10; if (/\b(buy|shop|get|order|now|cta)\b/i.test(text)) score += 15; if (/\b(review|proof|before|after|result|testimonial|guarantee)\b/i.test(text)) score += 15; if (text.split(/\s+/).length >= 12) score += 10; if (text.length < 24) score -= 15; score = Math.max(12, Math.min(96, score));
+  const angles = [`Hook: put the main benefit in the first 3 seconds. ${text.slice(0,80)}`, "Proof: add one review, result, or before/after in the first screen.", "CTA: one visible action. Shop, book, or start. Not both."]; const body = `Ad Score: ${score}/100. Fix first: first 3 seconds, visible CTA, one proof point.`;
+  return ok("ad_score_checker", `Ad Score: ${score}/100`, body, [file("SCORE.md", `# Ad score report\n\nScore: ${score}/100\n\nInput:\n${text}\n\nStrong:\nClear product angle if the offer can be said in one line.\n\nFix first:\n${angles.map((a,i) => `${i+1}. ${a}`).join("\n")}\n`, "text/markdown"), file("angles.json", JSON.stringify({ score, angles, input: text }, null, 2), "application/json")], true);
+}
+function calendarPack(prompt: string): LocalEngineResult {
+  const brand = brandFromPrompt(prompt); const days = Array.from({length:30},(_,i) => { const d = new Date(); d.setUTCDate(d.getUTCDate()+i); const iso=d.toISOString().slice(0,10); const kind=i%7===0?"Launch":i%3===0?"Proof":"Hook"; return {date:iso,kind,note:`${kind} for ${brand}`}; }); const csv=["date,kind,note",...days.map((x)=>`${x.date},${x.kind},"${x.note}"`)].join("\n");
+  return ok("campaign_calendar", "30-day calendar", "Seasonal brief, hooks, and launch days as files.", [file("calendar.csv",csv,"text/csv"),file("CALENDAR.md",`# ${brand} campaign calendar\n\n${prompt}\n\n${days.map((x)=>`- ${x.date} · ${x.kind}`).join("\n")}\n`,"text/markdown")], true);
+}
+function documentPack(prompt: string): LocalEngineResult {
+  const brand=brandFromPrompt(prompt); const files=[file("PITCH.md",`# ${brand} pitch\n\nProblem\n${prompt}\n\nSolution\nA clear offer, one buyer, one proof, one ask.\n\nAsk\nNext meeting or checkout.\n`,"text/markdown"),file("PROPOSAL.md",`# ${brand} proposal\n\nScope\nDeliver the files in this pack.\n\nOut of scope\nHosting, domain, app-store, and server setup stay with you.\n`,"text/markdown"),file("README.md",`# ${brand} document pack\n\nPitch, proposal, and setup notes. No MiniMax. No HeyGen.\n`,"text/markdown")];
+  return ok("document_pack","Pitch / proposal pack","Markdown files ready to download and edit.",files,true);
+}
+function colorRevise(category:string,prompt:string):LocalEngineResult{return ok(category,"Updated",prompt.trim(),[],false);}
+export async function runLocalEngine(input:LocalEngineInput):Promise<LocalEngineResult>{
+  const category=normalizeCategory(input.category)||normalizeCategory(input.type); const prompt=String(input.prompt||"").trim(); const scene=sceneIndex(input.scene);
+  if(!LOCAL_SET.has(category))return{ok:false,spend:false,engine:"local",category,code:"not_local",message:"Not a local file/copy category.",title:"",body:"",files:[],media:null};
+  if(!prompt)return{ok:false,spend:false,engine:"local",category,code:"empty_prompt",message:"Write what to produce first.",title:"",body:"",files:[],media:null};
+  if(isCopyLayoutColorOnly(prompt))return colorRevise(category,prompt);
+  switch(category as LocalCategory){case"website":return websitePack(prompt,scene);case"saas":return saasPack(prompt,scene);case"mobile_app":return mobilePack(prompt,scene);case"admin_project":return adminPack(prompt,scene);case"video_clipping":return clippingPack(prompt);case"ad_score_checker":return adScorePack(prompt);case"campaign_calendar":return calendarPack(prompt);case"document_pack":return documentPack(prompt);default:return colorRevise(category,prompt);}
+}
