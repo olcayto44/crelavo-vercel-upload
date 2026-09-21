@@ -314,7 +314,7 @@ export default function AssistantPage() {
           user_id: claims.sub, user_email: claims.email, production_type: category, package_id: packageId,
           title: prompt.replace(/\s+/g, " ").slice(0, 100), prompt, project_details: prompt,
           legal_acceptance: true, legal_acceptance_source: "cinema_assistant_send",
-          dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "cinema_assistant_send" },
+          dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "explicit_user_action" },
           quality: "normal", output_count: 1, output_duration_seconds: 6, aspect_ratio: "16:9",
           features: "Dashboard delivery, final download, ZIP, README",
           delivery_requirements: { requested: true, status: "pending", wantsZip: true, wantsReadme: true, wantsFinalVideo: dispatchAction !== "generate_image", formats: ["dashboard_delivery", dispatchAction === "generate_image" ? "final_image" : "final_mp4", "final_zip", "readme"] },
@@ -335,7 +335,7 @@ export default function AssistantPage() {
       if (!productionData.provider_start_requested) {
         const automationResponse = await cinemaFetch("/api/automation/start", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ production_id: productionId, user_id: claims.sub, dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "cinema_assistant_send" } }),
+          body: JSON.stringify({ production_id: productionId, user_id: claims.sub, dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "explicit_user_action" } }),
         });
         automationData = await automationResponse.json().catch(() => ({}));
         if (!automationResponse.ok) {
