@@ -29,7 +29,6 @@ import { providerReadinessSummary } from "@/lib/provider-readiness";
 import { buildProductionWorkflowState } from "@/lib/production-workflow";
 import { isProductAdProduction, isVideoLikeProductionType, launchCapacityPolicy, renderQueuePolicyForPackage, safeActiveVideoJobLimit } from "@/lib/queue-policy";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
-import { billingAccess } from "@/lib/billing-entitlements";
 import { hasValidProductionDispatch, productionDispatchError } from "@/lib/production-dispatch-gate";
 import { isExplicitDroneRequest } from "@/lib/production-routing";
 import { productionRequestUpdatePayload } from "@/lib/production-request-schema";
@@ -542,11 +541,6 @@ export async function POST(request: Request) {
      const access = await requireAutomationAccess(request, body, currentProduction);
 
     if (!access.ok) return access.response;
-    if (!isAdminRequest(request, body)) {
-      const billing = await billingAccess(supabase, String(currentProduction.user_id));
-      if (!billing.allowed) return Response.json({ error: "Production is locked while your payment is past due. Update your payment method to unlock it.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
-    }
-
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
     const existingVisualJob = existingOutput.visualJob && typeof existingOutput.visualJob === "object" ? existingOutput.visualJob as Record<string, unknown> : null;
     const existingHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingVisualJob?.id && !String(existingVisualJob.id).startsWith("pending-"));

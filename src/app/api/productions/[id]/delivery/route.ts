@@ -110,7 +110,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!isAdminRequest(request)) {
     const billing = await billingAccess(supabaseAdmin(), String(data.user_id));
     billingStatus = billing.status;
-    if (!billing.allowed) return Response.json({ error: "Downloads and final delivery are locked while payment is past due.", code: "payment_past_due", updatePaymentUrl: billing.updateUrl || "/dashboard/payment" }, { status: 402 });
   }
 
   const safeTitle = String(data.title ?? "crelavo-delivery").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-delivery";
