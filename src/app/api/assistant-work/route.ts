@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleAssistantWork } from "@/lib/assistant-work/core";
+import { chargeCredits, handleAssistantWork, quote } from "@/lib/assistant-work/core";
 import {
   isLocalCategory,
   isCopyLayoutColorOnly as isLocalCopyOnly,
   runLocalEngine,
 } from "@/lib/assistant-work/runLocalEngine";
 import {
+  engineConfigured,
+  getCategoryEngine,
   runMediaEngine,
   isCopyLayoutColorOnly,
 } from "@/lib/assistant-work/runMediaEngine";
@@ -64,15 +66,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...copy, spend: false });
     }
 
-    return NextResponse.json(
-      {
-        ok: false,
-        spend: false,
-        code: "production_pipeline_required",
-        message: "Create the production through /api/productions so credits, provider jobs, status tracking and delivery remain connected.",
-      },
-      { status: 409 },
-    );
+    const priced = quote(category, [], "revise", prompt);
+    const balanceResult = await handleAssistantWork(req, { action: "balance" });
+    const available = Number((balanceResult.payload as Record<string, unknown>).balance ?? 0);
+    if (priced.credits > 0 && available < priced.credits) {
+      return NextResponse.json({ ok: false, spend: false, code: "insufficient", message: `Not enough credits. Need ${priced.credits}. Balance ${available}.`, balance: available, need: priced.credits }, { status: 402 });
+    }
+
+    let result;
+    if (isLocalCategory(category, type)) {
+      result = await runLocalEngine({ prompt, type, category, scene, action });
+    } else {
+      if (!getCategoryEngine(category)) return NextResponse.json({ ok: false, spend: false, code: "unknown_category", message: "Unknown production category." }, { status: 400 });
+      if (!engineConfigured(category)) return NextResponse.json({ ok: false, spend: false, code: "engine_not_configured", message: "The selected provider is not configured on this host." }, { status: 503 });
+      result = await runMediaEngine({ prompt, type, category, scene });
+    }
+    if (!result.ok) return NextResponse.json(result, { status: 400 });
+
+    let balance = available;
+    let charged = 0;
+    const providerTaskId = "taskId" in result ? result.taskId : undefined;
+    if (result.spend && priced.credits > 0) {
+      const paid = await chargeCredits(user.id, priced.credits, `assistant_revise:${category}:${providerTaskId ?? scene}`);
+      if (!paid.ok) return NextResponse.json({ ok: false, spend: false, code: paid.code, message: paid.message || "Credit charge failed.", balance: paid.available, providerTaskId: providerTaskId ?? null }, { status: paid.code === "insufficient" ? 402 : 500 });
+      balance = paid.available;
+      charged = priced.credits;
+    }
+    return NextResponse.json({ ...result, balance, charged });
   }
 
   const out = await handleAssistantWork(req, body || {});

@@ -179,7 +179,8 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const scene = root.scene && typeof root.scene === "object" ? (root.scene as Record<string, unknown>) : root;
   const title = pickStr(scene, ["title", "headline", "name"]);
   const body = pickStr(scene, ["body", "copy", "description", "subtitle"]);
-  const media = pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
+  const mediaObject = root.media && typeof root.media === "object" ? root.media as Record<string, unknown> : {};
+  const media = pickStr(mediaObject, ["url"]) || pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
   return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
 }
 export default function AssistantPage() {
@@ -265,80 +266,22 @@ export default function AssistantPage() {
     setShots((cur) => cur.map((item, index) => index === selected ? { ...item, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
 
     try {
-      if (isCopyOnlyPrompt(prompt)) {
-        const response = await cinemaFetch("/api/assistant-work", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
-        });
-        const data = await response.json().catch(() => null);
-        if (!response.ok || !data || data.ok === false) throw new Error(String(data?.message || data?.error || "Copy update failed."));
-        const next = applyPayload(prev, data, prompt, website);
-        setShots((cur) => cur.map((item, index) => index === selected ? next : item));
-        setDraft("");
-        setNotice("COPY UPDATED / NO CREDIT SPEND");
-        setSending(false);
-        return;
-      }
-
-      if (category === "lip_sync" && (!materialFiles.some((file) => file.type.startsWith("video/")) || !materialFiles.some((file) => file.type.startsWith("audio/")))) throw new Error("Lip sync requires one video and one audio file.");
-      if (category === "voice_clone" && !materialFiles.some((file) => file.type.startsWith("audio/"))) throw new Error("Voice clone requires an authorized audio file.");
-      if (category === "visual_clone" && !materialFiles.some((file) => file.type.startsWith("image/"))) throw new Error("Visual clone requires an authorized reference image.");
-      if (category === "localization" && !materialFiles.some((file) => file.type.startsWith("video/"))) throw new Error("Localization requires a source video.");
-
-      const uploadedMaterials: Record<string, unknown>[] = [];
-      for (const materialFile of materialFiles) {
-        const form = new FormData();
-        form.set("user_id", claims.sub);
-        form.set("file", materialFile);
-        form.set("purpose", materialFile.type.startsWith("audio/") ? "audio_reference" : materialFile.type.startsWith("video/") ? "video_reference" : materialFile.type.startsWith("image/") ? "image_reference" : "user_material");
-        const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", body: form });
-        const uploadData = await uploadResponse.json().catch(() => ({}));
-        if (!uploadResponse.ok || !uploadData.material) throw new Error(String(uploadData.error || "Material upload failed."));
-        uploadedMaterials.push(uploadData.material as Record<string, unknown>);
-      }
-
-      const packageId = PACKAGE_BY_CATEGORY[category];
-      if (!packageId) throw new Error("This production category is not configured.");
-      const dispatchAction = category === "image" || category === "brand_kit" || category === "visual_clone" || category === "virtual_model_studio" ? "generate_image" : "start_production";
-      const productionResponse = await cinemaFetch("/api/productions", {
+      const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: claims.sub, user_email: claims.email, production_type: category, package_id: packageId,
-          title: prompt.replace(/\s+/g, " ").slice(0, 100), prompt, project_details: prompt,
-          legal_acceptance: true, legal_acceptance_source: "cinema_assistant_send",
-          dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "explicit_user_action" },
-          quality: "normal", output_count: 1, output_duration_seconds: 6, aspect_ratio: "16:9",
-          features: "Dashboard delivery, final download, ZIP, README",
-          delivery_requirements: { requested: true, status: "pending", wantsZip: true, wantsReadme: true, wantsFinalVideo: dispatchAction !== "generate_image", formats: ["dashboard_delivery", dispatchAction === "generate_image" ? "final_image" : "final_mp4", "final_zip", "readme"] },
-          uploaded_materials: uploadedMaterials,
-          request_metadata: { source: "cinema_assistant", scene: selected + 1, assistant_type: type },
-          input_json: { source: "cinema_assistant", scene: selected + 1, prompt },
-        }),
+        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
       });
-      const productionData = await productionResponse.json().catch(() => ({}));
-      if (!productionResponse.ok) {
-        if (productionResponse.status === 402) { await loadCredits(); throw new Error(String(productionData.error || "Not enough credits for this production.")); }
-        throw new Error(String(productionData.error || "Production could not be created."));
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data || data.ok === false) {
+        if (response.status === 402) await loadCredits();
+        throw new Error(String(data?.message || data?.error || "Production did not start."));
       }
-      const productionId = String(productionData.production?.id || "");
-      if (!productionId) throw new Error("Production record was not returned.");
-
-      let automationData: Record<string, unknown> = {};
-      if (!productionData.provider_start_requested) {
-        const automationResponse = await cinemaFetch("/api/automation/start", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ production_id: productionId, user_id: claims.sub, dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "explicit_user_action" } }),
-        });
-        automationData = await automationResponse.json().catch(() => ({}));
-        if (!automationResponse.ok) {
-          setNotice("PRODUCTION SAVED / OPEN ROOM TO CONTINUE");
-          window.location.href = "/dashboard/productions/" + encodeURIComponent(productionId);
-          return;
-        }
-      }
-      setNotice(automationData.project_delivery_ready ? "FILES READY / OPENING PRODUCTION" : "PROVIDER STARTED / OPENING PRODUCTION");
-      window.location.href = "/dashboard/productions/" + encodeURIComponent(productionId);
+      const next = applyPayload(prev, data, prompt, website);
+      setShots((cur) => cur.map((item, index) => index === selected ? next : item));
+      const nextBalance = parseCredits(data);
+      if (nextBalance != null) setCredits({ kind: "number", value: nextBalance });
+      setNotice(data.status === "ready" ? "SCENE READY / CINEMA STAYS OPEN" : "PROVIDER STARTED / SCENE IS RENDERING");
+      setSending(false);
     } catch (error) {
       setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
       setNotice(error instanceof Error ? error.message.toUpperCase() : "PRODUCTION DID NOT START / TRY AGAIN");

@@ -426,7 +426,9 @@ export async function POST(request: Request) {
   const serverNoPeopleMotionIntent = /no\s+human\s+presenter|do\s+not\s+use\s+any\s+human|no\s*people|without\s*(?:people|human)|insan\s*olmasın|insansız/.test(sanitizedServerRouteText)
     && /motion\s*graphics|kinetic\s*typography|animated\s*text|text\s*cards|dynamic\s*promotional/.test(sanitizedServerRouteText);
   const serverCinematicActionIntent = hasCinematicActionIntent(serverRouteText);
-  const serverMinimaxPresenterIntent = !directLuxuryProductCommercialRoute && !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasMinimaxPresenterIntent(`${sanitizedServerRouteText} ${String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? "").toLowerCase()} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
+  const explicitProviderPreference = String(initialRequestMetadata.preferredProvider ?? initialInputJson.preferredProvider ?? initialRequestMetadata.provider_route ?? initialInputJson.provider_route ?? "").toLowerCase();
+  const explicitHeyGenProviderRequested = /heygen/.test(explicitProviderPreference);
+  const serverMinimaxPresenterIntent = !explicitHeyGenProviderRequested && !directLuxuryProductCommercialRoute && !isImageProductionRequest && !serverNoPeopleMotionIntent && !serverCinematicActionIntent && hasMinimaxPresenterIntent(`${sanitizedServerRouteText} ${explicitProviderPreference} ${Boolean(initialRequestMetadata.presenterMode ?? initialInputJson.presenterMode)} ${String(initialRequestMetadata.creativePreset ?? initialInputJson.creativePreset ?? "").toLowerCase()}`);
 
 
   if (["talking_video_basic", "talking_video_multi_person", "talking_video_regional_culture"].includes(productionType)) productionType = "talking_video";

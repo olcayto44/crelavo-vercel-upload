@@ -772,7 +772,8 @@ if (talkingProviderType) {
   if (startRequestedError) throw new Error(`minimax_start_requested_update: ${errorMessage(startRequestedError, "DB update failed")}`);
 
   const explicitVideoAgentProvider = String(requestMetadata.preferredProvider ?? inputJson.preferredProvider ?? requestMetadata.selectedProviderService ?? inputJson.selectedProviderService ?? requestMetadata.provider_service ?? inputJson.provider_service ?? "").toLowerCase();
-  const useMiniMaxVideoAgent = explicitVideoAgentProvider === "minimax_video_agent" || explicitVideoAgentProvider === "minimax" || /video_agent|video agent/.test(productionDetectionText);
+  const explicitHeyGenVideoAgent = /heygen/.test(explicitVideoAgentProvider);
+  const useMiniMaxVideoAgent = !explicitHeyGenVideoAgent && (explicitVideoAgentProvider === "minimax_video_agent" || explicitVideoAgentProvider === "minimax" || /minimax_video_agent|minimax video agent/.test(productionDetectionText));
   let providerJob: Awaited<ReturnType<typeof startMiniMaxVideoAgentProduction>> | Awaited<ReturnType<typeof startHeyGenTalkingProduction>>;
   try {
     providerJob = useMiniMaxVideoAgent
