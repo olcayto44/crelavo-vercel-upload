@@ -1,6 +1,6 @@
 import { validateProductionSafety } from "@/lib/content-safety";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
-import { supabaseAdmin } from "@/lib/supabase";
+import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 const maxUploadBytes = 50 * 1024 * 1024;
 const allowedMimeTypes = new Set([
@@ -71,6 +71,8 @@ export async function POST(request: Request) {
     const purpose = String(formData.get("purpose") ?? "user_material").trim() || "user_material";
 
     if (!userId) return Response.json({ error: "User session is required." }, { status: 401 });
+    const verified = await requireVerifiedRequestUser(request, userId);
+    if (!verified.ok) return verified.response;
     if (!(file instanceof File)) return Response.json({ error: "A material file is required." }, { status: 400 });
     if (file.size <= 0) return Response.json({ error: "The uploaded file is empty." }, { status: 400 });
     if (file.size > maxUploadBytes) return Response.json({ error: "Material files can be up to 50 MB." }, { status: 400 });

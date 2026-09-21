@@ -4,6 +4,24 @@ import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
 const FORGET_KEYS = ["crelavo-aw-last-v2", "crelavo-aw-last", "crelavo-aw-scene", "crelavo-aw-selected"];
+const PACKAGE_BY_CATEGORY: Record<string, string> = {
+  campaign: "campaign_starter", ai_agent: "agent_brand_face", localization: "localization_video",
+  ad_score_checker: "ad_score_basic", virtual_model_studio: "virtual_model_single",
+  cultural_localization: "cultural_localization_brief", campaign_calendar: "campaign_calendar_brief",
+  crelavo_academy: "academy_template_pack", community_showcase: "showcase_style_reuse",
+  video: "video_draft", drama: "drama_short_series", talking_video: "talking_video_basic",
+  documentary: "documentary_short", animation: "animation_explainer", anime_short_film: "anime_short_scene",
+  animal_video: "animal_funny_short", nature_video: "nature_cinematic_short",
+  planet_space_video: "planet_explainer_short", drone_video: "drone_location_video",
+  live_sales_agent: "live_sales_agent_starter", studio: "studio_series_film",
+  cinematic_video: "cinematic_video_pack", video_clipping: "video_clipping_shorts",
+  avatar: "avatar_design", lip_sync: "lip_sync_video", voice_clone: "voice_clone_pack",
+  visual_clone: "visual_clone_pack", video_tools: "video_tools_pack",
+  stickman_animation: "stickman_short", music_video: "music_lyric_video",
+  website: "website_landing", saas: "saas_dashboard", mobile_app: "mobile_ui",
+  image: "image_single", brand_kit: "brand_full", document_pack: "document_pitch",
+  admin_project: "admin_basic",
+};
 type CreditState =
   | { kind: "loading" }
   | { kind: "signed_out" }
@@ -36,6 +54,21 @@ function fromAuthJson(raw: string | null): string | null {
     if (Array.isArray(v) && typeof v[0] === "string" && v[0].split(".").length === 3) return v[0];
   } catch { if (trimmed.split(".").length === 3) return trimmed; }
   return null;
+}
+function readSessionClaims(): { sub: string; email: string } | null {
+  const token = readAccessToken();
+  if (!token) return null;
+  try {
+    const raw = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(raw.padEnd(Math.ceil(raw.length / 4) * 4, "="))) as Record<string, unknown>;
+    const sub = typeof claims.sub === "string" ? claims.sub : "";
+    return sub ? { sub, email: typeof claims.email === "string" ? claims.email : "" } : null;
+  } catch { return null; }
+}
+function isCopyOnlyPrompt(prompt: string) {
+  const p = prompt.trim().toLowerCase();
+  if (!p || p.length > 280 || /video|film|image|avatar|voice|clone|render|mp4|png|sahne|g\u00f6rsel|\u00fcret|produce|scene/.test(p)) return false;
+  return /\b(copy|layout|color|colour|metin|yaz\u0131|renk|palette|typography|tipografi|headline|title|subtitle|spacing|padding|margin|font)\b/.test(p);
 }
 function readAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -157,6 +190,7 @@ export default function AssistantPage() {
   const [selected, setSelected] = useState(0);
   const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
   const [draft, setDraft] = useState("");
+  const [materialFiles, setMaterialFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
   const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
@@ -225,53 +259,98 @@ export default function AssistantPage() {
   async function onSend() {
     const prompt = draft.trim();
     if (!prompt || sending) return;
-    if (credits.kind === "signed_out") { window.location.href = "/?auth=login"; return; }
-    if (credits.kind === "number" && credits.value <= 0) { setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED"); return; }
+    const claims = readSessionClaims();
+    if (!claims) { window.location.href = "/?auth=login"; return; }
+    if (credits.kind === "number" && credits.value <= 0 && !isCopyOnlyPrompt(prompt)) {
+      setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
+      return;
+    }
+
     const prev = shots[selected];
     setSending(true);
-    setNotice("REVISING THIS SCENE / PRODUCTION CONTINUES");
-    setShots((cur) => cur.map((s, i) => i === selected ? { ...s, status: website ? s.status : "REVISING", label: website ? s.label : "REVISING" } : s));
+    setNotice(isCopyOnlyPrompt(prompt) ? "UPDATING COPY / NO CREDIT SPEND" : "CREATING PRODUCTION / CONNECTING WORKER");
+    setShots((cur) => cur.map((item, index) => index === selected ? { ...item, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
+
     try {
-      const res = await cinemaFetch("/api/assistant-work", {
+      if (isCopyOnlyPrompt(prompt)) {
+        const response = await cinemaFetch("/api/assistant-work", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data || data.ok === false) throw new Error(String(data?.message || data?.error || "Copy update failed."));
+        const next = applyPayload(prev, data, prompt, website);
+        setShots((cur) => cur.map((item, index) => index === selected ? next : item));
+        setDraft("");
+        setNotice("COPY UPDATED / NO CREDIT SPEND");
+        setSending(false);
+        return;
+      }
+
+      if (category === "lip_sync" && (!materialFiles.some((file) => file.type.startsWith("video/")) || !materialFiles.some((file) => file.type.startsWith("audio/")))) throw new Error("Lip sync requires one video and one audio file.");
+      if (category === "voice_clone" && !materialFiles.some((file) => file.type.startsWith("audio/"))) throw new Error("Voice clone requires an authorized audio file.");
+      if (category === "visual_clone" && !materialFiles.some((file) => file.type.startsWith("image/"))) throw new Error("Visual clone requires an authorized reference image.");
+      if (category === "localization" && !materialFiles.some((file) => file.type.startsWith("video/"))) throw new Error("Localization requires a source video.");
+
+      const uploadedMaterials: Record<string, unknown>[] = [];
+      for (const materialFile of materialFiles) {
+        const form = new FormData();
+        form.set("user_id", claims.sub);
+        form.set("file", materialFile);
+        form.set("purpose", materialFile.type.startsWith("audio/") ? "audio_reference" : materialFile.type.startsWith("video/") ? "video_reference" : materialFile.type.startsWith("image/") ? "image_reference" : "user_material");
+        const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", body: form });
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        if (!uploadResponse.ok || !uploadData.material) throw new Error(String(uploadData.error || "Material upload failed."));
+        uploadedMaterials.push(uploadData.material as Record<string, unknown>);
+      }
+
+      const packageId = PACKAGE_BY_CATEGORY[category];
+      if (!packageId) throw new Error("This production category is not configured.");
+      const dispatchAction = category === "image" || category === "brand_kit" || category === "visual_clone" || category === "virtual_model_studio" ? "generate_image" : "start_production";
+      const productionResponse = await cinemaFetch("/api/productions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
+        body: JSON.stringify({
+          user_id: claims.sub, user_email: claims.email, production_type: category, package_id: packageId,
+          title: prompt.replace(/\s+/g, " ").slice(0, 100), prompt, project_details: prompt,
+          legal_acceptance: true, legal_acceptance_source: "cinema_assistant_send",
+          dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "cinema_assistant_send" },
+          quality: "normal", output_count: 1, output_duration_seconds: 6, aspect_ratio: "16:9",
+          features: "Dashboard delivery, final download, ZIP, README",
+          delivery_requirements: { requested: true, status: "pending", wantsZip: true, wantsReadme: true, wantsFinalVideo: dispatchAction !== "generate_image", formats: ["dashboard_delivery", dispatchAction === "generate_image" ? "final_image" : "final_mp4", "final_zip", "readme"] },
+          uploaded_materials: uploadedMaterials,
+          request_metadata: { source: "cinema_assistant", scene: selected + 1, assistant_type: type },
+          input_json: { source: "cinema_assistant", scene: selected + 1, prompt },
+        }),
       });
-      const data = await res.json().catch(() => null);
-      if (isSessionError(data, res.status)) {
-        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
-        setCredits({ kind: "signed_out" });
-        setNotice("SIGN IN TO START PRODUCTION");
-        setSending(false);
-        return;
+      const productionData = await productionResponse.json().catch(() => ({}));
+      if (!productionResponse.ok) {
+        if (productionResponse.status === 402) { await loadCredits(); throw new Error("Not enough credits for this production."); }
+        throw new Error(String(productionData.error || "Production could not be created."));
       }
-      if (isInsufficient(data, res.status)) {
-        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
-        setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
-        await loadCredits();
-        setSending(false);
-        return;
+      const productionId = String(productionData.production?.id || "");
+      if (!productionId) throw new Error("Production record was not returned.");
+
+      let automationData: Record<string, unknown> = {};
+      if (!productionData.provider_start_requested) {
+        const automationResponse = await cinemaFetch("/api/automation/start", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ production_id: productionId, user_id: claims.sub, dispatch_action: dispatchAction, confirmation: { confirmed: true, source: "cinema_assistant_send" } }),
+        });
+        automationData = await automationResponse.json().catch(() => ({}));
+        if (!automationResponse.ok) {
+          setNotice("PRODUCTION SAVED / OPEN ROOM TO CONTINUE");
+          window.location.href = "/dashboard/productions/" + encodeURIComponent(productionId);
+          return;
+        }
       }
-      if (!res.ok || !data || data.ok === false) {
-        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
-        const msg = data && typeof data === "object" ? String((data as Record<string, unknown>).message || (data as Record<string, unknown>).error || "") : "";
-        setNotice(msg.trim() ? msg.trim().toUpperCase() : "PRODUCTION DID NOT START / TRY AGAIN");
-        setSending(false);
-        return;
-      }
-      const next = applyPayload(prev, data, prompt, website);
-      setShots((cur) => cur.map((s, i) => (i === selected ? next : s)));
-      setDraft("");
-      setNotice("REVISE THIS SCENE / PRODUCTION CONTINUES");
-      const maybeBal = parseCredits(data);
-      if (maybeBal != null) setCredits({ kind: "number", value: maybeBal });
-      else await loadCredits();
-    } catch {
-      setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
-      setNotice("PRODUCTION DID NOT START / TRY AGAIN");
-      setCredits((cur) => (cur.kind === "signed_out" ? cur : { kind: "unknown" }));
+      setNotice(automationData.project_delivery_ready ? "FILES READY / OPENING PRODUCTION" : "PROVIDER STARTED / OPENING PRODUCTION");
+      window.location.href = "/dashboard/productions/" + encodeURIComponent(productionId);
+    } catch (error) {
+      setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
+      setNotice(error instanceof Error ? error.message.toUpperCase() : "PRODUCTION DID NOT START / TRY AGAIN");
+      setSending(false);
     }
-    setSending(false);
   }
   if (!mounted) return null;
   const shell = (
@@ -297,6 +376,8 @@ export default function AssistantPage() {
       <div style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, margin: "8px 12px 0", border: "1px solid rgba(244,238,230,0.18)" }}>
         {shots.map((s, i) => <button key={s.id} type="button" onClick={() => setSelected(i)} style={{ background: i === selected ? "rgba(244,238,230,0.14)" : "transparent", color: "rgb(244,238,230)", border: "none", borderRight: i < 3 ? "1px solid rgba(244,238,230,0.18)" : "none", padding: "10px 6px", fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>{String(s.id).padStart(2, "0")} {s.label}</button>)}
       </div>
+      {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools"].includes(category)) ? <div style={{ padding: "8px 12px 0", display: "grid", gap: 5 }}><label style={{ fontSize: 10, letterSpacing: "0.12em", opacity: 0.72 }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ fontSize: 11 }} /><small style={{ opacity: 0.55 }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></div> : null}
+      <div style={{ padding: "6px 14px 0", fontSize: 9, opacity: 0.55 }}>SEND confirms you own or have permission to use the submitted content and starts a credit-priced production unless the request is copy/layout/color only.</div>
       <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", display: "flex", gap: 10, padding: "10px 12px 12px" }}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" disabled={sending} style={{ flex: 1, minWidth: 0, background: "transparent", border: "1px solid rgba(244,238,230,0.22)", borderRadius: 999, color: "rgb(244,238,230)", padding: "12px 16px", fontSize: 14, outline: "none" }} />
         <button type="submit" disabled={sending || !draft.trim()} style={{ border: "none", borderRadius: 999, background: "rgb(248,251,255)", color: "#111", padding: "0 18px", fontSize: 11, letterSpacing: "0.14em", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1 }}>SEND</button>

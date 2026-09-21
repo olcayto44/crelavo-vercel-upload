@@ -6,9 +6,6 @@ import {
   runLocalEngine,
 } from "@/lib/assistant-work/runLocalEngine";
 import {
-  getCategoryEngine,
-  engineConfigured,
-  expectsSpend,
   runMediaEngine,
   isCopyLayoutColorOnly,
 } from "@/lib/assistant-work/runMediaEngine";
@@ -67,74 +64,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ...copy, spend: false });
     }
 
-    const requireBalance = async () => {
-      const balanceResult = await handleAssistantWork(req, { action: "balance" });
-      const balancePayload = balanceResult.payload as Record<string, unknown>;
-      const balance = Number(balancePayload.balance || 0);
-      return balanceResult.status === 200 && Number.isFinite(balance) && balance > 0;
-    };
-
-    const spend = async () =>
-      supabase.rpc("assistant_work_spend", {
-        p_user_id: user.id,
-        p_category: category,
-        p_action: action,
-      });
-
-    if (isLocalCategory(category, type)) {
-      const local = await runLocalEngine({ prompt, type, category, scene, action });
-      if (!local.ok) return NextResponse.json(local, { status: 400 });
-      if (local.spend) {
-        if (!(await requireBalance())) {
-          return NextResponse.json(
-            { ok: false, spend: false, code: "insufficient_credits", message: "Not enough credits." },
-            { status: 402 },
-          );
-        }
-        const spent = await spend();
-        if (spent.error) {
-          return NextResponse.json(
-            { ok: false, spend: false, code: "insufficient_credits", message: spent.error.message },
-            { status: 402 },
-          );
-        }
-      }
-      return NextResponse.json(local);
-    }
-
-    if (!getCategoryEngine(category)) {
-      return NextResponse.json(
-        { ok: false, code: "unknown_category", message: "Unknown category." },
-        { status: 400 },
-      );
-    }
-
-    if (!engineConfigured(category)) {
-      return NextResponse.json(
-        { ok: false, code: "engine_not_configured", message: "Engine key missing on this host." },
-        { status: 503 },
-      );
-    }
-
-    if (expectsSpend(category, prompt) && !(await requireBalance())) {
-      return NextResponse.json(
-        { ok: false, spend: false, code: "insufficient_credits", message: "Not enough credits." },
-        { status: 402 },
-      );
-    }
-
-    const media = await runMediaEngine({ prompt, type, category, scene });
-    if (!media.ok) return NextResponse.json(media, { status: 400 });
-    if (media.spend) {
-      const spent = await spend();
-      if (spent.error) {
-        return NextResponse.json(
-          { ok: false, spend: false, code: "insufficient_credits", message: spent.error.message },
-          { status: 402 },
-        );
-      }
-    }
-    return NextResponse.json(media);
+    return NextResponse.json(
+      {
+        ok: false,
+        spend: false,
+        code: "production_pipeline_required",
+        message: "Create the production through /api/productions so credits, provider jobs, status tracking and delivery remain connected.",
+      },
+      { status: 409 },
+    );
   }
 
   const out = await handleAssistantWork(req, body || {});

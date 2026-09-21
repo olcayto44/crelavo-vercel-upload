@@ -290,6 +290,40 @@ const [thumbnailGenerationStatus, setThumbnailGenerationStatus] = useState<"idle
     capture();
   }
 
+  async function downloadDelivery(url: string, fallbackName: string) {
+    if (!url) return;
+    if (!url.startsWith("/api/productions/")) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setNotice("Preparing secure download...");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok) {
+      window.location.href = auth.redirect || "/auth/login";
+      return;
+    }
+    const response = await fetch(url, { headers: authHeaders(auth.accessToken), cache: "no-store" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setNotice(String(data.error || "Download could not be prepared."));
+      return;
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get("content-disposition") || "";
+    const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+    const filename = encoded ? decodeURIComponent(encoded) : plain || fallbackName;
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+    setNotice("Download started.");
+  }
+
   async function shareProductionLink() {
     const shareUrl = window.location.href;
     const shareData = { title: String(production.title ?? "Crelavo production"), text: "View this Crelavo production.", url: shareUrl };
@@ -1207,9 +1241,9 @@ const data = await response.json().catch(() => ({}));
             </div>
             <div className="customer-preview-top-actions" aria-label="Preview delivery actions">
               {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={14} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={14} /> Preview</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
-              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={14} /> Source</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
-              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={14} /> Setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
+              {deliveryUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(mediaDownloadUrl, isImageProduction ? "crelavo-image.png" : isProjectProduction ? "crelavo-manifest.html" : "crelavo-video.mp4")}><Download size={14} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest" : "Download MP4"}</button> : <button className="btn secondary" type="button" disabled><Download size={14} /> {isImageProduction ? "Image waiting" : "ZIP"}</button>}
+              {sourceUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(sourceUrl, "crelavo-source.md")}><ExternalLink size={14} /> Source</button> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Source</button>}
+              {readmeUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(readmeUrl, "crelavo-readme.md")}><ExternalLink size={14} /> Setup</button> : <button className="btn secondary" type="button" disabled><ExternalLink size={14} /> Setup</button>}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Revision</button>
               <button className="btn" type="button" onClick={shareProductionLink}><Share2 size={14} /> Share production</button>
               {(!isProjectProduction || isEcommerceProduction) ? <button className="btn secondary" type="button" onClick={prepareSocialSharing}><Share2 size={14} /> Prepare social sharing</button> : null}
@@ -1323,9 +1357,9 @@ const data = await response.json().catch(() => ({}));
             </div>
             <div className="customer-preview-actions delivery-action-grid">
               {playbackUrl ? <a className="btn" href={playbackUrl} target="_blank"><PlayCircle size={15} /> {openVideoLabel}</a> : <button className="btn" type="button" disabled><PlayCircle size={15} /> Preview pending</button>}
-              {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest / package" : "Download MP4"}</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> {isImageProduction ? "Final image waiting" : shotWaitingLabel}</button>}
-              {sourceUrl ? <a className="btn secondary" href={sourceUrl} target="_blank"><ExternalLink size={15} /> Source files</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
-              {readmeUrl ? <a className="btn secondary" href={readmeUrl} target="_blank"><ExternalLink size={15} /> README / setup</a> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
+              {deliveryUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(mediaDownloadUrl, isImageProduction ? "crelavo-image.png" : isProjectProduction ? "crelavo-manifest.html" : "crelavo-video.mp4")}><Download size={15} /> {isImageProduction ? "Download PNG" : isProjectProduction ? "Manifest / package" : "Download MP4"}</button> : <button className="btn secondary" type="button" disabled><Download size={15} /> {isImageProduction ? "Final image waiting" : shotWaitingLabel}</button>}
+              {sourceUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(sourceUrl, "crelavo-source.md")}><ExternalLink size={15} /> Source files</button> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> Source pending</button>}
+              {readmeUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(readmeUrl, "crelavo-readme.md")}><ExternalLink size={15} /> README / setup</button> : <button className="btn secondary" type="button" disabled><ExternalLink size={15} /> README pending</button>}
               {voiceAudioUrl ? <a className="btn secondary" href={voiceAudioUrl} target="_blank"><Mic2 size={15} /> Listen to voice</a> : null}
               <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Request revision"); setMessage("I want to request a revision for the final delivery package."); setNotice("Revision request is ready below. Add details and send it."); }}>Request revision</button>
               {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
@@ -1615,7 +1649,7 @@ const data = await response.json().catch(() => ({}));
           {durationDeltaPercent > 20 ? <p className="workspace-action-note warning">The final video is outside the target duration range. You can request a revision to make it closer to the requested duration.</p> : null}
           <div className="delivery-action-grid">
             {previewUrl ? <a className="btn secondary" href={previewUrl} target="_blank"><PlayCircle size={15} /> Preview</a> : <button className="btn secondary" type="button" disabled><PlayCircle size={15} /> Preview</button>}
-            {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
+            {deliveryUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(mediaDownloadUrl, "crelavo-delivery.zip")}><Download size={15} /> Download</button> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download</button>}
             <button className="btn secondary" type="button" onClick={() => { setTargetPart("Final delivery"); setAction("Revise"); setMessage("Change request: make the final video closer to the requested duration / adjust voice, subtitles, music, presenter, transitions, or scene visuals: "); }}><RefreshCcw size={15} /> Revise</button>
             {canCancel ? <button className="btn secondary" type="button" onClick={cancelProduction} disabled={cancelLoading}>{cancelLoading ? "Cancelling..." : "Cancel production"}</button> : null}
             {!isProjectProduction ? <button className="btn" type="button" onClick={prepareSocialSharing}><Share2 size={15} /> Share on social media</button> : null}
@@ -1673,7 +1707,7 @@ const data = await response.json().catch(() => ({}));
               <h3>Export video</h3>
               <p>Download the final MP4 for upload to your channel, ads manager, or manual publishing workflow.</p>
               <div className="production-part-actions">
-                {deliveryUrl ? <a className="btn secondary" href={mediaDownloadUrl} download><Download size={15} /> Download MP4</a> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download MP4</button>}
+                {deliveryUrl ? <button className="btn secondary" type="button" onClick={() => downloadDelivery(mediaDownloadUrl, "crelavo-video.mp4")}><Download size={15} /> Download MP4</button> : <button className="btn secondary" type="button" disabled><Download size={15} /> Download MP4</button>}
                 {deliveryUrl ? <a className="btn secondary" href={playbackUrl || deliveryUrl} target="_blank">Open video</a> : <button className="btn secondary" type="button" disabled>Open video</button>}
               </div>
             </article>
