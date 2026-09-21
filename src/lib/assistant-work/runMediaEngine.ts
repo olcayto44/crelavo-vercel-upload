@@ -1,170 +1,48 @@
-export type Engine =
-  | "heygen"
-  | "minimax_video"
-  | "minimax_t2a"
-  | "minimax_image"
-  | "local";
-
-export type CategoryRoute = {
-  id: string;
-  engines: Engine[];
-  produce: "video" | "audio" | "image" | "files" | "copy" | "avatar";
-  spend: boolean;
-};
-
-const ROUTES: Record<string, CategoryRoute> = {
-  website: { id: "website", engines: ["local"], produce: "files", spend: true },
-  saas: { id: "saas", engines: ["local"], produce: "files", spend: true },
-  mobile_app: { id: "mobile_app", engines: ["local"], produce: "files", spend: true },
-  admin_project: { id: "admin_project", engines: ["local"], produce: "files", spend: true },
-  video: { id: "video", engines: ["minimax_video"], produce: "video", spend: true },
-  talking_video: { id: "talking_video", engines: ["heygen"], produce: "avatar", spend: true },
-  documentary: { id: "documentary", engines: ["minimax_video", "minimax_t2a"], produce: "video", spend: true },
-  animation: { id: "animation", engines: ["minimax_video"], produce: "video", spend: true },
-  music_video: { id: "music_video", engines: ["minimax_video"], produce: "video", spend: true },
-  drama: { id: "drama", engines: ["minimax_video"], produce: "video", spend: true },
-  cinematic_video: { id: "cinematic_video", engines: ["minimax_video"], produce: "video", spend: true },
-  video_clipping: { id: "video_clipping", engines: ["local"], produce: "copy", spend: true },
-  video_tools: { id: "video_tools", engines: ["minimax_video"], produce: "video", spend: true },
-  campaign: { id: "campaign", engines: ["minimax_video", "local"], produce: "video", spend: true },
-  ad_score_checker: { id: "ad_score_checker", engines: ["local"], produce: "copy", spend: true },
-  campaign_calendar: { id: "campaign_calendar", engines: ["local"], produce: "copy", spend: true },
-  ai_agent: { id: "ai_agent", engines: ["heygen", "local"], produce: "avatar", spend: true },
-  localization: { id: "localization", engines: ["heygen"], produce: "avatar", spend: true },
-  cultural_localization: { id: "cultural_localization", engines: ["minimax_video", "local"], produce: "video", spend: true },
-  live_sales_agent: { id: "live_sales_agent", engines: ["heygen"], produce: "avatar", spend: false },
-  avatar: { id: "avatar", engines: ["heygen"], produce: "avatar", spend: true },
-  lip_sync: { id: "lip_sync", engines: ["heygen"], produce: "avatar", spend: true },
-  voice_clone: { id: "voice_clone", engines: ["heygen", "minimax_t2a"], produce: "audio", spend: true },
-  visual_clone: { id: "visual_clone", engines: ["minimax_image", "minimax_video"], produce: "image", spend: true },
-  image: { id: "image", engines: ["minimax_image"], produce: "image", spend: true },
-  brand_kit: { id: "brand_kit", engines: ["local", "minimax_image"], produce: "files", spend: true },
-  document_pack: { id: "document_pack", engines: ["local"], produce: "files", spend: true },
-  anime_short_film: { id: "anime_short_film", engines: ["minimax_video"], produce: "video", spend: true },
-  animal_video: { id: "animal_video", engines: ["minimax_video"], produce: "video", spend: true },
-  nature_video: { id: "nature_video", engines: ["minimax_video", "minimax_t2a"], produce: "video", spend: true },
-  planet_space_video: { id: "planet_space_video", engines: ["minimax_video", "minimax_t2a"], produce: "video", spend: true },
-  drone_video: { id: "drone_video", engines: ["minimax_video", "minimax_t2a"], produce: "video", spend: true },
-  stickman_animation: { id: "stickman_animation", engines: ["minimax_video"], produce: "video", spend: true },
-  studio: { id: "studio", engines: ["minimax_video", "local"], produce: "video", spend: true },
-};
-
-export function getCategoryEngine(category?: string | null): CategoryRoute {
-  const key = String(category || "video").trim().toLowerCase();
-  return ROUTES[key] || ROUTES.video;
-}
-
-export type MediaJob = {
-  category?: string;
-  type?: string;
-  prompt?: string;
-  scene?: string;
-};
-
-export type MediaResult = {
-  ok: boolean;
-  code?: string;
-  provider: string;
-  engines: Engine[];
-  produce: CategoryRoute["produce"];
-  spend: boolean;
-  title?: string;
-  body?: string;
-  media?: string;
-  job?: unknown;
-};
-
-function hasKey(name: string) {
-  return Boolean(process.env[name] && String(process.env[name]).trim());
-}
-
-async function callMinimax(task: "video" | "t2a" | "image", prompt: string) {
-  const key = process.env.MINIMAX_API_KEY;
-  if (!key) return { ok: false as const, code: "minimax_key_missing" };
-  const base = process.env.MINIMAX_API_URL || "https://api.minimax.io/v1";
-  const path = task === "video" ? "/video_generation" : task === "t2a" ? "/t2a_v2" : "/image_generation";
-  const res = await fetch(`${base}${path}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
-  });
-  const json = await res.json().catch(() => null);
-  if (!res.ok) return { ok: false as const, code: "minimax_http", job: json };
-  return { ok: true as const, job: json };
-}
-
-async function callHeygen(prompt: string, category: string) {
-  const key = process.env.HEYGEN_API_KEY;
-  if (!key) return { ok: false as const, code: "heygen_key_missing" };
-  const url = process.env.HEYGEN_API_URL || "https://api.heygen.com/v2/video/generate";
-  const avatarId = process.env.HEYGEN_AVATAR_ID || "";
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "X-Api-Key": key, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      category,
-      video_inputs: [
-        {
-          character: avatarId ? { type: "avatar", avatar_id: avatarId } : { type: "talking_photo" },
-          voice: { type: "text", input_text: prompt },
-        },
-      ],
-    }),
-  });
-  const json = await res.json().catch(() => null);
-  if (!res.ok) return { ok: false as const, code: "heygen_http", job: json };
-  return { ok: true as const, job: json };
-}
-
-export async function runMediaEngine(input: MediaJob = {}): Promise<MediaResult> {
-  const route = getCategoryEngine(input.category);
-  const prompt = String(input.prompt || "").trim();
-  const title = prompt ? prompt.slice(0, 80) : route.id;
-  const body = prompt || `${route.id} production`;
-
-  if (route.engines[0] === "local") {
-    return { ok: true, provider: "local", engines: route.engines, produce: route.produce, spend: route.spend, title, body };
-  }
-
-  const primary = route.engines[0];
-  if (primary === "heygen") {
-    const out = await callHeygen(body, route.id);
-    return {
-      ok: out.ok,
-      code: out.ok ? undefined : out.code,
-      provider: "heygen",
-      engines: route.engines,
-      produce: route.produce,
-      spend: Boolean(out.ok && route.spend),
-      title,
-      body,
-      job: "job" in out ? out.job : undefined,
-    };
-  }
-
-  if (primary === "minimax_video" || primary === "minimax_t2a" || primary === "minimax_image") {
-    const task = primary === "minimax_t2a" ? "t2a" : primary === "minimax_image" ? "image" : "video";
-    const out = await callMinimax(task, body);
-    return {
-      ok: out.ok,
-      code: out.ok ? undefined : out.code,
-      provider: "minimax",
-      engines: route.engines,
-      produce: route.produce,
-      spend: Boolean(out.ok && route.spend),
-      title,
-      body,
-      job: "job" in out ? out.job : undefined,
-    };
-  }
-
-  return { ok: false, code: "no_engine", provider: "none", engines: route.engines, produce: route.produce, spend: false };
-}
-
-export function engineConfigured(category?: string | null) {
-  const route = getCategoryEngine(category);
-  const primary = route.engines[0];
-  if (primary === "local") return true;
-  if (primary === "heygen") return hasKey("HEYGEN_API_KEY");
-  return hasKey("MINIMAX_API_KEY");
-}
+/** Crelavo media production. Server-side MiniMax + HeyGen only. Do not call this from the browser. Do not log API keys. */
+export type EngineKind = "minimax" | "heygen";
+export type EngineMedia = { kind: "video" | "image" | "audio"; url: string };
+export type EngineFile = { name: string; mime: string; content: string };
+export type EngineResult = { ok: boolean; spend: boolean; code?: string; message?: string; title?: string; body?: string; media?: EngineMedia | null; files?: EngineFile[]; status?: "ready" | "queued" | "rendering" | "failed"; engine?: EngineKind | "none"; taskId?: string; category?: string };
+export type EngineInput = { prompt: string; type?: string; category: string; scene?: string };
+const HEYGEN_CATEGORIES = new Set(["talking_video","avatar","lip_sync","voice_clone","live_sales_agent","ai_agent","localization"]);
+const MINIMAX_CATEGORIES = new Set(["video","documentary","animation","music_video","drama","cinematic_video","video_tools","campaign","cultural_localization","visual_clone","image","brand_kit","anime_short_film","animal_video","nature_video","planet_space_video","drone_video","stickman_animation","studio"]);
+const MINIMAX_IMAGE_CATEGORIES = new Set(["image","brand_kit","visual_clone"]);
+const MINIMAX_T2A_CATEGORIES = new Set(["documentary","nature_video","planet_space_video","drone_video"]);
+const TITLE: Record<string,string> = { talking_video:"Talking video",avatar:"Avatar video",lip_sync:"Lip sync video",voice_clone:"Voice clone",live_sales_agent:"Live sales agent",ai_agent:"AI agent video",localization:"Localization",video:"AI video",documentary:"Documentary",animation:"Animation",music_video:"Music video",drama:"Drama",cinematic_video:"Cinematic video",video_tools:"Video tools",campaign:"Campaign video",cultural_localization:"Cultural localization",visual_clone:"Visual clone",image:"Image",brand_kit:"Brand kit visual",anime_short_film:"Anime short",animal_video:"Animal video",nature_video:"Nature video",planet_space_video:"Space video",drone_video:"Drone video",stickman_animation:"Stickman animation",studio:"Studio / series" };
+function minimaxBase(){return(process.env.MINIMAX_API_BASE||"https://api.minimax.io/v1").replace(/\/$/,"");}
+function minimaxKey(){return String(process.env.MINIMAX_API_KEY||"").trim();}
+function heygenKey(){return String(process.env.HEYGEN_API_KEY||"").trim();}
+function sleep(ms:number){return new Promise((resolve)=>setTimeout(resolve,ms));}
+function clip(text:string,n:number){const t=String(text||"").trim();return t.length<=n?t:t.slice(0,n);}
+function firstUrl(text:string):string|null{const m=String(text||"").match(/https?:\/\/[^\s<>"']+/i);if(!m)return null;return m[0].replace(/[),.;]+$/g,"");}
+function isImageUrl(url:string){return /\.(png|jpe?g|webp|gif)(\?|$)/i.test(url);}
+function isAudioUrl(url:string){return /\.(mp3|wav|m4a|aac|ogg)(\?|$)/i.test(url);}
+function isVideoUrl(url:string){return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url);}
+export function isCopyLayoutColorOnly(prompt:string){const p=String(prompt||"").trim().toLowerCase();if(!p||p.length>280)return false;if(/video|film|image|avatar|voice|clone|render|mp4|png|sahne|görsel|üret|produce|scene/.test(p))return false;return /\b(copy|layout|color|metin|yazı|renk|palette|typography|tipografi)\b/.test(p);}
+export function getCategoryEngine(category:string):EngineKind|null{const cat=String(category||"").trim();if(HEYGEN_CATEGORIES.has(cat))return"heygen";if(MINIMAX_CATEGORIES.has(cat))return"minimax";return null;}
+export function engineConfigured(category:string){const engine=getCategoryEngine(category);if(engine==="heygen")return Boolean(heygenKey());if(engine==="minimax")return Boolean(minimaxKey());return false;}
+export function expectsSpend(category:string,prompt:string){if(isCopyLayoutColorOnly(prompt))return false;if(String(category||"").trim()==="live_sales_agent")return false;return Boolean(getCategoryEngine(category));}
+function wrapPrompt(category:string,prompt:string){const p=clip(prompt,1800);const map:Record<string,string>={video:`Cinematic commercial, 16:9, photorealistic, [Static shot], then [Push in]. ${p}`,documentary:`Documentary cinematography, natural light, observational 16:9. ${p}`,animation:`Stylized animation, clear character, smooth motion, 16:9. ${p}`,music_video:`Music video performance, rhythmic cuts, stage light, 16:9. ${p}`,drama:`Short drama scene, emotional close-ups, film lighting, 16:9. ${p}`,cinematic_video:`Luxury cinematic trailer look, anamorphic, 16:9, [Tracking shot]. ${p}`,video_tools:`Clean product motion video, 16:9. ${p}`,campaign:`Paid social ad video, hook in first second, product clear, 16:9. ${p}`,cultural_localization:`Culturally localized commercial scene, authentic wardrobe and setting, 16:9. ${p}`,anime_short_film:`Anime short film shot, expressive characters, 16:9. ${p}`,animal_video:`Animal cinematic short, natural motion, 16:9. ${p}`,nature_video:`Nature landscape cinematic, wide vista, 16:9, [Pedestal up]. ${p}`,planet_space_video:`Space / planet cinematic, stars and scale, 16:9. ${p}`,drone_video:`Aerial drone / satellite-style establishing shot, 16:9, [Pull out]. ${p}`,stickman_animation:`Simple stickman explainer animation, white background, clear motion, 16:9. ${p}`,studio:`Series or film studio teaser, cinematic blocking, 16:9. ${p}`,image:p,brand_kit:`Brand identity hero visual, logo-ready, clean composition, no tiny unreadable text. ${p}`,visual_clone:`Match the reference look, same subject identity, new composition. ${p}`};return map[category]||p;}
+async function readJson(res:Response){const text=await res.text();if(!text)return null;try{return JSON.parse(text);}catch{return{raw:text};}}
+function minimaxFail(data:any){const code=data?.base_resp?.status_code;if(code&&code!==0)return String(data.base_resp.status_msg||`MiniMax error ${code}`);return null;}
+async function minimaxFetch(path:string,init?:RequestInit){const res=await fetch(`${minimaxBase()}${path}`,{...init,headers:{Authorization:`Bearer ${minimaxKey()}`,"Content-Type":"application/json",...(init?.headers||{})}});const data=await readJson(res);return{res,data};}
+async function heygenFetch(path:string,init?:RequestInit){const res=await fetch(`https://api.heygen.com${path}`,{...init,headers:{"X-Api-Key":heygenKey(),"Content-Type":"application/json",...(init?.headers||{})}});const data=await readJson(res);return{res,data};}
+function fail(message:string,code="engine_error",extra?:Partial<EngineResult>):EngineResult{return{ok:false,spend:false,code,message,status:"failed",media:null,...extra};}
+function liveSalesPack(prompt:string):EngineResult{const body=["Live sales agent pack (service plan, no Crelavo credit spend).","","Opener:",clip(prompt,400)||"Welcome in. What are you looking for today?","","Talk track:","1. Greet and ask what they need.","2. Show the product, price, and one proof point.","3. Answer size / shipping / return in one sentence.","4. Ask for the order, then confirm.","","Fair use: Starter 10h / Pro 40h / Agency 120h live hours on the service plan."].join("\n");return{ok:true,spend:false,engine:"heygen",category:"live_sales_agent",status:"ready",title:TITLE.live_sales_agent,body,media:null,files:[{name:"live-sales-playbook.md",mime:"text/markdown",content:body}]};}
+let heygenDefaults:{avatarId:string;voiceId:string;at:number}|null=null;
+async function getHeygenDefaults(){const now=Date.now();if(heygenDefaults&&now-heygenDefaults.at<600000)return heygenDefaults;let avatarId=String(process.env.HEYGEN_AVATAR_ID||"").trim();let voiceId="";if(!avatarId){const listed=await heygenFetch("/v2/avatars",{method:"GET"});const avatars=listed.data?.data?.avatars||listed.data?.avatars||listed.data?.data||[];if(Array.isArray(avatars)&&avatars[0])avatarId=String(avatars[0].avatar_id||avatars[0].id||avatars[0].look_id||"");}if(!avatarId){const v3=await heygenFetch("/v3/avatars",{method:"GET"});const looks=v3.data?.data?.avatars||v3.data?.data||[];if(Array.isArray(looks)&&looks[0])avatarId=String(looks[0].avatar_id||looks[0].id||"");}const voices=await heygenFetch("/v2/voices",{method:"GET"});const list=voices.data?.data?.voices||voices.data?.voices||voices.data?.data||[];if(Array.isArray(list)&&list.length){const en=list.find((v:any)=>String(v.language||v.locale||"").toLowerCase().includes("english"))||list[0];voiceId=String(en.voice_id||en.id||"");}if(!voiceId){const v3=await heygenFetch("/v3/voices",{method:"GET"});const vlist=v3.data?.data?.voices||v3.data?.data||[];if(Array.isArray(vlist)&&vlist[0])voiceId=String(vlist[0].voice_id||vlist[0].id||"");}if(!avatarId||!voiceId)return null;heygenDefaults={avatarId,voiceId,at:now};return heygenDefaults;}
+async function pollHeygenVideo(videoId:string):Promise<string|null>{for(let i=0;i<12;i++){await sleep(8000);const v3=await heygenFetch(`/v3/videos/${encodeURIComponent(videoId)}`,{method:"GET"});const d=v3.data?.data||v3.data||{};const status=String(d.status||"").toLowerCase();const url=d.video_url||d.url||d.video_url_caption;if((status==="completed"||status==="success")&&url)return String(url);if(status==="failed"||status==="error")return null;const v1=await heygenFetch(`/v1/video_status.get?video_id=${encodeURIComponent(videoId)}`,{method:"GET"});const d1=v1.data?.data||v1.data||{};const s1=String(d1.status||"").toLowerCase();const url1=d1.video_url||d1.url;if((s1==="completed"||s1==="success")&&url1)return String(url1);if(s1==="failed"||s1==="error")return null;}return null;}
+async function createHeygenAvatarVideo(opts:{title:string;script:string;audioUrl?:string|null;imageUrl?:string|null}){const defaults=await getHeygenDefaults();const script=clip(opts.script,1400)||"Welcome. Here is your production.";const avatarId=defaults?.avatarId||"";const voiceId=defaults?.voiceId||"";if(opts.imageUrl&&isImageUrl(opts.imageUrl)){const img=await heygenFetch("/v3/videos",{method:"POST",body:JSON.stringify({type:"image",image:{type:"url",url:opts.imageUrl},script:opts.audioUrl?undefined:script,audio_url:opts.audioUrl||undefined,voice_id:opts.audioUrl?undefined:voiceId||undefined,title:opts.title,resolution:"1080p",aspect_ratio:"16:9"})});const id=img.data?.data?.video_id||img.data?.video_id;if(id)return String(id);}if(avatarId){const v3body:Record<string,unknown>={type:"avatar",avatar_id:avatarId,title:opts.title,resolution:"1080p",aspect_ratio:"16:9"};if(opts.audioUrl)v3body.audio_url=opts.audioUrl;else{v3body.script=script;if(voiceId)v3body.voice_id=voiceId;}const v3=await heygenFetch("/v3/videos",{method:"POST",body:JSON.stringify(v3body)});const id=v3.data?.data?.video_id||v3.data?.video_id;if(id)return String(id);if(voiceId){const v2=await heygenFetch("/v2/video/generate",{method:"POST",body:JSON.stringify({title:opts.title,video_inputs:[{character:{type:"avatar",avatar_id:avatarId,avatar_style:"normal"},voice:opts.audioUrl?{type:"audio",audio_url:opts.audioUrl}:{type:"text",input_text:script,voice_id:voiceId}}],dimension:{width:1920,height:1080}})});const id2=v2.data?.data?.video_id||v2.data?.video_id;if(id2)return String(id2);}}return null;}
+async function runHeygen(input:EngineInput):Promise<EngineResult>{const cat=input.category;const prompt=String(input.prompt||"").trim();const url=firstUrl(prompt);const title=TITLE[cat]||"HeyGen production";if(cat==="live_sales_agent"){const pack=liveSalesPack(prompt);if(!heygenKey())return pack;try{const agent=await heygenFetch("/v3/video-agents",{method:"POST",body:JSON.stringify({prompt:clip(`Live commerce host selling from this brief:\n${prompt}`,4000),mode:"generate"})});const sessionId=agent.data?.data?.session_id||agent.data?.session_id||agent.data?.data?.id;if(sessionId){pack.taskId=String(sessionId);pack.body=`${pack.body}\n\nHeyGen session: ${sessionId}`;}}catch{}return pack;}
+if(cat==="voice_clone"){const designed=await heygenFetch("/v3/voices",{method:"POST",body:JSON.stringify({name:clip(prompt,40)||"Crelavo voice",prompt:clip(prompt,500)})});const voiceId=designed.data?.data?.voice_id||designed.data?.voice_id||designed.data?.data?.id;if(!voiceId)return fail(designed.data?.error?.message||designed.data?.message||"HeyGen voice design did not return a voice id.","heygen_voice");const sample=await heygenFetch("/v3/voices/speech",{method:"POST",body:JSON.stringify({voice_id:voiceId,text:clip(prompt,300)||"This is your Crelavo voice sample."})});const audioUrl=sample.data?.data?.audio_url||sample.data?.audio_url||sample.data?.data?.url;return{ok:true,spend:true,engine:"heygen",category:cat,status:audioUrl?"ready":"queued",title,body:`Voice id: ${voiceId}\n${clip(prompt,500)}`,media:audioUrl?{kind:"audio",url:String(audioUrl)}:null,taskId:String(voiceId)};}
+if(cat==="ai_agent"){const agent=await heygenFetch("/v3/video-agents",{method:"POST",body:JSON.stringify({prompt:clip(prompt,4000),mode:"generate"})});const sessionId=agent.data?.data?.session_id||agent.data?.session_id||agent.data?.data?.id;const videoId=agent.data?.data?.video_id||agent.data?.video_id||null;if(!sessionId&&!videoId){const fallbackId=await createHeygenAvatarVideo({title,script:prompt,imageUrl:url&&isImageUrl(url)?url:null});if(!fallbackId)return fail(agent.data?.error?.message||agent.data?.message||"HeyGen video agent did not start.","heygen_agent");const mediaUrl=await pollHeygenVideo(fallbackId);return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:fallbackId};}let mediaUrl:string|null=null;if(videoId)mediaUrl=await pollHeygenVideo(String(videoId));if(!mediaUrl&&sessionId){for(let i=0;i<10;i++){await sleep(8000);const st=await heygenFetch(`/v3/video-agents/${encodeURIComponent(String(sessionId))}`,{method:"GET"});const d=st.data?.data||st.data||{};const vid=d.video_id||d.video?.id;const u=d.video_url||d.video?.url;if(u){mediaUrl=String(u);break;}if(vid){mediaUrl=await pollHeygenVideo(String(vid));if(mediaUrl)break;}const status=String(d.status||"").toLowerCase();if(status==="failed"||status==="error")break;}}return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:String(videoId||sessionId)};}
+if(cat==="localization"&&url&&isVideoUrl(url)){const tr=await heygenFetch("/v3/video-translations",{method:"POST",body:JSON.stringify({video_url:url,output_language:clip(prompt.replace(url,""),80)||"English"})});const id=tr.data?.data?.video_translate_id||tr.data?.data?.id||tr.data?.data?.video_id;if(id){const mediaUrl=await pollHeygenVideo(String(id));return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:String(id)};}const v2=await heygenFetch("/v2/video_translate/translate",{method:"POST",body:JSON.stringify({video_url:url,output_language:clip(prompt.replace(url,""),80)||"English",translate_audio:true})});const id2=v2.data?.data?.video_translate_id||v2.data?.data?.video_id||v2.data?.data?.id;if(id2){const mediaUrl=await pollHeygenVideo(String(id2));return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:String(id2)};}}
+if(cat==="lip_sync"){const audioUrl=url&&isAudioUrl(url)?url:null;const videoUrl=url&&isVideoUrl(url)?url:null;if(videoUrl&&audioUrl){const ls=await heygenFetch("/v3/lipsyncs",{method:"POST",body:JSON.stringify({video_url:videoUrl,audio_url:audioUrl})});const id=ls.data?.data?.video_id||ls.data?.data?.id||ls.data?.id;if(id){const mediaUrl=await pollHeygenVideo(String(id));return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:String(id)};}}}
+const videoId=await createHeygenAvatarVideo({title,script:prompt,audioUrl:url&&isAudioUrl(url)?url:null,imageUrl:url&&isImageUrl(url)?url:null});if(!videoId)return fail("HeyGen did not accept the video job. Check HEYGEN_API_KEY and optional HEYGEN_AVATAR_ID on this host.","heygen_create");const mediaUrl=await pollHeygenVideo(videoId);return{ok:true,spend:true,engine:"heygen",category:cat,status:mediaUrl?"ready":"queued",title,body:prompt,media:mediaUrl?{kind:"video",url:mediaUrl}:null,taskId:videoId};}
+async function retrieveMinimaxFile(fileId:string):Promise<string|null>{const{data}=await minimaxFetch(`/files/retrieve?file_id=${encodeURIComponent(fileId)}`,{method:"GET"});if(minimaxFail(data))return null;return data?.file?.download_url||data?.download_url||data?.file?.url||data?.url||null;}
+async function pollMinimaxVideo(taskId:string):Promise<{url:string|null;queued:boolean;error?:string}>{for(let i=0;i<12;i++){await sleep(8000);const{data}=await minimaxFetch(`/query/video_generation?task_id=${encodeURIComponent(taskId)}`,{method:"GET"});const err=minimaxFail(data);if(err)return{url:null,queued:false,error:err};const status=String(data?.status||"");if(status==="Success"){if(data?.file_id){const url=await retrieveMinimaxFile(String(data.file_id));return{url,queued:!url};}return{url:null,queued:false,error:"No file_id"};}if(status==="Fail")return{url:null,queued:false,error:data?.base_resp?.status_msg||"MiniMax video failed"};}return{url:null,queued:true};}
+async function minimaxT2A(text:string):Promise<string|null>{const{res,data}=await minimaxFetch("/t2a_v2",{method:"POST",body:JSON.stringify({model:"speech-02-hd",text:clip(text,2000),stream:false,voice_setting:{voice_id:"English_Trustworthy_Man",speed:1,vol:1,pitch:0},audio_setting:{sample_rate:32000,bitrate:128000,format:"mp3"}})});if(!res.ok||minimaxFail(data))return null;const hex=data?.data?.audio;if(typeof hex==="string"&&hex&&!hex.startsWith("http")){if(hex.length>2000000)return null;const bytes=hex.match(/.{1,2}/g);if(!bytes)return null;const buf=Uint8Array.from(bytes.map((b:string)=>parseInt(b,16)));let binary="";for(let i=0;i<buf.length;i++)binary+=String.fromCharCode(buf[i]);return`data:audio/mpeg;base64,${btoa(binary)}`;}return data?.data?.audio||data?.audio_file?.url||null;}
+async function minimaxImage(prompt:string,refUrl?:string|null){const payload:Record<string,unknown>={model:"image-01",prompt:clip(prompt,1500),aspect_ratio:"16:9",response_format:"url"};if(refUrl&&isImageUrl(refUrl))payload.subject_reference=[{type:"character",image_file:refUrl}];let{res,data}=await minimaxFetch("/image_generation",{method:"POST",body:JSON.stringify(payload)});if(!res.ok||minimaxFail(data)||!(data?.data?.image_urls||data?.data?.image_url)){payload.response_format="base64";const retry=await minimaxFetch("/image_generation",{method:"POST",body:JSON.stringify(payload)});res=retry.res;data=retry.data;}const err=minimaxFail(data);if(err)return fail(err,"minimax_image");const urls:string[]=data?.data?.image_urls||(data?.data?.image_url?[data.data.image_url]:[]);let url=urls[0]?String(urls[0]):"";if(!url&&Array.isArray(data?.data?.image_base64)&&data.data.image_base64[0])url=`data:image/jpeg;base64,${data.data.image_base64[0]}`;if(!url)return fail("MiniMax image returned no file.","minimax_image");return url;}
+async function runMinimax(input:EngineInput):Promise<EngineResult>{const cat=input.category;const prompt=String(input.prompt||"").trim();const url=firstUrl(prompt);const title=TITLE[cat]||"MiniMax production";if(MINIMAX_IMAGE_CATEGORIES.has(cat)){const image=await minimaxImage(wrapPrompt(cat,prompt),url);if(typeof image!=="string")return image;const files:EngineFile[]=[];let body=prompt;if(cat==="brand_kit"){body=["Brand kit visual is ready. Logo/palette/typography files stay local.","","Palette direction: 1 dark, 1 accent, 1 light.","Type: one display face, one body face.","",prompt].join("\n");files.push({name:"brand-kit-notes.md",mime:"text/markdown",content:body});}return{ok:true,spend:true,engine:"minimax",category:cat,status:"ready",title,body,media:{kind:"image",url:image},files};}
+const videoBody:Record<string,unknown>={model:"MiniMax-Hailuo-2.3",prompt:wrapPrompt(cat,prompt),duration:6,resolution:"1080P",prompt_optimizer:true};if((cat==="video_tools"||cat==="visual_clone")&&url&&isImageUrl(url))videoBody.first_frame_image=url;const created=await minimaxFetch("/video_generation",{method:"POST",body:JSON.stringify(videoBody)});const createErr=minimaxFail(created.data);if(createErr)return fail(createErr,"minimax_create");const taskId=created.data?.task_id;if(!taskId)return fail("MiniMax did not return task_id.","minimax_create");const polled=await pollMinimaxVideo(String(taskId));if(polled.error)return fail(polled.error,"minimax_video",{taskId:String(taskId)});let audioUrl:string|null=null;if(MINIMAX_T2A_CATEGORIES.has(cat)&&polled.url)audioUrl=await minimaxT2A(prompt);const files:EngineFile[]=[];if(audioUrl&&audioUrl.startsWith("data:"))files.push({name:"narration.mp3",mime:"audio/mpeg",content:audioUrl});return{ok:true,spend:true,engine:"minimax",category:cat,status:polled.url?"ready":"queued",title,body:prompt,media:polled.url?{kind:"video",url:polled.url}:audioUrl&&audioUrl.startsWith("http")?{kind:"audio",url:audioUrl}:null,files,taskId:String(taskId)};}
+export async function runMediaEngine(input:EngineInput):Promise<EngineResult>{const category=String(input.category||"").trim();const prompt=String(input.prompt||"").trim();if(!prompt)return fail("Write something first.","empty_prompt");if(isCopyLayoutColorOnly(prompt))return{ok:true,spend:false,engine:"none",category,status:"ready",title:"Copy / layout / color",body:prompt,media:null};const engine=getCategoryEngine(category);if(!engine)return fail("This category is not a MiniMax/HeyGen path.","not_media");if(!engineConfigured(category))return fail(engine==="heygen"?"HEYGEN_API_KEY missing on this host.":"MINIMAX_API_KEY missing on this host.","engine_not_configured",{engine});if(engine==="heygen")return runHeygen({...input,category,prompt});return runMinimax({...input,category,prompt});}
