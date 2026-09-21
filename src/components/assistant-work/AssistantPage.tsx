@@ -1,316 +1,307 @@
 "use client";
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-
-const AW = "aw5";
-const THREAD_ID = "crelavo-aw-thread";
-const FORGET_KEYS = ["crelavo-aw-last-v2", "crelavo-aw-last", "crelavo-aw-scene", "crelavo-aw-selected", "crelavo-aw-board"];
-
-type CreditView =
-  | { mode: "loading" }
-  | { mode: "signin" }
-  | { mode: "unknown" }
-  | { mode: "number"; value: number };
-type Shot = { kicker: string; title: string; body: string; cell: string };
-
-const VIDEO_SHOTS: Shot[] = [
-  { kicker: "SCENE 01 / SELECTED", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", cell: "01 READY" },
-  { kicker: "SCENE 02 / SELECTED", title: "Hands lift the piece into frame", body: "Warm bounce. Turn the label to camera, then a slow orbit.", cell: "02 REVISING" },
-  { kicker: "SCENE 03 / SELECTED", title: "Close on texture and a single drip", body: "Macro hold. Let the surface speak before the cut.", cell: "03 RENDERING" },
-  { kicker: "SCENE 04 / SELECTED", title: "Pack shot, mark centered", body: "Soft falloff. End on the logo and hold.", cell: "04 QUEUED" },
-];
-const WEB_SHOTS: Shot[] = [
-  { kicker: "PAGE 01 / HOME", title: "Home", body: "Hero, proof, and one clear start.", cell: "01 HOME" },
-  { kicker: "PAGE 02 / CATALOG", title: "Catalog", body: "Products in a clean grid, price quiet.", cell: "02 CATALOG" },
-  { kicker: "PAGE 03 / STORY", title: "Story", body: "Why it exists, in one scroll.", cell: "03 STORY" },
-  { kicker: "PAGE 04 / CHECKOUT", title: "Checkout", body: "Price, trust, and one buy action.", cell: "04 CHECKOUT" },
-];
-
+const AW = "aw6";
+const THREAD = "crelavo-aw-thread";
+const FORGET_KEYS = ["crelavo-aw-last-v2", "crelavo-aw-last", "crelavo-aw-scene", "crelavo-aw-selected"];
+type CreditState =
+  | { kind: "loading" }
+  | { kind: "signed_out" }
+  | { kind: "unknown" }
+  | { kind: "number"; value: number };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
 }
-
-function forgetStoredScene() {
-  try {
-    FORGET_KEYS.forEach((k) => {
-      window.localStorage.removeItem(k);
-      window.sessionStorage.removeItem(k);
-    });
-  } catch { /* ignore */ }
-}
-function boardKind(): "website" | "video" {
-  if (typeof window === "undefined") return "video";
+function readQuery() {
+  if (typeof window === "undefined") return { type: "AI Video", category: "video" };
   const q = new URLSearchParams(window.location.search);
-  const blob = `${q.get("type") || ""} ${q.get("category") || ""} ${window.location.pathname}`;
-  return /website|web site|page/i.test(blob) ? "website" : "video";
+  return { type: q.get("type") || "AI Video", category: q.get("category") || "video" };
 }
-function safeParse(s: string): unknown {
-  try { return JSON.parse(s); } catch { return null; }
-}
-function tokenFromUnknown(v: unknown): string | null {
-  if (!v) return null;
-  if (typeof v === "string") {
-    const t = v.trim();
-    if (!t) return null;
-    if (t.startsWith("eyJ")) return t;
-    return tokenFromUnknown(safeParse(t));
-  }
-  if (typeof v === "object") {
-    const o = v as Record<string, unknown>;
-    if (typeof o.access_token === "string" && o.access_token.startsWith("eyJ")) return o.access_token;
-    if (o.currentSession) return tokenFromUnknown(o.currentSession);
-    if (o.session) return tokenFromUnknown(o.session);
-    if (o.data) return tokenFromUnknown(o.data);
-  }
+function isWebsiteType(type: string, category: string) { return /website/i.test(type) || /website/i.test(category); }
+function fromAuthJson(raw: string | null): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  try {
+    const v = JSON.parse(trimmed);
+    if (typeof v === "string" && v.split(".").length === 3) return v;
+    if (v && typeof v === "object") {
+      const rec = v as Record<string, unknown>;
+      if (typeof rec.access_token === "string") return rec.access_token;
+      const session = rec.currentSession;
+      if (session && typeof session === "object" && typeof (session as Record<string, unknown>).access_token === "string") return (session as Record<string, unknown>).access_token as string;
+    }
+    if (Array.isArray(v) && typeof v[0] === "string" && v[0].split(".").length === 3) return v[0];
+  } catch { if (trimmed.split(".").length === 3) return trimmed; }
   return null;
 }
 function readAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  const scanStore = (store: Storage) => {
+  const stores = [window.localStorage, window.sessionStorage];
+  for (const store of stores) {
     for (let i = 0; i < store.length; i += 1) {
       const k = store.key(i);
-      if (!k || !/auth|supabase|sb-|token|session/i.test(k)) continue;
-      const t = tokenFromUnknown(store.getItem(k));
+      if (!k || !/auth-token|access_token|sb-.*token/i.test(k)) continue;
+      const t = fromAuthJson(store.getItem(k));
       if (t) return t;
     }
-    return null;
-  };
-  try { const a = scanStore(window.localStorage); if (a) return a; } catch { /* ignore */ }
-  try { const b = scanStore(window.sessionStorage); if (b) return b; } catch { /* ignore */ }
-  try {
-    const map: Record<string, string> = {};
-    (document.cookie || "").split(";").forEach((part) => {
-      const idx = part.indexOf("=");
-      if (idx < 0) return;
-      const key = part.slice(0, idx).trim();
-      const val = decodeURIComponent(part.slice(idx + 1).trim());
-      map[key] = val;
-    });
-    for (const [key, val] of Object.entries(map)) {
-      if (/\.\d+$/.test(key)) continue;
-      const t = tokenFromUnknown(val);
-      if (t) return t;
+  }
+  const cookies = document.cookie.split(";").map((s) => s.trim());
+  const chunks: Record<string, string[]> = {};
+  for (const c of cookies) {
+    const eq = c.indexOf("=");
+    if (eq < 0) continue;
+    const name = c.slice(0, eq);
+    let val = c.slice(eq + 1);
+    try { val = decodeURIComponent(val); } catch { /* keep raw */ }
+    const m = name.match(/^(sb-.*-auth-token)(?:\.(\d+))?$/);
+    if (m) {
+      const idx = m[2] ? Number(m[2]) : 0;
+      if (!chunks[m[1]]) chunks[m[1]] = [];
+      chunks[m[1]][idx] = val;
     }
-    const bases = new Set<string>();
-    Object.keys(map).forEach((key) => {
-      const m = key.match(/^(.*auth-token)\.(\d+)$/);
-      if (m) bases.add(m[1]);
-    });
-    for (const base of bases) {
-      let i = 0;
-      let acc = "";
-      while (map[`${base}.${i}`] != null) { acc += map[`${base}.${i}`]; i += 1; }
-      const t = tokenFromUnknown(acc);
-      if (t) return t;
-    }
-  } catch { /* ignore */ }
+    const t = fromAuthJson(val);
+    if (t) return t;
+  }
+  for (const parts of Object.values(chunks)) {
+    const t = fromAuthJson(parts.filter(Boolean).join(""));
+    if (t) return t;
+  }
   return null;
 }
-function isCatalogPayload(data: unknown): boolean {
+function looksLikeCatalog(data: unknown): boolean {
   if (!data || typeof data !== "object") return false;
   const o = data as Record<string, unknown>;
-  if (Array.isArray(o.products) || Array.isArray(o.plans) || Array.isArray(o.packs)) return true;
-  if (Array.isArray(o.prices) || Array.isArray(o.items) || Array.isArray(o.catalog)) return true;
-  if (o.catalog && typeof o.catalog === "object") return true;
+  if (Array.isArray(o.plans) || Array.isArray(o.packages) || Array.isArray(o.products)) return true;
+  if (o.pricing || o.pro_credits || o.catalog) return true;
   return false;
 }
-function isAuthError(res: Response, data: unknown, text: string): boolean {
-  if (res.status === 401 || res.status === 403) return true;
-  const blob = `${text} ${typeof data === "object" && data ? JSON.stringify(data) : ""}`.toLowerCase();
-  return blob.includes("user session is required") || blob.includes("sign_in") || blob.includes("not authenticated") || blob.includes("unauthorized");
-}
-function parseCredits(data: unknown): number | null {
-  if (data == null) return null;
-  if (typeof data === "number" && Number.isFinite(data)) return data;
-  if (typeof data === "string" && data.trim() !== "" && Number.isFinite(Number(data))) return Number(data);
-  if (typeof data !== "object" || isCatalogPayload(data)) return null;
-  const o = data as Record<string, unknown>;
-  const keys = ["balance", "credits", "credit_balance", "available", "remaining", "amount", "total"];
-  for (const key of keys) {
-    const v = o[key];
-    if (typeof v === "number" && Number.isFinite(v)) return v;
-    if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) return Number(v);
-  }
-  if (o.data && typeof o.data === "object") return parseCredits(o.data);
-  if (o.user && typeof o.user === "object") return parseCredits(o.user);
-  if (o.wallet && typeof o.wallet === "object") return parseCredits(o.wallet);
+function asInt(n: unknown): number | null {
+  if (typeof n === "number" && Number.isFinite(n)) return Math.trunc(n);
+  if (typeof n === "string" && n.trim() && Number.isFinite(Number(n))) return Math.trunc(Number(n));
   return null;
 }
-async function fetchCreditsOnce(): Promise<CreditView> {
-  const token = readAccessToken();
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const urls = ["/api/credits/balance", "/api/credits"];
-  let sawAuthError = false;
-  let sawOther = false;
-  for (const url of urls) {
-    try {
-      const res = await fetch(url, { method: "GET", credentials: "include", headers, cache: "no-store" });
-      const text = await res.text();
-      let data: unknown = null;
-      try { data = text ? JSON.parse(text) : null; } catch { data = null; }
-      if (isAuthError(res, data, text)) { sawAuthError = true; continue; }
-      const n = parseCredits(data);
-      if (n != null) return { mode: "number", value: n };
-      sawOther = true;
-    } catch { sawOther = true; }
+function parseCredits(data: unknown): number | null {
+  if (!data || typeof data !== "object" || looksLikeCatalog(data)) return null;
+  const o = data as Record<string, unknown>;
+  for (const k of ["balance", "credits", "credit_balance", "available", "remaining"]) {
+    const n = asInt(o[k]);
+    if (n != null) return n;
   }
-  if (sawAuthError && !token) return { mode: "signin" };
-  if (sawAuthError && token) return { mode: "unknown" };
-  if (sawOther) return { mode: "unknown" };
-  return token ? { mode: "unknown" } : { mode: "signin" };
+  if (o.data && typeof o.data === "object") return parseCredits(o.data);
+  return null;
 }
-function useViewport() {
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  useEffect(() => {
-    const update = () => {
-      const vv = window.visualViewport;
-      setSize({ w: Math.round(vv?.width ?? window.innerWidth), h: Math.round(vv?.height ?? window.innerHeight) });
-    };
-    update();
-    window.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("scroll", update);
-    return () => {
-      window.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
-    };
-  }, []);
-  return size;
+function isSessionError(data: unknown, status: number): boolean {
+  if (status === 401) return true;
+  if (!data || typeof data !== "object") return false;
+  const o = data as Record<string, unknown>;
+  const code = String(o.code || "");
+  const err = String(o.error || o.message || "");
+  if (code === "sign_in") return true;
+  return /session is required|sign in/i.test(err);
 }
-
-export function AssistantPage() {
+function isInsufficient(data: unknown, status: number): boolean {
+  if (status === 402) return true;
+  if (!data || typeof data !== "object") return false;
+  const o = data as Record<string, unknown>;
+  const code = String(o.code || "");
+  const err = String(o.error || o.message || "");
+  if (/insufficient|no_credits|empty_balance|zero_balance/i.test(code)) return true;
+  return /not enough credit|insufficient credit|no credits/i.test(err);
+}
+function pickStr(o: Record<string, unknown>, keys: string[]): string | null {
+  for (const k of keys) {
+    const v = o[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+async function cinemaFetch(url: string, init: RequestInit): Promise<Response> {
+  const token = readAccessToken();
+  const headers = new Headers(init.headers || {});
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+  if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
+  return fetch(url, { ...init, headers, credentials: "include", cache: "no-store" });
+}
+function videoShots(): Shot[] {
+  return [
+    { id: 1, label: "READY", status: "READY", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null },
+    { id: 2, label: "REVISING", status: "REVISING", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null },
+    { id: 3, label: "RENDERING", status: "RENDERING", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null },
+    { id: 4, label: "QUEUED", status: "QUEUED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null },
+  ];
+}
+function websiteShots(): Shot[] {
+  return [
+    { id: 1, label: "HOME", status: "HOME", title: "Home", body: "Hero, proof, and one clear start.", mediaUrl: null },
+    { id: 2, label: "CATALOG", status: "CATALOG", title: "Catalog", body: "Quiet grid. Product first, noise last.", mediaUrl: null },
+    { id: 3, label: "STORY", status: "STORY", title: "Story", body: "Why it exists, told in one screen.", mediaUrl: null },
+    { id: 4, label: "CHECKOUT", status: "CHECKOUT", title: "Checkout", body: "Buy path with no extra noise.", mediaUrl: null },
+  ];
+}
+function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolean): Shot {
+  const root = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  const scene = root.scene && typeof root.scene === "object" ? (root.scene as Record<string, unknown>) : root;
+  const title = pickStr(scene, ["title", "headline", "name"]);
+  const body = pickStr(scene, ["body", "copy", "description", "subtitle"]);
+  const media = pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+}
+export default function AssistantPage() {
+  const { type, category } = useMemo(() => readQuery(), []);
+  const website = isWebsiteType(type, category);
   const [mounted, setMounted] = useState(false);
-  const [kind, setKind] = useState<"website" | "video">("video");
+  const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
+  const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
   const [draft, setDraft] = useState("");
-  const [shots, setShots] = useState<Shot[]>(VIDEO_SHOTS);
-  const [credits, setCredits] = useState<CreditView>({ mode: "loading" });
-  const view = useViewport();
+  const [sending, setSending] = useState(false);
+  const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
+  const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
+  const loadCredits = useCallback(async () => {
+    const token = readAccessToken();
+    let number: number | null = null;
+    let hadPayload = false;
+    let networkError = false;
+    for (const url of ["/api/credits/balance", "/api/credits"]) {
+      try {
+        const res = await cinemaFetch(url, { method: "GET" });
+        const data = await res.json().catch(() => null);
+        if (isSessionError(data, res.status)) continue;
+        hadPayload = true;
+        const n = parseCredits(data);
+        if (n != null) { number = n; break; }
+      } catch { networkError = true; }
+    }
+    if (number != null) { setCredits({ kind: "number", value: number }); return; }
+    if (token || hadPayload || networkError) { setCredits({ kind: "unknown" }); return; }
+    setCredits({ kind: "signed_out" });
+  }, []);
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    forgetStoredScene();
-    setKind(boardKind());
-    setShots(boardKind() === "website" ? WEB_SHOTS.map((s) => ({ ...s })) : VIDEO_SHOTS.map((s) => ({ ...s })));
-    setSelected(0);
-    setMounted(true);
+    if (typeof window === "undefined") return;
+    for (const k of FORGET_KEYS) {
+      try { window.localStorage.removeItem(k); window.sessionStorage.removeItem(k); } catch { /* ignore */ }
+    }
+  }, []);
+  useEffect(() => {
+    const read = () => {
+      const vv = window.visualViewport;
+      setVp({ w: Math.round(vv?.width ?? window.innerWidth), h: Math.round(vv?.height ?? window.innerHeight) });
+    };
+    read();
+    window.addEventListener("resize", read);
+    window.visualViewport?.addEventListener("resize", read);
+    window.visualViewport?.addEventListener("scroll", read);
+    return () => {
+      window.removeEventListener("resize", read);
+      window.visualViewport?.removeEventListener("resize", read);
+      window.visualViewport?.removeEventListener("scroll", read);
+    };
   }, []);
   useEffect(() => {
     if (!mounted) return;
     const html = document.documentElement;
     const body = document.body;
-    const prev = { htmlOverflow: html.style.overflow, bodyOverflow: body.style.overflow, htmlHeight: html.style.height, bodyHeight: body.style.height, htmlOverscroll: html.style.overscrollBehavior, bodyOverscroll: body.style.overscrollBehavior };
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
     html.style.overflow = "hidden";
     body.style.overflow = "hidden";
-    html.style.height = "100%";
-    body.style.height = "100%";
-    html.style.overscrollBehavior = "none";
-    body.style.overscrollBehavior = "none";
-    const hidden: Array<{ el: HTMLElement; display: string }> = [];
-    document.querySelectorAll("footer").forEach((node) => {
-      const el = node as HTMLElement;
-      hidden.push({ el, display: el.style.display });
-      el.style.display = "none";
-    });
+    const footers = Array.from(document.querySelectorAll("footer"));
+    const prevDisplay = footers.map((f) => (f as HTMLElement).style.display);
+    footers.forEach((f) => { (f as HTMLElement).style.display = "none"; });
     return () => {
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-      html.style.height = prev.htmlHeight;
-      body.style.height = prev.bodyHeight;
-      html.style.overscrollBehavior = prev.htmlOverscroll;
-      body.style.overscrollBehavior = prev.bodyOverscroll;
-      hidden.forEach(({ el, display }) => { el.style.display = display; });
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+      footers.forEach((f, i) => { (f as HTMLElement).style.display = prevDisplay[i] || ""; });
     };
   }, [mounted]);
-  const loadCredits = useCallback(async () => { const next = await fetchCreditsOnce(); setCredits(next); }, []);
-  useEffect(() => {
-    if (!mounted) return;
-    let cancelled = false;
-    (async () => { const next = await fetchCreditsOnce(); if (!cancelled) setCredits(next); })();
-    const onFocus = () => { loadCredits(); };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
-  }, [mounted, loadCredits]);
+  useEffect(() => { if (mounted) void loadCredits(); }, [mounted, loadCredits]);
   const shot = shots[selected] || shots[0];
-  const onSend = useCallback(() => {
-    const text = draft.trim();
-    if (!text) return;
-    setShots((prev) => prev.map((item, i) => (i === selected ? { ...item, body: text } : item)));
-    setDraft("");
-  }, [draft, selected]);
-  const creditLabel = useMemo(() => {
-    if (credits.mode === "loading") return "\u2026";
-    if (credits.mode === "number") return new Intl.NumberFormat("en-US").format(credits.value);
-    if (credits.mode === "unknown") return "--";
-    return null;
-  }, [credits]);
-  if (!mounted || typeof document === "undefined") return null;
-
-  const ui = (
-    <div id={THREAD_ID} data-aw={AW} style={{ position: "fixed", inset: 0, width: view.w ? `${view.w}px` : "100vw", height: view.h ? `${view.h}px` : "100dvh", zIndex: 2147483646, overflow: "hidden", background: "#070605", color: "#f4eee6", display: "flex", flexDirection: "column", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
-      <style>{`
-        #${THREAD_ID} * { box-sizing: border-box; }
-        #${THREAD_ID} a { color: inherit; text-decoration: none; }
-        #${THREAD_ID} button, #${THREAD_ID} input { font: inherit; }
-        #${THREAD_ID} .aw-nav { display: flex; gap: 18px; align-items: center; letter-spacing: 0.14em; font-size: 11px; color: rgba(244,238,230,0.72); text-transform: uppercase; }
-        #${THREAD_ID} .aw-pill { border: 1px solid rgba(244,238,230,0.35); border-radius: 999px; padding: 6px 12px; background: transparent; color: #f4eee6; cursor: pointer; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
-        #${THREAD_ID} .aw-live { font-size: 10px; letter-spacing: 0.14em; color: rgba(244,238,230,0.7); text-transform: uppercase; white-space: nowrap; }
-        #${THREAD_ID} .aw-desk { display: flex; }
-        #${THREAD_ID} .aw-credits { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; }
-        #${THREAD_ID} .aw-stage { flex: 1; min-height: 0; position: relative; background: linear-gradient(180deg, #c4a06a 0%, #7a4e28 42%, #140c08 100%); }
-        #${THREAD_ID} .aw-caption { position: absolute; left: 22px; right: 22px; bottom: 18px; }
-        #${THREAD_ID} .aw-kicker { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(244,238,230,0.7); margin-bottom: 8px; }
-        #${THREAD_ID} .aw-title { font-family: Georgia, "Times New Roman", serif; font-size: 28px; line-height: 1.15; font-weight: 400; margin: 0 0 6px; }
-        #${THREAD_ID} .aw-body { margin: 0; font-size: 13px; color: rgba(244,238,230,0.82); }
-        #${THREAD_ID} .aw-dock { background: #070605; padding: 8px 12px 12px; flex: 0 0 auto; }
-        #${THREAD_ID} .aw-revise { font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(244,238,230,0.55); margin: 0 0 6px; }
-        #${THREAD_ID} .aw-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid rgba(244,238,230,0.18); margin-bottom: 8px; }
-        #${THREAD_ID} .aw-cell { background: transparent; color: rgba(244,238,230,0.55); border: 0; border-right: 1px solid rgba(244,238,230,0.18); padding: 10px 6px; cursor: pointer; letter-spacing: 0.16em; font-size: 10px; text-transform: uppercase; }
-        #${THREAD_ID} .aw-cell:last-child { border-right: 0; }
-        #${THREAD_ID} .aw-cell.on { background: rgba(244,238,230,0.12); color: #f4eee6; }
-        #${THREAD_ID} .aw-row { display: flex; gap: 8px; align-items: center; }
-        #${THREAD_ID} .aw-input { flex: 1; min-width: 0; background: transparent; color: #f4eee6; border: 1px solid rgba(244,238,230,0.22); border-radius: 999px; padding: 10px 16px; outline: none; }
-        #${THREAD_ID} .aw-send { border: 0; border-radius: 999px; background: #f4eee6; color: #070605; padding: 10px 16px; cursor: pointer; letter-spacing: 0.12em; font-size: 11px; font-weight: 600; }
-        @media (max-width: 720px) {
-          #${THREAD_ID} .aw-desk { display: none; }
-          #${THREAD_ID} .aw-title { font-size: 22px; }
-          #${THREAD_ID} .aw-caption { left: 16px; right: 16px; bottom: 14px; }
-          #${THREAD_ID} .aw-cell { letter-spacing: 0.08em; font-size: 9px; padding: 10px 2px; }
-        }
-      `}</style>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", background: "#070605", flex: "0 0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0 }}>
-          <a className="aw-pill" href="/">&lt; HOME</a>
-          <nav className="aw-nav aw-desk"><a href="/">Crelavo</a><a href="/dashboard">Dashboard</a><a href="/pricing">Credits</a><a href="/dashboard/productions">Productions</a></nav>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {creditLabel == null ? <a className="aw-pill" href="/?auth=login">Sign in</a> : <a className="aw-pill aw-credits" href="/pricing" title="Credits">{creditLabel}</a>}
-          <a className="aw-live" href="/pricing">Live &middot; Pro $9.99/mo</a>
-        </div>
+  const kicker = website ? `PAGE ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `SCENE ${String(shot.id).padStart(2, "0")} / SELECTED`;
+  const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
+  async function onSend() {
+    const prompt = draft.trim();
+    if (!prompt || sending) return;
+    if (credits.kind === "signed_out") { window.location.href = "/?auth=login"; return; }
+    if (credits.kind === "number" && credits.value <= 0) { setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED"); return; }
+    const prev = shots[selected];
+    setSending(true);
+    setNotice("REVISING THIS SCENE / PRODUCTION CONTINUES");
+    setShots((cur) => cur.map((s, i) => i === selected ? { ...s, status: website ? s.status : "REVISING", label: website ? s.label : "REVISING" } : s));
+    try {
+      const res = await cinemaFetch("/api/assistant-work", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
+      });
+      const data = await res.json().catch(() => null);
+      if (isSessionError(data, res.status)) {
+        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
+        setCredits({ kind: "signed_out" });
+        setNotice("SIGN IN TO START PRODUCTION");
+        setSending(false);
+        return;
+      }
+      if (isInsufficient(data, res.status)) {
+        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
+        setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
+        await loadCredits();
+        setSending(false);
+        return;
+      }
+      if (!res.ok || !data || data.ok === false) {
+        setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
+        const msg = data && typeof data === "object" ? String((data as Record<string, unknown>).message || (data as Record<string, unknown>).error || "") : "";
+        setNotice(msg.trim() ? msg.trim().toUpperCase() : "PRODUCTION DID NOT START / TRY AGAIN");
+        setSending(false);
+        return;
+      }
+      const next = applyPayload(prev, data, prompt, website);
+      setShots((cur) => cur.map((s, i) => (i === selected ? next : s)));
+      setDraft("");
+      setNotice("REVISE THIS SCENE / PRODUCTION CONTINUES");
+      const maybeBal = parseCredits(data);
+      if (maybeBal != null) setCredits({ kind: "number", value: maybeBal });
+      else await loadCredits();
+    } catch {
+      setShots((cur) => cur.map((s, i) => (i === selected ? prev : s)));
+      setNotice("PRODUCTION DID NOT START / TRY AGAIN");
+      setCredits((cur) => (cur.kind === "signed_out" ? cur : { kind: "unknown" }));
+    }
+    setSending(false);
+  }
+  if (!mounted) return null;
+  const shell = (
+    <div id={THREAD} data-aw={AW} style={{ position: "fixed", inset: 0, width: vp.w ? `${vp.w}px` : "100vw", height: vp.h ? `${vp.h}px` : "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", flexDirection: "column", background: "#070605", color: "rgb(244, 238, 230)", fontFamily: "Inter, system-ui, sans-serif" }}>
+      <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input { font-family: inherit; }`}</style>
+      <header style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 18, padding: "10px 16px", background: "#070605" }}>
+        <a href="/" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>&lt; HOME</a>
+        <nav style={{ display: "flex", gap: 16, fontSize: 11, letterSpacing: "0.16em", opacity: 0.78, flex: 1, minWidth: 0, overflow: "hidden" }}>
+          <a href="/">CRELAVO</a><a href="/dashboard">DASHBOARD</a><a href="/pricing">CREDITS</a><a href="/dashboard/productions">PRODUCTIONS</a>
+        </nav>
+        {credits.kind === "signed_out" ? <a href="/?auth=login" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>SIGN IN</a> : <div style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>{creditLabel}</div>}
+        <a href="/pricing" style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.7 }}>LIVE &middot; PRO $9.99/MO</a>
       </header>
-      <div className="aw-stage">
-        <div className="aw-caption"><div className="aw-kicker">{shot.kicker}</div><h1 className="aw-title">{shot.title}</h1><p className="aw-body">{shot.body}</p></div>
-      </div>
-      <div className="aw-dock">
-        <p className="aw-revise">Revise this scene / production continues</p>
-        <div className="aw-strip">
-          {shots.map((item, i) => <button key={item.cell} type="button" className={i === selected ? "aw-cell on" : "aw-cell"} onClick={() => setSelected(i)}>{item.cell}</button>)}
+      <section style={{ flex: "1 1 auto", minHeight: 0, position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #d7b07a 0%, #9a5a28 42%, #3a1c0e 78%, #070605 100%)" }}>
+        {shot.mediaUrl ? (/\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl) || /video/i.test(shot.mediaUrl) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "24px 20px 18px", background: "linear-gradient(180deg, transparent, rgba(7,6,5,0.88))" }}>
+          <div style={{ fontSize: 10, letterSpacing: "0.18em", opacity: 0.7 }}>{kicker}</div>
+          <div style={{ fontFamily: "Georgia, serif", fontSize: 28, marginTop: 6, lineHeight: 1.15 }}>{shot.title}</div>
+          <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6 }}>{shot.body}</div>
         </div>
-        <form className="aw-row" onSubmit={(e) => { e.preventDefault(); onSend(); }}>
-          <input className="aw-input" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" autoComplete="off" />
-          <button className="aw-send" type="submit">SEND</button>
-        </form>
+      </section>
+      <div style={{ flex: "0 0 auto", padding: "8px 12px 0", fontSize: 10, letterSpacing: "0.16em", opacity: 0.7 }}>{notice}</div>
+      <div style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, margin: "8px 12px 0", border: "1px solid rgba(244,238,230,0.18)" }}>
+        {shots.map((s, i) => <button key={s.id} type="button" onClick={() => setSelected(i)} style={{ background: i === selected ? "rgba(244,238,230,0.14)" : "transparent", color: "rgb(244,238,230)", border: "none", borderRight: i < 3 ? "1px solid rgba(244,238,230,0.18)" : "none", padding: "10px 6px", fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>{String(s.id).padStart(2, "0")} {s.label}</button>)}
       </div>
+      <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", display: "flex", gap: 10, padding: "10px 12px 12px" }}>
+        <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" disabled={sending} style={{ flex: 1, minWidth: 0, background: "transparent", border: "1px solid rgba(244,238,230,0.22)", borderRadius: 999, color: "rgb(244,238,230)", padding: "12px 16px", fontSize: 14, outline: "none" }} />
+        <button type="submit" disabled={sending || !draft.trim()} style={{ border: "none", borderRadius: 999, background: "rgb(248,251,255)", color: "#111", padding: "0 18px", fontSize: 11, letterSpacing: "0.14em", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1 }}>SEND</button>
+      </form>
     </div>
   );
-  return createPortal(ui, document.body);
+  return createPortal(shell, document.body);
 }
-
-export default AssistantPage;
