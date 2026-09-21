@@ -119,7 +119,7 @@ function asInt(n: unknown): number | null {
 function parseCredits(data: unknown): number | null {
   if (!data || typeof data !== "object" || looksLikeCatalog(data)) return null;
   const o = data as Record<string, unknown>;
-  for (const k of ["balance", "credits", "credit_balance", "available", "remaining"]) {
+  for (const k of ["available", "balance", "credits", "credit_balance", "remaining"]) {
     const n = asInt(o[k]);
     if (n != null) return n;
   }
@@ -195,23 +195,15 @@ export default function AssistantPage() {
   const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
   const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
   const loadCredits = useCallback(async () => {
-    const token = readAccessToken();
-    let number: number | null = null;
-    let hadPayload = false;
-    let networkError = false;
-    for (const url of ["/api/credits/balance", "/api/credits"]) {
-      try {
-        const res = await cinemaFetch(url, { method: "GET" });
-        const data = await res.json().catch(() => null);
-        if (isSessionError(data, res.status)) continue;
-        hadPayload = true;
-        const n = parseCredits(data);
-        if (n != null) { number = n; break; }
-      } catch { networkError = true; }
-    }
-    if (number != null) { setCredits({ kind: "number", value: number }); return; }
-    if (token || hadPayload || networkError) { setCredits({ kind: "unknown" }); return; }
-    setCredits({ kind: "signed_out" });
+    const claims = readSessionClaims();
+    if (!claims) { setCredits({ kind: "signed_out" }); return; }
+    try {
+      const response = await cinemaFetch(`/api/credits?user_id=${encodeURIComponent(claims.sub)}&t=${Date.now()}`, { method: "GET" });
+      const data = await response.json().catch(() => null);
+      if (isSessionError(data, response.status)) { setCredits({ kind: "signed_out" }); return; }
+      const number = parseCredits(data);
+      setCredits(number == null ? { kind: "unknown" } : { kind: "number", value: number });
+    } catch { setCredits({ kind: "unknown" }); }
   }, []);
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
@@ -267,6 +259,7 @@ export default function AssistantPage() {
     }
 
     const prev = shots[selected];
+    setDraft("");
     setSending(true);
     setNotice(isCopyOnlyPrompt(prompt) ? "UPDATING COPY / NO CREDIT SPEND" : "CREATING PRODUCTION / CONNECTING WORKER");
     setShots((cur) => cur.map((item, index) => index === selected ? { ...item, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
@@ -325,7 +318,7 @@ export default function AssistantPage() {
       });
       const productionData = await productionResponse.json().catch(() => ({}));
       if (!productionResponse.ok) {
-        if (productionResponse.status === 402) { await loadCredits(); throw new Error("Not enough credits for this production."); }
+        if (productionResponse.status === 402) { await loadCredits(); throw new Error(String(productionData.error || "Not enough credits for this production.")); }
         throw new Error(String(productionData.error || "Production could not be created."));
       }
       const productionId = String(productionData.production?.id || "");
