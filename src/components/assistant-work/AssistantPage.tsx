@@ -28,7 +28,7 @@ type CreditState =
   | { kind: "unknown" }
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
-type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[] };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
@@ -182,8 +182,9 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const body = pickStr(scene, ["body", "copy", "description", "subtitle"]);
   const mediaObject = root.media && typeof root.media === "object" ? root.media as Record<string, unknown> : {};
   const media = pickStr(mediaObject, ["url"]) || pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
+  const taskId = pickStr(root, ["taskId", "task_id"]);
   const files = Array.isArray(root.files) ? root.files.filter((item): item is DeliveryFile => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")) : shot.files;
-  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
 }
 function safeDownloadName(name: string) { return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 120) || "crelavo-output.txt"; }
 function downloadDeliveryFile(file: DeliveryFile) {
@@ -195,6 +196,12 @@ function downloadDeliveryFile(file: DeliveryFile) {
 }
 function downloadMedia(url: string) {
   const a = document.createElement("a"); a.href = url; a.download = "crelavo-output"; a.target = "_blank"; a.rel = "noreferrer"; document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function downloadDeliveryZip(files: DeliveryFile[]) {
+  const response = await cinemaFetch("/api/assistant-work/package", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ files }) });
+  if (!response.ok) throw new Error("ZIP delivery failed.");
+  const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "crelavo-delivery.zip"; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function AssistantPage() {
   const { type, category } = useMemo(() => readQuery(), []);
@@ -262,6 +269,18 @@ export default function AssistantPage() {
   const shot = shots[selected] || shots[0];
   const kicker = website ? `PAGE ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `SCENE ${String(shot.id).padStart(2, "0")} / SELECTED`;
   const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
+  async function pollQueuedJob(index: number, taskId: string) {
+    for (let attempt = 0; attempt < 36; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 10000));
+      try {
+        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId }) });
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.ok) return;
+        if (data.status === "failed") { setNotice(String(data.message || "PRODUCTION FAILED").toUpperCase()); return; }
+        if (data.status === "ready" && data.mediaUrl) { setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, mediaUrl: String(data.mediaUrl), status: "READY", label: "READY", taskId: undefined } : item)); setNotice("SCENE READY / DOWNLOAD AVAILABLE"); return; }
+      } catch { return; }
+    }
+  }
   async function onSend() {
     const prompt = draft.trim();
     if (!prompt || sending) return;
@@ -302,6 +321,7 @@ export default function AssistantPage() {
       const nextBalance = parseCredits(data);
       if (nextBalance != null) setCredits({ kind: "number", value: nextBalance });
       setNotice(data.status === "ready" ? "SCENE READY / CINEMA STAYS OPEN" : "PROVIDER STARTED / SCENE IS RENDERING");
+      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId));
       setSending(false);
     } catch (error) {
       setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
@@ -334,7 +354,7 @@ export default function AssistantPage() {
         {shots.map((s, i) => <button key={s.id} type="button" onClick={() => setSelected(i)} style={{ background: i === selected ? "rgba(244,238,230,0.14)" : "transparent", color: "rgb(244,238,230)", border: "none", borderRight: i < 3 ? "1px solid rgba(244,238,230,0.18)" : "none", padding: "10px 6px", fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>{String(s.id).padStart(2, "0")} {s.label}</button>)}
       </div>
       {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <div style={{ padding: "8px 12px 0", display: "grid", gap: 5 }}><label style={{ fontSize: 10, letterSpacing: "0.12em", opacity: 0.72 }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ fontSize: 11 }} /><small style={{ opacity: 0.55 }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></div> : null}
-             {(shot.mediaUrl || shot.files.length > 0) ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 12px 0" }}><span style={{ width: "100%", fontSize: 10, letterSpacing: "0.12em", opacity: 0.7 }}>DELIVERY READY</span>{shot.mediaUrl ? <button type="button" onClick={() => downloadMedia(shot.mediaUrl!)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>DOWNLOAD MEDIA</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>{file.name}</button>)}</div> : null}
+             {(shot.mediaUrl || shot.files.length > 0) ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 12px 0" }}><span style={{ width: "100%", fontSize: 10, letterSpacing: "0.12em", opacity: 0.7 }}>DELIVERY READY</span>{shot.mediaUrl ? <button type="button" onClick={() => downloadMedia(shot.mediaUrl!)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>DOWNLOAD MEDIA</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>DOWNLOAD ZIP</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>{file.name}</button>)}</div> : null}
 <div style={{ padding: "6px 14px 0", fontSize: 9, opacity: 0.55 }}>SEND confirms you own or have permission to use the submitted content and starts a credit-priced production unless the request is copy/layout/color only.</div>
       <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", display: "flex", gap: 10, padding: "10px 12px 12px" }}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" disabled={sending} style={{ flex: 1, minWidth: 0, background: "transparent", border: "1px solid rgba(244,238,230,0.22)", borderRadius: 999, color: "rgb(244,238,230)", padding: "12px 16px", fontSize: 14, outline: "none" }} />

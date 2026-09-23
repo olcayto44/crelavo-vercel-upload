@@ -15,6 +15,7 @@ import {
 } from "@/lib/assistant-work/runMediaEngine";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
+import { mirrorProviderAsset } from "@/lib/providers/storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -103,6 +104,9 @@ export async function POST(req: NextRequest) {
       result = await runMediaEngine({ prompt, type, category, scene });
     }
     if (!result.ok) return NextResponse.json(result, { status: 400 });
+    if (result.media?.url && result.status === "ready" && result.engine !== "local") {
+      try { result.media.url = await mirrorProviderAsset({ productionId: "assistant-" + user.id, sourceUrl: result.media.url, filenameBase: "media-" + ("taskId" in result && result.taskId ? result.taskId : crypto.randomUUID()), fallbackContentType: result.media.kind === "image" ? "image/jpeg" : result.media.kind === "audio" ? "audio/mpeg" : "video/mp4" }); } catch { /* retain provider URL when storage mirroring is unavailable */ }
+    }
 
     let balance = available;
     let charged = 0;
