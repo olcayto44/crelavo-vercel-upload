@@ -145,6 +145,18 @@ function isInsufficient(data: unknown, status: number): boolean {
   if (/insufficient|no_credits|empty_balance|zero_balance/i.test(code)) return true;
   return /not enough credit|insufficient credit|no credits/i.test(err);
 }
+function readableMessage(value: unknown, fallback = "Production did not start."): string {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    for (const key of ["message", "error", "detail", "status_msg", "description"]) {
+      const nested = readableMessage(o[key], "");
+      if (nested) return nested;
+    }
+    try { const json = JSON.stringify(value); if (json && json !== "{}") return json; } catch {}
+  }
+  return fallback;
+}
 function pickStr(o: Record<string, unknown>, keys: string[]): string | null {
   for (const k of keys) {
     const v = o[k];
@@ -276,7 +288,7 @@ export default function AssistantPage() {
         const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId }) });
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.ok) return;
-        if (data.status === "failed") { setNotice(String(data.message || "PRODUCTION FAILED").toUpperCase()); return; }
+        if (data.status === "failed") { setNotice(readableMessage(data.message, "PRODUCTION FAILED").toUpperCase()); return; }
         if (data.status === "ready" && data.mediaUrl) { setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, mediaUrl: String(data.mediaUrl), status: "READY", label: "READY", taskId: undefined } : item)); setNotice("SCENE READY / DOWNLOAD AVAILABLE"); return; }
       } catch { return; }
     }
@@ -303,7 +315,7 @@ export default function AssistantPage() {
         const form = new FormData(); form.set("user_id", claims.sub); form.set("file", materialFiles[0]); form.set("purpose", "video_clipping_source");
         const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", body: form });
         const uploadData = await uploadResponse.json().catch(() => ({}));
-        if (!uploadResponse.ok || !uploadData.material?.file_url) throw new Error(String(uploadData.error || "Source video upload failed."));
+        if (!uploadResponse.ok || !uploadData.material?.file_url) throw new Error(readableMessage(uploadData.error, "Source video upload failed."));
         sourceVideoUrl = String(uploadData.material.file_url);
       }
       const response = await cinemaFetch("/api/assistant-work", {
@@ -314,7 +326,7 @@ export default function AssistantPage() {
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
         if (response.status === 402) await loadCredits();
-        throw new Error(String(data?.message || data?.error || "Production did not start."));
+        throw new Error(readableMessage(data?.message ?? data?.error, "Production did not start."));
       }
       const next = applyPayload(prev, data, prompt, website);
       setShots((cur) => cur.map((item, index) => index === selected ? next : item));
