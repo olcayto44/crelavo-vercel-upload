@@ -14,9 +14,9 @@ export const GROUPS = [
 ] as const;
 const labels = (items: string[]) => items.map((label) => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, "_"), label }));
 const videoExtras: ExtraField[] = [
-  { id: "input", label: "How should production start?", kind: "select", required: true, options: labels(["Prompt-to-video", "Product / page link", "Voice-to-video", "Image-to-video"]) },
+  { id: "input", label: "How should production start?", kind: "select", required: true, options: labels(["Prompt-to-video", "Product / page link to video", "Voice-to-video", "Image-to-video"]) },
   { id: "aspect", label: "Format", kind: "select", required: true, options: [{ id: "9x16", label: "9:16 vertical" }, { id: "1x1", label: "1:1 square" }, { id: "16x9", label: "16:9 horizontal" }] },
-  { id: "duration", label: "Length", kind: "select", required: true, options: labels(["8 seconds", "15 seconds", "30 seconds", "60 seconds"]) },
+  { id: "duration", label: "Length", kind: "select", required: true, options: labels(["8 seconds", "15 seconds"]) },
 ];
 const talkingExtras: ExtraField[] = [{ id: "who", label: "Who appears?", kind: "select", required: true, options: labels(["Self-in-video", "Custom avatar", "Multi-person"]) }, { id: "language", label: "Spoken language", kind: "select", required: true, options: labels(["English", "Turkish", "German", "French", "Spanish", "Arabic"]) }, ...videoExtras.filter((field) => field.id !== "input")];
 const imageExtras: ExtraField[] = [{ id: "format", label: "Format", kind: "select", required: true, options: labels(["Story 9:16", "Feed 1:1", "Banner", "Poster", "Hero image"]) }];
@@ -28,7 +28,7 @@ export const CATEGORIES: Category[] = [
   category("saas", "SaaS", "build", "SaaS", ["Dashboard", "Auth", "Billing"], [["SaaS Dashboard", 2500], ["SaaS MVP Starter", 6000]], buildExtras),
   category("mobile_app", "Mobile App", "build", "Mobile App", ["iOS/Android UI", "Expo starter", "Navigation"], [["Mobile App UI", 3000], ["Expo Starter App", 6000]], buildExtras),
   category("admin_project", "Admin Panel Project", "build", "Admin Panel Project", ["CRUD", "Roles", "Database"], [["Basic Admin Panel", 3500]], buildExtras),
-  category("video", "AI Video", "media", "AI Video", ["Prompt-to-video", "Link-to-video", "Voice-to-video"], [["Controlled 1080p Video Test", 600], ["Premium Video", 3300]]),
+  category("video", "AI Video", "media", "AI Video", ["Prompt-to-video", "Product / page link to video", "Image-to-video", "Voice-to-video"], [["Controlled 1080p Video Test", 600], ["Premium Video", 3300]]),
   category("talking_video", "Advanced Talking Video", "media", "Advanced Talking Video", ["Self-in-video", "Photo/avatar input", "Choose character"], [["Self-in-Video Talking Scene", 4200], ["Multi-person Talking Video", 8200]], talkingExtras),
   category("documentary", "Documentary", "media", "Documentary", ["Topic research", "Narration outline", "Interview map"], [["Short Documentary", 2200], ["Documentary Explainer", 5200]]),
   category("animation", "Animation", "media", "Animation", ["2D animation", "2.5D animation", "3D animation"], [["Animation Explainer", 900], ["Character Animation Pack", 3500]]),

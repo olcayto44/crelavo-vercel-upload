@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ProductionSelection } from "@/components/assistant/AssistantPreProduction";
+import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
 import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
@@ -35,9 +35,12 @@ export function CinemaRouteGuard() {
   return null;
 }
 function readQuery() {
-  if (typeof window === "undefined") return { type: "AI Video", category: "video" };
+  if (typeof window === "undefined") return { type: "AI Video", category: "" };
   const q = new URLSearchParams(window.location.search);
-  return { type: q.get("type") || "AI Video", category: q.get("category") || "video" };
+  const type = q.get("type") || "AI Video";
+  const direct = q.get("category") || "";
+  const map: Record<string, string> = { media: "video", video: "video", "AI Video": "video", drone: "drone_video", live_sales: "live_sales_agent", commerce: "campaign", app: "mobile_app", ecommerce: "website", avatar: "avatar", image: "image", documentary: "documentary", animation: "animation" };
+  return { type, category: direct || map[type] || map[type.toLowerCase()] || "" };
 }
 function isWebsiteType(type: string, category: string) { return /website/i.test(type) || /website/i.test(category); }
 function fromAuthJson(raw: string | null): string | null {
@@ -219,8 +222,11 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
 }
 export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
   const query = useMemo(() => readQuery(), []);
-  const type = preProduction?.type || query.type;
-  const category = preProduction?.categoryId || query.category;
+  const [selection, setSelection] = useState<ProductionSelection | null>(preProduction || null);
+  const [setupOpen, setSetupOpen] = useState(!preProduction);
+  const chosen = selection || preProduction;
+  const type = chosen?.type || query.type;
+  const category = chosen?.categoryId || query.category || "video";
   const website = isWebsiteType(type, category);
   const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
   const restoredRef = useRef(false);
@@ -230,6 +236,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
   const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
+  const categoryResetRef = useRef(category);
   const [draft, setDraft] = useState("");
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
@@ -246,6 +253,15 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       setCredits(number == null ? { kind: "unknown" } : { kind: "number", value: number });
     } catch { setCredits({ kind: "unknown" }); }
   }, []);
+  useEffect(() => {
+    if (categoryResetRef.current === category) return;
+    categoryResetRef.current = category;
+    setShots(website ? websiteShots() : videoShots());
+    setSelected(0);
+    setDraft("");
+    setMaterialFiles([]);
+    setNotice("SETUP UPDATED / READY FOR A NEW PRODUCTION");
+  }, [category, website]);
   useEffect(() => {
     setMounted(true);
     try {
@@ -329,7 +345,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!currentPrompt.trim() || sending) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
-      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }) });
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: chosen?.extras }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
@@ -392,13 +408,14 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     <div id={THREAD} data-aw={AW} style={{ position: "fixed", inset: 0, width: vp.w ? `${vp.w}px` : "100vw", height: vp.h ? `${vp.h}px` : "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", flexDirection: "column", background: "#070605", color: "rgb(244, 238, 230)", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input { font-family: inherit; }`}</style>
       <header style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: 18, padding: "10px 16px", background: "#070605" }}>
-        <a href="/" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>&lt; HOME</a>
-        <nav style={{ display: "flex", gap: 16, fontSize: 11, letterSpacing: "0.16em", opacity: 0.78, flex: 1, minWidth: 0, overflow: "hidden" }}>
+        <a href="/" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>&lt; HOME</a><button type="button" onClick={() => setSetupOpen(true)} style={{ border: "1px solid rgba(245,199,122,0.65)", borderRadius: 999, padding: "6px 12px", fontSize: 10, letterSpacing: "0.12em", background: "transparent", color: "#f5c77a" }}>SETUP</button>
+        <nav style={{ display: "flex", gap: 16, fontSize: 11, letterSpacing: "0.16em", opacity: 0.78, flex: 1, minWidth: 0, overflow: "hidden" }}><span style={{ color: "#f5c77a", whiteSpace: "nowrap" }}>PRODUCTION: {type} / {category}</span>
           <a href="/">CRELAVO</a><a href="/dashboard">DASHBOARD</a><a href="/pricing">CREDITS</a><a href="/dashboard/productions">PRODUCTIONS</a>
         </nav>
         {credits.kind === "signed_out" ? <a href="/?auth=login" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>SIGN IN</a> : <div style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>{creditLabel}</div>}
         <a href="/pricing" style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.7 }}>LIVE &middot; PRO $9.99/MO</a>
       </header>
+      {setupOpen ? <div style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "auto", padding: "18px 14px", background: "rgba(7,6,5,0.94)" }}><AssistantPreProduction initialCategoryId={query.category} onConfirm={(next) => { setSelection(next); setSetupOpen(false); }} /></div> : null}
       <section style={{ flex: "1 1 auto", minHeight: 0, position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #d7b07a 0%, #9a5a28 42%, #3a1c0e 78%, #070605 100%)" }}>
         {shot.mediaUrl ? (/\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl) || /video/i.test(shot.mediaUrl) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "24px 20px 18px", background: "linear-gradient(180deg, transparent, rgba(7,6,5,0.88))" }}>

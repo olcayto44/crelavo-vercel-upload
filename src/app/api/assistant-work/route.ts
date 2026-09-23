@@ -16,6 +16,7 @@ import {
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
 import { mirrorProviderAsset } from "@/lib/providers/storage";
+import { getCategory as getCatalogCategory } from "@/lib/crelavo/categoryCatalog";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     const type = String(body.type || "");
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
+    const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
 
     if (!prompt) {
       return NextResponse.json(
@@ -70,11 +72,13 @@ export async function POST(req: NextRequest) {
         const local = await runLocalEngine({ prompt, type, category, scene, action });
         return NextResponse.json({ ...local, spend: false });
       }
-      const copy = await runMediaEngine({ prompt, type, category, scene });
+      const copy = await runMediaEngine({ prompt, type, category, scene, extras });
       return NextResponse.json({ ...copy, spend: false });
     }
 
-    const priced = quote(category, [], "revise", prompt);
+    const quoted = quote(category, [], "revise", prompt);
+     const selectedPack = getCatalogCategory(category)?.packs.find((pack) => pack.id === String(body.packId || ""));
+     const priced = selectedPack?.credits != null ? { ...quoted, credits: selectedPack.credits, engine: selectedPack.credits > 0, reason: "selected_pack" } : quoted;
     const creditUrl = new URL(req.url);
     creditUrl.pathname = "/api/credits";
     creditUrl.search = "user_id=" + encodeURIComponent(user.id);
@@ -105,7 +109,7 @@ export async function POST(req: NextRequest) {
     } else {
       if (!getCategoryEngine(category)) return NextResponse.json({ ok: false, spend: false, code: "unknown_category", message: "Unknown production category." }, { status: 400 });
       if (!engineConfigured(category)) return NextResponse.json({ ok: false, spend: false, code: "engine_not_configured", message: "The selected provider is not configured on this host." }, { status: 503 });
-      result = await runMediaEngine({ prompt, type, category, scene, renderFinal: body.render === true });
+      result = await runMediaEngine({ prompt, type, category, scene, extras, renderFinal: body.render === true });
     }
     if (!result.ok) return NextResponse.json(result, { status: 400 });
     if (result.media?.url && result.status === "ready" && result.engine !== "local") {
@@ -139,7 +143,7 @@ export async function POST(req: NextRequest) {
       generation_status: resultStatus || "queued",
       estimated_credits: priced.credits,
       reserved_credits: 0,
-      input_json: { source: "cinema_assistant", type, scene, categoryId: body.categoryId ?? category, packId: body.packId ?? null, features: Array.isArray(body.features) ? body.features : [], extras: body.extras && typeof body.extras === "object" ? body.extras : {} },
+      input_json: { source: "cinema_assistant", type, scene, categoryId: body.categoryId ?? category, packId: body.packId ?? null, features: Array.isArray(body.features) ? body.features : [], extras },
       output_json: { assistant: true, provider: result.engine, taskId: providerTaskId ?? null, media: result.media ?? null, files: result.files ?? [], charged },
       preview_url: result.media?.url ?? null,
       delivery_zip_url: null,
