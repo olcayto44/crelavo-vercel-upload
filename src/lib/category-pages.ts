@@ -12,14 +12,9 @@ function titleCase(value: string) {
 }
 
 function ctaHref(typeId: string) {
-  if (typeId === "campaign") return "/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Product%20link%20campaign";
-  if (["video", "talking_video", "animation", "anime_short_film", "animal_video", "nature_video", "planet_space_video", "cinematic_video", "video_clipping", "stickman_animation", "music_video", "video_tools"].includes(typeId)) return "/dashboard/videos";
-  if (["website", "saas", "mobile_app", "admin_project"].includes(typeId)) return "/dashboard/create";
-  if (["avatar", "visual_clone", "brand_kit", "image"].includes(typeId)) return "/dashboard/brand-kit";
-  if (["lip_sync", "voice_clone", "ai-dubbing-voice", "localization"].includes(typeId)) return "/dashboard/dubbing";
-  if (typeId === "live_sales_agent") return "/live-sales-credits";
-  if (typeId === "ai_agent") return "/dashboard/growth";
-  return "/dashboard/assistant-workspace";
+  const type = productionTypes.find((item) => item.id === typeId);
+  const label = type?.label || typeId;
+  return `/dashboard/assistant-workspace?category=${encodeURIComponent(typeId)}&type=${encodeURIComponent(label)}`;
 }
 
 function buildCategoryPage(type: typeof productionTypes[number]): CategoryPage {

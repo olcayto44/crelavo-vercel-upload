@@ -223,7 +223,7 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
 export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
   const query = useMemo(() => readQuery(), []);
   const [selection, setSelection] = useState<ProductionSelection | null>(preProduction || null);
-  const [setupOpen, setSetupOpen] = useState(!preProduction);
+  const [setupOpen, setSetupOpen] = useState(false);
   const chosen = selection || preProduction;
   const type = chosen?.type || query.type;
   const category = chosen?.categoryId || query.category || "video";
@@ -415,7 +415,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         {credits.kind === "signed_out" ? <a href="/?auth=login" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>SIGN IN</a> : <div style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>{creditLabel}</div>}
         <a href="/pricing" style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.7 }}>LIVE &middot; PRO $9.99/MO</a>
       </header>
-      {setupOpen ? <div style={{ position: "absolute", inset: 0, zIndex: 20, overflow: "auto", padding: "18px 14px", background: "rgba(7,6,5,0.94)" }}><AssistantPreProduction initialCategoryId={query.category} onConfirm={(next) => { setSelection(next); setSetupOpen(false); }} /></div> : null}
+      {setupOpen ? <aside aria-label="Production setup" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>CLOSE</button></div><AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelection(next); setSetupOpen(false); }} /></aside> : null}
       <section style={{ flex: "1 1 auto", minHeight: 0, position: "relative", overflow: "hidden", background: "linear-gradient(180deg, #d7b07a 0%, #9a5a28 42%, #3a1c0e 78%, #070605 100%)" }}>
         {shot.mediaUrl ? (/\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl) || /video/i.test(shot.mediaUrl) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "24px 20px 18px", background: "linear-gradient(180deg, transparent, rgba(7,6,5,0.88))" }}>
