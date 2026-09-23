@@ -301,13 +301,15 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const shot = shots[selected] || shots[0];
   const kicker = website ? `PAGE ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `SCENE ${String(shot.id).padStart(2, "0")} / SELECTED`;
   const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
-  async function pollQueuedJob(index: number, taskId: string) {
+  async function pollQueuedJob(index: number, initialTaskId: string, productionId?: string) {
+    let taskId = initialTaskId;
     for (let attempt = 0; attempt < 36; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 10000));
       try {
-        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId, productionId: shots[index]?.productionId }) });
+        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId, productionId: productionId || shots[index]?.productionId }) });
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.ok) { setNotice(readableMessage(data?.message, "PROVIDER STATUS CHECK FAILED").toUpperCase()); return; }
+        if (data.taskId && String(data.taskId) !== taskId) { taskId = String(data.taskId); setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, taskId } : item)); }
         if (data.status === "failed") { setNotice(readableMessage(data.message, "PRODUCTION FAILED").toUpperCase()); return; }
         if (data.status === "ready" && data.mediaUrl) { setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, mediaUrl: String(data.mediaUrl), status: "READY", label: "READY", taskId: undefined } : item)); setNotice("SCENE READY / DOWNLOAD AVAILABLE"); return; }
       } catch { return; }
@@ -318,7 +320,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     shots.forEach((item, index) => {
       if (item.taskId && !resumedJobsRef.current.has(item.taskId)) {
         resumedJobsRef.current.add(item.taskId);
-        void pollQueuedJob(index, item.taskId);
+        void pollQueuedJob(index, item.taskId, item.productionId);
       }
     });
   }, [mounted, shots, category]);
@@ -333,7 +335,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const next = applyPayload(shot, data, currentPrompt, website);
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, planPrompt: currentPrompt } : item));
       setNotice(data.status === "ready" ? "SCENE READY / DOWNLOAD AVAILABLE" : "04 QUEUED / FINAL RENDER IN PROGRESS");
-      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId));
+      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
     } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
   }
   async function onSend() {
