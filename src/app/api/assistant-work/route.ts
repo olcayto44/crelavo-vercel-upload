@@ -14,6 +14,7 @@ import {
   isCopyLayoutColorOnly,
 } from "@/lib/assistant-work/runMediaEngine";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
+import { runVideoClippingPipeline } from "@/lib/pipelines/video-clipping-pipeline";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -81,7 +82,20 @@ export async function POST(req: NextRequest) {
     }
 
     let result;
-    if (isLocalCategory(category, type)) {
+    if (category === "video_clipping") {
+      const sourceVideoUrl = String(body.sourceVideoUrl || body.source_video_url || (prompt.match(/https:\/\/[^\s<>"]+/i)?.[0] || "")).replace(/[),.;]+$/g, "");
+      if (!sourceVideoUrl || !/^https:\/\//i.test(sourceVideoUrl) || !/\.(mp4|mov|webm|m4v)(\?|$)/i.test(sourceVideoUrl)) {
+        return NextResponse.json({ ok: false, spend: false, code: "source_video_required", message: "Video clipping requires an uploaded MP4, MOV, WEBM or M4V source video." }, { status: 400 });
+      }
+      try {
+        const clipping = await runVideoClippingPipeline({ productionId: "assistant-" + user.id + "-" + crypto.randomUUID(), title: prompt.slice(0, 100), prompt, requestMetadata: { sourceVideoUrl }, requestedClipCount: Number(body.requestedClipCount || 3), targetDurationSeconds: Number(body.targetDurationSeconds || 18) });
+        const render = clipping.renderJob as unknown as Record<string, unknown> | null;
+        const finalUrl = typeof render?.outputUrl === "string" && render.outputUrl ? render.outputUrl : clipping.clipUrls[0] || null;
+        result = { ok: true, spend: true, engine: "local", category, status: finalUrl ? "ready" : "queued", title: "Video clips ready", body: prompt, media: finalUrl ? { kind: "video", url: finalUrl } : null, taskId: typeof render?.id === "string" ? render.id : undefined, files: [{ name: "clips.json", mime: "application/json", content: JSON.stringify({ sourceVideoUrl: clipping.sourceVideoUrl, clips: clipping.selectedHighlights, subtitleUrl: clipping.subtitleUrl, clipUrls: clipping.clipUrls }, null, 2) }] };
+      } catch (error) {
+        return NextResponse.json({ ok: false, spend: false, code: "video_clipping_failed", message: error instanceof Error ? error.message : "Video clipping failed." }, { status: 400 });
+      }
+    } else if (isLocalCategory(category, type)) {
       result = await runLocalEngine({ prompt, type, category, scene, action });
     } else {
       if (!getCategoryEngine(category)) return NextResponse.json({ ok: false, spend: false, code: "unknown_category", message: "Unknown production category." }, { status: 400 });

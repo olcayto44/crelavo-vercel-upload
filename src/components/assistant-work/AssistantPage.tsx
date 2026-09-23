@@ -27,7 +27,8 @@ type CreditState =
   | { kind: "signed_out" }
   | { kind: "unknown" }
   | { kind: "number"; value: number };
-type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null };
+type DeliveryFile = { name: string; mime?: string; content?: string };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[] };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
@@ -160,18 +161,18 @@ async function cinemaFetch(url: string, init: RequestInit): Promise<Response> {
 }
 function videoShots(): Shot[] {
   return [
-    { id: 1, label: "READY", status: "READY", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null },
-    { id: 2, label: "REVISING", status: "REVISING", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null },
-    { id: 3, label: "RENDERING", status: "RENDERING", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null },
-    { id: 4, label: "QUEUED", status: "QUEUED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null },
+    { id: 1, label: "READY", status: "READY", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
+    { id: 2, label: "REVISING", status: "REVISING", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null, files: [] },
+    { id: 3, label: "RENDERING", status: "RENDERING", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null, files: [] },
+    { id: 4, label: "QUEUED", status: "QUEUED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null, files: [] },
   ];
 }
 function websiteShots(): Shot[] {
   return [
-    { id: 1, label: "HOME", status: "HOME", title: "Home", body: "Hero, proof, and one clear start.", mediaUrl: null },
-    { id: 2, label: "CATALOG", status: "CATALOG", title: "Catalog", body: "Quiet grid. Product first, noise last.", mediaUrl: null },
-    { id: 3, label: "STORY", status: "STORY", title: "Story", body: "Why it exists, told in one screen.", mediaUrl: null },
-    { id: 4, label: "CHECKOUT", status: "CHECKOUT", title: "Checkout", body: "Buy path with no extra noise.", mediaUrl: null },
+    { id: 1, label: "HOME", status: "HOME", title: "Home", body: "Hero, proof, and one clear start.", mediaUrl: null, files: [] },
+    { id: 2, label: "CATALOG", status: "CATALOG", title: "Catalog", body: "Quiet grid. Product first, noise last.", mediaUrl: null, files: [] },
+    { id: 3, label: "STORY", status: "STORY", title: "Story", body: "Why it exists, told in one screen.", mediaUrl: null, files: [] },
+    { id: 4, label: "CHECKOUT", status: "CHECKOUT", title: "Checkout", body: "Buy path with no extra noise.", mediaUrl: null, files: [] },
   ];
 }
 function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolean): Shot {
@@ -181,7 +182,19 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const body = pickStr(scene, ["body", "copy", "description", "subtitle"]);
   const mediaObject = root.media && typeof root.media === "object" ? root.media as Record<string, unknown> : {};
   const media = pickStr(mediaObject, ["url"]) || pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
-  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+  const files = Array.isArray(root.files) ? root.files.filter((item): item is DeliveryFile => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")) : shot.files;
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+}
+function safeDownloadName(name: string) { return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 120) || "crelavo-output.txt"; }
+function downloadDeliveryFile(file: DeliveryFile) {
+  if (!file.content) return;
+  const blob = new Blob([file.content], { type: file.mime || "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = safeDownloadName(file.name); document.body.appendChild(a); a.click(); a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadMedia(url: string) {
+  const a = document.createElement("a"); a.href = url; a.download = "crelavo-output"; a.target = "_blank"; a.rel = "noreferrer"; document.body.appendChild(a); a.click(); a.remove();
 }
 export default function AssistantPage() {
   const { type, category } = useMemo(() => readQuery(), []);
@@ -266,10 +279,18 @@ export default function AssistantPage() {
     setShots((cur) => cur.map((item, index) => index === selected ? { ...item, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
 
     try {
+      let sourceVideoUrl: string | undefined;
+      if (category === "video_clipping" && materialFiles[0]) {
+        const form = new FormData(); form.set("user_id", claims.sub); form.set("file", materialFiles[0]); form.set("purpose", "video_clipping_source");
+        const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", body: form });
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+        if (!uploadResponse.ok || !uploadData.material?.file_url) throw new Error(String(uploadData.error || "Source video upload failed."));
+        sourceVideoUrl = String(uploadData.material.file_url);
+      }
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1 }),
+        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1, sourceVideoUrl }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
@@ -312,8 +333,9 @@ export default function AssistantPage() {
       <div style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 0, margin: "8px 12px 0", border: "1px solid rgba(244,238,230,0.18)" }}>
         {shots.map((s, i) => <button key={s.id} type="button" onClick={() => setSelected(i)} style={{ background: i === selected ? "rgba(244,238,230,0.14)" : "transparent", color: "rgb(244,238,230)", border: "none", borderRight: i < 3 ? "1px solid rgba(244,238,230,0.18)" : "none", padding: "10px 6px", fontSize: 11, letterSpacing: "0.14em", cursor: "pointer" }}>{String(s.id).padStart(2, "0")} {s.label}</button>)}
       </div>
-      {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools"].includes(category)) ? <div style={{ padding: "8px 12px 0", display: "grid", gap: 5 }}><label style={{ fontSize: 10, letterSpacing: "0.12em", opacity: 0.72 }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ fontSize: 11 }} /><small style={{ opacity: 0.55 }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></div> : null}
-      <div style={{ padding: "6px 14px 0", fontSize: 9, opacity: 0.55 }}>SEND confirms you own or have permission to use the submitted content and starts a credit-priced production unless the request is copy/layout/color only.</div>
+      {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <div style={{ padding: "8px 12px 0", display: "grid", gap: 5 }}><label style={{ fontSize: 10, letterSpacing: "0.12em", opacity: 0.72 }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ fontSize: 11 }} /><small style={{ opacity: 0.55 }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></div> : null}
+             {(shot.mediaUrl || shot.files.length > 0) ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 12px 0" }}><span style={{ width: "100%", fontSize: 10, letterSpacing: "0.12em", opacity: 0.7 }}>DELIVERY READY</span>{shot.mediaUrl ? <button type="button" onClick={() => downloadMedia(shot.mediaUrl!)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>DOWNLOAD MEDIA</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "7px 10px", fontSize: 10 }}>{file.name}</button>)}</div> : null}
+<div style={{ padding: "6px 14px 0", fontSize: 9, opacity: 0.55 }}>SEND confirms you own or have permission to use the submitted content and starts a credit-priced production unless the request is copy/layout/color only.</div>
       <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", display: "flex", gap: 10, padding: "10px 12px 12px" }}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" disabled={sending} style={{ flex: 1, minWidth: 0, background: "transparent", border: "1px solid rgba(244,238,230,0.22)", borderRadius: 999, color: "rgb(244,238,230)", padding: "12px 16px", fontSize: 14, outline: "none" }} />
         <button type="submit" disabled={sending || !draft.trim()} style={{ border: "none", borderRadius: 999, background: "rgb(248,251,255)", color: "#111", padding: "0 18px", fontSize: 11, letterSpacing: "0.14em", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1 }}>SEND</button>

@@ -7,6 +7,9 @@ export const LOCAL_CATEGORIES = [
   "ad_score_checker",
   "campaign_calendar",
   "document_pack",
+  "crelavo_academy",
+  "community_showcase",
+  "virtual_model_studio",
 ] as const;
 
 export type LocalCategory = (typeof LOCAL_CATEGORIES)[number];
@@ -90,11 +93,14 @@ function documentPack(prompt: string): LocalEngineResult {
   const brand=brandFromPrompt(prompt); const files=[file("PITCH.md",`# ${brand} pitch\n\nProblem\n${prompt}\n\nSolution\nA clear offer, one buyer, one proof, one ask.\n\nAsk\nNext meeting or checkout.\n`,"text/markdown"),file("PROPOSAL.md",`# ${brand} proposal\n\nScope\nDeliver the files in this pack.\n\nOut of scope\nHosting, domain, app-store, and server setup stay with you.\n`,"text/markdown"),file("README.md",`# ${brand} document pack\n\nPitch, proposal, and setup notes. No MiniMax. No HeyGen.\n`,"text/markdown")];
   return ok("document_pack","Pitch / proposal pack","Markdown files ready to download and edit.",files,true);
 }
+function academyPack(prompt:string):LocalEngineResult{return ok("crelavo_academy","Academy lesson pack", "Lesson, exercise and handout files are ready.",[file("LESSON.md",`# Crelavo Academy lesson\n\nTopic\n${prompt}\n\nObjective\nExplain the topic with one practical example.\n`,"text/markdown"),file("EXERCISE.md",`# Exercise\n\n1. Describe the problem in one sentence.\n2. Apply the lesson to your own project.\n3. Write one measurable next step.\n`,"text/markdown"),file("HANDOUT.md",`# Learner handout\n\nKey points\n- One clear objective\n- One worked example\n- One practice task\n`,"text/markdown")],true);}
+function showcasePack(prompt:string):LocalEngineResult{return ok("community_showcase","Showcase submission pack","Showcase description, caption and metadata are ready.",[file("SHOWCASE.md",`# Community showcase\n\n${prompt}\n\nDescribe the result, the process and the outcome.\n`,"text/markdown"),file("SOCIAL-CAPTION.txt",`Built with Crelavo. ${prompt.slice(0,180)}\n`,"text/plain"),file("METADATA.json",JSON.stringify({title:brandFromPrompt(prompt),description:prompt,source:"Crelavo Community Showcase"},null,2),"application/json")],true);}
+function virtualModelPack(prompt:string):LocalEngineResult{return ok("virtual_model_studio","Virtual model studio pack","Model brief, shot list and usage notes are ready.",[file("MODEL-BRIEF.md",`# Virtual model brief\n\n${prompt}\n\nSubject: consistent virtual presenter\nFormat: 16:9 and 9:16 safe framing\n`,"text/markdown"),file("SHOT-LIST.md",`# Shot list\n\n1. Intro portrait\n2. Product / message presentation\n3. Closing call to action\n`,"text/markdown"),file("USAGE-NOTES.md",`# Usage notes\n\nUse only authorized likeness, voice and brand materials.\n`,"text/markdown")],true);}
 function colorRevise(category:string,prompt:string):LocalEngineResult{return ok(category,"Updated",prompt.trim(),[],false);}
 export async function runLocalEngine(input:LocalEngineInput):Promise<LocalEngineResult>{
   const category=normalizeCategory(input.category)||normalizeCategory(input.type); const prompt=String(input.prompt||"").trim(); const scene=sceneIndex(input.scene);
   if(!LOCAL_SET.has(category))return{ok:false,spend:false,engine:"local",category,code:"not_local",message:"Not a local file/copy category.",title:"",body:"",files:[],media:null};
   if(!prompt)return{ok:false,spend:false,engine:"local",category,code:"empty_prompt",message:"Write what to produce first.",title:"",body:"",files:[],media:null};
   if(isCopyLayoutColorOnly(prompt))return colorRevise(category,prompt);
-  switch(category as LocalCategory){case"website":return websitePack(prompt,scene);case"saas":return saasPack(prompt,scene);case"mobile_app":return mobilePack(prompt,scene);case"admin_project":return adminPack(prompt,scene);case"video_clipping":return clippingPack(prompt);case"ad_score_checker":return adScorePack(prompt);case"campaign_calendar":return calendarPack(prompt);case"document_pack":return documentPack(prompt);default:return colorRevise(category,prompt);}
+  switch(category as LocalCategory){case"website":return websitePack(prompt,scene);case"saas":return saasPack(prompt,scene);case"mobile_app":return mobilePack(prompt,scene);case"admin_project":return adminPack(prompt,scene);case"video_clipping":return clippingPack(prompt);case"ad_score_checker":return adScorePack(prompt);case"campaign_calendar":return calendarPack(prompt);case"document_pack":return documentPack(prompt);case"crelavo_academy":return academyPack(prompt);case"community_showcase":return showcasePack(prompt);case"virtual_model_studio":return virtualModelPack(prompt);default:return colorRevise(category,prompt);}
 }
