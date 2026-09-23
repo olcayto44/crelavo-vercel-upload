@@ -302,7 +302,7 @@ export default function AssistantPage() {
       try {
         const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId }) });
         const data = await response.json().catch(() => null);
-        if (!response.ok || !data?.ok) return;
+        if (!response.ok || !data?.ok) { setNotice(readableMessage(data?.message, "PROVIDER STATUS CHECK FAILED").toUpperCase()); return; }
         if (data.status === "failed") { setNotice(readableMessage(data.message, "PRODUCTION FAILED").toUpperCase()); return; }
         if (data.status === "ready" && data.mediaUrl) { setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, mediaUrl: String(data.mediaUrl), status: "READY", label: "READY", taskId: undefined } : item)); setNotice("SCENE READY / DOWNLOAD AVAILABLE"); return; }
       } catch { return; }

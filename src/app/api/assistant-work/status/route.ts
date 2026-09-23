@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   const token=bearerTokenFromRequest(req); if(!token)return NextResponse.json({ok:false,code:"sign_in",message:"Sign in required."},{status:401});
   const supabase=supabaseAdmin(); const auth=await supabase.auth.getUser(token); if(auth.error||!auth.data.user)return NextResponse.json({ok:false,code:"sign_in",message:"Sign in required."},{status:401});
   const body=await req.json().catch(()=>({})); const category=String(body.category||"").trim(); const taskId=String(body.taskId||"").trim(); const result=await pollMediaJob(category,taskId);
-  if(result.status!=="ready"||!result.mediaUrl)return NextResponse.json({ok:true,...result});
+  if(result.status!=="ready"||!result.mediaUrl)return NextResponse.json({ok:true,...result},{status:result.status==="failed"?502:200});
   let mediaUrl=result.mediaUrl; try { mediaUrl=await mirrorProviderAsset({productionId:"assistant-"+auth.data.user.id,sourceUrl:result.mediaUrl,filenameBase:"media-"+taskId,fallbackContentType:"video/mp4"}); } catch { /* keep provider URL if mirroring is unavailable */ }
   return NextResponse.json({ok:true,status:"ready",mediaUrl});
 }
