@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
@@ -218,6 +218,8 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
 export default function AssistantPage() {
   const { type, category } = useMemo(() => readQuery(), []);
   const website = isWebsiteType(type, category);
+  const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
+  const restoredRef = useRef(false);
   const [mounted, setMounted] = useState(false);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
@@ -238,13 +240,23 @@ export default function AssistantPage() {
       setCredits(number == null ? { kind: "unknown" } : { kind: "number", value: number });
     } catch { setCredits({ kind: "unknown" }); }
   }, []);
-  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    for (const k of FORGET_KEYS) {
-      try { window.localStorage.removeItem(k); window.sessionStorage.removeItem(k); } catch { /* ignore */ }
-    }
-  }, []);
+    setMounted(true);
+    try {
+      const saved = window.sessionStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { shots?: Shot[]; selected?: number; notice?: string };
+        if (Array.isArray(parsed.shots) && parsed.shots.length > 0) setShots(parsed.shots);
+        if (Number.isInteger(parsed.selected)) setSelected(Math.max(0, Math.min(3, Number(parsed.selected))));
+        if (parsed.notice) setNotice(String(parsed.notice));
+      }
+    } catch { /* ignore invalid session state */ }
+    restoredRef.current = true;
+  }, [storageKey]);
+  useEffect(() => {
+    if (!restoredRef.current || typeof window === "undefined") return;
+    try { window.sessionStorage.setItem(storageKey, JSON.stringify({ shots, selected, notice, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
+  }, [shots, selected, notice, storageKey]);
   useEffect(() => {
     const read = () => {
       const vv = window.visualViewport;
