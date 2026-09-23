@@ -221,6 +221,7 @@ export default function AssistantPage() {
   const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
   const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
+  const resumedJobsRef = useRef(new Set<string>());
   const [mounted, setMounted] = useState(false);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
@@ -308,6 +309,15 @@ export default function AssistantPage() {
       } catch { return; }
     }
   }
+  useEffect(() => {
+    if (!mounted) return;
+    shots.forEach((item, index) => {
+      if (item.taskId && !resumedJobsRef.current.has(item.taskId)) {
+        resumedJobsRef.current.add(item.taskId);
+        void pollQueuedJob(index, item.taskId);
+      }
+    });
+  }, [mounted, shots, category]);
   async function onSend() {
     const prompt = draft.trim();
     if (!prompt || sending) return;
