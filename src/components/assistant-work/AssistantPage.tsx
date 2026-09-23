@@ -220,6 +220,7 @@ export default function AssistantPage() {
   const website = isWebsiteType(type, category);
   const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
   const restoredRef = useRef(false);
+  const skipPersistRef = useRef(true);
   const [mounted, setMounted] = useState(false);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
@@ -252,9 +253,11 @@ export default function AssistantPage() {
       }
     } catch { /* ignore invalid session state */ }
     restoredRef.current = true;
+    skipPersistRef.current = true;
   }, [storageKey]);
   useEffect(() => {
     if (!restoredRef.current || typeof window === "undefined") return;
+    if (skipPersistRef.current) { skipPersistRef.current = false; return; }
     try { window.sessionStorage.setItem(storageKey, JSON.stringify({ shots, selected, notice, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
   }, [shots, selected, notice, storageKey]);
   useEffect(() => {
