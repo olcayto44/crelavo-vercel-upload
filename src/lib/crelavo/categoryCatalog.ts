@@ -17,6 +17,7 @@ const videoExtras: ExtraField[] = [
   { id: "input", label: "How should production start?", kind: "select", required: true, options: labels(["Prompt-to-video", "Product / page link to video", "Voice-to-video", "Image-to-video"]) },
   { id: "aspect", label: "Format", kind: "select", required: true, options: [{ id: "9x16", label: "9:16 vertical" }, { id: "1x1", label: "1:1 square" }, { id: "16x9", label: "16:9 horizontal" }] },
   { id: "duration", label: "Length / Duration", kind: "select", required: true, options: labels(["8 seconds", "15 seconds"]) },
+  { id: "sound", label: "Sound", kind: "select", required: true, options: labels(["Instrumental BGM", "No music"]) },
 ];
 const talkingExtras: ExtraField[] = [{ id: "who", label: "Who appears?", kind: "select", required: true, options: labels(["Self-in-video", "Custom avatar", "Multi-person"]) }, { id: "language", label: "Spoken language", kind: "select", required: true, options: labels(["English", "Turkish", "German", "French", "Spanish", "Arabic"]) }, ...videoExtras.filter((field) => field.id !== "input")];
 const imageExtras: ExtraField[] = [{ id: "format", label: "Format", kind: "select", required: true, options: labels(["Story 9:16", "Feed 1:1", "Banner", "Poster", "Hero image"]) }];

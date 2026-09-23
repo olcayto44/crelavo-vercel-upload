@@ -66,16 +66,20 @@ export async function mirrorProviderAsset(input: { productionId: string; sourceU
   return uploadProviderAsset(`${input.productionId}/${input.filenameBase}.${extension}`, bytes, contentType);
 }
 
-export async function mirrorProviderVideoVertical(input: { productionId: string; sourceUrl: string; filenameBase: string }) {
+export async function mirrorProviderVideoVertical(input: { productionId: string; sourceUrl: string; filenameBase: string; audioBytes?: Uint8Array }) {
   const ffmpeg = resolveFfmpegPath();
-  if (!ffmpeg) return mirrorProviderAsset({ ...input, fallbackContentType: "video/mp4" });
-  const id = crypto.randomUUID(); const inputPath = "/tmp/crelavo-in-" + id + ".mp4"; const outputPath = "/tmp/crelavo-out-" + id + ".mp4";
+  if (!ffmpeg && !input.audioBytes) return mirrorProviderAsset({ ...input, fallbackContentType: "video/mp4" });
+  if (!ffmpeg) throw new Error("FFMPEG_RUNTIME_UNAVAILABLE: audio mux requires ffmpeg.");
+  const id = crypto.randomUUID(); const inputPath = "/tmp/crelavo-in-" + id + ".mp4"; const audioPath = "/tmp/crelavo-audio-" + id + ".mp3"; const outputPath = "/tmp/crelavo-out-" + id + ".mp4";
   try {
     const response = await fetch(input.sourceUrl, { cache: "no-store" });
     if (!response.ok) throw new Error("Provider video download failed: " + response.status);
     await fsPromises.writeFile(inputPath, new Uint8Array(await response.arrayBuffer()));
-    await execFileAsync(ffmpeg, ["-y", "-i", inputPath, "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath], { timeout: 90000, maxBuffer: 20 * 1024 * 1024 });
+    const audioInput = input.audioBytes ? ["-i", audioPath] : [];
+    if (input.audioBytes) await fsPromises.writeFile(audioPath, input.audioBytes);
+    const audioMap = input.audioBytes ? ["-map", "0:v:0", "-map", "1:a:0", "-shortest"] : [];
+    await execFileAsync(ffmpeg, ["-y", "-i", inputPath, ...audioInput, "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920", ...audioMap, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath], { timeout: 90000, maxBuffer: 20 * 1024 * 1024 });
     const bytes = await fsPromises.readFile(outputPath);
     return uploadProviderAsset(input.productionId + "/" + input.filenameBase + "-vertical.mp4", bytes, "video/mp4");
-  } finally { await fsPromises.rm(inputPath, { force: true }).catch(() => undefined); await fsPromises.rm(outputPath, { force: true }).catch(() => undefined); }
+  } finally { await fsPromises.rm(inputPath, { force: true }).catch(() => undefined); await fsPromises.rm(audioPath, { force: true }).catch(() => undefined); await fsPromises.rm(outputPath, { force: true }).catch(() => undefined); }
 }

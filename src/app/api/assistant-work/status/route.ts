@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { mirrorProviderVideoVertical } from "@/lib/providers/storage";
+import { generateStableAudio, stableAudioConfigured } from "@/lib/providers/stable-audio";
 import { pollMediaJob, runwayConfigured, startRunwayFallback } from "@/lib/assistant-work/runMediaEngine";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
@@ -20,7 +21,11 @@ export async function POST(req: NextRequest) {
   }
   if(productionId){ await supabase.from("production_requests").update({ generation_status: result.status, status: result.status === "failed" ? "failed" : "in_production", error_message: result.message ?? null, updated_at: new Date().toISOString() }).eq("id",productionId).eq("user_id",auth.data.user.id); }
   if(result.status!=="ready"||!result.mediaUrl)return NextResponse.json({ok:true,...result,productionId},{status:result.status==="failed"?502:200});
-  let mediaUrl=result.mediaUrl; try { mediaUrl=await mirrorProviderVideoVertical({ productionId:"assistant-"+auth.data.user.id, sourceUrl:result.mediaUrl, filenameBase:"media-"+taskId }); } catch { /* keep provider URL if vertical export is unavailable */ }
-  if(productionId){ await supabase.from("production_requests").update({ generation_status: "ready", status: "ready", preview_url: mediaUrl, output_json: { ...(production?.output_json||{}), assistant: true, provider: result.provider || production?.output_json?.provider || "heygen_or_minimax", taskId, media: { kind: "video", url: mediaUrl } }, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id",productionId).eq("user_id",auth.data.user.id); }
-  return NextResponse.json({ok:true,status:"ready",provider:result.provider,taskId,mediaUrl,productionId});
+  let mediaUrl=result.mediaUrl; let audioStatus="not_requested"; let audioBytes:Uint8Array|undefined;
+  const sound=String(production?.input_json?.extras?.sound||"");
+  const audioAlready=production?.output_json?.audioMuxed===true;
+  if(sound==="instrumental_bgm"&&!audioAlready){if(stableAudioConfigured()){try{const duration=String(production?.input_json?.extras?.duration||"").includes("15")?15:8;audioBytes=await generateStableAudio({prompt:"Premium instrumental background music for a modern AI creative technology brand video, elegant, energetic, no vocals, no spoken words, clean commercial sound design",durationSeconds:duration});audioStatus="generated";}catch(error){audioStatus="failed";}}else audioStatus="not_configured";}
+  try { mediaUrl=await mirrorProviderVideoVertical({ productionId:"assistant-"+auth.data.user.id, sourceUrl:result.mediaUrl, filenameBase:"media-"+taskId, audioBytes }); if(audioBytes)audioStatus="muxed"; } catch { /* keep provider URL when postprocessing is unavailable */ }
+  if(productionId){ await supabase.from("production_requests").update({ generation_status: "ready", status: "ready", preview_url: mediaUrl, output_json: { ...(production?.output_json||{}), assistant: true, provider: result.provider || production?.output_json?.provider || "heygen_or_minimax", taskId, audioStatus, audioMuxed: audioStatus === "muxed", media: { kind: "video", url: mediaUrl } }, completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id",productionId).eq("user_id",auth.data.user.id); }
+  return NextResponse.json({ok:true,status:"ready",provider:result.provider,taskId,mediaUrl,audioStatus,productionId});
 }
