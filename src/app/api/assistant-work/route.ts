@@ -124,7 +124,26 @@ export async function POST(req: NextRequest) {
       balance = Number(paid.available ?? paid.balance ?? available - priced.credits);
       charged = Number(paid.spent ?? priced.credits);
     }
-    return NextResponse.json({ ...result, balance, charged });
+    const resultStatus = "status" in result && typeof result.status === "string" ? result.status : "ready";
+    const assistantProduction = await supabase.from("production_requests").insert({
+      user_id: user.id,
+      production_type: category || "assistant_work",
+      package_id: null,
+      title: result.title || category || "Assistant production",
+      prompt,
+      status: resultStatus === "ready" ? "ready" : "in_production",
+      generation_status: resultStatus || "queued",
+      estimated_credits: priced.credits,
+      reserved_credits: 0,
+      input_json: { source: "cinema_assistant", type, scene },
+      output_json: { assistant: true, provider: result.engine, taskId: providerTaskId ?? null, media: result.media ?? null, files: result.files ?? [], charged },
+      preview_url: result.media?.url ?? null,
+      delivery_zip_url: null,
+      request_metadata: { source: "cinema_assistant", assistant_task_id: providerTaskId ?? null, provider: result.engine, category, scene, charged, balance },
+      completed_at: resultStatus === "ready" ? new Date().toISOString() : null,
+    }).select("id").single();
+    if (assistantProduction.error) return NextResponse.json({ ...result, balance, charged, productionPersisted: false, productionPersistError: assistantProduction.error.message });
+    return NextResponse.json({ ...result, balance, charged, productionId: assistantProduction.data.id });
   }
 
   const out = await handleAssistantWork(req, body || {});

@@ -28,7 +28,7 @@ type CreditState =
   | { kind: "unknown" }
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
-type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
@@ -195,8 +195,9 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const mediaObject = root.media && typeof root.media === "object" ? root.media as Record<string, unknown> : {};
   const media = pickStr(mediaObject, ["url"]) || pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
   const taskId = pickStr(root, ["taskId", "task_id"]);
+  const productionId = pickStr(root, ["productionId", "production_id"]);
   const files = Array.isArray(root.files) ? root.files.filter((item): item is DeliveryFile => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")) : shot.files;
-  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
 }
 function safeDownloadName(name: string) { return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 120) || "crelavo-output.txt"; }
 function downloadDeliveryFile(file: DeliveryFile) {
@@ -301,7 +302,7 @@ export default function AssistantPage() {
     for (let attempt = 0; attempt < 36; attempt += 1) {
       await new Promise((resolve) => window.setTimeout(resolve, 10000));
       try {
-        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId }) });
+        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId, productionId: shots[index]?.productionId }) });
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.ok) { setNotice(readableMessage(data?.message, "PROVIDER STATUS CHECK FAILED").toUpperCase()); return; }
         if (data.status === "failed") { setNotice(readableMessage(data.message, "PRODUCTION FAILED").toUpperCase()); return; }

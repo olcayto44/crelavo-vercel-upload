@@ -1,5 +1,6 @@
 import { DashboardShell } from "@/components/DashboardShell";
 import { RequestsTable } from "@/components/RequestsTable";
+import { AssistantDeliveries } from "@/components/AssistantDeliveries";
 
 export default function MyVideosPage() {
   return (
@@ -9,6 +10,7 @@ export default function MyVideosPage() {
         <p style={{ color: "var(--muted)" }}>Teslim edilen videolar, indirme linkleri, caption ve hashtagler burada gorunecek.</p>
         <RequestsTable />
       </div>
+      <AssistantDeliveries />
     </DashboardShell>
   );
 }
