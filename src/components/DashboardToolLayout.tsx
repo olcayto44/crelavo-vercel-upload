@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CDX_GLOW } from "@/components/DashboardAccountStyles";
 import { DashboardFooter } from "@/components/DashboardFooter";
+import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 
 const CDX_CSS = `
 .cdx{font-family:Inter,system-ui,sans-serif;color:#e2e8f0;background:#020617;max-width:1120px;margin:0 auto;padding:20px 20px 72px}
@@ -40,7 +41,7 @@ const CDX_CSS = `
 export function DashboardToolLayout({ id, children, fullBleed = false }: { id: string; children: ReactNode; fullBleed?: boolean }) {
   const content = (
     <>
-      <div className="cdx-top"><a href="/?auth=login">Sign in</a></div>
+      <div className="cdx-top"><AuthHeaderControls /></div>
       <nav className="pills" aria-label="Dashboard">
         <a href="/dashboard">Overview</a>
         <a href="/dashboard/credits">Credits</a>

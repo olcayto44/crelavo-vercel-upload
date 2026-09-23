@@ -85,7 +85,7 @@ export function normalizeCategoryPagesConfig(payload: CategoryPagesPayload): Cat
       keyword: "SEO Category",
       summary: "Custom editable SEO category page managed from the admin panel.",
       primaryCtaLabel: "Start request",
-      primaryCtaHref: "/dashboard/assistant-workspace",
+      primaryCtaHref: "/join",
       secondaryCtaHref: "/categories",
       bestFor: "Custom production categories",
       inputs: ["Project brief"],

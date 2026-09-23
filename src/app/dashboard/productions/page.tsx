@@ -148,7 +148,7 @@ export default function MyProductionsPage() {
           <article className="cdx-card">
             <h2>Your jobs</h2>
             <p>Sign in to view your productions.</p>
-            <a className="cdx-btn-ghost" href="/?auth=login">Sign in</a>
+            <a className="cdx-btn-ghost" href="/join">Sign in</a>
           </article>
 
           <article className="cdx-card">

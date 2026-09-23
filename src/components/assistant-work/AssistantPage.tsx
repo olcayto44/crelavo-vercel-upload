@@ -371,7 +371,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     const prompt = draft.trim();
     if (!prompt || sending) return;
     const claims = readSessionClaims();
-    if (!claims) { window.location.href = "/?auth=login"; return; }
+    if (!claims) { window.location.href = "/join"; return; }
     if (credits.kind === "number" && credits.value <= 0 && !isCopyOnlyPrompt(prompt)) {
       setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
       return;
@@ -425,7 +425,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         <nav style={{ display: "flex", gap: 16, fontSize: 11, letterSpacing: "0.16em", opacity: 0.78, flex: 1, minWidth: 0, overflow: "hidden" }}><span style={{ color: "#f5c77a", whiteSpace: "nowrap" }}>PRODUCTION: {type} / {category}</span>
           <a href="/">CRELAVO</a><a href="/dashboard">DASHBOARD</a><a href="/pricing">CREDITS</a><a href="/dashboard/productions">PRODUCTIONS</a>
         </nav>
-        {credits.kind === "signed_out" ? <a href="/?auth=login" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>SIGN IN</a> : <div style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>{creditLabel}</div>}
+        {credits.kind === "signed_out" ? <a href="/join" style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>SIGN IN</a> : <div style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 12px", fontSize: 11, letterSpacing: "0.12em" }}>{creditLabel}</div>}
         <a href="/pricing" style={{ fontSize: 11, letterSpacing: "0.12em", opacity: 0.7 }}>LIVE &middot; PRO $9.99/MO</a>
       </header>
       {setupOpen ? <aside aria-label="Production setup" translate="no" className="notranslate" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>CLOSE</button></div><AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelection(next); setSetupOpen(false); }} /></aside> : null}

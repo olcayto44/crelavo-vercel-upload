@@ -16,8 +16,8 @@ export function SiteFooter() {
         <div className="site-footer-grid balanced-footer-grid">
           <div className="site-footer-group"><h3>Start here</h3><nav>
             <a href="/pricing">Pricing</a>
-            <a href="/?auth=register">Sign up</a>
-            <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
+            <a href="/join">Sign up</a>
+            <a href="/join">Assistant</a>
             <a href="/dashboard">Dashboard</a>
           </nav></div>
           <div className="site-footer-group"><h3>Create</h3><nav>

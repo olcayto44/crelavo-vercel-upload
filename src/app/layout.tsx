@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { AuthStickyBar } from "@/components/auth/AuthStickyBar";
 import { AdminFooterVisibility } from "@/components/AdminFooterVisibility";
 import CrelavoSessionBridge from "@/components/CrelavoSessionBridge";
 import { GoogleAdsTag } from "@/components/GoogleAdsConversion";
@@ -121,7 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PublicSideRail /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
-        {children}
+        <AuthProvider>{children}<AuthModal /><AuthStickyBar /></AuthProvider>
         <RouteAwareFooter><SiteFooter /></RouteAwareFooter>
       </body>
     </html>

@@ -22,7 +22,7 @@ export function LoginForm() {
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (!email) { setState("error"); setMessage("Enter your email address."); return; }
-    const { error } = await supabaseBrowser().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl || window.location.origin}/?auth=login` } });
+    const { error } = await supabaseBrowser().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl || window.location.origin}/dashboard?signup=1&method=email` } });
     if (error) { setState("error"); setMessage(error.message); return; }
     setState("success"); setMessage("Check your email. The secure sign-in link will log you in or create your account automatically.");
   }

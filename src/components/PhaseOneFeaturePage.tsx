@@ -25,7 +25,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
                 <Link className="btn" href="/free-tools/ad-performance-score-checker">Run the free ad score now</Link>
                 <Link className="btn secondary" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Score%20my%20ad%20and%20turn%20it%20into%20a%20stronger%20campaign">Turn score into campaign</Link>
               </>
-            ) : <Link className="btn" href={page.slug === "community-showcase" ? "/dashboard/create?type=AI%20Video&category=video" : "/dashboard/create"}>Start a request</Link>}
+            ) : <Link className="btn" href={page.slug === "community-showcase" ? "/join" : "/dashboard/create"}>Start a request</Link>}
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/tools">Open tools</Link>
           </div>
@@ -199,7 +199,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             <h3>Admin checklist</h3>
             <ul>{communityShowcaseAdminChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-              <Link className="btn" href="/dashboard/create?type=AI%20Video&category=video">Use a showcase style</Link>
+              <Link className="btn" href="/join">Use a showcase style</Link>
               <Link className="btn secondary" href="/pricing">View credit packages</Link>
               <Link className="btn secondary" href="/showcase/explore-samples">Open sample proof</Link>
             </div>

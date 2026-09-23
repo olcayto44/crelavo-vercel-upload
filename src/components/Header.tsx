@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Clapperboard } from "lucide-react";
 import { HeaderCreditPill } from "@/components/HeaderCreditPill";
 import { LocalizedNavLink } from "@/components/LocalizedNavLink";
-import { UserInfoPill } from "@/components/UserInfoPill";
+import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { footerGroups } from "@/lib/site-content";
 import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-config";
@@ -49,8 +49,8 @@ function normalizeNavLabel(label: string) {
 
 const createGroups = [
   { title: "Build", links: [{ label: "Website Builder", href: "/ai-website-builder" }, { label: "SaaS & App Builder", href: "/ai-app-builder" }, { label: "E-commerce Builder", href: "/ai-ecommerce-builder" }] },
-  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/dashboard/create?type=AI%20Video&category=video" }] },
-  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/dashboard/create?type=AI%20Video&category=video" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
+  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/join" }] },
+  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/join" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
 ];
 
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
@@ -59,7 +59,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
     .sort((a, b) => a.order - b.order)
     .map((item) => {
       const label = normalizeNavLabel(item.label);
-      if (label === "Assistant") return { ...item, label, href: "/dashboard/create?type=AI%20Video&category=video" };
+      if (label === "Assistant") return { ...item, label, href: "/join" };
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
       if (label === "Credits") return { ...item, label: "Pricing", href: "/pricing" };
       if (label === "Live Sales Plans") return { ...item, label: "Live Sales Avatar", href: "/live-sales-credits" };
@@ -86,7 +86,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
             <div className="tools-mega-group">
               <strong>Start</strong>
               <Link href="/categories">All production categories</Link>
-              <Link href="/dashboard/create?type=AI%20Video&category=video">New Production</Link>
+              <Link href="/join">New Production</Link>
               <Link href="/dashboard/productions">My Productions</Link>
             </div>
           </div>
@@ -110,7 +110,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
           {localizedEuropePages.map((page) => <Link href={page.path} key={page.path}>{page.locale.toUpperCase()}</Link>)}
         </div>
         <HeaderCreditPill />
-        <UserInfoPill />
+        <AuthHeaderControls />
       </div>
     </header>
   );

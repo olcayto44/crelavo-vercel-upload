@@ -11,7 +11,7 @@ export default function ResendConfirmationPage() {
           <h1>Resend confirmation email</h1>
           <p style={{ color: "var(--muted)" }}>If your confirmation link expired, enter your email address and we will send a new confirmation link.</p>
           <ResendConfirmationForm />
-          <p style={{ color: "var(--muted)" }}>To return to the login page, <Link href="/auth/login">click here</Link>.</p>
+          <p style={{ color: "var(--muted)" }}>To return to the login page, <Link href="/join">click here</Link>.</p>
         </div>
       </main>
     </>

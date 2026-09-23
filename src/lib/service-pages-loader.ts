@@ -99,7 +99,7 @@ export function normalizeServicePagesConfig(payload: ServicePagesPayload): Servi
       keyword: "AI Service",
       summary: "Custom editable AI service page managed from the admin panel.",
       primaryCtaLabel: "Start request",
-      primaryCtaHref: "/dashboard/assistant-workspace",
+      primaryCtaHref: "/join",
       secondaryCtaHref: "/pricing",
       bestFor: "Custom production requests",
       inputs: ["Project brief"],

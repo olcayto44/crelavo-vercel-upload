@@ -11,7 +11,7 @@ export default function ResetPasswordPage() {
           <h1>Create a new password</h1>
           <p style={{ color: "var(--muted)" }}>If you arrived from the password reset link in your email, you can set your new password here.</p>
           <ResetPasswordForm />
-          <p style={{ color: "var(--muted)" }}>To return to the login page, <Link href="/auth/login">click here</Link>.</p>
+          <p style={{ color: "var(--muted)" }}>To return to the login page, <Link href="/join">click here</Link>.</p>
         </div>
       </main>
     </>
