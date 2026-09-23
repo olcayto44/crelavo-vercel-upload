@@ -29,7 +29,7 @@ type CreditState =
   | { kind: "unknown" }
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
-type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
@@ -322,6 +322,20 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       }
     });
   }, [mounted, shots, category]);
+  async function renderFinalScene() {
+    const currentPrompt = shot.planPrompt || shot.body;
+    if (!currentPrompt.trim() || sending) return;
+    setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
+    try {
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }) });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
+      const next = applyPayload(shot, data, currentPrompt, website);
+      setShots((cur) => cur.map((item, index) => index === selected ? { ...next, planPrompt: currentPrompt } : item));
+      setNotice(data.status === "ready" ? "SCENE READY / DOWNLOAD AVAILABLE" : "04 QUEUED / FINAL RENDER IN PROGRESS");
+      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId));
+    } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
+  }
   async function onSend() {
     const prompt = draft.trim();
     if (!prompt || sending) return;
@@ -350,7 +364,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }),
+        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
@@ -361,7 +375,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       setShots((cur) => cur.map((item, index) => index === selected ? next : item));
       const nextBalance = parseCredits(data);
       if (nextBalance != null) setCredits({ kind: "number", value: nextBalance });
-      setNotice(data.status === "ready" ? "SCENE READY / CINEMA STAYS OPEN" : "PROVIDER STARTED / SCENE IS RENDERING");
+      setShots((cur) => cur.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item));
+      setNotice("01 READY / SCENE PLAN UPDATED");
       if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId));
       setSending(false);
     } catch (error) {
@@ -399,7 +414,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 <div style={{ padding: "6px 14px 0", fontSize: 9, opacity: 0.55 }}>SEND confirms you own or have permission to use the submitted content and starts a credit-priced production unless the request is copy/layout/color only.</div>
       <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", display: "flex", gap: 10, padding: "10px 12px 12px" }}>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Make this part like this?" disabled={sending} style={{ flex: 1, minWidth: 0, background: "transparent", border: "1px solid rgba(244,238,230,0.22)", borderRadius: 999, color: "rgb(244,238,230)", padding: "12px 16px", fontSize: 14, outline: "none" }} />
-        <button type="submit" disabled={sending || !draft.trim()} style={{ border: "none", borderRadius: 999, background: "rgb(248,251,255)", color: "#111", padding: "0 18px", fontSize: 11, letterSpacing: "0.14em", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1 }}>SEND</button>
+        <button type="button" onClick={() => void renderFinalScene()} disabled={sending || !shot.body.trim()} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, background: "transparent", color: "inherit", padding: "0 14px", fontSize: 10 }}>RENDER FINAL VIDEO</button><button type="submit" disabled={sending || !draft.trim()} style={{ border: "none", borderRadius: 999, background: "rgb(248,251,255)", color: "#111", padding: "0 18px", fontSize: 11, letterSpacing: "0.14em", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1 }}>SEND</button>
       </form>
     </div>
   );

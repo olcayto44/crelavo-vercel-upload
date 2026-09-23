@@ -61,6 +61,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (body.render !== true) {
+      return NextResponse.json({ ok: true, spend: false, engine: "assistant_plan", category, type, status: "ready", title: "Scene plan ready", body: prompt, plan: { stage: "ready", scene, direction: prompt, nextAction: "Revise the scene or render the final video when approved." }, media: null, files: [] });
+    }
+
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
       if (isLocalCategory(category, type)) {
         const local = await runLocalEngine({ prompt, type, category, scene, action });
