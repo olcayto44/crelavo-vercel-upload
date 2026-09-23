@@ -1,5 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { promises as fsPromises } from "node:fs";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { appUrl } from "./env";
+const execFileAsync = promisify(execFile);
 
 export async function uploadProviderAsset(path: string, body: Blob | ArrayBuffer | Uint8Array | string, contentType: string) {
   const bucket = process.env.SUPABASE_PROVIDER_ASSETS_BUCKET || "provider-assets";
@@ -59,4 +64,18 @@ export async function mirrorProviderAsset(input: { productionId: string; sourceU
   const extension = extensionFromContentType(contentType);
   const bytes = await response.arrayBuffer();
   return uploadProviderAsset(`${input.productionId}/${input.filenameBase}.${extension}`, bytes, contentType);
+}
+
+export async function mirrorProviderVideoVertical(input: { productionId: string; sourceUrl: string; filenameBase: string }) {
+  const ffmpeg = resolveFfmpegPath();
+  if (!ffmpeg) return mirrorProviderAsset({ ...input, fallbackContentType: "video/mp4" });
+  const id = crypto.randomUUID(); const inputPath = "/tmp/crelavo-in-" + id + ".mp4"; const outputPath = "/tmp/crelavo-out-" + id + ".mp4";
+  try {
+    const response = await fetch(input.sourceUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error("Provider video download failed: " + response.status);
+    await fsPromises.writeFile(inputPath, new Uint8Array(await response.arrayBuffer()));
+    await execFileAsync(ffmpeg, ["-y", "-i", inputPath, "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputPath], { timeout: 90000, maxBuffer: 20 * 1024 * 1024 });
+    const bytes = await fsPromises.readFile(outputPath);
+    return uploadProviderAsset(input.productionId + "/" + input.filenameBase + "-vertical.mp4", bytes, "video/mp4");
+  } finally { await fsPromises.rm(inputPath, { force: true }).catch(() => undefined); await fsPromises.rm(outputPath, { force: true }).catch(() => undefined); }
 }
