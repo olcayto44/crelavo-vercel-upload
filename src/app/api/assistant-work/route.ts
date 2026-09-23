@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       generation_status: resultStatus || "queued",
       estimated_credits: priced.credits,
       reserved_credits: 0,
-      input_json: { source: "cinema_assistant", type, scene },
+      input_json: { source: "cinema_assistant", type, scene, categoryId: body.categoryId ?? category, packId: body.packId ?? null, features: Array.isArray(body.features) ? body.features : [], extras: body.extras && typeof body.extras === "object" ? body.extras : {} },
       output_json: { assistant: true, provider: result.engine, taskId: providerTaskId ?? null, media: result.media ?? null, files: result.files ?? [], charged },
       preview_url: result.media?.url ?? null,
       delivery_zip_url: null,

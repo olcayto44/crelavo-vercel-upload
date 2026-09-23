@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ProductionSelection } from "@/components/assistant/AssistantPreProduction";
 import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
@@ -216,8 +217,10 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
   if (!response.ok) throw new Error("ZIP delivery failed.");
   const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "crelavo-delivery.zip"; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export default function AssistantPage() {
-  const { type, category } = useMemo(() => readQuery(), []);
+export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
+  const query = useMemo(() => readQuery(), []);
+  const type = preProduction?.type || query.type;
+  const category = preProduction?.categoryId || query.category;
   const website = isWebsiteType(type, category);
   const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
   const restoredRef = useRef(false);
@@ -347,7 +350,7 @@ export default function AssistantPage() {
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1, sourceVideoUrl }),
+        body: JSON.stringify({ action: "revise", prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
