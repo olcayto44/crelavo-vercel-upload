@@ -332,7 +332,7 @@ export default function AssistantPage() {
     setDraft("");
     setSending(true);
     setNotice(isCopyOnlyPrompt(prompt) ? "UPDATING COPY / NO CREDIT SPEND" : "CREATING PRODUCTION / CONNECTING WORKER");
-    setShots((cur) => cur.map((item, index) => index === selected ? { ...item, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
+    setShots((cur) => cur.map((item, index) => index === selected ? { ...item, mediaUrl: null, files: [], taskId: undefined, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
 
     try {
       let sourceVideoUrl: string | undefined;
