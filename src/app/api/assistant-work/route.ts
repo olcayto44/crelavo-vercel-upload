@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     } else {
       if (!getCategoryEngine(category)) return NextResponse.json({ ok: false, spend: false, code: "unknown_category", message: "Unknown production category." }, { status: 400 });
       if (!engineConfigured(category)) return NextResponse.json({ ok: false, spend: false, code: "engine_not_configured", message: "The selected provider is not configured on this host." }, { status: 503 });
-      result = await runMediaEngine({ prompt, type, category, scene });
+      result = await runMediaEngine({ prompt, type, category, scene, renderFinal: body.render === true });
     }
     if (!result.ok) return NextResponse.json(result, { status: 400 });
     if (result.media?.url && result.status === "ready" && result.engine !== "local") {

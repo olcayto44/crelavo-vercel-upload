@@ -3,7 +3,8 @@ export type EngineKind = "minimax" | "heygen";
 export type EngineMedia = { kind: "video" | "image" | "audio"; url: string };
 export type EngineFile = { name: string; mime: string; content: string };
 export type EngineResult = { ok: boolean; spend: boolean; code?: string; message?: string; title?: string; body?: string; media?: EngineMedia | null; files?: EngineFile[]; status?: "ready" | "queued" | "rendering" | "failed"; engine?: EngineKind | "none"; taskId?: string; category?: string };
-export type EngineInput = { prompt: string; type?: string; category: string; scene?: string };
+export type EngineInput = {
+  renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string };
 const HEYGEN_CATEGORIES = new Set(["talking_video","avatar","lip_sync","voice_clone","live_sales_agent","ai_agent","localization"]);
 const MINIMAX_CATEGORIES = new Set(["video","documentary","animation","music_video","drama","cinematic_video","video_tools","campaign","cultural_localization","visual_clone","image","brand_kit","anime_short_film","animal_video","nature_video","planet_space_video","drone_video","stickman_animation","studio"]);
 const MINIMAX_IMAGE_CATEGORIES = new Set(["image","brand_kit","visual_clone"]);
@@ -42,7 +43,7 @@ async function runHeygen(input:EngineInput):Promise<EngineResult>{
   if(cat==="localization"&&url&&isVideoUrl(url)){const tr=await heygenFetch("/v3/video-translations",{method:"POST",body:JSON.stringify({video_url:url,output_language:clip(prompt.replace(url,""),80)||"English"})});const id=tr.data?.data?.video_translate_id||tr.data?.data?.id||tr.data?.data?.video_id;if(id)return{ok:true,spend:true,engine:"heygen",category:cat,status:"queued",title,body:prompt,media:null,taskId:String(id)};}
   if(cat==="lip_sync"){const audioUrl=url&&isAudioUrl(url)?url:null;const videoUrl=url&&isVideoUrl(url)?url:null;if(videoUrl&&audioUrl){const ls=await heygenFetch("/v3/lipsyncs",{method:"POST",body:JSON.stringify({video_url:videoUrl,audio_url:audioUrl})});const id=ls.data?.data?.video_id||ls.data?.data?.id||ls.data?.id;if(id)return{ok:true,spend:true,engine:"heygen",category:cat,status:"queued",title,body:prompt,media:null,taskId:String(id)};}}
   const sceneDriven=/outdoor|outside|city|street|golden hour|background|camera|handheld|advertising video|commercial/i.test(prompt);
-  if ((cat === "avatar" || cat === "talking_video") && sceneDriven) {
+  if (!input.renderFinal && (cat === "avatar" || cat === "talking_video") && sceneDriven) {
     const agent=await heygenFetch("/v3/video-agents",{method:"POST",body:JSON.stringify({prompt:clip(prompt,4000),mode:"chat"})});
     const sessionId=agent.data?.data?.session_id||agent.data?.session_id||agent.data?.data?.id;
     const videoId=agent.data?.data?.video_id||agent.data?.video_id;
