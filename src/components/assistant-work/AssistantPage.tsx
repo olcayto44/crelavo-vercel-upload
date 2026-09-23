@@ -388,7 +388,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: preProduction?.categoryId, packId: preProduction?.packId, features: preProduction?.features, extras: preProduction?.extras }),
+        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: chosen?.extras }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
