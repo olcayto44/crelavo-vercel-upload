@@ -70,6 +70,13 @@ function readSessionClaims(): { sub: string; email: string } | null {
     return sub ? { sub, email: typeof claims.email === "string" ? claims.email : "" } : null;
   } catch { return null; }
 }
+function sceneSummary(prompt: string) {
+  const normalized = String(prompt || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return "Scene plan ready for production.";
+  const first = normalized.split(/(?<=[.!?])\s+/)[0] || normalized;
+  const compact = first.length > 180 ? `${first.slice(0, 177).trim()}...` : first;
+  return compact;
+}
 function isCopyOnlyPrompt(prompt: string) {
   const p = prompt.trim().toLowerCase();
   if (!p || p.length > 280 || /video|film|image|avatar|voice|clone|render|mp4|png|sahne|g\u00f6rsel|\u00fcret|produce|scene/.test(p)) return false;
@@ -427,7 +434,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "24px 20px 18px", background: "linear-gradient(180deg, transparent, rgba(7,6,5,0.88))" }}>
           <div style={{ fontSize: 10, letterSpacing: "0.18em", opacity: 0.7 }}>{kicker}</div>
           <div style={{ fontFamily: "Georgia, serif", fontSize: 28, marginTop: 6, lineHeight: 1.15 }}>{shot.title}</div>
-          <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6 }}>{shot.body}</div>
+          <div style={{ fontSize: 13, opacity: 0.8, marginTop: 6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{sceneSummary(shot.body)}</div>
         </div>
       </section>
       <div style={{ flex: "0 0 auto", padding: "8px 12px 0", fontSize: 10, letterSpacing: "0.16em", opacity: 0.7 }}>{notice}</div>
