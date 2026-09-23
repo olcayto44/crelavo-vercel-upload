@@ -24,6 +24,7 @@ export function UserInfoPill() {
     if (authMode === "login" || authMode === "register") {
       setMode(authMode);
       setOpen(true);
+      window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
     }
   }, []);
 

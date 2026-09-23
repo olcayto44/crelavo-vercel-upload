@@ -13442,8 +13442,8 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
 
 
 /* Header auth modal */
-.auth-modal-backdrop{position:fixed;inset:0;background:rgba(8,11,18,.62);display:flex;align-items:stretch;justify-content:flex-end;z-index:1200;padding:0;backdrop-filter:blur(4px);}
-.auth-modal-card{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);height:100vh;overflow-y:auto;background:var(--card,#0f1626);color:var(--text,#e2e8f0);border-radius:18px 0 0 18px;padding:32px 24px;box-shadow:-24px 0 64px rgba(0,0,0,.45);transform:translateX(0);z-index:1201;}
+.auth-modal-backdrop{position:fixed;inset:0;background:rgba(8,11,18,.72);display:flex;align-items:center;justify-content:center;z-index:1200;padding:20px;backdrop-filter:blur(8px);}
+.auth-modal-card{position:relative;width:min(440px,100%);max-height:min(720px,calc(100vh - 40px));overflow-y:auto;background:var(--card,#0f1626);color:var(--text,#e2e8f0);border-radius:20px;padding:32px 24px;box-shadow:0 24px 80px rgba(0,0,0,.5);z-index:1201;}
 .auth-modal-close{position:absolute;top:10px;right:14px;background:transparent;border:0;font-size:22px;line-height:1;color:var(--muted,#94a3b8);cursor:pointer;}
 .auth-modal-close:hover{color:var(--text,#e2e8f0);}
 .auth-modal-tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid rgba(148,163,184,.18);padding-bottom:8px;}
@@ -13456,7 +13456,7 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
 .auth-modal-message{margin:0;font-size:14px;}
 .auth-modal-message-success{color:#86efac;}
 .auth-modal-message-error{color:#fca5a5;}
-@media (max-width: 560px){.auth-modal-card{width:min(92vw,420px);padding:28px 20px;border-radius:16px 0 0 16px;}html body.has-auth-modal-open{overflow:hidden;}}
+@media (max-width: 560px){.auth-modal-backdrop{padding:12px;}.auth-modal-card{width:100%;max-height:calc(100vh - 24px);padding:28px 20px;border-radius:16px;}html body.has-auth-modal-open{overflow:hidden;}}
 
 /* Showcase/public navigation: keep the main nav in one horizontal row at desktop widths. */
 @media (max-width: 1180px) {

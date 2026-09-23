@@ -7,8 +7,8 @@ const css = `
 .page-with-rails{padding-left:0!important;padding-right:0!important}
 #cl-inner-nav,#cl-mnav-toggle,label.cl-mnav,#cl-mnav-sheet,.cl-sticky,.cl-fallback-bar{display:none}
 #cl-mnav-panel,nav#cl-mnav-panel{display:none!important;height:0!important;overflow:hidden!important;position:absolute!important;left:-9999px!important}
-html body .auth-modal-backdrop{z-index:5000!important;position:fixed!important;inset:0!important;display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;background:rgba(8,11,18,.86)!important;align-items:stretch!important;justify-content:flex-end!important}
-html body .auth-modal-card{z-index:5001!important;position:fixed!important;top:0!important;right:0!important;bottom:0!important;width:min(100vw,420px)!important;max-width:100%!important;height:100vh!important;display:block!important;visibility:visible!important;background:#0f1626!important;color:#f8fbff!important;overflow:auto!important;padding:32px 22px!important;font-family:Inter,system-ui,sans-serif!important}
+html body .auth-modal-backdrop{z-index:5000!important;position:fixed!important;inset:0!important;display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;background:rgba(8,11,18,.86)!important;align-items:center!important;justify-content:center!important;padding:12px!important}
+html body .auth-modal-card{z-index:5001!important;position:relative!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;width:min(440px,100%)!important;max-width:100%!important;height:auto!important;max-height:calc(100vh - 24px)!important;display:block!important;visibility:visible!important;background:#0f1626!important;color:#f8fbff!important;overflow:auto!important;padding:32px 22px!important;border-radius:20px!important;font-family:Inter,system-ui,sans-serif!important}
 html body .auth-google-btn,html body .auth-modal-provider{display:flex!important;visibility:visible!important;opacity:1!important;width:100%!important}
 @media(max-width:980px){
 #cl-inner-nav{display:block!important}
@@ -34,7 +34,7 @@ label.cl-mnav{display:inline-flex!important;position:fixed!important;top:10px!im
 html body:not(:has(main.omni-work-route)){padding-bottom:72px}
 html body:not(:has(main.omni-work-route)) [style*="bottom:14px"][style*="right:14px"]{bottom:86px!important}
 html body:has(main.omni-work-route) .cl-sticky{display:none!important}
-html body .auth-modal-card{width:100%!important;left:0!important;right:0!important;border-radius:0!important}
+html body .auth-modal-card{width:100%!important;left:auto!important;right:auto!important;border-radius:16px!important}
 }
 @media(min-width:981px){#cl-inner-nav,#cl-mnav-toggle,label.cl-mnav,#cl-mnav-sheet,.cl-sticky,.cl-fallback-bar{display:none!important}}
 html.cl-authed .cl-sticky a.gin,html.cl-authed .cl-sticky a.uye,html.cl-authed #cl-mnav-sheet .auth{display:none!important}
