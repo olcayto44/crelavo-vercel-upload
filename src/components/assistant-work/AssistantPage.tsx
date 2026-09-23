@@ -264,13 +264,19 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }, [category, website]);
   useEffect(() => {
     setMounted(true);
+    const shouldResume = new URLSearchParams(window.location.search).get("resume") === "1";
     try {
-      const saved = window.sessionStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved) as { shots?: Shot[]; selected?: number; notice?: string };
-        if (Array.isArray(parsed.shots) && parsed.shots.length > 0) setShots(parsed.shots);
-        if (Number.isInteger(parsed.selected)) setSelected(Math.max(0, Math.min(3, Number(parsed.selected))));
-        if (parsed.notice) setNotice(String(parsed.notice));
+      if (!shouldResume) {
+        window.sessionStorage.removeItem(storageKey);
+        window.localStorage.removeItem(storageKey);
+      } else {
+        const saved = window.sessionStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { shots?: Shot[]; selected?: number; notice?: string };
+          if (Array.isArray(parsed.shots) && parsed.shots.length > 0) setShots(parsed.shots);
+          if (Number.isInteger(parsed.selected)) setSelected(Math.max(0, Math.min(3, Number(parsed.selected))));
+          if (parsed.notice) setNotice(String(parsed.notice));
+        }
       }
     } catch { /* ignore invalid session state */ }
     restoredRef.current = true;
