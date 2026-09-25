@@ -13,7 +13,9 @@ const css = `
   #cl-mnav-sheet>a{display:block;padding:12px 4px;border-bottom:1px solid rgba(255,255,255,.08);color:#f8fbff;font:600 16px/1.3 Inter,system-ui,sans-serif;text-decoration:none}
   #cl-mnav-sheet .langs{display:flex;gap:12px;padding-top:16px}
   #cl-mnav-sheet .langs a{color:#f8fbff;text-decoration:none;border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:8px 14px}
-  #cl-mnav-sheet .crelavo-mobile-auth{padding-top:16px}
+  #cl-mnav-sheet .crelavo-mobile-auth{display:flex;align-items:center;justify-content:center;padding:20px 0 8px;border-top:1px solid rgba(255,255,255,.1)}
+   #cl-mnav-sheet .crelavo-mobile-auth .crelavo-auth-controls{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;width:100%}
+   #cl-mnav-sheet .crelavo-mobile-auth .crelavo-auth-signin,#cl-mnav-sheet .crelavo-mobile-auth .crelavo-auth-join{display:inline-flex;align-items:center;justify-content:center;height:42px;margin:0;white-space:nowrap}
 }
 @media(min-width:981px){#cl-inner-nav,#cl-mnav-toggle,label.cl-mnav,#cl-mnav-sheet{display:none!important}}
 `;
