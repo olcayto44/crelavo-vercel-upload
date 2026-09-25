@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AdminLogoutButton } from "@/components/AdminLoginPanel";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
+import { AdminSidebarAlert } from "@/components/AdminSidebarAlert";
 import { adminMenu, adminMenuGroups } from "@/lib/admin";
 
 function isActiveAdminHref(pathname: string, href: string) {
@@ -30,7 +31,7 @@ export function AdminShell({ children, title, description }: { children: React.R
       <div className="admin-shell">
         <aside className="admin-sidebar-card">
            <span className="badge">Admin navigation</span>
-           <p className="admin-sidebar-intro">Open a section only when you need its detailed controls.</p>
+           <p className="admin-sidebar-intro">Open a section only when you need its detailed controls.</p><AdminSidebarAlert />
            <nav>
              {adminMenuGroups.map((group) => (
                <details className="admin-menu-group" key={group} open={group === "Panel"}>

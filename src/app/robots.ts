@@ -15,7 +15,7 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Applebot-Extended", allow: "/", disallow: privateDisallow },
       { userAgent: "CCBot", allow: "/", disallow: privateDisallow }
     ],
-    host: "https://www.crelavo.com",
-    sitemap: "https://www.crelavo.com/sitemap.xml"
+    host: (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").replace(/\/$/, ""),
+    sitemap: `${(process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").replace(/\/$/, "")}/sitemap.xml`
   };
 }

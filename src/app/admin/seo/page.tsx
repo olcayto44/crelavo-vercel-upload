@@ -20,6 +20,7 @@ const seoModules = [
 export default function AdminSeoPage() {
   return (
     <AdminShell title="SEO / Sitemap / Google" description="Manage SEO files, Google settings, sitemap, robots, metadata, and social sharing previews.">
+      <section className="card admin-wide-card"><span className="badge">Live technical SEO</span><h2>Google ve AI bot tarama durumu</h2><div className="admin-info-grid"><div><span>Robots</span><strong>Public crawl açık</strong><small>/robots.txt</small></div><div><span>AI bots</span><strong>GPTBot · Claude · Perplexity</strong><small>Public sayfalar açık, admin/api/dashboard kapalı</small></div><div><span>Sitemap</span><strong>Aktif</strong><small>/sitemap.xml</small></div><div><span>Canonical</span><strong>www.crelavo.com</strong><small>NEXT_PUBLIC_APP_URL ile kontrol edilir</small></div></div><p style={{ marginTop: 12 }}>Title, description, canonical, Open Graph ve JSON-LD metadata public sayfalarda çalışıyor. Google Search Console için sitemap adresi: <a href="/sitemap.xml" target="_blank">/sitemap.xml</a> · Robots: <a href="/robots.txt" target="_blank">/robots.txt</a></p></section>
       <section className="card admin-wide-card">
         <span className="badge">16 · Tier-1 global SEO plan</span>
         <h2>Country/use-case SEO plan needs owner priority before scale</h2>
