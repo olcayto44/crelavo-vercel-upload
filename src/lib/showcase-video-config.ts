@@ -7,6 +7,8 @@ export type ConfiguredShowcaseVideo = ShowcaseVideo & {
   order: number;
   publishStatus: ShowcaseVideoStatus;
   aspectRatio?: string;
+  heroEnabled?: boolean;
+  heroOrder?: number;
 };
 
 type ConfigPayload = { videos?: unknown };
@@ -56,12 +58,14 @@ function normalizeVideo(value: unknown, fallbackOrder: number): ConfiguredShowca
     orientation,
     aspectRatio: normalizeString(item.aspectRatio) || (orientation === "portrait" ? "9:16" : "16:9"),
     order: Number.isFinite(Number(item.order)) ? Number(item.order) : fallbackOrder,
-    publishStatus: item.publishStatus === "published" ? "published" : "draft"
+    publishStatus: item.publishStatus === "published" ? "published" : "draft",
+    heroEnabled: item.heroEnabled === true,
+    heroOrder: Number.isFinite(Number(item.heroOrder)) ? Number(item.heroOrder) : fallbackOrder
   };
 }
 
 function normalizeDefaults() {
-  return showcaseVideos.map((video, index) => ({ ...video, order: index + 1, publishStatus: "published" as const, aspectRatio: video.orientation === "portrait" ? "9:16" : "16:9" }));
+  return showcaseVideos.map((video, index) => ({ ...video, order: index + 1, publishStatus: "published" as const, heroEnabled: index === 5, heroOrder: index + 1, aspectRatio: video.orientation === "portrait" ? "9:16" : "16:9" }));
 }
 
 export function normalizeConfiguredShowcaseVideos(input: unknown, includeDefaults = false): ConfiguredShowcaseVideo[] {
