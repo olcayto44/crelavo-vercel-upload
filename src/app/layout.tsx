@@ -122,8 +122,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><PartnerReferralTracker /></Suspense>
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
-        <AuthProvider>{children}<AuthModal /><AuthStickyBar /></AuthProvider>
-        <RouteAwareFooter><SiteFooter /></RouteAwareFooter>
+        <AuthProvider>{children}<AuthModal /><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></AuthProvider>
       </body>
     </html>
   );

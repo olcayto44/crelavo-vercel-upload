@@ -30,7 +30,6 @@ export default function DashboardPage() {
           <article className="card"><h3>Live Sales</h3><p>Service hours, not production credits.</p><a className="ghost" href="/live-sales-credits">Live plans</a></article>
           <article className="card"><h3>Drone</h3><p>One-time location and satellite packs.</p><a className="ghost" href="/drone-credits">Drone packs</a></article>
         </div>
-        <p className="note" style={{ marginTop: 18 }}>Not signed in? <a className="ghost" href="/join" style={{ display: "inline-flex", height: 36, padding: "0 14px" }}>Sign in</a></p>
       </div>
     </main>
   );

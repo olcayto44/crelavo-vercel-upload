@@ -1,3 +1,4 @@
+import { FooterStartLinks } from "@/components/auth/FooterStartLinks";
 export function SiteFooter() {
   return (
     <>

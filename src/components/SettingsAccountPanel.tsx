@@ -236,7 +236,7 @@ export function SettingsAccountPanel() {
   return (
     <section className={`cdx-settings${authLoaded && !user ? " is-guest" : ""}`} data-cdx="settings-account">
       <style id="cdx-settings-account-css">{SETTINGS_CSS}</style>
-      {authLoaded && !user ? <p className="cdx-set-auth" data-cdx-auth-guest>Not signed in? <a href="/join">Sign in</a> to change login, language, notifications or team.</p> : null}
+      {authLoaded && !user ? <p className="cdx-set-auth" data-cdx-auth-guest>Not signed in? <a href="/join?mode=signin">Sign in</a> to change login, language, notifications or team.</p> : null}
 
       <div className="cdx-set-grid">
         <article className="cdx-set-card"><h3>Email</h3><p>Dashboard sign-in email. Use the same email as Whop checkout so credits match. A change sends a confirmation link.</p><form id="cdx-set-email" className="cdx-set-form" noValidate onSubmit={submitEmail}><label htmlFor="cdx-set-email-current">Current email</label><input id="cdx-set-email-current" type="email" autoComplete="username" readOnly placeholder="Sign in to see your email" value={user?.email || ""} /><label htmlFor="cdx-set-email-new">New email</label><input id="cdx-set-email-new" name="email" type="email" autoComplete="email" placeholder="you@company.com" /><label htmlFor="cdx-set-email-confirm">Confirm new email</label><input id="cdx-set-email-confirm" name="emailConfirm" type="email" autoComplete="email" placeholder="Repeat new email" /><button className="cdx-btn" type="submit">Send confirmation</button>{message("email")}</form></article>

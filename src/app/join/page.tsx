@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { PRO_PATH } from "@/lib/crelavo/authConfig";
-import { SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
+import { postAuthPath, SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
 
 export default function JoinPage() {
   const { user, loading, openAuth } = useAuth();

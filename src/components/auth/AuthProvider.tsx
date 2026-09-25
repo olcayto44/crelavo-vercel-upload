@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter } from "next/navigation";
 import { fetchSession, probeGoogleAuth, signOut as apiSignOut, type SessionUser } from "@/lib/crelavo/authSession";
 import { trackCrelavoUserCreated } from "@/lib/crelavo/trackSignup";
+import { supabaseBrowser } from "@/lib/supabase";
 import { postAuthPath } from "@/lib/crelavo/redirects";
 
 export type AuthIntent = "login" | "register";
@@ -25,6 +26,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => { setUser(await fetchSession()); setLoading(false); }, []);
   useEffect(() => { setQuery(window.location.search); }, []);
   useEffect(() => { void refresh(); void probeGoogleAuth().then(setGoogleReady); }, [refresh]);
+  useEffect(() => {
+    const { data: { subscription } } = supabaseBrowser().auth.onAuthStateChange((_event, session) => {
+      const authUser = session?.user;
+      setUser(authUser?.email ? {
+        id: authUser.id,
+        email: authUser.email,
+        name: String(authUser.user_metadata?.full_name ?? authUser.user_metadata?.name ?? "") || null,
+        image: String(authUser.user_metadata?.avatar_url ?? authUser.user_metadata?.picture ?? "") || null,
+      } : null);
+      setLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
   useEffect(() => {
     const signup = searchParams.get("signup");
     if (signup !== "1" || !user) return;

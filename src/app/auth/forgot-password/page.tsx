@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
           <h1>Forgot password</h1>
           <p style={{ color: "var(--muted)" }}>Enter your email address and we will send a secure link to create a new password.</p>
           <ForgotPasswordForm />
-          <p style={{ color: "var(--muted)" }}>Remembered your password? <Link href="/join">Sign in</Link></p>
+          <p style={{ color: "var(--muted)" }}>Remembered your password? <Link href="/join?mode=signin">Sign in</Link></p>
         </div>
       </main>
     </>

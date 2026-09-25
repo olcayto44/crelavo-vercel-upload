@@ -594,7 +594,7 @@ async function sendMessage() {
               {accountLiveHours ? `${accountLiveHours} live hours` : <>No live hours yet&nbsp; <a href="/live-sales-credits">Get live hours</a></>}
             </p>
           ) : (
-            <p className="cdx-hours"><a href="/join">Sign in to load your live hours</a></p>
+            <p className="cdx-hours"><a href="/join?mode=signin">Sign in to load your live hours</a></p>
           )}
           <div className="card selected-billing-card live-sales-preferences-card live-sales-avatar-targets-card">
             <span className="badge">Where to use</span>
@@ -634,7 +634,7 @@ async function sendMessage() {
             <section className="cdx-guest-only">
               <h2>Publish / Integration</h2>
               <p>Sign in to save this setup, publish, and copy your embed code.</p>
-              <a href="/join">Sign in</a>
+              <a href="/join?mode=signin">Sign in</a>
             </section>
             <section className="cdx-user-only">
               <h2>Publish / Integration</h2>

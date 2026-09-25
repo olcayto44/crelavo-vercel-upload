@@ -28,7 +28,7 @@ export default function DashboardPartnersPage() {
         <div className="card" style={{ marginTop: 14 }}>
           <h3>Your stats</h3>
           <p className="note">Empty until you are signed in as an approved partner. No placeholder names, emails or IBANs.</p>
-          <a className="ghost" href="/join">Sign in</a>
+          <a className="ghost" href="/join?mode=signin">Sign in</a>
         </div>
       </div>
     </main>
