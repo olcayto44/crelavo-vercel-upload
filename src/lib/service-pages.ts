@@ -91,7 +91,7 @@ const coreServicePages: ServicePage[] = [
     badge: "Video generator",
     keyword: "AI Video Generator",
     summary: "Prepare AI video generator workflows for product videos, short clips, social media ads, TikTok/Reels/Shorts assets, captions, ratios, thumbnail notes and provider-ready delivery workflows.",
-    primaryCtaLabel: "Start AI Video Generator",
+    primaryCtaLabel: "Create a free account",
     primaryCtaHref: "/join",
     secondaryCtaHref: "/dashboard/videos",
     bestFor: "Short videos, product clips, TikTok/Reels/Shorts assets and multi-format video packs",
