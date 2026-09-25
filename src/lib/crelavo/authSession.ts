@@ -1,7 +1,7 @@
 "use client";
 
 import { supabaseBrowser } from "@/lib/supabase";
-import { AUTH_GOOGLE_START, AUTH_GOOGLE_STATUS, AUTH_MAGIC_LINK, AUTH_SESSION, AUTH_SIGNOUT, SIGNUP_DISABLED } from "./authConfig";
+import { AUTH_GOOGLE_START, AUTH_GOOGLE_STATUS, AUTH_SESSION, AUTH_SIGNOUT, SIGNUP_DISABLED } from "./authConfig";
 import type { SessionUser } from "./sessionCookie";
 export type { SessionUser };
 
@@ -22,10 +22,13 @@ export async function requestMagicLink(email: string, intent: "login" | "registe
   if (SIGNUP_DISABLED && intent === "register") throw new Error("signup_disabled");
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error("invalid_email");
-  const res = await fetch(AUTH_MAGIC_LINK, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: normalized, intent, next }) });
-  const data = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
-  if (!res.ok) throw new Error(data.error || "magic_link_failed");
-  return data;
+  const destination = `${window.location.origin}${next || "/dashboard"}${next?.includes("?") ? "&" : "?"}signup=1&method=email`;
+  const { error } = await supabaseBrowser().auth.signInWithOtp({
+    email: normalized,
+    options: { shouldCreateUser: true, emailRedirectTo: destination },
+  });
+  if (error) throw error;
+  return { ok: true };
 }
 
 export async function probeGoogleAuth(): Promise<boolean> {
