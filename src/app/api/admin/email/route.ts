@@ -58,7 +58,6 @@ async function safeLogEmail(to: string, subject: string, body: string, status: s
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     await supabaseAdmin().from("email_logs").insert({ to_email: to, template: "admin_manual", subject, status, error: status === "sent" ? null : "Email provider rejected the message.", created_at: new Date().toISOString() });
-    await supabaseAdmin().from("email_logs").insert({ to_email: to, template: "admin_manual", subject, status, error: status === "sent" ? null : "Email provider rejected the message.", created_at: new Date().toISOString() });
     await supabaseAdmin().from("admin_email_logs").insert({
       recipient_email: to,
       subject,

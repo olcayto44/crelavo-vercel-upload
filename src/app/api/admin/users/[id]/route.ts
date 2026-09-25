@@ -55,6 +55,8 @@ export async function GET(request: Request, { params }: RouteContext) {
       null as any
     );
 
+    const ipHistory = await safeTable(() => supabase.from("user_ips").select("id,ip,user_agent,seen_at").eq("user_id", userId).order("seen_at", { ascending: false }).limit(50), [] as any[]);
+    const paymentFulfillments = await safeTable(() => supabase.from("payment_fulfillments").select("id,whop_payment_id,plan_id,product_title,amount_usd,credits,status,billing_reason,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(50), [] as any[]);
     const creditEvents = await safeTable(
       () => supabase.from("credit_events").select("id, user_id, type, amount, note, created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(80),
       [] as any[]
@@ -156,6 +158,8 @@ export async function GET(request: Request, { params }: RouteContext) {
         balance_updated_at: balance?.updated_at ?? null
       },
       creditEvents,
+      ipHistory,
+      paymentFulfillments,
       productions,
       legacyVideoRequests,
       legalAcceptances,

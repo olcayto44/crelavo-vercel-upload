@@ -29,6 +29,8 @@ type UserDetail = {
   balance_updated_at?: string | null;
 };
 
+type IpHistory = { id?: string; ip?: string | null; user_agent?: string | null; seen_at?: string | null };
+type PaymentFulfillment = { id?: string; plan_id?: string | null; product_title?: string | null; amount_usd?: number | null; credits?: number | null; status?: string | null; created_at?: string | null };
 type CreditEvent = { id?: string; type: string; amount: number; note?: string | null; created_at?: string | null };
 type ProductionItem = { id: string; title?: string | null; prompt?: string | null; production_type?: string | null; status?: string | null; automation_status?: string | null; package_id?: string | null; estimated_credits?: number | null; reserved_credits?: number | null; final_video_url?: string | null; created_at?: string | null; updated_at?: string | null };
 type MessageItem = { id?: string; email?: string | null; source?: string | null; offer?: string | null; status?: string | null; page_url?: string | null; metadata?: any; created_at?: string | null };
@@ -37,6 +39,8 @@ type OutgoingEmail = { id?: string; recipient_email?: string | null; subject?: s
 type DetailState = {
   user: UserDetail;
   creditEvents: CreditEvent[];
+  ipHistory: IpHistory[];
+  paymentFulfillments: PaymentFulfillment[];
   productions: ProductionItem[];
   legacyVideoRequests: ProductionItem[];
   incomingMessages: MessageItem[];
@@ -211,6 +215,8 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
         </div>
       </section>
 
+      <section className="card admin-wide-card"><span className="badge">IP history</span><h2>Login IP and device history</h2><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>IP</th><th>User agent</th></tr></thead><tbody>{detail.ipHistory.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.seen_at)}</td><td>{item.ip ?? "-"}</td><td>{item.user_agent ?? "-"}</td></tr>)}</tbody></table></div>{!detail.ipHistory.length ? <p className="form-message">No IP history recorded.</p> : null}</section>
+      <section className="card admin-wide-card"><span className="badge">Payment packages</span><h2>Purchased credit packages</h2><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>Package</th><th>Credits</th><th>Amount</th><th>Status</th></tr></thead><tbody>{detail.paymentFulfillments.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.created_at)}</td><td>{item.product_title ?? item.plan_id ?? "-"}</td><td>{Number(item.credits ?? 0).toLocaleString()}</td><td>${Number(item.amount_usd ?? 0).toFixed(2)}</td><td>{item.status ?? "-"}</td></tr>)}</tbody></table></div>{!detail.paymentFulfillments.length ? <p className="form-message">No payment fulfillment records.</p> : null}</section>
       <AdminEmailComposer
         title="Bu üyeye cevap yaz"
         description="Kullanıcıya support, kredi, üretim veya hesap cevabını buradan gönder. Gönderim başarılı olursa admin e-posta log tablosu varsa cevap geçmişinde tutulur."

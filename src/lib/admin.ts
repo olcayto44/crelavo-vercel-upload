@@ -5,12 +5,14 @@ export const adminMenu = [
   { label: "Productions", href: "/admin/productions", group: "Operations" },
   { label: "Credits", href: "/admin/credits", group: "Finance" },
   { label: "Finance", href: "/admin/finance", group: "Finance" },
-  { label: "Email Logs", href: "/admin/email", group: "Operations" },
+  { label: "Email & Messages", href: "/admin/email", group: "Operations" },
+  { label: "Leads / Support", href: "/admin/growth", group: "Operations" },
   { label: "Showcase Videos", href: "/admin/showcase-videos", group: "Content" },
-  { label: "Site Content", href: "/admin/site-content", group: "Content" },
+  { label: "Blog / Footer / Hero", href: "/admin/site-content", group: "Content" },
+  { label: "Affiliate / Partners", href: "/admin/partners", group: "Finance" },
   { label: "SEO / Google", href: "/admin/seo", group: "Content" },
   { label: "Provider Health", href: "/admin/providers", group: "System" },
-  { label: "Production QA", href: "/admin/production-qa", group: "System" },
+  { label: "Production Debug / QA", href: "/admin/production-qa", group: "System" },
   { label: "Security / Fraud", href: "/admin/security-fraud", group: "System" },
   { label: "Monitoring", href: "/admin/monitoring", group: "System" }
 ];
