@@ -62,19 +62,10 @@ export function AdminNotificationBell() {
   useEffect(() => {
     let cancelled = false;
     async function loadDashboard() {
-      const { data: userData } = await supabaseBrowser().auth.getUser();
-      const adminEmail = userData.user?.email ?? "";
-      const headers = adminApiHeaders(adminEmail, getStoredAdminApiToken());
-      if (!adminEmail) {
-        if (!cancelled) {
-          setMode("login");
-          setMetricsMode("login");
-        }
-        return;
-      }
+      const headers = adminApiHeaders("", getStoredAdminApiToken());
       const [notificationsResponse, metricsResponse] = await Promise.all([
-        fetch("/api/admin/notifications", { headers, cache: "no-store" }),
-        fetch("/api/admin/dashboard-metrics", { headers, cache: "no-store" })
+        fetch("/api/admin/notifications", { headers, credentials: "include", cache: "no-store" }),
+        fetch("/api/admin/dashboard-metrics", { headers, credentials: "include", cache: "no-store" })
       ]);
       const [notifications, nextMetrics] = await Promise.all([
         notificationsResponse.json().catch(() => ({})),

@@ -28,16 +28,8 @@ export function AdminStatsCards() {
 
   useEffect(() => {
     async function loadStats() {
-      const { data: userData } = await supabaseBrowser().auth.getUser();
-      const adminEmail = userData.user?.email ?? "";
       const adminToken = getStoredAdminApiToken();
-
-      if (!adminEmail) {
-        setMode("login");
-        return;
-      }
-
-      fetch("/api/admin/stats", { headers: adminApiHeaders(adminEmail, adminToken) })
+      fetch("/api/admin/stats", { headers: adminApiHeaders("", adminToken), credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
           if (typeof data.totalRequests === "number") {

@@ -56,7 +56,7 @@ export function AdminUsersManager() {
   async function loadUsers() {
     setLoading(true);
     const token = getStoredAdminApiToken();
-    const response = await fetch("/api/admin/users", { headers: adminApiHeaders("", token), cache: "no-store" });
+    const response = await fetch("/api/admin/users", { headers: adminApiHeaders("", token), credentials: "include", cache: "no-store" });
     const data = await response.json().catch(() => ({}));
     setLoading(false);
 

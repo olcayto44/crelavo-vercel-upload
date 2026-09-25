@@ -47,16 +47,16 @@ export async function GET(request: Request) {
       ? await supabase.from("credit_balances").select("user_id, balance, reserved, updated_at").in("user_id", userIds)
       : { data: [], error: null };
 
-    if (balancesError) throw balancesError;
+    const safeBalances = balancesError ? [] : (balances ?? []);
 
     const { data: acceptances, error: acceptancesError } = userIds.length > 0
       ? await supabase.from("legal_acceptances").select("id, user_id, production_id, version, accepted_at, ip_address, user_agent, production_type, package_id, title, responsibility_text, rights_warranty_text").in("user_id", userIds).order("accepted_at", { ascending: false })
       : { data: [], error: null };
 
-    if (acceptancesError) throw acceptancesError;
+    const safeAcceptances = acceptancesError ? [] : (acceptances ?? []);
 
     const acceptanceMap = new Map<string, { latest: any; count: number }>();
-    for (const acceptance of acceptances ?? []) {
+    for (const acceptance of safeAcceptances) {
       const current = acceptanceMap.get(acceptance.user_id) ?? { latest: acceptance, count: 0 };
       acceptanceMap.set(acceptance.user_id, { latest: current.latest, count: current.count + 1 });
     }
@@ -67,10 +67,10 @@ export async function GET(request: Request) {
       ? await supabase.from("credit_events").select("user_id, type, amount, note, created_at").in("user_id", userIds).order("created_at", { ascending: false })
       : { data: [], error: null };
 
-    if (creditEventsError) throw creditEventsError;
+    const safeCreditEvents = creditEventsError ? [] : (creditEvents ?? []);
 
     const financeMap = new Map<string, { totalRevenueUsd: number; todayRevenueUsd: number; weeklyRevenueUsd: number; monthlyRevenueUsd: number; spentCredits: number; packageNames: Set<string>; latestPurchaseAt: string | null }>();
-    for (const event of creditEvents ?? []) {
+    for (const event of safeCreditEvents) {
       const userId = String(event.user_id ?? "");
       if (!userId) continue;
       const current = financeMap.get(userId) ?? { totalRevenueUsd: 0, todayRevenueUsd: 0, weeklyRevenueUsd: 0, monthlyRevenueUsd: 0, spentCredits: 0, packageNames: new Set<string>(), latestPurchaseAt: null };
@@ -89,7 +89,7 @@ export async function GET(request: Request) {
       financeMap.set(userId, current);
     }
 
-    const balanceMap = new Map((balances ?? []).map((balance) => [balance.user_id, balance]));
+    const balanceMap = new Map(safeBalances.map((balance) => [balance.user_id, balance]));
     const users = userIds.map((userId) => {
       const profile = profileMap.get(userId);
       const balance = balanceMap.get(userId);
