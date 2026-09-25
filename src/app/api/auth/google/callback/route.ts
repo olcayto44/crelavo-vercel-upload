@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { AFTER_SIGNIN_PATH } from "@/lib/crelavo/authConfig";
-import { safeReturnPath, SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
+import { postAuthPath } from "@/lib/crelavo/redirects";
 import { createUser } from "@/lib/crelavo/userStore";
 import { setSessionUser } from "@/lib/crelavo/sessionCookie";
 
@@ -24,8 +24,7 @@ export async function GET(req: Request) {
   try {
     const parsed = rawState ? JSON.parse(Buffer.from(rawState, "base64url").toString()) as { state: string; next?: string; intent?: "login" | "register" } : null;
     if (!parsed || parsed.state !== state || !code) return NextResponse.redirect(new URL("/join?error=google_state", appUrl));
-    if (parsed.intent === "register") next = SIGNUP_DESTINATION;
-    else next = safeReturnPath(parsed.next);
+    next = postAuthPath({ isNew: parsed.intent === "register", returnTo: parsed.next });
   } catch { return NextResponse.redirect(new URL("/join?error=google_state", appUrl)); }
 
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: process.env.GOOGLE_CLIENT_ID || "", client_secret: process.env.GOOGLE_CLIENT_SECRET || "", redirect_uri: redirectUri, grant_type: "authorization_code" }) });

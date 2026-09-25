@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RequireFreeAccount } from "@/components/auth/RequireFreeAccount";
 
 export const metadata: Metadata = {
   title: "Crelavo Dashboard",
@@ -15,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <RequireFreeAccount>{children}</RequireFreeAccount>;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { safeReturnPath, SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
+import { postAuthPath } from "@/lib/crelavo/redirects";
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const state = crypto.randomUUID();
   const response = NextResponse.redirect(new URL("https://accounts.google.com/o/oauth2/v2/auth"));
   const intent = url.searchParams.get("intent") === "register" ? "register" : "login";
-  const next = intent === "register" ? SIGNUP_DESTINATION : safeReturnPath(url.searchParams.get("next"));
+  const next = postAuthPath({ isNew: intent === "register", returnTo: url.searchParams.get("next") });
   const statePayload = Buffer.from(JSON.stringify({ state, next, intent })).toString("base64url");
   response.cookies.set("crelavo_oauth_state", statePayload, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 600 });
   const google = new URL("https://accounts.google.com/o/oauth2/v2/auth");

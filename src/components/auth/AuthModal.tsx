@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./AuthProvider";
 import { requestMagicLink } from "@/lib/crelavo/authSession";
 import { supabaseBrowser } from "@/lib/supabase";
-import { safeReturnPath, SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
+import { postAuthPath } from "@/lib/crelavo/redirects";
 
 export function AuthModal() {
   const { user, modalOpen, intent, nextPath, closeAuth, openAuth } = useAuth();
@@ -16,7 +16,7 @@ export function AuthModal() {
   async function onGoogle() {
     setBusy(true);
     setError(null);
-    const target = intent === "register" ? SIGNUP_DESTINATION : safeReturnPath(nextPath);
+    const target = postAuthPath({ isNew: intent === "register", returnTo: nextPath });
     const redirectTo = `${window.location.origin}${target}${target.includes("?") ? "&" : "?"}${intent === "register" ? "signup=1&method=google" : ""}`;
     const { error: googleError } = await supabaseBrowser().auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     if (googleError) { setError(googleError.message); setBusy(false); }
