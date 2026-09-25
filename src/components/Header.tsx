@@ -59,7 +59,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
     .sort((a, b) => a.order - b.order)
     .map((item) => {
       const label = normalizeNavLabel(item.label);
-      if (label === "Assistant") return { ...item, label, href: "/join" };
+      if (label === "Assistant") return { ...item, label, href: "/dashboard/create" };
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
       if (label === "Credits") return { ...item, label: "Pricing", href: "/pricing" };
       if (label === "Live Sales Plans") return { ...item, label: "Live Sales Avatar", href: "/live-sales-credits" };
