@@ -68,6 +68,7 @@ export async function GET(request: Request) {
     }
 
     const authUserMap = new Map(authUsers.map((user) => [user.id, user]));
+    const configuredAdminEmails = new Set(String(process.env.ADMIN_EMAILS ?? process.env.ADMIN_EMAIL ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean));
 
     const { data: creditEvents, error: creditEventsError } = userIds.length > 0
       ? await supabase.from("credit_events").select("user_id, type, amount, note, created_at").in("user_id", userIds).order("created_at", { ascending: false })
@@ -114,7 +115,7 @@ export async function GET(request: Request) {
         ip: latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? latestLegal?.ip_address ?? "-",
         country: String(authUser?.user_metadata?.country ?? latestPresenceMap.get(userId)?.country ?? "Unknown"),
         city: String(authUser?.user_metadata?.city ?? "Unknown"),
-        role: profile?.role ?? String(authUser?.user_metadata?.role ?? "user"),
+        role: String(profile?.role ?? authUser?.user_metadata?.role ?? (configuredAdminEmails.has(email.toLowerCase()) ? "admin" : "user")),
         provider,
         email_confirmed: emailConfirmed,
         last_sign_in_at: authUser?.last_sign_in_at ?? null,

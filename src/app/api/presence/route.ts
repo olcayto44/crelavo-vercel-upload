@@ -1,4 +1,4 @@
-﻿import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse } from "@/lib/security";
+import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse } from "@/lib/security";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 
 function clean(value: unknown, max: number, fallback = "") { return String(value ?? fallback).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     device: clean(body.device, 40) || (/(android|iphone|ipad|mobile)/i.test(request.headers.get("user-agent") || "") ? "mobile" : "desktop"),
     seen_at: new Date().toISOString(),
   });
+  if (!error && user?.id) { await supabaseAdmin().from("user_ips").insert({ user_id: user.id, ip, user_agent: clean(request.headers.get("user-agent"), 500), seen_at: new Date().toISOString() }); }
   if (error) return noStoreJson({ error: "presence_unavailable" }, { status: 503 });
   return noStoreJson({ ok: true });
 }
