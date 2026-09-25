@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminFinanceCards } from "@/components/AdminFinanceCards";
+import { supabaseAdmin } from "@/lib/supabase";
 import { productionReadinessScorePlan, providerCostLedgerPlan, providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
 
 const financeGuardrails = [
@@ -11,7 +12,13 @@ const financeGuardrails = [
   "Lemon remains postponed; Whop is the active payment path for finance reconciliation."
 ];
 
-export default function AdminFinancePage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminFinancePage() {
+  const { data: fulfillments } = await supabaseAdmin().from("payment_fulfillments").select("status,amount_usd,credits,kind,billing_reason,created_at").order("created_at", { ascending: false }).limit(500);
+  const paid = (fulfillments ?? []).filter((row) => row.status === "fulfilled");
+  const paymentRevenue = paid.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
+  const pendingPayments = (fulfillments ?? []).filter((row) => row.status === "pending_user").length;
   return (
     <AdminShell title="Finance Dashboard" description="Revenue, provider spend, reserved-credit exposure, production margin and manual payment activation review.">
       <section className="card admin-wide-card">
@@ -29,6 +36,7 @@ export default function AdminFinancePage() {
       </section>
 
       <section className="admin-panel-section"><AdminFinanceCards /></section>
+      <section className="card admin-wide-card" style={{ marginTop: 20 }}><span className="badge">Live Whop reconciliation</span><h2>Gerçek fulfillment özeti</h2><div className="admin-info-grid"><div><span>Fulfilled</span><strong>{paid.length}</strong><small>Audit tablosundaki başarılı ödemeler</small></div><div><span>Revenue</span><strong>${paymentRevenue.toFixed(2)}</strong><small>Fulfillment amount toplamı</small></div><div><span>Pending user</span><strong>{pendingPayments}</strong><small>Email eşleşmesi bekleyen ödeme</small></div><div><span>Last sync</span><strong>{fulfillments?.[0]?.created_at ? new Date(fulfillments[0].created_at).toLocaleString("tr-TR") : "—"}</strong><small>Son audit kaydı</small></div></div></section>
 
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Production readiness / credit burn</span>

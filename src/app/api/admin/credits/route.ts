@@ -124,6 +124,7 @@ export async function POST(request: Request) {
         })
       : { skipped: true, reason: action === "remove" ? "Credit removal does not send activation email." : "Admin disabled user notification." };
 
+    await supabase.from("email_logs").insert({ user_id: profile.id, to_email: profile.email, template: "credit_activation", subject: "Crelavo credits activated", status: emailResult?.sent === false ? "failed" : "sent", error: emailResult?.sent === false ? String(emailResult.reason ?? "Email failed") : null, created_at: new Date().toISOString() });
     return Response.json({ profile, balance, email: emailResult });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not add credits";
