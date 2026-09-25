@@ -4,6 +4,9 @@ import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Crelavo AI Production Studio for Ecommerce",
   description: "Product videos, campaigns and live-commerce from one AI production studio.",
