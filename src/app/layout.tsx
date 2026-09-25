@@ -10,6 +10,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { LiveVisitorTracker } from "@/components/LiveVisitorTracker";
 import { PartnerReferralTracker } from "@/components/PartnerReferralTracker";
 import { PreviewSupportBoxRouteGate } from "@/components/PreviewSupportBoxRouteGate";
+import { PresenceBeacon } from "@/components/PresenceBeacon";
 import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
 import { YandexMetrica } from "@/components/YandexMetrica";
@@ -122,6 +123,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><PartnerReferralTracker /></Suspense>
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
+        <PresenceBeacon />
         <AuthProvider>{children}<AuthModal /><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></AuthProvider>
       </body>
     </html>
