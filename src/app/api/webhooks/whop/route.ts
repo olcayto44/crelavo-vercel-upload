@@ -9,6 +9,7 @@ import { whopProductForPlanId } from "@/lib/whop";
 import { buildWhopCreditReconciliation } from "@/lib/whop-reconciliation";
 import { previewLimitForPlan } from "@/lib/billing-entitlements";
 import { recordWhopAnalytics } from "@/lib/whop-analytics";
+import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 
 type WhopObject = Record<string, unknown>;
 
@@ -556,6 +557,17 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   }) : [{ provider: "meta" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }, { provider: "google_ads" as const, status: "not_configured" as const, detail: `skipped_${activationDecision.reason}` }];
 
   if (!activationDecision.add) {
+    await recordPaymentFulfillment({
+      paymentId: paymentReference,
+      userId: profile?.id ?? null,
+      planId,
+      productTitle: product.name,
+      amountUsd,
+      credits: 0,
+      kind: "skipped_preview",
+      status: profile ? "skipped" : "pending_user",
+      billingReason,
+    }).catch(() => null);
     const activation = { activated: false, reason: activationDecision.reason, productId: product.id };
     const creditReconciliation = buildWhopCreditReconciliation({ event, webhookId, paymentReference, customerEmail: email, activation, receiptEmailResult, adminPaymentNotificationResult });
     return { receiptEmailResult, adminPaymentNotificationResult, partnerCommissionResult, adConversionResult, activation, creditReconciliation };
@@ -578,6 +590,22 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
     paymentId: paymentReference,
     membershipId: membershipReference
   });
+
+  const activationProfileId = "profile" in activation && activation.profile ? activation.profile.id : profile?.id ?? null;
+  await recordPaymentFulfillment({
+    paymentId: paymentReference,
+    userId: activationProfileId,
+    planId,
+    productTitle: product.name,
+    amountUsd,
+    credits: activation.activated ? credits : 0,
+    kind: "credits",
+    status: activation.activated ? "fulfilled" : "pending_user",
+    billingReason,
+  }).catch(() => null);
+  if (activation.activated && activationProfileId) {
+    await recordCreditLedger({ userId: activationProfileId, delta: credits, reason: "purchase", paymentId: paymentReference, note: `${product.name} / ${mappedPlan.billing}` }).catch(() => null);
+  }
 
   const creditActivationEmailResult = activation.activated
     ? await sendCreditActivationEmail({
