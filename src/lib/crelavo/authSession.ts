@@ -2,6 +2,7 @@
 
 import { supabaseBrowser } from "@/lib/supabase";
 import { AUTH_GOOGLE_START, AUTH_GOOGLE_STATUS, AUTH_SESSION, AUTH_SIGNOUT, SIGNUP_DISABLED } from "./authConfig";
+import { safeReturnPath, SIGNUP_DESTINATION } from "./redirects";
 import type { SessionUser } from "./sessionCookie";
 export type { SessionUser };
 
@@ -22,7 +23,8 @@ export async function requestMagicLink(email: string, intent: "login" | "registe
   if (SIGNUP_DISABLED && intent === "register") throw new Error("signup_disabled");
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error("invalid_email");
-  const destination = `${window.location.origin}${next || "/dashboard"}${next?.includes("?") ? "&" : "?"}signup=1&method=email`;
+  const target = intent === "register" ? SIGNUP_DESTINATION : safeReturnPath(next);
+  const destination = `${window.location.origin}${target}${target.includes("?") ? "&" : "?"}${intent === "register" ? "signup=1&method=email" : ""}`;
   const { error } = await supabaseBrowser().auth.signInWithOtp({
     email: normalized,
     options: { shouldCreateUser: true, emailRedirectTo: destination },
@@ -35,9 +37,11 @@ export async function probeGoogleAuth(): Promise<boolean> {
   try { const res = await fetch(AUTH_GOOGLE_STATUS, { cache: "no-store" }); return res.ok && ((await res.json()) as { ready?: boolean }).ready === true; } catch { return false; }
 }
 
-export function googleStartUrl(next?: string) {
+export function googleStartUrl(next?: string, intent: "login" | "register" = "login") {
   const url = new URL(AUTH_GOOGLE_START, window.location.origin);
-  if (next) url.searchParams.set("next", next);
+  url.searchParams.set("intent", intent);
+  const target = intent === "register" ? SIGNUP_DESTINATION : safeReturnPath(next);
+  if (target) url.searchParams.set("next", target);
   return url.toString();
 }
 

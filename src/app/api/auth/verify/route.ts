@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { AFTER_SIGNIN_PATH } from "@/lib/crelavo/authConfig";
+import { safeReturnPath, SIGNUP_DESTINATION } from "@/lib/crelavo/redirects";
 import { consumeMagicToken, createUser, hashToken } from "@/lib/crelavo/userStore";
 import { setSessionUser } from "@/lib/crelavo/sessionCookie";
 
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const token = url.searchParams.get("token") || "";
   const intent = url.searchParams.get("intent") || "login";
-  const next = url.searchParams.get("next") || AFTER_SIGNIN_PATH;
+  const next = intent === "register" ? SIGNUP_DESTINATION : safeReturnPath(url.searchParams.get("next"));
   if (!token) return NextResponse.redirect(new URL("/join?error=missing_token", url.origin));
   const consumed = await consumeMagicToken(hashToken(token));
   if (!consumed) return NextResponse.redirect(new URL("/join?error=expired", url.origin));
