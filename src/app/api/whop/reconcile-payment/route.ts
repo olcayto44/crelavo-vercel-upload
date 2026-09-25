@@ -1,4 +1,5 @@
 import { applyCreditPurchaseToBuckets } from "@/lib/credit-rollover";
+import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -338,6 +339,10 @@ export async function POST(request: Request) {
       paymentId: resolvedPaymentId,
       membershipId: membershipReference
     });
+    const activationReason = (activation as { reason?: string }).reason;
+    const activationProfile = (activation as { profile?: { id?: string } }).profile;
+    await recordPaymentFulfillment({ paymentId: resolvedPaymentId, userId: activationProfile?.id ?? null, planId, productTitle: product.name, amountUsd: paymentAmount(payment), credits, kind: "credits", status: activation.activated || activationReason === "already_processed" ? "fulfilled" : "pending_user", billingReason: paymentBillingReason(payment) || activationReason || null });
+    if (activation.activated && activationProfile?.id) await recordCreditLedger({ userId: activationProfile.id, delta: credits, reason: "purchase", paymentId: resolvedPaymentId, note: `checkout reconciliation | package=${product.id} | billing=${mappedPlan.billing}` });
     const isAlreadyProcessed = (activation as { reason?: string }).reason === "already_processed";
     const adminNotification = isAlreadyProcessed
       ? { skipped: true, reason: "Payment already processed; admin notification not repeated." }

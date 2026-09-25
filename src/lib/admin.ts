@@ -5,6 +5,7 @@ export const adminMenu = [
   { label: "Members", href: "/admin/users", group: "Panel" },
   { label: "All Requests", href: "/admin/productions", group: "Panel" },
   { label: "Finance Dashboard", href: "/admin/finance", group: "Panel" },
+  { label: "Email Operations", href: "/admin/email", group: "Panel" },
   { label: "Ad Slots", href: "/admin/ads", group: "Panel" },
   { label: "Site Content", href: "/admin/site-content", group: "Panel" },
   { label: "Packages", href: "/admin/packages", group: "Panel" },
