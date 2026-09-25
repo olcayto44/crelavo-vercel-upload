@@ -64,8 +64,8 @@ export async function GET(request: Request) {
   ]);
 
   const items: NotificationItem[] = [
-    { label: "Incoming email / contact", href: "/admin/growth", count: contactLeads.count, priority: "high", note: "Review contact form and support messages." },
-    { label: "New leads / requests", href: "/admin/growth", count: capturedLeads.count, priority: "medium", note: "Exit-intent, checkout, streak, or campaign leads." },
+    { label: "Incoming email / contact", href: "/admin/inbox", count: contactLeads.count, priority: "high", note: "Review contact form and support messages." },
+    { label: "New leads / requests", href: "/admin/inbox", count: capturedLeads.count, priority: "medium", note: "Exit-intent, checkout, streak, or campaign leads." },
     { label: "Assistant conversations", href: "/admin/assistant", count: assistantNeedsReview.count, priority: "high", note: "New messages or conversations needing follow-up." },
     { label: "Production actions", href: "/admin/productions", count: pendingProductions.count, priority: "high", note: "Pending, active, failed, or admin-review jobs." },
     { label: "Failed productions", href: "/admin/production-qa", count: failedProductions.count, priority: "high", note: "Credit release/refund and delivery review may be needed." },

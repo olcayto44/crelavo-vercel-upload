@@ -1,7 +1,8 @@
 export const adminMenu = [
   { label: "Overview", href: "/admin", group: "Operations" },
   { label: "Live Visitors", href: "/admin/live", group: "Operations" },
-  { label: "Members", href: "/admin/users", group: "Operations" },
+  { label: "Members / Subscribers", href: "/admin/users", group: "Operations" },
+  { label: "Inbox / Notifications", href: "/admin/inbox", group: "Operations" },
   { label: "Productions", href: "/admin/productions", group: "Operations" },
   { label: "Credits", href: "/admin/credits", group: "Finance" },
   { label: "Finance", href: "/admin/finance", group: "Finance" },

@@ -143,7 +143,7 @@ export function AdminNotificationBell() {
       {state.recentLeads?.length ? (
         <div className="admin-notification-list recent">
           {state.recentLeads.slice(0, 2).map((lead, index) => (
-            <Link href="/admin/growth" key={`${lead.email}-${lead.created_at}-${index}`}>
+            <Link href="/admin/inbox" key={`${lead.email}-${lead.created_at}-${index}`}>
               <span>{lead.metadata?.fullName || lead.email || "New message"}</span>
               <strong>{lead.metadata?.requesterType || lead.source || "Contact"}</strong>
               <small>{lead.metadata?.topic || lead.offer || "No topic recorded"}</small>
@@ -151,7 +151,7 @@ export function AdminNotificationBell() {
           ))}
         </div>
       ) : null}
-      <Link className="btn secondary" href="/admin/growth">Review incoming items</Link>
+      <Link className="btn secondary" href="/admin/inbox">Review incoming items</Link>
     </div>
   );
 }
