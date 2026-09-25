@@ -213,18 +213,8 @@ html body #clh a.film.still video{
   object-fit:cover!important;
   object-position:center 12%!important;
 }
-html body #clh .films a.film{display:none!important;}
-html body #clh .films a.film[href*="product-link-to-video-showcase"],
-html body #clh .films a.film[href*="ad-creative-angles-showcase"],
-html body #clh .films a.film[href*="ugc-style-ad-showcase"],
-html body #clh .films a.film[href*="lower-ad-costs-showcase"],
-html body #clh .films a.film[href*="cinematic-battle-concept-showcase"],
-html body #clh .films a.film[href*="crelavo-midnight-fomo-reel"],
-html body #clh .films a.film[href*="crelavo-3d-fomo-final"],
-html body #clh .films a.film[href*="crelavo-dog-dental-care"],
-html body #clh .films a.film[href*="crelavo-relationship-cards"]{
-  display:block!important;
-}
+html body #clh .films a.film{display:block!important;}
+
 `;
 
 const menuScript = `
