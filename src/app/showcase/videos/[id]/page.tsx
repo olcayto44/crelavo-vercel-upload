@@ -7,6 +7,9 @@ import { getConfiguredShowcaseVideo, getConfiguredShowcaseVideos } from "@/lib/s
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "").replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
 
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
+
 export async function generateStaticParams() { return (await getConfiguredShowcaseVideos()).map((video) => ({ id: video.id })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {

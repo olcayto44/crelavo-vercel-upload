@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { showcaseVideos } from "@/lib/showcase-videos";
+import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
 export const metadata: Metadata = {
   title: "Crelavo AI Production Studio for Ecommerce",
@@ -24,14 +24,14 @@ const softwareApplicationJsonLd = {
 
 const landscapeFilmIds = new Set(["product-link-to-video-showcase", "ad-creative-angles-showcase", "lower-ad-costs-showcase", "crelavo-shot-montage-road", "crelavo-action-film-final"]);
 
-const films = showcaseVideos.map((video) => ({
+function filmsFromVideos(videos: Awaited<ReturnType<typeof getConfiguredShowcaseVideos>>) { return videos.map((video) => ({
   href: `/showcase/videos/${video.id}`,
   kicker: video.kicker,
   title: video.title,
   poster: video.imageUrl,
   video: video.videoUrl,
   landscape: landscapeFilmIds.has(video.id)
-}));
+})); }
 
 const css = `
 .public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none}
@@ -276,6 +276,8 @@ const menuScript = `
 `;
 
 export default async function HomePage() {
+  const configuredShowcaseVideos = await getConfiguredShowcaseVideos();
+  const films = filmsFromVideos(configuredShowcaseVideos);
   const siteContent = await getConfiguredSiteContentConfig();
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }} />
