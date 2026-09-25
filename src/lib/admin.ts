@@ -1,5 +1,6 @@
 export const adminMenu = [
   { label: "Overview", href: "/admin", group: "Panel" },
+  { label: "Live Visitors", href: "/admin/live", group: "Panel" },
   { label: "Showcase Videos", href: "/admin/showcase-videos", group: "Panel" },
   { label: "Members", href: "/admin/users", group: "Panel" },
   { label: "All Requests", href: "/admin/productions", group: "Panel" },
