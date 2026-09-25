@@ -54,6 +54,12 @@ export async function GET(request: Request) {
       : { data: [], error: null };
 
     const safeAcceptances = acceptancesError ? [] : (acceptances ?? []);
+    const { data: ipRows } = userIds.length > 0 ? await supabase.from("user_ips").select("user_id,ip,seen_at").in("user_id", userIds).order("seen_at", { ascending: false }) : { data: [] };
+    const { data: presenceRows } = userIds.length > 0 ? await supabase.from("presence").select("user_id,ip,country,seen_at").in("user_id", userIds).order("seen_at", { ascending: false }) : { data: [] };
+    const latestIpMap = new Map<string, any>();
+    for (const row of ipRows ?? []) if (row.user_id && !latestIpMap.has(row.user_id)) latestIpMap.set(row.user_id, row);
+    const latestPresenceMap = new Map<string, any>();
+    for (const row of presenceRows ?? []) if (row.user_id && !latestPresenceMap.has(row.user_id)) latestPresenceMap.set(row.user_id, row);
 
     const acceptanceMap = new Map<string, { latest: any; count: number }>();
     for (const acceptance of safeAcceptances) {
@@ -105,8 +111,8 @@ export async function GET(request: Request) {
         id: userId,
         name: profile?.full_name || String(authUser?.user_metadata?.full_name ?? "") || email.split("@")[0] || "Unnamed user",
         email,
-        ip: latestLegal?.ip_address ?? "IP later",
-        country: String(authUser?.user_metadata?.country ?? "Unknown"),
+        ip: latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? latestLegal?.ip_address ?? "-",
+        country: String(authUser?.user_metadata?.country ?? latestPresenceMap.get(userId)?.country ?? "Unknown"),
         city: String(authUser?.user_metadata?.city ?? "Unknown"),
         role: profile?.role ?? String(authUser?.user_metadata?.role ?? "user"),
         provider,
