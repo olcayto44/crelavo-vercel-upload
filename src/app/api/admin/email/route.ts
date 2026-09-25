@@ -70,6 +70,17 @@ async function safeLogEmail(to: string, subject: string, body: string, status: s
   }
 }
 
+export async function GET(request: Request) {
+  const targetType = new URL(request.url).searchParams.get("target_type") ?? "all_users";
+  try {
+    const access = await requireAdminPermission(request, "support");
+    if (!access.ok) return access.response;
+    const recipients = await loadRecipients(targetType, "");
+    return Response.json({ count: recipients.length, sample: recipients.slice(0, 5) }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    return Response.json({ error: error instanceof Error ? error.message : "Recipients could not be loaded." }, { status: 500 });
+  }
+}
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const access = await requireAdminPermission(request, "support", body);

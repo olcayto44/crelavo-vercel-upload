@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { adminApiHeaders, getStoredAdminApiToken } from "@/lib/admin-client-auth";
 
 type AdminEmailComposerProps = {
@@ -38,7 +38,7 @@ export function AdminEmailComposer({
   const [body, setBody] = useState(defaultBody);
   const [status, setStatus] = useState("");
   const [sending, setSending] = useState(false);
-
+  const [recipientPreview, setRecipientPreview] = useState<{ count: number; sample: string[]; loading: boolean; error?: string }>({ count: 0, sample: [], loading: false });
   const options = [
     ...(allowBulkUsers ? ["all_users" as const] : []),
     ...(allowBulkPartners ? ["all_partners" as const] : []),
@@ -47,6 +47,10 @@ export function AdminEmailComposer({
     "custom" as const
   ];
   const needsRecipient = targetType !== "all_users" && targetType !== "all_partners";
+
+  useEffect(() => { if (needsRecipient) { setRecipientPreview({ count: recipientEmail.trim() ? 1 : 0, sample: recipientEmail.trim() ? [recipientEmail.trim()] : [], loading: false }); return; } let cancelled = false; setRecipientPreview((current) => ({ ...current, loading: true, error: undefined })); fetch(`/api/admin/email?target_type=${encodeURIComponent(targetType)}`, { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((data) => { if (!cancelled) setRecipientPreview({ count: Number(data.count ?? 0), sample: Array.isArray(data.sample) ? data.sample : [], loading: false, error: data.error }); }).catch(() => { if (!cancelled) setRecipientPreview({ count: 0, sample: [], loading: false, error: "Alıcılar yüklenemedi." }); }); return () => { cancelled = true; }; }, [targetType, recipientEmail, needsRecipient]);
+
+  useEffect(() => { if (needsRecipient) { setRecipientPreview({ count: recipientEmail.trim() ? 1 : 0, sample: recipientEmail.trim() ? [recipientEmail.trim()] : [], loading: false }); return; } let cancelled = false; setRecipientPreview((current) => ({ ...current, loading: true, error: undefined })); fetch(`/api/admin/email?target_type=${encodeURIComponent(targetType)}`, { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((data) => { if (!cancelled) setRecipientPreview({ count: Number(data.count ?? 0), sample: Array.isArray(data.sample) ? data.sample : [], loading: false, error: data.error }); }).catch(() => { if (!cancelled) setRecipientPreview({ count: 0, sample: [], loading: false, error: "Alıcılar yüklenemedi." }); }); return () => { cancelled = true; }; }, [targetType, recipientEmail, needsRecipient]);
 
   async function sendEmail() {
     setSending(true);
@@ -65,7 +69,7 @@ export function AdminEmailComposer({
       return;
     }
 
-    setStatus(`${data.sentCount ?? 0} email sent. ${data.failedCount ?? 0} failed.`);
+    setStatus(`${data.sentCount ?? 0} email başarıyla gönderildi. ${data.failedCount ?? 0} başarısız.`);
   }
 
   return (
@@ -75,28 +79,30 @@ export function AdminEmailComposer({
       <p style={{ color: "var(--muted)" }}>{description}</p>
       <div className="admin-production-editor">
         <div className="field">
-          <label>Recipient group</label>
+          <label>Alıcı grubu</label>
           <select value={targetType} onChange={(event) => setTargetType(event.target.value as typeof targetType)}>
             {options.map((option) => <option key={option} value={option}>{targetLabels[option]}</option>)}
           </select>
         </div>
         {needsRecipient ? (
           <div className="field">
-            <label>Recipient email</label>
+            <label>Alıcı e-postası</label>
             <input value={recipientEmail} onChange={(event) => setRecipientEmail(event.target.value)} placeholder="name@example.com" />
           </div>
         ) : null}
         <div className="field">
-          <label>Subject</label>
+          <label>E-posta konusu</label>
           <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Email subject" />
         </div>
       </div>
+<div className="card" style={{ marginTop: 12, background: "rgba(14,165,233,.08)" }}><strong>{recipientPreview.loading ? "Alıcılar kontrol ediliyor..." : `${recipientPreview.count} alıcıya gönderilecek`}</strong>{recipientPreview.error ? <p>{recipientPreview.error}</p> : null}{recipientPreview.sample.length ? <small style={{ display: "block", marginTop: 6 }}>Örnek: {recipientPreview.sample.join(", ")}{recipientPreview.count > recipientPreview.sample.length ? " ..." : ""}</small> : null}</div>
+<div className="card" style={{ marginTop: 12, background: "rgba(14,165,233,.08)" }}><strong>{recipientPreview.loading ? "Alıcılar kontrol ediliyor..." : `${recipientPreview.count} alıcıya gönderilecek`}</strong>{recipientPreview.error ? <p>{recipientPreview.error}</p> : null}{recipientPreview.sample.length ? <small style={{ display: "block", marginTop: 6 }}>Örnek: {recipientPreview.sample.join(", ")}{recipientPreview.count > recipientPreview.sample.length ? " ..." : ""}</small> : null}</div>
       <div className="field" style={{ marginTop: 12 }}>
-        <label>Email body</label>
+        <label>E-posta içeriği</label>
         <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={8} placeholder="Write the email message..." />
       </div>
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 12 }}>
-        <button className="btn" type="button" disabled={sending} onClick={sendEmail}>{sending ? "Sending..." : "Send email"}</button>
+        <button className="btn" type="button" disabled={sending || recipientPreview.count === 0} onClick={sendEmail}>{sending ? "Sending..." : "Send email"}</button>
         {status ? <span className="badge">{status}</span> : null}
       </div>
     </section>
