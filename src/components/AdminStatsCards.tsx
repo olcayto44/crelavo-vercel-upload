@@ -5,6 +5,7 @@ import { adminApiHeaders, getStoredAdminApiToken } from "@/lib/admin-client-auth
 import { supabaseBrowser } from "@/lib/supabase";
 
 type AdminStats = {
+  registeredUsers: number;
   totalRequests: number;
   pending: number;
   inProduction: number;
@@ -15,6 +16,7 @@ type AdminStats = {
 
 export function AdminStatsCards() {
   const [stats, setStats] = useState<AdminStats>({
+    registeredUsers: 0,
     totalRequests: 0,
     pending: 0,
     inProduction: 0,
@@ -57,6 +59,7 @@ export function AdminStatsCards() {
 
   return (
     <div className="kpi">
+      <div className="card"><span>Registered users</span><strong>{mode === "loading" ? "..." : stats.registeredUsers}</strong><p>Profiles</p></div>
       <div className="card"><span>Total requests</span><strong>{mode === "loading" ? "..." : stats.totalRequests}</strong><p>Supabase records</p></div>
       <div className="card"><span>Pending</span><strong>{mode === "loading" ? "..." : stats.pending}</strong><p>Waiting for review</p></div>
       <div className="card"><span>In production</span><strong>{mode === "loading" ? "..." : stats.inProduction}</strong><p>Active jobs</p></div>
