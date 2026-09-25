@@ -15,12 +15,7 @@ export function SiteFooter() {
 `}</style>
       <footer id="cl-site-footer" className="container footer clean-feed-section site-footer">
         <div className="site-footer-grid balanced-footer-grid">
-          <div className="site-footer-group"><h3>Start here</h3><nav>
-            <a href="/pricing">Pricing</a>
-            <a href="/join">Sign up</a>
-            <a href="/join">Assistant</a>
-            <a href="/dashboard">Dashboard</a>
-          </nav></div>
+          <div className="site-footer-group"><h3>Start here</h3><nav><FooterStartLinks /></nav></div>
           <div className="site-footer-group"><h3>Create</h3><nav>
             <a href="/categories">Categories</a>
             <a href="/tools">Tools</a>
