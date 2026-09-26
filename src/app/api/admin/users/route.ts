@@ -79,10 +79,15 @@ export async function GET(request: Request) {
     const safeAcceptances = acceptancesError ? [] : (acceptances ?? []);
     const { data: ipRows } = userIds.length > 0 ? await supabase.from("user_ips").select("user_id,ip,seen_at").in("user_id", userIds).order("seen_at", { ascending: false }) : { data: [] };
     const { data: presenceRows } = userIds.length > 0 ? await supabase.from("presence").select("user_id,ip,country,seen_at").in("user_id", userIds).order("seen_at", { ascending: false }) : { data: [] };
+    const { data: visitorSessionRows } = userIds.length > 0 ? await supabase.from("visitor_sessions").select("user_id,country,last_seen_at").in("user_id", userIds).order("last_seen_at", { ascending: false }) : { data: [] };
     const latestIpMap = new Map<string, any>();
     for (const row of ipRows ?? []) if (row.user_id && !latestIpMap.has(row.user_id)) latestIpMap.set(row.user_id, row);
     const latestPresenceMap = new Map<string, any>();
     const latestCountryMap = new Map<string, string>();
+    for (const row of visitorSessionRows ?? []) {
+      const country = meaningfulLocation(row.country);
+      if (row.user_id && country && !latestCountryMap.has(row.user_id)) latestCountryMap.set(row.user_id, country);
+    }
     for (const row of presenceRows ?? []) {
       if (row.user_id && !latestPresenceMap.has(row.user_id)) latestPresenceMap.set(row.user_id, row);
       const country = meaningfulLocation(row.country);

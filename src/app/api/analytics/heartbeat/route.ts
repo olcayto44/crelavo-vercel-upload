@@ -1,6 +1,7 @@
 import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse } from "@/lib/security";
 import { recordLiveVisitor } from "@/lib/live-visitors";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/crelavo/sessionCookie";
 
 function safe(value: unknown, max: number, fallback = "") {
   return String(value ?? fallback).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   const path = safePath(body.path);
   const title = safe(body.title, 200);
   const referrer = safe(body.referrer, 500);
-  const country = safe(request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || body.country, 80, "Unknown");
+  const country = safe(request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || body.country, 80, "Unknown");
   const attribution = {
     utmSource: safe(body.utmSource, 120),
     utmMedium: safe(body.utmMedium, 120),
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
   let user: { id: string; email?: string | null } | null = null;
 
   try {
-    user = await authenticatedUser(request);
+    user = await authenticatedUser(request) || await getSessionUser();
     const now = new Date().toISOString();
     const supabase = supabaseAdmin();
     const { data: existing } = await supabase.from("visitor_sessions").select("first_seen_at").eq("anonymous_id", sessionId).maybeSingle();

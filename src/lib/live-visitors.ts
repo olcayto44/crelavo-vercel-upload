@@ -194,14 +194,21 @@ export function getLiveVisitorSnapshot() {
 
 export async function getPersistedLiveVisitorSnapshot() {
   const cutoff = new Date(Date.now() - ACTIVE_WINDOW_MS).toISOString();
-  const { data, error } = await supabaseAdmin()
-    .from("visitor_sessions")
-    .select("anonymous_id, first_seen_at, last_seen_at, current_path, current_title, first_touch_path, landing_path, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, source, country")
-    .gte("last_seen_at", cutoff)
-    .order("last_seen_at", { ascending: false })
-    .limit(MAX_RECORDS);
+  const supabase = supabaseAdmin();
+  const [{ data, error }, { data: presenceRows }] = await Promise.all([
+    supabase.from("visitor_sessions")
+      .select("anonymous_id, first_seen_at, last_seen_at, current_path, current_title, first_touch_path, landing_path, referrer, utm_source, utm_medium, utm_campaign, utm_term, utm_content, source, country")
+      .gte("last_seen_at", cutoff)
+      .order("last_seen_at", { ascending: false })
+      .limit(MAX_RECORDS),
+    supabase.from("presence")
+      .select("id,guest_id,user_id,ip,country,path,seen_at,device")
+      .gte("seen_at", cutoff)
+      .order("seen_at", { ascending: false })
+      .limit(MAX_RECORDS)
+  ]);
 
-  if (error) return getLiveVisitorSnapshot();
+  if (error && !presenceRows?.length) return getLiveVisitorSnapshot();
 
   const records: LiveVisitorRecord[] = (data ?? []).map((row) => ({
     sessionId: sanitizeText(row.anonymous_id),
@@ -224,5 +231,31 @@ export async function getPersistedLiveVisitorSnapshot() {
     lastSeenAt: new Date(row.last_seen_at).getTime()
   }));
 
-  return snapshotFromRecords(records.filter((record) => record.sessionId && Number.isFinite(record.lastSeenAt)));
+  const presenceRecords: LiveVisitorRecord[] = (presenceRows ?? []).map((row) => ({
+    sessionId: sanitizeText(row.guest_id || row.user_id || row.ip || row.id),
+    ip: sanitizeText(row.ip, "unknown") || "unknown",
+    country: normalizeCountry(row.country),
+    path: sanitizeText(row.path, "/") || "/",
+    url: sanitizeText(row.path, "/") || "/",
+    title: "Live visitor",
+    referrer: "",
+    userAgent: "",
+    utmSource: "",
+    utmMedium: "",
+    utmCampaign: "",
+    utmTerm: "",
+    utmContent: "",
+    ref: "",
+    firstTouchAt: sanitizeText(row.seen_at),
+    firstTouchPath: sanitizeText(row.path, "/") || "/",
+    firstSeenAt: new Date(row.seen_at).getTime(),
+    lastSeenAt: new Date(row.seen_at).getTime()
+  }));
+  const combined = new Map<string, LiveVisitorRecord>();
+  for (const record of [...records, ...presenceRecords]) {
+    if (!record.sessionId || !Number.isFinite(record.lastSeenAt)) continue;
+    const existing = combined.get(record.sessionId);
+    if (!existing || record.lastSeenAt > existing.lastSeenAt) combined.set(record.sessionId, record);
+  }
+  return snapshotFromRecords([...combined.values()]);
 }

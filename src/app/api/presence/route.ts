@@ -1,9 +1,10 @@
 import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse } from "@/lib/security";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
+import { getSessionUser } from "@/lib/crelavo/sessionCookie";
 
 function clean(value: unknown, max: number, fallback = "") { return String(value ?? fallback).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
 function safePath(value: unknown) { const path = clean(value, 500, "/").split("?")[0].split("#")[0]; return path.startsWith("/") ? path : `/${path}`; }
-async function currentUser(request: Request) { const token = bearerTokenFromRequest(request); if (!token) return null; const { data } = await supabaseAdmin().auth.getUser(token).catch(() => ({ data: { user: null } })); return data.user; }
+async function currentUser(request: Request) { const token = bearerTokenFromRequest(request); if (token) { const { data } = await supabaseAdmin().auth.getUser(token).catch(() => ({ data: { user: null } })); if (data.user) return data.user; } return getSessionUser(); }
 
 export async function POST(request: Request) {
   const ip = clientIpFromRequest(request);
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     guest_id: user ? null : clean(body.guestId, 160) || null,
     path: safePath(body.path),
     ip,
-    country: clean(request.headers.get("x-vercel-ip-country") || request.headers.get("cf-ipcountry"), 80) || null,
+    country: clean(request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || request.headers.get("cf-ipcountry"), 80) || null,
     device: clean(body.device, 40) || (/(android|iphone|ipad|mobile)/i.test(request.headers.get("user-agent") || "") ? "mobile" : "desktop"),
     seen_at: new Date().toISOString(),
   });
