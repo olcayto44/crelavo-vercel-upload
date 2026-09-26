@@ -4,7 +4,8 @@ import { memo, useEffect, useRef } from "react";
 
 const DESKTOP_SRC = "/hero/hero-04-giant-fashion-city-1920x1080.mp4";
 const MOBILE_SRC = "/hero/hero-04-giant-fashion-city-1080x1920.mp4";
-const POSTER_SRC = "/hero/hero-04-giant-fashion-city-poster.png";
+const POSTER_SRC = "/hero/hero-04-giant-fashion-city-poster.jpg";
+const FALLBACK_SRC = "https://cdn.hailuoai.video/moss/prod/2026-08-08-08/video/1786148830090586661-1786148830070.mp4";
 
 function HeroReelInner() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -43,6 +44,14 @@ function HeroReelInner() {
       src={DESKTOP_SRC}
       className="hero-video h-full w-full bg-[#020617] object-cover"
       aria-hidden="true"
+      onError={(event) => {
+        const video = event.currentTarget;
+        if (video.dataset.fallback === "1") return;
+        video.dataset.fallback = "1";
+        video.src = FALLBACK_SRC;
+        video.load();
+        void video.play().catch(() => {});
+      }}
     />
   );
 }

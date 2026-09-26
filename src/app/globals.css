@@ -13560,3 +13560,4 @@ html body .admin-shell-layout .admin-sidebar-alert-count {
     object-position: 50% 28%;
   }
 }
+html body:has(#clh) .crelavo-auth-sticky { display: none !important; }
