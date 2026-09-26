@@ -225,7 +225,7 @@ const menuScript = `
   function pin(){var src=document.getElementById('clh-css');if(!src)return;var old=document.getElementById('clh-css-head');if(old)old.parentNode.removeChild(old);var style=document.createElement('style');style.id='clh-css-head';style.textContent=src.textContent;document.head.appendChild(style);}
   function scrub(){var nodes=document.querySelectorAll('#cl-mnav-panel,nav#cl-mnav-panel');for(var i=0;i<nodes.length;i++){if(nodes[i]&&nodes[i].parentNode)nodes[i].parentNode.removeChild(nodes[i]);}}
   pin();scrub();setTimeout(function(){pin();scrub();},80);setTimeout(function(){pin();scrub();},400);
-  (function(){var grid=document.querySelector('#clh-films .films');if(!grid)return;function rotate(){var cards=grid.querySelectorAll(':scope > a.film');if(cards.length<2)return;var take=Math.min(4,cards.length-1);for(var i=0;i<take;i++){var current=grid.querySelectorAll(':scope > a.film');grid.insertBefore(current[current.length-1],current[0]);}}window.setInterval(rotate,12000);})();
+  (function(){var grid=document.querySelector('#clh-films .films');if(!grid)return;function rotate(){var cards=grid.querySelectorAll(':scope > a.film');if(cards.length<2)return;var take=Math.min(4,cards.length-1);for(var i=0;i<take;i++){var current=grid.querySelectorAll(':scope > a.film');grid.insertBefore(current[current.length-1],current[0]);}if(typeof syncPlayback==='function')syncPlayback();}window.setInterval(rotate,12000);})();
   document.addEventListener("click",function(e){
     var el=e.target&&e.target.closest&&e.target.closest("a.cikis");
     if(!el)return;
@@ -260,20 +260,20 @@ const menuScript = `
   })();
   var root=document.getElementById('clh');if(!root)return;
   var films=[].slice.call(root.querySelectorAll('.films video'));
-  function prep(v){try{v.muted=true;v.defaultMuted=true;v.playsInline=true;v.loop=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.autoplay=true;v.setAttribute('autoplay','');}catch(e){}}
+  var visibleFilms=new Set();
+  function prep(v){try{v.muted=true;v.defaultMuted=true;v.playsInline=true;v.loop=true;v.setAttribute('playsinline','');v.setAttribute('muted','');v.removeAttribute('autoplay');}catch(e){}}
   function play(v){prep(v);try{var p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}}
   function pause(v){try{v.pause();}catch(e){}}
+  function syncPlayback(){
+    var active=[].slice.call(visibleFilms).filter(function(v){return document.contains(v);}).sort(function(a,b){return a.getBoundingClientRect().top-b.getBoundingClientRect().top;}).slice(0,4);
+    films.forEach(function(v){if(active.indexOf(v)!==-1)play(v);else pause(v);});
+  }
   films.forEach(function(v){prep(v);v.preload='none';pause(v);});
   if('IntersectionObserver' in window){
-
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(e){
-        if(e.target.closest&&e.target.closest("a.film.still")) return;
-        if(e.isIntersecting) play(e.target);
-        else pause(e.target);
-      });
-    },{threshold:0.25});
-    films.forEach(function(v){io.observe(v);});
+    var preloadObserver=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting&&e.target.preload!=='auto'){e.target.preload='auto';try{e.target.load();}catch(err){}}});},{rootMargin:'600px 0px',threshold:0.01});
+    var playbackObserver=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.target.closest&&e.target.closest("a.film.still"))return;if(e.isIntersecting)visibleFilms.add(e.target);else visibleFilms.delete(e.target);});syncPlayback();},{rootMargin:'80px 0px',threshold:0.2});
+    films.forEach(function(v){preloadObserver.observe(v);playbackObserver.observe(v);});
+    document.addEventListener('visibilitychange',function(){if(document.hidden)films.forEach(pause);else syncPlayback();});
   }
 })();
 `;
@@ -299,7 +299,7 @@ export default async function HomePage() {
       </div>
       <script dangerouslySetInnerHTML={{ __html: `console.log("CL HERO", ${JSON.stringify(activeHeroVideos.map((v) => v.id + "|" + v.heroEnabled + "|" + v.heroOrder + "|" + (v.videoUrl ?? "-")))});` }} /><section id="clh">
         <div className="stage"><div className="stage-bg" id="clh-hero-slides"><HeroReel /></div><div className="stage-veil" /><div className="stage-grain" /><div className="stage-copy"><div className="inner"><span id="clh-strip">Free member. No card.</span><h1>Make the feed look <em>expensive.</em></h1><p className="lede">Create a free Crelavo account. No card. After you are in, the 24h Pro preview is optional.</p><div className="cta-row"><a className="btn btn-cyan" href="/join">Create a free account</a></div></div></div></div>
-        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className={film.href.endsWith("/lower-ad-costs-showcase") ? "film still" : film.landscape ? "film ls" : "film"} href={film.href} key={film.href}><video muted loop autoPlay playsInline preload="metadata" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
+        <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><div className="films">{films.map((film) => <a className={film.href.endsWith("/lower-ad-costs-showcase") ? "film still" : film.landscape ? "film ls" : "film"} href={film.href} key={film.href}><video muted loop playsInline preload="none" poster={film.poster} src={film.video} /><span className="meta"><small>{film.kicker}</small><h3>{film.title}</h3></span></a>)}</div><a className="more" href="/showcase/explore-samples">Browse all 32 samples →</a></div>
         <div className="wrap paths"><span className="kicker">Start with one outcome</span><h2>Pick the job. The studio opens the path.</h2><p className="sub">Omni Assistant is the production door. Credits only move after scope is visible.</p><div className="grid-3"><a className="card" href="/join?idea=Sell+internationally"><span>01</span><h3>Sell internationally</h3><p>Localize hooks, visuals and campaign direction for another market before you buy more traffic.</p></a><a className="card" href="/free-tools/ad-performance-score-checker"><span>02</span><h3>Test an existing ad</h3><p>Run the free AI Ad Scorer on hook, CTA and proof before you spend production credits.</p></a><a className="card" href="/join"><span>03</span><h3>Create from scratch</h3><p>Product video, landing page, campaign pack or launch asset from one brief.</p></a></div></div>
         <div className="wrap packs-head"><span className="kicker">Packages</span><h2>Four ways in. Prices match live checkout.</h2><div className="packs"><a className="pack intro" href="https://whop.com/checkout/plan_ujLQgM3kEg0dg"><span>INTRO</span><strong>$9.99/mo</strong><p>24h preview, then $9.99. Card required. No charge until the preview ends.</p></a><a className="pack" href="/live-sales-credits"><span>Live Sales</span><strong>from $249/mo</strong><p>Starter 10 hours / 1 platform. Service hours, not credits.</p></a><a className="pack" href="/drone-credits"><span>Drone</span><strong>from $299</strong><p>Drone Location 2,600 credits one-time.</p></a><a className="pack" href="/growth-intelligence"><span>Growth</span><strong>from $179/mo</strong><p>Starter: 1 competitor, weekly PDF. Intelligence service.</p></a></div></div>
         <div className="final"><h2>Create a free account. No card.</h2><p>Pro 24h preview is optional after signup.</p><div className="cta-row" style={{justifyContent:"center"}}><a className="btn btn-cyan" href="/join">Create a free account</a></div></div>
