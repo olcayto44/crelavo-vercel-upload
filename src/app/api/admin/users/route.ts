@@ -23,6 +23,25 @@ function noteValue(note: string | null | undefined, key: string) {
   return match ? match.slice(key.length + 1).trim() : "";
 }
 
+function meaningfulLocation(value: unknown) {
+  const clean = String(value ?? "").trim();
+  return clean && !/^(unknown|bilinmiyor|null|undefined|-)$/i.test(clean) ? clean : "";
+}
+
+function countryLabel(value: unknown) {
+  const clean = meaningfulLocation(value);
+  if (!clean) return "Bilinmiyor";
+  if (/^[A-Za-z]{2}$/.test(clean)) {
+    try { return new Intl.DisplayNames(["tr"], { type: "region" }).of(clean.toUpperCase()) || clean.toUpperCase(); } catch { return clean.toUpperCase(); }
+  }
+  return clean;
+}
+
+function dayKey(value: string | null | undefined) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+}
 export async function GET(request: Request) {
   const access = await requireAdminPermission(request, ["users", "support", "finance"]);
   if (!access.ok) return access.response;
@@ -33,13 +52,17 @@ export async function GET(request: Request) {
       .from("profiles")
       .select("id, email, full_name, role, created_at")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(1000);
 
     if (profilesError) throw profilesError;
 
-    const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 });
-    if (authUsersError) throw authUsersError;
-    const authUsers = authUsersData.users ?? [];
+    const authUsers: any[] = [];
+    for (let page = 1; page <= 10; page += 1) {
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
+      if (error) throw error;
+      authUsers.push(...(data.users ?? []));
+      if ((data.users ?? []).length < 100) break;
+    }
     const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
     const mergedUserIds = Array.from(new Set([...(profiles ?? []).map((profile) => profile.id), ...authUsers.map((user) => user.id).filter(Boolean)]));
     const userIds = mergedUserIds;
@@ -59,7 +82,12 @@ export async function GET(request: Request) {
     const latestIpMap = new Map<string, any>();
     for (const row of ipRows ?? []) if (row.user_id && !latestIpMap.has(row.user_id)) latestIpMap.set(row.user_id, row);
     const latestPresenceMap = new Map<string, any>();
-    for (const row of presenceRows ?? []) if (row.user_id && !latestPresenceMap.has(row.user_id)) latestPresenceMap.set(row.user_id, row);
+    const latestCountryMap = new Map<string, string>();
+    for (const row of presenceRows ?? []) {
+      if (row.user_id && !latestPresenceMap.has(row.user_id)) latestPresenceMap.set(row.user_id, row);
+      const country = meaningfulLocation(row.country);
+      if (row.user_id && country && !latestCountryMap.has(row.user_id)) latestCountryMap.set(row.user_id, country);
+    }
 
     const acceptanceMap = new Map<string, { latest: any; count: number }>();
     for (const acceptance of safeAcceptances) {
@@ -113,8 +141,8 @@ export async function GET(request: Request) {
         name: profile?.full_name || String(authUser?.user_metadata?.full_name ?? "") || email.split("@")[0] || "Unnamed user",
         email,
         ip: latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? latestLegal?.ip_address ?? "-",
-        country: String(authUser?.user_metadata?.country ?? latestPresenceMap.get(userId)?.country ?? "Unknown"),
-        city: String(authUser?.user_metadata?.city ?? "Unknown"),
+        country: countryLabel(latestCountryMap.get(userId) || meaningfulLocation(authUser?.user_metadata?.country) || meaningfulLocation(authUser?.user_metadata?.country_code) || meaningfulLocation(authUser?.app_metadata?.country)),
+        city: meaningfulLocation(authUser?.user_metadata?.city) || "Bilinmiyor",
         role: String(profile?.role ?? authUser?.user_metadata?.role ?? (configuredAdminEmails.has(email.toLowerCase()) ? "admin" : "user")),
         provider,
         email_confirmed: emailConfirmed,
@@ -140,7 +168,23 @@ export async function GET(request: Request) {
       };
     });
 
-    return Response.json({ users });
+    users.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
+    const memberUsers = users.filter((user) => String(user.role).toLowerCase() !== "admin");
+    const dailyCounts = new Map<string, number>();
+    for (const user of memberUsers) {
+      const key = dayKey(user.created_at);
+      if (key) dailyCounts.set(key, (dailyCounts.get(key) ?? 0) + 1);
+    }
+    const today = new Date();
+    const daily = Array.from({ length: 14 }, (_, offset) => {
+      const date = new Date(today);
+      date.setUTCDate(today.getUTCDate() - offset);
+      const dateKey = date.toISOString().slice(0, 10);
+      return { date: dateKey, count: dailyCounts.get(dateKey) ?? 0 };
+    });
+    const last7Days = daily.slice(0, 7).reduce((total, item) => total + item.count, 0);
+
+    return Response.json({ users, summary: { total_members: memberUsers.length, today_members: daily[0]?.count ?? 0, yesterday_members: daily[1]?.count ?? 0, last_7_days_members: last7Days, daily } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not load users";
     return Response.json({ error: message }, { status: 500 });

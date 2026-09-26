@@ -14,6 +14,13 @@ type UserFinanceSummary = {
   latest_purchase_at?: string | null;
 };
 
+type UserSummary = {
+  total_members: number;
+  today_members: number;
+  yesterday_members: number;
+  last_7_days_members: number;
+  daily: { date: string; count: number }[];
+};
 type AdminUser = {
   id: string;
   name: string;
@@ -49,6 +56,7 @@ function formatAdminDateTime(value?: string | null) {
 
 export function AdminUsersManager() {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [summary, setSummary] = useState<UserSummary>({ total_members: 0, today_members: 0, yesterday_members: 0, last_7_days_members: 0, daily: [] });
   const [query, setQuery] = useState("");
   const [message, setMessage] = useState("Live user data loads only after admin login is verified. No demo users are shown.");
   const [loading, setLoading] = useState(false);
@@ -62,11 +70,13 @@ export function AdminUsersManager() {
 
     if (!response.ok || !Array.isArray(data.users)) {
       setUsers([]);
+      setSummary({ total_members: 0, today_members: 0, yesterday_members: 0, last_7_days_members: 0, daily: [] });
       setMessage(data.error ?? "Live users could not be loaded. Demo users are hidden.");
       return;
     }
 
     setUsers(data.users);
+    if (data.summary) setSummary(data.summary);
     setMessage(`${data.users.length} members loaded.`);
   }
 
@@ -85,16 +95,29 @@ export function AdminUsersManager() {
   const filteredUsers = useMemo(() => {
     const clean = query.toLowerCase().trim();
     const visibleUsers = users.filter((user) => String(user.role ?? "user").toLowerCase() !== "admin");
-    return visibleUsers.filter((user) => matchesQuery(user, clean));
+    return visibleUsers.filter((user) => matchesQuery(user, clean)).sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
   }, [query, users]);
 
   const adminUsers = useMemo(() => {
     const clean = query.toLowerCase().trim();
-    return users.filter((user) => String(user.role ?? "").toLowerCase() === "admin" && matchesQuery(user, clean));
+    return users.filter((user) => String(user.role ?? "").toLowerCase() === "admin" && matchesQuery(user, clean)).sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
   }, [query, users]);
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      <section className="card admin-wide-card">
+        <span className="badge">Günlük üye özeti</span>
+        <h2>Kayıt performansı</h2>
+        <div className="admin-info-grid">
+          <div><span>Bugün</span><strong>{summary.today_members.toLocaleString("tr-TR")}</strong><small>Bugün kaydolan üyeler</small></div>
+          <div><span>Dün</span><strong>{summary.yesterday_members.toLocaleString("tr-TR")}</strong><small>Dün kaydolan üyeler</small></div>
+          <div><span>Son 7 gün</span><strong>{summary.last_7_days_members.toLocaleString("tr-TR")}</strong><small>7 günlük yeni üye toplamı</small></div>
+          <div><span>Toplam üye</span><strong>{summary.total_members.toLocaleString("tr-TR")}</strong><small>Admin hesapları hariç</small></div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 16 }}>
+          {summary.daily.map((item) => <span className="badge" key={item.date}>{new Date(`${item.date}T00:00:00Z`).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" })}: {item.count}</span>)}
+        </div>
+      </section>
       <section className="card admin-wide-card">
         <span className="badge">Üyeler</span>
         <h2>Alt alta üye listesi</h2>
