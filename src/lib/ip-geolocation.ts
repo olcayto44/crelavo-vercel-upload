@@ -23,7 +23,18 @@ export async function resolveCountry(ip: string, headerValue?: string | null) {
     const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, { signal: controller.signal, cache: "no-store" });
     const data = await response.json().catch(() => ({})) as { success?: boolean; country_code?: string; country?: string };
     const country = usable(data.country_code) || usable(data.country);
-    const result = country || "Unknown";
+    if (country) {
+      const result = country.toUpperCase();
+      cache.set(ip, { country: result, expiresAt: Date.now() + 6 * 60 * 60 * 1000 });
+      return result;
+    }
+  } catch {}
+
+  try {
+    const fallback = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, { signal: controller.signal, cache: "no-store" });
+    const data = await fallback.json().catch(() => ({})) as { country_code?: string; country_name?: string };
+    const country = usable(data.country_code) || usable(data.country_name);
+    const result = country ? country.toUpperCase() : "Unknown";
     cache.set(ip, { country: result, expiresAt: Date.now() + 6 * 60 * 60 * 1000 });
     return result;
   } catch {

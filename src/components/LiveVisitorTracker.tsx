@@ -24,6 +24,17 @@ type AttributionPayload = {
   firstTouchPath: string;
 };
 
+function browserCountry() {
+  try {
+    const language = navigator.language.toLowerCase();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (language === "tr" || language.startsWith("tr-") || timezone === "Europe/Istanbul") return "TR";
+    const match = language.match(/-([a-z]{2})$/i);
+    return match?.[1]?.toUpperCase() || "";
+  } catch {
+    return "";
+  }
+}
 function getSessionId() {
   if (typeof window === "undefined") return "";
   try {
@@ -105,6 +116,7 @@ export function LiveVisitorTracker() {
         },
         body: JSON.stringify({
           sessionId,
+          country: browserCountry(),
           path,
           title: document.title.slice(0, 200),
           referrer: document.referrer.slice(0, 500),
