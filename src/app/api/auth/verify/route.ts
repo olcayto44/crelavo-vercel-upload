@@ -3,6 +3,7 @@ import { AFTER_SIGNIN_PATH } from "@/lib/crelavo/authConfig";
 import { postAuthPath } from "@/lib/crelavo/redirects";
 import { consumeMagicToken, createUser, hashToken } from "@/lib/crelavo/userStore";
 import { setSessionUser } from "@/lib/crelavo/sessionCookie";
+import { clientIpFromRequest } from "@/lib/security";
 
 async function supabaseBridge(email: string, destination: string) {
   try {
@@ -21,6 +22,13 @@ export async function GET(req: Request) {
   const consumed = await consumeMagicToken(hashToken(token));
   if (!consumed) return NextResponse.redirect(new URL("/join?error=expired", url.origin));
   const { user, created } = await createUser({ email: consumed.email, provider: "email" });
+  const country = req.headers.get("x-vercel-ip-country") || req.headers.get("cf-ipcountry") || null;
+  const ip = clientIpFromRequest(req);
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase");
+    await supabaseAdmin().from("presence").insert({ user_id: user.id, guest_id: null, path: next, ip, country, device: /mobile|android|iphone|ipad/i.test(req.headers.get("user-agent") || "") ? "mobile" : "desktop", seen_at: new Date().toISOString() });
+    await supabaseAdmin().from("user_ips").insert({ user_id: user.id, ip, user_agent: req.headers.get("user-agent") || null, seen_at: new Date().toISOString() });
+  } catch {}
   await setSessionUser(user);
   const dest = new URL(next.startsWith("/") ? next : AFTER_SIGNIN_PATH, url.origin);
   if (created || intent === "register") dest.searchParams.set("signup", "1");
