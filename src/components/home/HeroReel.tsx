@@ -41,7 +41,7 @@ function HeroReelInner() {
       playsInline
       preload="metadata"
       poster={POSTER_SRC}
-      src={DESKTOP_SRC}
+      src={MOBILE_SRC}
       className="hero-video h-full w-full bg-[#020617] object-cover"
       aria-hidden="true"
       onError={(event) => {
