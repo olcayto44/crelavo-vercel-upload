@@ -18,7 +18,7 @@ export function AdminShell({ children, title, description }: { children: React.R
 
   return (
     <main className="container section admin-shell-layout">
-      <div className="nav" style={{ paddingTop: 0 }}>
+      <div className="nav admin-topbar" style={{ paddingTop: 0 }}>
         <Link className="logo" href="/admin"><span className="logo-mark">▶</span><span>Crelavo Admin</span></Link>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button className="btn secondary" type="button" onClick={() => router.back()}>Back</button>

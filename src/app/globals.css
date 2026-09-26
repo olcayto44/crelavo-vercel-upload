@@ -13485,3 +13485,69 @@ html body .omni-setup-summary p { margin: 0; color: #cbd5e1; line-height: 1.45; 
 @media(max-width:980px){.site-main-nav .crelavo-auth-controls,.site-main-nav .crelavo-account-control{display:none!important}.crelavo-mobile-auth .crelavo-auth-controls{display:flex!important}.crelavo-mobile-auth .crelavo-auth-signin,.crelavo-mobile-auth .crelavo-auth-join{display:inline-flex!important;align-items:center;justify-content:center;min-width:110px;height:42px;margin:0;white-space:nowrap}}
 
 .crelavo-avatar{width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;padding:0!important;flex:0 0 38px!important;border-radius:50%!important;overflow:hidden!important}.crelavo-avatar img{width:38px!important;height:38px!important;display:block!important}
+
+/* Admin header and inbox badge stabilization. */
+html body .admin-shell-layout .admin-topbar {
+  position: relative !important;
+  z-index: 5 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  min-height: 58px !important;
+  padding: 10px 0 !important;
+  margin: 0 0 18px !important;
+  overflow: visible !important;
+}
+html body .admin-shell-layout .admin-topbar .logo {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  line-height: 1.1 !important;
+  overflow: visible !important;
+}
+html body .admin-shell-layout .admin-topbar > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+html body .admin-shell-layout .admin-sidebar-alert {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  margin: 12px 0 16px !important;
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  line-height: 1.25 !important;
+  white-space: normal !important;
+}
+html body .admin-shell-layout .admin-sidebar-alert-label {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+html body .admin-shell-layout .admin-sidebar-alert-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  min-width: 28px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  background: rgba(245,158,11,.2) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+@media (max-width: 900px) {
+  html body .admin-shell-layout .admin-topbar { align-items: flex-start !important; }
+  html body .admin-shell-layout .admin-topbar > div { justify-content: flex-start !important; }
+}
