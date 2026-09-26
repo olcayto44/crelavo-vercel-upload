@@ -13551,3 +13551,12 @@ html body .admin-shell-layout .admin-sidebar-alert-count {
   html body .admin-shell-layout .admin-topbar { align-items: flex-start !important; }
   html body .admin-shell-layout .admin-topbar > div { justify-content: flex-start !important; }
 }
+.hero-video {
+  object-position: 62% 50%;
+}
+
+@media (max-width: 767px) {
+  .hero-video {
+    object-position: 50% 28%;
+  }
+}
