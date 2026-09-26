@@ -81,7 +81,10 @@ export async function getConfiguredShowcaseVideos(options: { includeDrafts?: boo
     if (error) throw error;
     if (!data) return options.includeDrafts ? normalizeDefaults() : normalizeDefaults();
     const payload = data.value as ConfigPayload | null;
-    const videos = normalizeConfiguredShowcaseVideos(payload?.videos, true);
+    const configured = normalizeConfiguredShowcaseVideos(payload?.videos, true);
+    const configuredIds = new Set(configured.map((video) => video.id));
+    const bundledMissing = normalizeDefaults().filter((video) => !configuredIds.has(video.id));
+    const videos = [...bundledMissing, ...configured];
     return options.includeDrafts ? videos : videos.filter((video) => video.publishStatus === "published");
   } catch {
     return normalizeDefaults();

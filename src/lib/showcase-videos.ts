@@ -565,6 +565,27 @@ export const showcaseVideos: ShowcaseVideo[] = [
       "Useful for premium 3D animation, character comedy and animated brand storytelling."
     ],
     bestFor: ["3D animation", "Character comedy", "Hero team scene", "Homepage visual proof"]
+  },
+  {
+    id: "3d-businesswoman-holographic-presentation", title: "3D Businesswoman Holographic Presentation", kicker: "3D business animation", description: "A vertical 3D animation featuring a businesswoman presenting holographic data and creative solutions.", videoUrl: "/showcase/uploads/3d-businesswoman-holographic-presentation.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:00:00.000Z", details: ["Animated business presentation with holographic data visualization.", "Vertical technology and corporate storytelling."], bestFor: ["3D animation", "Business presentation", "Technology campaign"]
+  },
+  {
+    id: "crelavo-premium-skincare-gift-box-set", title: "Crelavo Premium Skincare Gift Box", kicker: "Luxury skincare campaign", description: "A premium skincare gift-box reveal with product lineup, serum and cream texture close-ups.", videoUrl: "/showcase/uploads/crelavo-premium-skincare-gift-box.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:01:00.000Z", details: ["Luxury gift-box presentation for a complete skincare range.", "Close-ups highlight packaging and product textures."], bestFor: ["Skincare advertising", "Luxury products", "Beauty ecommerce"]
+  },
+  {
+    id: "crelavo-luxury-skincare-gift-box-unboxing", title: "Luxury Crelavo Skincare Unboxing", kicker: "Beauty product unboxing", description: "A polished vertical unboxing film revealing a luxury Crelavo skincare collection.", videoUrl: "/showcase/uploads/crelavo-skincare-unboxing.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:02:00.000Z", details: ["Premium skincare gift-box opening sequence.", "Designed for beauty launches and social proof."], bestFor: ["Product unboxing", "Beauty launch", "Vertical ads"]
+  },
+  {
+    id: "wireless-earbuds-modern-neon-studio", title: "Wireless Earbuds in a Modern Neon Studio", kicker: "Consumer tech product ad", description: "A presenter-led wireless-earbuds advertisement with an active-noise-cancellation feature highlight.", videoUrl: "/showcase/uploads/wireless-earbuds-neon-studio.mp4", duration: "PT5S", orientation: "portrait", uploadDate: "2026-09-26T00:03:00.000Z", details: ["Presenter-driven product reveal in a modern studio.", "Feature callout and purchase CTA."], bestFor: ["Consumer electronics", "Wireless earbuds", "Short-form video"]
+  },
+  {
+    id: "cinematic-horror-bedroom-door-scene", title: "Cinematic Horror Bedroom Door Scene", kicker: "Horror short scene", description: "A suspense-driven vertical horror scene in a dark hallway as a warned bedroom door slowly opens.", videoUrl: "/showcase/uploads/horror-bedroom-door.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:04:00.000Z", details: ["Dark hallway suspense with a supernatural reveal.", "Cinematic vertical storytelling built around tension."], bestFor: ["Horror storytelling", "Short drama", "Vertical cinema"]
+  },
+  {
+    id: "suspense-horror-hallway-phone-warning", title: "Suspense Horror Hallway Phone Warning", kicker: "Cinematic suspense scene", description: "A frightened woman receives a warning through her phone before discovering a mysterious hallway figure.", videoUrl: "/showcase/uploads/horror-hallway-phone-warning.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:05:00.000Z", details: ["Phone-message warning drives a compact suspense narrative.", "Atmospheric hallway staging and final reveal."], bestFor: ["Suspense film", "Horror short", "Vertical drama"]
+  },
+  {
+    id: "luxury-leopard-faux-fur-bag-gold-chain", title: "Luxury Leopard Faux Fur Bag with Gold Chain", kicker: "Fashion product campaign", description: "A fashion model presents a leopard-print faux-fur shoulder bag with a statement chain.", videoUrl: "/showcase/uploads/leopard-faux-fur-bag.mp4", duration: "PT15S", orientation: "portrait", uploadDate: "2026-09-26T00:06:00.000Z", details: ["Full-body presentation with product-detail shots.", "Highlights silhouette, texture, chain and clasp."], bestFor: ["Fashion advertising", "Handbag ecommerce", "Luxury accessories"]
   }
 ];
 
