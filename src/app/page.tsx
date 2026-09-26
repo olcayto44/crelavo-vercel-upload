@@ -225,7 +225,7 @@ const menuScript = `
   function pin(){var src=document.getElementById('clh-css');if(!src)return;var old=document.getElementById('clh-css-head');if(old)old.parentNode.removeChild(old);var style=document.createElement('style');style.id='clh-css-head';style.textContent=src.textContent;document.head.appendChild(style);}
   function scrub(){var nodes=document.querySelectorAll('#cl-mnav-panel,nav#cl-mnav-panel');for(var i=0;i<nodes.length;i++){if(nodes[i]&&nodes[i].parentNode)nodes[i].parentNode.removeChild(nodes[i]);}}
   pin();scrub();setTimeout(function(){pin();scrub();},80);setTimeout(function(){pin();scrub();},400);
-  (function(){var grid=document.querySelector('#clh-films .films');if(!grid)return;function rotate(){var cards=grid.querySelectorAll(':scope > a.film');if(cards.length<2)return;grid.insertBefore(cards[cards.length-1],cards[0]);}window.setInterval(rotate,12000);})();
+  (function(){var grid=document.querySelector('#clh-films .films');if(!grid)return;function rotate(){var cards=grid.querySelectorAll(':scope > a.film');if(cards.length<2)return;var take=Math.min(4,cards.length-1);for(var i=0;i<take;i++){var current=grid.querySelectorAll(':scope > a.film');grid.insertBefore(current[current.length-1],current[0]);}}window.setInterval(rotate,12000);})();
   document.addEventListener("click",function(e){
     var el=e.target&&e.target.closest&&e.target.closest("a.cikis");
     if(!el)return;
