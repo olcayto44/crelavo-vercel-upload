@@ -2,6 +2,7 @@ import { clientIpFromRequest, noStoreJson, rateLimit, rateLimitResponse } from "
 import { recordLiveVisitor } from "@/lib/live-visitors";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { getSessionUser } from "@/lib/crelavo/sessionCookie";
+import { resolveCountry } from "@/lib/ip-geolocation";
 
 function safe(value: unknown, max: number, fallback = "") {
   return String(value ?? fallback).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
   const path = safePath(body.path);
   const title = safe(body.title, 200);
   const referrer = safe(body.referrer, 500);
-  const country = safe(request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || body.country, 80, "Unknown");
+  const country = await resolveCountry(ip, request.headers.get("cf-ipcountry") || request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || body.country);
   const attribution = {
     utmSource: safe(body.utmSource, 120),
     utmMedium: safe(body.utmMedium, 120),
