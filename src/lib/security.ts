@@ -11,11 +11,18 @@ type Bucket = {
 
 const buckets = new Map<string, Bucket>();
 
+function isPrivateOrInvalidIp(ip: string) {
+  const value = ip.trim().toLowerCase();
+  return !value || value === "unknown" || value === "::1" || value === "127.0.0.1" || value === "::ffff:127.0.0.1" || /^10\./.test(value) || /^192\.168\./.test(value) || /^172\.(1[6-9]|2\d|3[0-1])\./.test(value) || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80:");
+}
+
 export function clientIpFromRequest(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = request.headers.get("x-real-ip")?.trim();
   const cfIp = request.headers.get("cf-connecting-ip")?.trim();
-  return cfIp || forwardedFor || realIp || "unknown";
+  if (cfIp && !isPrivateOrInvalidIp(cfIp)) return cfIp;
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((item) => item.trim()).find((item) => !isPrivateOrInvalidIp(item));
+  if (forwarded) return forwarded;
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  return realIp && !isPrivateOrInvalidIp(realIp) ? realIp : "unknown";
 }
 
 export function rateLimit({ key, limit, windowMs }: RateLimitOptions) {
