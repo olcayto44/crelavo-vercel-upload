@@ -55,6 +55,7 @@ export async function POST(request: Request) {
     user = await authenticatedUser(request) || await getSessionUser();
     const now = new Date().toISOString();
     const supabase = supabaseAdmin();
+    if (user?.id && user.email) await supabase.from("profiles").upsert({ id: user.id, email: user.email, full_name: null, role: "user" }, { onConflict: "id" });
     const { data: existing } = await supabase.from("visitor_sessions").select("first_seen_at").eq("anonymous_id", sessionId).maybeSingle();
     await supabase.from("visitor_sessions").upsert({
       anonymous_id: sessionId,

@@ -13,6 +13,8 @@ export async function POST(request: Request) {
   if (!limited.allowed) return rateLimitResponse(limited.resetAt);
   const body = await request.json().catch(() => ({}));
   const user = await currentUser(request);
+  const admin = supabaseAdmin();
+  if (user?.id && user.email) { await admin.from("profiles").upsert({ id: user.id, email: user.email, full_name: null, role: "user" }, { onConflict: "id" }); }
   const country = await resolveCountry(ip, request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || request.headers.get("cf-ipcountry"));
   const { error } = await supabaseAdmin().from("presence").insert({
     user_id: user?.id ?? null,

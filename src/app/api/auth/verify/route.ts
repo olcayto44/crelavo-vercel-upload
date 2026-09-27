@@ -27,6 +27,7 @@ export async function GET(req: Request) {
   const country = await resolveCountry(ip, req.headers.get("x-vercel-ip-country") || req.headers.get("x-vercel-ip-country-code") || req.headers.get("cf-ipcountry"));
   try {
     const { supabaseAdmin } = await import("@/lib/supabase");
+        await supabaseAdmin().from("profiles").upsert({ id: user.id, email: user.email, full_name: user.name ?? null, role: "user" }, { onConflict: "id" });
     await supabaseAdmin().from("presence").insert({ user_id: user.id, guest_id: null, path: next, ip, country, device: /mobile|android|iphone|ipad/i.test(req.headers.get("user-agent") || "") ? "mobile" : "desktop", seen_at: new Date().toISOString() });
     await supabaseAdmin().from("user_ips").insert({ user_id: user.id, ip, user_agent: req.headers.get("user-agent") || null, seen_at: new Date().toISOString() });
   } catch {}
