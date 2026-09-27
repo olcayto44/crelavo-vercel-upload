@@ -15,7 +15,7 @@ const privateRouteHeaders = [
 ];
 
 const nextConfig = {
-  serverExternalPackages: ["ffmpeg-static"],
+  serverExternalPackages: ["ffmpeg-static", "geoip-lite"],
   outputFileTracingIncludes: {
     "/api/**/*": ["./node_modules/ffmpeg-static/**/*"]
   },

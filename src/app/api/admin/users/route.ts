@@ -1,5 +1,6 @@
 import { requireAdminPermission } from "@/lib/admin-guard";
 import { supabaseAdmin } from "@/lib/supabase";
+import { resolveCountry } from "@/lib/ip-geolocation";
 
 function estimateCreditValueUsd(credits: number) {
   if (credits <= 0) return 0;
@@ -94,6 +95,16 @@ export async function GET(request: Request) {
       if (row.user_id && country && !latestCountryMap.has(row.user_id)) latestCountryMap.set(row.user_id, country);
     }
 
+    const countryBackfillRows: { user_id: string; guest_id: null; path: string; ip: string; country: string; device: string; seen_at: string }[] = [];
+    for (const userId of userIds) {
+      if (latestCountryMap.has(userId)) continue;
+      const ip = String(latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? "");
+      const country = resolveCountry(ip);
+      if (country === "Unknown") continue;
+      latestCountryMap.set(userId, country);
+      countryBackfillRows.push({ user_id: userId, guest_id: null, path: "/admin-country-backfill", ip, country, device: "backfill", seen_at: new Date().toISOString() });
+    }
+    if (countryBackfillRows.length) await supabase.from("presence").insert(countryBackfillRows);
     const acceptanceMap = new Map<string, { latest: any; count: number }>();
     for (const acceptance of safeAcceptances) {
       const current = acceptanceMap.get(acceptance.user_id) ?? { latest: acceptance, count: 0 };

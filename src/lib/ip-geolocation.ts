@@ -1,3 +1,5 @@
+import geoip from "geoip-lite";
+
 const ISO2 = /^[A-Z]{2}$/;
 const INVALID = new Set(["", "XX", "T1", "UNKNOWN", "BILINMIYOR", "NULL", "UNDEFINED", "-"]);
 
@@ -18,5 +20,6 @@ export function countryFromCloudflare(headerValue: string | null | undefined) {
 export function resolveCountry(ip: string, headerValue?: string | null) {
   const headerCountry = normalizeCountry(headerValue);
   if (headerCountry !== "Unknown") return headerCountry;
-  return isPublicIp(ip) ? "Unknown" : "Unknown";
+  if (!isPublicIp(ip)) return "Unknown";
+  return normalizeCountry(geoip.lookup(ip)?.country);
 }
