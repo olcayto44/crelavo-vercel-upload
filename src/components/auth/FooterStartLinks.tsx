@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useAuth } from "./AuthProvider";
 
@@ -8,5 +8,5 @@ export function FooterStartLinks() {
   if (user) {
     return <><a href="/pricing">Pricing</a><a href="/dashboard/create">Assistant</a><a href="/dashboard">Dashboard</a></>;
   }
-  return <><a href="/pricing">Pricing</a><a href="/join">Sign up</a><a href="/assistant">Assistant</a><a href="/dashboard">Dashboard</a></>;
+  return <><a href="/pricing">Pricing</a><a href="/assistant">Assistant</a><a href="/dashboard">Dashboard</a></>;
 }
