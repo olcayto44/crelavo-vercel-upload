@@ -28,15 +28,15 @@ export function AuthModal() {
       <button type="button" className="crelavo-auth-close" onClick={closeAuth} aria-label="Close">×</button>
       {sent ? <div><h2>Check your email</h2><p>We sent a sign-in link to <strong>{email}</strong>. No password or card is required.</p></div> : <>
         <span className="crelavo-auth-eyebrow">Crelavo</span>
-        <h2>{isRegister ? "Create a free account" : "Welcome back"}</h2>
-        <p>{isRegister ? "Free Crelavo member. No card. Pro 24h preview is optional after this." : "Sign in with Google or an email link."}</p>
-        <button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
-        <div className="crelavo-auth-divider"><span>or continue with email</span></div>
+        <h2>{isRegister ? "Get 800 credits" : "Welcome back"}</h2>
+        <p>{isRegister ? "$10 one-time. No subscription." : "Sign in with Google or an email link."}</p>
+        <a className="crelavo-auth-submit" href="https://whop.com/checkout/plan_kmGVCrQu90NBV">Buy Starter Pack · $10</a><div className="crelavo-auth-divider"><span>Or browse free</span></div><button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
+        <div className="crelavo-auth-divider"><span>OR CONTINUE WITH EMAIL</span></div>
         <form onSubmit={onEmail}>
           <label htmlFor="crelavo-auth-email">Email</label>
           <input id="crelavo-auth-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="example@email.com" />
           {error ? <p className="crelavo-auth-error">{error}</p> : null}
-          <button type="submit" className="crelavo-auth-submit" disabled={busy}>{busy ? "Sending…" : isRegister ? "Create account with email" : "Continue with email"}</button>
+          <button type="submit" className="crelavo-auth-submit" disabled={busy}>{busy ? "Sending…" : isRegister ? "Create free account with email" : "Continue with email"}</button>
         </form>
         <small>No password required. This email link also signs in existing members.</small>
         <button type="button" className="crelavo-auth-switch" onClick={() => openAuth(isRegister ? "login" : "register", { next: nextPath || undefined })}>{isRegister ? "Already a member? Sign in" : "Need an account? Create one free"}</button>

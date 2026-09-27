@@ -93,8 +93,8 @@ export function CreditBalanceCard() {
       ) : null}
       {mode === "live" && credits.available <= 0 ? (
         <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-          <small>Start with a credit review before opening a paid production.</small>
-          <a className="btn secondary" href="/dashboard/credits">Review credit plans</a>
+          <strong>You have 0 credits.</strong><small>800 credits. $10 one-time. No subscription.</small>
+          <a className="btn" href="https://whop.com/checkout/plan_kmGVCrQu90NBV">Buy Starter Pack · $10</a>
         </div>
       ) : null}
       {mode === "login" ? (
