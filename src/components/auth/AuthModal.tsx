@@ -30,7 +30,7 @@ export function AuthModal() {
         <span className="crelavo-auth-eyebrow">Crelavo</span>
         <h2>{isRegister ? "Create your free account" : "Welcome back"}</h2>
         <p>{isRegister ? "Browse the studio and open your dashboard. No card required." : "Sign in with Google or an email link."}</p>
-        <button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
+        <div className="crelavo-auth-divider"><span>Or browse free</span></div><button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
         <div className="crelavo-auth-divider"><span>OR CONTINUE WITH EMAIL</span></div>
         <form onSubmit={onEmail}>
           <label htmlFor="crelavo-auth-email">Email</label>
