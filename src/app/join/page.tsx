@@ -10,5 +10,5 @@ export default function JoinPage() {
   const router = useRouter();
   useEffect(() => { if (!loading && !user) openAuth("register", { next: SIGNUP_DESTINATION }); }, [loading, user, openAuth]);
   useEffect(() => { if (user) router.replace(SIGNUP_DESTINATION); }, [user, router]);
-  return <main className="crelavo-join-page"><span>Starter Pack</span><h1>800 credits. $10 one-time.</h1><p>No subscription. Free account if you only want to browse.</p>{!user ? <><a className="btn" href="https://whop.com/checkout/plan_kmGVCrQu90NBV">Buy Starter Pack · $10</a><button type="button" onClick={() => openAuth("register", { next: SIGNUP_DESTINATION })}>Or browse free</button></> : <a href="/dashboard">Open dashboard</a>}</main>;
+  return <main className="crelavo-join-page"><span>Join Crelavo</span><h1>Create your free account.</h1><p>Browse the studio and open your dashboard. No card required.</p>{!user ? <button type="button" onClick={() => openAuth("register", { next: SIGNUP_DESTINATION })}>Create free account</button> : <a href="/dashboard">Open dashboard</a>}</main>;
 }

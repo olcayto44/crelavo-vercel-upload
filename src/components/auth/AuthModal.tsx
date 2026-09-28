@@ -28,9 +28,9 @@ export function AuthModal() {
       <button type="button" className="crelavo-auth-close" onClick={closeAuth} aria-label="Close">×</button>
       {sent ? <div><h2>Check your email</h2><p>We sent a sign-in link to <strong>{email}</strong>. No password or card is required.</p></div> : <>
         <span className="crelavo-auth-eyebrow">Crelavo</span>
-        <h2>{isRegister ? "Get 800 credits" : "Welcome back"}</h2>
-        <p>{isRegister ? "$10 one-time. No subscription." : "Sign in with Google or an email link."}</p>
-        <a className="crelavo-auth-buy" href="https://whop.com/checkout/plan_kmGVCrQu90NBV">Buy Starter Pack · $10</a><div className="crelavo-auth-divider"><span>Or browse free</span></div><button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
+        <h2>{isRegister ? "Create your free account" : "Welcome back"}</h2>
+        <p>{isRegister ? "Browse the studio and open your dashboard. No card required." : "Sign in with Google or an email link."}</p>
+        <button type="button" className="crelavo-auth-google" onClick={() => void onGoogle()} disabled={busy}><span>G</span> Continue with Google</button>
         <div className="crelavo-auth-divider"><span>OR CONTINUE WITH EMAIL</span></div>
         <form onSubmit={onEmail}>
           <label htmlFor="crelavo-auth-email">Email</label>
