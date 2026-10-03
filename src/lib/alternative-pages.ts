@@ -523,27 +523,51 @@ export const alternativePages: AlternativePage[] = [
   {
     slug: "crelavo-vs-synthesia",
     competitor: "Synthesia",
-    category: "Crelavo vs AI video company",
+    category: "Crelavo vs Synthesia",
     title: "Crelavo vs Synthesia",
-    metaTitle: "Crelavo vs Synthesia for Business Videos and Campaign Assets",
-    metaDescription: "Compare Crelavo vs Synthesia for business videos, product campaigns, ecommerce assets, website/app production and managed AI delivery workflows.",
-    h1: "Crelavo vs Synthesia for business video, ecommerce campaigns and creative production",
-    summary: "Crelavo vs Synthesia compares presenter-style business video workflows with a broader Crelavo system for product ads, campaign assets, websites, apps and AI + human QA delivery.",
-    bestFor: "businesses that need video plus campaign assets, not only presenter videos",
-    competitorFit: "Synthesia is known for AI avatar and presenter-style business video production.",
-    crelavoFit: "Crelavo is better when the same request must include product ad direction, social assets, landing pages, app or website production and delivery notes.",
+    metaTitle: "Crelavo vs Synthesia: presenter training video vs product-link campaigns",
+    metaDescription: "Synthesia wins AI presenters, L&D and corporate training. Crelavo wins Shopify, Amazon and Trendyol product campaigns from $9.99/month after a 24-hour preview.",
+    h1: "Crelavo vs Synthesia for business video and product campaigns",
+    summary: "Synthesia is the better tool if you need an AI presenter for training, onboarding, internal comms or a PowerPoint turned into a talking-head video. Crelavo is the better tool if the job starts from a product URL and must become a campaign: hooks, product scenes, captions, marketplace angles and dashboard delivery.",
+    bestFor: "Teams comparing corporate presenter video with ecommerce product-link campaigns",
+    competitorFit: "Synthesia is strong for AI presenters, L&D, corporate training and multilingual business video.",
+    crelavoFit: "Crelavo turns Shopify, Amazon and Trendyol product links into campaign-ready production requests.",
     primaryKeyword: "Crelavo vs Synthesia",
-    secondaryKeywords: ["Synthesia vs Crelavo", "Synthesia alternative for ecommerce", "AI business video comparison", "managed AI video production"],
+    secondaryKeywords: ["Synthesia vs Crelavo", "Synthesia alternative for ecommerce", "AI business video vs product video generator"],
     h2Sections: [
-      { title: "Presenter video versus multi-asset production", body: "Synthesia-style output is useful for business explainers. Crelavo expands the production scope into ecommerce ads, website/app assets, product videos and campaign material.", bullets: ["Business video plus campaign copy", "Product ad and ecommerce support", "Dashboard delivery structure"] },
-      { title: "Who should compare these platforms?", body: "Teams searching Crelavo vs Synthesia usually want AI business video but may also need a broader managed production system.", bullets: ["Marketing teams", "Ecommerce teams", "Startup launch teams"] }
+      { title: "Short answer", body: "Use Synthesia for L&D and corporate presenters: 125–240+ stock avatars, personal avatars, 160+ languages, AI dubbing, roleplay training, surveys, and, on Enterprise, SCORM, SSO and 1-click translation. Basic is free with a watermark. Starter is $14/month billed yearly ($29/month month-to-month). Pro is $59/month billed yearly ($89/month month-to-month). Unused monthly minutes do not roll over.\n\nUse Crelavo when the input is a Shopify, Amazon or Trendyol product link and the output must sell, not train. Pro is $9.99/month after a 24-hour preview. Talking-video requests exist as one path (Advanced Talking Video), next to product ads and human QA delivery.\n\nIf the brief is “this SOP needs a presenter in 12 languages,” Synthesia wins. If the brief is “this SKU needs ads that look expensive,” Crelavo wins.", bullets: [] },
+      { title: "What Synthesia is", body: "Synthesia is an AI video platform for business. You type a script, pick or train an avatar, optionally import a PowerPoint, and export a presenter video without a camera crew. The product is built for learning and development, sales enablement, internal comms and localized training at company scale. Fortune 100 logos sit on the pricing page for a reason.\n\nIt is strong at:\n\n• Stock AI avatars (9 on Basic, 125+ Starter, 180+ Pro, 240+ Enterprise)\n• Personal avatars (3 on Starter, 5 on Pro, unlimited on Enterprise)\n• 160+ languages and voices; AI dubbing with lip-sync\n• PowerPoint to video, templates, screen recorder\n• Roleplay training ($25/learner/month) and interactive surveys\n• Enterprise: SCORM, SSO, brand kits, 1-click translation, live collaboration\n\nIt is not organized around product-link ecommerce ads. A Synthesia avatar can explain a product. You still have to build the campaign somewhere else.", bullets: [] },
+      { title: "What Crelavo is", body: "Crelavo is an AI production studio for ecommerce growth. The default path is: paste a product link, get campaign-ready video plus the surrounding assets, review in the dashboard.\n\nIt is strong at:\n\n• Shopify, Amazon and Trendyol product-link workflows\n• Product scenes, ad hooks, captions and marketplace angles from one request\n• 24-hour preview before Pro continues at $9.99/month\n• AI + human QA, revision context and dashboard delivery\n• Talking-video requests as one category, not the whole product\n\nCrelavo is not a Synthesia clone. It will not match Synthesia’s avatar library, SCORM export, roleplay seats or Fortune-100 L&D stack.", bullets: [] },
+      { title: "What Synthesia credits actually buy", body: "Synthesia meters avatar footage, not number of videos. From the live pricing FAQ:\n\n• Typical finished minute ≈ 100 credits (more if the avatar stays on screen the whole time)\n• First 10 minutes of video per month included on every plan\n• Dubbing: about 76–80 credits/minute with lip-sync, 40 without\n• Surveys: 350 credits per response after the 3 included\n• Only new footage is billed. Edit 3 seconds and regenerate, pay for 3 seconds.\n\nOn Starter yearly (15,000 credits): roughly 150 extra minutes of typical video, plus the 10 min/month free allowance. A 5-minute training module is one credit-heavy asset. Two of those a week will chew Starter.\n\nCrelavo credits fund a production request (product video, talking scene, campaign pack), not an avatar-minute meter. Compare workflows, not raw credit numbers.", bullets: [] },
+      { title: "When Synthesia is the right choice", body: "Pick Synthesia when:\n\n• The video is a person talking to employees, partners or learners.\n• You have slides, an SOP or a script and need a presenter, not product B-roll.\n• You need the same training cut dubbed or translated across languages.\n• SCORM, SSO, roleplay seats or LMS export matter (Enterprise).\n• You want a reusable digital twin for internal comms.\n\nSynthesia is the specialist. Do not pretend Crelavo beats it at corporate training.", bullets: [] },
+      { title: "When Crelavo is the right choice", body: "Pick Crelavo when:\n\n• The job starts from a product URL, not a training script.\n• You need more than a presenter: product close-ups, offer structure, captions and marketplace cuts.\n• Shopify, Amazon or Trendyol is the channel, not an LMS.\n• You want a 24-hour preview, then $9.99/month, instead of jumping to Starter/Pro.\n• You want the file delivered with revision context.\n\nCrelavo is the campaign path. Do not pretend it is cheaper Synthesia.", bullets: [] },
+      { title: "Talking video overlap", body: "Crelavo’s Advanced Talking Video takes user photos/video, person count, script, own-voice material and regional notes, then opens a production request.\n\nThat is a brief-to-studio path. It is not Synthesia’s avatar engine, not 180 stock presenters, and not SCORM. If you need a persistent corporate avatar or a training library, stay on Synthesia. If a talking scene is one asset inside a product launch, send the brief to Crelavo with the product link.\n\nHeyGen is closer to Synthesia than Crelavo is. If the comparison is really avatar vs avatar, read Crelavo vs HeyGen and pick the avatar tool. Crelavo is not in that race.", bullets: [] },
+      { title: "Ecommerce gap", body: "A Synthesia presenter can read a product script. Ecommerce teams still need product-accurate B-roll and variant shots, first-three-second hooks for paid social, captions sized for Reels / Shorts / TikTok, Amazon A+ / Trendyol listing cuts, and landing copy that matches the ad. Synthesia leaves that stack to you. This page should send product-ad searchers into Crelavo checkout, not into a fake “we also have 180 avatars” claim.", bullets: [] }
     ],
-    comparison: commonComparison("Synthesia"),
+    comparison: [
+      { feature: "AI presenter / stock avatar", crelavo: "Talking-video requests. Not an avatar marketplace.", competitor: "Core product. 125–240+ avatars by plan." },
+      { feature: "Personal / custom avatar", crelavo: "Self-in-video from user photos/video in a production brief.", competitor: "3 / 5 / unlimited by plan. Studio Avatar $1,000/year." },
+      { feature: "L&D, onboarding, SOP, compliance", crelavo: "Not an L&D platform.", competitor: "Roleplay, surveys and SCORM on Enterprise." },
+      { feature: "Localization", crelavo: "Voice-over and dialect notes inside a brief.", competitor: "160+ languages, dubbing and 1-click translation on Enterprise." },
+      { feature: "PowerPoint to video", crelavo: "Not the workflow.", competitor: "Native import." },
+      { feature: "Product-link campaign", crelavo: "Dedicated Shopify, Amazon and Trendyol paths.", competitor: "Avatar can explain a product; no marketplace funnel." },
+      { feature: "Ad hooks, captions, landing copy", crelavo: "One request can carry product scenes, hooks, captions and delivery notes.", competitor: "You make the presenter clip; the rest is outside." },
+      { feature: "Self-serve editor", crelavo: "Guided workspace → request → dashboard delivery.", competitor: "Full business video editor." },
+      { feature: "Human QA", crelavo: "AI + human QA on delivery.", competitor: "You are the editor." },
+      { feature: "Lowest paid entry", crelavo: "Pro $9.99/month after 24-hour preview.", competitor: "Starter $14/month yearly, or free watermarked Basic." },
+      { feature: "Credit rollover", crelavo: "Monthly unused credits roll while subscribed.", competitor: "Monthly unused minutes do not roll. Annual pool is yearly." },
+      { feature: "Team seats", crelavo: "Team Credits priced per seat.", competitor: "1 editor on self-serve; Enterprise for real collaboration." }
+    ],
     faq: [
-      { question: "Is Crelavo only for business videos?", answer: "No. Crelavo covers video, ecommerce campaigns, websites, apps, brand assets and delivery workflows." },
-      { question: "Why choose Crelavo over a presenter-video tool?", answer: "Choose Crelavo when the video is part of a larger campaign or production package." }
+      { question: "Is Crelavo a Synthesia alternative?", answer: "For product-link campaigns, yes. For corporate presenters and L&D, no. Crelavo is the better alternative when the searcher actually needs ecommerce video, and a worse alternative when they need a training avatar." },
+      { question: "Does Crelavo replace Synthesia avatars?", answer: "No. Crelavo can take talking-video requests. Synthesia remains the business-presenter product." },
+      { question: "Which is cheaper?", answer: "Entry paid: Crelavo Pro at $9.99/month after preview versus Synthesia Starter at $14/month yearly. That only holds if you need campaign production. Avatar minutes on Synthesia are a different meter. Match the job, then the price." },
+      { question: "Do Synthesia minutes roll over?", answer: "No, not on the monthly allowance. Synthesia’s FAQ says unused monthly minutes reset. Annual plan credits are a yearly pool given upfront." },
+      { question: "Which is better for Shopify product ads?", answer: "Crelavo." },
+      { question: "Which is better for employee training videos?", answer: "Synthesia." },
+      { question: "Synthesia vs HeyGen vs Crelavo?", answer: "Synthesia and HeyGen compete with each other on avatars. Crelavo competes on product campaigns. If you are choosing an avatar tool, compare Synthesia and HeyGen. If you are choosing a product-ad studio, choose Crelavo." }
     ],
-    relatedSlugs: ["synthesia-alternative", "crelavo-vs-heygen", "best-ai-production-studio-alternatives"]
+    relatedSlugs: ["synthesia-alternative", "crelavo-vs-heygen", "crelavo-vs-runway"]
   },
   {
     slug: "crelavo-vs-creatify",
