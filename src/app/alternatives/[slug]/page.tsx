@@ -179,6 +179,14 @@ function SynthesiaComparisonPage({ page, navLinks }: { page: NonNullable<ReturnT
     </main>
   </>;
 }
+function CreatifyComparisonPage({ page, navLinks }: { page: NonNullable<ReturnType<typeof getAlternativePage>>; navLinks: Awaited<ReturnType<typeof getConfiguredSiteContentConfig>>["navLinks"] }) {
+  return <><AlternativeStructuredData page={page} /><Header navLinks={navLinks} /><main className="container section service-page-detail">
+    <section className="production-hero-card admin-overview-hero service-hero-card"><span className="badge">Crelavo vs Creatify</span><h1>{page.h1}</h1><p>{page.summary}</p><p>Short split: use Creatify for self-serve UGC volume from a URL. Use Crelavo when the product link should become a coherent campaign, including Trendyol.</p><div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}><Link className="btn" href="/dashboard/create">Start a Crelavo request</Link><Link className="btn secondary" href="/pricing">Pricing</Link><Link className="btn secondary" href="/alternatives">All alternatives</Link></div></section>
+    <article className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>{page.h2Sections.map((section) => <section key={section.title} style={{ marginBottom: 24 }}><h2>{section.title}</h2>{section.body.split("\\n\\n").map((paragraph, index) => <p key={index} style={{ whiteSpace: "pre-line", marginBottom: 12 }}>{paragraph}</p>)}</section>)}<section><h2>Quick comparison</h2><div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Feature</th><th>Creatify</th><th>Crelavo</th></tr></thead><tbody>{page.comparison.map((row) => <tr key={row.feature}><td>{row.feature}</td><td>{row.competitor}</td><td>{row.crelavo}</td></tr>)}</tbody></table></div></section></article>
+    <section className="card admin-wide-card" style={{ marginTop: 18 }}><span className="badge">FAQ</span><h2>FAQ</h2><div className="admin-category-grid">{page.faq.map((item) => <div className="card admin-category-card" key={item.question}><h3>{item.question}</h3><p>{item.answer}</p></div>)}</div></section>
+    <section className="card admin-wide-card" style={{ marginTop: 18 }}><span className="badge">Related pages</span><div className="plan-feature-groups"><Link href="/alternatives/crelavo-vs-runway"><b>Crelavo vs Runway</b></Link><Link href="/alternatives/crelavo-vs-heygen"><b>Crelavo vs HeyGen</b></Link><Link href="/alternatives/crelavo-vs-synthesia"><b>Crelavo vs Synthesia</b></Link><Link href="/alternatives/best-ai-product-video-generators"><b>Best AI product video generators</b></Link><Link href="/pricing"><b>Crelavo pricing</b></Link></div></section>
+  </main></>;
+}
 export default async function AlternativeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [siteContent, page] = await Promise.all([getConfiguredSiteContentConfig(), Promise.resolve(getAlternativePage(slug))]);
@@ -187,6 +195,7 @@ export default async function AlternativeDetailPage({ params }: { params: Promis
   if (page.slug === "crelavo-vs-runway") return <RunwayComparisonPage page={page} navLinks={siteContent.navLinks} />;
   if (page.slug === "crelavo-vs-heygen") return <HeyGenComparisonPage page={page} navLinks={siteContent.navLinks} />;
   if (page.slug === "crelavo-vs-synthesia") return <SynthesiaComparisonPage page={page} navLinks={siteContent.navLinks} />;
+  if (page.slug === "crelavo-vs-creatify") return <CreatifyComparisonPage page={page} navLinks={siteContent.navLinks} />;
 
   return (
     <>
