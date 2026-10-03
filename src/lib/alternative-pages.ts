@@ -439,25 +439,37 @@ export const alternativePages: AlternativePage[] = [
   {
     slug: "crelavo-vs-runway",
     competitor: "Runway",
-    category: "Crelavo vs AI video company",
+    category: "Crelavo vs Runway",
     title: "Crelavo vs Runway",
-    metaTitle: "Crelavo vs Runway for Ecommerce Product Video Workflows",
-    metaDescription: "Compare Crelavo vs Runway for AI video generation, product ads, ecommerce campaign briefs, managed delivery and AI + human QA production workflows.",
-    h1: "Crelavo vs Runway for ecommerce product video and campaign delivery",
-    summary: "Crelavo vs Runway is a high-intent comparison for teams that need AI video connected to product links, campaign briefs, captions, delivery notes and human QA instead of only generative video experimentation.",
-    bestFor: "ecommerce sellers, agencies and founders comparing AI video companies for campaign-ready output",
-    competitorFit: "Runway is strong for generative video experiments, creative video editing and visual exploration.",
-    crelavoFit: "Crelavo is better when the video must become a product campaign with hook, proof, CTA, delivery path and review context.",
+    metaTitle: "Crelavo vs Runway for ecommerce product video (2026)",
+    metaDescription: "Runway is a generative video studio. Crelavo turns a product link into a campaign video with hooks, captions and delivery. Compare price, workflow and who each tool is for.",
+    h1: "Crelavo vs Runway: which one for ecommerce product video?",
+    summary: "Runway is the right tool if you want to generate and edit cinematic clips in a self-serve studio. Crelavo is the right tool if you have a Shopify, Amazon or Trendyol product and need an ad video, hooks, captions and a delivered file, not a prompt lab.",
+    bestFor: "Teams choosing between a generative video studio and an ecommerce campaign workflow",
+    competitorFit: "Runway is strong for cinematic clip generation and self-serve creative exploration.",
+    crelavoFit: "Crelavo turns product context into campaign video, hooks, captions and delivery.",
     primaryKeyword: "Crelavo vs Runway",
-    secondaryKeywords: ["Runway vs Crelavo", "Runway alternative for ecommerce video", "AI video company comparison", "AI product video workflow"],
+    secondaryKeywords: ["Runway vs Crelavo", "Runway alternative for ecommerce video", "AI product video workflow"],
     h2Sections: [
-      { title: "AI video generation versus campaign production", body: "Runway helps users create and experiment with AI video. Crelavo focuses on routing product context into a production request with ecommerce hooks, marketplace angles, captions and delivery notes.", bullets: ["Product link to campaign brief", "AI + human QA delivery", "Marketplace-specific ad video paths"] },
-      { title: "When Crelavo is the better fit", body: "Use Crelavo when the buyer journey starts from a Shopify, Amazon, Trendyol or product page and the team needs a clear ad video workflow instead of isolated clip generation.", bullets: ["Ecommerce campaign planning", "Credit and delivery visibility", "Internal links to product video pages"] }
+      { title: "When to use Runway", body: "You are exploring a look, a camera move or a 5-second scene. You are comfortable prompting, retrying and cutting in an editor. Quality of the generation itself is the point.", bullets: [] },
+      { title: "When to use Crelavo", body: "You start from a product URL. You need a campaign path: hook, proof, CTA, marketplace format, delivery in the dashboard. You want a 24-hour preview, then Pro at $9.99/month, instead of buying generation credits to find a usable take.", bullets: [] },
+      { title: "A seller example", body: "10 SKUs, 3 hooks each. In Runway that is dozens of generations and usually Pro or Max. In Crelavo you paste the product link, set the channel, and get a campaign package. Some teams use both: Runway for a hero shot, Crelavo for the ad skeleton and delivery.", bullets: [] }
     ],
-    comparison: commonComparison("Runway"),
+    comparison: [
+      { feature: "Starts from", crelavo: "Product link or brief", competitor: "Prompt, image, editor" },
+      { feature: "You get", crelavo: "Campaign video path, hooks, captions, dashboard delivery", competitor: "Generated clips you assemble" },
+      { feature: "Entry price", crelavo: "Pro $9.99/month after a 24-hour preview", competitor: "Standard $15/month ($12 billed yearly)" },
+      { feature: "Other plans", crelavo: "Live Sales, Drone, Growth as separate offers", competitor: "Pro $35/month, Max $95/month" },
+      { feature: "Credits", crelavo: "Unused subscription credits roll over while the plan is active", competitor: "Standard and Pro reset each month. Max rolls over about one month" },
+      { feature: "Gen-4.5 volume (Runway’s own math)", crelavo: "Not a Gen-4.5 seat. Production is scoped as a request", competitor: "Standard ~52 seconds/month, Pro ~187, Max ~791" },
+      { feature: "Shopify / Amazon / Trendyol", crelavo: "Dedicated product-link workflows", competitor: "General video tool, no marketplace funnel" },
+      { feature: "Review", crelavo: "AI plus human QA on delivery", competitor: "You review the takes" },
+      { feature: "Languages", crelavo: "English, German, French, Turkish", competitor: "General, not built around TR ecommerce" }
+    ],
     faq: [
-      { question: "Is Crelavo a direct Runway replacement?", answer: "No. Runway is a generative video platform. Crelavo is positioned as a managed AI production studio for product videos, ecommerce campaigns and delivery workflows." },
-      { question: "Which is better for Shopify product ads?", answer: "Crelavo is more focused on Shopify product-link-to-ad workflows, campaign hooks and ecommerce delivery context." }
+      { question: "Is Crelavo a Runway replacement?", answer: "No. Runway generates and edits video. Crelavo is a production studio for product campaigns." },
+      { question: "Which is better for Shopify ads?", answer: "If the job is product page to ad, Crelavo. If the job is a custom cinematic shot, Runway." },
+      { question: "Which is cheaper to start?", answer: "Crelavo Pro is $9.99/month after preview. Runway Standard is $15/month ($12 yearly). Heavy generation is more expensive on Runway because retries burn credits." }
     ],
     relatedSlugs: ["runway-alternative", "best-ai-product-video-generators", "product-video-generator-alternative"]
   },

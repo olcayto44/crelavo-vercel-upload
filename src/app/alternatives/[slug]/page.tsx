@@ -130,11 +130,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+function RunwayComparisonPage({ page, navLinks }: { page: NonNullable<ReturnType<typeof getAlternativePage>>; navLinks: Awaited<ReturnType<typeof getConfiguredSiteContentConfig>>["navLinks"] }) {
+  return <>
+    <AlternativeStructuredData page={page} />
+    <Header navLinks={navLinks} />
+    <main className="container section service-page-detail">
+      <section className="production-hero-card admin-overview-hero service-hero-card"><span className="badge">Crelavo vs Runway</span><h1>{page.h1}</h1><h2>Short answer</h2><p>{page.summary}</p><p>They are not the same product. Pick by the job, not by the model name.</p></section>
+      <article className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
+        {page.h2Sections.map((section) => <section key={section.title} style={{ marginBottom: 24 }}><h2>{section.title}</h2><p>{section.body}</p></section>)}
+        <section><h2>Comparison</h2><div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Feature</th><th>Crelavo</th><th>Runway</th></tr></thead><tbody>{page.comparison.map((row) => <tr key={row.feature}><td>{row.feature}</td><td>{row.crelavo}</td><td>{row.competitor}</td></tr>)}</tbody></table></div></section>
+        <p style={{ marginTop: 24 }}>On Runway Standard, one 5-second Gen-4.5 clip is 60 credits. A failed take still spends the credits. About ten tries can empty the month. That is normal for a model lab. It is a poor fit if you needed ten product ads, not ten experiments.</p>
+      </article>
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}><span className="badge">FAQ</span><h2>FAQ</h2><div className="admin-category-grid">{page.faq.map((item) => <div className="card admin-category-card" key={item.question}><h3>{item.question}</h3><p>{item.answer}</p></div>)}</div></section>
+      <section className="card admin-wide-card" style={{ marginTop: 18 }}><span className="badge">Next</span><h2>Start a focused brief on Crelavo, or review pricing.</h2><p>See also Runway alternative and best AI product video generators.</p><div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}><Link className="btn" href="/dashboard/create">Start a focused brief</Link><Link className="btn secondary" href="/pricing">Review pricing</Link><Link className="btn secondary" href="/alternatives/runway-alternative">Runway alternative</Link><Link className="btn secondary" href="/alternatives/best-ai-product-video-generators">Best AI product video generators</Link></div></section>
+    </main>
+  </>;
+}
 export default async function AlternativeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [siteContent, page] = await Promise.all([getConfiguredSiteContentConfig(), Promise.resolve(getAlternativePage(slug))]);
   if (!page) notFound();
   const related = getRelatedAlternativePages(page);
+  if (page.slug === "crelavo-vs-runway") return <RunwayComparisonPage page={page} navLinks={siteContent.navLinks} />;
 
   return (
     <>
