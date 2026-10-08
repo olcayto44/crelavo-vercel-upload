@@ -1,8 +1,8 @@
-﻿/**
+/**
  * Free crelavo.com member signup. Keep FALSE.
  * Pro / 24h Whop preview is a separate second step (card required there).
  */
-export const SIGNUP_DISABLED = false;
+export const SIGNUP_DISABLED = true;
 
 export const SESSION_COOKIE = "crelavo_session";
 export const SESSION_DAYS = 30;

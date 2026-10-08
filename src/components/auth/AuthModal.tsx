@@ -21,12 +21,13 @@ export function AuthModal() {
   async function onGoogle() {
     setBusy(true);
     setError(null);
-    const target = postAuthPath({ isNew: intent === "register", returnTo: nextPath });
-    const redirectTo = `${window.location.origin}${target}${target.includes("?") ? "&" : "?"}${intent === "register" ? "signup=1&method=google" : ""}`;
+    const authIntent = isPaidEntry ? "register" : intent;
+    const target = postAuthPath({ isNew: authIntent === "register", returnTo: nextPath });
+    const redirectTo = `${window.location.origin}${target}${target.includes("?") ? "&" : "?"}${authIntent === "register" ? "signup=1&method=google" : ""}`;
     const { error: googleError } = await supabaseBrowser().auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
     if (googleError) { setError(googleError.message); setBusy(false); }
   }
-  async function onEmail(event: React.FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { await requestMagicLink(email, intent, nextPath || undefined); setSent(true); } catch (err) { setError(err instanceof Error ? err.message : "Could not send link"); } finally { setBusy(false); } }
+  async function onEmail(event: React.FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { await requestMagicLink(email, isPaidEntry ? "register" : intent, nextPath || undefined, isPaidEntry ? { allowPaidSignup: true } : undefined); setSent(true); } catch (err) { setError(err instanceof Error ? err.message : "Could not send link"); } finally { setBusy(false); } }
   return <div className="crelavo-auth-backdrop" role="dialog" aria-modal="true" aria-label={isPaidEntry ? "Ödemen alındı, stüdyoya gir" : isJoinRegister ? "Start Crelavo Pro" : isRegister ? "Create a free Crelavo account" : "Sign in to Crelavo"}>
     <button type="button" className="crelavo-auth-scrim" aria-label="Close" onClick={closeAuth} />
     <section className="crelavo-auth-card">

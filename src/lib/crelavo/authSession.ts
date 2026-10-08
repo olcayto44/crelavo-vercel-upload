@@ -19,15 +19,15 @@ export async function fetchSession(): Promise<SessionUser | null> {
   return ((await res.json()) as { user: SessionUser | null }).user ?? null;
 }
 
-export async function requestMagicLink(email: string, intent: "login" | "register", next?: string) {
-  if (SIGNUP_DISABLED && intent === "register") throw new Error("signup_disabled");
+export async function requestMagicLink(email: string, intent: "login" | "register", next?: string, options?: { allowPaidSignup?: boolean }) {
+  if (SIGNUP_DISABLED && intent === "register" && !options?.allowPaidSignup) throw new Error("signup_disabled");
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new Error("invalid_email");
   const target = postAuthPath({ isNew: intent === "register", returnTo: next });
   const destination = `${window.location.origin}${target}${target.includes("?") ? "&" : "?"}${intent === "register" ? "signup=1&method=email" : ""}`;
   const { error } = await supabaseBrowser().auth.signInWithOtp({
     email: normalized,
-    options: { shouldCreateUser: true, emailRedirectTo: destination },
+    options: { shouldCreateUser: intent === "register", emailRedirectTo: destination },
   });
   if (error) throw error;
   return { ok: true };

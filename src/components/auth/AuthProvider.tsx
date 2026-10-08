@@ -6,6 +6,7 @@ import { fetchSession, probeGoogleAuth, signOut as apiSignOut, type SessionUser 
 import { trackCrelavoUserCreated } from "@/lib/crelavo/trackSignup";
 import { supabaseBrowser } from "@/lib/supabase";
 import { postAuthPath } from "@/lib/crelavo/redirects";
+import { SIGNUP_DISABLED } from "@/lib/crelavo/authConfig";
 
 export type AuthIntent = "login" | "register";
 type AuthContextValue = { user: SessionUser | null; loading: boolean; googleReady: boolean; modalOpen: boolean; intent: AuthIntent; nextPath: string | null; openAuth: (intent?: AuthIntent, opts?: { next?: string }) => void; closeAuth: () => void; refresh: () => Promise<void>; signOut: () => Promise<void> };
@@ -52,13 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (loading) return;
     const auth = searchParams.get("auth");
     if (user) { setModalOpen(false); if (auth) { router.replace(pathname); setQuery(""); } return; }
-    if (auth === "login" || auth === "register") { setIntent(auth); setModalOpen(true); }
+    if (auth === "login" || auth === "register") { setIntent(auth === "register" && SIGNUP_DISABLED ? "login" : auth); setModalOpen(true); }
   }, [loading, user, searchParams, pathname, router]);
 
   const openAuth = useCallback((nextIntent: AuthIntent = "login", opts?: { next?: string }) => {
-    setIntent(nextIntent);
+    const effectiveIntent = nextIntent === "register" && SIGNUP_DISABLED ? "login" : nextIntent;
+    setIntent(effectiveIntent);
     const current = `${pathname}${window.location.search}`;
-    setNextPath(postAuthPath({ isNew: nextIntent === "register", returnTo: opts?.next ?? current }));
+    setNextPath(postAuthPath({ isNew: effectiveIntent === "register", returnTo: opts?.next ?? current }));
     setModalOpen(true);
   }, [pathname]);
   const closeAuth = useCallback(() => setModalOpen(false), []);

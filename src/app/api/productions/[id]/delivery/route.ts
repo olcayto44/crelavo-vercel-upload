@@ -107,17 +107,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const access = await requireDeliveryAccess(request, data);
   if (!access.ok) return access.response;
   let billingStatus = "active";
+  let trialing = false;
   if (!isAdminRequest(request)) {
-    const billing = await billingAccess(supabaseAdmin(), String(data.user_id));
+    const admin = supabaseAdmin();
+    const billing = await billingAccess(admin, String(data.user_id));
     billingStatus = billing.status;
+    const { data: trialSubscription } = await admin.from("subscriptions").select("status,product_id,plan_id").eq("user_id", String(data.user_id)).eq("status", "trialing").maybeSingle();
+    const trialProduct = String(trialSubscription?.product_id ?? trialSubscription?.plan_id ?? "").toLowerCase();
+    trialing = Boolean(trialSubscription) && /pro|pro_24h_free_trial/.test(trialProduct);
   }
 
   const safeTitle = String(data.title ?? "crelavo-delivery").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-delivery";
   const previewAccess = previewAccessForDelivery(data);
-  const downloadFiles = new Set(["readme", "source", "zip"]);
+  const downloadFiles = new Set(["readme", "source", "zip", "video", "mp4", "image", "png", "jpg", "jpeg", "audio", "subtitles", "score-json", "score-markdown"]);
 
-  if (previewAccess.previewOnly && billingStatus !== "active" && downloadFiles.has(file)) {
-    return Response.json({ error: "Downloads are closed during the 24-hour preview. Cancel before 24 hours to stop the main subscription; otherwise the selected plan activates automatically." }, { status: 403 });
+  if ((trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
+    return Response.json({ error: "Downloads are locked during the 24-hour preview. You can view the result, but downloads open only after the $9.99 subscription payment is confirmed. Cancel before 24 hours to stop the subscription." }, { status: 403 });
   }
 
    const output = objectValue(data.output_json);
