@@ -99,7 +99,7 @@ export function CreditPlansToggle({ plans, ctaLabel = "Choose package", compact 
         <div>
           <span className="badge"><CreditCard size={14} /> {isTopUpList ? "One-time credit purchases" : "Recurring credit subscriptions"}</span>
 <h2>{isTopUpList ? "Buy extra credits whenever you need them" : sideBySideAnnual ? "Choose your Pro trial plan" : "Choose a monthly or yearly credit subscription"}</h2>
-           <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : sideBySideAnnual ? "Both plans start at $0 today with a 24-hour free trial. Card required; cancel in the customer portal before the trial ends and pay nothing." : "Start with a 24-hour free trial. Monthly renews every 30 days; yearly gives 12 months of access."}</p>
+           <p className="section-lead">{isTopUpList ? "Extra credit packages are one-time purchases, do not renew automatically, and can be bought repeatedly." : sideBySideAnnual ? "Both plans require a card: 24-hour preview, one production, no downloads; cancel before the trial ends to avoid the monthly charge." : "Start with a card-required 24-hour preview: one production, no downloads; monthly or yearly access begins after payment."}</p>
         </div>
 {!isTopUpList && !sideBySideAnnual ? (
            <div>

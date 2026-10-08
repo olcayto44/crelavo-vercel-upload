@@ -905,24 +905,24 @@ export const whopTrialProducts = [
     id: "pro_24h_free_trial",
     name: "Pro 24-Hour Preview",
     billing: "Monthly",
-    price: "$9.99/mo after 1-day free trial",
+    price: "$9.99/mo after 24-hour preview",
     priceUsd: 9.99,
     setupFeeUsd: 0,
     credits: 2500,
     planType: "subscription",
     monthlyStripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
     yearlyStripePriceEnv: "STRIPE_PRICE_PRO_YEARLY",
-    description: "Whop-hosted 24-hour preview for the Pro monthly plan. Card required. No charge until the preview ends; then the $9.99 monthly Pro subscription starts unless cancelled.",
-    estimatedOutput: "Use the first 24 hours to review the Crelavo workflow, dashboard and brief direction before the Pro subscription starts.",
+    description: "Whop-hosted 24-hour preview for the Pro monthly plan. Card required. One production is available during the preview; downloads open only after the $9.99 monthly Pro subscription starts.",
+    estimatedOutput: "Use the first 24 hours for one production and review the result before the Pro subscription starts.",
     videoSpec: "Production and downloads stay closed during the preview; access and recurring 2,500 credits follow confirmed Pro subscription payment.",
-    mediaIncluded: "Pro workflow and dashboard preview; production starts only after the preview ends and payment is confirmed.",
+    mediaIncluded: "One production during the 24-hour preview; downloads and recurring credits open after payment is confirmed.",
     modelAccess: ["Pro workflow preview", "Standard video/image/editing access after paid subscription starts"],
     automationAccess: ["Trial-to-Pro checkout", "Whop cancellation before trial end", "Payment verification before credits"],
     concurrentTasks: 4,
-    relaxMode: "Preview access does not include production; recurring 2,500 credits are activated only after paid subscription confirmation.",
+    relaxMode: "One preview production is allowed; downloads and recurring 2,500 credits activate only after paid subscription confirmation.",
     renderQueue: "Pro queue after subscription starts",
     teamFeatures: ["Single user Pro workflow preview"],
-    usage: ["24-hour preview with card required", "No charge until the preview ends", "No production or downloads during the preview", "Cancel in Whop before the preview ends to stop the monthly subscription", "$9.99/month starts after the preview if not cancelled", "Recurring credits are added only after payment is confirmed"]
+    usage: ["24-hour preview with card required", "One production during the preview", "No downloads during the preview", "Cancel in Whop before the preview ends to stop the monthly subscription", "$9.99/month starts after the preview if not cancelled", "Recurring credits are added only after payment is confirmed"]
   }
 ];
 

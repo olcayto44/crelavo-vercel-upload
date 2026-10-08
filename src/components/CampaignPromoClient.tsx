@@ -17,7 +17,7 @@ type CampaignPromoProps = {
 export function CampaignPromoClient({
   eyebrow = "24-HOUR FREE TRIAL",
   title = "Try Crelavo Pro for $0 today",
-  body = "Card required. You are not charged until the 24-hour trial ends. Then $9.99 every 30 days unless you cancel in the customer portal. If you already used a Crelavo trial, you pay full price.",
+  body = "Card required. 24-hour preview, one production, no downloads. Downloads open after the $9.99/month subscription starts unless cancelled.",
   cta = "Start free 24-hour trial",
   href = "/pricing#clp",
   priceBadge = "$0 TODAY",
@@ -41,7 +41,7 @@ export function CampaignPromoClient({
           <span>{bonusSecondary}</span>
         </div>
         <p>{body}</p>
-        <small>Card required. No charge until the 24-hour trial ends.</small>
+        <small>Card required. 24-hour preview, one production, no downloads.</small>
       </div>
       <Link className="btn campaign-promo-cta" href={href}>{cta}</Link>
       <Link className="campaign-promo-secondary-link" href="/pricing">

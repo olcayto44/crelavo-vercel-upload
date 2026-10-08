@@ -28,5 +28,5 @@ export function AuthStickyBar() {
   }, []);
 
   if (loading || !sessionChecked || modalOpen || user || hasSupabaseSession) return null;
-  return <div className="crelavo-auth-sticky"><a href="https://whop.com/checkout/plan_ujLQgM3kEg0dg">Start Pro · $9.99/mo</a><button type="button" onClick={() => openAuth("login")}>Sign in</button></div>;
+  return <div className="crelavo-auth-sticky"><a href="https://whop.com/checkout/ch_MTZtuBJl2OuZtL8/">Start Pro · $9.99/mo</a><button type="button" onClick={() => openAuth("login")}>Sign in</button></div>;
 }

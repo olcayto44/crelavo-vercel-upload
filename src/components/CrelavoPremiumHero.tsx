@@ -39,7 +39,7 @@ const heroScenes = [
     kicker: "AI production workspace",
     title: "Videos, websites, apps and campaign assets in one system.",
     text: "Crelavo combines AI speed with human quality assurance for source handoff, preview links, final files, revisions and campaign-ready delivery.",
-    cta: "Start free 24-hour trial",
+    cta: "Start Pro preview",
     href: whopFreeTrialCheckoutUrl,
     tone: "green",
     videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501593829539623-1784501593820.mp4",
@@ -76,7 +76,7 @@ export function CrelavoPremiumHero() {
           <h1>Crelavo: AI Production Studio for E-Commerce, Apps and Campaigns</h1>
           <p>Create product videos, websites, app assets and campaign packages with AI speed, human quality assurance, clear credit guidance and dashboard delivery.</p>
           <div className="crelavo-hero-actions">
-             <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start free 24-hour trial <ArrowRight size={16} /></Link>
+             <Link className="btn" href={whopFreeTrialCheckoutUrl}>Start Pro preview <ArrowRight size={16} /></Link>
              <Link className="btn secondary" href="/pricing">Annual plan coming soon</Link>
              <Link className="btn secondary" href="/pricing">View pricing</Link>
           </div>
@@ -95,7 +95,7 @@ export function CrelavoPremiumHero() {
             <span>Live production studio</span>
             <small>{activeScene.kicker}</small>
           </div>
-          <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Claim the Crelavo Pro 24-hour free trial">
+          <Link className="hero-trial-fomo-card" href={whopFreeTrialCheckoutUrl} aria-label="Start the Crelavo Pro 24-hour preview">
             <span>FLASH TRIAL</span>
             <strong>$0 for the first 24 hours</strong>
             <small>Then $9.99/month for workspace access unless cancelled in the customer portal. Usage credits are sold separately.</small>
