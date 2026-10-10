@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   if (!code) redirect("/dashboard?connection=pinterest&status=missing_code");
   const clientId = String(process.env.PINTEREST_CLIENT_ID || "").trim();
   const clientSecret = secret();
-  const redirectUri = `${url.origin}/api/pinterest/oauth/callback`;
+  const redirectUri = "https://crelavo.com/api/pinterest/oauth/callback";
   try {
     const tokenResponse = await fetch("https://api.pinterest.com/v5/oauth/token", {
       method: "POST",

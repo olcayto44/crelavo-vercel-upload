@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const clientId = String(process.env.PINTEREST_CLIENT_ID || "").trim();
   const clientSecret = secret();
   if (!clientId || !clientSecret) return Response.json({ error: "Pinterest OAuth environment variables are missing." }, { status: 500 });
-  const redirectUri = `${new URL(request.url).origin}/api/pinterest/oauth/callback`;
+  const redirectUri = "https://crelavo.com/api/pinterest/oauth/callback";
   const url = new URL("https://www.pinterest.com/oauth/");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);
