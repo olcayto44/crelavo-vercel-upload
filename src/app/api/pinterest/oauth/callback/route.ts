@@ -55,8 +55,8 @@ export async function GET(request: Request) {
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id,provider,external_account_id" });
     if (saveError) throw saveError;
-    redirect("/dashboard?connection=pinterest&status=connected");
+    return new Response(null, { status: 302, headers: { Location: "/dashboard/connections?connection=pinterest&status=connected" } });
   } catch (caught) {
-    redirect(`/dashboard?connection=pinterest&status=error&message=${encodeURIComponent(caught instanceof Error ? caught.message : "Pinterest connection failed.")}`);
+    redirect(`/dashboard/connections?connection=pinterest&status=error&message=${encodeURIComponent(caught instanceof Error ? caught.message : "Pinterest connection failed.")}`);
   }
 }
