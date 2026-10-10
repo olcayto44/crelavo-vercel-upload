@@ -37,7 +37,7 @@ type ExportPackItem = {
   guardrail: string;
 };
 
-const socialProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", "meta"];
+const socialProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", "meta", "pinterest"];
 const commerceProviders: ConnectedProvider[] = ["shopify", "woocommerce"];
 const allProviders: ConnectedProvider[] = [...socialProviders, ...commerceProviders];
 
@@ -107,11 +107,12 @@ export function ConnectedAccountsPanel() {
     const { userId, token } = await currentUser();
     if (!userId) return setMessage("You must sign in before starting OAuth.");
     const commerce = provider === "shopify";
+    const pinterest = provider === "pinterest";
     setMessage(`${connectedProviderLabels[provider]} OAuth başlatılıyor...`);
-    const response = await fetch(commerce ? "/api/commerce/shopify/oauth/start" : "/api/ads/oauth/start", {
+    const response = await fetch(commerce ? "/api/commerce/shopify/oauth/start" : pinterest ? "/api/pinterest/oauth/start" : "/api/ads/oauth/start", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(commerce ? { user_id: userId, shop: storeUrl } : { user_id: userId, platform: provider })
+      body: JSON.stringify(commerce ? { user_id: userId, shop: storeUrl } : pinterest ? { user_id: userId } : { user_id: userId, platform: provider })
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.url) {
@@ -263,7 +264,7 @@ export function ConnectedAccountsPanel() {
       <div className="card connection-card">
         <span className="badge">Connected accounts V1</span>
         <h3>Social and store account records</h3>
-        <p>Save OAuth-ready or connected records for TikTok, YouTube, Instagram/Meta, Shopify and WooCommerce. Tokens are stored server-side and hidden from the UI.</p>
+        <p>Save OAuth-ready or connected records for TikTok, YouTube, Instagram/Meta, Pinterest, Shopify and WooCommerce. Tokens are stored server-side and hidden from the UI.</p>
         <div className="connection-launch-panel">
           <div className="connection-launch-section">
             <strong>Social OAuth</strong>
