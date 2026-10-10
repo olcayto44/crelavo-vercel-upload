@@ -22,6 +22,7 @@ export const platformFormatLimits: Record<ConnectedProvider, PlatformFormatLimit
   youtube: { provider: "youtube", video: "Shorts: 9:16 short video; long-form: 16:9. Confirm upload type before queueing.", image: "Thumbnail required for long-form; Shorts can use frame/cover.", caption: "Title/description must be reviewed before upload." },
   instagram: { provider: "instagram", video: "Reels-friendly 9:16 MP4; avoid unsupported durations/aspect ratios.", image: "Cover should fit Reels grid and story-safe crop.", caption: "Caption and hashtags require review before publish." },
   meta: { provider: "meta", video: "Facebook/Meta video ad or page post format depends on placement.", image: "Feed/story placement needs separate safe crops.", caption: "Ad copy/page post text requires final approval." },
+  pinterest: { provider: "pinterest", video: "Prefer MP4 vertical video for Pinterest video Pins; confirm title, description, board and destination URL.", image: "Pin cover should be clear and vertical-safe.", caption: "Pin title, description and destination URL require final approval." },
   shopify: { provider: "shopify", video: "Product media must meet Shopify file/media limits before upload.", image: "Product images should be compressed and alt text-ready.", caption: "Product title/description/metafields require merchant approval.", productMedia: "Use draft/media association first; no product page mutation without approval." },
   woocommerce: { provider: "woocommerce", video: "Video usually needs media library or external embed depending store setup.", image: "Media library upload should validate MIME/size.", caption: "Product description/meta updates require merchant approval.", productMedia: "Upload media first, then attach after approval." }
 };
@@ -31,6 +32,7 @@ export const providerWorkerSkeletons: Record<ConnectedProvider, string[]> = {
   youtube: ["Validate YouTube upload scope", "Create resumable upload session", "Upload video metadata/media", "Save YouTube video id and privacy status"],
   instagram: ["Validate Instagram business publishing scope", "Create media container", "Poll container status", "Publish after final approval and save media id"],
   meta: ["Validate Meta page/ad account permission", "Create page post or ad creative draft", "Attach media asset", "Save Meta object id and review status"],
+  pinterest: ["Validate Pinterest pins:write and boards:read scopes", "Create video Pin upload", "Attach title, description, board and destination URL", "Save Pinterest Pin id and publish response"],
   shopify: ["Validate Shopify product/media permissions", "Upload staged media", "Attach media or update selected product fields", "Save Shopify product/media response"],
   woocommerce: ["Validate WooCommerce REST credentials", "Upload media to WordPress/WooCommerce", "Attach media or update selected product fields", "Save WooCommerce product/media response"]
 };

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     if (!auth.ok) return auth.response;
 
     const provider = normalizeConnectedProvider(body.provider);
-    if (!provider) return Response.json({ error: "provider must be one of: tiktok, youtube, instagram, meta, shopify, woocommerce." }, { status: 400 });
+    if (!provider) return Response.json({ error: "provider must be one of: tiktok, youtube, instagram, meta, pinterest, shopify, woocommerce." }, { status: 400 });
 
     const displayName = clean(body.display_name ?? body.displayName) || connectedProviderLabels[provider];
     const externalAccountId = clean(body.external_account_id ?? body.externalAccountId) || displayName;

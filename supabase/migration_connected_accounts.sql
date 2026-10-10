@@ -1,7 +1,7 @@
 create table if not exists connected_accounts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
-  provider text not null check (provider in ('tiktok', 'youtube', 'instagram', 'meta', 'shopify', 'woocommerce')),
+  provider text not null check (provider in ('tiktok', 'youtube', 'instagram', 'meta', 'pinterest', 'shopify', 'woocommerce')),
   account_type text not null check (account_type in ('social', 'commerce')),
   display_name text not null default 'Connected account',
   external_account_id text not null default '',

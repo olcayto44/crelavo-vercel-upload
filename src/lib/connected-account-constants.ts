@@ -1,9 +1,9 @@
-export type ConnectedProvider = "tiktok" | "youtube" | "instagram" | "meta" | "shopify" | "woocommerce";
+export type ConnectedProvider = "tiktok" | "youtube" | "instagram" | "meta" | "pinterest" | "shopify" | "woocommerce";
 export type ConnectedAccountStatus = "not_connected" | "oauth_ready" | "connected" | "permission_limited" | "expired" | "error";
 export type ConnectedAccountType = "social" | "commerce";
 export type ConnectedAccountJobType = "export_ready" | "draft_upload" | "one_click_publish" | "store_upload";
 
-export const connectedProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", "meta", "shopify", "woocommerce"];
+export const connectedProviders: ConnectedProvider[] = ["tiktok", "youtube", "instagram", "meta", "pinterest", "shopify", "woocommerce"];
 export const connectedStatuses: ConnectedAccountStatus[] = ["not_connected", "oauth_ready", "connected", "permission_limited", "expired", "error"];
 
 export const connectedProviderLabels: Record<ConnectedProvider, string> = {
@@ -11,6 +11,7 @@ export const connectedProviderLabels: Record<ConnectedProvider, string> = {
   youtube: "YouTube Shorts",
   instagram: "Instagram / Reels",
   meta: "Meta / Facebook",
+  pinterest: "Pinterest",
   shopify: "Shopify",
   woocommerce: "WooCommerce"
 };
@@ -20,6 +21,7 @@ export const providerAccountTypes: Record<ConnectedProvider, ConnectedAccountTyp
   youtube: "social",
   instagram: "social",
   meta: "social",
+  pinterest: "social",
   shopify: "commerce",
   woocommerce: "commerce"
 };
