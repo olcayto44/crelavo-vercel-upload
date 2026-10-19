@@ -55,7 +55,8 @@
     "start": "next start",
     "lint": "npm run smoke && npm run build",
     "smoke:production-seo": "node scripts/production-seo-smoke.cjs",
-    "smoke:chinese-language": "node scripts/chinese-language-smoke.cjs"
+    "smoke:chinese-language": "node scripts/chinese-language-smoke.cjs",
+    "smoke:footer-seo": "node scripts/footer-seo-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",

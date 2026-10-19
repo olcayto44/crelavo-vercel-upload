@@ -111,7 +111,8 @@ async function checkHttp() {
     assert.equal(apps.length,1,route+' application schema count');
     assert.equal(apps[0].offers.price,'9.99',route+' schema price');
     assert.equal(nodes.find(x=>x['@type']==='FAQPage').mainEntity.length,page.faq.length);
-    assert.equal([...html.matchAll(/<summary\b/g)].length,page.faq.length,route+' visible FAQs');
+    const articleHtml = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/)?.[1] || '';
+    assert.equal([...articleHtml.matchAll(/<summary\b/g)].length,page.faq.length,route+' visible FAQs');
     if(page.section !== 'blog') assert(html.includes('<table>'),route+' comparison table');
     for(const href of page.related) assert(html.includes('href="'+href+'"'),route+' related '+href);
     for(const s of page.sections) if(s.link) assert(html.includes('href="'+s.link.href+'"'),route+' inline link');
