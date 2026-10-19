@@ -1,4 +1,9 @@
+import { ProductionSeoPage } from "@/components/ProductionSeoPage";
+import { getProductionSeoPage, productionSeoPages } from "@/lib/production-seo-pages";
+import { productionMetadata } from "@/lib/production-seo";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import { ArrowRight, CheckCircle2, Layers3, PlayCircle, Sparkles } from "lucide-react";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { Header } from "@/components/Header";
@@ -9,16 +14,31 @@ import { featuredToolById, featuredTools } from "@/lib/featured-tools";
 import { sampleVideos } from "@/lib/sample-videos";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
+// Configured navigation is read at request time, not during production builds.
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
-  return featuredTools.map((tool) => ({ id: tool.id }));
+  return [...new Set([...featuredTools.map(tool => tool.id), ...productionSeoPages.filter(page => page.section === "tools").map(page => page.slug)])].map(id => ({ id }));
 }
 
 type ToolPageProps = {
   params: Promise<{ id: string }>;
 };
 
+export async function generateMetadata({ params }: ToolPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const page = getProductionSeoPage("tools", id);
+  if (page) return productionMetadata(page);
+  const tool = featuredToolById(id);
+  if (!tool) return {};
+  return { title: tool.title + " | Crelavo", description: tool.description, alternates: { canonical: "/tools/" + id } };
+}
+
 export default async function ToolDetailPage({ params }: ToolPageProps) {
-  const [{ id }, siteContent] = await Promise.all([params, getConfiguredSiteContentConfig()]);
+  const { id } = await params;
+  const productionPage = getProductionSeoPage("tools", id);
+  if (productionPage) return <ProductionSeoPage page={productionPage} />;
+  const siteContent = await getConfiguredSiteContentConfig();
   const tool = featuredToolById(id);
   if (!tool) notFound();
 

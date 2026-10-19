@@ -1,3 +1,4 @@
+import { ProductionPageCards } from "@/components/ProductionSeoPage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
@@ -81,6 +82,7 @@ export default async function ToolsPage() {
             ))}
           </div>
         </section>
+        <ProductionPageCards section="tools" />
       </main>
     </>
   );

@@ -1,3 +1,6 @@
+import { ProductionSeoPage } from "@/components/ProductionSeoPage";
+import { getProductionSeoPage, productionSeoPages } from "@/lib/production-seo-pages";
+import { productionMetadata } from "@/lib/production-seo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -102,11 +105,13 @@ function AlternativeStructuredData({ page }: { page: NonNullable<ReturnType<type
 }
 
 export function generateStaticParams() {
-  return alternativePages.map((page) => ({ slug: page.slug }));
+  return [...new Set([...alternativePages.map(page => page.slug), ...productionSeoPages.filter(page => page.section === "alternatives").map(page => page.slug)])].map(slug => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const productionPage = getProductionSeoPage("alternatives", slug);
+  if (productionPage) return productionMetadata(productionPage);
   const page = getAlternativePage(slug);
   if (!page) return {};
 
@@ -192,6 +197,8 @@ function ProductGeneratorsListicle({ page, navLinks }: { page: NonNullable<Retur
 }
 export default async function AlternativeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const productionPage = getProductionSeoPage("alternatives", slug);
+  if (productionPage) return <ProductionSeoPage page={productionPage} />;
   const [siteContent, page] = await Promise.all([getConfiguredSiteContentConfig(), Promise.resolve(getAlternativePage(slug))]);
   if (!page) notFound();
   const related = getRelatedAlternativePages(page);

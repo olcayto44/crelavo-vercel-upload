@@ -1,3 +1,4 @@
+import { ProductionPageCards } from "@/components/ProductionSeoPage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
@@ -182,6 +183,7 @@ export default async function BlogPage() {
             <Link className="btn secondary" href="/categories">View categories</Link>
           </div>
         </section>
+        <ProductionPageCards section="blog" />
       </main>
     </>
   );

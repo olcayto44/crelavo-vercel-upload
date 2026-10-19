@@ -1,3 +1,4 @@
+import { ProductionPageCards } from "@/components/ProductionSeoPage";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
@@ -110,6 +111,7 @@ export default async function AlternativesPage() {
             <Link href="/pricing"><b>Pricing and credits</b><small>Review delivery and package options</small></Link>
           </div>
         </section>
+        <ProductionPageCards section="alternatives" />
       </main>
     </>
   );

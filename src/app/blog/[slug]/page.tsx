@@ -1,16 +1,25 @@
+import { ProductionSeoPage } from "@/components/ProductionSeoPage";
+import { getProductionSeoPage, productionSeoPages } from "@/lib/production-seo-pages";
+import { productionMetadata } from "@/lib/production-seo";
 import type { Metadata } from "next";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { ecommerceIntegrationGuides, getEcommerceIntegrationGuide } from "@/lib/ecommerce-integration-guides";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
+// Configured navigation is read at request time, not during production builds.
+export const dynamic = "force-dynamic";
+
 export function generateStaticParams() {
-  return ecommerceIntegrationGuides.map((guide) => ({ slug: guide.slug }));
+  return [...new Set([...ecommerceIntegrationGuides.map(guide => guide.slug), ...productionSeoPages.filter(page => page.section === "blog").map(page => page.slug)])].map(slug => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const productionPage = getProductionSeoPage("blog", slug);
+  if (productionPage) return productionMetadata(productionPage);
   const guide = getEcommerceIntegrationGuide(slug);
   if (!guide) return {};
 
@@ -36,6 +45,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EcommerceGuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const productionPage = getProductionSeoPage("blog", slug);
+  if (productionPage) return <ProductionSeoPage page={productionPage} />;
   const [siteContent, guide] = await Promise.all([getConfiguredSiteContentConfig(), Promise.resolve(getEcommerceIntegrationGuide(slug))]);
   if (!guide) notFound();
 

@@ -53,7 +53,8 @@
     "test:production-preview": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/production-preview-smoke.mts",
     "test:production-request-schema": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/production-request-schema-smoke.mts",
     "start": "next start",
-    "lint": "npm run smoke && npm run build"
+    "lint": "npm run smoke && npm run build",
+    "smoke:production-seo": "node scripts/production-seo-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",
