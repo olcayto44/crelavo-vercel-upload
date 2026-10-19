@@ -1,4 +1,5 @@
 import { HardReloadLink } from "@/components/HardReloadLink";
+import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 
 // Dashboard navigation keeps user production, tools and account paths in one place.
 const navGroups = [
@@ -55,7 +56,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
   return (
     <main className={shellClassName}>
       <aside className="dashboard-sidebar-card">
-        <HardReloadLink className="logo" href="/dashboard"><span className="logo-mark">▶</span><span>Crelavo</span></HardReloadLink>
+        <HardReloadLink className="logo" href="/dashboard"><SiteBrandLogo /></HardReloadLink>
         <p>AI production planning, dashboard delivery, credits and post-launch growth tools.</p>
         <HardReloadLink className="dashboard-primary-action" href="/categories">Create</HardReloadLink>
         <nav className="dashboard-nav-groups" aria-label="Dashboard menu">

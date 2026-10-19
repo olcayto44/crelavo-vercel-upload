@@ -13,6 +13,7 @@ import { PreviewSupportBoxRouteGate } from "@/components/PreviewSupportBoxRouteG
 import { PresenceBeacon } from "@/components/PresenceBeacon";
 import { RouteAwareFooter } from "@/components/RouteAwareFooter";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MobileSiteHeader } from "@/components/MobileSiteHeader";
 import { YandexMetrica } from "@/components/YandexMetrica";
 import "./globals.css";
 
@@ -127,7 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
         <PresenceBeacon />
-        <AuthProvider>{children}<AuthModal /><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></AuthProvider>
+        <AuthProvider><MobileSiteHeader />{children}<AuthModal /><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></AuthProvider>
       </body>
     </html>
   );

@@ -28,7 +28,7 @@ assert(!copy.includes('?'), 'Chinese copy was corrupted by the shell encoding');
 const links = read('src/components/LanguagePageLinks.tsx');
 assert(links.includes('ZH (\u4e2d\u6587)'.replace('\\u4e2d','\u4e2d').replace('\\u6587','\u6587')));
 assert(links.includes('hrefLang={page.hreflang}'));
-for (const file of ['src/components/Header.tsx','src/components/InnerMobileNav.tsx','src/app/page.tsx']) assert(read(file).includes('<LanguagePageLinks />'),file+' not connected');
+for (const file of ['src/components/Header.tsx','src/components/MobileSiteHeader.tsx']) assert(read(file).includes('<LanguagePageLinks />'),file+' not connected');
 for (const locale of ['de','fr','tr']) assert(read('src/app/'+locale+'/[slug]/page.tsx').includes('...localizedLanguageAlternates()'), locale+' hreflang reciprocity');
 assert(read('src/app/sitemap.ts').includes('localizedEuropePages.map'));
 const zhPage=read('src/app/zh/ai-video-generator/page.tsx');
@@ -65,7 +65,7 @@ async function checkHttp() {
   }
   for(const route of ['/','/tools','/blog']) {
     const html=await get(route);
-    const nav=html.match(/<nav\b[^>]*id="cl-mnav-sheet"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
+    const nav=html.match(/<dialog\b[^>]*id="crelavo-mobile-menu"[^>]*>([\s\S]*?)<\/dialog>/)?.[1];
     assert(nav,'Mobile menu missing on '+route);
     assert(nav.includes('href="/zh/ai-video-generator"'),'ZH missing in mobile menu '+route);
     assert(nav.includes('ZH ('),'Chinese menu label missing '+route);

@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { LanguagePageLinks } from "@/components/LanguagePageLinks";
 import { Header } from "@/components/Header";
-import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 import { HeroReel } from "@/components/home/HeroReel";
@@ -223,46 +221,6 @@ html body #clh .films a.film{display:block!important;}
 
 .hero-badge{display:inline-flex;margin:0 0 12px;padding:6px 12px;border-radius:999px;background:rgba(34,211,238,.18);color:#fff;font-size:13px;font-weight:600}.hero-sub{max-width:36rem;margin:12px 0 20px;color:rgba(255,255,255,.78);font-size:16px;line-height:1.45}.hero-cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}.hero-cta-primary,.hero-cta-secondary{display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 22px;border-radius:999px;font-size:15px;font-weight:600;text-decoration:none;white-space:nowrap}.hero-cta-primary{background:#22d3ee;color:#fff}.hero-cta-secondary{background:transparent;border:1px solid rgba(255,255,255,.55);color:#fff}.hero-cta-tertiary{color:rgba(255,255,255,.85);font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:3px}.hero-sticky{display:none}@media(max-width:767px){.hero-overlay{padding-bottom:92px}.hero-cta-row{flex-direction:column;align-items:stretch}.hero-cta-primary,.hero-cta-secondary{width:100%}.hero-cta-tertiary{text-align:center}.hero-sticky{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:rgba(2,6,23,.92);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(12px)}.hero-sticky .hero-cta-primary{flex:1}.hero-sticky .hero-cta-signin{flex:0 0 auto;height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.55);color:#fff;font-size:15px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}}`;
 
-const menuScript = `
-(function(){
-  function pin(){var src=document.getElementById('clh-css');if(!src)return;var old=document.getElementById('clh-css-head');if(old)old.parentNode.removeChild(old);var style=document.createElement('style');style.id='clh-css-head';style.textContent=src.textContent;document.head.appendChild(style);}
-  function scrub(){var nodes=document.querySelectorAll('#cl-mnav-panel,nav#cl-mnav-panel');for(var i=0;i<nodes.length;i++){if(nodes[i]&&nodes[i].parentNode)nodes[i].parentNode.removeChild(nodes[i]);}}
-  pin();scrub();setTimeout(function(){pin();scrub();},80);setTimeout(function(){pin();scrub();},400);
-  document.addEventListener("click",function(e){
-    var el=e.target&&e.target.closest&&e.target.closest("a.cikis");
-    if(!el)return;
-    e.preventDefault();
-    var nodes=document.querySelectorAll(".signed-in-actions button.auth-mini-btn");
-    for(var i=0;i<nodes.length;i++){
-      if(/sign out|çıkış/i.test((nodes[i].textContent||"").trim())){nodes[i].click();return;}
-    }
-    if(nodes[0])nodes[0].click();
-  });
-  (function(){
-    var HOME="https://www.crelavo.com/";
-    function authed(){return !!document.querySelector(".nav-session-bar .signed-in-actions,.nav-session-bar .user-info-pill");}
-    function hashPending(){var h=location.hash||"";return h.indexOf("access_token=")!==-1||h.indexOf("error=")!==-1;}
-    function goHome(){
-      if(hashPending())return;
-      if(location.pathname!=="/"||location.search||location.hash){location.replace(HOME);}
-    }
-    function sync(){
-      if(authed()){
-        document.documentElement.classList.add("cl-authed");
-        goHome();
-      } else {
-        document.documentElement.classList.remove("cl-authed");
-      }
-    }
-    sync();
-    var bar=document.querySelector(".nav-session-bar");
-    if(bar&&window.MutationObserver){new MutationObserver(sync).observe(bar,{childList:true,subtree:true});}
-    setTimeout(sync,80);setTimeout(sync,400);setTimeout(sync,1200);
-    if(hashPending()){setTimeout(function(){if(!hashPending()&&authed())goHome();},800);}
-  })();
-
-})();
-`;
 
 export default async function HomePage() {
   const configuredShowcaseVideos = await getConfiguredShowcaseVideos({ includeDrafts: true });
@@ -274,15 +232,6 @@ export default async function HomePage() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }} />
     <Header navLinks={siteContent.navLinks} />
     <main className="public-home-page"><style id="clh-css" dangerouslySetInnerHTML={{ __html: css }} />
-      <div id="cl-home-nav">
-        <input type="checkbox" id="cl-mnav-toggle" aria-hidden="true" />
-        <label htmlFor="cl-mnav-toggle" className="cl-mnav" aria-label="Menu">Menu</label>
-        <nav id="cl-mnav-sheet" aria-label="Mobil menü">
-          <a href="/categories">Create</a><a href="/tools">Tools</a><a href="/pricing">Pricing</a><a href="/live-sales-credits">Live Sales</a><a href="/drone-credits">Drone</a><a href="/dashboard/create">Assistant</a><a href="/dashboard">Dashboard</a><a href="/contact">Contact</a><a href="/blog">Blog</a>
-          <div className="langs"><LanguagePageLinks /></div>
-          <div className="auth"><AuthHeaderControls /></div>
-        </nav>
-      </div>
       <script dangerouslySetInnerHTML={{ __html: `console.log("CL HERO", ${JSON.stringify(activeHeroVideos.map((v) => v.id + "|" + v.heroEnabled + "|" + v.heroOrder + "|" + (v.videoUrl ?? "-")))});` }} /><section id="clh">
         <div className="stage"><div className="stage-bg" id="clh-hero-slides"><HeroReel /></div><div className="stage-veil" /><div className="stage-grain" /><div className="stage-copy"><div className="inner"><p className="hero-badge">Crelavo Pro</p><h1>Make the feed look <em>expensive.</em></h1><p className="hero-sub">Card required. 24-hour preview, one production, no downloads. Then $9.99/month unless cancelled.</p><div className="hero-cta-row"><a className="hero-cta-primary" href="https://whop.com/checkout/ch_MTZtuBJl2OuZtL8/">Start Pro · $9.99/mo</a></div></div></div></div><div className="hero-sticky" role="navigation" aria-label="Mobile account access"><a className="hero-cta-primary" href="https://whop.com/checkout/ch_MTZtuBJl2OuZtL8/">Start Pro · $9.99/mo</a><a className="hero-cta-signin" href="/join">Sign in</a></div>
         <div className="wrap wall" id="clh-films"><span className="kicker">Showcase</span><h2>The work hits first. Copy comes second.</h2><p className="sub">Muted playback. Every film opens its full Crelavo example.</p><HomeShowcaseGrid films={films} /><a className="more" href="/showcase/explore-samples">Browse all {films.length} samples →</a></div>
@@ -291,7 +240,7 @@ export default async function HomePage() {
 
       </section>
 
-      <script dangerouslySetInnerHTML={{ __html: menuScript }} />
+
     </main>
   </>;
 }
