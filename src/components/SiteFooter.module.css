@@ -1,7 +1,7 @@
 .footer:global(#cl-site-footer){display:grid;gap:28px;padding-top:40px;padding-bottom:28px;border-top:1px solid rgba(148,163,184,.16);color:#aeb8cc;font-size:14px}
-.brandRow{display:flex;align-items:center;justify-content:space-between;gap:28px}
+.brandRow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
 .brandLink{display:inline-flex;align-items:center;flex:0 0 auto;max-width:100%;text-decoration:none}
-.description{margin:0;max-width:520px;color:#aeb8cc;font-size:14px;line-height:1.75}
+.description{margin:0;width:100%;max-width:none;color:#aeb8cc;font-size:14px;line-height:1.75;text-align:center;white-space:nowrap}
 .columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 44px;padding:28px 0;border-top:1px solid rgba(148,163,184,.12);border-bottom:1px solid rgba(148,163,184,.12)}
 .group{min-width:0}
 .group h2{margin:0 0 18px;color:#e2e8f0;font-size:14px;font-weight:650;line-height:1.5;letter-spacing:.015em}
@@ -23,6 +23,6 @@
 .bottom{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px 24px;padding-top:20px;border-top:1px solid rgba(148,163,184,.12);font-size:12px;line-height:1.7}
 .legalLinks{display:flex;flex-wrap:wrap;gap:10px 20px}
 .footer .legalLinks a{font-size:12px}
-@media(max-width:760px){.brandRow{align-items:flex-start;flex-direction:column;gap:14px}.columns{gap:28px 22px}.utilityRow{flex-direction:column;gap:24px}.bottom{align-items:flex-start;flex-direction:column}}
+@media(max-width:760px){.brandRow{align-items:center;gap:14px}.description{white-space:normal}.columns{gap:28px 22px}.utilityRow{flex-direction:column;gap:24px}.bottom{align-items:flex-start;flex-direction:column}}
 @media(max-width:600px){.columns{grid-template-columns:minmax(0,1fr);gap:30px;padding:24px 0}.group h2{margin-bottom:12px}.group ul{gap:10px}.footer .group a{display:inline-block;padding:3px 0}.socialLinks{gap:12px 18px}.footer:global(#cl-site-footer){gap:24px;padding-top:28px}}
 @media(prefers-reduced-motion:reduce){.footer a{transition:none}}
