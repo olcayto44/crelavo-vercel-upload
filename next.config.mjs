@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+const isDevelopment = process.env.NODE_ENV === "development";
 const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -30,10 +31,19 @@ const nextConfig = {
     ];
   },
   async headers() {
+    // React/Turbopack debugging needs eval only on the local development server.
+    // Production retains the original strict policy without unsafe-eval.
+    const environmentHeaders = securityHeaders.map((header) => {
+      if (!isDevelopment || header.key !== "Content-Security-Policy") return header;
+      return { ...header, value: header.value
+        .replace("script-src 'self'", "script-src 'self' 'unsafe-eval'")
+        .replace("connect-src 'self'", "connect-src 'self' ws:")
+        .replace("; upgrade-insecure-requests", "") };
+    });
     return [
       {
         source: "/:path*",
-        headers: securityHeaders
+        headers: environmentHeaders
       },
       {
         source: "/admin/:path*",

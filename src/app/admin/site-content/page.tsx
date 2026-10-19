@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminShell } from "@/components/AdminShell";
 import { AdminSiteContentManager } from "@/components/AdminSiteContentManager";
 import { defaultSiteContentConfig } from "@/lib/site-content-config";
@@ -8,6 +9,7 @@ export default function AdminSiteContentPage() {
       <section className="card admin-wide-card">
         <span className="badge">Content Management</span>
         <h3>Public site content</h3>
+        <p><Link className="btn" href="/admin/branding">Logo ve Marka — logoyu değiştir</Link></p>
         <p style={{ color: "var(--muted)", marginTop: 0 }}>This panel manages top navigation, homepage moving showcase slides, blog topics, media slots and footer help content through the platform_configs table. Blog topics can be added, removed and re-ordered from here; the public Blog / Content page now also carries Academy and programmatic SEO engine sections.</p>
         <AdminSiteContentManager initialContent={defaultSiteContentConfig} />
       </section>

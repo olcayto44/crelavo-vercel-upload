@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Clapperboard } from "lucide-react";
+import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 import { HeaderCreditPill } from "@/components/HeaderCreditPill";
 import { LocalizedNavLink } from "@/components/LocalizedNavLink";
 import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
@@ -70,8 +70,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
   return (
     <header className="container nav site-main-nav">
       <Link className="logo" href="/">
-        <span className="logo-mark"><Clapperboard size={18} /></span>
-        <span>Crelavo</span>
+        <SiteBrandLogo />
       </Link>
       <nav className="nav-links primary-nav-links">
         <div className="tools-mega-wrap create-mega-wrap">
