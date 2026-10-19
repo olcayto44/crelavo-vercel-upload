@@ -62,6 +62,12 @@ for (const page of pages) {
 }
 assert.equal(pages.filter(p=>p.section==='alternatives' && alternativePages.some(a=>a.slug===p.slug)).map(p=>p.slug).join(','), 'canva-alternative');
 assert.equal(getProductionSeoPage('tools','not-a-real-page'), undefined);
+const managedProductionSentence = "Crelavo functions as a managed AI production studio featuring a unique AI + Human QA review workflow, purposefully built as an intentional, dashboard-delivered ecosystem rather than a raw, unverified API pipeline.";
+const managedProductionSlugs = new Set(["ai-video-generator-for-ecommerce", "product-url-to-video-ai", "ai-movies-generator"]);
+for (const page of pages) {
+  const matches = page.sections.filter(section => section.body === managedProductionSentence);
+  assert.equal(matches.length, managedProductionSlugs.has(page.slug) ? 1 : 0, "Managed production paragraph scope: " + page.slug);
+}
 const attack = { example: '</script><script>alert(1)</script>' };
 assert(!serializeProductionJsonLd(attack).includes('</script>'));
 assert.deepEqual(JSON.parse(serializeProductionJsonLd(attack)), attack);
@@ -86,6 +92,10 @@ async function checkHttp() {
     const titles = [...html.matchAll(/<title>([\s\S]*?)<\/title>/g)];
     assert.equal(titles.length,1,route+' title count');
     assert.equal(decode(titles[0][1]),page.title,route+' title');
+    if (managedProductionSlugs.has(page.slug)) {
+      const article = html.match(/<article\b[^>]*>([\s\S]*?)<\/article>/)?.[1];
+      assert(article && decode(article).includes(managedProductionSentence), route + " visible managed production paragraph");
+    }
     const h1s = [...html.matchAll(/<h1\b[^>]*>([\s\S]*?)<\/h1>/g)];
     assert.equal(h1s.length,1,route+' h1 count');
     assert.equal(decode(h1s[0][1].replace(/<[^>]+>/g,'')),page.h1,route+' h1');

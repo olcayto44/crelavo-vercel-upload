@@ -134,6 +134,10 @@ export const productionSeoPages: ProductionSeoPage[] = [
     {
       "heading": "Plan for the channel and the market",
       "body": "Set the platform, aspect ratio, language and CTA before production. Localization should preserve product facts while adapting phrasing and cultural context. Review translations, captions and visual claims before publishing."
+    },
+    {
+      "heading": "Managed production, reviewed delivery",
+      "body": "Crelavo functions as a managed AI production studio featuring a unique AI + Human QA review workflow, purposefully built as an intentional, dashboard-delivered ecosystem rather than a raw, unverified API pipeline."
     }
   ],
   "comparisonLabel": "Isolated clip workflow",
@@ -242,6 +246,10 @@ export const productionSeoPages: ProductionSeoPage[] = [
     {
       "heading": "Specify the final package",
       "body": "Set the channel, language, duration, format and number of variations. Request handoff notes or a source ZIP if needed and confirm availability. A generated video does not automatically include editable third-party project files."
+    },
+    {
+      "heading": "Managed production, reviewed delivery",
+      "body": "Crelavo functions as a managed AI production studio featuring a unique AI + Human QA review workflow, purposefully built as an intentional, dashboard-delivered ecosystem rather than a raw, unverified API pipeline."
     }
   ],
   "comparisonLabel": "Link scraping without a brief",
@@ -350,6 +358,10 @@ export const productionSeoPages: ProductionSeoPage[] = [
     {
       "heading": "Create a continuity reference",
       "body": "Provide authorized character and world references, wardrobe notes and a style guide. Reuse anchors across scenes and inspect outputs. Reference-based production supports continuity planning but cannot guarantee identical details in every generated frame."
+    },
+    {
+      "heading": "Managed production, reviewed delivery",
+      "body": "Crelavo functions as a managed AI production studio featuring a unique AI + Human QA review workflow, purposefully built as an intentional, dashboard-delivered ecosystem rather than a raw, unverified API pipeline."
     }
   ],
   "comparisonLabel": "Disconnected clip generation",
