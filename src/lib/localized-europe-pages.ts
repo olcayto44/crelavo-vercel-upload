@@ -1,5 +1,5 @@
 export type LocalizedEuropePage = {
-  locale: "de" | "fr" | "tr";
+  locale: "de" | "fr" | "tr" | "zh";
   hreflang: string;
   languageName: string;
   slug: string;
@@ -83,7 +83,53 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
     ],
     useCases: ["Shopify ürün videosu", "Amazon ürün reklamı", "Sosyal medya kreatifi", "Landing page briefi", "Avrupa kampanya paketi"],
     keywords: ["yapay zeka video üretici", "AI ürün videosu", "e-ticaret video reklam", "Avrupa e-ticaret kampanyası"]
-  }
+  },
+{
+  "locale": "zh",
+  "hreflang": "zh-Hans",
+  "languageName": "简体中文",
+  "slug": "ai-video-generator",
+  "path": "/zh/ai-video-generator",
+  "title": "AI 视频生成器：电商产品广告与创意制作 | Crelavo",
+  "description": "通过产品链接、创意简报和授权素材，规划 AI 产品视频、社交广告、电影概念短片、系列内容及数字人视频。了解 Crelavo 的制作流程、价格与交付范围。",
+  "eyebrow": "面向跨境电商与创作者的 AI 制作工作室",
+  "h1": "用产品链接和创意简报，开启 AI 视频制作",
+  "lead": "为 Shopify、Amazon 等平台的产品准备视频广告，或规划电影概念短片、系列内容、音乐视频和数字人讲解。提供准确的产品信息与授权素材，确认制作范围和点数后，再开始制作。",
+  "primaryCta": "开始制作简报",
+  "secondaryCta": "查看价格与点数",
+  "marketNote": "适合跨境电商品牌、独立站卖家、营销团队和内容创作者。此页面为简体中文介绍；账户、结算和部分工作区页面目前仍为英文。",
+  "sections": [
+    {
+      "title": "从产品链接到广告简报",
+      "body": "提交公开产品链接、目标市场、卖点和品牌素材。若网页无法读取，请直接提供产品信息和授权图片。先核对事实，再确认开场钩子、产品展示和行动号召。"
+    },
+    {
+      "title": "让创意和交付保持一致",
+      "body": "在简报中注明平台、语言、画幅、时长和版本数量。需要字幕、配音、人物参考或交付说明时，请明确提出；支持范围与费用以确认后的制作方案为准。"
+    },
+    {
+      "title": "先确认范围，再开始制作",
+      "body": "查看制作所需点数、供应商可用性和交付要求。产品主张、音乐、声音及肖像均需具备相应使用权。生成内容仍需审核，不保证广告审批、销售增长或角色完全一致。"
+    }
+  ],
+  "useCases": [
+    "Shopify 产品视频",
+    "Amazon 产品广告",
+    "UGC 风格广告",
+    "电影概念短片与系列内容",
+    "音乐视频与歌词视频",
+    "数字人讲解视频"
+  ],
+  "keywords": [
+    "AI 视频生成器",
+    "AI 产品视频",
+    "电商视频广告",
+    "跨境电商 AI",
+    "数字人视频",
+    "AI 电影",
+    "Crelavo 中文"
+  ]
+}
 ];
 
 export function getLocalizedEuropePage(locale: string, slug: string) {

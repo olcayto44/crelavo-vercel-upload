@@ -78,6 +78,7 @@ const translations: Record<string, Partial<Record<TranslationKey, string>>> = {
 };
 
 const navTranslations: Record<string, Record<string, string>> = {
+  zh: { Home: "首页", Categories: "制作分类", Create: "开始创作", Tools: "工具", Pricing: "价格", Credits: "点数", Assistant: "AI 助手", Start: "开始", Productions: "制作项目", Dashboard: "控制台", Contact: "联系我们", "Blog / Content": "博客与指南" },
   tr: {
     Home: "Ana sayfa",
     Categories: "Kategoriler",

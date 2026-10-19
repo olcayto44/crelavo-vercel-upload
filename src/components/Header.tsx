@@ -3,7 +3,7 @@ import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 import { HeaderCreditPill } from "@/components/HeaderCreditPill";
 import { LocalizedNavLink } from "@/components/LocalizedNavLink";
 import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
-import { localizedEuropePages } from "@/lib/localized-europe-pages";
+import { LanguagePageLinks } from "@/components/LanguagePageLinks";
 import { footerGroups } from "@/lib/site-content";
 import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-config";
 
@@ -106,7 +106,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">
-          {localizedEuropePages.map((page) => <Link href={page.path} key={page.path}>{page.locale.toUpperCase()}</Link>)}
+          <LanguagePageLinks />
         </div>
         <HeaderCreditPill />
         <AuthHeaderControls />
