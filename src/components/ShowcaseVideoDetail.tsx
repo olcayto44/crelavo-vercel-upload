@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, CheckCircle2, PlayCircle } from "lucide-react";
 import { Header } from "@/components/Header";
 import { SiteStructuredData } from "@/components/SiteStructuredData";
-import { absoluteShowcaseVideoImage, type ShowcaseVideo } from "@/lib/showcase-videos";
+import { absoluteShowcaseVideoImage, type ShowcaseVideo, type ShowcaseVideoSeo } from "@/lib/showcase-videos";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "").replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
 
@@ -42,9 +42,12 @@ export function ShowcaseVideoDetail({
   backLabel = "Back to showcase videos",
   actionHref = `/dashboard/create?category=video&sample=${encodeURIComponent(video.id)}`,
   actionLabel = "Create a similar video",
-  showHeader = true
+  showHeader = true,
+  seo
 }: {
   video: ShowcaseVideoDetailVideo;
+  seo?: ShowcaseVideoSeo;
+
   backHref?: string;
   backLabel?: string;
   actionHref?: string;
@@ -77,6 +80,23 @@ export function ShowcaseVideoDetail({
             </div>
           </div>
         </section>
+        {seo ? (
+          <div className="showcase-detail-grid">
+            <section className="showcase-detail-card">
+              <span className="badge">Strategic overview</span>
+              <h2>Strategic overview</h2>
+              <p>{seo.strategicOverview}</p>
+            </section>
+            <section className="showcase-detail-card">
+              <span className="badge">GEO targeting & ad psychology</span>
+              <h2>Built for targeted markets</h2>
+              <p>{seo.geoPsychology}</p>
+              <div className="social-chip-row" style={{ marginTop: 12 }}>
+                {seo.geoTargets.map((target) => <span key={target}><CheckCircle2 size={14} /> {target}</span>)}
+              </div>
+            </section>
+          </div>
+        ) : null}
         <div className="showcase-detail-grid">
           <section className="showcase-detail-card">
             <h2>Why this video matters</h2>
@@ -101,6 +121,7 @@ export function ShowcaseVideoDetail({
             ))}
           </div>
         </section>
+        {seo ? <section className="showcase-detail-card" style={{ marginTop: 18 }}><span className="badge">Search intent</span><h2>{seo.seoTitle}</h2><div className="social-chip-row">{seo.nicheKeywords.map((keyword) => <span key={keyword}><CheckCircle2 size={14} /> {keyword}</span>)}</div></section> : null}
       </section>
     </main>
   );

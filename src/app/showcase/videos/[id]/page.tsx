@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/Header";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-import { absoluteShowcaseVideoImage, type ShowcaseVideo } from "@/lib/showcase-videos";
+import { absoluteShowcaseVideoImage, getShowcaseVideoSeo, type ShowcaseVideo } from "@/lib/showcase-videos";
 import { getConfiguredShowcaseVideo, getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://www.crelavo.com").trim().replace(/\/$/, "").replace(/^https:\/\/crelavo\.com$/i, "https://www.crelavo.com");
@@ -41,6 +41,7 @@ function ideaHref(title: string) {
 
 function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
   const chips = video.bestFor || [];
+  const seo = getShowcaseVideoSeo(video);
   const why = video.details || [];
   const info = (video.productionDetails && video.productionDetails.length
     ? video.productionDetails
@@ -80,6 +81,21 @@ function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
               </video>
             </div>
           </div>
+          {seo ? (
+            <div className="grid-2">
+              <section className="card">
+                <span className="kicker">Strategic overview</span>
+                <h2>Why this video matters</h2>
+                <p>{seo.strategicOverview}</p>
+              </section>
+              <section className="card">
+                <span className="kicker">GEO targeting & ad psychology</span>
+                <h2>Built for targeted markets</h2>
+                <p>{seo.geoPsychology}</p>
+                <div className="chips" style={{ marginTop: 12 }}>{seo.geoTargets.map((target) => <span className="chip" key={target}>{target}</span>)}</div>
+              </section>
+            </div>
+          ) : null}
           <div className="grid-2">
             <section className="card">
               <h2>Why this video matters</h2>
@@ -105,6 +121,7 @@ function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
             </div>
           </section>
           <div className="cta-row" style={{ marginTop: 18 }}>
+            {seo ? <a className="btn btn-cyan" href={seo.ctaHref}>{seo.ctaLabel}</a> : null}
             <a className="btn btn-cyan" href={PRO_MO}>Start 24-hour Pro preview — $9.99/mo</a>
             <a className="btn btn-ghost" href={PRO_YR}>Annual Pro — $99/yr</a>
             <a className="btn btn-ghost" href="/free-tools/ad-performance-score-checker">Free AI ad scorer</a>

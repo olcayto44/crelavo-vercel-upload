@@ -1,3 +1,14 @@
+export type ShowcaseVideoSeo = {
+  seoSlug: string;
+  seoTitle: string;
+  geoTargets: string[];
+  nicheKeywords: string[];
+  strategicOverview: string;
+  geoPsychology: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+
 export type ShowcaseVideo = {
   id: string;
   title: string;
@@ -12,6 +23,107 @@ export type ShowcaseVideo = {
   productionDetails?: { title: string; text: string }[];
   orientation?: "portrait" | "landscape";
 };
+
+const showcaseVideoSeo: Record<string, ShowcaseVideoSeo> = {
+  "product-link-to-video-showcase": {
+    seoSlug: "product-link-to-video",
+    seoTitle: "Shopify Product Link to Ad Video Generator - Amazon URL to Video AI",
+    geoTargets: ["United States (USA)", "United Kingdom (UK)", "Canada (CA)", "Australia (AU)"],
+    nicheKeywords: ["Shopify ad maker", "product link to video creator", "automated dropshipping video ads", "Amazon product video tool"],
+    strategicOverview: "This Crelavo showcase demonstrates how a raw Shopify or Amazon product link is converted into a launch-ready social media video ad.",
+    geoPsychology: "Designed for high-CPM western markets. The AI extracts product benefits, customer pain points and localized calls to action for US, UK, Canadian and Australian buyer contexts.",
+    ctaLabel: "Convert Your Product Link to Video Now - Start 24h Free Trial",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "ad-creative-angles-showcase": {
+    seoSlug: "ad-creative-angles",
+    seoTitle: "AI Ad Creative Angles Generator - E-commerce Ad Fatigue Solution",
+    geoTargets: ["United States (USA)", "Germany", "United Kingdom (UK)", "Western Europe"],
+    nicheKeywords: ["e-commerce creative automation", "ad fatigue solutions", "A/B testing video angles", "AI marketing campaign tools"],
+    strategicOverview: "Turn tired product features into fresh, multi-angle creative variants for Facebook, TikTok and Google Ads without increasing production overhead.",
+    geoPsychology: "Built for agencies and brands scaling spend across North America and the Eurozone, with distinct problem-solution, social-proof and direct-offer hooks.",
+    ctaLabel: "Generate Fresh Ad Creative Angles - Try Free Tools",
+    ctaHref: "/free-tools/ad-performance-score-checker"
+  },
+  "ugc-style-ad-showcase": {
+    seoSlug: "ugc-style-ad",
+    seoTitle: "AI UGC Ad Generator - Creator-Style E-commerce Video Ads",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Western Europe"],
+    nicheKeywords: ["AI UGC creator program", "creator-led product video", "TikTok UGC ad maker", "authentic e-commerce ads"],
+    strategicOverview: "Watch how raw product assets become a natural, creator-led UGC video built around social trust and rapid pacing.",
+    geoPsychology: "Formatted for TikTok, Reels and Shorts feeds in western markets, using authentic storytelling rather than generic slideshows to support lower acquisition costs.",
+    ctaLabel: "Create Your First AI UGC Ad in 60 Seconds - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "crelavo-summer-face-mist": {
+    seoSlug: "summer-face-mist",
+    seoTitle: "AI Beauty Product Video Maker - Skincare UGC Advertisement",
+    geoTargets: ["Southern Europe (Spain, Italy, France)", "United States (Sunbelt region)", "United Kingdom"],
+    nicheKeywords: ["skincare product video ad", "beauty visual creator AI", "cosmetic product unboxing maker", "DTC beauty ads"],
+    strategicOverview: "A high-end macro skincare showcase showing a traveler refreshing with a mist on a sunny European street.",
+    geoPsychology: "Optimized for Spanish, Italian, French and US cosmetic markets, focusing on sensory product details, texture close-ups and fresh lifestyle visuals for seasonal launches.",
+    ctaLabel: "Generate Skincare Video Ads - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "crelavo-emerald-satin-dress": {
+    seoSlug: "emerald-satin-dress",
+    seoTitle: "AI Fashion Video Creator - Clothing Unboxing & Try-On Ad",
+    geoTargets: ["United Kingdom", "Germany", "United States", "France"],
+    nicheKeywords: ["fashion try-on haul maker", "clothing product clip AI", "apparel UGC ad template", "Shopify fashion automation"],
+    strategicOverview: "An editorial-grade vertical fashion unboxing and try-on video featuring premium fabric in a clean, modern room setup.",
+    geoPsychology: "Tailored to UK, German, US and French fashion buyers, using texture highlights and smooth transitions to build product trust without making unsupported sizing claims.",
+    ctaLabel: "Launch Your Apparel Video Campaign Now",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-leopard-chain-bag": {
+    seoSlug: "leopard-chain-bag",
+    seoTitle: "AI Luxury Accessory Video Generator - Fashion Handbag CGI Ad",
+    geoTargets: ["United States", "France (Paris)", "Italy (Milan)", "United Kingdom (London)"],
+    nicheKeywords: ["luxury fashion CGI showcase", "handbag video advertisement", "premium editorial fashion clips", "high-end lifestyle video ads"],
+    strategicOverview: "A premium product commercial for a leopard-print plush chain bag with editorial framing and fashion-focused motion.",
+    geoPsychology: "Built for affluent western fashion hubs, using close-ups and premium visual pacing to increase perceived value for boutique brands and Shopify stores.",
+    ctaLabel: "Make Your Feed Look Expensive - Start Pro",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-dog-dental-care": {
+    seoSlug: "dog-dental-care",
+    seoTitle: "AI Pet Product Video Generator - Dog Wellness UGC Ad",
+    geoTargets: ["United States", "Canada", "United Kingdom", "Germany (DE)"],
+    nicheKeywords: ["pet wellness advertisement", "dog toy product video", "Amazon pet listings video maker", "dropshipping pet ads"],
+    strategicOverview: "A playful pet-wellness commercial featuring a golden retriever demonstrating dental care in a modern bathroom setup.",
+    geoPsychology: "Geared toward premium pet owners in North America and Germany, addressing practical buyer questions about ease of use and everyday care without making medical claims.",
+    ctaLabel: "Generate Pet Product Videos Instantly - Free Link-to-Video",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "wireless-earbuds-modern-neon-studio": {
+    seoSlug: "wireless-earbuds-neon",
+    seoTitle: "AI Tech Product Commercial Maker - Electronics Video Ad Generator",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Australia"],
+    nicheKeywords: ["consumer tech product ad", "gadget short-form commercial", "wireless earbud video workflow", "Amazon tech listing ad"],
+    strategicOverview: "A presenter-led tech product commercial featuring wireless earbuds in a modern neon studio layout.",
+    geoPsychology: "Formatted for tech audiences in the US, UK, Canada and Australia, emphasizing clear product presentation and feature-led pacing without inventing specifications.",
+    ctaLabel: "Scale Your Tech Gadget Launch Now",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "turkish-avatar-hook": {
+    seoSlug: "turkish-avatar-hook",
+    seoTitle: "AI Video Localization Studio - Multilingual Voice & Lip-Sync Dubbing",
+    geoTargets: ["Turkey", "Germany", "United States", "Global expansion teams"],
+    nicheKeywords: ["Turkish e-commerce product video", "AI dubbing services", "multilingual script adaptation", "cross-border marketplace localization"],
+    strategicOverview: "A cross-border e-commerce localization example showing how one product video or asset can be adapted into market-specific regional hooks and local delivery.",
+    geoPsychology: "Connects Turkish marketplace context with international Amazon markets by adapting language, pacing, humor and buyer-trust signals for each region.",
+    ctaLabel: "Localize Your Ad for Global Markets Now",
+    ctaHref: "/dashboard/assistant-workspace?category=localization"
+  }
+};
+
+export function getShowcaseVideoSeo(video: Pick<ShowcaseVideo, "id">): ShowcaseVideoSeo | undefined {
+  return showcaseVideoSeo[video.id];
+}
+
+export function getShowcaseVideoBySeoSlug(slug: string) {
+  return showcaseVideos.find((video) => showcaseVideoSeo[video.id]?.seoSlug === slug);
+}
 
 export const showcaseVideos: ShowcaseVideo[] = [
   {

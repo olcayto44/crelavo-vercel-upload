@@ -8,9 +8,14 @@ import { ShowcaseVideoDetail } from "@/components/ShowcaseVideoDetail";
 import { ExploreSamplesBody } from "@/components/ExploreSamplesBody";
 import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { getShowcaseItem, showcaseItems } from "@/lib/showcase-items";
+import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
+import { getShowcaseVideoSeo, showcaseVideos } from "@/lib/showcase-videos";
 
 export function generateStaticParams() {
-  return showcaseItems.map((item) => ({ id: item.id }));
+  return [
+    ...showcaseItems.map((item) => ({ id: item.id })),
+    ...showcaseVideos.map((video) => getShowcaseVideoSeo(video)?.seoSlug).filter(Boolean).map((id) => ({ id: id as string }))
+  ];
 }
 
 const siteUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://crelavo.com").trim().replace(/\/$/, "");
@@ -217,7 +222,15 @@ function buildShowcaseKeywords(item: { title: string; description: string; longD
 export async function generateMetadata({ params }: ShowcasePageProps): Promise<Metadata> {
   const { id } = await params;
   const item = getShowcaseItem(id);
-  if (!item) return { title: "Showcase detail | Crelavo" };
+  if (!item) {
+    const video = (await getConfiguredShowcaseVideos()).find((entry) => getShowcaseVideoSeo(entry)?.seoSlug === id);
+    const seo = video ? getShowcaseVideoSeo(video) : undefined;
+    if (video && seo) {
+      const description = `${seo.strategicOverview} ${seo.geoPsychology}`;
+      return { title: seo.seoTitle, description, keywords: seo.nicheKeywords, alternates: { canonical: `${siteUrl}/showcase/${seo.seoSlug}` }, openGraph: { title: seo.seoTitle, description, url: `${siteUrl}/showcase/${seo.seoSlug}`, type: "video.other", videos: [{ url: video.videoUrl, type: "video/mp4" }] } };
+    }
+    return { title: "Showcase detail | Crelavo" };
+  }
   const keywords = buildShowcaseKeywords(item).slice(0, 3).join(", ");
   return {
     title: `${item.title} showcase for ${item.bestFor[0] || "Crelavo users"} | Crelavo`,
@@ -237,7 +250,12 @@ export default async function ShowcaseDetailPage({ params, searchParams }: Showc
   const [{ id }, siteContent] = await Promise.all([params, getConfiguredSiteContentConfig()]);
   const query = searchParams ? await searchParams : {};
   const item = getShowcaseItem(id);
-  if (!item) notFound();
+  if (!item) {
+    const video = (await getConfiguredShowcaseVideos()).find((entry) => getShowcaseVideoSeo(entry)?.seoSlug === id);
+    if (!video) notFound();
+    const seo = getShowcaseVideoSeo(video);
+    return <ShowcaseVideoDetail video={video} seo={seo} backHref="/showcase/explore-samples" backLabel="Back to showcase videos" actionHref={seo?.ctaHref} actionLabel={seo?.ctaLabel} />;
+  }
   const selectedHomepageVideo = id === "explore-samples" ? crelavoHomepageVideos.find((video) => video.id === query.video) : undefined;
   if (selectedHomepageVideo) {
     return <ShowcaseVideoDetail video={selectedHomepageVideo} backHref="/showcase/explore-samples" backLabel="Back to samples" actionHref={`/dashboard/create?category=video&sample=${encodeURIComponent(selectedHomepageVideo.id)}`} actionLabel="Create a similar video" />;
