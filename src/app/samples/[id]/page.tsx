@@ -81,8 +81,12 @@ export async function generateMetadata({ params }: SamplePageProps): Promise<Met
   if (!sample) return { title: "Sample detail | Crelavo" };
   const keywords = buildSampleKeywords(sample).slice(0, 4).join(", ");
 
+  const metaTitle = sample.id === "stickman-explainer"
+    ? "Free AI Stickman Animation Explainer Generator (9:16 & 16:9) | Crelavo"
+    : `${sample.title} sample for ${sample.category} | Crelavo`;
+
   return {
-    title: `${sample.title} sample for ${sample.category} | Crelavo`,
+    title: metaTitle,
     description: `${sample.description} Explore ${keywords} and use this sample as a direct entry into the matching Crelavo production workflow.`,
     keywords: buildSampleKeywords(sample),
     alternates: { canonical: `/samples/${sample.id}` },
@@ -136,6 +140,12 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
           </div>
         </section>
 
+        {sample.id === "stickman-explainer" ? (
+          <div className="container stickman-sample-cta stickman-sample-cta-top">
+            <a href="https://crelavo.com">⚡ Turn Any Topic into Stickman Video - Start Free</a>
+          </div>
+        ) : null}
+
         <section className="container sample-detail-keywords-section">
           <div className="showcase-info-card showcase-wide-card">
             <span className="badge">SEO keyword coverage</span>
@@ -165,6 +175,10 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
           </div>
         </section>
 
+        {sample.id === "stickman-explainer" ? (
+          <p className="container stickman-sample-internal-link"><strong>💡 Dropshipping or E-commerce Seller? If you need to turn a direct product URL into a high-converting social media ad instead of a line animation, explore our <a href="/ai-product-video-generator">managed AI Product Video Generator workflow</a>.</strong></p>
+        ) : null}
+
         <section className="container section home-section-tight sample-detail-workflow">
           <div className="sample-detail-section-head">
             <span className="badge"><Clapperboard size={15} /> What this sample includes</span>
@@ -181,6 +195,12 @@ export default async function SampleDetailPage({ params }: SamplePageProps) {
         <section className="container section home-section-tight">
           <SampleVideoGallery title="More sample outputs" subtitle="Open another large sample card, then create a similar production from its detail page." limit={3} videos={related} />
         </section>
+        {sample.id === "stickman-explainer" ? (
+          <div className="container stickman-sample-cta stickman-sample-cta-bottom">
+            <a href="https://crelavo.com">🚀 Create Your Own Stickman Animation in 60 Seconds</a>
+          </div>
+        ) : null}
+
       </main>
     </>
   );

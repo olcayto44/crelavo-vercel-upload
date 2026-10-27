@@ -13573,3 +13573,29 @@ html body:has(#clh) .crelavo-auth-sticky { display: none !important; }
   html body:has(#crelavo-mobile-header) .dashboard-sidebar-card{box-sizing:border-box;min-width:0;max-width:100%}
   html body:has(#crelavo-mobile-header) .dashboard-sidebar-card > .logo{display:none!important}
 }
+
+/* Stickman sample conversion CTAs. */
+.stickman-sample-cta {
+  display: flex;
+  justify-content: center;
+  margin: 25px auto;
+  text-align: center;
+}
+.stickman-sample-cta a {
+  display: inline-block;
+  padding: 16px 32px;
+  color: #000;
+  font-family: sans-serif;
+  font-size: 18px;
+  font-weight: 750;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: transform .2s, background-color .2s;
+}
+.stickman-sample-cta a:hover { transform: scale(1.05); }
+.stickman-sample-cta-top a { background: #00ff66; box-shadow: 0 4px 15px rgba(0,255,102,.3); }
+.stickman-sample-cta-bottom { margin-top: 35px; margin-bottom: 48px; }
+.stickman-sample-cta-bottom a { background: #fff; border: 2px solid #00ff66; box-shadow: 0 4px 10px rgba(255,255,255,.1); }
+.stickman-sample-cta-bottom a:hover { background: #00ff66; }
+.stickman-sample-internal-link { margin-top: 28px; margin-bottom: 0; line-height: 1.6; }
+.stickman-sample-internal-link a { color: #00ff66; text-decoration: underline; }
