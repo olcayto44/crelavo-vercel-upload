@@ -46,6 +46,8 @@ export const sampleVideos: SampleVideo[] = [
     description: "Product link, hook, voice-over, subtitles, product close-ups and social CTA in one ready-to-publish package.",
     features: ["Product URL analysis", "Voice-over", "Styled subtitles", "TikTok/Reels/Shorts export"],
     href: "/dashboard/assistant-workspace?idea=Skincare%20product%20ad%20sample",
+    videoUrl: "/showcase/uploads/crelavo-premium-skincare-gift-box.mp4",
+    thumbnailUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-09-04/image/1786222106538364280-1786222106536.png",
     likeCount: 842,
     shareCount: 96,
     comments: [
@@ -63,7 +65,9 @@ export const sampleVideos: SampleVideo[] = [
     credits: "Pro plan fit",
     description: "Fast hook variations for testing angle, caption, CTA and first-three-second retention before buying a premium output.",
     features: ["Multiple hooks", "Caption variants", "Controlled 1080p tests", "Social publishing prep"],
-    href: "/dashboard/assistant-workspace?idea=Fashion%20hook%20test%20sample"
+    href: "/dashboard/assistant-workspace?idea=Fashion%20hook%20test%20sample",
+    videoUrl: "/showcase/uploads/leopard-faux-fur-bag.mp4",
+    thumbnailUrl: "https://cdn.hailuoai.video/moss/prod/2026-08-21-07/image/1787266915208416909-1787266915187.png"
   },
   {
     id: "ugc-product-demo",
@@ -75,7 +79,9 @@ export const sampleVideos: SampleVideo[] = [
     credits: "Business / Ultra",
     description: "Creator-style product explanation with scene plan, voice direction, subtitles and platform-ready export notes.",
     features: ["UGC script", "AI video", "Voice direction", "Ad-ready CTA"],
-    href: "/dashboard/assistant-workspace?idea=UGC%20product%20demo%20sample"
+    href: "/dashboard/assistant-workspace?idea=UGC%20product%20demo%20sample",
+    videoUrl: "/showcase/uploads/crelavo-product-link-ai-video-ad.mp4",
+    thumbnailUrl: "/showcase/ai-production-studio.webp"
   },
   {
     id: "music-visualizer",
@@ -123,7 +129,9 @@ export const sampleVideos: SampleVideo[] = [
     credits: "Pro plan fit",
     description: "Fast, clear animation package for education, product explanation or idea walkthroughs with simple line characters.",
     features: ["Short script", "Stickman scene plan", "Voice direction", "Subtitle notes"],
-    href: "/dashboard/assistant-workspace?idea=Stickman%20explainer%20sample"
+    href: "/dashboard/assistant-workspace?idea=Stickman%20explainer%20sample",
+    videoUrl: "https://cdn.hailuoai.video/moss/prod/2026-07-20-06/video/1784501593829539623-1784501593820.mp4",
+    thumbnailUrl: "/showcase/ai-production-studio.webp"
   },
   {
     id: "stickman-comedy-skit",

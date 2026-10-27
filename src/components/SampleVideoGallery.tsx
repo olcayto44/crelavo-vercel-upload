@@ -95,7 +95,7 @@ export function SampleVideoGallery({ title = "Sample video outputs", subtitle = 
                 <img className="sample-card-video sample-card-poster" src={item.thumbnailUrl} alt={samplePosterAlt(item)} loading="lazy" decoding="async" />
               ) : <div className="sample-card-video sample-card-static-fallback" aria-hidden="true" />}
               {allowVideoPreview ? (
-                <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="none" poster={item.thumbnailUrl} aria-label={`Crelavo AI product video hover preview for ${item.title}`} />
+                <video className="sample-card-video sample-card-video-layer" src={samplePreviewUrl(item, index)} muted loop playsInline preload="metadata" autoPlay poster={item.thumbnailUrl} aria-label={`Crelavo AI product video hover preview for ${item.title}`} />
               ) : null}
               <span className="sample-video-play"><PlayCircle size={34} /></span>
               <small>{item.category}</small>
