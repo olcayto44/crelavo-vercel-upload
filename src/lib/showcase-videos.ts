@@ -174,6 +174,66 @@ const showcaseVideoSeo: Record<string, ShowcaseVideoSeo> = {
     geoPsychology: "Geared toward pet boutiques in US, UK, Canadian and German markets, using visible product presentation to support questions about fit, flexibility and comfort without making unsupported material claims.",
     ctaLabel: "Convert Your Pet Product Link to Video Instantly",
     ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-premium-skincare-gift-box-set": {
+    seoSlug: "premium-skincare-gift-box",
+    seoTitle: "AI Skincare Video Advertising Generator - Luxury Serum Commercial",
+    geoTargets: ["United States", "United Kingdom", "France", "United Arab Emirates (UAE)"],
+    nicheKeywords: ["luxury skincare gift box video", "serum product commercial", "beauty ecommerce video ad", "premium cosmetic showcase"],
+    strategicOverview: "An ultra-premium skincare gift-box reveal featuring macro close-ups of luxury serum and cream textures under dramatic studio lighting.",
+    geoPsychology: "Tailored for high-end cosmetic brands and luxury Shopify stores targeting affluent audiences, with material detail and clinical pacing that support premium positioning without unsupported product claims.",
+    ctaLabel: "Make Your Skincare Feed Look Expensive - Start Pro",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-luxury-skincare-gift-box-unboxing": {
+    seoSlug: "luxury-skincare-unboxing",
+    seoTitle: "AI Skincare Unboxing Video Creator - Vertical Beauty UGC Ad",
+    geoTargets: ["United States", "Canada", "United Kingdom", "France"],
+    nicheKeywords: ["beauty product unboxing maker", "vertical skincare unboxing film", "cosmetic collection video template", "Shopify beauty automation"],
+    strategicOverview: "A polished vertical unboxing film revealing a luxury skincare collection in a clean, soft-lit modern home setting.",
+    geoPsychology: "Optimized for TikTok, Reels and Shorts feeds in the US, Canada, UK and France, turning product packaging into an authentic sensory beauty experience.",
+    ctaLabel: "Convert Your Beauty Product Link to Video Instantly",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "origami-dragon-meteor": {
+    seoSlug: "origami-dragon-meteor",
+    seoTitle: "AI Anime Video Generator - Fast Neon Anime Teaser Creator",
+    geoTargets: ["United States", "Japan", "Germany", "France", "Global creators"],
+    nicheKeywords: ["AI anime short film builder", "neon anime teaser template", "character creator AI", "automated anime video production"],
+    strategicOverview: "A fast neon anime teaser showcasing a paper crane transforming into a luminous dragon with atmospheric particle effects.",
+    geoPsychology: "Built for content creators, webtoon artists and indie studios worldwide, with short-form visual escalation suited to anime teasers and fantasy scene concepts.",
+    ctaLabel: "Build Your Anime Short Scene - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "great-mishaps": {
+    seoSlug: "great-mishaps",
+    seoTitle: "AI 3D Character Animation Builder - Animated Movie Teaser",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Western Europe"],
+    nicheKeywords: ["3D character animation pack", "animated superhero comedy", "golden hour animation workflow", "automated 3D storytelling"],
+    strategicOverview: "A cinematic 3D animation featuring lovable misfit heroes navigating golden-hour comedic chaos with expressive character staging.",
+    geoPsychology: "Designed for marketing agencies, entertainment startups and app-explainer teams in North America and western Europe, demonstrating a polished animated storytelling direction without claiming a specific studio affiliation.",
+    ctaLabel: "Create a Similar 3D Animation Pack - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "cinematic-horror-bedroom-door-scene": {
+    seoSlug: "horror-bedroom-door",
+    seoTitle: "AI Suspense Video Creator - Vertical Horror Scene Generator",
+    geoTargets: ["United States", "United Kingdom", "Global gaming and movie channels"],
+    nicheKeywords: ["suspense driven vertical scene", "horror short scene maker", "cinematic horror hallway video", "short film trailer montage"],
+    strategicOverview: "A suspense-driven vertical horror sequence showing a frightened character receiving a telephone warning before a mysterious corridor shadow appears.",
+    geoPsychology: "Formatted for horror channels, YouTube Shorts and indie film trailers in western markets, using atmosphere, tension-building movement and compact sound-led pacing.",
+    ctaLabel: "Launch Your Short Film Teaser Pack - Try Pro",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "3d-businesswoman-holographic-presentation": {
+    seoSlug: "saas-feature-promo",
+    seoTitle: "AI SaaS Product Video Generator - 3D App Explainer Creator",
+    geoTargets: ["United States", "United Kingdom", "Germany", "Canada"],
+    nicheKeywords: ["SaaS feature promo clip", "vertical 3D business animation", "holographic presentation video maker", "app store preview video AI"],
+    strategicOverview: "A presenter-led vertical 3D animation featuring a businesswoman presenting holographic data and creative software solutions.",
+    geoPsychology: "Optimized for software founders, SaaS companies and B2B marketers in the US, UK, Germany and Canada, translating visible product concepts into benefit-focused explainer direction without inventing specifications.",
+    ctaLabel: "Scale Your Mobile App & SaaS Launch Now",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
   }
 };
 
