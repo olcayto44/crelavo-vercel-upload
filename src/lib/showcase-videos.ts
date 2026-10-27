@@ -114,6 +114,66 @@ const showcaseVideoSeo: Record<string, ShowcaseVideoSeo> = {
     geoPsychology: "Connects Turkish marketplace context with international Amazon markets by adapting language, pacing, humor and buyer-trust signals for each region.",
     ctaLabel: "Localize Your Ad for Global Markets Now",
     ctaHref: "/dashboard/assistant-workspace?category=localization"
+  },
+  "crelavo-ramen-flavor-ad": {
+    seoSlug: "ramen-flavor-ad",
+    seoTitle: "AI Food Commercial Video Maker - Fast Casual Product Ad Generator",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Singapore"],
+    nicheKeywords: ["food product commercial maker", "beverage video advertisement", "fast-casual restaurant ads", "Shopify food store automation"],
+    strategicOverview: "A high-energy food commercial featuring cinematic close-ups, steam, fresh ingredient toppings and professional package reveals.",
+    geoPsychology: "Tailored for modern instant-food brands and fast-casual subscription models in North America and Asia-Pacific, using bold visual hooks and sensory cues early in the video to support appetite-driven commerce.",
+    ctaLabel: "Generate Food Commercial Videos Instantly - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-sunset-soda-spot": {
+    seoSlug: "sunset-soda-spot",
+    seoTitle: "AI Beverage Ad Creator - Premium Drink Commercial Generator",
+    geoTargets: ["Western Europe (France, Italy, Germany)", "United States (California, Florida)"],
+    nicheKeywords: ["drink spot commercial loop", "beverage social media ads", "premium lifestyle drink commercial", "DTC beverage marketing tool"],
+    strategicOverview: "A premium lifestyle beverage commercial combining a model-led profile, sunset indoor lighting and high-fidelity bottled beverage reveals.",
+    geoPsychology: "Optimized for western European and coastal US beverage startups, using polished visual pacing and refreshing lifestyle dynamics to support premium brand positioning without inventing product claims.",
+    ctaLabel: "Make Your Drink Brand Look Expensive - Try Pro",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "crelavo-relationship-cards": {
+    seoSlug: "relationship-cards",
+    seoTitle: "AI Tabletop Game Video Maker - Card Game UGC Advertisement",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Australia"],
+    nicheKeywords: ["board game product video", "card game UGC ad layout", "Kickstarter tabletop game promo", "Amazon toy listings video maker"],
+    strategicOverview: "A cozy, natural creator-style UGC video capturing an intimate couple card-game night with warm lighting and authentic reactions.",
+    geoPsychology: "Designed for TikTok, Reels and Amazon stores in the US, UK, Canada and Australia, using emotional connection, practical objection handling and social-native pacing.",
+    ctaLabel: "Scale Your Card Game Campaign Now",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
+  },
+  "cinematic-battle-concept-showcase": {
+    seoSlug: "cinematic-battle-concept",
+    seoTitle: "AI Cinematic Video Trailer Generator - Sci-Fi Action Concept Film",
+    geoTargets: ["United States", "United Kingdom", "Germany", "South Korea"],
+    nicheKeywords: ["cinematic action concept trailer", "Sci-Fi video generator AI", "movie teaser creator software", "high-budget cinematic VFX studio"],
+    strategicOverview: "A high-control cinematic sci-fi teaser showcasing futuristic battle equipment, advanced motion mechanics and dramatic title cards.",
+    geoPsychology: "Built for gaming studios, entertainment channels and creative agencies globally, using cinematic movement, premium light treatment and intense audiovisual pacing for trailer concepts.",
+    ctaLabel: "Build Your Cinematic Series Concept - Try Crelavo Studio",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "crelavo-shot-montage-road": {
+    seoSlug: "shot-montage-road",
+    seoTitle: "AI Movie Teaser Creator - Cinematic Desert Highway Chase Scene",
+    geoTargets: ["United States (West Coast)", "Western Europe", "United Arab Emirates (UAE)"],
+    nicheKeywords: ["cinematic camera montage maker", "desert highway tracking shots", "action film teaser workflow", "high-end automotive video ads"],
+    strategicOverview: "A premium automotive tracking montage featuring a desert highway, motorcycle and luxury-car chase sequence with dramatic golden-hour lighting.",
+    geoPsychology: "Optimized for automotive brands, film pre-production teams and high-end lifestyle campaigns in North America, western Europe and the Middle East, with continuity-focused editorial pacing.",
+    ctaLabel: "Launch Your Cinematic Action Project - Start Free",
+    ctaHref: "/dashboard/assistant-workspace?category=video"
+  },
+  "crelavo-dog-sweater-fashion": {
+    seoSlug: "dog-sweater-fashion",
+    seoTitle: "AI Pet Apparel Video Maker - Colorful Dog Sweater UGC Ad",
+    geoTargets: ["United States", "United Kingdom", "Canada", "Germany"],
+    nicheKeywords: ["pet clothing product video AI", "dog sweater fashion commercial", "Shopify pet boutique marketing", "Amazon pet product clip"],
+    strategicOverview: "A bright studio-lit pet-fashion showcase highlighting colorful dog-apparel patterns with clean, high-retention motion aesthetics.",
+    geoPsychology: "Geared toward pet boutiques in US, UK, Canadian and German markets, using visible product presentation to support questions about fit, flexibility and comfort without making unsupported material claims.",
+    ctaLabel: "Convert Your Pet Product Link to Video Instantly",
+    ctaHref: "/dashboard/assistant-workspace?category=campaign"
   }
 };
 
