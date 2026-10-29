@@ -1347,7 +1347,7 @@ main.auth-screen .auth-card {
 
 .admin-menu-group summary::-webkit-details-marker { display: none; }
 .admin-menu-group summary::after { content: "+"; float: right; color: var(--muted); }
-.admin-menu-group[open] summary::after { content: "âˆ’"; }
+.admin-menu-group[open] summary::after { content: "−"; }
 .admin-sidebar-intro { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 10px 0; }
 
 .admin-menu-group a {
@@ -4314,7 +4314,7 @@ body.admin-route > .site-footer {
 }
 
 .ai-dashboard-shell::before {
-  content: "WORK Â· STUDIO Â· DEPLOY";
+  content: "WORK · STUDIO · DEPLOY";
   position: absolute;
   top: 12px;
   left: 50%;
