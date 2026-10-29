@@ -13,6 +13,7 @@ import { ASSISTANT_WORKSPACE_MESSAGES_KEY } from "@/lib/assistant-session-client
 import { buildAssistantProductionPayload, packageIdFromSelection, type UserUploadedMaterial } from "@/lib/production-payload";
 import { estimateProductionCost, productionPackages, productionTypes, type ProductionPackage } from "@/lib/production";
 import { productionWorkspacePath } from "@/lib/production-url";
+import { normalizeAssistantCategoryKey, resolveAssistantPromptCategoryKey, resolveProductionTypeIdFromCategory } from "@/lib/assistant-category";
 
 const defaultSteps = [
   "Brief received",
@@ -129,6 +130,199 @@ const deliveryHandoffItems = [
 ];
 
 type Message = { role: "assistant" | "user"; content: string };
+
+function categoryWelcomeMessage(category: string, language: string): string {
+  const key = normalizeAssistantCategoryKey(category);
+  const normalized = resolveAssistantPromptCategoryKey(category);
+  const turkish = language === "tr" || language.toLowerCase().startsWith("tr-");
+  const prompts: Record<string, [string, string]> = {
+    website: [
+      "Web sitesi oluşturma akışındayız. Ne tür bir site istiyorsun: kurumsal site, hizmet sayfası, landing page veya e-ticaret mağazası? Hedef kitleni ve olmazsa olmaz özelliklerini de yazabilirsin.",
+      "We’re setting up a website project. What kind of site do you need—a business site, service site, landing page, or online store? You can also tell me your audience and must-have features."
+    ],
+    ecommerce: [
+      "E-ticaret mağazası oluşturma akışındayız. Hangi ürünleri satacaksın, hangi ülkelere ve para birimleriyle satış yapacaksın? Ürün kataloğu, sepet, ödeme, kargo ve yönetim panelinden hangileri gerekli?",
+      "We’re setting up an ecommerce store. What products will you sell, which markets and currencies will you support, and do you need a catalog, cart, checkout, shipping rules, and an admin dashboard?"
+    ],
+    app_builder: [
+      "SaaS / uygulama oluşturma akışındayız. Web uygulaması, SaaS platformu veya mobil uygulama mı istiyorsun? Çözülecek problem, kullanıcı türleri ve ilk sürümdeki temel özellikler neler?",
+      "We’re setting up an app or SaaS project. Do you need a web app, SaaS platform, or mobile app? What problem will it solve, who will use it, and what are the essential MVP features?"
+    ],
+    product_ad_video: [
+      "Ürün reklam videosu akışındayız. Ürün linkini veya ürün görsellerini paylaşabilir misin? Hangi pazarda ve platformda reklam vereceğiz; ana satış vaadi, teklif ve hedef kitle nedir?",
+      "We’re setting up a product ad video. Share the product URL or product images. Which market and platform are we targeting, and what are the core selling point, offer, and audience?"
+    ],
+    social_media_content: [
+      "Sosyal medya içerik akışındayız. Hangi platformlarda içerik istiyorsun, markanın konusu ne ve ana hedef satış, erişim ya da topluluk oluşturmak mı? İstersen tek içerik yerine haftalık içerik paketi planlayabiliriz.",
+      "We’re setting up a social media content plan. Which platforms matter, what does the brand offer, and is the main goal sales, reach, or community growth? We can plan a weekly package instead of a single post."
+    ],
+    saas: [
+      "Uygulama / SaaS oluşturma akışındayız. Uygulaman hangi problemi çözecek, kimler kullanacak ve ilk sürümde mutlaka bulunması gereken 2–3 özellik neler?",
+      "We’re setting up an app / SaaS project. What problem will it solve, who will use it, and which 2–3 features are essential for the first version?"
+    ],
+    mobile_app: [
+      "Mobil uygulama akışındayız. Uygulama iOS, Android veya her ikisi için mi olacak? Kullanıcıların yapacağı temel işi ve gerekli ana ekranları anlatabilir misin?",
+      "We’re setting up a mobile app. Should it target iOS, Android, or both? Tell me the main thing users will do and the screens you need."
+    ],
+    admin_project: [
+      "Yönetim paneli akışındayız. Panelde neler yönetilecek, hangi kullanıcı rolleri olacak ve hangi işlemler yapılabilecek?",
+      "We’re setting up an admin panel. What will it manage, which user roles are needed, and what actions should each role be able to perform?"
+    ],
+    campaign: [
+      "Reklam ve sosyal medya kampanyası akışındayız. Hangi ürün veya hizmet için çalışıyoruz, hedef kitlen kim ve ana hedef satış, erişim ya da marka bilinirliği mi?",
+      "We’re setting up a campaign. What product or service is this for, who is the target audience, and is the main goal sales, reach, or brand awareness?"
+    ],
+    ai_agent: [
+      "Yapay zekâ ajanı akışındayız. Ajan hangi işi üstlenecek, hangi platformlarda çalışacak ve hangi işlemler için senden onay almalı?",
+      "We’re setting up an AI agent. What job should it handle, which platforms should it use, and which actions must wait for your approval?"
+    ],
+    localization: [
+      "Global lokalizasyon akışındayız. İçeriği hangi pazardan hangi ülke ve dillere uyarlıyoruz? Metni, ürünü veya kampanya materyalini ve hedef kitleni paylaşabilirsin.",
+      "We’re setting up a localization project. Which source market, target countries, and languages are involved? Share the content, product, or campaign and its audience."
+    ],
+    cultural_localization: [
+      "Kültürel uyarlama akışındayız. Hangi ülkeye yönelik çalışıyoruz, ürünün temel vaadi nedir ve o pazarda hangi ton veya kültürel hassasiyetlere dikkat etmeliyiz?",
+      "We’re setting up a cultural adaptation. Which country are we targeting, what is the product’s core promise, and what local tone or cultural considerations matter?"
+    ],
+    ad_score_checker: [
+      "Reklam analizi akışındayız. Reklam hangi platformda yayınlanacak ve hedefin satış, tıklama, izlenme veya dönüşüm mü? Reklam videosunu, görselini ya da metnini paylaşabilirsin.",
+      "We’re setting up an ad review. Which platform is the ad for, and are you optimizing sales, clicks, views, or conversions? Share the video, image, or ad copy."
+    ],
+    virtual_model_studio: [
+      "Sanal model stüdyosu akışındayız. Hangi ürün veya moda kategorisi için görsel üreteceğiz, hedef pazarın neresi ve modelin nasıl görünmesini istiyorsun?",
+      "We’re setting up a virtual model shoot. Which product or fashion category is this for, which market are you targeting, and what model direction do you want?"
+    ],
+    campaign_calendar: [
+      "Kampanya takvimi akışındayız. Hangi ürün veya marka için plan yapıyoruz, hedef ülke ve platformlar hangileri, kampanya dönemi hangi tarihler arasında?",
+      "We’re setting up a campaign calendar. Which brand or product are we planning for, which markets and platforms matter, and what dates should the campaign cover?"
+    ],
+    crelavo_academy: [
+      "Crelavo Academy akışındayız. Hangi konuda öğrenmek veya hazır şablon kullanmak istiyorsun: ürün videosu, UGC reklamı, e-ticaret büyümesi ya da AI üretim iş akışı?",
+      "We’re setting up a Crelavo Academy path. What do you want to learn or template—product video, UGC ads, ecommerce growth, or an AI production workflow?"
+    ],
+    community_showcase: [
+      "Topluluk örnekleri akışındayız. Beğendiğin örneği veya tarzı paylaşabilir misin? Onu hangi ürün, marka ve platform için uyarlamak istiyorsun?",
+      "We’re setting up a showcase-based project. Share the example or style you like, then tell me which product, brand, and platform it should be adapted for."
+    ],
+    live_sales_agent: [
+      "Canlı satış ajanı akışındayız. Hangi ürünü hangi platformda satacağız, hedef pazar ve dil nedir, ajan ürün sorularına nasıl cevap vermeli?",
+      "We’re setting up a live-sales agent. What product and platform are we selling on, which market and language matter, and how should the agent answer product questions?"
+    ],
+    image: [
+      "Görsel üretim akışındayız. Görsel nerede kullanılacak, hangi ürün veya konuyu göstermeli, hangi boyut ve görsel stil gerekiyor?",
+      "We’re setting up an image project. Where will the image be used, what should it show, and what dimensions and visual style do you need?"
+    ],
+    brand_kit: [
+      "Marka kimliği akışındayız. Marka adını, sektörünü, hedef kitleni ve istediğin görsel tarzı anlatabilir misin? Logo, renk paleti veya tipografi de gerekiyor mu?",
+      "We’re setting up a brand identity kit. Tell me the brand name, industry, audience, and visual direction. Do you also need a logo, color palette, or typography?"
+    ],
+    document_pack: [
+      "Doküman ve dosya paketi akışındayız. Hangi çıktıya ihtiyacın var: PDF, sunum, teklif, katalog, SEO raporu veya kaynak dosya paketi? İçeriği ve hedef okuyucuyu da belirtebilirsin.",
+      "We’re setting up a document and file package. Do you need a PDF, presentation, proposal, catalog, SEO report, or source-file package? Share the content and intended audience."
+    ],
+    avatar: [
+      "Avatar ve konuşan video akışındayız. Avatar ne için kullanılacak, hangi dilde konuşacak ve elinde kullanma iznine sahip olduğun bir fotoğraf veya ses var mı?",
+      "We’re setting up an avatar or talking-video project. What will it be used for, which language should it speak, and do you have an authorized photo or voice sample?"
+    ],
+    talking_video: [
+      "Konuşan video akışındayız. Videoda kim veya kaç kişi konuşacak, hangi dil ve ses tonu kullanılacak, elinde fotoğraf, video ya da ses materyali var mı?",
+      "We’re setting up a talking-video project. Who or how many people will speak, which language and tone should be used, and do you have photo, video, or voice material?"
+    ],
+    lip_sync: [
+      "Dudak senkronizasyonu akışındayız. Konuşturulacak yüz veya avatar için video/görsel ve ses kaydın var mı, yoksa önce metin ve ses mi hazırlayalım?",
+      "We’re setting up lip sync. Do you have a face/avatar video or image and an audio track, or should we prepare the script and voice first?"
+    ],
+    voice_clone: [
+      "Ses ve dublaj akışındayız. Hangi dil ve ses tarzı gerekiyor? Kullanacağımız ses kaydı sana ait veya kullanımına izin verilmiş olmalı; hedef teslimat ses dosyası mı, dublajlı video mu?",
+      "We’re setting up a voice or dubbing project. Which language and voice style do you need? Any sample must be yours or authorized. Do you need an audio file or a dubbed video?"
+    ],
+    visual_clone: [
+      "Görsel stil uyarlama akışındayız. Referans olarak hangi görseli veya tarzı kullanacağız, hangi ürün/karakter korunmalı ve yeni çıktı nerede kullanılacak? Yalnızca kullanma hakkına sahip olduğun materyalleri paylaş.",
+      "We’re setting up a visual-style adaptation. Which reference image or style should guide the work, what product or character must stay consistent, and where will the output be used? Share only material you have rights to use."
+    ],
+    video_clipping: [
+      "Video kırpma akışındayız. Kaynak videoyu yükleyebilir veya bağlantısını paylaşabilirsin. Kaç kısa video istiyorsun ve hangi platform için hazırlayalım?",
+      "We’re setting up a video-clipping project. Upload the source video or share its link. How many short clips do you want, and which platform are they for?"
+    ],
+    video_tools: [
+      "Video araçları akışındayız. Görselden videoya, metinden videoya, hareket kontrolü, video uzatma veya başka hangi işlemi yapmak istiyorsun? Elindeki kaynak dosyayı da paylaşabilirsin.",
+      "We’re setting up a video-tools task. Do you need image-to-video, text-to-video, motion control, video extension, or another operation? Share the source asset if you have one."
+    ],
+    drone_video: [
+      "Drone / uydu tarzı video akışındayız. Hangi konum veya alan gösterilecek, hedef kullanım emlak/turizm/ürün tanıtımı mı ve harita ya da rota referansın var mı?",
+      "We’re setting up a drone/satellite-style video. Which location or area should appear, is it for real estate, tourism, or product promotion, and do you have a map or route reference?"
+    ],
+    documentary: [
+      "Belgesel üretim akışındayız. Konu, hedef izleyici ve yaklaşık süre nedir? Araştırma, anlatıcı, röportaj yapısı ve arşiv görselleri konusunda ihtiyaçlarını belirleyelim.",
+      "We’re setting up a documentary. What is the topic, audience, and approximate length? Let’s define research, narration, interview structure, and archival visuals."
+    ],
+    animation: [
+      "Animasyon akışındayız. 2D, 2.5D, 3D, karakter animasyonu, motion graphics veya açıklayıcı video seçeneklerinden hangisi gerekiyor? Konu ve hedef süre nedir?",
+      "We’re setting up an animation. Do you need 2D, 2.5D, 3D, character animation, motion graphics, or an explainer? What is the topic and target duration?"
+    ],
+    anime_short_film: [
+      "Anime kısa film akışındayız. Hikâye türü, ana karakterler, sahne fikri ve hedef süre nedir? Diyalog, seslendirme ve altyazı isteyip istemediğini de belirtebilirsin.",
+      "We’re setting up an anime short film. What are the genre, main characters, scene idea, and target length? Tell me whether you need dialogue, voice-over, and subtitles."
+    ],
+    animal_video: [
+      "Hayvan videosu akışındayız. Hangi hayvan veya olay gösterilecek; komik, eğitici, doğal ya da sinematik bir tarz mı istiyorsun? Video hangi platformda kullanılacak?",
+      "We’re setting up an animal video. Which animal or event should appear, and should it be funny, educational, natural, or cinematic? Where will it be published?"
+    ],
+    nature_video: [
+      "Doğa videosu akışındayız. Manzara, vahşi yaşam, hava olayı veya belirli bir ortam mı istiyorsun? Görsel tarzı, süreyi ve anlatım/müzik ihtiyacını belirleyelim.",
+      "We’re setting up a nature video. Do you want a landscape, wildlife, weather event, or specific environment? Let’s define visual style, duration, narration, and music."
+    ],
+    planet_space_video: [
+      "Gezegen / uzay videosu akışındayız. Bilimsel açıklama mı, kozmik sinematik sahne mi istiyorsun? Konu, süre ve anlatım/altyazı tercihlerini paylaşabilirsin.",
+      "We’re setting up a planet/space video. Do you want a scientific explainer or a cinematic cosmic scene? Share the topic, duration, and narration/subtitle preferences."
+    ],
+    stickman_animation: [
+      "Çöp adam animasyonu akışındayız. Video eğitim, mizah, açıklama veya sosyal medya kısa videosu mu olacak? Mesajı, karakterleri ve hedef süreyi anlatabilirsin.",
+      "We’re setting up a stickman animation. Is it for education, comedy, explanation, or a social short? Tell me the message, characters, and target duration."
+    ],
+    music_video: [
+      "Müzik videosu akışındayız. Şarkın veya ses kaydın hazır mı; klip, lyric video, visualizer ya da kısa tanıtım mı istiyorsun? Tarzı ve hedef platformu da belirleyelim.",
+      "We’re setting up a music video. Do you have the track ready, and do you need a music clip, lyric video, visualizer, or teaser? Let’s define style and target platform."
+    ],
+    studio: [
+      "Dizi / film stüdyosu akışındayız. Fikri, türü, yaklaşık süreyi ve hedef formatı anlatabilir misin? Hikâye, karakterler, sahne planı ve fragman teslimini birlikte yapılandıralım.",
+      "We’re setting up a series/film project. Tell me the concept, genre, approximate length, and target format. We can structure the story, characters, scenes, and trailer deliverables."
+    ],
+    drama: [
+      "Kısa dizi / drama akışındayız. Hikâyenin konusu, ana karakterler, bölüm süresi ve yayın platformu nedir? Tek video mu, birden fazla bölüm mü hazırlıyoruz?",
+      "We’re setting up a short drama or series. What is the story, who are the main characters, how long is each episode, and where will it publish? One video or multiple episodes?"
+    ],
+    cinematic_video: [
+      "Sinematik video akışındayız. Ürün veya hikâye nedir, hangi atmosferi hedefliyorsun ve video nerede yayınlanacak? Kamera hissi, ışık, renk ve süreyi birlikte netleştirelim.",
+      "We’re setting up a cinematic video. What product or story are we showing, what mood do you want, and where will it publish? Let’s define camera feel, lighting, color, and duration."
+    ],
+    video: [
+      "Video üretim akışındayız. Video ne için kullanılacak, hangi platformda yayınlanacak ve nasıl bir tarz ile yaklaşık süre istiyorsun? Elinde ürün görseli veya referans varsa ekleyebilirsin.",
+      "We’re setting up a video project. What is it for, where will it be published, and what style and approximate duration do you want? You can add product images or references too."
+    ]
+  };
+  const categoryLabels: Record<string, string> = {
+    website: "web sitesi", saas: "uygulama / SaaS", mobile_app: "mobil uygulama", admin_project: "yönetim paneli",
+    ecommerce: "e-ticaret mağazası", app_builder: "SaaS / uygulama", product_ad_video: "ürün reklam videosu", social_media_content: "sosyal medya içerikleri",
+    campaign: "reklam ve kampanya", ai_agent: "AI ajanı", localization: "global lokalizasyon", cultural_localization: "kültürel lokalizasyon",
+    ad_score_checker: "reklam analizi", virtual_model_studio: "sanal model stüdyosu", campaign_calendar: "kampanya takvimi",
+    crelavo_academy: "Crelavo Academy", community_showcase: "topluluk örnekleri", live_sales_agent: "canlı satış ajanı",
+    image: "görsel üretimi", brand_kit: "marka kimliği", document_pack: "doküman paketi", avatar: "avatar üretimi",
+    talking_video: "konuşan video", lip_sync: "dudak senkronizasyonu", voice_clone: "ses ve dublaj", visual_clone: "görsel stil uyarlama", video_clipping: "video kırpma",
+    video_tools: "video araçları", drone_video: "drone / uydu videosu", documentary: "belgesel", animation: "animasyon",
+    anime_short_film: "anime kısa film", animal_video: "hayvan videosu", nature_video: "doğa videosu", planet_space_video: "gezegen / uzay videosu",
+    stickman_animation: "çöp adam animasyonu", music_video: "müzik videosu", studio: "dizi / film stüdyosu", drama: "kısa dizi / drama",
+    cinematic_video: "sinematik video", video: "video üretimi"
+  };
+  const resolved = prompts[normalized] ? normalized : "";
+  if (resolved) return prompts[resolved][turkish ? 0 : 1];
+
+  // Do not silently force an unfamiliar category into a video workflow.
+  const label = categoryLabels[key] || String(category || "").trim() || (turkish ? "üretim" : "production");
+  return turkish
+    ? `“${label}” kategorisini henüz doğru bir üretim türüyle eşleştiremedim. Yanlış iş başlatmamak için hedefini bir cümleyle anlatabilir veya desteklenen kategorilerden birini seçebilirsin.`
+    : `I couldn’t match “${label}” to a supported production type yet. To avoid starting the wrong job, describe your goal in one sentence or choose a supported category.`;
+}
 
 type AssistantAgentAction = {
   name?: string;
@@ -1404,19 +1598,29 @@ const [chatInput, setChatInput] = useState("");
 const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
   const [messages, setMessages] = useState<Message[]>(() => {
     const language = getStoredLanguage();
-    return [{ role: "assistant", content: language === "tr" ? "Selam, dinliyorum. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin; kısa ve net cevap vereceğim." : "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
+    const firstMessage = initialCategory
+      ? categoryWelcomeMessage(initialCategory, language)
+      : language === "tr"
+        ? "Selam, dinliyorum. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin; kısa ve net cevap vereceğim."
+        : "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here.";
+    return [{ role: "assistant", content: firstMessage }];
   });
   const [activeStep, setActiveStep] = useState(0);
   const [status, setStatus] = useState(() => getStoredLanguage() === "tr" ? "Canlı üretim çalışma alanı hazır. Asistanla serbestçe sohbet edebilirsin; üretim başlamadan önce kısa onay görünür." : "Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
   const [isLoading, setIsLoading] = useState(false);
   const [lastRoute, setLastRoute] = useState("/dashboard/assistant-workspace");
-  const [selectedProductionType, setSelectedProductionType] = useState("video");
+  const [selectedProductionType, setSelectedProductionType] = useState(() => initialCategory ? (resolveProductionTypeIdFromCategory(initialCategory, productionTypes) ?? "") : "video");
+  // Keep the category that launched the assistant separate from transient wizard/type guesses.
+  // It changes only when the user explicitly picks another category in a category selector.
+  const [activeAssistantCategoryType, setActiveAssistantCategoryType] = useState(() =>
+    initialCategory && resolveProductionTypeIdFromCategory(initialCategory, productionTypes) ? initialCategory : ""
+  );
   const [selectedQuality, setSelectedQuality] = useState("1080p");
   const [selectedStyle, setSelectedStyle] = useState("Cinematic");
   const [selectedDuration, setSelectedDuration] = useState("15 sec");
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(["Voice-over", "Subtitles", "Music"]);
-  const [selectedModules, setSelectedModules] = useState<string[]>(["AI video"]);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["Dashboard delivery", "MP4 download"]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(initialCategory ? [] : ["Voice-over", "Subtitles", "Music"]);
+  const [selectedModules, setSelectedModules] = useState<string[]>(initialCategory ? [] : ["AI video"]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(initialCategory ? ["Dashboard delivery"] : ["Dashboard delivery", "MP4 download"]);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
   const [activeCleanToolSection, setActiveCleanToolSection] = useState("categories");
   const [uploadedMaterials, setUploadedMaterials] = useState<UserUploadedMaterial[]>([]);
@@ -1735,9 +1939,9 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
   useEffect(() => {
     setMessages((current) => {
       if (current.length !== 1 || current[0]?.role !== "assistant") return current;
-      return [{ role: "assistant", content: localizedWorkspaceReply("default", activeLanguage, 1) }];
+      return [{ role: "assistant", content: initialCategory ? categoryWelcomeMessage(initialCategory, activeLanguage) : localizedWorkspaceReply("default", activeLanguage, 1) }];
     });
-  }, [activeLanguage]);
+  }, [activeLanguage, initialCategory]);
 
   useEffect(() => {
     const node = chatLogRef.current;
@@ -1851,6 +2055,7 @@ function selectWizardCategory(groupId: string, categoryId: string) {
   const subject = wizardCategoryLabels[categoryId] ?? dynamicWizardLabels[type];
   const productionMatch = productionTypes.some((item) => item.id === categoryId);
   if (productionMatch) {
+    setActiveAssistantCategoryType(categoryId);
     applyGeneralProductionPreset(categoryId, subject);
   } else {
     applyDynamicWizardPreset(type, subject);
@@ -2023,12 +2228,8 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     return ["e-ticaret", "ecommerce", "e-commerce", "shopify", "woocommerce", "marketplace", "mağaza", "magaza", "sepet", "checkout", "ürün sayfası", "urun sayfasi"].some((keyword) => text.includes(keyword));
   }
 
-  function productionTypeFromAssistantCategory(category?: string) {
-    const normalized = String(category ?? "").trim().toLocaleLowerCase("tr-TR");
-    if (/^(image|banner|poster|image \/ banner \/ poster|banner \/ poster|görsel|gorsel|afiş|afis)$/.test(normalized)) return "image";
-    if (/^(ecommerce|e-commerce|e commerce|e-ticaret)$/.test(normalized)) return "website";
-    const match = productionTypes.find((type) => type.label.toLocaleLowerCase("tr-TR") === normalized || type.id.toLocaleLowerCase("tr-TR") === normalized);
-    return match?.id ?? "video";
+  function productionTypeFromAssistantCategory(category?: string): string | null {
+    return category ? resolveProductionTypeIdFromCategory(category, productionTypes) : null;
   }
 
   function clearProductionChat() {
@@ -2053,7 +2254,13 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   }
 
   function applyCategorySelection(type: string) {
+    if (!productionTypes.some((item) => item.id === type)) return;
     const label = productionTypes.find((item) => item.id === type)?.label ?? type;
+    // Category cards inside the manager are explicit user choices, so update the trusted
+    // category context as well as the visible production preset.
+    setActiveAssistantCategoryType(type);
+    setStartError("");
+    setStartState("idle");
     applyGeneralProductionPreset(type, input.trim() || label);
     setOptionsOpen(true);
   }
@@ -2079,9 +2286,15 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   function applyAssistantSuggestion(suggestion: AssistantSuggestion, idea: string, plan?: AssistantPlan) {
     const suggestedText = `${idea} ${suggestion.suggestedPrompt ?? ""}`;
     const inferredType = inferDynamicWizardType(suggestedText);
-    const forcedVideoOnly = isAiVideoOnlyIntent(suggestedText) || inferredType === "video" && durationFromFollowUp(suggestedText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(suggestedText);
+    const activeCategoryEngineType = resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes);
+    const forcedVideoOnly = (!activeCategoryEngineType || activeCategoryEngineType === "video") && (
+      isAiVideoOnlyIntent(suggestedText) || inferredType === "video" && durationFromFollowUp(suggestedText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(suggestedText)
+    );
     const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(plan?.production_type ?? suggestion.category);
-    forcedVideoOnly ? applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea) : applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea);
+    if (type && resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes) !== type) {
+      setActiveAssistantCategoryType(type);
+    }
+    forcedVideoOnly ? applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea) : type ? applyGeneralProductionPreset(type, suggestion.suggestedPrompt || idea) : applyAiVideoOnlyPreset(suggestion.suggestedPrompt || idea);
   if (forcedVideoOnly) {
     if (plan?.selected_style || suggestion.style) setSelectedStyle(plan?.selected_style ?? suggestion.style ?? "SaaS modern");
     if (plan?.selected_quality || suggestion.quality) setSelectedQuality(safeWorkQuality(plan?.selected_quality ?? suggestion.quality));
@@ -2107,9 +2320,15 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     if (!firstJob) return;
   const jobText = `${idea} ${firstJob.brief ?? ""}`;
   const inferredType = inferDynamicWizardType(jobText);
-  const forcedVideoOnly = isAiVideoOnlyIntent(jobText) || inferredType === "video" && durationFromFollowUp(jobText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(jobText);
+  const activeCategoryEngineType = resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes);
+  const forcedVideoOnly = (!activeCategoryEngineType || activeCategoryEngineType === "video") && (
+    isAiVideoOnlyIntent(jobText) || inferredType === "video" && durationFromFollowUp(jobText) && /voice|voiceover|voice-over|seslendirme|subtitle|subtitles|altyazı|altyazi|mp4|tanitim|tanıtım|promo|cinematic|sinematik/i.test(jobText)
+  );
   const type = forcedVideoOnly ? "video" : productionTypeFromAssistantCategory(firstJob.type ?? "video");
-  forcedVideoOnly ? applyAiVideoOnlyPreset(firstJob.brief || idea) : applyGeneralProductionPreset(type, firstJob.brief || idea);
+  if (type && resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes) !== type) {
+    setActiveAssistantCategoryType(type);
+  }
+  forcedVideoOnly ? applyAiVideoOnlyPreset(firstJob.brief || idea) : type ? applyGeneralProductionPreset(type, firstJob.brief || idea) : applyAiVideoOnlyPreset(firstJob.brief || idea);
   if (forcedVideoOnly) {
     if (firstJob.selected_style) setSelectedStyle(firstJob.selected_style);
     if (firstJob.selected_quality) setSelectedQuality(safeWorkQuality(firstJob.selected_quality));
@@ -2189,6 +2408,22 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     }
     if (initialCategory) {
       const type = productionTypeFromAssistantCategory(initialCategory);
+      if (!type) {
+        setSelectedProductionType("");
+        setSelectedModules([]);
+        setSelectedFeatures([]);
+        setSelectedPlatforms(["Dashboard delivery"]);
+        setInput(initialIdea);
+        setProductionBrief(initialIdea);
+        setOptionsOpen(false);
+        setProductionStartingIntent(false);
+        setStartModalOpen(false);
+        setStatus(activeLanguage === "tr"
+          ? `“${initialCategory}” kategorisini henüz tanımıyorum. Yanlış üretim başlatmamak için önce bir kategori seçelim.`
+          : `I don't recognize the “${initialCategory}” category yet. To avoid starting the wrong production, please choose a supported category first.`);
+        setActiveCleanToolSection("categories");
+        return;
+      }
       const ideaForPreset = initialIdea || initialCategory;
       applyGeneralProductionPreset(type, ideaForPreset);
       if (initialMode === "commerce") {
@@ -2383,7 +2618,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   })();
   const isNoPresenterSelection = (value: string) => /no presenter|ui-only|yok|sadece ürün|sadece urun|sadece sahne|sadece ekran|sadece görüntü|sadece goruntu/i.test(value);
   const defaultManualWizardSteps = [
-    { id: "category", title: "Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "category", title: "Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) { setSelectedProductionType(match.id); setActiveAssistantCategoryType(match.id); } } },
     { id: "modules", title: "Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
     { id: "features", title: "Ek özellikler", subtitle: "Ses, altyazı, revizyon veya teslimat eklerini seç.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
     { id: "style", title: "Stil", subtitle: "Görsel/yaratıcı yönü seç.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
@@ -2392,7 +2627,7 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
     { id: "delivery", title: "Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
   const aiVideoWizardSteps = [
-    { id: "category", title: "Kategori", subtitle: "Yapay Zeka Videosu seçili. İstersen farklı kategoriye geçebilirsin.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "category", title: "Kategori", subtitle: "Yapay Zeka Videosu seçili. İstersen farklı kategoriye geçebilirsin.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) { setSelectedProductionType(match.id); setActiveAssistantCategoryType(match.id); } } },
     { id: "character", title: characterStepCopy.title, subtitle: characterStepCopy.subtitle, options: characterStepCopy.options, value: selectedCharacterProfile, apply: setSelectedCharacterProfile },
     { id: "voice", title: "Seslendirme", subtitle: "Ses tarzını seç.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Energetic sales voice", "Professional SaaS narrator", "Calm documentary voice", "Premium ad voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
     { id: "language", title: "Seslendirme dili", subtitle: "Voice-over ve altyazı dilini seç.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
@@ -2491,6 +2726,12 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
   }
 
   function openStartProductionModal() {
+    if (!productionTypes.some((item) => item.id === selectedProductionType)) {
+      setStatus(activeLanguage === "tr" ? "Önce geçerli bir üretim kategorisi seçmelisin." : "Choose a supported production category before starting.");
+      setActiveCleanToolSection("categories");
+      setOptionsOpen(true);
+      return;
+    }
     if (!manualWizardCompleted) {
       openManualWizard();
       return;
@@ -2505,6 +2746,14 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
   }
 
   async function startProduction() {
+    if (!productionTypes.some((item) => item.id === selectedProductionType)) {
+      setStatus(activeLanguage === "tr" ? "Üretim başlamadı. Önce geçerli bir kategori seç." : "Production was not started. Choose a supported category first.");
+      setActiveCleanToolSection("categories");
+      setOptionsOpen(true);
+      setStartState("error");
+      setStartError(activeLanguage === "tr" ? "Bu kategori desteklenmiyor. Bir kategori seçerek tekrar dene." : "This category is not supported yet. Select a category and try again.");
+      return;
+    }
     const clean = productionBrief.trim() || input.trim() || "Assistant workspace production";
     const luxuryCommercialIntent = /perfume|fragrance|matte-black|matte\s*black|luxury\s+commercial|premium\s+commercial|retail\s+counter|marble\s+wall|perfume\s+bottle/i.test(clean);
     const productionType = luxuryCommercialIntent ? "video" : productionTypeFromSelection();
@@ -2742,9 +2991,12 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
     }
     if (isStartConfirmation && hasProductionContext) {
       const existingBrief = productionBrief.trim() || messages.slice(-8).filter((item) => item.role === "user").map((item) => item.content).join("\n") || input.trim() || "AI video production";
-      if (isAiVideoOnlyIntent(existingBrief)) {
+      const activeCategoryEngineType = resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes);
+      if (isAiVideoOnlyIntent(existingBrief) && (!activeCategoryEngineType || activeCategoryEngineType === "video")) {
         applyAiVideoOnlyPreset(existingBrief);
-      } else if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
+      } else if (!dynamicWizard.open && existingBrief.trim() && !activeAssistantCategoryType && !initialCategory) {
+        openDynamicWizardFromMessage(existingBrief);
+      }
       setProductionBrief((current) => current.trim() ? current : existingBrief);
       setManualWizardCompleted(true);
       setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: currentTurnLanguage === "tr" ? "Onayı aldım. Chat içinde tekrar soru sormadan gerçek kredi rezerv/onay ekranını açıyorum." : "Confirmed. I am opening the real credit reserve and production approval step now." }]);
@@ -2756,7 +3008,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       setStartModalOpen(true);
       return;
     }
-    if (!conversationalOnly && !followUpProduction) {
+    if (!conversationalOnly && !followUpProduction && !activeAssistantCategoryType && !initialCategory) {
       openDynamicWizardFromMessage(clean);
     }
     if (followUpProduction) {
@@ -2819,6 +3071,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
             user_email: auth.user.email ?? "",
             message: clean,
             messages: nextMessages,
+            category_context: activeAssistantCategoryType,
             conversation_id: assistantConversationId,
             local_reply: conversationalOnly ? "" : assistantVisibleReply,
             language: activeLanguage,
@@ -2879,6 +3132,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
           user_email: auth.user.email ?? "",
           idea: clean,
           messages: assistantPayloadMessages,
+          category_context: activeAssistantCategoryType,
           mode
         })
       });
@@ -2906,7 +3160,14 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       let orchestratorPlan: AssistantOrchestratorResponse | null = null;
       if (!conversationalOnly) {
         applyAssistantSuggestion(suggestion, clean, plan);
-        openDynamicWizardFromMessage(clean, String(plan.production_type ?? suggestion.category ?? ""));
+        const plannedCategoryType = productionTypeFromAssistantCategory(String(plan.production_type ?? suggestion.category ?? ""));
+        const currentCategoryType = resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes);
+        // A category-specific discovery answer should not launch the generic dynamic wizard.
+        // Open it only for an uncategorized request or when the returned plan explicitly switches type.
+        const shouldOpenDynamicWizard = (!activeAssistantCategoryType && !initialCategory) || Boolean(currentCategoryType && plannedCategoryType && currentCategoryType !== plannedCategoryType);
+        if (shouldOpenDynamicWizard) {
+          openDynamicWizardFromMessage(clean, String(plan.production_type ?? suggestion.category ?? ""));
+        }
         try {
           const orchestratorResponse = await fetch("/api/assistant/orchestrate", {
             method: "POST",
@@ -2916,6 +3177,7 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
               user_email: auth.user.email ?? "",
               message: clean,
               messages: assistantPayloadMessages,
+              category_context: activeAssistantCategoryType,
               mode
             })
           });
@@ -2927,7 +3189,8 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
           }
           if (followUpProduction) {
             if (followUpDuration) setSelectedDuration(followUpDuration);
-            if (isAiVideoOnlyIntent(`${productionBrief}\n${clean}`) || selectedProductionType === "video") {
+            const activeCategoryEngineType = resolveProductionTypeIdFromCategory(activeAssistantCategoryType, productionTypes);
+            if ((isAiVideoOnlyIntent(`${productionBrief}\n${clean}`) && (!activeCategoryEngineType || activeCategoryEngineType === "video")) || selectedProductionType === "video") {
               setSelectedProductionType("video");
               setSelectedModules(["AI video"]);
               setSelectedPlatforms(["Dashboard delivery", "MP4 download"]);

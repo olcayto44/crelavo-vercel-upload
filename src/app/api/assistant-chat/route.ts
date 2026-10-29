@@ -1,6 +1,8 @@
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { buildAssistantKnowledgePrompt } from "@/lib/assistant-knowledge";
 import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib/assistant-user-context";
+import { buildAssistantCategoryContextNote } from "@/lib/assistant-category";
+import { productionTypes } from "@/lib/production";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { validateProductionSafety } from "@/lib/content-safety";
 
@@ -262,6 +264,7 @@ export async function POST(request: Request) {
   const userEmail = String(body.user_email ?? "").trim().toLowerCase();
   const message = String(body.message ?? "").trim().slice(0, 2000);
   const language = String(body.language ?? "en").trim() || "en";
+  const categoryContext = String(body.category_context ?? "").trim().slice(0, 100);
   const mode = modeFromBody(body.mode);
   const conversationId = String(body.conversation_id ?? "").trim();
   const localReply = String(body.local_reply ?? "").trim().slice(0, 2000);
@@ -329,7 +332,9 @@ export async function POST(request: Request) {
 
     const userContext = await loadAssistantUserContext(supabase, userId);
     const userContextPrompt = buildAssistantUserContextPrompt(userContext);
-    const reply = await generateChatReply(message, language, history, userContextPrompt);
+    const categoryContextPrompt = buildAssistantCategoryContextNote(categoryContext, productionTypes);
+    const combinedContextPrompt = [categoryContextPrompt, userContextPrompt].filter(Boolean).join("\n\n");
+    const reply = await generateChatReply(message, language, history, combinedContextPrompt);
     const activeConversationId = await ensureAssistantConversation(supabase, { conversationId, userId, userEmail, firstMessage: message });
     const now = new Date().toISOString();
     const { error: messageInsertError } = await supabase.from("assistant_messages").insert([

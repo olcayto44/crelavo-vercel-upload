@@ -53,7 +53,7 @@ export default async function CampaignCategoryPage() {
             This category is built for sellers who want to turn Shopify, Amazon, Trendyol or direct product links into campaign assets: product ad videos, UGC hooks, TikTok/Reels/Shorts ideas, captions, ad copy, landing page messaging and launch-ready creative directions.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Product%20link%20campaign">Start campaign request</Link>
+            <Link className="btn" href="/dashboard/create?mode=commerce&category=campaign&idea=Product%20link%20campaign">Start campaign request</Link>
             <Link className="btn secondary" href="/shopify-product-link-to-ad-video">Shopify video workflow</Link>
             <Link className="btn secondary" href="/amazon-product-ad-video">Amazon video workflow</Link>
             <Link className="btn secondary" href="/trendyol-product-video">Trendyol video workflow</Link>
@@ -97,7 +97,7 @@ export default async function CampaignCategoryPage() {
             This page supports searches like Shopify product link to TikTok ad video, Amazon listing to product video, Trendyol product video generator, ecommerce UGC hook ideas, AI product ad campaign, product link to landing page copy and marketplace campaign production.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-            <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Product%20link%20campaign">Start from a product link</Link>
+            <Link className="btn" href="/dashboard/create?mode=commerce&category=campaign&idea=Product%20link%20campaign">Start from a product link</Link>
             <Link className="btn secondary" href="/categories">Back to all categories</Link>
             <Link className="btn secondary" href="/tools">Open tools catalog</Link>
           </div>

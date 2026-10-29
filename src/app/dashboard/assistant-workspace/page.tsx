@@ -1,10 +1,11 @@
 import { Suspense } from "react";
-import AssistantPage from "@/components/assistant-work/AssistantPage";
+import CreateProductionGate from "@/components/assistant-work/CreateProductionGate";
 
+/** Share the same feature-flagged assistant entry point for consistent rollback behavior. */
 export default function AssistantWorkspacePage() {
   return (
     <Suspense fallback={null}>
-      <AssistantPage />
+      <CreateProductionGate />
     </Suspense>
   );
 }
