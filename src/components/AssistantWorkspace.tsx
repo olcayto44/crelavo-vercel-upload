@@ -1401,10 +1401,9 @@ export function AssistantWorkspace({ initialIdea = "", initialCategory = "", ini
 const [input, setInput] = useState(initialIdea || "");
 const [productionBrief, setProductionBrief] = useState(initialIdea || "");
 const [chatInput, setChatInput] = useState("");
-const [activeLanguage, setActiveLanguage] = useState(() => getStoredLanguage());
+const [activeLanguage, setActiveLanguage] = useState("en");
   const [messages, setMessages] = useState<Message[]>(() => {
-    const language = getStoredLanguage();
-    return [{ role: "assistant", content: language === "tr" ? "Selam, dinliyorum. Genel soru, fikir, kod, site işi veya üretim isteği yazabilirsin; kısa ve net cevap vereceğim." : "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
+    return [{ role: "assistant", content: "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
   });
   const [activeStep, setActiveStep] = useState(0);
   const [status, setStatus] = useState(() => getStoredLanguage() === "tr" ? "Canlı üretim çalışma alanı hazır. Asistanla serbestçe sohbet edebilirsin; üretim başlamadan önce kısa onay görünür." : "Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
@@ -1711,19 +1710,15 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
 
   useEffect(() => {
     if (messages.length) {
-      const cleanedMessages = cleanAssistantMessages(messages);
+      const cleanedMessages = cleanAssistantMessages(messages).filter((message) => !isLikelyTurkish(message.content));
       window.sessionStorage.setItem(ASSISTANT_WORKSPACE_MESSAGES_KEY, JSON.stringify(cleanedMessages.slice(-200)));
       if (cleanedMessages.length !== messages.length) setMessages(cleanedMessages);
     }
   }, [messages]);
 
   useEffect(() => {
-    setActiveLanguage(getStoredLanguage());
-    function handleLanguageChange() {
-      setActiveLanguage(getStoredLanguage());
-    }
-    window.addEventListener("clipora-language-change", handleLanguageChange);
-    return () => window.removeEventListener("clipora-language-change", handleLanguageChange);
+    // Keep this production workspace in English regardless of the global site language.
+    setActiveLanguage("en");
   }, []);
 
   useEffect(() => {
@@ -3301,7 +3296,7 @@ async function startRawMicrophoneFallback() {
             <p>{productionBrief || "Describe what you want to create in the prompt area. Crelavo will show the brief, action, credit estimate and delivery plan here."}</p>
             <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status">
               <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
-              <span><Bot size={13} /><strong>Video Agent native artifacts aktif</strong></span>
+              <span><Bot size={13} /><strong>Video Agent native artifacts active</strong></span>
               <span><Gauge size={13} /><strong>Build marker: assistant-workspace-bridge</strong></span>
             </div>
             {!startedProduction && productionBrief.trim().length === 0 ? (
@@ -3326,7 +3321,7 @@ async function startRawMicrophoneFallback() {
           </div>
           <div className="clean-hero-credit-pill">
             <CreditCard size={15} />
-            <span><small>Tahmini rezerv</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></span>
+            <span><small>Estimated reserve</small><strong>{costEstimate.totalCredits.toLocaleString()} kredi</strong></span>
           </div>
         </section>
 
@@ -3334,8 +3329,8 @@ async function startRawMicrophoneFallback() {
           <div className="drawer-head">
             <div>
               <span className="badge">Prompt, plan, routing</span>
-              <h3>Prompt’a göre üretim seçenekleri</h3>
-              <p>Prompt yazınca kategori, kalite, stil, süre, modül, özellik, materyal ve teslimat seçenekleri burada dinamikleşir.</p>
+              <h3>Prompt-based production options</h3>
+              <p>Write a prompt to dynamically configure category, quality, style, duration, modules, features, materials, and delivery.</p>
             </div>
             <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
           </div>
@@ -3573,7 +3568,7 @@ async function startRawMicrophoneFallback() {
               <p>{productionBrief || "Henüz brief yok. Soldaki Work Chat’e yazınca burada üretim planı, çıktı önizlemesi, action ve kredi tahmini görünür."}</p>
               <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status secondary">
                 <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
-                <span><Bot size={13} /><strong>Video Agent native artifacts aktif</strong></span>
+                <span><Bot size={13} /><strong>Video Agent native artifacts active</strong></span>
                 <span><Gauge size={13} /><strong>Build marker: assistant-workspace-bridge</strong></span>
               </div>
             </div>
@@ -3590,7 +3585,7 @@ async function startRawMicrophoneFallback() {
               <div className="drawer-head">
                 <div>
                   <span className="badge">Prompt, plan, routing</span>
-                  <h3>Prompt’a göre üretim seçenekleri</h3>
+                  <h3>Prompt-based production options</h3>
                   <p>Kullanıcı ne yazarsa ilgili kategori, kalite, stil, süre, modül, materyal ve teslimat seçenekleri burada açılır.</p>
                 </div>
                 <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
