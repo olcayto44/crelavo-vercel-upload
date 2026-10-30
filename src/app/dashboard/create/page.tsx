@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** The legacy production screen is disabled until a replacement is approved. */
+/** Legacy links now open the maintained assistant workspace. */
 export default function CreatePage() {
-  redirect("/dashboard");
+  redirect("/dashboard/assistant-workspace");
 }

@@ -10,9 +10,9 @@ export function safeReturnTo(returnTo?: string | null): string | null {
 }
 
 export function postAuthPath(opts: { isNew: boolean; returnTo?: string | null }) {
-  if (opts.isNew) return "/dashboard/create";
+  if (opts.isNew) return "/dashboard/assistant-workspace";
   return safeReturnTo(opts.returnTo) ?? AFTER_SIGNIN_PATH;
 }
 
-export const SIGNUP_DESTINATION = "/dashboard/create";
+export const SIGNUP_DESTINATION = "/dashboard/assistant-workspace";
 export { BLOCKED };
