@@ -257,6 +257,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [draft, setDraft] = useState("");
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
   const [referenceUrl, setReferenceUrl] = useState("");
+  const [planApproved, setPlanApproved] = useState(false);
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
   const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
@@ -274,6 +275,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   useEffect(() => {
     if (categoryResetRef.current === category) return;
     categoryResetRef.current = category;
+    setPlanApproved(false);
     setNotice(`CATEGORY UPDATED / ${getCategory(category)?.label || type} MODE / PROJECT CONTEXT PRESERVED`);
   }, [category, website]);
   useEffect(() => {
@@ -337,6 +339,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const shot = shots[selected] || shots[0];
   const kicker = website ? `PAGE ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `SCENE ${String(shot.id).padStart(2, "0")} / SELECTED`;
   const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
+  const selectedPack = categoryConfig?.packs.find((pack) => pack.id === chosen?.packId);
+  const estimatedCredits = selectedPack?.credits ?? 0;
   async function pollQueuedJob(index: number, initialTaskId: string, productionId?: string) {
     let taskId = initialTaskId;
     for (let attempt = 0; attempt < 36; attempt += 1) {
@@ -362,7 +366,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }, [mounted, shots, category]);
   async function renderFinalScene() {
     const currentPrompt = shot.planPrompt || shot.body;
-    if (!currentPrompt.trim() || sending) return;
+    if (!currentPrompt.trim() || sending || !planApproved) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
       const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) } }) });
@@ -379,6 +383,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!prompt || sending) return;
     const claims = readSessionClaims();
     if (!claims) { window.location.href = "/join"; return; }
+    if (!planApproved && !isCopyOnlyPrompt(prompt)) {
+      setNotice("PLAN ONAYI GEREKLİ / ÖNCE PLAN KARTINDAN ONAYLAYIN");
+      return;
+    }
     if (credits.kind === "number" && credits.value <= 0 && !isCopyOnlyPrompt(prompt)) {
       setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
       return;
@@ -387,6 +395,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     const prev = shots[selected];
     setDraft("");
     setSending(true);
+    setPlanApproved(false);
     setNotice(isCopyOnlyPrompt(prompt) ? "UPDATING COPY / NO CREDIT SPEND" : "CREATING PRODUCTION / CONNECTING WORKER");
     setShots((cur) => cur.map((item, index) => index === selected ? { ...item, mediaUrl: null, files: [], taskId: undefined, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
 
@@ -451,7 +460,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <button type="button" onClick={() => setSetupOpen(true)} style={{ border: "1px solid #2e333d", borderRadius: 8, padding: "9px 12px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 12 }}>Setup</button>
-                <button type="button" onClick={renderFinalScene} disabled={sending || !shot.body.trim()} style={{ border: "1px solid #2e333d", borderRadius: 8, padding: "9px 12px", background: "#f8fbff", color: "#111", cursor: sending ? "default" : "pointer", fontSize: 12, opacity: sending || !shot.body.trim() ? 0.5 : 1 }}>Render final</button>
+                <button type="button" onClick={renderFinalScene} disabled={sending || !planApproved || !shot.body.trim()} style={{ border: "1px solid #2e333d", borderRadius: 8, padding: "9px 12px", background: "#f8fbff", color: "#111", cursor: sending ? "default" : "pointer", fontSize: 12, opacity: sending || !planApproved || !shot.body.trim() ? 0.5 : 1 }}>Render final</button>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 18 }}>
@@ -488,6 +497,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
           <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{categoryConfig?.intake.greeting || "Crelavo AI Production Manager is ready. Tell me what you want to produce and I’ll choose the right category engine."}</p>{categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>Smart starting point: {Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")} (editable)</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{choice}</button>)}</div>
+          <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Plan ve onay</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>Kategori: <strong>{categoryConfig?.label || type}</strong></div><div>Paket: <strong>{selectedPack?.label || "Henüz seçilmedi"}</strong></div><div>Tahmini kredi: <strong>{estimatedCredits ? `${estimatedCredits} kredi` : "Paket seçilmedi"}</strong></div><div>Teslimat: <strong>{chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : "Setup tamamlanmadı"}</strong></div></div>{planApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>Plan onaylandı. Final üretim başlatılabilir.</div> : <button type="button" onClick={() => { if (!chosen?.packId) { setSetupOpen(true); setNotice("ÖNCE PAKET VE SETUP SEÇİMİNİ TAMAMLAYIN"); return; } setPlanApproved(true); setNotice("PLAN ONAYLANDI / FINAL ÜRETİM HAZIR"); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>Planı onayla ve üretime geç</button>}</div>
           <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Aktif üretim planı</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{enginePlan.map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {shots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === selected ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === selected ? "Aktif" : "Hazır"} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
         </div>
