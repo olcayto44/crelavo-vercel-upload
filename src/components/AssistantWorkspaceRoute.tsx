@@ -13,12 +13,14 @@ export default function AssistantWorkspaceRoute() {
   const providerTestPreset = searchParams.get("providerTest") === "1";
 
   return (
-    <AssistantWorkspace
-      key={`${type}|${category}|${idea}|${mode}|${providerTestPreset ? "1" : "0"}`}
-      initialIdea={idea}
-      initialCategory={category}
-      initialMode={mode}
-      providerTestPreset={providerTestPreset}
-    />
+    <main className="assistant-production-page">
+      <AssistantWorkspace
+        key={`${type}|${category}|${idea}|${mode}|${providerTestPreset ? "1" : "0"}`}
+        initialIdea={idea}
+        initialCategory={category}
+        initialMode={mode}
+        providerTestPreset={providerTestPreset}
+      />
+    </main>
   );
 }
