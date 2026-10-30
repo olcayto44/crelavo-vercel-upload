@@ -164,9 +164,9 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
         ))}
       </div>
       <div className="clc-btn-row">
-        <HardReloadLink className="btn" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
+        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
         {type.id === "ad_score_checker" ? <HardReloadLink className="btn secondary" href="/free-tools/ad-performance-score-checker">Free score tool</HardReloadLink> : null}
-        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href="/live-sales-credits">View service plans</HardReloadLink> : null}
+        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
       </div>
     </div>
   );

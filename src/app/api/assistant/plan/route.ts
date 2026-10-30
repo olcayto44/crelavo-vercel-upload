@@ -4,9 +4,8 @@ import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib
 import { validateProductionSafety } from "@/lib/content-safety";
 import { normalizeDeliveryCreditRates } from "@/lib/delivery-credit-rates";
 import { normalizePackageConfig, PACKAGE_CONFIG_KEY } from "@/lib/package-config";
-import { estimateProductionCost, productionTypes } from "@/lib/production";
+import { estimateProductionCost } from "@/lib/production";
 import { packageIdFromSelection } from "@/lib/production-payload";
-import { buildAssistantCategoryContextNote, resolveExplicitProductionTypeFromMessage, resolveProductionTypeIdFromCategory } from "@/lib/assistant-category";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 const PLAN_CREDITS = {
@@ -129,8 +128,8 @@ function detectProductionType(message: string) {
   if (isVoiceCloneIntent(text)) return "voice_clone";
   if (isLipSyncIntent(text)) return "lip_sync";
   if (isAvatarIntent(text)) return "avatar";
-  if (/mobil uygulama|mobile app|mobile application|native app|ios|android|expo|react native|app store|play store/.test(text)) return "mobile_app";
-  if (/saas|web app|\bapp\b|application|uygulama|app builder|yazılım|software|dashboard|portal|crm|abonelik/.test(text)) return "saas";
+  if (/mobil uygulama|mobile app|ios|android|expo|react native|app store|play store/.test(text)) return "mobile_app";
+  if (/saas|yazılım|software|dashboard|portal|crm|abonelik/.test(text)) return "saas";
   if (/admin panel|yönetim panel|yonetim panel|crud/.test(text)) return "admin_project";
   if (/e-?commerce|e commerce|e-ticaret|storefront|online store|shop|shopping|product catalog|checkout|cart|sepet|ürün|urun/.test(text)) return "website";
   if (/web sitesi|website|landing|site/.test(text)) return "website";
@@ -412,8 +411,6 @@ export async function POST(request: Request) {
   const userId = String(body.user_id ?? "").trim();
   const userEmail = String(body.user_email ?? "").trim().toLowerCase();
   const message = String(body.idea ?? body.message ?? "").trim().slice(0, 2000);
-  const categoryContext = String(body.category_context ?? "").trim().slice(0, 100);
-  const resolvedCategoryType = resolveProductionTypeIdFromCategory(categoryContext, productionTypes);
   const mode = modeFromBody(body.mode);
   const history: AssistantHistoryMessage[] = Array.isArray(body.messages)
     ? body.messages
@@ -470,33 +467,19 @@ export async function POST(request: Request) {
 
     const userContext = await loadAssistantUserContext(supabase, userId);
     const userContextPrompt = buildAssistantUserContextPrompt(userContext);
-    const categoryContextPrompt = buildAssistantCategoryContextNote(categoryContext, productionTypes);
-    const combinedContextPrompt = [categoryContextPrompt, userContextPrompt].filter(Boolean).join("\n\n");
-    const openAiDraft = await openAiProductionDraft(message, mode, history, combinedContextPrompt);
-    const geminiDraft = openAiDraft ? null : await geminiProductionDraft(message, mode, history, combinedContextPrompt);
+    const openAiDraft = await openAiProductionDraft(message, mode, history, userContextPrompt);
+    const geminiDraft = openAiDraft ? null : await geminiProductionDraft(message, mode, history, userContextPrompt);
     const aiDraft = openAiDraft || geminiDraft;
     const assistantBrain = openAiDraft ? "openai" : geminiDraft ? "gemini" : "local_rules";
     const localDetectedType = detectProductionType(message);
-    const explicitTargetType = resolveExplicitProductionTypeFromMessage(message);
-    const isExplicitCategorySwitch = Boolean(resolvedCategoryType && explicitTargetType && explicitTargetType !== resolvedCategoryType);
-    const categoryDefaultType = resolvedCategoryType && !isExplicitCategorySwitch ? resolvedCategoryType : "";
-    const proposedType = categoryDefaultType || (isExplicitCategorySwitch ? explicitTargetType! : aiDraft?.production_type?.trim() || localDetectedType);
-    // While the user is answering questions in a selected category, do not let a broad keyword
-    // heuristic (for example, a mention of a promo video or website link) silently change the job.
-    // A switch is only allowed when the explicit-output detector above identifies a different
-    // primary deliverable.
-    const productionType = categoryDefaultType
-      ? categoryDefaultType
-      : localDetectedType === "image" && explicitTargetType === "image"
-        ? "image"
-        : safeProductionType(message, proposedType);
+    const productionType = localDetectedType === "image" ? "image" : safeProductionType(message, aiDraft?.production_type?.trim() || localDetectedType);
 const isImageProduction = productionType === "image";
 const selectedQuality = isImageProduction ? "Image" : aiDraft?.selected_quality?.trim() || detectQuality(message);
 const selectedDuration = isImageProduction ? "Static" : aiDraft?.selected_duration?.trim() || detectDuration(message, productionType);
 const selectedStyle = isImageProduction ? detectStyle(message, productionType) : aiDraft?.selected_style?.trim() || detectStyle(message, productionType);
-const selectedModules = isImageProduction || categoryDefaultType ? detectModules(message, productionType) : cleanStringArray(aiDraft?.selected_modules, detectModules(message, productionType));
-const selectedFeatures = isImageProduction || categoryDefaultType ? detectFeatures(message, productionType) : cleanStringArray(aiDraft?.selected_features, detectFeatures(message, productionType));
-const selectedPlatforms = isImageProduction || categoryDefaultType ? detectPlatforms(message, productionType) : cleanStringArray(aiDraft?.selected_platforms, detectPlatforms(message, productionType));
+const selectedModules = isImageProduction ? detectModules(message, productionType) : cleanStringArray(aiDraft?.selected_modules, detectModules(message, productionType));
+const selectedFeatures = isImageProduction ? detectFeatures(message, productionType) : cleanStringArray(aiDraft?.selected_features, detectFeatures(message, productionType));
+const selectedPlatforms = isImageProduction ? detectPlatforms(message, productionType) : cleanStringArray(aiDraft?.selected_platforms, detectPlatforms(message, productionType));
     const providerRoute = aiDraft?.provider_route?.trim() || detectProviderRoute(message);
     const voiceProfile = aiDraft?.voice_profile?.trim() || detectVoiceProfile(message);
     const voiceLanguage = aiDraft?.voice_language?.trim() || detectVoiceLanguage(message);

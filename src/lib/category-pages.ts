@@ -14,7 +14,7 @@ function titleCase(value: string) {
 function ctaHref(typeId: string) {
   const type = productionTypes.find((item) => item.id === typeId);
   const label = type?.label || typeId;
-  return `/dashboard/create?category=${encodeURIComponent(typeId)}&type=${encodeURIComponent(label)}`;
+  return `/dashboard/assistant-workspace?category=${encodeURIComponent(typeId)}&type=${encodeURIComponent(label)}`;
 }
 
 function buildCategoryPage(type: typeof productionTypes[number]): CategoryPage {

@@ -4,9 +4,8 @@ import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib
 import { validateProductionSafety } from "@/lib/content-safety";
 import { normalizeDeliveryCreditRates } from "@/lib/delivery-credit-rates";
 import { normalizePackageConfig, PACKAGE_CONFIG_KEY } from "@/lib/package-config";
-import { estimateProductionCost, productionTypes } from "@/lib/production";
+import { estimateProductionCost } from "@/lib/production";
 import { packageIdFromSelection } from "@/lib/production-payload";
-import { buildAssistantCategoryContextNote, resolveExplicitProductionTypeFromMessage, resolveProductionTypeIdFromCategory } from "@/lib/assistant-category";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 
 type AgentAction = {
@@ -88,11 +87,10 @@ function inferProductionType(message: string) {
   if (isLipSyncIntent(text)) return "lip_sync";
   if (isAvatarIntent(text)) return "avatar";
   if (/belgesel|documentary|sağlık|saglik|anlatımlı belgesel|anlatimli belgesel/.test(text)) return "video";
-  // Resolve concrete app types before broad keyword matches: an iOS/mobile app is not a generic SaaS project.
-  if (/mobil uygulama|mobile app|mobile application|native app|ios|android|expo|react native|app store|play store/.test(text)) return "mobile_app";
   if (/e-?ticaret|eticaret|mağaza|magaza|shopify|woocommerce|sepet|checkout/.test(text)) return "website";
   if (/web sitesi|website|landing|site kur|site yap|site yaptır|site yaptir/.test(text)) return "website";
-  if (/saas|web app|\bapp\b|application|uygulama|app builder|dashboard|panel|abonelik|billing/.test(text)) return "saas";
+  if (/saas|dashboard|panel|abonelik|billing/.test(text)) return "saas";
+  if (/mobil uygulama|mobile app|ios|android|expo/.test(text)) return "mobile_app";
   if (/admin panel|yönetim panel|yonetim panel|crud/.test(text)) return "admin_project";
   if (/logo|brand kit|marka kiti|etiket|ambalaj|packaging|poster|afiş|afis|görsel|gorsel/.test(text)) return "image";
   if (/reklam|kampanya|tiktok|instagram|reels|shorts|ürün|urun|restoran|yemek|gıda|gida|kafe|cafe|menü|menu/.test(text)) return "campaign";
@@ -239,12 +237,6 @@ export async function POST(request: Request) {
   const userId = String(body.user_id ?? "").trim();
   const userEmail = String(body.user_email ?? "").trim().toLowerCase();
   const message = String(body.message ?? body.idea ?? "").trim().slice(0, 3000);
-  const categoryContext = String(body.category_context ?? "").trim().slice(0, 100);
-  const resolvedCategoryType = resolveProductionTypeIdFromCategory(categoryContext, productionTypes);
-  const explicitTargetType = resolveExplicitProductionTypeFromMessage(message);
-  const isExplicitCategorySwitch = Boolean(resolvedCategoryType && explicitTargetType && explicitTargetType !== resolvedCategoryType);
-  const categoryDefaultType = resolvedCategoryType && !isExplicitCategorySwitch ? resolvedCategoryType : "";
-  const enforcedPrimaryType = categoryDefaultType || (isExplicitCategorySwitch ? explicitTargetType! : "");
   const history: { role: "user" | "assistant"; content: string }[] = Array.isArray(body.messages)
     ? body.messages.map((item: { role?: string; content?: string }) => ({ role: item.role === "assistant" ? "assistant" as const : "user" as const, content: String(item.content ?? "").slice(0, 1200) })).filter((item: { content: string }) => item.content.trim())
     : [];
@@ -268,40 +260,25 @@ export async function POST(request: Request) {
   const deliveryCreditRates = normalizeDeliveryCreditRates(deliveryRateRow?.value);
   const packageConfig = normalizePackageConfig(packageConfigRow?.value);
 
-  const categoryContextPrompt = buildAssistantCategoryContextNote(categoryContext, productionTypes);
-  const combinedContextPrompt = [categoryContextPrompt, userContextPrompt].filter(Boolean).join("\n\n");
-  const draft = await aiDraft(message, history, combinedContextPrompt);
-  const rawDraftJobs: DraftJob[] = Array.isArray(draft?.jobs) && draft?.jobs?.length ? draft.jobs.slice(0, 4) : inferJobTypes(message).map((type) => ({ type }));
-  // A brief that answers category-discovery questions stays in the selected category.
-  // If the user explicitly changes the primary deliverable, pin that type as the first job
-  // while retaining additional jobs that the brief genuinely requires.
-  const draftJobs: DraftJob[] = enforcedPrimaryType
-    ? [
-        { ...(rawDraftJobs.find((job) => job.type === enforcedPrimaryType) ?? rawDraftJobs[0] ?? {}), type: enforcedPrimaryType },
-        // Keep the initial category flow single-scope. Cross-category tasks should only be added
-        // after the user explicitly requests them, not because an LLM over-interprets discovery answers.
-        ...(isExplicitCategorySwitch ? rawDraftJobs.filter((job) => job.type !== enforcedPrimaryType).slice(0, 3) : [])
-      ]
-    : rawDraftJobs;
+  const draft = await aiDraft(message, history, userContextPrompt);
+  const draftJobs: DraftJob[] = Array.isArray(draft?.jobs) && draft?.jobs?.length ? draft.jobs.slice(0, 4) : inferJobTypes(message).map((type) => ({ type }));
 
   const jobs: OrchestratorJob[] = draftJobs.map((draftJob, index) => {
-    const type = String(enforcedPrimaryType && index === 0 ? enforcedPrimaryType : draftJob.type ?? inferProductionType(message)).trim() || "video";
-    const typeLabel = productionTypes.find((item) => item.id === type)?.label ?? type.replaceAll("_", " ");
+    const type = String(draftJob.type ?? inferProductionType(message)).trim() || "video";
     const defaults = defaultsForType(type, message);
-    const useCategoryDefaults = Boolean(categoryDefaultType && index === 0);
     const growthService = type === "document_pack" && isGrowthIntelligenceRequest(message);
     const baseJob = {
       type,
-      title: String(enforcedPrimaryType && index === 0 ? `${typeLabel} project` : draftJob.title ?? `${typeLabel} production`).trim(),
+      title: String(draftJob.title ?? `${type.replaceAll("_", " ")} production`).trim(),
       brief: String(draftJob.brief ?? message).trim(),
-      selected_style: growthService || useCategoryDefaults ? defaults.selected_style : String(draftJob.selected_style ?? defaults.selected_style),
-      selected_quality: growthService || useCategoryDefaults ? defaults.selected_quality : String(draftJob.selected_quality ?? defaults.selected_quality),
-      selected_duration: growthService || useCategoryDefaults ? defaults.selected_duration : String(draftJob.selected_duration ?? defaults.selected_duration),
-      selected_modules: growthService || useCategoryDefaults ? defaults.selected_modules : cleanArray(draftJob.selected_modules, defaults.selected_modules),
-      selected_features: growthService || useCategoryDefaults ? defaults.selected_features : cleanArray(draftJob.selected_features, defaults.selected_features),
-      selected_platforms: growthService || useCategoryDefaults ? defaults.selected_platforms : cleanArray(draftJob.selected_platforms, defaults.selected_platforms),
-      deliverables: growthService || useCategoryDefaults ? defaults.deliverables : cleanArray(draftJob.deliverables, defaults.deliverables),
-      required_materials: growthService || useCategoryDefaults ? defaults.required_materials : cleanArray(draftJob.required_materials, defaults.required_materials)
+      selected_style: growthService ? defaults.selected_style : String(draftJob.selected_style ?? defaults.selected_style),
+      selected_quality: growthService ? defaults.selected_quality : String(draftJob.selected_quality ?? defaults.selected_quality),
+      selected_duration: growthService ? defaults.selected_duration : String(draftJob.selected_duration ?? defaults.selected_duration),
+      selected_modules: growthService ? defaults.selected_modules : cleanArray(draftJob.selected_modules, defaults.selected_modules),
+      selected_features: growthService ? defaults.selected_features : cleanArray(draftJob.selected_features, defaults.selected_features),
+      selected_platforms: growthService ? defaults.selected_platforms : cleanArray(draftJob.selected_platforms, defaults.selected_platforms),
+      deliverables: growthService ? defaults.deliverables : cleanArray(draftJob.deliverables, defaults.deliverables),
+      required_materials: growthService ? defaults.required_materials : cleanArray(draftJob.required_materials, defaults.required_materials)
     };
     const selection = {
       input: message,
