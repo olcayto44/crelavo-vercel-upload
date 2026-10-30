@@ -37,12 +37,18 @@ export function CinemaRouteGuard() {
 function readQuery() {
   if (typeof window === "undefined") return { type: "AI Video", category: "" };
   const q = new URLSearchParams(window.location.search);
-  const type = q.get("type") || "AI Video";
+  const type = q.get("type") || "General";
   const direct = q.get("category") || "";
   const map: Record<string, string> = { media: "video", video: "video", "AI Video": "video", drone: "drone_video", live_sales: "live_sales_agent", commerce: "campaign", app: "mobile_app", ecommerce: "website", avatar: "avatar", image: "image", documentary: "documentary", animation: "animation" };
-  return { type, category: direct || map[type] || map[type.toLowerCase()] || "" };
+  return { type, category: direct || ((q.has("type") || q.has("category")) ? map[type] || map[type.toLowerCase()] || "" : "") };
 }
 function isWebsiteType(type: string, category: string) { return /website/i.test(type) || /website/i.test(category); }
+function categoryEnginePlan(type: string, category: string): string[] {
+  if (category === "website") return ["✓ İstek alındı: Website üretimi seçildi", "⏳ Site türü, sektör ve fonksiyonlar", "○ E-commerce Builder altyapısı", "○ Sayfa taslağı ve kredi maliyeti"];
+  if (category === "video") return ["✓ İstek alındı: AI video seçildi", "⏳ Ürün, hedef kitle ve platform", "○ TikTok / Reels hook planı", "○ Video briefi ve kredi maliyeti"];
+  if (category) return [`✓ İstek alındı: ${type} seçildi`, "⏳ Kategoriye özel ihtiyaçları belirle", "○ Uygun araçları ve üretim yolunu seç", "○ Görevi planla ve kredi maliyetini çıkar"];
+  return ["⏳ Crelavo AI Orchestrator talebinizi bekliyor", "○ Üretim türünü belirle: web, video, app veya sosyal", "○ İlgili kategori motorunu çalıştır", "○ Görevi planla ve üretimi başlat"];
+}
 function fromAuthJson(raw: string | null): string | null {
   if (!raw) return null;
   const trimmed = raw.trim();
@@ -234,6 +240,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const chosen = selection || preProduction;
   const type = chosen?.type || query.type;
   const category = chosen?.categoryId || query.category || "video";
+  const engineCategory = chosen?.categoryId || query.category || "general";
+  const enginePlan = categoryEnginePlan(type, engineCategory);
   const website = isWebsiteType(type, category);
   const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
   const restoredRef = useRef(false);
@@ -480,8 +488,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} /> Orchestrator & category engine active</div>
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
-          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>Merhaba! İsteğini yaz; üretim planını, seçimini ve çıktını bu panelden yönetelim.</p></div>
-          <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Aktif üretim planı</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}><div style={{ color: "#34d399" }}>✓ İstek alındı</div><div style={{ color: "#60a5fa", fontWeight: 600 }}>⏳ Üretim seçimi ve yönlendirme</div><div style={{ color: "#6b7280" }}>○ Kredi ve çıktı kontrolü</div><div style={{ color: "#6b7280" }}>○ Üretimi başlat ve teslim et</div></div></div>
+          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{engineCategory === "website" ? "Website Builder alanına bağlandınız. Sitenizin sektörünü ve fonksiyonlarını birlikte netleştirelim." : engineCategory === "video" ? "AI Video Generator alanına bağlandınız. Ürün, hedef kitle ve platformu birlikte planlayalım." : "Crelavo AI Production Manager hazır. Ne üretmek istediğinizi yazın; doğru kategori motorunu çalıştırayım."}</p></div>
+          <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Aktif üretim planı</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{enginePlan.map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {shots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === selected ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === selected ? "Aktif" : "Hazır"} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
