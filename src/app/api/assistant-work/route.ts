@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
+    const planApproved = body.planApproved === true;
 
     if (!prompt) {
       return NextResponse.json(
@@ -65,6 +66,17 @@ export async function POST(req: NextRequest) {
 
     if (body.render !== true) {
       return NextResponse.json({ ok: true, spend: false, engine: "assistant_plan", category, type, status: "ready", title: "Scene plan ready", body: prompt, plan: { stage: "ready", scene, direction: prompt, nextAction: "Revise the scene or render the final video when approved." }, media: null, files: [] });
+    }
+
+    if (category === "website" && extras.reference_url) {
+      const referenceUrl = String(extras.reference_url).trim();
+      let validReference = false;
+      try { const parsed = new URL(referenceUrl); validReference = (parsed.protocol === "http:" || parsed.protocol === "https:") && referenceUrl.length <= 2048; } catch { validReference = false; }
+      if (!validReference) return NextResponse.json({ ok: false, spend: false, code: "invalid_reference_url", message: "Website reference URL must be a valid HTTP or HTTPS URL under 2048 characters." }, { status: 400 });
+    }
+
+    if (body.render === true && category === "website" && !planApproved) {
+      return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the website plan before starting production." }, { status: 409 });
     }
 
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
@@ -148,7 +160,7 @@ export async function POST(req: NextRequest) {
        provider_job_id: providerTaskId ?? null,
       preview_url: result.media?.url ?? null,
       delivery_zip_url: null,
-      request_metadata: { source: "cinema_assistant", assistant_task_id: providerTaskId ?? null, provider: result.engine, category, scene, charged, balance },
+      request_metadata: { source: "cinema_assistant", assistant_task_id: providerTaskId ?? null, provider: result.engine, category, scene, charged, balance, planApproved, referenceUrl: category === "website" ? extras.reference_url ?? null : null },
       completed_at: resultStatus === "ready" ? new Date().toISOString() : null,
     }).select("id").single();
     if (assistantProduction.error) return NextResponse.json({ ...result, balance, charged, productionPersisted: false, productionPersistError: assistantProduction.error.message });

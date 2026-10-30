@@ -369,7 +369,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!currentPrompt.trim() || sending || !planApproved) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
-      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) } }) });
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) }, planApproved }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
@@ -411,7 +411,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) } }),
+        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) }, planApproved }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
