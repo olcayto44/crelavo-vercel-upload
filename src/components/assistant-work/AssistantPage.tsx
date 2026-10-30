@@ -35,7 +35,7 @@ export function CinemaRouteGuard() {
   return null;
 }
 function readQuery() {
-  if (typeof window === "undefined") return { type: "AI Video", category: "" };
+  if (typeof window === "undefined") return { type: "General", category: "" };
   const q = new URLSearchParams(window.location.search);
   const type = q.get("type") || "General";
   const direct = q.get("category") || "";
@@ -239,7 +239,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [setupOpen, setSetupOpen] = useState(false);
   const chosen = selection || preProduction;
   const type = chosen?.type || query.type;
-  const category = chosen?.categoryId || query.category || "video";
+  const category = chosen?.categoryId || query.category || "";
   const engineCategory = chosen?.categoryId || query.category || "general";
   const enginePlan = categoryEnginePlan(type, engineCategory);
   const website = isWebsiteType(type, category);
