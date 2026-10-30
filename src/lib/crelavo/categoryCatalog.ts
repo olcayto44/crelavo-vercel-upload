@@ -1,9 +1,10 @@
-﻿export type Billing = "credits" | "subscription";
+export type Billing = "credits" | "subscription";
 export type Pack = { id: string; label: string; credits?: number; priceLabel?: string };
 export type ExtraField = { id: string; label: string; kind: "select" | "text"; required?: boolean; placeholder?: string; options?: { id: string; label: string }[] };
 export type GroupId = "build" | "media" | "marketing" | "avatar_voice" | "brand" | "special_video";
 export type FamilyId = GroupId | "live_sales";
-export type Category = { id: string; type: string; group: GroupId; family: FamilyId; label: string; billing: Billing; features: { id: string; label: string }[]; packs: Pack[]; extras: ExtraField[] };
+export type IntakeConfig = { greeting: string; quickChoices: string[]; defaults: Record<string, string> };
+export type Category = { id: string; type: string; group: GroupId; family: FamilyId; label: string; billing: Billing; features: { id: string; label: string }[]; packs: Pack[]; extras: ExtraField[]; intake: IntakeConfig };
 export const GROUPS = [
   { id: "build", label: "Build", blurb: "Website, SaaS, mobile app, admin panel" },
   { id: "media", label: "Create Media", blurb: "Video, talking, animation, music, cinema" },
@@ -22,10 +23,21 @@ const videoExtras: ExtraField[] = [
 const talkingExtras: ExtraField[] = [{ id: "who", label: "Who appears?", kind: "select", required: true, options: labels(["Self-in-video", "Custom avatar", "Multi-person"]) }, { id: "language", label: "Spoken language", kind: "select", required: true, options: labels(["English", "Turkish", "German", "French", "Spanish", "Arabic"]) }, ...videoExtras.filter((field) => field.id !== "input")];
 const imageExtras: ExtraField[] = [{ id: "format", label: "Format", kind: "select", required: true, options: labels(["Story 9:16", "Feed 1:1", "Banner", "Poster", "Hero image"]) }];
 const packs = (items: Array<[string, number]>): Pack[] => items.map(([label, credits]) => ({ id: label.toLowerCase().replace(/[^a-z0-9]+/g, "_"), label, credits }));
-function category(id: string, type: string, group: GroupId, label: string, features: string[], packList: Array<[string, number]>, extras: ExtraField[] = videoExtras): Category { return { id, type, group, family: group, label, billing: "credits", features: labels(features), packs: packs(packList), extras }; }
+const defaultIntake = (label: string): IntakeConfig => ({ greeting: `Let's define your ${label.toLowerCase()} project step by step.`, quickChoices: [`Starter ${label}`, `Professional ${label}`, "You decide for me"], defaults: {} });
+function category(id: string, type: string, group: GroupId, label: string, features: string[], packList: Array<[string, number]>, extras: ExtraField[] = videoExtras, intake?: Partial<IntakeConfig>): Category { return { id, type, group, family: group, label, billing: "credits", features: labels(features), packs: packs(packList), extras, intake: { ...defaultIntake(label), ...intake } }; }
+const websiteExtras: ExtraField[] = [
+  { id: "site_type", label: "Website type", kind: "select", required: true, options: labels(["Corporate Website", "Service Business Website", "Landing Page", "Portfolio Website", "Blog", "Other"]) },
+  { id: "industry", label: "Industry", kind: "text", placeholder: "For example: skincare, consulting, restaurant" },
+  { id: "audience", label: "Target audience", kind: "text", placeholder: "Who should this website help?" },
+  { id: "pages", label: "Pages", kind: "text", placeholder: "Home, About, Services, Contact" },
+  { id: "design_style", label: "Design style", kind: "select", options: labels(["Clean and minimal", "Editorial", "Bold and energetic", "You decide for me"]) },
+  { id: "language", label: "Language", kind: "select", required: true, options: labels(["English", "German", "Turkish", "French", "Spanish", "Other"]) },
+  { id: "reference_url", label: "Reference or product URL (optional)", kind: "text", placeholder: "https://" },
+  { id: "stack", label: "Delivery", kind: "select", required: true, options: labels(["Preview first", "Preview + source files"]) },
+];
 const buildExtras: ExtraField[] = [{ id: "reference_url", label: "Reference site or product URL", kind: "text", placeholder: "https://" }, { id: "stack", label: "Delivery", kind: "select", required: true, options: labels(["Preview first", "Preview + source files"]) }];
 export const CATEGORIES: Category[] = [
-  category("website", "Website", "build", "Website", ["Landing page", "Business site", "E-commerce storefront"], [["Landing Page", 500], ["Business Website", 1500], ["Website + Basic Admin", 3500]], buildExtras),
+  category("website", "Website", "build", "Website", ["Landing page", "Business site", "E-commerce storefront"], [["Landing Page", 500], ["Business Website", 1500], ["Website + Basic Admin", 3500]], websiteExtras, { greeting: "Hello! Let's create a professional website for you. First, let's decide what kind of website you need.", quickChoices: ["Corporate Website", "Service Business Website", "Landing Page", "Portfolio Website", "Blog", "Other", "You decide for me"], defaults: { industry: "skincare", language: "english", pages: "landing_page + campaign" } }),
   category("saas", "SaaS", "build", "SaaS", ["Dashboard", "Auth", "Billing"], [["SaaS Dashboard", 2500], ["SaaS MVP Starter", 6000]], buildExtras),
   category("mobile_app", "Mobile App", "build", "Mobile App", ["iOS/Android UI", "Expo starter", "Navigation"], [["Mobile App UI", 3000], ["Expo Starter App", 6000]], buildExtras),
   category("admin_project", "Admin Panel Project", "build", "Admin Panel Project", ["CRUD", "Roles", "Database"], [["Basic Admin Panel", 3500]], buildExtras),

@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
+import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
@@ -243,7 +244,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const engineCategory = chosen?.categoryId || query.category || "general";
   const enginePlan = categoryEnginePlan(type, engineCategory);
   const website = isWebsiteType(type, category);
-  const storageKey = `crelavo-aw-session-v3-${type}-${category}`;
+  const categoryConfig = getCategory(engineCategory);
+  const storageKey = "crelavo-aw-project-v4";
   const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
   const resumedJobsRef = useRef(new Set<string>());
@@ -254,6 +256,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const categoryResetRef = useRef(category);
   const [draft, setDraft] = useState("");
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
+  const [referenceUrl, setReferenceUrl] = useState("");
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
   const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
@@ -271,11 +274,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   useEffect(() => {
     if (categoryResetRef.current === category) return;
     categoryResetRef.current = category;
-    setShots(website ? websiteShots() : videoShots());
-    setSelected(0);
-    setDraft("");
-    setMaterialFiles([]);
-    setNotice("SETUP UPDATED / READY FOR A NEW PRODUCTION");
+    setNotice(`CATEGORY UPDATED / ${getCategory(category)?.label || type} MODE / PROJECT CONTEXT PRESERVED`);
   }, [category, website]);
   useEffect(() => {
     setMounted(true);
@@ -366,7 +365,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!currentPrompt.trim() || sending) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
-      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: chosen?.extras }) });
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) } }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
@@ -403,7 +402,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: chosen?.extras }),
+        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: { ...chosen?.extras, ...(referenceUrl.trim() ? { reference_url: referenceUrl.trim() } : {}) } }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
@@ -488,13 +487,14 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} /> Orchestrator & category engine active</div>
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
-          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{engineCategory === "website" ? "Website Builder alanına bağlandınız. Sitenizin sektörünü ve fonksiyonlarını birlikte netleştirelim." : engineCategory === "video" ? "AI Video Generator alanına bağlandınız. Ürün, hedef kitle ve platformu birlikte planlayalım." : "Crelavo AI Production Manager hazır. Ne üretmek istediğinizi yazın; doğru kategori motorunu çalıştırayım."}</p></div>
+          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{categoryConfig?.intake.greeting || "Crelavo AI Production Manager is ready. Tell me what you want to produce and I’ll choose the right category engine."}</p>{categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>Smart starting point: {Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")} (editable)</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{choice}</button>)}</div>
           <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Aktif üretim planı</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{enginePlan.map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {shots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === selected ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === selected ? "Aktif" : "Hazır"} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
-          <textarea rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Asistana üretim hedefinizi söyleyin..." disabled={sending} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}><label title="Attach file" style={{ flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>FILE</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ display: "none" }} /></label><button type="submit" disabled={sending || !draft.trim()} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1, fontSize: 12 }}>{sending ? "Gönderiliyor..." : "SEND"}</button></div>
+          <textarea rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Tell the assistant what you want to create..." disabled={sending} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />
+          {website ? <input value={referenceUrl} onChange={(e) => setReferenceUrl(e.target.value)} placeholder="Optional product or reference URL (no file upload in MVP)" disabled={sending} style={{ display: "block", width: "100%", marginTop: 8, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: "10px 12px", color: "#fff", outline: "none", fontSize: 12 }} /> : null}
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>{!website ? <label title="Attach file" style={{ flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>FILE</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ display: "none" }} /></label> : null}<button type="submit" disabled={sending || !draft.trim()} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1, fontSize: 12 }}>{sending ? "Sending..." : "SEND"}</button></div>
         </form>
       </aside>
 
