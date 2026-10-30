@@ -1090,9 +1090,8 @@ function englishProductionLanguageLock() {
   return "Language lock: The production brief, script, narration, voiceover, scene plan, final prompt, and any on-screen text must be in English. Do not translate the production content into Turkish.";
 }
 
-function responseLanguage(message: string, activeLanguage = "") {
-  if (wantsEnglishProductionLanguage(message)) return "en";
-  return isLikelyTurkish(message, activeLanguage) ? "tr" : activeLanguage || "en";
+function responseLanguage(_message: string, _activeLanguage = "") {
+  return "en";
 }
 
 function turnLanguage(message: string, activeLanguage = "") {
@@ -1406,7 +1405,7 @@ const [activeLanguage, setActiveLanguage] = useState("en");
     return [{ role: "assistant", content: "Hi, I’m listening. You can ask general questions, discuss ideas, debug code, or start a production request here." }];
   });
   const [activeStep, setActiveStep] = useState(0);
-  const [status, setStatus] = useState(() => getStoredLanguage() === "tr" ? "Canlı üretim çalışma alanı hazır. Asistanla serbestçe sohbet edebilirsin; üretim başlamadan önce kısa onay görünür." : "Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
+  const [status, setStatus] = useState("Live production workspace is ready. You can chat freely with the assistant; a short confirmation appears before production starts.");
   const [isLoading, setIsLoading] = useState(false);
   const [lastRoute, setLastRoute] = useState("/dashboard/assistant-workspace");
   const [selectedProductionType, setSelectedProductionType] = useState("video");
@@ -2707,7 +2706,7 @@ if (wantsClipping || selectedProductionType === "video_clipping") return "video_
 
 const recentContext = normalizeTurkishQuery(messages.slice(-8).map((item) => item.content).join(" "));
 const briefHasEnglishLock = productionBrief.includes("Language lock:") || wantsEnglishProductionLanguage(productionBrief);
-const currentTurnLanguage = briefHasEnglishLock || wantsEnglishProductionLanguage(clean) ? "en" : turnLanguage(clean, activeLanguage);
+const currentTurnLanguage = "en";
 const followUpProduction = isShortProductionFollowUp(clean, recentContext) || (dynamicWizard.open && isShortProductionFollowUp(clean, `${recentContext} video proje uretim`));
 const followUpDuration = followUpProduction ? durationFromFollowUp(clean) : "";
 const intent = followUpProduction ? "production_request" : detectWorkspaceIntent(clean);
@@ -2742,9 +2741,9 @@ const enrichedClean = conversationalOnly ? clean : `${followUpProduction ? "Prod
       } else if (!dynamicWizard.open && existingBrief.trim()) openDynamicWizardFromMessage(existingBrief);
       setProductionBrief((current) => current.trim() ? current : existingBrief);
       setManualWizardCompleted(true);
-      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: currentTurnLanguage === "tr" ? "Onayı aldım. Chat içinde tekrar soru sormadan gerçek kredi rezerv/onay ekranını açıyorum." : "Confirmed. I am opening the real credit reserve and production approval step now." }]);
+      setMessages([...messages, { role: "user", content: clean }, { role: "assistant", content: "Confirmed. I am opening the real credit reserve and production approval step now." }]);
       if (source === "chat") setChatInput("");
-      setStatus(currentTurnLanguage === "tr" ? "Üretim onayı açıldı; kredi harcanmadan önce rezerv ekranı görünecek." : "Production approval opened; credits are reserved before provider start.");
+       setStatus("Production approval opened; credits are reserved before provider start.");
       setProductionStartingIntent(true);
       setStartError("");
       setStartState("idle");
