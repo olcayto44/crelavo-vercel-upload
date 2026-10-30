@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
     const planApproved = body.planApproved === true;
+    const planSnapshot = body.planSnapshot && typeof body.planSnapshot === "object" ? body.planSnapshot as Record<string, unknown> : null;
 
     if (!prompt) {
       return NextResponse.json(
@@ -73,10 +74,28 @@ export async function POST(req: NextRequest) {
       let validReference = false;
       try { const parsed = new URL(referenceUrl); validReference = (parsed.protocol === "http:" || parsed.protocol === "https:") && referenceUrl.length <= 2048; } catch { validReference = false; }
       if (!validReference) return NextResponse.json({ ok: false, spend: false, code: "invalid_reference_url", message: "Website reference URL must be a valid HTTP or HTTPS URL under 2048 characters." }, { status: 400 });
+      try {
+        const parsed = new URL(referenceUrl);
+        const blockedHost = /^(localhost|127\.|0\.0\.0\.0|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|::1$)/i.test(parsed.hostname);
+        if (blockedHost || parsed.username || parsed.password) return NextResponse.json({ ok: false, spend: false, code: "unsafe_reference_url", message: "This reference URL cannot be used." }, { status: 400 });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        let response: Response;
+        try { response = await fetch(referenceUrl, { method: "HEAD", redirect: "manual", signal: controller.signal, headers: { "User-Agent": "Crelavo-Website-Reference-Check/1.0" } }); } finally { clearTimeout(timeout); }
+        if (response.status >= 400 && response.status !== 405 && response.status !== 301 && response.status !== 302 && response.status !== 307 && response.status !== 308) return NextResponse.json({ ok: false, spend: false, code: "reference_unreachable", message: "The website reference URL could not be reached." }, { status: 400 });
+      } catch { return NextResponse.json({ ok: false, spend: false, code: "reference_unreachable", message: "The website reference URL could not be reached." }, { status: 400 }); }
     }
 
-    if (body.render === true && category === "website" && !planApproved) {
-      return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the website plan before starting production." }, { status: 409 });
+    if (body.render === true && category === "website") {
+      const snapshotCategory = String(planSnapshot?.category || "");
+      const snapshotPack = String(planSnapshot?.packId || "");
+      const selectedPack = getCatalogCategory(category)?.packs.find((pack) => pack.id === String(body.packId || ""));
+      const snapshotExtras = planSnapshot?.extras && typeof planSnapshot.extras === "object" ? planSnapshot.extras as Record<string, unknown> : {};
+      const requiredWebsiteFields = ["site_type", "language", "stack"];
+      const missingWebsiteField = requiredWebsiteFields.find((field) => !String(extras[field] || "").trim());
+      if (!planApproved || !planSnapshot || snapshotCategory !== category || snapshotPack !== String(body.packId || "") || !selectedPack || missingWebsiteField || String(snapshotExtras.stack || "") !== String(extras.stack || "")) {
+        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });
+      }
     }
 
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
