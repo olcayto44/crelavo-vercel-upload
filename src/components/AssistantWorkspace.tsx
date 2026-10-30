@@ -2347,56 +2347,56 @@ if (dynamicWizard.type === "stickman_wizard") { setSelectedProductionType("stick
   const characterStepCopy = (() => {
     if (["drama", "studio", "anime_short_film", "animation", "stickman_animation"].includes(selectedProductionType)) {
       return {
-        title: "Oyuncu / Karakter",
-        subtitle: "Hikâyede oyuncu veya ana karakter olacak mı?",
-        summaryLabel: "Oyuncu/karakter",
-        options: ["Yok — sadece sahne / ortam", "Ana karakter", "Kadın oyuncu", "Erkek oyuncu", "Çocuk karakter", "Yaşlı karakter", "Çoklu karakter", "Maskot / yaratık"]
+        title: "Actor / Character",
+        subtitle: "Will the story include an actor or main character?",
+        summaryLabel: "Actor/character",
+        options: ["None — scene / environment only", "Main character", "Female actor", "Male actor", "Child character", "Older character", "Multiple characters", "Mascot / creature"]
       };
     }
     if (["talking_video", "avatar", "lip_sync", "live_sales_agent"].includes(selectedProductionType)) {
       return {
-        title: "Sunucu / Avatar",
-        subtitle: "Ekranda konuşacak kişi veya avatarı seç.",
-        summaryLabel: "Sunucu/avatar",
-        options: ["Kadın sunucu", "Erkek sunucu", "AI avatar", "Kendi fotoğrafımı konuştur", "Çoklu konuşmacı / panel", "Satış temsilcisi avatarı"]
+        title: "Host / Avatar",
+        subtitle: "Choose the person or avatar who appears on screen.",
+        summaryLabel: "Host/avatar",
+        options: ["Female host", "Male host", "AI avatar", "Animate my photo", "Multiple speakers / panel", "Sales representative avatar"]
       };
     }
     if (["documentary"].includes(selectedProductionType)) {
       return {
-        title: "Anlatıcı / Röportaj",
-        subtitle: "Belgeselde görünen anlatıcı/röportaj kişisi olsun mu?",
-        summaryLabel: "Anlatıcı/röportaj",
-        options: ["Yok — sadece görüntü + dış ses", "Anlatıcı görünsün", "Röportaj kişisi", "Uzman konuşmacı", "Saha muhabiri"]
+        title: "Narrator / Interview",
+        subtitle: "Should a narrator or interview subject appear in the documentary?",
+        summaryLabel: "Narrator/interview",
+        options: ["None — visuals + voice-over only", "Show the narrator", "Interview subject", "Expert speaker", "Field reporter"]
       };
     }
     return {
-      title: "Konuşan kişi / avatar",
-      subtitle: "Videoda konuşan kişi seçersen dudak senkronlu talking video hattı kullanılır. Sadece ürün/ekran/sahne için ilk seçeneği seç.",
-      summaryLabel: "Konuşan kişi/avatar",
-      options: ["Yok — sadece ürün / ekran / sahne videosu", "Kadın sunucu", "Erkek sunucu", "AI avatar", "Kendi fotoğrafımı konuştur", "Çoklu konuşmacı / panel", "Marka maskotu"]
+      title: "Speaking person / avatar",
+      subtitle: "Choose a speaking person to use a lip-synced talking-video path. Choose the first option for product, screen, or scene-only video.",
+      summaryLabel: "Speaking person/avatar",
+      options: ["None — product / screen / scene video only", "Female host", "Male host", "AI avatar", "Animate my photo", "Multiple speakers / panel", "Brand mascot"]
     };
   })();
   const isNoPresenterSelection = (value: string) => /no presenter|ui-only|yok|sadece ürün|sadece urun|sadece sahne|sadece ekran|sadece görüntü|sadece goruntu/i.test(value);
   const defaultManualWizardSteps = [
-    { id: "category", title: "Kategori", subtitle: "Önce üretimin ana kategorisini seç.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
-    { id: "modules", title: "Ana modüller", subtitle: "Bu kategori için üretilecek ana parçaları seç.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
-    { id: "features", title: "Ek özellikler", subtitle: "Ses, altyazı, revizyon veya teslimat eklerini seç.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
-    { id: "style", title: "Stil", subtitle: "Görsel/yaratıcı yönü seç.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
-    { id: "quality", title: "Kalite ve oran", subtitle: "Çözünürlük / platform oranı.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
-    { id: "duration", title: "Süre", subtitle: "Üretim süresini seç.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
-    { id: "delivery", title: "Teslim", subtitle: "Son dosya ve yönlendirme.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+    { id: "category", title: "Category", subtitle: "Choose the main production category first.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "modules", title: "Core modules", subtitle: "Choose the main pieces to produce for this category.", options: activeCategoryProfile.modules.length ? activeCategoryProfile.modules : ["Production package"], value: selectedModules[0] ?? "Production package", apply: (value: string) => setSelectedModules((current) => Array.from(new Set([...current, value]))) },
+    { id: "features", title: "Additional features", subtitle: "Choose audio, subtitles, revisions, or delivery extras.", options: activeCategoryProfile.features.length ? activeCategoryProfile.features : ["Final ZIP", "Revision right"], value: selectedFeatures[0] ?? "Auto", apply: (value: string) => setSelectedFeatures((current) => Array.from(new Set([...current, value]))) },
+    { id: "style", title: "Style", subtitle: "Choose the visual and creative direction.", options: activeCategoryProfile.style.length ? activeCategoryProfile.style : ["SaaS modern", "Cinematic", "Premium ad"], value: selectedStyle, apply: setSelectedStyle },
+    { id: "quality", title: "Quality and ratio", subtitle: "Resolution and platform ratio.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "Duration", subtitle: "Choose the production duration.", options: Array.from(new Set([...activeCategoryProfile.duration, "40 sec"])), value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "delivery", title: "Delivery", subtitle: "Final files and handoff direction.", options: activeCategoryProfile.platforms.length ? activeCategoryProfile.platforms : ["Dashboard delivery"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
   const aiVideoWizardSteps = [
-    { id: "category", title: "Kategori", subtitle: "Yapay Zeka Videosu seçili. İstersen farklı kategoriye geçebilirsin.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
+    { id: "category", title: "Category", subtitle: "AI Video is selected. You can switch to another category.", options: productionTypes.map((item) => item.label), value: selectedProduction?.label ?? selectedProductionType, apply: (value: string) => { const match = productionTypes.find((item) => item.label === value || item.id === value); if (match) setSelectedProductionType(match.id); } },
     { id: "character", title: characterStepCopy.title, subtitle: characterStepCopy.subtitle, options: characterStepCopy.options, value: selectedCharacterProfile, apply: setSelectedCharacterProfile },
-    { id: "voice", title: "Seslendirme", subtitle: "Ses tarzını seç.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Energetic sales voice", "Professional SaaS narrator", "Calm documentary voice", "Premium ad voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
-    { id: "language", title: "Seslendirme dili", subtitle: "Voice-over ve altyazı dilini seç.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
-    { id: "environment", title: "Arka plan / Sahne", subtitle: "Videonun ana görsel ortamını seç.", options: ["Website visitor + AI chat scene", "Office / SaaS dashboard", "Product UI screens", "Studio background", "Clean abstract tech background", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
-    { id: "music", title: "Arka fon müziği", subtitle: "Müzik olsun mu, hangi ruh halinde olsun?", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Technology SaaS music"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); } },
-    { id: "style", title: "Görsel stil", subtitle: "Video dili ve tempo seçimi.", options: ["SaaS modern", "Cinematic", "Premium ad", "Fast CTA video"], value: selectedStyle, apply: setSelectedStyle },
-    { id: "quality", title: "Kalite ve oran", subtitle: "Kalite / platform formatını seç.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
-    { id: "duration", title: "Süre", subtitle: "Video süresini seç.", options: ["10 sec", "15 sec", "30 sec", "60 sec", "2 min"], value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
-    { id: "delivery", title: "Teslim", subtitle: "Final dosya ve platform çıktısını seç.", options: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
+    { id: "voice", title: "Voice-over", subtitle: "Choose the voice style.", options: ["No voice-over", "Adult neutral voice", "Male voice", "Female voice", "Energetic sales voice", "Professional SaaS narrator", "Calm documentary voice", "Premium ad voice"], value: selectedVoiceProfile, apply: (value: string) => { setSelectedVoiceProfile(value); setSelectedFeatures((current) => value === "No voice-over" ? current.filter((item) => !/voice/i.test(item)) : Array.from(new Set([...current, "Voice-over"]))); } },
+    { id: "language", title: "Voice-over language", subtitle: "Choose the voice-over and subtitle language.", options: ["English", "Turkish", "German", "French", "Spanish", "Arabic", "Multi-language"], value: selectedVoiceLanguage, apply: setSelectedVoiceLanguage },
+    { id: "environment", title: "Background / Scene", subtitle: "Choose the main visual environment.", options: ["Website visitor + AI chat scene", "Office / SaaS dashboard", "Product UI screens", "Studio background", "Clean abstract tech background", "Green screen / clean background"], value: selectedEnvironmentProfile, apply: setSelectedEnvironmentProfile },
+    { id: "music", title: "Background music", subtitle: "Should there be music, and what mood should it have?", options: ["No music", "Cinematic background music", "Energetic ad music", "Calm ambient music", "Luxury brand music", "Technology SaaS music"], value: selectedMusicProfile, apply: (value: string) => { setSelectedMusicProfile(value); setSelectedFeatures((current) => value === "No music" ? current.filter((item) => !/music/i.test(item)) : Array.from(new Set([...current, "Music"]))); } },
+    { id: "style", title: "Visual style", subtitle: "Choose the video language and pace.", options: ["SaaS modern", "Cinematic", "Premium ad", "Fast CTA video"], value: selectedStyle, apply: setSelectedStyle },
+    { id: "quality", title: "Quality and ratio", subtitle: "Choose quality and platform format.", options: activeCategoryProfile.quality, value: selectedQuality, apply: (value: string) => { setQuickProviderTest(false); setSelectedQuality(value); } },
+    { id: "duration", title: "Duration", subtitle: "Choose the video duration.", options: ["10 sec", "15 sec", "30 sec", "60 sec", "2 min"], value: selectedDuration, apply: (value: string) => { setQuickProviderTest(false); setSelectedDuration(value); } },
+    { id: "delivery", title: "Delivery", subtitle: "Choose the final file and platform output.", options: ["Dashboard delivery", "MP4 download", "TikTok", "Instagram Reels", "YouTube Shorts"], value: selectedDeliveryHandoff, apply: (value: string) => { setSelectedDeliveryHandoff(value); setSelectedPlatforms((current) => Array.from(new Set([...current, value]))); } }
   ];
   const manualWizardSteps = isManualAiVideoFlow ? aiVideoWizardSteps : defaultManualWizardSteps;
   const currentManualWizardStep = manualWizardSteps[Math.min(manualWizardStep, manualWizardSteps.length - 1)] ?? manualWizardSteps[0];
@@ -3353,14 +3353,14 @@ async function startRawMicrophoneFallback() {
         <section className="clean-preview-card production-example-directions" aria-label="Manual production setup wizard">
           <div className="production-example-head">
             <span className="badge">Manual setup</span>
-            <small>İstersen chat yerine buradan adım adım seç: motor, kalite, süre, ses, müzik, ortam ve teslim.</small>
+            <small>Prefer step-by-step setup here instead of chat: engine, quality, duration, voice, music, environment, and delivery.</small>
           </div>
-          <p>Kullanıcı hiçbir kategori bilmeden başlayabilir; seçimler splash ekranda kategori, modül, özellik, stil, motor, kalite, süre, ses, müzik, ortam ve teslim şeklinde sırayla sorulur.</p>
+          <p>Anyone can start without knowing production categories; the splash screen asks for category, modules, features, style, engine, quality, duration, voice, music, environment, and delivery in order.</p>
           <div className="production-example-actions">
-            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.max(0, manualWizardStep - 1)); }}>Önceki</button>
-            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.min(manualWizardSteps.length - 1, manualWizardStep + 1)); }}>Sonraki seçenek</button>
-            <button className="btn" type="button" onClick={openManualWizard}>Adım adım seç</button>
-            <button className="btn" type="button" onClick={openStartProductionModal}>Örnekleri göster / üretime hazırla</button>
+            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.max(0, manualWizardStep - 1)); }}>Previous</button>
+            <button className="btn secondary" type="button" onClick={() => { setManualWizardOpen(true); setManualWizardStep(Math.min(manualWizardSteps.length - 1, manualWizardStep + 1)); }}>Next option</button>
+            <button className="btn" type="button" onClick={openManualWizard}>Choose step by step</button>
+            <button className="btn" type="button" onClick={openStartProductionModal}>Show examples / prepare production</button>
           </div>
         </section>
 
@@ -3447,7 +3447,7 @@ async function startRawMicrophoneFallback() {
           <div className="production-start-modal credit-splash-modal">
             <button className="splash-ad-close" type="button" onClick={() => setManualWizardOpen(false)} aria-label="Close manual setup">×</button>
             <span className="badge">Manual production setup</span>
-            <h3 key={`manual-step-title-${manualWizardStep}-${currentManualWizardStep?.id}`}>Adım {Math.min(manualWizardStep + 1, manualWizardSteps.length)} / {manualWizardSteps.length}: {currentManualWizardStep?.title}</h3>
+            <h3 key={`manual-step-title-${manualWizardStep}-${currentManualWizardStep?.id}`}>Step {Math.min(manualWizardStep + 1, manualWizardSteps.length)} / {manualWizardSteps.length}: {currentManualWizardStep?.title}</h3>
             <p>{currentManualWizardStep?.subtitle}</p>
             <div className="progress-mini"><span style={{ width: `${Math.round(((manualWizardStep + 1) / manualWizardSteps.length) * 100)}%` }} /></div>
             <div className="clean-tool-grid two" style={{ marginTop: 14 }}>
@@ -3457,10 +3457,10 @@ async function startRawMicrophoneFallback() {
                 </button>
               ))}
             </div>
-            <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Seçim özeti</strong><pre>{manualWizardStep === 0 ? "Kategori seçimini yaptıktan sonra özet dolacak. Eski/default paketler burada gösterilmiyor." : selectedOptionSummary()}</pre></div>
+            <div className="drawer-summary" style={{ marginTop: 14 }}><strong>Selection summary</strong><pre>{manualWizardStep === 0 ? "The summary will fill after you choose a category. Legacy/default packages are not shown here." : selectedOptionSummary()}</pre></div>
             <div className="production-example-actions">
-              {manualWizardStep > 0 ? <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Önceki</button> : null}
-              <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else completeManualWizardAndOpenStart(); }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Seç ve devam et" : "Üretime hazırla"}</button>
+              {manualWizardStep > 0 ? <button className="btn secondary" type="button" onClick={() => setManualWizardStep((current) => Math.max(0, current - 1))}>Previous</button> : null}
+              <button className="btn" type="button" onClick={() => { if (manualWizardStep < manualWizardSteps.length - 1) setManualWizardStep((current) => current + 1); else completeManualWizardAndOpenStart(); }}>{manualWizardStep < manualWizardSteps.length - 1 ? "Choose and continue" : "Prepare production"}</button>
             </div>
           </div>
         </div>
@@ -3487,7 +3487,7 @@ async function startRawMicrophoneFallback() {
             {startError ? <p className="workspace-action-note error">{startError}</p> : null}
             <div className="production-start-actions">
               <button className="btn secondary" type="button" onClick={() => { setStartModalOpen(false); setProductionStartingIntent(false); }} disabled={startState === "loading"}>Cancel</button>
-              <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading"}>{startState === "loading" ? "Starting..." : productionCreditInsufficient ? "Kredi ekle / üretimi başlat" : "I understand, start production"}</button>
+               <button className="btn" type="button" onClick={startProduction} disabled={startState === "loading"}>{startState === "loading" ? "Starting..." : productionCreditInsufficient ? "Add credits / start production" : "I understand, start production"}</button>
             </div>
           </div>
         </div>
@@ -3565,7 +3565,7 @@ async function startRawMicrophoneFallback() {
             <div>
               <span className="badge">Studio stage</span>
               <h3>{selectedProduction?.label ?? selectedProductionType}</h3>
-              <p>{productionBrief || "Henüz brief yok. Soldaki Work Chat’e yazınca burada üretim planı, çıktı önizlemesi, action ve kredi tahmini görünür."}</p>
+               <p>{productionBrief || "No brief yet. Write in Work Chat and the production plan, output preview, action, and credit estimate will appear here."}</p>
               <div className="clean-hero-selection-chips" aria-label="HeyGen bridge status secondary">
                 <span><Sparkles size={13} /><strong>HEYGEN BRIDGE LIVE</strong></span>
                 <span><Bot size={13} /><strong>Video Agent native artifacts active</strong></span>
@@ -3573,10 +3573,10 @@ async function startRawMicrophoneFallback() {
               </div>
             </div>
             <div className="studio-preview-metrics">
-              <span><small>Kalite</small><strong>{selectedQuality}</strong></span>
-              <span><small>Süre / kapsam</small><strong>{selectedDuration}</strong></span>
-              <span><small>Teslimat</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
-              <span><small>Kredi</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
+               <span><small>Quality</small><strong>{selectedQuality}</strong></span>
+               <span><small>Duration / scope</small><strong>{selectedDuration}</strong></span>
+               <span><small>Delivery</small><strong>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard"}</strong></span>
+               <span><small>Credits</small><strong>{costEstimate.totalCredits.toLocaleString()}</strong></span>
             </div>
             <div className="prompt-first-engine-strip" aria-label="AI Core production engines">
               {serviceNetworkGroups.map((engine) => <span key={engine.label}><strong>{engine.label}</strong><small>{engine.services.join(" · ")}</small></span>)}
@@ -3586,7 +3586,7 @@ async function startRawMicrophoneFallback() {
                 <div>
                   <span className="badge">Prompt, plan, routing</span>
                   <h3>Prompt-based production options</h3>
-                  <p>Kullanıcı ne yazarsa ilgili kategori, kalite, stil, süre, modül, materyal ve teslimat seçenekleri burada açılır.</p>
+                   <p>Whatever the user writes, the relevant category, quality, style, duration, modules, materials, and delivery options open here.</p>
                 </div>
                 <button className="btn" type="button" onClick={openStartProductionModal}>Start Production</button>
               </div>
@@ -3603,9 +3603,9 @@ async function startRawMicrophoneFallback() {
               </div>
             </section>
             <div className="ai-output-canvas-preview" aria-label="Production output canvas">
-              <div className="ai-output-card large"><small>Preview</small><strong>{selectedProduction?.label ?? "Production"}</strong><span>{productionBrief ? "Brief hazır" : "Komut bekleniyor"}</span></div>
-              <div className="ai-output-card"><small>Action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong><span>Onaydan önce üretim başlamaz</span></div>
-              <div className="ai-output-card"><small>Delivery</small><strong>{selectedPackage?.name ?? "Files + links"}</strong><span>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard teslim"}</span></div>
+               <div className="ai-output-card large"><small>Preview</small><strong>{selectedProduction?.label ?? "Production"}</strong><span>{productionBrief ? "Brief ready" : "Waiting for command"}</span></div>
+               <div className="ai-output-card"><small>Action</small><strong>{latestAgentAction?.name ?? "Draft"}</strong><span>Production does not start before confirmation</span></div>
+               <div className="ai-output-card"><small>Delivery</small><strong>{selectedPackage?.name ?? "Files + links"}</strong><span>{selectedPlatforms.slice(0, 2).join(" + ") || "Dashboard delivery"}</span></div>
             </div>
           </section>
 
@@ -3639,9 +3639,9 @@ async function startRawMicrophoneFallback() {
               </div>
             </section>
             <aside className="assistant-delivery-stack assistant-delivery-preview">
-              <span className="badge">Teslimat içeriği</span>
+               <span className="badge">Delivery contents</span>
               <strong>{selectedPackage?.name ?? "Custom production package"}</strong>
-              <p>{selectedPackage?.description ?? "Teslimat paketi seçilen modüller, platformlar ve üretim kapsamına göre hazırlanır."}</p>
+               <p>{selectedPackage?.description ?? "The delivery package is prepared from the selected modules, platforms, and production scope."}</p>
               <div className="assistant-delivery-format-grid">
                 {defaultDeliveryPreviewItems.map((item) => <span key={item}>{item}</span>)}
               </div>
