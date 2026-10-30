@@ -1,11 +1,6 @@
-import { Suspense } from "react";
-import CreateProductionGate from "@/components/assistant-work/CreateProductionGate";
-import { RequireFreeAccount } from "@/components/auth/RequireFreeAccount";
+import { redirect } from "next/navigation";
 
+/** The legacy production screen is disabled until a replacement is approved. */
 export default function CreatePage() {
-  return (
-    <Suspense fallback={null}>
-      <RequireFreeAccount><CreateProductionGate /></RequireFreeAccount>
-    </Suspense>
-  );
+  redirect("/dashboard");
 }
