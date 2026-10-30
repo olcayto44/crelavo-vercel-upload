@@ -11696,42 +11696,6 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
     linear-gradient(145deg, rgba(3,7,18,.96), rgba(8,13,30,.92)) !important;
 }
 
-/* Keep prompt options in the middle grid row; prevent overlap with the output viewer. */
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel {
-  grid-area: steps;
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  align-content: start;
-  padding: 12px;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 18px;
-  background: rgba(2,6,23,.42);
-}
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .drawer-head,
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .prompt-first-engine-strip,
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .prompt-first-option-grid {
-  min-width: 0;
-  max-width: 100%;
-}
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .prompt-first-option-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .prompt-first-option-card {
-  min-width: 0;
-  overflow: hidden;
-}
-html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel .compact-option-grid {
-  min-width: 0;
-  max-height: 118px;
-  overflow-y: auto !important;
-}
 .clean-studio-rail,
 .clean-studio-main,
 .clean-studio-side,
