@@ -31,6 +31,7 @@ type CreditState =
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
 type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; progress?: number; };
+type ChatMessage = { role: "user" | "assistant"; content: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
@@ -255,6 +256,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
   const categoryResetRef = useRef(category);
   const [draft, setDraft] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
   const [referenceUrl, setReferenceUrl] = useState("");
   const [planApproved, setPlanApproved] = useState(false);
@@ -403,6 +405,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     }
 
     const prev = shots[selected];
+    setChatMessages((cur) => [...cur, { role: "user", content: prompt }]);
     setDraft("");
     setSending(true);
     setPlanApproved(false);
@@ -490,7 +493,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           </section>
 
           <section style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", border: "1px solid #2e333d", borderRadius: 8, overflow: "hidden" }}>
-            {shots.map((item, index) => <button key={item.id} type="button" onClick={() => setSelected(index)} style={{ minWidth: 0, border: "none", borderRight: index < shots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === selected ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === selected ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
+            {chatMessages.length > 0 ? <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Conversation</p><div style={{ display: "grid", gap: 8 }}>{chatMessages.map((message, index) => <div key={`chat-message-${index}`} style={{ padding: "8px 10px", borderRadius: 7, background: message.role === "user" ? "#222733" : "#1a2421", color: message.role === "user" ? "#fff" : "#b7f7d5", fontSize: 12, lineHeight: 1.45 }}><strong style={{ display: "block", marginBottom: 3, fontSize: 10, color: message.role === "user" ? "#93c5fd" : "#6ee7b7", textTransform: "uppercase" }}>{message.role === "user" ? "You" : "Assistant"}</strong>{message.content}</div>)}</div></div> : null}
+           {shots.map((item, index) => <button key={item.id} type="button" onClick={() => setSelected(index)} style={{ minWidth: 0, border: "none", borderRight: index < shots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === selected ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === selected ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
           </section>
 
           {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <section style={{ flex: "0 0 auto", display: "grid", gap: 8, padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><label style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ maxWidth: "100%", fontSize: 12, color: "#d1d5db" }} /><small style={{ color: "#6b7280" }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></section> : null}
