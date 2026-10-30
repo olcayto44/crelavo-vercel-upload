@@ -91,9 +91,14 @@ export async function POST(req: NextRequest) {
       const snapshotPack = String(planSnapshot?.packId || "");
       const selectedPack = getCatalogCategory(category)?.packs.find((pack) => pack.id === String(body.packId || ""));
       const snapshotExtras = planSnapshot?.extras && typeof planSnapshot.extras === "object" ? planSnapshot.extras as Record<string, unknown> : {};
-      const requiredWebsiteFields = ["site_type", "language", "stack"];
+      const requiredWebsiteFields = ["site_type", "industry", "audience", "pages", "design_style", "language", "stack"];
       const missingWebsiteField = requiredWebsiteFields.find((field) => !String(extras[field] || "").trim());
-      if (!planApproved || !planSnapshot || snapshotCategory !== category || snapshotPack !== String(body.packId || "") || !selectedPack || missingWebsiteField || String(snapshotExtras.stack || "") !== String(extras.stack || "")) {
+      const snapshotReferenceUrl = String(planSnapshot?.referenceUrl || "").trim();
+      const currentReferenceUrl = String(extras.reference_url || "").trim();
+      const snapshotFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(snapshotExtras[field] || ""); return out; }, {});
+      const currentFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(extras[field] || ""); return out; }, {});
+      const planMatchesCurrentInput = JSON.stringify(snapshotFields) === JSON.stringify(currentFields) && snapshotReferenceUrl === currentReferenceUrl;
+      if (!planApproved || !planSnapshot || snapshotCategory !== category || snapshotPack !== String(body.packId || "") || !selectedPack || missingWebsiteField || !planMatchesCurrentInput) {
         return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });
       }
     }
