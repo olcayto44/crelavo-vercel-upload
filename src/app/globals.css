@@ -11697,6 +11697,13 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 
 /* Keep prompt options in the middle grid row; prevent overlap with the output viewer. */
+html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-studio-main > .production-example-directions {
+  grid-area: manual;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  overflow-y: auto;
+}
 html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .clean-prompt-first-panel {
   grid-area: steps;
   display: grid;
@@ -11780,6 +11787,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio .
   grid-template-areas:
     "hero"
     "steps"
+    "manual"
     "preview";
   gap: 12px;
   height: 100%;
@@ -12692,7 +12700,7 @@ html body .assistant-production-page .assistant-workspace.crelavo-clean-studio {
 }
 
 .clean-studio-main {
-  grid-template-rows: minmax(68px, auto) minmax(44px, auto) minmax(0, 1fr) !important;
+  grid-template-rows: minmax(68px, auto) minmax(0, auto) auto minmax(0, 1fr) !important;
   gap: 7px !important;
 }
 
