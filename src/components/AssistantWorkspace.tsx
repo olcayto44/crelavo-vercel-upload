@@ -1709,7 +1709,7 @@ const displayedProductionReservedText = typeof productionCreditReserved === "num
 
   useEffect(() => {
     if (messages.length) {
-      const cleanedMessages = cleanAssistantMessages(messages).filter((message) => !isLikelyTurkish(message.content));
+      const cleanedMessages = cleanAssistantMessages(messages).filter((message) => message.role !== "assistant" || !isLikelyTurkish(message.content));
       window.sessionStorage.setItem(ASSISTANT_WORKSPACE_MESSAGES_KEY, JSON.stringify(cleanedMessages.slice(-200)));
       if (cleanedMessages.length !== messages.length) setMessages(cleanedMessages);
     }
