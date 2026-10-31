@@ -395,15 +395,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!prompt || sending) return;
     const claims = readSessionClaims();
     if (!claims) { window.location.href = "/join"; return; }
-    if (!planApproved && !isCopyOnlyPrompt(prompt)) {
-      setNotice("PLAN APPROVAL REQUIRED / APPROVE THE PLAN FIRST");
-      return;
-    }
-    if (credits.kind === "number" && credits.value <= 0 && !isCopyOnlyPrompt(prompt)) {
-      setNotice("NOT ENOUGH CREDITS / PRODUCTION STOPPED");
-      return;
-    }
-
+    // Plan revisions are free and allowed before approval; credits are enforced only for final render.\n
     const prev = shots[selected];
     setChatMessages((cur) => [...cur, { role: "user", content: prompt }]);
     setDraft("");
