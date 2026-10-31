@@ -371,7 +371,12 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     }
   }
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || category === "website") {
+      if (mounted && category === "website") {
+        setShots((cur) => cur.map((item) => item.taskId ? { ...item, taskId: undefined, status: "READY", label: "READY", progress: 100 } : item));
+      }
+      return;
+    }
     shots.forEach((item, index) => {
       if (item.taskId && !resumedJobsRef.current.has(item.taskId)) {
         resumedJobsRef.current.add(item.taskId);
@@ -388,8 +393,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
-      setShots((cur) => cur.map((item, index) => index === selected ? { ...next, planPrompt: currentPrompt } : item));
       const websiteReady = category === "website";
+      setShots((cur) => cur.map((item, index) => index === selected ? { ...next, status: websiteReady ? "READY" : next.status, label: websiteReady ? "READY" : next.label, taskId: websiteReady ? undefined : next.taskId, progress: websiteReady ? 100 : next.progress, planPrompt: currentPrompt } : item));
       setNotice(websiteReady || data.status === "ready" ? (Array.isArray(data.files) && data.files.length ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / DOWNLOAD AVAILABLE") : "04 QUEUED / FINAL RENDER IN PROGRESS");
       if (!websiteReady && data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
     } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
