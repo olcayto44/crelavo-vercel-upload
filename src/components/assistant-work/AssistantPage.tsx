@@ -388,8 +388,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, planPrompt: currentPrompt } : item));
-      setNotice(data.status === "ready" ? (Array.isArray(data.files) && data.files.length ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / DOWNLOAD AVAILABLE") : "04 QUEUED / FINAL RENDER IN PROGRESS");
-      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
+      const websiteReady = category === "website";
+      setNotice(websiteReady || data.status === "ready" ? (Array.isArray(data.files) && data.files.length ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / DOWNLOAD AVAILABLE") : "04 QUEUED / FINAL RENDER IN PROGRESS");
+      if (!websiteReady && data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
     } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
   }
   async function onSend() {
