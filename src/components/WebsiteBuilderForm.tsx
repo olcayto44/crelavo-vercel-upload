@@ -3,7 +3,8 @@
 import { FormEvent, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 
-type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string };
+type WebsitePlan = { manifest?: { entryPage?: string; pages?: Array<{ slug: string; title: string }>; features?: string[] }; status?: string };
+type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string; plan?: WebsitePlan };
 
 export function WebsiteBuilderForm() {
   const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
@@ -30,7 +31,7 @@ export function WebsiteBuilderForm() {
         const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : "";
         throw new Error(`${data.message || (data.error === "provider_required" ? "Real AI provider is not configured: OPENAI_API_KEY is required." : data.error || "Website generation failed.")}${missing}`);
       }
-      setOutputs(data.outputs);
+      setOutputs({ ...data.outputs, plan: data.plan });
       setStatus("Website generation complete. Preview, ZIP and README links are ready.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Website generation failed.");
@@ -46,7 +47,7 @@ export function WebsiteBuilderForm() {
     <form onSubmit={submit} className="form-grid">
       <label>Website brief<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder="What does it offer, what problem does it solve and what should the user do?" /></label>
       <label>Site type<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
-       <label>Site scope<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">Public static website — no admin panel</option><option value="website_with_admin">Public website + admin panel source starter</option></select><small>{scopeLabel}. Admin files are included only when selected.</small></label>
+       <label>Site scope<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">Public static website - no admin panel</option><option value="website_with_admin">Public website + admin panel source starter</option></select><small>{scopeLabel}. Admin files are included only when selected.</small></label>
        <label>Brand / product<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
       <label>Target audience<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
       <label>Pages <small>comma-separated</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
@@ -55,6 +56,6 @@ export function WebsiteBuilderForm() {
       <button className="btn" type="submit" disabled={busy}>{busy ? "Building..." : "Generate website package"}</button>
     </form>
     {status ? <p role="status" style={{ marginTop: "1rem" }}>{status}</p> : null}
-    {outputs ? <div className="mini-card" style={{ marginTop: "1.5rem" }}><h2>Website outputs</h2><p>Scope: {outputs.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website"}</p><p><a className="btn secondary" href={outputs.previewUrl} target="_blank" rel="noreferrer">Open preview</a> <a className="btn secondary" href={outputs.zipUrl}>Download ZIP/source</a> <a className="btn secondary" href={outputs.readmeUrl}>README</a></p><small>Source guide: <a href={outputs.sourceUrl}>{outputs.sourceUrl}</a></small></div> : null}
+    {outputs ? <div className="mini-card" style={{ marginTop: "1.5rem" }}><h2>Website outputs</h2><p>Scope: {outputs.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website"}</p>{outputs.plan?.manifest ? <><p>Plan status: {outputs.plan.status || "draft"} · Entry page: {outputs.plan.manifest.entryPage || "home"}</p><small>Planned pages: {(outputs.plan.manifest.pages || []).map((page) => page.title || page.slug).join(", ") || "Home"}. Features: {(outputs.plan.manifest.features || []).join(", ") || "None specified"}.</small></> : null}<p><a className="btn secondary" href={outputs.previewUrl} target="_blank" rel="noreferrer">Open preview</a> <a className="btn secondary" href={outputs.zipUrl}>Download ZIP/source</a> <a className="btn secondary" href={outputs.readmeUrl}>README</a></p><small>Source guide: <a href={outputs.sourceUrl}>{outputs.sourceUrl}</a></small></div> : null}
   </section>;
 }
