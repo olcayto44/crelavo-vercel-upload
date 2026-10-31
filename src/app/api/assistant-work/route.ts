@@ -89,18 +89,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.render === true && category === "website") {
-      const snapshotCategory = String(planSnapshot?.category || "");
-      const snapshotPack = String(planSnapshot?.packId || "");
-      const selectedPack = getCatalogCategory(category)?.packs.find((pack) => pack.id === String(body.packId || ""));
-      const snapshotExtras = planSnapshot?.extras && typeof planSnapshot.extras === "object" ? planSnapshot.extras as Record<string, unknown> : {};
+      const websiteCatalog = getCatalogCategory(category);
+      const selectedPack = websiteCatalog?.packs.find((pack) => pack.id === String(body.packId || "")) || websiteCatalog?.packs.find((pack) => pack.id === "website_basic_admin") || websiteCatalog?.packs[0];
+      const effectiveExtras = { ...(websiteCatalog?.intake.defaults || {}), ...extras };
       const requiredWebsiteFields = ["site_type", "industry", "audience", "pages", "design_style", "language", "stack"];
-      const missingWebsiteField = requiredWebsiteFields.find((field) => !String(extras[field] || "").trim());
-      const snapshotReferenceUrl = String(planSnapshot?.referenceUrl || "").trim();
-      const currentReferenceUrl = String(extras.reference_url || "").trim();
-      const snapshotFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(snapshotExtras[field] || ""); return out; }, {});
-      const currentFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(extras[field] || ""); return out; }, {});
-      const planMatchesCurrentInput = JSON.stringify(snapshotFields) === JSON.stringify(currentFields) && snapshotReferenceUrl === currentReferenceUrl;
-      // The UI approval state is the source of truth. Snapshot equality is intentionally not required because the optional reference URL may be cleared locally.\n      if (!planApproved || !selectedPack || missingWebsiteField) {\n        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });\n      }
+      const missingWebsiteField = requiredWebsiteFields.find((field) => !String(effectiveExtras[field] || "").trim());
+      if (!(planApproved || body.skipQueue === true) || !selectedPack || missingWebsiteField) {
+        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });
+      }
     }
 
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
