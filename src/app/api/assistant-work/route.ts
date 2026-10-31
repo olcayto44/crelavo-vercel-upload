@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
       completed_at: resultStatus === "ready" ? new Date().toISOString() : null,
     }).select("id").single();
     if (assistantProduction.error) return NextResponse.json({ ...result, balance, charged, productionPersisted: false, productionPersistError: assistantProduction.error.message });
-    return NextResponse.json({ ...result, balance, charged, productionId: assistantProduction.data.id });
+    return NextResponse.json({ ...result, status: resultStatus, balance, charged, productionId: assistantProduction.data.id });
   }
 
   const out = await handleAssistantWork(req, body || {});

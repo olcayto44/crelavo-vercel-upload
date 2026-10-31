@@ -216,7 +216,8 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const taskId = pickStr(root, ["taskId", "task_id"]);
   const productionId = pickStr(root, ["productionId", "production_id"]);
   const files = Array.isArray(root.files) ? root.files.filter((item): item is DeliveryFile => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")) : shot.files;
-  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, status: website ? shot.status : "READY", label: website ? shot.label : "READY" };
+  const ready = String(root.status || "").toLowerCase() === "ready";
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, status: ready || !website ? "READY" : shot.status, label: ready || !website ? "READY" : shot.label };
 }
 function safeDownloadName(name: string) { return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 120) || "crelavo-output.txt"; }
 function downloadDeliveryFile(file: DeliveryFile) {
@@ -387,7 +388,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, planPrompt: currentPrompt } : item));
-      setNotice(data.status === "ready" ? "SCENE READY / DOWNLOAD AVAILABLE" : "04 QUEUED / FINAL RENDER IN PROGRESS");
+      setNotice(data.status === "ready" ? (Array.isArray(data.files) && data.files.length ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / DOWNLOAD AVAILABLE") : "04 QUEUED / FINAL RENDER IN PROGRESS");
       if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
     } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
   }
