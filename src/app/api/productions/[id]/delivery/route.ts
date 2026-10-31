@@ -1,14 +1,21 @@
-import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
+﻿import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
 import { isAdminRequest } from "@/lib/admin-guard";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
 
 function responseWithText(content: string, filename: string, contentType = "text/markdown; charset=utf-8", disposition: "attachment" | "inline" = "attachment") {
+  const isHtml = contentType.toLowerCase().startsWith("text/html");
   return new Response(content, {
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `${disposition}; filename="${filename}"`,
-      "Cache-Control": "no-store, max-age=0"
+      "Cache-Control": "no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+      ...(isHtml ? {
+        "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline' https:; script-src 'unsafe-inline'; img-src data: blob: https:; font-src data: https:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-ancestors 'self';"
+      } : {})
     }
   });
 }
@@ -41,7 +48,7 @@ function adScoreMarkdown(data: Record<string, unknown>) {
   const value = section("valueProposition");
   const cta = section("cta");
   const platform = section("platformFit");
-  return `# Ad Performance Score\n\n## Overall\n- Total score: ${String(analysis.totalScore ?? "N/A")}/100\n- Verdict: ${String(analysis.verdict ?? "N/A")}\n\n## Category scores\n- Hook: ${String(hook.score ?? "N/A")}/100 — ${String(hook.analysis ?? "")}\n- Message clarity: ${String(clarity.score ?? "N/A")}/100 — ${String(clarity.analysis ?? "")}\n- Target audience: ${String(audience.score ?? "N/A")}/100 — ${String(audience.analysis ?? "")}\n- Value proposition: ${String(value.score ?? "N/A")}/100 — ${String(value.analysis ?? "")}\n- CTA: ${String(cta.score ?? "N/A")}/100 — ${String(cta.analysis ?? "")}\n- Platform fit: ${String(platform.score ?? "N/A")}/100 — ${String(platform.analysis ?? "")}\n\n## Audience\n${String(audience.audience ?? "Not specified")}\n\n## Hook rewrite\n${String(hook.rewrite ?? "Not provided")}\n\n## CTA rewrite\n${String(cta.rewrite ?? "Not provided")}\n\n## Risks\n${list("risks")}\n\n## Improvements\n${list("recommendations")}\n\n## Rewritten ad brief\n${String(analysis.rewrittenBrief ?? "Not provided")}\n\n## Rewritten script\n${String(analysis.rewrittenScript ?? "Not provided")}\n`;
+  return `# Ad Performance Score\n\n## Overall\n- Total score: ${String(analysis.totalScore ?? "N/A")}/100\n- Verdict: ${String(analysis.verdict ?? "N/A")}\n\n## Category scores\n- Hook: ${String(hook.score ?? "N/A")}/100 â€” ${String(hook.analysis ?? "")}\n- Message clarity: ${String(clarity.score ?? "N/A")}/100 â€” ${String(clarity.analysis ?? "")}\n- Target audience: ${String(audience.score ?? "N/A")}/100 â€” ${String(audience.analysis ?? "")}\n- Value proposition: ${String(value.score ?? "N/A")}/100 â€” ${String(value.analysis ?? "")}\n- CTA: ${String(cta.score ?? "N/A")}/100 â€” ${String(cta.analysis ?? "")}\n- Platform fit: ${String(platform.score ?? "N/A")}/100 â€” ${String(platform.analysis ?? "")}\n\n## Audience\n${String(audience.audience ?? "Not specified")}\n\n## Hook rewrite\n${String(hook.rewrite ?? "Not provided")}\n\n## CTA rewrite\n${String(cta.rewrite ?? "Not provided")}\n\n## Risks\n${list("risks")}\n\n## Improvements\n${list("recommendations")}\n\n## Rewritten ad brief\n${String(analysis.rewrittenBrief ?? "Not provided")}\n\n## Rewritten script\n${String(analysis.rewrittenScript ?? "Not provided")}\n`;
 }
 
 function previewAccessForDelivery(data: { output_json?: Record<string, unknown> | null }) {
@@ -208,3 +215,4 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (file === "manifest-json") return Response.json(buildDeliveryManifest(data), { headers: { "Cache-Control": "no-store, max-age=0" } });
   return responseWithText(buildPreviewHtml(data), `${safeTitle}-delivery-overview.html`, "text/html; charset=utf-8", "inline");
 }
+
