@@ -159,6 +159,11 @@ export async function POST(req: NextRequest) {
       charged = Number(paid.spent ?? priced.credits);
     }
     const resultStatus = "status" in result && typeof result.status === "string" ? result.status : "ready";
+    const deliveryFiles = (result.files ?? []).map((item) => {
+      const record = item as { name?: string; path?: string; content?: string; mime?: string };
+      const name = record.name || record.path || "output.txt";
+      return { name, path: name, content: record.content || "", mime: record.mime || "text/plain" };
+    });
     const assistantProduction = await supabase.from("production_requests").insert({
       user_id: user.id,
       production_type: category || "assistant_work",
