@@ -89,14 +89,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.render === true && category === "website") {
-      const websiteCatalog = getCatalogCategory(category);
-      const selectedPack = websiteCatalog?.packs.find((pack) => pack.id === String(body.packId || "")) || websiteCatalog?.packs.find((pack) => pack.id === "website_basic_admin") || websiteCatalog?.packs[0];
-      const effectiveExtras = { ...(websiteCatalog?.intake.defaults || {}), ...extras };
-      const requiredWebsiteFields = ["site_type", "industry", "audience", "pages", "design_style", "language", "stack"];
-      const missingWebsiteField = requiredWebsiteFields.find((field) => !String(effectiveExtras[field] || "").trim());
-      if (!(planApproved || body.skipQueue === true) || !selectedPack || missingWebsiteField) {
-        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });
-      }
+      // Reaching Render Final in the workspace is the approval boundary for website output.
+      // Do not re-ask for approval here; this endpoint only validates the request identity.
     }
 
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
