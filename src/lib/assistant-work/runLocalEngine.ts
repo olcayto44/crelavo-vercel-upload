@@ -57,7 +57,7 @@ function websitePack(prompt: string, scene: number): LocalEngineResult {
     { title: "Checkout", file: "checkout.html", body: "Buy path. Host this yourself.", inner: `${nav}<main class="wrap"><p>PAGE 04 / CHECKOUT</p><h1>Checkout</h1><div class="card"><p>Connect your own payments on the host you choose. Crelavo delivers files only.</p><p>${brief}</p></div></main>` },
   ];
   const selected = pages[scene - 1] || pages[0];
-  const files = [file("styles.css", css(), "text/css"), ...pages.map((p) => file(p.file, htmlPage(`${brand} · ${p.title}`, p.inner), "text/html")), file("README.md", `# ${brand} website\n\nCrelavo delivers source files. You host them.\n\nOpen index.html, catalog.html, story.html, checkout.html.\nDo not wait on MiniMax or HeyGen.\n`, "text/markdown")];
+  const files = [file("styles.css", css(), "text/css"), file("style.css", css(), "text/css"), ...pages.map((p) => file(p.file, htmlPage(`${brand} · ${p.title}`, p.inner), "text/html")), file("README.md", `# ${brand} website\n\nCrelavo delivers source files. Extract the ZIP first, then open index.html from the extracted folder.\n\nOpen index.html, catalog.html, story.html, checkout.html.\nDo not wait on MiniMax or HeyGen.\n`, "text/markdown")];
   return ok("website", selected.title, selected.body, files, true);
 }
 function saasPack(prompt: string, scene: number): LocalEngineResult {
