@@ -73,7 +73,7 @@ export function WebsiteBuilderForm() {
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "PUT", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, content }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Website content update failed.");
-      setStatus("Website content saved. Regenerate the package to include the latest copy in downloadable source files.");
+      setStatus("Website content saved. Preview and downloadable source files now use the latest copy.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website content update failed."); } finally { setContentBusy(false); }
   }
 
@@ -121,3 +121,4 @@ export function WebsiteBuilderForm() {
     </section>
   );
 }
+

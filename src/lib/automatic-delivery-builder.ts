@@ -760,18 +760,30 @@ function applyWebsiteContent(content: string, production: ProductionLike) {
   const websiteContent = websiteContentFor(production);
   if (!websiteContent || production.production_type !== "website") return content;
   let result = content;
-  const replaceFirst = (pattern: RegExp, valueToInsert: unknown) => {
-    const valueText = String(valueToInsert ?? "").trim();
+  const replaceFirst = (pattern: RegExp, rawValue: unknown) => {
+    const valueText = String(rawValue ?? "").trim();
     if (!valueText) return;
     result = result.replace(pattern, (_match, prefix: string, _old: string, suffix: string) => `${prefix}${escapeHtml(valueText)}${suffix}`);
   };
+  const replaceMany = (pattern: RegExp, values: unknown[]) => {
+    let index = 0;
+    result = result.replace(pattern, (_match, prefix: string, _old: string, suffix: string) => {
+      const valueText = String(values[index++] ?? "").trim();
+      return valueText ? `${prefix}${escapeHtml(valueText)}${suffix}` : _match;
+    });
+  };
   replaceFirst(/(<title>)([^<]*)(<\/title>)/i, websiteContent.siteTitle);
-  replaceFirst(/(<h1[^>]*>)(.*?)(<\/h1>)/i, websiteContent.heroTitle);
+  replaceFirst(/(<section[^>]+id=["']hero["'][\s\S]*?<h1[^>]*>)(.*?)(<\/h1>)/i, websiteContent.heroTitle);
   replaceFirst(/(<p[^>]*class=["'][^"']*hero-intro[^"']*["'][^>]*>)(.*?)(<\/p>)/i, websiteContent.heroBody);
   replaceFirst(/(<a[^>]*class=["'][^"']*primary-cta[^"']*["'][^>]*>)(.*?)(<\/a>)/i, websiteContent.primaryCta);
+  replaceFirst(/(<section[^>]+id=["']hero["'][\s\S]*?<p[^>]*class=["'][^"']*eyebrow[^"']*["'][^>]*>)(.*?)(<\/p>)/i, websiteContent.tagline);
+  replaceFirst(/(<section[^>]+id=["']about["'][\s\S]*?<h2[^>]*>)(.*?)(<\/h2>)/i, websiteContent.aboutTitle);
+  replaceFirst(/(<section[^>]+id=["']about["'][\s\S]*?<p[^>]*>)(.*?)(<\/p>)/i, websiteContent.aboutBody);
+  if (Array.isArray(websiteContent.features)) {
+    replaceMany(/(<article[^>]*class=["'][^"']*feature-card[^"']*["'][\s\S]*?<h3[^>]*>)(.*?)(<\/h3>)/gi, websiteContent.features);
+  }
   return result;
 }
-
 function effectiveWebsiteFiles(production: ProductionLike) {
   const files = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
   return files.map((file) => {

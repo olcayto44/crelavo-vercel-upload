@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+﻿import { readFileSync } from "node:fs";
 import { automaticDeliveryLinks, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "../src/lib/automatic-delivery-builder.ts";
 
 function assert(condition: boolean, message: string) {
@@ -37,7 +37,31 @@ const source = buildSourceGuide(production);
 assert(source.includes("Source / Export Guide"), "source guide missing");
 
 const preview = buildPreviewHtml(production);
-assert(preview.includes("<!doctype html>"), "preview html missing doctype");
+assert(preview.includes("<!doctype html>"), "preview html missing doctype");const revisedWebsite = {
+  ...production,
+  package_id: "website_builder",
+  output_json: {
+    websiteContent: {
+      siteTitle: "Revised Site",
+      tagline: "A sharper promise",
+      heroTitle: "Move faster",
+      heroBody: "A clearer explanation.",
+      primaryCta: "Start now",
+      aboutTitle: "Built for focus",
+      aboutBody: "A revised approach.",
+      features: ["One", "Two", "Three"]
+    },
+    websiteFiles: [
+      { path: "index.html", content: '<html><head><title>Old Site</title></head><body><section id="hero"><p class="eyebrow">Old tagline</p><h1>Old hero</h1><p class="hero-intro">Old body</p><a class="cta primary-cta">Old CTA</a></section><section id="about"><h2>Old about</h2><p>Old about body</p></section><article class="feature-card"><h3>Old feature</h3></article><article class="feature-card"><h3>Old feature 2</h3></article><article class="feature-card"><h3>Old feature 3</h3></article></body></html>' },
+      { path: "styles.css", content: "" },
+      { path: "script.js", content: "" }
+    ]
+  }
+};
+const revisedPreview = buildPreviewHtml(revisedWebsite);
+for (const term of ["Revised Site", "A sharper promise", "Move faster", "A clearer explanation.", "Start now", "Built for focus", "A revised approach.", ">One<", ">Two<", ">Three<"]) {
+  assert(revisedPreview.includes(term), `revised content missing ${term}`);
+}
 
 const zip = buildDeliveryZip([{ name: "README.md", content: readme }, { name: "manifest.json", content: JSON.stringify(manifest) }]);
 assert(zip.length > 100, "zip should contain bytes");
@@ -54,3 +78,4 @@ for (const term of ["automaticDeliveryLinks", "deliveryLinks.deliveryZipUrl", "s
 }
 
 console.log("automatic-delivery-builder-smoke ok");
+
