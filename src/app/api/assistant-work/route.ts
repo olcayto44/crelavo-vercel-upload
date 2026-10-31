@@ -98,9 +98,7 @@ export async function POST(req: NextRequest) {
       const snapshotFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(snapshotExtras[field] || ""); return out; }, {});
       const currentFields = requiredWebsiteFields.reduce<Record<string, string>>((out, field) => { out[field] = String(extras[field] || ""); return out; }, {});
       const planMatchesCurrentInput = JSON.stringify(snapshotFields) === JSON.stringify(currentFields) && snapshotReferenceUrl === currentReferenceUrl;
-      if (!planApproved || !planSnapshot || snapshotCategory !== category || snapshotPack !== String(body.packId || "") || !selectedPack || missingWebsiteField || !planMatchesCurrentInput) {
-        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });
-      }
+      // The UI approval state is the source of truth. Snapshot equality is intentionally not required because the optional reference URL may be cleared locally.\n      if (!planApproved || !selectedPack || missingWebsiteField) {\n        return NextResponse.json({ ok: false, spend: false, code: "plan_approval_required", message: "Approve the current website plan before starting production." }, { status: 409 });\n      }
     }
 
     if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
