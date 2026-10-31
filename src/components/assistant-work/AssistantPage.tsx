@@ -215,7 +215,12 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
   const media = pickStr(mediaObject, ["url"]) || pickStr(scene, ["url", "media_url", "file_url", "video_url", "image_url", "output_url"]);
   const taskId = pickStr(root, ["taskId", "task_id"]);
   const productionId = pickStr(root, ["productionId", "production_id"]);
-  const files = Array.isArray(root.files) ? root.files.filter((item): item is DeliveryFile => Boolean(item && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string")) : shot.files;
+  const files = Array.isArray(root.files) ? root.files.flatMap((item): DeliveryFile[] => {
+    if (!item || typeof item !== "object") return [];
+    const record = item as Record<string, unknown>;
+    const name = typeof record.name === "string" ? record.name : typeof record.path === "string" ? record.path : "";
+    return name ? [{ name, mime: typeof record.mime === "string" ? record.mime : undefined, content: typeof record.content === "string" ? record.content : undefined }] : [];
+  }) : shot.files;
   const ready = String(root.status || "").toLowerCase() === "ready";
   return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, status: ready || !website ? "READY" : shot.status, label: ready || !website ? "READY" : shot.label };
 }
@@ -395,7 +400,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const next = applyPayload(shot, data, currentPrompt, website);
       const websiteReady = category === "website";
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, status: websiteReady ? "READY" : next.status, label: websiteReady ? "READY" : next.label, taskId: websiteReady ? undefined : next.taskId, progress: websiteReady ? 100 : next.progress, planPrompt: currentPrompt } : item));
-      setNotice(websiteReady || data.status === "ready" ? (Array.isArray(data.files) && data.files.length ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / DOWNLOAD AVAILABLE") : "04 QUEUED / FINAL RENDER IN PROGRESS");
+      const hasDelivery = Boolean(next.mediaUrl || next.files.length);
+      setNotice(websiteReady || data.status === "ready" ? (hasDelivery ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / OUTPUT NOT ATTACHED") : "04 QUEUED / FINAL RENDER IN PROGRESS");
       if (!websiteReady && data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
     } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
   }
@@ -404,7 +410,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!prompt || sending) return;
     const claims = readSessionClaims();
     if (!claims) { window.location.href = "/join"; return; }
-    // Plan revisions are free and allowed before approval; credits are enforced only for final render.\n
+    // Plan revisions are free and allowed before approval; credits are enforced only for final render.
+
     const prev = shots[selected];
     setChatMessages((cur) => [...cur, { role: "user", content: prompt }]);
     setDraft("");
