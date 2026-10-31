@@ -242,8 +242,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [setupOpen, setSetupOpen] = useState(false);
   const chosen = selection || preProduction;
   const type = chosen?.type || query.type;
-  const category = chosen?.categoryId || query.category || "";
-  const engineCategory = chosen?.categoryId || query.category || "general";
+  const websiteRequested = chosen?.categoryId === "website" || query.category === "website" || /website/i.test(type);
+  const category = websiteRequested ? "website" : (chosen?.categoryId || query.category || "");
+  const engineCategory = category || "general";
   const enginePlan = categoryEnginePlan(type, engineCategory);
   const website = isWebsiteType(type, category);
   const categoryConfig = getCategory(engineCategory);
@@ -383,7 +384,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!currentPrompt.trim() || sending || !planApproved) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
-      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, prompt: currentPrompt, type, category, scene: selected + 1, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }) });
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, skipQueue: websiteRequested, prompt: currentPrompt, type: websiteRequested ? "Website" : type, category, scene: selected + 1, categoryId: websiteRequested ? "website" : chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
       const next = applyPayload(shot, data, currentPrompt, website);

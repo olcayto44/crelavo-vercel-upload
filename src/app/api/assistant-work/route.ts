@@ -49,9 +49,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const category = String(body.category || "").trim();
+    const requestedCategory = String(body.category || "").trim().toLowerCase();
+    const requestedType = String(body.type || "");
+    const category = body.skipQueue === true && (/website/i.test(requestedType) || requestedCategory === "website") ? "website" : requestedCategory;
     const prompt = String(body.prompt || "").trim();
-    const type = String(body.type || "");
+    const type = body.skipQueue === true && category === "website" ? "Website" : requestedType;
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
