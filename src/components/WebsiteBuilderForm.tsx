@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
@@ -35,7 +35,7 @@ export function WebsiteBuilderForm() {
       const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, site_scope: fields.scope, pages: list(fields.pages), features: list(fields.features) }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : ""; throw new Error(`${data.message || data.error || "Website generation failed."}${missing}`); }
-      const initialContent = { heroTitle: data.plan?.brief?.businessName || data.outputs?.content?.heroTitle || "", heroBody: data.plan?.brief?.businessDescription || data.outputs?.content?.heroBody || "", primaryCta: data.outputs?.content?.primaryCta || "Get started" };
+      const initialContent = { ...data.production?.output_json?.websiteContent, ...data.outputs?.content, heroTitle: data.production?.output_json?.websiteContent?.heroTitle || data.outputs?.content?.heroTitle || data.plan?.brief?.businessName || "", heroBody: data.production?.output_json?.websiteContent?.heroBody || data.outputs?.content?.heroBody || data.plan?.brief?.businessDescription || "", primaryCta: data.production?.output_json?.websiteContent?.primaryCta || data.outputs?.content?.primaryCta || "Get started" };
       setContent(initialContent); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website generation failed."); } finally { setBusy(false); }
   }
@@ -73,6 +73,7 @@ export function WebsiteBuilderForm() {
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "PUT", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, content }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Website content update failed.");
+      setContent(data.content || content); setHistory(data.history || []);
       setStatus("Website content saved. Preview and downloadable source files now use the latest copy.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website content update failed."); } finally { setContentBusy(false); }
   }
@@ -113,6 +114,13 @@ export function WebsiteBuilderForm() {
             <label>Hero title<input value={content.heroTitle} onChange={(event) => setContent((current) => ({ ...current, heroTitle: event.target.value }))} /></label>
             <label>Hero text<textarea rows={4} value={content.heroBody} onChange={(event) => setContent((current) => ({ ...current, heroBody: event.target.value }))} /></label>
             <label>Primary button<input value={content.primaryCta} onChange={(event) => setContent((current) => ({ ...current, primaryCta: event.target.value }))} /></label>
+            {([['siteTitle', 'Site title'], ['tagline', 'Tagline'], ['aboutTitle', 'About title'], ['aboutBody', 'About text'], ['contactTitle', 'Contact title'], ['contactBody', 'Contact text'], ['contactEmail', 'Contact email']] as const).map(([key, label]) => (
+              <label key={key}>{label}{key.endsWith('Body') ? <textarea rows={3} maxLength={2000} value={String(content[key] ?? '')} onChange={(event) => setContent((current) => ({ ...current, [key]: event.target.value }))} /> : <input type={key === 'contactEmail' ? 'email' : 'text'} maxLength={2000} value={String(content[key] ?? '')} onChange={(event) => setContent((current) => ({ ...current, [key]: event.target.value }))} />}</label>
+            ))}
+            <label>Feature titles (one per line)<textarea rows={3} value={Array.isArray(content.features) ? content.features.join('\n') : ''} onChange={(event) => setContent((current) => ({ ...current, features: event.target.value.split('\n') }))} /></label>
+            <h3>Frequently asked questions</h3>
+            <small>Blank entries keep the original generated text. Revisions also accept: FAQ 1 question: Your question</small>
+            {[0, 1, 2].map((index) => <fieldset key={index}><legend>FAQ {index + 1}</legend>{(['faqQuestions', 'faqAnswers'] as const).map((key) => <label key={key}>{key === 'faqQuestions' ? 'Question' : 'Answer'}<textarea maxLength={240} rows={key === 'faqQuestions' ? 2 : 3} value={String(Array.isArray(content[key]) ? content[key][index] ?? '' : '')} onChange={(event) => setContent((current) => { const items = Array.isArray(current[key]) ? [...current[key]] : ['', '', '']; items[index] = event.target.value; return { ...current, [key]: items }; })} /></label>)}</fieldset>)}
             <button className="btn" type="submit" disabled={contentBusy}>{contentBusy ? "Saving..." : "Save content"}</button>
           </form>
           {history.length > 0 ? <div className="mini-card" style={{ marginTop: "1rem" }}><h2>Version history</h2>{history.slice().reverse().map((item) => <div key={`${item.revision}-${item.createdAt}`} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: ".5rem" }}><span>Version {item.revision} - {item.source || "manual"}</span><button className="btn secondary" type="button" disabled={contentBusy} onClick={() => rollback(item.revision)}>Restore</button></div>)}</div> : null}
@@ -121,4 +129,3 @@ export function WebsiteBuilderForm() {
     </section>
   );
 }
-

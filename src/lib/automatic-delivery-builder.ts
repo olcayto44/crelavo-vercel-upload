@@ -1,4 +1,4 @@
-﻿import { buildExportReadyPack } from "./connected-accounts.ts";
+import { buildExportReadyPack } from "./connected-accounts.ts";
 import { deliveryPackageForProduction, type DeliveryPackage } from "./delivery-package.ts";
 import { buildOutputRegistry } from "./output-registry.ts";
 import { qualityProfileForProduction, type ProductionQualityProfile } from "./production-quality.ts";
@@ -778,10 +778,47 @@ function applyWebsiteContent(content: string, production: ProductionLike) {
   replaceFirst(/(<a[^>]*class=["'][^"']*primary-cta[^"']*["'][^>]*>)(.*?)(<\/a>)/i, websiteContent.primaryCta);
   replaceFirst(/(<section[^>]+id=["']hero["'][\s\S]*?<p[^>]*class=["'][^"']*eyebrow[^"']*["'][^>]*>)(.*?)(<\/p>)/i, websiteContent.tagline);
   replaceFirst(/(<section[^>]+id=["']about["'][\s\S]*?<h2[^>]*>)(.*?)(<\/h2>)/i, websiteContent.aboutTitle);
-  replaceFirst(/(<section[^>]+id=["']about["'][\s\S]*?<p[^>]*>)(.*?)(<\/p>)/i, websiteContent.aboutBody);
+  replaceFirst(/(<section[^>]+id=["']about["'][\s\S]*?<\/h2>[\s\S]*?<p[^>]*>)([\s\S]*?)(<\/p>)/i, websiteContent.aboutBody);
   if (Array.isArray(websiteContent.features)) {
     replaceMany(/(<article[^>]*class=["'][^"']*feature-card[^"']*["'][\s\S]*?<h3[^>]*>)(.*?)(<\/h3>)/gi, websiteContent.features);
   }
+  const editSection = (id: string, edit: (html: string) => string) => {
+    result = result.replace(new RegExp(`(<section\\b[^>]*\\bid=["']${id}["'][^>]*>)([\\s\\S]*?)(<\\/section>)`, "i"), (_match, open: string, body: string, close: string) => `${open}${edit(body)}${close}`);
+  };
+  editSection("faq", (html) => {
+    const questions = Array.isArray(websiteContent.faqQuestions) ? websiteContent.faqQuestions : [];
+    const answers = Array.isArray(websiteContent.faqAnswers) ? websiteContent.faqAnswers : [];
+    let questionIndex = 0;
+    let answerIndex = 0;
+    const questionText = (old: string) => {
+      const entry = questions[questionIndex++];
+      return typeof entry === "string" && entry.trim() ? escapeHtml(entry.trim()) : old;
+    };
+    html = html.replace(/(<button\b[^>]*class=["'][^"']*\bfaq-trigger\b[^"']*["'][^>]*>)([\s\S]*?)(<\/button>)/gi, (_match, open: string, body: string, close: string) => {
+      const icon = body.match(/<span\b[\s\S]*?<\/span>/i)?.[0] ?? "";
+      return `${open}${questionText(body.replace(/<span\b[\s\S]*?<\/span>/i, ""))}${icon}${close}`;
+    });
+    if (!questionIndex) html = html.replace(/(<summary\b[^>]*>)([\s\S]*?)(<\/summary>)/gi, (_match, open: string, body: string, close: string) => `${open}${questionText(body)}${close}`);
+    html = html.replace(/(<(?:div\b[^>]*class=["'][^"']*\bfaq-panel\b[^"']*["'][^>]*>|\/summary>)[\s\S]*?<p\b[^>]*>)([\s\S]*?)(<\/p>)/gi, (_match, open: string, body: string, close: string) => {
+      const entry = answers[answerIndex++];
+      return `${open}${typeof entry === "string" && entry.trim() ? escapeHtml(entry.trim()) : body}${close}`;
+    });
+    return html;
+  });
+  editSection("contact", (html) => {
+    const replaceText = (pattern: RegExp, raw: unknown) => {
+      if (typeof raw === "string" && raw.trim()) html = html.replace(pattern, (_match, open: string, _body: string, close: string) => `${open}${escapeHtml(raw.trim())}${close}`);
+    };
+    replaceText(/(<h2\b[^>]*>)([\s\S]*?)(<\/h2>)/i, websiteContent.contactTitle);
+    replaceText(/(<\/h2>[\s\S]*?<p\b[^>]*>)([\s\S]*?)(<\/p>)/i, websiteContent.contactBody);
+    const email = websiteContent.contactEmail;
+    if (typeof email === "string" && /^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email.trim())) {
+      const link = `<a class="contact-email" href="mailto:${escapeHtml(email.trim())}">${escapeHtml(email.trim())}</a>`;
+      if (/<a\b[^>]*class=["'][^"']*\bcontact-email\b/.test(html)) html = html.replace(/<a\b[^>]*class=["'][^"']*\bcontact-email\b[^"']*["'][^>]*>[\s\S]*?<\/a>/i, () => link);
+      else html = html.replace(/<\/h2>/i, (end) => `${end}${link}`);
+    }
+    return html;
+  });
   return result;
 }
 function effectiveWebsiteFiles(production: ProductionLike) {
@@ -926,7 +963,7 @@ export function buildPreviewHtml(production: ProductionLike) {
     const index = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "index.html") as Record<string, unknown> | undefined;
     const css = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "styles.css") as Record<string, unknown> | undefined;
     const js = generatedWebsiteFiles.find((file) => file && typeof file === "object" && file.path === "script.js") as Record<string, unknown> | undefined;
-    if (index && typeof index.content === "string") return index.content.replace(/<link[^>]+href=[\"']styles\.css[\"'][^>]*>/i, `<style>${String(css?.content ?? "")}</style>`).replace(/<script[^>]+src=[\"']script\.js[\"'][^>]*><\/script>/i, `<script>${String(js?.content ?? "")}</script>`);
+    if (index && typeof index.content === "string") return index.content.replace(/<link[^>]+href=[\"'](?:\.\/)?styles\.css[\"'][^>]*>/i, `<style>${String(css?.content ?? "")}</style>`).replace(/<script[^>]+src=[\"'](?:\.\/)?script\.js[\"'][^>]*><\/script>/i, `<script>${String(js?.content ?? "")}</script>`);
   }
   const manifest = buildDeliveryManifest(production);
   const featureSet = projectFeatureSet(production);
@@ -994,4 +1031,3 @@ export function buildDeliveryZip(entries: ZipEntry[]) {
   const end = concat([u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(central.length), u32(offset), u16(0)]);
   return concat([...localParts, central, end]);
 }
-

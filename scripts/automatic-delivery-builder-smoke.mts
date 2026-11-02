@@ -1,5 +1,6 @@
-﻿import { readFileSync } from "node:fs";
-import { automaticDeliveryLinks, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "../src/lib/automatic-delivery-builder.ts";
+import { readFileSync } from "node:fs";
+import { stripTypeScriptTypes } from "node:module";
+import { automaticDeliveryLinks, buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "../src/lib/automatic-delivery-builder.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -63,6 +64,28 @@ for (const term of ["Revised Site", "A sharper promise", "Move faster", "A clear
   assert(revisedPreview.includes(term), `revised content missing ${term}`);
 }
 
+const extendedWebsite = {
+  ...revisedWebsite,
+  output_json: {
+    ...revisedWebsite.output_json,
+    websiteContent: {
+      ...revisedWebsite.output_json.websiteContent,
+      contactTitle: 'Talk <safely>', contactBody: 'New contact copy', contactEmail: 'hello@example.com',
+      faqQuestions: ['New question?', '', 'Third question?'], faqAnswers: ['Safe <answer>', '', 'Third answer']
+    },
+    websiteFiles: revisedWebsite.output_json.websiteFiles.map((file) => file.path === 'index.html' ? { ...file, content: file.content.replace('</body>', '<section id="faq"><button class="faq-trigger" aria-expanded="true" aria-controls="panel-0">Old question<span aria-hidden="true">+</span></button><div id="panel-0" class="faq-panel"><p>Old answer</p></div><button class="faq-trigger">Keep question</button><div class="faq-panel"><p>Keep answer</p></div><button class="faq-trigger">Third old</button><div class="faq-panel"><p>Third old answer</p></div></section><section id="contact"><p class="eyebrow">Start here</p><h2>Old contact</h2><p>Old contact copy</p><form class="contact-form"><input type="email" required><button>Send</button></form></section></body>') } : file)
+  }
+};
+const extendedPreview = buildPreviewHtml(extendedWebsite);
+for (const text of ['New question?', 'Safe &lt;answer&gt;', 'Keep question', 'Keep answer', 'Third question?', 'Third answer', 'Talk &lt;safely&gt;', 'New contact copy', 'mailto:hello@example.com', 'aria-controls="panel-0"', '<span aria-hidden="true">+</span>', '<form class="contact-form">']) {
+  assert(extendedPreview.includes(text), `extended CMS preview missing ${text}`);
+}
+const extendedEntries = buildDeliveryEntries(extendedWebsite);
+const sourceIndex = extendedEntries.find((entry) => entry.name === 'source/index.html');
+assert(Boolean(sourceIndex?.content.includes('Safe &lt;answer&gt;') && sourceIndex.content.includes('mailto:hello@example.com')), 'ZIP source must contain FAQ/contact revisions');
+assert(!extendedWebsite.output_json.websiteFiles[0].content.includes('New question?'), 'CMS delivery must not mutate original source');
+const extendedZip = new TextDecoder().decode(buildDeliveryZip(extendedEntries));
+assert(extendedZip.includes('New question?') && extendedZip.includes('mailto:hello@example.com'), 'ZIP bytes missing revised content');
 const zip = buildDeliveryZip([{ name: "README.md", content: readme }, { name: "manifest.json", content: JSON.stringify(manifest) }]);
 assert(zip.length > 100, "zip should contain bytes");
 assert(zip[0] === 0x50 && zip[1] === 0x4b, "zip should start with PK signature");
@@ -77,5 +100,13 @@ for (const term of ["automaticDeliveryLinks", "deliveryLinks.deliveryZipUrl", "s
   assert(automationStart.includes(term), `automation start missing ${term}`);
 }
 
+const cmsRoute = readFileSync('src/app/api/website-content/[id]/route.ts', 'utf8');
+const revisionFunction = cmsRoute.slice(cmsRoute.indexOf('function applyNaturalRevision('), cmsRoute.indexOf('async function getOwnedWebsite('));
+const revise = new Function(stripTypeScriptTypes(revisionFunction) + '; return applyNaturalRevision;')() as (current: Record<string, unknown>, instruction: string) => Record<string, unknown>;
+assert(revise({ heroTitle: 'Keep hero' }, 'İletişim başlığını Bize ulaşın olarak değiştir.').contactTitle === 'Bize ulaşın', 'contact title command must not change hero title');
+assert(revise({}, 'Hakkımızda başlığını Ekibimiz olarak değiştir.').aboutTitle === 'Ekibimiz', 'about command must precede generic title command');
+const faqRevision = revise({}, 'SSS 3 soru: Üçüncü soru?');
+assert(JSON.stringify(faqRevision.faqQuestions) === JSON.stringify(['', '', 'Üçüncü soru?']), 'numbered FAQ revision must retain positions');
+assert(revise({}, 'İletişim e-postası: destek@example.com').contactEmail === 'destek@example.com', 'contact email revision failed');
+assert(revise({}, 'Change the hero title to Start faster.').heroTitle === 'Start faster', 'English revision connector must not become content');
 console.log("automatic-delivery-builder-smoke ok");
-
