@@ -34,3 +34,10 @@ Bu aşama statik website ve kaynak dosya teslimidir. Özel sayfalar statik bilgi
 - TypeScript kontrolü ve üretim derlemesi geçti; 560 sayfa oluşturuldu.
 - Genel asistan bağlantı testi ana sayfada HardReloadLink, genel sohbet testi ise publicConversationalReply(clean, activeLanguage kaynak ifadesini bulamadığı için başarısız. Bu iki hatanın işaret ettiği ana sayfa, AssistantWorkspace ve assistant-chat dosyaları bu birleşmede değiştirilmedi. Bu hatalar giderilmiş sayılmaz.
 - Bu sonuçlar yereldir; yeni sürüm için commit/push/deploy ve canlı kabul henüz yapılmadı.
+
+## Asistan ekranı ve giriş düzeltmesi
+- Ana asistan kabuğu korunur; website seçimi artık ayrı bir tam ekran formuyla asistanı değiştirmez.
+- Website sohbeti mevcut sağ panelde, sunucu onayı aynı panelde, ortak editör/önizleme/teslim mevcut ana alanda çalışır.
+- URL sorgusu canlı okunur; genel/video bağlantısına dönünce önceki website seçimi bu bağlantıları ele geçiremez.
+- Oturumsuz asistan erişimi /join üzerinden ödeme ekranına gönderilmez. Mevcut giriş penceresi açılır ve kategori dahil dönüş adresi korunur. Diğer sayfaların erişimi ve üretim/indirme ödeme kuralları değiştirilmez.
+- npm run smoke:assistant-workspace-regression gerçek bileşen çıktısını ve eylemlerini kontrollü bağımlılıklarla sınar: genel kabuk, website sohbeti, ortak üretim, aynı proje editörü, kategori ayrımı ve giriş dönüş adresi. Bu test canlı tarayıcı kabulü değildir.

@@ -1,5 +1,8 @@
 "use client";
-import { WebsiteAssistantPanel } from "./WebsiteAssistantPanel";
+import { useWebsiteAssistant, WebsitePlanControls } from "./WebsiteAssistantPanel";
+import { WebsiteBuilderForm } from "@/components/WebsiteBuilderForm";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
@@ -37,9 +40,9 @@ export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
   return null;
 }
-function readQuery() {
-  if (typeof window === "undefined") return { type: "General", category: "" };
-  const q = new URLSearchParams(window.location.search);
+function readQuery(search: string) {
+
+  const q = new URLSearchParams(search);
   const type = q.get("type") || "General";
   const direct = q.get("category") || "";
   const map: Record<string, string> = { media: "video", video: "video", "AI Video": "video", drone: "drone_video", live_sales: "live_sales_agent", commerce: "campaign", app: "mobile_app", ecommerce: "website", avatar: "avatar", image: "image", documentary: "documentary", animation: "animation" };
@@ -243,16 +246,21 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
   const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "crelavo-delivery.zip"; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
-  const query = useMemo(() => readQuery(), []);
+  const { openAuth } = useAuth();
+  const searchParams = useSearchParams();
+  const routeKey = searchParams.toString();
+  const query = useMemo(() => readQuery(routeKey), [routeKey]);
+  const [selectionRoute, setSelectionRoute] = useState(routeKey);
   const [selection, setSelection] = useState<ProductionSelection | null>(preProduction || null);
   const [setupOpen, setSetupOpen] = useState(false);
-  const chosen = selection || preProduction;
+  const chosen = selectionRoute === routeKey ? selection || preProduction : preProduction;
   const type = chosen?.type || query.type;
   const websiteRequested = chosen?.categoryId === "website" || query.category === "website" || /website/i.test(type);
   const category = websiteRequested ? "website" : (chosen?.categoryId || query.category || "");
   const engineCategory = category || "general";
   const enginePlan = categoryEnginePlan(type, engineCategory);
   const website = isWebsiteType(type, category);
+  const websiteFlow = useWebsiteAssistant({ enabled: website, selection: chosen || undefined, request: cinemaFetch });
   const categoryConfig = getCategory(engineCategory);
   const storageKey = "crelavo-aw-project-v4";
   const restoredRef = useRef(false);
@@ -391,6 +399,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     });
   }, [mounted, shots, category]);
   async function renderFinalScene() {
+    if (website) { if (websiteFlow.approved && await websiteFlow.perform("render")) await loadCredits(); return; }
     const currentPrompt = shot.planPrompt || shot.body;
     if (!currentPrompt.trim() || sending || !planApproved) return;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
@@ -408,9 +417,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   async function onSend() {
     const prompt = draft.trim();
-    if (!prompt || sending) return;
+    if (!prompt || sending || (website && websiteFlow.busy)) return;
+    if (website) { if (await websiteFlow.perform("revise", undefined, prompt)) setDraft(""); return; }
     const claims = readSessionClaims();
-    if (!claims) { window.location.href = "/join"; return; }
+    if (!claims) { openAuth("login", { next: window.location.pathname + window.location.search }); return; }
     // Plan revisions are free and allowed before approval; credits are enforced only for final render.
 
     const prev = shots[selected];
@@ -455,7 +465,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     }
   }
   if (!mounted) return null;
-  if (website) return createPortal(<WebsiteAssistantPanel selection={chosen || undefined} request={cinemaFetch} />, document.body);
+
   const shell = (
     <div id={THREAD} data-aw={AW} translate="no" className="notranslate" style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input, #${THREAD} textarea { font-family: inherit; }`}</style>
@@ -474,6 +484,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             </div>
           </header>
 
+          {website ? <section aria-label="Website production" style={{ display: "grid", gap: 16 }}>
+            <div style={{ padding: 20, background: "#111318", border: "1px solid #2e333d", borderRadius: 12 }}><h2>{websiteFlow.project?.website.brief.brand || "Website production"}</h2><p role="status">{websiteFlow.notice}</p><p>Discuss the website in the assistant. Review the plan and credit estimate before production.</p><button type="button" onClick={renderFinalScene} disabled={websiteFlow.busy || !websiteFlow.approved || websiteFlow.project?.status === "ready" || websiteFlow.project?.status === "generating"}>{websiteFlow.busy ? "Processing..." : websiteFlow.project?.status === "awaiting_payment" ? "Retry payment / finalize same project" : "Generate approved website"}</button></div>
+            {websiteFlow.project?.status === "ready" ? <WebsiteBuilderForm key={websiteFlow.project.productionId} initialProjectId={websiteFlow.project.productionId} editorOnly /> : <div style={{ minHeight: 320, padding: 24, border: "1px solid #2e333d", borderRadius: 12 }}><h3>Website preview</h3><p>The generated website, revisions, history and ZIP will appear here after approved production.</p></div>}
+          </section> : <>
           <section style={{ flex: "0 0 auto", background: "#111318", border: "1px solid #1f2229", borderRadius: 12, padding: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
               <div style={{ minWidth: 0, flex: "1 1 420px" }}>
@@ -511,6 +525,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {(shot.mediaUrl || shot.files.length > 0) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>DELIVERY READY</strong>{shot.mediaUrl ? <button type="button" onClick={() => downloadMedia(shot.mediaUrl!)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>DOWNLOAD MEDIA</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>DOWNLOAD ZIP</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.</div>
+          </>}
         </div>
       </main>
 
@@ -520,19 +535,20 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} /> Orchestrator & category engine active</div>
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
+          {website ? <><WebsitePlanControls controller={websiteFlow} /><div aria-label="Website conversation" aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 16 }}>{websiteFlow.project?.website.messages.map((message, index) => <div key={index} style={{ padding: 12, borderRadius: 8, background: message.role === "assistant" ? "#1a2421" : "#222733", whiteSpace: "pre-wrap", fontSize: 13 }}><strong>{message.role === "assistant" ? "Assistant" : "You"}:</strong> {message.content}</div>)}</div></> : <>
           <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{categoryConfig?.intake.greeting || "Crelavo AI Production Manager is ready. Tell me what you want to produce and I’ll choose the right category engine."}</p>{categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>Smart starting point: {Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")} (editable)</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{choice}</button>)}</div>
           <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Plan and approval</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>Category: <strong>{categoryConfig?.label || type}</strong></div><div>Package: <strong>{selectedPack?.label || "Not selected yet"}</strong></div><div>Estimated credits: <strong>{estimatedCredits ? `${estimatedCredits} credits` : "No package selected"}</strong></div><div>Delivery: <strong>{chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : "Setup incomplete"}</strong></div></div>{planApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>Plan approved. Final production is ready to start.</div> : <button type="button" onClick={() => { if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } setPlanApproved(true); setNotice("PLAN APPROVED / FINAL PRODUCTION READY"); void persistProject({ category, type, selection: chosen, shots, selected, notice: "PLAN APPROVED / FINAL PRODUCTION READY", referenceUrl, planApproved: true }); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>Approve plan and continue to production</button>}</div>
           <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Active production plan</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{enginePlan.map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {shots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === selected ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === selected ? "Active" : "Ready"} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
+          </>}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
-          <textarea rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Tell the assistant what you want to create..." disabled={sending} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />
-          {website ? <input value={referenceUrl} onChange={(e) => { setReferenceUrl(e.target.value); setPlanApproved(false); }} placeholder="Optional product or reference URL (no file upload in MVP)" disabled={sending} style={{ display: "block", width: "100%", marginTop: 8, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: "10px 12px", color: "#fff", outline: "none", fontSize: 12 }} /> : null}
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>{!website ? <label title="Attach file" style={{ flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>FILE</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ display: "none" }} /></label> : null}<button type="submit" disabled={sending || !draft.trim()} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1, fontSize: 12 }}>{sending ? "Sending..." : "UPDATE PLAN"}</button></div>
+          <textarea rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Tell the assistant what you want to create..." disabled={sending || (website && websiteFlow.busy)} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>{!website ? <label title="Attach file" style={{ flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>FILE</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ display: "none" }} /></label> : null}<button type="submit" disabled={sending || (website && (websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")) || !draft.trim()} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || !draft.trim() ? "default" : "pointer", opacity: sending || !draft.trim() ? 0.5 : 1, fontSize: 12 }}>{sending || (website && websiteFlow.busy) ? "Sending..." : website ? "SEND MESSAGE" : "UPDATE PLAN"}</button></div>
         </form>
       </aside>
 
-      {setupOpen ? <aside aria-label="Production setup" translate="no" className="notranslate" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>CLOSE</button></div><AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelection(next); setPlanApproved(false); setSetupOpen(false); }} /></aside> : null}
+      {setupOpen ? <aside aria-label="Production setup" translate="no" className="notranslate" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>CLOSE</button></div><AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelectionRoute(routeKey); setSelection(next); setPlanApproved(false); setSetupOpen(false); }} /></aside> : null}
     </div>
   );  return createPortal(shell, document.body);
 }
