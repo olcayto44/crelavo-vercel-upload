@@ -1,4 +1,5 @@
-﻿import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
+import { websiteContentFromSource } from "@/lib/website-content";
+import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
 import { generateDeterministicWebsiteSource } from "@/lib/providers/website-template";
 import { createWebsitePlan } from "@/lib/website-domain";
 import { hasProviderEnv } from "@/lib/providers/env";
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
         ...file,
         url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
       })));
-      const websiteContent = { siteTitle: generated.siteTitle, heroTitle: generated.siteTitle, heroBody: brief, primaryCta: "Get started", pages, features, websiteContentRevision: 0 };
+      const websiteContent = { ...websiteContentFromSource({ websiteFiles: generated.files }), pages };
       const outputJson = { plan, websiteContent, websiteContentUpdatedAt: new Date().toISOString(), provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerModel: hasProviderEnv("openai") ? (process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini") : null, providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
       const { data: completed, error: updateError } = await supabase.from("production_requests").update({ status: "ready", generation_status: "completed", preview_url: `/api/productions/${production.id}/delivery?file=preview`, delivery_link: `/api/productions/${production.id}/delivery?file=zip`, delivery_zip_url: `/api/productions/${production.id}/delivery?file=zip`, source_files_url: `/api/productions/${production.id}/delivery?file=source`, readme_url: `/api/productions/${production.id}/delivery?file=readme`, output_json: outputJson, updated_at: new Date().toISOString() }).eq("id", production.id).select("*").single();
       if (updateError || !completed) throw updateError ?? new Error("Website production could not be finalized.");

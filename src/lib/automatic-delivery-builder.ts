@@ -1,3 +1,4 @@
+import { applyManagedWebsiteContent, sanitizeWebsiteContent, websitePublishingGuide } from "./website-content.ts";
 import { buildExportReadyPack } from "./connected-accounts.ts";
 import { deliveryPackageForProduction, type DeliveryPackage } from "./delivery-package.ts";
 import { buildOutputRegistry } from "./output-registry.ts";
@@ -819,13 +820,14 @@ function applyWebsiteContent(content: string, production: ProductionLike) {
     }
     return html;
   });
-  return result;
+  return applyManagedWebsiteContent(result, sanitizeWebsiteContent(websiteContent));
 }
 function effectiveWebsiteFiles(production: ProductionLike) {
   const files = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
   return files.map((file) => {
     if (!file || typeof file !== "object" || typeof file.content !== "string") return file;
     const item = file as Record<string, unknown>;
+    if (item.path === "script.js" && production.output_json?.websiteContent?.contactEndpoint) return { ...item, content: String(item.content).replace("document.querySelector(\u0027.contact-form\u0027)?.addEventListener(\u0027submit\u0027, (event) => { event.preventDefault();", "document.querySelector(\u0027.contact-form\u0027)?.addEventListener(\u0027submit\u0027, (event) => { if (event.currentTarget.getAttribute(\u0027data-connected-form\u0027) === \u0027true\u0027) return; event.preventDefault();") };
     return item.path === "index.html" ? { ...item, content: applyWebsiteContent(String(item.content), production) } : item;
   });
 }
@@ -836,7 +838,8 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     { name: "README.md", content: buildDeliveryReadme(production) },
     { name: "SOURCE-GUIDE.md", content: buildSourceGuide(production) },
     { name: "manifest.json", content: JSON.stringify(manifest, null, 2) },
-    { name: "preview.html", content: buildPreviewHtml(production) }
+    { name: "preview.html", content: buildPreviewHtml(production) },
+    ...(production.production_type === "website" ? [{ name: "PUBLISHING-GUIDE.md", content: websitePublishingGuide(sanitizeWebsiteContent(production.output_json?.websiteContent)) }] : [])
   ];
   const generatedWebsiteFiles = effectiveWebsiteFiles(production);
   for (const file of generatedWebsiteFiles) {
