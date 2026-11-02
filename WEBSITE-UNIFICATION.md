@@ -49,3 +49,11 @@ Bu aşama statik website ve kaynak dosya teslimidir. Özel sayfalar statik bilgi
 - Üretilen sayfalar gerçek dosya manifestinden alınır. Önizleme mevcut büyük alanın içinde yetkili teslim API üzerinden yüklenir; iframe sandbox ve kaynak/manifest denetimli gezinme kullanılır.
 - Revizyon/geçmiş/ZIP aynı proje için sekmelerin altındaki açılır alandadır. İçerik kaydı, revizyon ve geri alma önizlemeyi yeniler.
 - Regresyon testi bu kontrolleri, sayfa seçimini, sunucu onayı ayrımını, sandbox önizlemesini, eski HTML gösterilmemesini ve ödeme hatasının önizlemeye yansımasını kapsar. Piksel düzeyinde canlı tarayıcı kabulü yerine geçmez.
+
+## Genel asistan konuşmasının gerçek akışa bağlanması
+- Ekran kaydında General modunda gönderilen website talebi website motoruna geçmiyordu. Genel plan uç noktası da gerçek yanıt yerine prompt metnini geri döndürüyordu; istemci bu metni sol sayfa alanına uyguluyor, asistan mesajı eklemiyordu.
+- General modundaki açık website oluşturma isteği sunucuda website akışına yönlenir. Yanıttaki aynı proje istemciye alınır ve website kategori URL parametreleri güncellenir; ikinci bir üretim ya da kredi harcaması başlatılmaz. Açık video/diğer kategori seçimi website sözcüğüyle ele geçirilmez.
+- Genel sohbet de gerçek yanıt sağlayıcısını kullanır; kendi mesajını geri alan echo yanıtı reddedilir. Sağlayıcı yoksa/hatalıysa 503 ve görünür hata döner; tamamlanmış üretim veya gerçek yanıt varmış gibi gösterilmez.
+- Kullanıcı/asistan mesajları yalnız sağ sohbet panelindedir. Sol sayfa sekmelerinden konuşma çıkarılmıştır. Mesaj gönderimi önizlemeyi veya dosyaları silmez; bekleme ve hata sohbet içinde görünür.
+- Sohbet bağlamı sunucuya iletilir. Genel yerel kayıt kullanıcı/kategori bazında ayrılır; farklı kategoriye ait eski sayfa durumu General ekranına yüklenmez. Geciken kayıt yüklemesi yeni gönderilen mesajı ezemez.
+- smoke:workspace-conversation, gerçek POST işleyicisini kontrollü bağımlılıklarla test eder: General üzerinden film sitesi, açık kategori ayrımı, gerçek cevap sözleşmesi, geçmiş, sağlayıcı hatası ve konuşmada üretim kredisi harcanmaması. Canlı sağlayıcı/Supabase kabulü ayrıca gereklidir.

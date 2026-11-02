@@ -2,6 +2,7 @@
 import { useWebsiteAssistant, WebsitePlanControls } from "./WebsiteAssistantPanel";
 import { WebsiteBuilderForm } from "@/components/WebsiteBuilderForm";
 import { WebsiteWorkspacePreview } from "./WebsiteWorkspacePreview";
+import { normalizeWorkspaceMessages } from "@/lib/assistant-work/workspace-chat";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -247,7 +248,7 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
   const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "crelavo-delivery.zip"; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
-  const { openAuth } = useAuth();
+  const { openAuth, user: authUser } = useAuth();
   const searchParams = useSearchParams();
   const routeKey = searchParams.toString();
   const query = useMemo(() => readQuery(routeKey), [routeKey]);
@@ -263,7 +264,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const website = isWebsiteType(type, category);
   const websiteFlow = useWebsiteAssistant({ enabled: website, selection: chosen || undefined, request: cinemaFetch });
   const categoryConfig = getCategory(engineCategory);
-  const storageKey = "crelavo-aw-project-v4";
+  const storageKey = "crelavo-aw-project-v5:" + (authUser?.id || "signed-out") + ":" + engineCategory;
   const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
   const resumedJobsRef = useRef(new Set<string>());
@@ -281,6 +282,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("REVISE THIS SCENE / PRODUCTION CONTINUES");
   const [credits, setCredits] = useState<CreditState>({ kind: "loading" });
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatActivityRef = useRef(0);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ block: "nearest" }); }, [chatMessages, websiteFlow.project?.website.messages, websiteFlow.messages.length, websiteFlow.busy]);
   const currentExtras = { ...(chosen?.extras || {}), reference_url: referenceUrl.trim() };
   const planSnapshot = { category, packId: chosen?.packId || "", extras: currentExtras, referenceUrl: referenceUrl.trim() };
   const persistProject = useCallback(async (state: Record<string, unknown>) => { try { await cinemaFetch("/api/assistant-work/project", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "Website project", state }) }); } catch { /* local session remains available */ } }, []);
@@ -303,35 +307,30 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }, [category, website]);
   useEffect(() => {
     setMounted(true);
-    try {
-      const saved = window.sessionStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved) as { shots?: Shot[]; selected?: number; notice?: string; referenceUrl?: string; planApproved?: boolean };
-        if (Array.isArray(parsed.shots) && parsed.shots.length > 0) setShots(parsed.shots);
-        if (Number.isInteger(parsed.selected)) setSelected(Math.max(0, Math.min(3, Number(parsed.selected))));
-        if (parsed.notice) setNotice(String(parsed.notice));
-        if (typeof parsed.referenceUrl === "string") setReferenceUrl(parsed.referenceUrl);
-        if (parsed.planApproved === true) setPlanApproved(true);
-      }
-    } catch { /* ignore invalid session state */ }
-    restoredRef.current = true;
-    skipPersistRef.current = true;
-    void cinemaFetch("/api/assistant-work/project", { method: "GET" }).then((response) => response.json()).then((data) => {
-      const state = data?.state;
-      if (!state || projectLoaded) return;
-      if (Array.isArray(state.shots) && state.shots.length > 0) setShots(state.shots);
-      if (Number.isInteger(state.selected)) setSelected(Math.max(0, Math.min(3, Number(state.selected))));
+    if (website) return;
+    let active = true; const restoreVersion = chatActivityRef.current;
+    setChatMessages([]); setShots(videoShots()); setSelected(0); setPlanApproved(false);
+    function restore(raw: unknown) {
+      if (!active || !raw || typeof raw !== "object") return;
+      const state = raw as Record<string, unknown>;
+      if (state.category !== engineCategory) return;
+      if (Array.isArray(state.shots) && state.shots.length) setShots(state.shots as Shot[]);
+      if (Number.isInteger(state.selected)) setSelected(Math.max(0, Number(state.selected)));
       if (typeof state.notice === "string") setNotice(state.notice);
       if (typeof state.referenceUrl === "string") setReferenceUrl(state.referenceUrl);
       if (state.planApproved === true) setPlanApproved(true);
-      setProjectLoaded(true);
-    }).catch(() => setProjectLoaded(true));
-  }, [storageKey, projectLoaded]);
+      setChatMessages(normalizeWorkspaceMessages(state.chatMessages));
+    }
+    try { const saved = window.sessionStorage.getItem(storageKey); if (saved) restore(JSON.parse(saved)); } catch { /* ignore invalid session state */ }
+    restoredRef.current = true; skipPersistRef.current = true;
+    void cinemaFetch("/api/assistant-work/project", { method: "GET" }).then((response) => response.json()).then((data) => { if (chatActivityRef.current === restoreVersion) restore(data?.state); if (active) setProjectLoaded(true); }).catch(() => { if (active) setProjectLoaded(true); });
+    return () => { active = false; };
+  }, [storageKey, website]);
   useEffect(() => {
-    if (!restoredRef.current || typeof window === "undefined") return;
+    if (website || !restoredRef.current || typeof window === "undefined") return;
     if (skipPersistRef.current) { skipPersistRef.current = false; return; }
-    try { window.sessionStorage.setItem(storageKey, JSON.stringify({ shots, selected, notice, referenceUrl, planApproved, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
-  }, [shots, selected, notice, referenceUrl, planApproved, storageKey]);
+    try { window.sessionStorage.setItem(storageKey, JSON.stringify({ category: engineCategory, shots, selected, notice, referenceUrl, planApproved, chatMessages, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
+  }, [shots, selected, notice, referenceUrl, planApproved, chatMessages, storageKey, website, engineCategory]);
   useEffect(() => {
     const read = () => {
       const vv = window.visualViewport;
@@ -428,6 +427,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   async function onSend() {
     const prompt = draft.trim();
     if (!prompt || sending || (website && websiteFlow.busy)) return;
+    chatActivityRef.current++;
     if (website) { const message = referenceUrl.trim() ? prompt + "\nReference URL supplied by user: " + referenceUrl.trim() : prompt; if (await websiteFlow.perform("revise", undefined, message)) setDraft(""); return; }
     const claims = readSessionClaims();
     if (!claims) { openAuth("login", { next: window.location.pathname + window.location.search }); return; }
@@ -438,8 +438,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     setDraft("");
     setSending(true);
     setPlanApproved(false);
-    setNotice(isCopyOnlyPrompt(prompt) ? "UPDATING COPY / NO CREDIT SPEND" : "CREATING PRODUCTION / CONNECTING WORKER");
-    setShots((cur) => cur.map((item, index) => index === selected ? { ...item, mediaUrl: null, files: [], taskId: undefined, status: website ? item.status : "REVISING", label: website ? item.label : "REVISING" } : item));
+    setNotice("WAITING FOR ASSISTANT REPLY / NO PRODUCTION OR CREDIT SPEND");
 
     try {
       let sourceVideoUrl: string | undefined;
@@ -453,24 +452,32 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
+        body: JSON.stringify({ action: "revise", render: false, prompt, messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
         if (response.status === 402) await loadCredits();
         throw new Error(readableMessage(data?.message ?? data?.error, "Production did not start."));
       }
-      const next = applyPayload(prev, data, prompt, website);
-      setShots((cur) => cur.map((item, index) => index === selected ? next : item));
-      const nextBalance = parseCredits(data);
-      if (nextBalance != null) setCredits({ kind: "number", value: nextBalance });
-      setShots((cur) => cur.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item));
-      setNotice("01 READY / SCENE PLAN UPDATED");
-      if (data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId));
+      if (data.website && data.productionId) {
+        websiteFlow.acceptProject(data);
+        setSelectionRoute(routeKey); setSelection({ categoryId: "website", type: "Website", packId: data.website.packId || "website_landing", features: [], extras: {} });
+        if (window.history?.replaceState) { const params = new URLSearchParams(window.location.search); params.set("category", "website"); params.set("type", "Website"); window.history.replaceState({}, "", window.location.pathname + "?" + params.toString()); }
+        setNotice("WEBSITE BRIEF UPDATED / REVIEW BEFORE PRODUCTION");
+      } else {
+        const reply = typeof data.reply === "string" ? data.reply.trim() : typeof data.body === "string" ? data.body.trim() : "";
+        if (!reply || reply === prompt) throw new Error("The assistant did not return a valid answer. No production was submitted.");
+        const conversation = [...chatMessages, { role: "user" as const, content: prompt }, { role: "assistant" as const, content: reply }];
+        setChatMessages(conversation);
+        setShots((cur) => cur.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item));
+        setNotice("ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION");
+        void persistProject({ category: engineCategory, type, shots: shots.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item), selected, chatMessages: conversation, referenceUrl, planApproved: false, notice: "ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION" });
+      }
       setSending(false);
     } catch (error) {
       setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
-      setNotice(error instanceof Error ? error.message.toUpperCase() : "PRODUCTION DID NOT START / TRY AGAIN");
+      const detail = error instanceof Error ? error.message : "The assistant request failed. No production was submitted.";
+      setNotice(detail); setChatMessages((current) => [...current, { role: "assistant", content: "Request failed: " + detail }]);
       setSending(false);
     }
   }
@@ -525,7 +532,6 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           </section>
 
           <section aria-label="Page navigation" style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", border: "1px solid #2e333d", borderRadius: 8, overflow: "hidden" }}>
-            {chatMessages.length > 0 ? <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Conversation</p><div style={{ display: "grid", gap: 8 }}>{chatMessages.map((message, index) => <div key={`chat-message-${index}`} style={{ padding: "8px 10px", borderRadius: 7, background: message.role === "user" ? "#222733" : "#1a2421", color: message.role === "user" ? "#fff" : "#b7f7d5", fontSize: 12, lineHeight: 1.45 }}><strong style={{ display: "block", marginBottom: 3, fontSize: 10, color: message.role === "user" ? "#93c5fd" : "#6ee7b7", textTransform: "uppercase" }}>{message.role === "user" ? "You" : "Assistant"}</strong>{message.content}</div>)}</div></div> : null}
            {displayShots.map((item, index) => <button key={item.id} type="button" onClick={() => setSelected(index)} style={{ minWidth: 0, border: "none", borderRight: index < displayShots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === activeIndex ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === activeIndex ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
           </section>
 
@@ -545,10 +551,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
           <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{categoryConfig?.intake.greeting || "Crelavo AI Production Manager is ready. Tell me what you want to produce and I’ll choose the right category engine."}</p>{categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>Smart starting point: {Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")} (editable)</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{choice}</button>)}</div>
-          <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Plan and approval</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>Category: <strong>{categoryConfig?.label || type}</strong></div><div>Package: <strong>{selectedPack?.label || "Not selected yet"}</strong></div><div>Estimated credits: <strong>{estimatedCredits ? `${estimatedCredits} credits` : "No package selected"}</strong></div><div>Delivery: <strong>{chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : "Setup incomplete"}</strong></div></div>{effectiveApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>Plan approved. Final production is ready to start.</div> : <button type="button" disabled={website && (websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")} onClick={() => { if (website) { if (!websiteFlow.reviewed) { void websiteFlow.perform("revise"); return; } void websiteFlow.perform("website_approve"); return; } if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } setPlanApproved(true); setNotice("PLAN APPROVED / FINAL PRODUCTION READY"); void persistProject({ category, type, selection: chosen, shots, selected, notice: "PLAN APPROVED / FINAL PRODUCTION READY", referenceUrl, planApproved: true }); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>Approve plan and continue to production</button>}</div>
+          <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>Plan and approval</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>Category: <strong>{categoryConfig?.label || type}</strong></div><div>Package: <strong>{selectedPack?.label || "Not selected yet"}</strong></div><div>Estimated credits: <strong>{estimatedCredits ? `${estimatedCredits} credits` : "No package selected"}</strong></div><div>Delivery: <strong>{chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : "Setup incomplete"}</strong></div></div>{effectiveApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>Plan approved. Final production is ready to start.</div> : <button type="button" disabled={website && (websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")} onClick={() => { if (website) { if (!websiteFlow.reviewed) { void websiteFlow.perform("revise"); return; } void websiteFlow.perform("website_approve"); return; } if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } setPlanApproved(true); setNotice("PLAN APPROVED / FINAL PRODUCTION READY"); void persistProject({ category: engineCategory, type, selection: chosen, shots, selected, chatMessages, notice: "PLAN APPROVED / FINAL PRODUCTION READY", referenceUrl, planApproved: true }); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>Approve plan and continue to production</button>}</div>
           <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>Active production plan</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{enginePlan.map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {displayShots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === activeIndex ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === activeIndex ? "Active" : "Ready"} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
-          {website && websiteFlow.project ? <div aria-label="Website conversation" aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 12 }}>{websiteFlow.project.website.messages.map((message, index) => <div key={index} style={{ padding: 10, borderRadius: 7, background: message.role === "assistant" ? "#1a2421" : "#222733", fontSize: 12, whiteSpace: "pre-wrap" }}><strong>{message.role === "assistant" ? "Assistant" : "You"}:</strong> {message.content}</div>)}</div> : null}
+          <div aria-label="Assistant conversation" aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 12 }}>{(website ? websiteFlow.messages : chatMessages).map((message, index) => <div key={index} style={{ padding: 10, borderRadius: 7, background: message.role === "assistant" ? "#1a2421" : "#222733", fontSize: 12, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><strong>{message.role === "assistant" ? "Assistant" : "You"}:</strong> {message.content}</div>)}{(website ? websiteFlow.busy : sending) ? <div role="status">Waiting for assistant response...</div> : null}<div ref={chatEndRef} /></div>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
           <textarea rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Tell the assistant what you want to create..." disabled={sending || (website && websiteFlow.busy)} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />

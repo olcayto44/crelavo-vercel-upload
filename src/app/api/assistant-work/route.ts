@@ -1,3 +1,5 @@
+import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
+import { converseWorkspacePlan } from "@/lib/assistant-work/conversation";
 import { handleWebsiteAssistant } from "@/lib/assistant-work/website";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
@@ -53,9 +55,9 @@ export async function POST(req: NextRequest) {
 
     const requestedCategory = String(body.category || "").trim().toLowerCase();
     const requestedType = String(body.type || "");
-    const category = body.skipQueue === true && (/website/i.test(requestedType) || requestedCategory === "website") ? "website" : requestedCategory;
+    const category = resolveWorkspaceCategory(requestedCategory, requestedType, String(body.prompt || ""));
     const prompt = String(body.prompt || "").trim();
-    const type = body.skipQueue === true && category === "website" ? "Website" : requestedType;
+    const type = category === "website" ? "Website" : requestedType;
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
       if (JSON.stringify(body).length > 50000) return NextResponse.json({ ok: false, error: "website_request_too_large" }, { status: 413 });
       const safe = rejectSuspiciousText([String(body.prompt ?? ""), JSON.stringify(body.websiteBrief ?? {})]); if (!safe.ok) return NextResponse.json({ ok: false, error: safe.message }, { status: 400 });
       const creditHeaders = new Headers(req.headers);
-      const result = await handleWebsiteAssistant(body, { id: user.id, email: user.email }, {
+      const result = await handleWebsiteAssistant({ ...body, category, type }, { id: user.id, email: user.email }, {
         db: supabase,
         pack: (id) => { const pack = getCatalogCategory("website")?.packs.find((pack) => pack.id === id); return pack && typeof pack.credits === "number" ? { credits: pack.credits, label: pack.label } : undefined; },
         balance: async () => { const url = new URL("/api/credits", req.url); url.searchParams.set("user_id", user.id); const response = await creditsGet(new Request(url, { headers: creditHeaders })); const data = await response.json(); if (!response.ok) throw new Error(data.error || "credit_read_failed"); return Number(data.available ?? data.balance ?? 0); },
@@ -83,7 +85,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.render !== true) {
-      return NextResponse.json({ ok: true, spend: false, engine: "assistant_plan", category, type, status: "ready", title: "Scene plan ready", body: prompt, plan: { stage: "ready", scene, direction: prompt, nextAction: "Revise the scene or render the final video when approved." }, media: null, files: [] });
+      const limit = rateLimit({ key: `workspace-conversation:${user.id}:${clientIpFromRequest(req)}`, limit: 30, windowMs: 15 * 60 * 1000 });
+      if (!limit.allowed) return rateLimitResponse(limit.resetAt);
+      if (JSON.stringify(body).length > 50000) return NextResponse.json({ ok: false, error: "conversation_request_too_large" }, { status: 413 });
+      const safe = rejectSuspiciousText([prompt, JSON.stringify(body.messages ?? [])]);
+      if (!safe.ok) return NextResponse.json({ ok: false, error: safe.message }, { status: 400 });
+      try {
+        const reply = await converseWorkspacePlan(prompt, category, body.messages);
+        return NextResponse.json({ ok: true, spend: false, engine: "assistant_plan", category, type, status: "draft", title: "Production brief", reply, body: reply, plan: { stage: "draft", scene, direction: prompt, nextAction: "Review the plan and credit estimate before final production." }, media: null, files: [] });
+      } catch {
+        const message = /[çğıöşü]|istiyorum|merhaba|sitesi/i.test(prompt) ? "Asistan yanıt servisine şu anda ulaşılamıyor. Mesajınız üretime gönderilmedi ve kredi harcanmadı. Lütfen tekrar deneyin." : "The assistant reply service is unavailable. No production was submitted and no credits were spent. Please try again.";
+        return NextResponse.json({ ok: false, spend: false, code: "assistant_conversation_unavailable", message }, { status: 503 });
+      }
     }
 
     if (category === "website" && extras.reference_url) {

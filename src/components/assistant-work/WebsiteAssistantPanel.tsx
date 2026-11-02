@@ -17,31 +17,38 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
   const [notice, setNotice] = useState("Describe your website in the conversation. No production starts before plan approval.");
   const [userId, setUserId] = useState("");
   const [projects, setProjects] = useState<Array<{ id: string; title: string }>>([]);
+  const [transientMessages, setTransientMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const enabledRef = useRef(enabled); enabledRef.current = enabled;
   const activeRequest = useRef(0);
   useEffect(() => { if (!enabled) { activeRequest.current++; setBusy(false); return; } let disposed = false; void supabaseBrowser().auth.getUser().then(({ data }) => { if (!disposed && data.user) setUserId(data.user.id); }); return () => { disposed = true; }; }, [enabled]);
   useEffect(() => { if (!enabled || !userId) return; const saved = window.sessionStorage.getItem("crelavo-website-project:" + userId); if (saved && !activeId) void perform("website_open", saved); }, [enabled, userId]);
-  useEffect(() => { if (selection?.packId) { setPackId(selection.packId); setDirty(true); } }, [selection?.packId]);
+  useEffect(() => { if (selection?.packId && selection.packId !== packId) { setPackId(selection.packId); setDirty(true); } }, [selection?.packId]);
+  useEffect(() => { if (enabled && userId && activeId) window.sessionStorage.setItem("crelavo-website-project:" + userId, activeId); }, [enabled, userId, activeId]);
+  function acceptProject(data: Project) {
+    setActiveId(data.productionId); setProject(data); setBrief(data.website.brief); setPackId(data.website.packId || packId); setDirty(false); setTransientMessages([]);
+    if (userId) window.sessionStorage.setItem("crelavo-website-project:" + userId, data.productionId);
+  }
   async function perform(action: string, id?: string, message = "") {
     if (!enabled || busy) return false;
     const sequence = ++activeRequest.current; setBusy(true);
+    if (action === "revise" && message) setTransientMessages((current) => [...current, { role: "user", content: message }]);
     try {
       const response = await request("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "website", type: "Website", prompt: message || (action === "revise" ? "Please review the website brief and ask about missing information." : ""), action, render: action === "render", productionId: id || activeId || project?.productionId, websiteBrief: action === "revise" ? brief : undefined, packId, planHash: project?.website.planHash, extras: selection?.extras ?? {} }) });
       const data = await response.json();
       if (!enabledRef.current || sequence !== activeRequest.current) return false;
       if (data.productionId) { setActiveId(data.productionId); if (userId) window.sessionStorage.setItem("crelavo-website-project:" + userId, data.productionId); }
       if (!response.ok || !data.ok) throw new Error(data.message || data.code || data.error || "Website request failed.");
-      setProject(data); setBrief(data.website.brief); setPackId(data.website.packId || packId); setDirty(false);
+      acceptProject(data);
       setNotice(action === "render" ? "Website ready. Preview, revisions and ZIP belong to this same project." : action === "website_approve" ? "Plan approved on the server. Production can now start." : data.body || "Website project opened.");
       return true;
-    } catch (error) { if (sequence === activeRequest.current) setNotice(error instanceof Error ? error.message : "Website request failed."); return false; }
+    } catch (error) { if (sequence === activeRequest.current) { const detail = error instanceof Error ? error.message : "Website request failed."; setNotice(detail); setTransientMessages((current) => [...current, { role: "assistant", content: "Request failed: " + detail }]); } return false; }
     finally { if (sequence === activeRequest.current) setBusy(false); }
   }
   async function loadProjects() { setBusy(true); try { const response = await request("/api/websites?user_id=" + encodeURIComponent(userId), { method: "GET" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setProjects(data.websites ?? []); } catch (error) { setNotice(error instanceof Error ? error.message : "Project list failed."); } finally { setBusy(false); } }
-  function newProject() { setActiveId(""); setProject(null); setBrief(emptyBrief()); setDirty(true); if (userId) window.sessionStorage.removeItem("crelavo-website-project:" + userId); setNotice("New Website Brief. No production has started."); }
+  function newProject() { setTransientMessages([]); setActiveId(""); setProject(null); setBrief(emptyBrief()); setDirty(true); if (userId) window.sessionStorage.removeItem("crelavo-website-project:" + userId); setNotice("New Website Brief. No production has started."); }
   const reviewed = Boolean(project && !dirty && !project.website.missing.length && !project.website.unsupported.length);
   const approved = Boolean(reviewed && project?.website.approvedHash === project?.website.planHash);
-  return { project, brief, setBrief, packId, setPackId, packs, busy, dirty, setDirty, notice, userId, projects, reviewed, approved, perform, loadProjects, newProject };
+  return { acceptProject, messages: [...(project?.website.messages ?? []), ...transientMessages], project, brief, setBrief, packId, setPackId, packs, busy, dirty, setDirty, notice, userId, projects, reviewed, approved, perform, loadProjects, newProject };
 }
 export type WebsiteAssistantController = ReturnType<typeof useWebsiteAssistant>;
 export function WebsitePlanControls({ controller: c }: { controller: WebsiteAssistantController }) {
