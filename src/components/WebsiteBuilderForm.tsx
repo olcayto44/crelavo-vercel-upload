@@ -8,7 +8,7 @@ type WebsitePlan = { projectId?: string; brief?: { businessName?: string; busine
 type WebsiteContent = { heroTitle: string; heroBody: string; primaryCta: string; [key: string]: unknown };
 type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string; plan?: WebsitePlan; content?: WebsiteContent };
 
-export function WebsiteBuilderForm({ initialProjectId, editorOnly = false }: { initialProjectId?: string; editorOnly?: boolean } = {}) {
+export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onContentChange }: { initialProjectId?: string; editorOnly?: boolean; onContentChange?: () => void } = {}) {
   const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewPages, setPreviewPages] = useState<Array<{ title: string; path: string }>>([]);
@@ -84,7 +84,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false }: { i
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, action: "revision", instruction: revisionInstruction }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Revision failed.");
-      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setRevisionInstruction(""); setStatus("Natural-language revision saved.");
+      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setRevisionInstruction(""); setStatus("Natural-language revision saved."); onContentChange?.();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Revision failed."); } finally { setContentBusy(false); }
   }
 
@@ -96,7 +96,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false }: { i
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, action: "rollback", revision }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Rollback failed.");
-      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setStatus(`Version ${revision} restored.`);
+      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setStatus(`Version ${revision} restored.`); onContentChange?.();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Rollback failed."); } finally { setContentBusy(false); }
   }
   async function saveContent(event: FormEvent) {
@@ -109,7 +109,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false }: { i
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Website content update failed.");
       setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []);
-      setStatus("Website content saved. Preview and downloadable source files now use the latest copy.");
+      setStatus("Website content saved. Preview and downloadable source files now use the latest copy."); onContentChange?.();
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website content update failed."); } finally { setContentBusy(false); }
   }
 

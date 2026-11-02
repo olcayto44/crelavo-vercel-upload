@@ -41,3 +41,11 @@ Bu aşama statik website ve kaynak dosya teslimidir. Özel sayfalar statik bilgi
 - URL sorgusu canlı okunur; genel/video bağlantısına dönünce önceki website seçimi bu bağlantıları ele geçiremez.
 - Oturumsuz asistan erişimi /join üzerinden ödeme ekranına gönderilmez. Mevcut giriş penceresi açılır ve kategori dahil dönüş adresi korunur. Diğer sayfaların erişimi ve üretim/indirme ödeme kuralları değiştirilmez.
 - npm run smoke:assistant-workspace-regression gerçek bileşen çıktısını ve eylemlerini kontrollü bağımlılıklarla sınar: genel kabuk, website sohbeti, ortak üretim, aynı proje editörü, kategori ayrımı ve giriş dönüş adresi. Bu test canlı tarayıcı kabulü değildir.
+
+## Referans ekrandaki iç düzenin geri getirilmesi
+- Website modunda da özgün Home/Setup/Render final kartı, Category/Scene-page/Status kutuları, büyük önizleme alanı, yatay sayfa sekmeleri, sağ plan özeti ve dikey sayfa listesi korunur.
+- Referans URL alanı ve UPDATE PLAN düğmesi geri geldi. URL, kullanıcı tarafından sağlanan konuşma bağlamıdır; otomatik tarandığı iddia edilmez.
+- Brief alanları, paket seçimi ve kurtarma işlemleri ana ekranın yerine geçmez; Setup içindedir. Mevcut onay düğmesi sunucu onayına, Render final ortak üretim motoruna gider.
+- Üretilen sayfalar gerçek dosya manifestinden alınır. Önizleme mevcut büyük alanın içinde yetkili teslim API üzerinden yüklenir; iframe sandbox ve kaynak/manifest denetimli gezinme kullanılır.
+- Revizyon/geçmiş/ZIP aynı proje için sekmelerin altındaki açılır alandadır. İçerik kaydı, revizyon ve geri alma önizlemeyi yeniler.
+- Regresyon testi bu kontrolleri, sayfa seçimini, sunucu onayı ayrımını, sandbox önizlemesini, eski HTML gösterilmemesini ve ödeme hatasının önizlemeye yansımasını kapsar. Piksel düzeyinde canlı tarayıcı kabulü yerine geçmez.
