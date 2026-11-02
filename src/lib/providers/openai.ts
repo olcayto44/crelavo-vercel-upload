@@ -1,4 +1,4 @@
-import { optionalEnv, requireProviderEnv } from "./env";
+import { optionalEnv, requireProviderEnv } from "./env.ts";
 import type { AdBrainResult, AdPerformanceScoreResult, ProductSnapshot } from "./types";
 
 function parseBrainJson(text: string): AdBrainResult {
@@ -241,9 +241,11 @@ The final styles.css MUST contain a real glassmorphism combination, not a label:
 
 export class WebsiteQualityError extends Error {
   readonly code = "website_quality_failed" as const;
-  constructor(public readonly missing: string[]) {
+  readonly missing: string[];
+  constructor(missing: string[]) {
     super(`website_quality_failed: ${missing.join("; ")}`);
     this.name = "WebsiteQualityError";
+    this.missing = missing;
   }
 }
 

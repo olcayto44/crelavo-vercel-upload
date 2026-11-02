@@ -1,14 +1,17 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { websitePreviewDocument } from "@/lib/website-preview";
 import { supabaseBrowser } from "@/lib/supabase";
 
 type WebsitePlan = { projectId?: string; brief?: { businessName?: string; businessDescription?: string }; manifest?: { entryPage?: string; pages?: Array<{ slug: string; title: string }>; features?: string[] }; status?: string };
 type WebsiteContent = { heroTitle: string; heroBody: string; primaryCta: string; [key: string]: unknown };
 type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string; plan?: WebsitePlan; content?: WebsiteContent };
 
-export function WebsiteBuilderForm() {
+export function WebsiteBuilderForm({ initialProjectId, editorOnly = false }: { initialProjectId?: string; editorOnly?: boolean } = {}) {
   const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
+  const previewFrame = useRef<HTMLIFrameElement>(null);
+  const [previewPages, setPreviewPages] = useState<Array<{ title: string; path: string }>>([]);
   const [previewHtml, setPreviewHtml] = useState("");
   const [savedProjects, setSavedProjects] = useState<Array<{ id: string; title: string; status: string }>>([]);
   const [projectId, setProjectId] = useState("");
@@ -30,6 +33,7 @@ export function WebsiteBuilderForm() {
     return { user: userData.user, token: sessionData.session?.access_token };
   }
 
+  useEffect(() => { if (initialProjectId) void openProject(initialProjectId); }, [initialProjectId]);
   async function listProjects() {
     setContentBusy(true);
     try { const { user, token } = await session(); const response = await fetch(`/api/websites?user_id=${encodeURIComponent(user.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Project list failed.'); setSavedProjects(data.websites || []); setStatus(`${data.websites?.length ?? 0} saved websites found.`); }
@@ -37,24 +41,25 @@ export function WebsiteBuilderForm() {
   }
   async function openProject(id: string) {
     if (!id.trim()) return; setPreviewHtml(""); setContentBusy(true);
-    try { const { user, token } = await session(); const response = await fetch(`/api/website-content/${encodeURIComponent(id.trim())}?user_id=${encodeURIComponent(user.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Project could not be opened.'); const base = `/api/productions/${encodeURIComponent(id.trim())}/delivery`; setContent({ heroTitle: '', heroBody: '', primaryCta: '', ...data.content }); setHistory(data.history || []); setOutputs({ previewUrl: `${base}?file=preview`, zipUrl: `${base}?file=zip`, sourceUrl: `${base}?file=source`, readmeUrl: `${base}?file=readme`, plan: { ...data.plan, projectId: id.trim() }, scope: data.scope }); setProjectId(id.trim()); setStatus('Saved website opened. Latest content and history loaded.'); }
+    try { const { user, token } = await session(); const response = await fetch(`/api/website-content/${encodeURIComponent(id.trim())}?user_id=${encodeURIComponent(user.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Project could not be opened.'); const base = `/api/productions/${encodeURIComponent(id.trim())}/delivery`; setContent({ heroTitle: '', heroBody: '', primaryCta: '', ...data.content }); setHistory(data.history || []); setPreviewPages(Array.isArray(data.pageManifest) ? data.pageManifest : []); setOutputs({ previewUrl: `${base}?file=preview`, zipUrl: `${base}?file=zip`, sourceUrl: `${base}?file=source`, readmeUrl: `${base}?file=readme`, plan: { ...data.plan, projectId: id.trim() }, scope: data.scope }); setProjectId(id.trim()); setStatus('Saved website opened. Latest content and history loaded.'); }
     catch (error) { setStatus(error instanceof Error ? error.message : 'Project could not be opened.'); } finally { setContentBusy(false); }
   }
-  async function downloadOutput(url: string, preview = false) {
+  async function downloadOutput(url: string, preview = false, anchor = "") {
     setContentBusy(true);
     try {
       const { token } = await session();
       const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Output could not be loaded.'); }
       if (preview) {
-        const html = (await response.text()).replace(/<head\b[^>]*>/i, (head) => head + `<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39; https:; script-src &#39;unsafe-inline&#39;; img-src data: blob: https:; font-src data: https:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;; object-src &#39;none&#39;">`);
+        const html = websitePreviewDocument(await response.text(), anchor);
         setPreviewHtml(html); return;
       }
       const objectUrl = URL.createObjectURL(await response.blob()); const a = document.createElement('a'); a.href = objectUrl;
       a.download = response.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] || 'website-output';
       a.click(); setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
     } catch (error) { setStatus(error instanceof Error ? error.message : 'Output failed.'); } finally { setContentBusy(false); }
-  }  const faqItems = Array.isArray(content.faq) ? content.faq as Array<{ question: string; answer: string }> : [];
+  }  useEffect(() => { const onPage = (event: MessageEvent) => { if (event.source !== previewFrame.current?.contentWindow || event.data?.type !== "crelavo-website-page" || !outputs || !previewPages.some((page) => page.path === event.data.page)) return; void downloadOutput(outputs.previewUrl + "&page=" + encodeURIComponent(event.data.page), true, typeof event.data.anchor === "string" ? event.data.anchor : ""); }; window.addEventListener("message", onPage); return () => window.removeEventListener("message", onPage); }, [outputs, previewPages]);
+  const faqItems = Array.isArray(content.faq) ? content.faq as Array<{ question: string; answer: string }> : [];
   function changeFaq(index: number, key: 'question' | 'answer', value: string) { setContent((current) => ({ ...current, faq: (Array.isArray(current.faq) ? current.faq : []).map((item, i) => i === index ? { ...item, [key]: value } : item) })); }
   function moveFaq(index: number, direction: number) { setContent((current) => { const items = [...(Array.isArray(current.faq) ? current.faq : [])]; const next = index + direction; if (next < 0 || next >= items.length) return current; [items[index], items[next]] = [items[next], items[index]]; return { ...current, faq: items }; }); }
   async function submit(event: FormEvent) {
@@ -66,7 +71,7 @@ export function WebsiteBuilderForm() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : ""; throw new Error(`${data.message || data.error || "Website generation failed."}${missing}`); }
       const initialContent = { ...data.production?.output_json?.websiteContent, ...data.outputs?.content, heroTitle: data.production?.output_json?.websiteContent?.heroTitle || data.outputs?.content?.heroTitle || data.plan?.brief?.businessName || "", heroBody: data.production?.output_json?.websiteContent?.heroBody || data.outputs?.content?.heroBody || data.plan?.brief?.businessDescription || "", primaryCta: data.production?.output_json?.websiteContent?.primaryCta || data.outputs?.content?.primaryCta || "Get started" };
-      setContent(initialContent); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
+      setContent(initialContent); setPreviewPages(data.production?.output_json?.pageManifest || []); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website generation failed."); } finally { setBusy(false); }
   }
 
@@ -110,7 +115,7 @@ export function WebsiteBuilderForm() {
 
   return (
     <section className="service-page-shell" style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1rem" }}>
-      <span className="badge">AI Website Builder</span>
+      {!editorOnly ? <><span className="badge">AI Website Builder</span>
       <h1>Generate a premium website source package from a brief</h1>
       <p>Enter the site type, brand context, target audience, pages, features and visual direction. The output includes renderable HTML/CSS/JS, a preview, a ZIP source bundle and an installation README.</p>
       <div className="mini-card" style={{ marginBottom: '1rem' }}>
@@ -131,6 +136,7 @@ export function WebsiteBuilderForm() {
         <label>Style / visual direction<input required value={fields.style} onChange={(event) => update("style", event.target.value)} /></label>
         <button className="btn" type="submit" disabled={busy}>{busy ? "Building..." : "Generate website package"}</button>
       </form>
+      </> : null}
       {status ? <p role="status" style={{ marginTop: "1rem" }}>{status}</p> : null}
       {outputs ? (
         <>
@@ -139,7 +145,8 @@ export function WebsiteBuilderForm() {
             <p>Scope: {outputs.scope === "website_with_admin" ? "Public website + admin starter" : "Public static website"}</p>
             {outputs.plan?.manifest ? <><p>Plan status: {outputs.plan.status || "draft"} - Entry page: {outputs.plan.manifest.entryPage || "home"}</p><small>Planned pages: {(outputs.plan.manifest.pages || []).map((page) => page.title || page.slug).join(", ") || "Home"}. Features: {(outputs.plan.manifest.features || []).join(", ") || "None specified"}.</small></> : null}
             <p><button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.previewUrl, true)}>Open preview</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.zipUrl)}>Download ZIP/source</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.readmeUrl)}>README</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.sourceUrl)}>Source guide</button></p>          </div>
-          {previewHtml ? <div className="mini-card"><h2>Sandboxed website preview</h2><button type="button" onClick={() => setPreviewHtml("")}>Close preview</button><iframe title="Website preview" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={previewHtml} style={{ width: "100%", height: 650, border: 0 }} /></div> : null}
+          {previewPages.length ? <p>{previewPages.map((page) => <button key={page.path} disabled={contentBusy} type="button" onClick={() => downloadOutput(outputs.previewUrl + "&page=" + encodeURIComponent(page.path), true)}>{page.title}</button>)}</p> : null}
+          {previewHtml ? <div className="mini-card"><h2>Sandboxed website preview</h2><button type="button" onClick={() => setPreviewHtml("")}>Close preview</button><iframe ref={previewFrame} title="Website preview" sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={previewHtml} style={{ width: "100%", height: 650, border: 0 }} /></div> : null}
           <form onSubmit={applyRevision} className="mini-card" style={{ marginTop: "1rem" }}>
             <h2>Revise with natural language</h2>
             <textarea rows={3} value={revisionInstruction} onChange={(event) => setRevisionInstruction(event.target.value)} placeholder="Example: Change the hero title to Start faster." />

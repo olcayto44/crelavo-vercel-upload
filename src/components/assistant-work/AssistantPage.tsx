@@ -1,4 +1,5 @@
 "use client";
+import { WebsiteAssistantPanel } from "./WebsiteAssistantPanel";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
@@ -454,6 +455,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     }
   }
   if (!mounted) return null;
+  if (website) return createPortal(<WebsiteAssistantPanel selection={chosen || undefined} request={cinemaFetch} />, document.body);
   const shell = (
     <div id={THREAD} data-aw={AW} translate="no" className="notranslate" style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input, #${THREAD} textarea { font-family: inherit; }`}</style>

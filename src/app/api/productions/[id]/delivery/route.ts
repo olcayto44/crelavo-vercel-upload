@@ -1,4 +1,4 @@
-﻿import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
+import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
 import { isAdminRequest } from "@/lib/admin-guard";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { billingAccess } from "@/lib/billing-entitlements";
@@ -133,6 +133,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
    const output = objectValue(data.output_json);
+   if (data.production_type === "website" && output.websiteBillingPending === true && !isAdminRequest(request)) return Response.json({ error: "Website generation/payment is not finalized. Retry from the same website project." }, { status: 409 });
     const realOutputTypes = new Set(["music_video", "voice_clone", "visual_clone", "drama", "studio"]);
    if (realOutputTypes.has(String(data.production_type ?? "")) && data.status !== "ready") {
      return Response.json({ error: "Real provider output is not ready yet. Demo or placeholder delivery is unavailable." }, { status: 409 });
@@ -188,6 +189,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   if (data.production_type === "ad_score_checker" && file === "score-json") {
     const output = objectValue(data.output_json);
+
     return new Response(JSON.stringify({ production_id: data.id, title: data.title, analysis: output.analysis ?? null }, null, 2), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
@@ -200,7 +202,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (data.production_type === "ad_score_checker" && file === "score-markdown") return responseWithText(adScoreMarkdown(data as Record<string, unknown>), `${safeTitle}-score.md`);
   if (file === "readme") return responseWithText(buildDeliveryReadme(data), `${safeTitle}-readme.md`);
   if (file === "source") return responseWithText(buildSourceGuide(data), `${safeTitle}-source-guide.md`);
-  if (file === "preview" || file === "manifest") return responseWithText(buildPreviewHtml(data), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");
+  if (file === "preview" || file === "manifest") {
+    const page = searchParams.get("page") ?? "index.html";
+    if (data.production_type === "website" && (!/^[a-z0-9][a-z0-9-]{0,79}\.html$/.test(page) || (page !== "index.html" && !(Array.isArray(output.websiteFiles) && output.websiteFiles.some((entry: unknown) => { const item = objectValue(entry); return item.path === page && typeof item.content === "string"; }))))) return Response.json({ error: "Website preview page not found." }, { status: 404 });
+    return responseWithText(buildPreviewHtml(data, data.production_type === "website" ? page : "index.html"), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");
+  }
   if (file === "zip") {
     const zip = buildDeliveryZip(buildDeliveryEntries(data));
     return new Response(zip, {

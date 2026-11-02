@@ -29,7 +29,7 @@ assert(websitePublishingGuide({}).includes('does not create a hosting project'),
 const listing = readFileSync('src/app/api/websites/route.ts', 'utf8');
 assert(listing.includes('requireVerifiedRequestUser') && listing.includes('.eq("user_id", userId)') && listing.includes('.eq("production_type", "website")'), 'saved websites must be owner isolated');
 const ui = readFileSync('src/components/WebsiteBuilderForm.tsx', 'utf8');
-for (const token of ['Bearer ${token}', 'Content-Security-Policy', 'Add question', 'Remove question', 'moveFaq', 'openProject', 'contactEndpoint']) assert(ui.includes(token), `UI missing ${token}`);
+for (const token of ['Bearer ${token}', 'websitePreviewDocument', 'Add question', 'Remove question', 'moveFaq', 'openProject', 'contactEndpoint']) assert(ui.includes(token), `UI missing ${token}`);
 const delivery = readFileSync('src/app/api/productions/[id]/delivery/route.ts', 'utf8');
 assert(delivery.includes("form-action 'none'") && delivery.includes("connect-src 'none'"), 'preview submission security must remain intact');
 assert(websiteVersionHistory({ websiteContentHistory: [{ revision: 1, content: { heroTitle: 'Before' }, source: 'manual' }] })[0].revision === 0, 'legacy history must use true version numbers');

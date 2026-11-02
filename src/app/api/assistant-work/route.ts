@@ -1,3 +1,5 @@
+import { handleWebsiteAssistant } from "@/lib/assistant-work/website";
+import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { handleAssistantWork, quote } from "@/lib/assistant-work/core";
 import { GET as creditsGet } from "@/app/api/credits/route";
@@ -57,6 +59,19 @@ export async function POST(req: NextRequest) {
     const scene = String(body.scene || "01");
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
+    if (category === "website") {
+      const limit = rateLimit({ key: `website-assistant:${user.id}:${clientIpFromRequest(req)}`, limit: 30, windowMs: 15 * 60 * 1000 }); if (!limit.allowed) return rateLimitResponse(limit.resetAt);
+      if (JSON.stringify(body).length > 50000) return NextResponse.json({ ok: false, error: "website_request_too_large" }, { status: 413 });
+      const safe = rejectSuspiciousText([String(body.prompt ?? ""), JSON.stringify(body.websiteBrief ?? {})]); if (!safe.ok) return NextResponse.json({ ok: false, error: safe.message }, { status: 400 });
+      const creditHeaders = new Headers(req.headers);
+      const result = await handleWebsiteAssistant(body, { id: user.id, email: user.email }, {
+        db: supabase,
+        pack: (id) => { const pack = getCatalogCategory("website")?.packs.find((pack) => pack.id === id); return pack && typeof pack.credits === "number" ? { credits: pack.credits, label: pack.label } : undefined; },
+        balance: async () => { const url = new URL("/api/credits", req.url); url.searchParams.set("user_id", user.id); const response = await creditsGet(new Request(url, { headers: creditHeaders })); const data = await response.json(); if (!response.ok) throw new Error(data.error || "credit_read_failed"); return Number(data.available ?? data.balance ?? 0); },
+        spend: async (amount, session) => { const headers = new Headers(creditHeaders); headers.set("Content-Type", "application/json"); const response = await creditsSpend(new Request(new URL("/api/credits/spend", req.url), { method: "POST", headers, body: JSON.stringify({ user_id: user.id, amount, session, type: "website" }) })); const data = await response.json(); return { ok: response.ok && data.ok !== false, balance: Number(data.available ?? data.balance ?? 0), charged: Number(data.spent ?? 0), error: data.error }; }
+      });
+      return NextResponse.json(result.payload, { status: result.status, headers: { "Cache-Control": "no-store" } });
+    }
     const planApproved = body.planApproved === true;
     const planSnapshot = body.planSnapshot && typeof body.planSnapshot === "object" ? body.planSnapshot as Record<string, unknown> : null;
 

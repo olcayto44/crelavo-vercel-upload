@@ -108,6 +108,7 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
   if (action === "balance") return { status: 200, payload: { ok: true, balance } };
 
   const category = String(body.category || "video");
+  if (category === "website" && action !== "quote") return { status: 409, payload: { ok: false, code: "website_shared_engine_required", message: "Open the website assistant to review and approve a Website Brief before production.", href: "/dashboard/assistant-workspace?category=website&type=Website" } };
   const typeName = String(body.typeName || "");
   const chips = Array.isArray(body.chips) ? body.chips.map(String) : [];
   const message = String(body.message || "");
