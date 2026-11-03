@@ -22,10 +22,20 @@ const db = { from: () => { if (throwConnection) throw new Error("Missing SUPABAS
  if ((creating && row) || (!creating && (!row || filters.some(([key,value]) => row[key] !== value)))) return { data: null, error: creating ? { code: "23505" } : null };
  row = structuredClone(record); return { data: structuredClone(row) };
  } }; return query; } };
+let uploadedCover = null, uploadFailure = false;
 const invalidated = [];
-const api = load("src/app/api/admin/blog/route.ts", { "next/cache": { revalidatePath: path => invalidated.push(path) }, "@/lib/admin-guard": { requireAdminPermission: async () => permitted ? { ok: true } : { ok: false, response: Response.json({}, { status: 403 }) } }, "@/lib/admin-session": { ADMIN_SESSION_COOKIE: "session", getCookieValue: () => session ? "signed" : "", getAdminSessionPayload: token => token ? { email: "editor@example.test" } : null }, "@/lib/supabase": { supabaseAdmin: () => db }, "@/lib/blog-posts": blog, "@/lib/production-seo-pages": { productionSeoPages: [{ section: "blog", slug: "reserved" }] }, "@/lib/ecommerce-integration-guides": { ecommerceIntegrationGuides: [] } });
+const api = load("src/app/api/admin/blog/route.ts", { "@/lib/providers/storage": { uploadProviderAsset: async (path, bytes, type) => { if (uploadFailure) throw new Error("storage failure"); uploadedCover = { path, bytes, type }; return "https://assets.example.test/" + path; } }, "next/cache": { revalidatePath: path => invalidated.push(path) }, "@/lib/admin-guard": { requireAdminPermission: async () => permitted ? { ok: true } : { ok: false, response: Response.json({}, { status: 403 }) } }, "@/lib/admin-session": { ADMIN_SESSION_COOKIE: "session", getCookieValue: () => session ? "signed" : "", getAdminSessionPayload: token => token ? { email: "editor@example.test" } : null }, "@/lib/supabase": { supabaseAdmin: () => db }, "@/lib/blog-posts": blog, "@/lib/production-seo-pages": { productionSeoPages: [{ section: "blog", slug: "reserved" }] }, "@/lib/ecommerce-integration-guides": { ecommerceIntegrationGuides: [] } });
 const request = (body, origin = "https://www.crelavo.com") => new Request("https://www.crelavo.com/api/admin/blog", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
 (async () => {
+ const coverRequest = (content, type = "image/png", origin = "https://www.crelavo.com") => { const form = new FormData(); form.append("file", new File([content], "cover.png", { type })); return new Request("https://www.crelavo.com/api/admin/blog", { method: "POST", headers: { origin }, body: form }); };
+ const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3xkAAAAASUVORK5CYII=", "base64");
+ session = false; assert.equal((await api.POST(coverRequest(png))).status,403); session = true;
+ assert.equal((await api.POST(coverRequest(png,"image/png","https://evil.test"))).status,403);
+ assert.equal((await api.POST(coverRequest("<script>bad</script>"))).status,400);
+ assert.equal((await api.POST(coverRequest(png,"image/svg+xml"))).status,400);
+ assert.equal((await api.POST(coverRequest(new Uint8Array(3*1024*1024+1)))).status,400);
+ const cover = await api.POST(coverRequest(png)); assert.equal(cover.status,200); assert((await cover.json()).url.startsWith("https://assets.example.test/blog/covers/")); assert.equal(uploadedCover.type,"image/png"); assert.deepEqual(uploadedCover.bytes,new Uint8Array(png));
+ uploadFailure = true; assert.equal((await api.POST(coverRequest(png))).status,503); uploadFailure = false;
  session = false; assert.equal((await api.GET(request({}))).status, 403); assert.equal((await api.POST(request({}))).status, 403); session = true;
  permitted = false; assert.equal((await api.POST(request({}))).status, 403); permitted = true;
  assert.equal((await api.POST(request({}, "https://evil.test"))).status, 403);

@@ -1,3 +1,4 @@
+import { uploadProviderAsset } from "@/lib/providers/storage";
 import { revalidatePath } from "next/cache";
 import { requireAdminPermission } from "@/lib/admin-guard";
 import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
@@ -26,6 +27,22 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
   const denied = await authorize(request); if (denied) return denied;
+  if (request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data")) {
+    if (Number(request.headers.get("content-length") || 0) > 3 * 1024 * 1024 + 65536) return Response.json({ error: "Kapak görseli en fazla 3 MB olabilir." }, { status: 413 });
+    const form = await request.formData(); const file = form.get("file");
+    if (!(file instanceof File) || !file.size || file.size > 3 * 1024 * 1024) return Response.json({ error: "En fazla 3 MB boyutunda JPG, PNG veya WebP dosyası seçin." }, { status: 400 });
+    const bytes = new Uint8Array(await file.arrayBuffer()), type = file.type.toLowerCase();
+    const png = bytes.length >= 24 && [137,80,78,71,13,10,26,10].every((value,index) => bytes[index] === value);
+    const jpeg = bytes.length >= 4 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+    const webp = bytes.length >= 12 && new TextDecoder().decode(bytes.slice(0,4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8,12)) === "WEBP";
+    const extension = type === "image/png" && png ? "png" : type === "image/jpeg" && jpeg ? "jpg" : type === "image/webp" && webp ? "webp" : null;
+    if (!extension) return Response.json({ error: "Dosya içeriği JPG, PNG veya WebP ile eşleşmiyor. SVG ve HTML kabul edilmez." }, { status: 400 });
+    try {
+      const url = await uploadProviderAsset("blog/covers/" + crypto.randomUUID() + "." + extension, bytes, type);
+      if (!url.startsWith("https://")) throw new Error("public_url_unavailable");
+      return Response.json({ url }, { headers: { "Cache-Control": "no-store" } });
+    } catch { return Response.json({ error: "Kapak yüklenemedi. Dosya depolama bağlantısı ve izinleri kontrol edilmeli; mevcut kapak değiştirilmedi." }, { status: 503 }); }
+  }
   if (Number(request.headers.get("content-length") || 0) > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
   const raw = await request.text(); if (raw.length > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
   let body; try { body = JSON.parse(raw); } catch { return Response.json({ error: "JSON geçersiz." }, { status: 400 }); }
