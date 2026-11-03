@@ -18,6 +18,11 @@ export async function POST(request: Request) {
   const state = data.output_json?.websiteAssistant;
   if (!state?.brief) return Response.json({ error: "shared_website_brief_required" }, { status: 409 });
   if (["generating", "awaiting_payment"].includes(state.phase)) return Response.json({ error: "production_in_progress" }, { status: 409 });
+  if (body.action === "status") {
+    const blueprint = data.output_json.runtimeBlueprint;
+    const artifact = data.output_json.runtimeArtifact;
+    return Response.json({ productionId: data.id, blueprint: blueprint ? { ...blueprint, stale: blueprint.sourcePlanHash !== state.planHash } : null, artifact: artifact ? { artifactVersion: artifact.artifactVersion, blueprintHash: artifact.blueprintHash, status: artifact.status, blockers: artifact.blockers, stale: artifact.blueprintHash !== blueprint?.hash || blueprint?.sourcePlanHash !== state.planHash } : null, preview: "not_provisioned", charged: 0 }, { headers: { "Cache-Control": "no-store" } });
+  }
   if (body.action === "compile") {
     const stored = data.output_json?.runtimeBlueprint;
     if (!stored || stored.sourcePlanHash !== state.planHash) return Response.json({ error: "runtime_plan_changed_review_again" }, { status: 409 });
@@ -33,7 +38,7 @@ export async function POST(request: Request) {
   }
   if (body.action && body.action !== "propose") return Response.json({ error: "unsupported_action" }, { status: 400 });
   try {
-    const blueprint = await proposeRuntimeBlueprint(state.brief, String(body.instruction || "Mevcut brief'e uygun uygulama planı hazırla."));
+    const blueprint = await proposeRuntimeBlueprint(state.brief, String(body.instruction || "Mevcut brief'e uygun uygulama planı hazırla."), data.output_json.runtimeBlueprint);
     const result = await db.from("production_requests").update({ updated_at: new Date().toISOString(), output_json: { ...data.output_json, runtimeBlueprint: { ...blueprint, review: "pending_user_approval", acceptance: "not_run", sourcePlanHash: state.planHash }, websiteAssistant: { ...state, approvedHash: null, phase: "draft" } } }).eq("id", data.id).eq("user_id", body.user_id).eq("updated_at", data.updated_at).select("id").maybeSingle();
     if (result.error) return Response.json({ error: "blueprint_save_failed" }, { status: 503 });
     if (!result.data) return Response.json({ error: "project_changed_reload" }, { status: 409 });

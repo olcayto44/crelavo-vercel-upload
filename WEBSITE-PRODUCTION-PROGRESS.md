@@ -47,3 +47,9 @@ Remote Preview için güvenli container/VM veya eşdeğer izole uygulama çalı�
 - Yeni compileRuntimeBlueprint onay hash kontrolüyle sektör bağımsız planı runtime sayfa/block/koleksiyon kaynaklarına çevirir. Private koleksiyonlar ziyaretçi sayfasına bağlanmaz. Sabit içerik hash ile artifactVersion oluşturulur.
 - Geliştirme blueprint API compile eylemi: aynı sahip/proje/CAS, açık approve ve blueprintHash ister. Statik brief değişince eski plan derlenemez. Runtime artifact ve önceki 5 artifact ayrı saklanır; mevcut statik çıktı üzerine yazılmaz, kredi harcanmaz, ready verilmez.
 - Derleme burada kaynak üretimi anlamındadır; çalışan uzak build/Preview ve kabul testi anlamına gelmez. Bu son tur henüz pushlanmadı.
+
+## Setup entegrasyonu
+- Sadece geliştirme ortamında Setup içinde AI planı, kullanıcı plan revizyonu, onay/hash ile kaynak üretimi ve kayıtlı plan/artifact durum sorgusu eklendi. Production flag kilidi korunur.
+- Plan revizyonuna önceki blueprint gönderilir; açıkça değişmeyen gereksinimleri koruma talimatı verilir. Bu tam kaynak kodu/veritabanı migration revizyonu değildir.
+- API rotası için Production kilidi, kullanıcı sahipliği, açık onay, CAS çakışması ve eski plan/artifact durumları mock testte doğrulandı.
+- Tamamlanmayanlar: uzak Preview hesabı/sağlayıcısı, çalışma ortamı, ödeme/rezervasyon/üyelik süreçleri, özgün tasarım/kod revizyonu, mobil browser ve temiz ZIP kabul worker. Yeni eklemeler pushlanmadı.
