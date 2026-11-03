@@ -79,14 +79,14 @@ assert(missing.reply.toLocaleLowerCase('tr-TR').includes('eksik') && !missing.br
 const document = websitePreviewDocument('<html><head></head><body><a href="./about.html">About</a></body></html>');
 assert(document.includes('crelavo-website-page') && document.includes('form-action'), 'safe preview navigation missing');
 const directRoute = readFileSync('src/app/api/websites/generate/route.ts', 'utf8'); const localEngine = readFileSync('src/lib/assistant-work/runLocalEngine.ts', 'utf8');
-assert(directRoute.includes('generateWebsiteArtifact') && !localEngine.includes('function websitePack('), 'two competing website generators still present');
+assert(directRoute.includes('executeWebsiteRequest') && !directRoute.includes('estimated_credits: 0') && !localEngine.includes('function websitePack('), 'two competing website generators still present');
 const paused = environment(); const interrupted = await paused.prepare(); await paused.call({ action: 'website_approve', productionId: interrupted.id, planHash: interrupted.hash });
 const interruptedRow = paused.rows.get(interrupted.id); interruptedRow.output_json.websiteAssistant.phase = 'generating'; interruptedRow.output_json.websiteAssistant.generationStartedAt = new Date().toISOString();
 assert((await paused.call({ action: 'website_retry', productionId: interrupted.id })).status === 409, 'live generation must not be recovered early');
 interruptedRow.output_json.websiteAssistant.generationStartedAt = new Date(Date.now() - 240000).toISOString();
 assert((await paused.call({ action: 'website_retry', productionId: interrupted.id })).status === 200, 'interrupted generation must be recoverable on the same record');
 const workRoute = readFileSync('src/app/api/assistant-work/route.ts', 'utf8');
-assert(workRoute.indexOf('handleWebsiteAssistant(body') < workRoute.indexOf('if (body.render !== true)'), 'website must be dispatched before generic plan echo/local engine');
+assert(workRoute.indexOf('executeWebsiteRequest(req') < workRoute.indexOf('if (body.render !== true)'), 'website must be dispatched before generic plan echo/local engine');
 const deliverySource = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8").replace(/^import .*;\r?\n/gm, "").replace(/export async function /g, "async function ");
 const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", stripTypeScriptTypes(deliverySource) + "; return GET;");
 const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, () => env.db, async () => ({ status: "active" }));

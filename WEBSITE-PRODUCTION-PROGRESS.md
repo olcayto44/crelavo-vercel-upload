@@ -26,3 +26,18 @@ Mevcut website assistant, content, generation-quality, automatic-delivery ve del
 
 ## Altyapı kararı
 Remote Preview için güvenli container/VM veya eşdeğer izole uygulama çalıştırma ve persistent disk gerekiyor. Vercel frontend/serverless ortamı tek başına bu SQLite runtime'ını barındırmaz. Harici hesap/sağlayıcı seçimi ve yetki olmadan bir Preview URL'si oluşturulmuş gibi raporlanamaz.
+
+## İkinci geliştirme turu
+- Sektörden bağımsız runtimeSchema eklendi: doğrulanmış koleksiyon/alan/gizlilik tanımı ile film dışı, örneğin laboratuvar ekipmanı kataloğu üretilebilir. Şema henüz AI ihtiyaç analizinden otomatik oluşturulmuyor; API geliştirme sözleşmesi hazır.
+- Gerçek müşteri admininde sürüm geçmişi/geri alma, medya yükleme başarı testi ve editor rol erişim testi eklendi.
+- Gizli koleksiyonlar public API'ye açılmıyor; ders içeriği öğrenci yetkisi kurulana kadar private. Public API yalnız şemada bildirilen alanları döndürüyor.
+- Kayıt versiyonuna bağlı kabul kontrolü tanımlandı; önceki sürüm testleri yeni sürümü onaylamaz. Ancak otomatik kabul worker'ına ve teslimat sonlandırmasına henüz bağlanmadı; bu yeni kontrol tek başına uçtan uca entegrasyon değildir.
+- Uzak Preview sağlayıcısı ve hesap/kalıcı disk henüz yok. Ortamda sağlayıcı erişimi doğrulanmadığından Preview ve Production deploy yapılmadı.
+- Tek üretim işi, AI kaynak revizyonu, iş akışı entegrasyonları ve mobil tarayıcı kabulü tamamlanmadı. Runtime development flag arkasında kaldı.
+
+## Ortak akış ve ihtiyaç planı turu
+- Assistant ve Builder aynı executeWebsiteRequest adaptörünü ve handleWebsiteAssistant durum makinesini kullanır. Builder ayrı production insert/ücretsiz ready yolunu kullanmaz. Plan, açık onay ve ayrı üretim başlatma adımı gösterilir. Paketler aynı katalogdan gelir. Mevcut proje kimliği korunur.
+- Geliştirme modunda /api/websites/blueprint; aynı kullanıcıya ait ortak website brief'inden gerçek AI yanıtıyla sektör bağımsız veri/sayfa/özellik planı üretir. Şema, public/private erişim ve plan hash'i doğrulanır. Kaydetme CAS ile korunur. Henüz UI ve runtime üretim işine bağlı değildir.
+- Blueprint eklenen projede statik üretime sessiz düşüş engellenir; runtime kabulü beklenirken kredi harcayıp hazır teslim edilmez.
+- Önceki geliştirme runtime yolu ayrı Builder endpoint'i kaldırıldığından şu anda yalnız doğrudan motor geliştirme/test çağrısı üzerinden kullanılabilir. Otomatik runtime üretimi halen tamamlanmadı.
+- İzole Preview sağlayıcısı, otomatik kabul worker'ı, tam kaynak revizyonu ve gerçek checkout/booking/membership iş akışları halen eksik. Tüm ürün tamamlandı iddiası yok.

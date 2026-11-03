@@ -1,9 +1,10 @@
+import type { RuntimeSchema } from "./website-runtime/schema.ts";
 import { generateCustomerRuntime } from "./website-runtime/package.ts";
 import { generateDeterministicWebsiteSource, escapeHtml } from "./providers/website-template.ts";
 import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGenerationInput, type WebsiteGeneratedFile } from "./providers/openai.ts";
 import { createWebsitePlan } from "./website-domain.ts";
 import { websiteContentFromSource } from "./website-content.ts";
-export type WebsiteEngineInput = WebsiteGenerationInput & { locale?: string };
+export type WebsiteEngineInput = WebsiteGenerationInput & { locale?: string; runtimeSchema?: RuntimeSchema };
 export const websitePageSlug = (title: string) => title.toLowerCase().replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70);
 export function websitePageManifest(pages: string[]) {
   const result = [{ slug: "home", title: pages.find((p) => /^(home|ana\s?sayfa|anasayfa)$/i.test(p)) || "Home", path: "index.html", section: "hero" }];

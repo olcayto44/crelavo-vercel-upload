@@ -2,8 +2,10 @@ import type { WebsiteEngineInput } from "../website-engine";
 import type { WebsiteGeneratedFile } from "../providers/openai";
 import { customerServerSource } from "./server-source.ts";
 import { customerAdminSource } from "./admin-source.ts";
+import { validateRuntimeSchema } from "./schema.ts";
 export type WebsiteModule = { key: string; fields: string[]; private: boolean };
 export function websiteModules(input: WebsiteEngineInput): WebsiteModule[] {
+  if (input.runtimeSchema) return validateRuntimeSchema(input.runtimeSchema).collections;
   const text = [input.siteType, input.brief, ...input.features].join(" ");
   const modules: WebsiteModule[] = [];
   const add = (key: string, fields: string[], hidden = false) => modules.push({ key, fields, private: hidden });
@@ -12,7 +14,7 @@ export function websiteModules(input: WebsiteEngineInput): WebsiteModule[] {
   if (/otel|hotel|turizm|tourism/i.test(text)) { add("rooms", ["title", "description", "price", "capacity", "image"]); add("reservations", ["title", "description", "date", "customer", "status"], true); }
   if (/restoran|restaurant|cafe|kafe/i.test(text)) { add("menu", ["title", "description", "category", "price", "image"]); add("restaurant-orders", ["title", "description", "customer", "status"], true); }
   if (/emlak|estate|property/i.test(text)) add("properties", ["title", "description", "category", "price", "location", "image"]);
-  if (/eğitim|egitim|education|kurs|course/i.test(text)) { add("courses", ["title", "description", "instructor", "price", "image"]); add("lessons", ["title", "description", "course", "video"]); add("enrollments", ["title", "description", "student", "course", "progress"], true); }
+  if (/eğitim|egitim|education|kurs|course/i.test(text)) { add("courses", ["title", "description", "instructor", "price", "image"]); add("lessons", ["title", "description", "course", "video"], true); add("enrollments", ["title", "description", "student", "course", "progress"], true); }
   add("articles", ["title", "description", "category", "image"]);
   return modules;
 }
