@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { handleWebsiteAssistant } from '../src/lib/assistant-work/website.ts';
 import { generateWebsiteArtifact } from '../src/lib/website-engine.ts';
 import { buildDeliveryEntries, buildDeliveryZip, buildPreviewHtml } from '../src/lib/automatic-delivery-builder.ts';
-import { normalizeAssistantWebsiteBrief, converseWebsiteBrief } from '../src/lib/assistant-work/website-brief.ts';
+import { normalizeAssistantWebsiteBrief, converseWebsiteBrief, explicitWebsiteBriefPatch } from '../src/lib/assistant-work/website-brief.ts';
 import { websitePreviewDocument } from '../src/lib/website-preview.ts';
 delete process.env.OPENAI_API_KEY;
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
@@ -114,9 +114,35 @@ for (let i = 0; i < 2; i++) {
  const updated = await languages.call({ action: 'revise', productionId: turkishDraft.payload.productionId, prompt: 'Please review the website brief.', uiAction: true });
  assert(languages.rows.get(turkishDraft.payload.productionId).output_json.websiteAssistant.replyLanguage === 'tr' && (updated.payload as any).website.messages.filter((m: any) => m.role === 'user').length === 1, 'repeated UI actions must retain the substantive chat language');
 }
+const filmRequest = 'FilmAtlas adında bir film keşif sitesi istiyorum. Site İngilizce olsun ama benimle Türkçe konuş. Modern bir tasarım istiyorum. Hedef kitle filmseverler. Ana sayfa, Filmler, Hakkımızda ve İletişim sayfaları olsun. Şimdilik yalnızca statik demo ve örnek film kartları istiyorum; üyelik, ödeme ve gerçek kullanıcı yorumları olmasın.';
+assert(explicitWebsiteBriefPatch('Site Türkçe olsun ama benimle İngilizce konuş.').locale === 'tr', 'Turkish website language must not be inferred from chat language');
+assert(explicitWebsiteBriefPatch('Please build a Turkish website and reply in English.').locale === 'tr', 'English requests must support a separately named website language');
+assert(!explicitWebsiteBriefPatch('Benimle Türkçe konuş.').locale, 'chat-only language must not change website locale');
+assert(!explicitWebsiteBriefPatch('Bir site istiyorum.').brief, 'vague requests must still ask for purpose');
+const film = environment();
+const filmResult = await film.call({ action: 'revise', prompt: filmRequest, packId: '' });
+assert(filmResult.status === 200, 'FilmAtlas natural request failed');
+const filmWebsite = (filmResult.payload as any).website;
+assert(filmWebsite.brief.brand === 'FilmAtlas' && filmWebsite.brief.brief === filmRequest && filmWebsite.brief.locale === 'en', 'explicit description and website language must survive without a provider');
+assert(filmWebsite.brief.audience === 'filmseverler' && filmWebsite.brief.style === 'Modern' && filmWebsite.brief.pages.length === 4, 'explicit user facts must populate the brief without fabrication');
+assert(!filmWebsite.missing.length && !filmWebsite.unsupported.length && filmWebsite.review.blockers.join(',') === 'package', 'only the unselected package should block this complete static brief');
+assert(film.counts().charges === 0 && film.counts().generates === 0 && !(filmResult.payload as any).body.includes('site açıklaması'), 'complete chat must not claim missing description or generate');
+const oldFilm = environment(); const old = await oldFilm.prepare();
+const replaced = await oldFilm.call({ action: 'revise', productionId: old.id, prompt: filmRequest, packId: '', websiteBrief: { ...brief, locale: 'tr' } });
+assert((replaced.payload as any).website.brief.locale === 'en' && (replaced.payload as any).website.brief.brand === 'FilmAtlas', 'latest explicit facts must override stale form and project facts');
 const originalFetch = globalThis.fetch; process.env.OPENAI_API_KEY = 'local-test-key'; let conversationalCalls = 0;
 try {
   globalThis.fetch = (async () => { conversationalCalls++; return Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'We can prepare a static services website and keep revisions on the same project.', brief }) } }] }); }) as typeof fetch;
   const answer = await converseWebsiteBrief(normalizeAssistantWebsiteBrief({}), [], 'Can this be a services website?', undefined);
   assert(conversationalCalls === 1 && answer.reply.startsWith('We can prepare') && answer.brief.brand === brief.brand, 'actual conversation adapter must parse reply and structured brief');
+  globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Bilgileri güncelledim.', brief: { brand: '', brief: '', audience: '', style: '', pages: [], features: [], locale: 'tr' } }) } }] })) as typeof fetch;
+  const incompleteProvider = environment();
+  const recovered = await incompleteProvider.call({ action: 'revise', prompt: filmRequest, packId: '' });
+  const recoveredWebsite = (recovered.payload as any).website;
+  assert(recovered.status === 200 && !recoveredWebsite.missing.length && recoveredWebsite.brief.locale === 'en' && recoveredWebsite.brief.brief === filmRequest, 'empty provider fields and chat-language locale must not erase explicit facts');
+  assert(recoveredWebsite.review.blockers.join(',') === 'package' && recoveredWebsite.messages.at(-1).content.includes('paket') && !recoveredWebsite.messages.at(-1).content.includes('site açıklaması'), 'provider omissions must not become false missing-field notices');
+  const preserve = await converseWebsiteBrief(normalizeAssistantWebsiteBrief(brief), [], 'Keep the existing brief.', undefined);
+  assert(preserve.brief.locale === brief.locale, 'provider must not change website language without a user request');
+  assert(preserve.brief.brand === brief.brand && preserve.brief.brief === brief.brief && preserve.brief.pages.length === brief.pages.length, 'empty provider values must preserve existing facts');
+
 } finally { globalThis.fetch = originalFetch; delete process.env.OPENAI_API_KEY; }console.log('website-assistant-integration-smoke ok');
