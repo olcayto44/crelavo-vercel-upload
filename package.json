@@ -64,7 +64,8 @@
     "smoke:footer-seo": "node scripts/footer-seo-smoke.cjs",
     "smoke:admin-inbox": "node scripts/admin-inbox-smoke.cjs",
     "smoke:mobile-navigation": "node scripts/mobile-navigation-smoke.cjs",
-    "smoke:blog-admin": "node scripts/blog-admin-smoke.cjs"
+    "smoke:blog-admin": "node scripts/blog-admin-smoke.cjs",
+    "smoke:website-runtime": "node scripts/website-runtime-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",

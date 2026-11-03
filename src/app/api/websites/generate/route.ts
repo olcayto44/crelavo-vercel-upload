@@ -64,6 +64,10 @@ export async function POST(request: Request) {
 
     try {
       const generated = await generateWebsiteArtifact({ brief, siteType, scope, brand, audience, pages, features, style, locale: String(body.locale ?? "en") }, String(production.id));
+      if (generated.runtime) {
+        await supabase.from("production_requests").update({ status: "pending", generation_status: "pending", output_json: { websiteFiles: generated.files, runtime: generated.runtime, plan: generated.plan, pageManifest: generated.pageManifest, scope, websiteContent: generated.websiteContent, acceptancePending: true } }).eq("id", production.id);
+        return Response.json({ productionId: production.id, status: "acceptance_pending", message: "Runtime kaynakları oluşturuldu. İzole Preview ve proje testleri tamamlanmadan teslim hazır sayılmaz." }, { status: 202 });
+      }
       const plan = generated.plan;
       const storedFiles = await Promise.all(generated.files.map(async (file) => ({
         ...file,
