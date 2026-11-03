@@ -22,6 +22,9 @@ async function ready(){for(let i=0;i<60;i++){try{if((await fetch(base+'/health')
 async function stop(){if(!child||child.exitCode!==null)return;await new Promise(resolve=>{child.once('exit',resolve);child.kill();});}
 (async()=>{try{start();await ready();assert.equal((await fetch(base+'/api/documents/films')).status,401);assert.equal((await fetch(base+'/')).status,200);
 let login=await fetch(base+'/api/login',{method:'POST',headers:{origin:base,'Content-Type':'application/json'},body:JSON.stringify({email:'owner@example.test',password:'test-password-unique-123'})});assert.equal(login.status,200,logs);const cookie=login.headers.get('set-cookie').split(';')[0],{csrf}=await login.json();const headers={origin:base,cookie,'x-csrf-token':csrf,'Content-Type':'application/json'};
+const settingsRecord=(await(await fetch(base+'/api/documents/settings',{headers:{cookie}})).json()).records[0];
+const themed=await fetch(base+'/api/documents/settings',{method:'POST',headers,body:JSON.stringify({id:settingsRecord.id,version:settingsRecord.version,payload:{...settingsRecord.payload,backgroundColor:'#fffafa',textColor:'#123456',radius:'square',font:'Georgia'}})});assert.equal(themed.status,200);
+const themedHtml=await(await fetch(base+'/')).text();assert(themedHtml.includes('--site-background:#fffafa'));assert(themedHtml.includes('--site-text:#123456'));assert(themedHtml.includes('--site-radius:0px'));assert(themedHtml.includes('font-family:Georgia'));
 const input={payload:{title:'Authorized film',description:'Test entry',category:'Drama',year:'2026',country:'Turkey',published:true}};
 assert.equal((await fetch(base+'/api/documents/films',{method:'POST',headers:{...headers,'x-csrf-token':'bad'},body:JSON.stringify(input)})).status,403);
 let saved=await fetch(base+'/api/documents/films',{method:'POST',headers,body:JSON.stringify(input)});assert.equal(saved.status,200,await saved.clone().text());let record=(await saved.json()).records[0];
