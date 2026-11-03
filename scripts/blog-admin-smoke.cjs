@@ -1,0 +1,44 @@
+const fs = require("node:fs"), assert = require("node:assert/strict"), ts = require("typescript");
+function load(path, mocks = {}) { const exports = {}; const js = ts.transpileModule(fs.readFileSync(path, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText; new Function("require", "exports", js)((id) => id in mocks ? mocks[id] : require(id), exports); return exports; }
+const blog = load("src/lib/blog-posts.ts");
+const candidate = { id: "post-one", slug: "seo-article", title: "Useful article", excerpt: "A useful article summary.", content: "## Topic\n\n" + "Practical useful content. ".repeat(12), status: "published", seoTitle: "Useful article | Crelavo", seoDescription: "A practical guide to publishing useful articles with clear titles, helpful sections and relevant internal links.", keywords: ["content SEO"], coverImage: "/images/blog.png", coverAlt: "Article cover", author: "Editor" };
+const validated = blog.validateBlogPost(candidate);
+assert.equal(validated.slug, "seo-article");
+for (const patch of [{ slug: "../admin" }, { coverImage: "javascript:alert(1)" }, { coverImage: "//evil.test/a" }, { coverAlt: "" }, { seoDescription: "short" }, { status: "bad" }, { content: "too short" }, { keywords: Array(21).fill("x") }]) assert.throws(() => blog.validateBlogPost({ ...candidate, ...patch }));
+const draft = blog.validateBlogPost({ ...candidate, status: "draft", content: "", seoDescription: "", seoTitle: "" });
+assert.equal(blog.publishedBlogPosts([draft]).length, 0);
+assert.equal(blog.publishedBlogPosts([{ ...validated, publishedAt: "2999-01-01" }]).length, 0);
+const metadata = blog.blogPostMetadata(validated); assert.equal(metadata.alternates.canonical, "/blog/seo-article"); assert.equal(metadata.openGraph.type, "article");
+const malicious = { ...validated, title: "</script><script>alert(1)</script>" }; assert(!blog.blogArticleJsonLd(malicious).includes("</script>"));
+const React = require("react"), { renderToStaticMarkup } = require("react-dom/server");
+const renderer = load("src/components/BlogArticleContent.tsx", { "@/lib/blog-posts": blog });
+const html = renderToStaticMarkup(React.createElement(renderer.BlogArticleContent, { content: "## Section\n\n<script>alert(1)</script>\n\n[unsafe](javascript:alert) [safe](/pricing)" }));
+assert(html.includes("<h2>Section</h2>") && !html.includes("<script>") && !html.includes('href="javascript:') && html.includes('href="/pricing"'));
+let row = null, session = true, permitted = true, failRead = false, failWrite = false;
+const db = { from: () => { let record, creating = false; const filters = []; const query = { select: () => query, eq: (key, value) => { filters.push([key, value]); return query; }, update: value => { record = value; return query; }, insert: value => { record = value; creating = true; return query; }, single: async () => query.maybeSingle(), maybeSingle: async () => {
+ if (!record) return failRead ? { error: {} } : { data: row ? structuredClone(row) : null };
+ if (failWrite) return { error: { code: "failure" } };
+ if ((creating && row) || (!creating && (!row || filters.some(([key,value]) => row[key] !== value)))) return { data: null, error: creating ? { code: "23505" } : null };
+ row = structuredClone(record); return { data: structuredClone(row) };
+ } }; return query; } };
+const api = load("src/app/api/admin/blog/route.ts", { "@/lib/admin-guard": { requireAdminPermission: async () => permitted ? { ok: true } : { ok: false, response: Response.json({}, { status: 403 }) } }, "@/lib/admin-session": { ADMIN_SESSION_COOKIE: "session", getCookieValue: () => session ? "signed" : "", getAdminSessionPayload: token => token ? { email: "editor@example.test" } : null }, "@/lib/supabase": { supabaseAdmin: () => db }, "@/lib/blog-posts": blog, "@/lib/production-seo-pages": { productionSeoPages: [{ section: "blog", slug: "reserved" }] }, "@/lib/ecommerce-integration-guides": { ecommerceIntegrationGuides: [] } });
+const request = (body, origin = "https://www.crelavo.com") => new Request("https://www.crelavo.com/api/admin/blog", { method: "POST", headers: { "Content-Type": "application/json", origin }, body: JSON.stringify(body) });
+(async () => {
+ session = false; assert.equal((await api.GET(request({}))).status, 403); assert.equal((await api.POST(request({}))).status, 403); session = true;
+ permitted = false; assert.equal((await api.POST(request({}))).status, 403); permitted = true;
+ assert.equal((await api.POST(request({}, "https://evil.test"))).status, 403);
+ assert.equal((await api.POST(request({ action: "save", revision: null, post: { ...candidate, slug: "reserved" } }))).status, 409);
+ const saved = await api.POST(request({ action: "save", revision: null, post: candidate })); assert.equal(saved.status, 200); const data = await saved.json();
+ assert.equal(data.posts[0].status, "published"); assert(data.posts[0].publishedAt); assert.equal(blog.publishedBlogPosts(data.posts).length, 1);
+ assert.equal((await api.POST(request({ action: "save", revision: null, post: candidate }))).status, 409);
+ assert.equal((await api.POST(request({ action: "save", revision: data.revision, post: { ...candidate, slug: "changed" } }))).status, 400);
+ assert.equal((await api.POST(request({ action: "save", revision: data.revision, post: { ...candidate, id: "post-two" } }))).status, 409);
+ const unpublished = await api.POST(request({ action: "save", revision: data.revision, post: { ...candidate, status: "draft" } })); assert.equal(unpublished.status, 200); const hidden = await unpublished.json(); assert.equal(blog.publishedBlogPosts(hidden.posts).length, 0);
+ failRead = true; assert.equal((await api.GET(request({}))).status, 503); assert.equal((await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id }))).status, 503); failRead = false;
+ failWrite = true; assert.equal((await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id }))).status, 503); assert(row.value.posts.length); failWrite = false;
+ const deleted = await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id })); assert.equal(deleted.status, 200); assert.equal((await deleted.json()).posts.length, 0);
+ const listing = fs.readFileSync("src/app/blog/page.tsx", "utf8"), article = fs.readFileSync("src/app/blog/[slug]/page.tsx", "utf8"), sitemap = fs.readFileSync("src/app/sitemap.ts", "utf8");
+ for (const source of [listing, article, sitemap]) assert(source.includes("getPublishedBlogPosts") && source.includes('"force-dynamic"'));
+ assert(article.includes("blogArticleJsonLd(post)") && article.includes("blogPostMetadata(post)") && article.includes("getEcommerceIntegrationGuide(slug)"));
+ console.log("blog-admin-smoke ok: CRUD, publish/unpublish, auth/permissions/origin, conflicts, storage failure, SEO metadata, draft exclusion, safe rendering and preserved legacy routes");
+})().catch(error => { console.error(error); process.exitCode = 1; });

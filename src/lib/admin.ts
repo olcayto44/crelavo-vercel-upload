@@ -10,6 +10,7 @@ export const adminMenu = [
   { label: "Leads / Support", href: "/admin/growth", group: "Operations" },
   { label: "Hero Videos", href: "/admin/hero", group: "Content" },
   { label: "Showcase / Vitrine", href: "/admin/showcase-videos", group: "Content" },
+  { label: "Blog / SEO yazıları", href: "/admin/blog", group: "Content" },
   { label: "Blog / Footer / Hero", href: "/admin/site-content", group: "Content" },
   { label: "Affiliate / Partners", href: "/admin/partners", group: "Finance" },
   { label: "SEO / Google", href: "/admin/seo", group: "Content" },

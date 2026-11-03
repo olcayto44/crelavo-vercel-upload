@@ -1,0 +1,57 @@
+import { requireAdminPermission } from "@/lib/admin-guard";
+import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
+import { supabaseAdmin } from "@/lib/supabase";
+import { BLOG_CONFIG_KEY, readBlogPosts, validateBlogPost } from "@/lib/blog-posts";
+import { productionSeoPages } from "@/lib/production-seo-pages";
+import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
+export const dynamic = "force-dynamic";
+async function authorize(request: Request) {
+  // Never authorize content writes from an email header alone.
+  const session = getAdminSessionPayload(getCookieValue(request.headers.get("cookie"), ADMIN_SESSION_COOKIE));
+  if (!session) return Response.json({ error: "Yönetici oturumu gerekli." }, { status: 403 });
+  const origin = request.headers.get("origin");
+  if (origin && origin !== new URL(request.url).origin) return Response.json({ error: "İstek kaynağı geçersiz." }, { status: 403 });
+  const access = await requireAdminPermission(request, "content");
+  return access.ok ? null : access.response;
+}
+export async function GET(request: Request) {
+  const denied = await authorize(request); if (denied) return denied;
+  const { data, error } = await supabaseAdmin().from("platform_configs").select("value, updated_at").eq("key", BLOG_CONFIG_KEY).maybeSingle();
+  if (error) return Response.json({ error: "Yazılar yüklenemedi. Kaydetmeden önce yeniden deneyin." }, { status: 503 });
+  return Response.json({ posts: readBlogPosts(data?.value), revision: data?.updated_at ?? null }, { headers: { "Cache-Control": "no-store" } });
+}
+export async function POST(request: Request) {
+  const denied = await authorize(request); if (denied) return denied;
+  if (Number(request.headers.get("content-length") || 0) > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
+  const raw = await request.text(); if (raw.length > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
+  let body; try { body = JSON.parse(raw); } catch { return Response.json({ error: "JSON geçersiz." }, { status: 400 }); }
+  if (!body || typeof body !== "object" || !["save", "delete"].includes(body.action)) return Response.json({ error: "İşlem geçersiz." }, { status: 400 });
+  const db = supabaseAdmin();
+  const { data, error } = await db.from("platform_configs").select("value, updated_at").eq("key", BLOG_CONFIG_KEY).maybeSingle();
+  if (error) return Response.json({ error: "Kayıt okunamadı; hiçbir değişiklik yapılmadı." }, { status: 503 });
+  if (body.revision !== (data?.updated_at ?? null)) return Response.json({ error: "Başka bir değişiklik var. Yazıları yeniden yükleyin; yerel metninizi önce kopyalayın." }, { status: 409 });
+  let posts = readBlogPosts(data?.value);
+  try {
+    if (body.action === "delete") {
+      if (!posts.some(post => post.id === body.id)) return Response.json({ error: "Yazı bulunamadı." }, { status: 404 });
+      posts = posts.filter(post => post.id !== body.id);
+    } else {
+      const post = validateBlogPost(body.post);
+      const reserved = [...ecommerceIntegrationGuides.map(guide => guide.slug), ...productionSeoPages.filter(page => page.section === "blog").map(page => page.slug)];
+      if (reserved.includes(post.slug) || posts.some(item => item.slug === post.slug && item.id !== post.id)) return Response.json({ error: "Bu URL zaten kullanılıyor; farklı bir URL girin." }, { status: 409 });
+      const old = posts.find(item => item.id === post.id);
+      if (old?.publishedAt && old.slug !== post.slug) return Response.json({ error: "Yayınlanmış yazının URL'si SEO bağlantılarını korumak için değiştirilemez." }, { status: 400 });
+      post.updatedAt = new Date().toISOString();
+      post.publishedAt = old?.publishedAt || (post.status === "published" ? post.updatedAt : null);
+      posts = [...posts.filter(item => item.id !== post.id), post];
+      if (posts.length > 500) return Response.json({ error: "En fazla 500 yazı saklanabilir." }, { status: 400 });
+    }
+  } catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Yazı geçersiz." }, { status: 400 }); }
+  const updatedAt = new Date(Math.max(Date.now(), Date.parse(data?.updated_at || "") + 1 || 0)).toISOString();
+  const record = { key: BLOG_CONFIG_KEY, value: { posts }, description: "Admin-managed SEO blog articles", updated_at: updatedAt };
+  const saved = data
+    ? await db.from("platform_configs").update(record).eq("key", BLOG_CONFIG_KEY).eq("updated_at", data.updated_at).select("updated_at").maybeSingle()
+    : await db.from("platform_configs").insert(record).select("updated_at").single();
+  if (saved.error || !saved.data) return Response.json({ error: "Kaydedilemedi veya kayıt değişti. Yeniden yükleyip deneyin." }, { status: saved.error?.code === "23505" || !saved.error ? 409 : 503 });
+  return Response.json({ posts, revision: saved.data.updated_at }, { headers: { "Cache-Control": "no-store" } });
+}

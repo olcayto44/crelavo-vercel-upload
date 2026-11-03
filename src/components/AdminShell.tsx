@@ -14,6 +14,7 @@ function isActiveAdminHref(pathname: string, href: string) {
 }
 const groupLabels: Record<string, string> = { Operations: "Operasyon", Finance: "Finans", Content: "İçerik", System: "Sistem" };
 const menuLabels: Record<string, string> = {
+  "/admin/blog": "Blog / SEO yazıları",
   "/admin": "Genel bakış", "/admin/live": "Canlı ziyaretçiler", "/admin/users": "Üyeler / aboneler",
   "/admin/inbox": "Gelen kutusu", "/admin/productions": "Üretimler", "/admin/credits": "Krediler",
   "/admin/finance": "Finans", "/admin/email": "E-posta gönderimi", "/admin/growth": "Lead / destek",

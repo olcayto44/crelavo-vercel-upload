@@ -1,3 +1,6 @@
+import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
+import { blogPostMetadata, blogArticleJsonLd } from "@/lib/blog-posts";
+import { BlogArticleContent } from "@/components/BlogArticleContent";
 import { ProductionSeoPage } from "@/components/ProductionSeoPage";
 import { getProductionSeoPage, productionSeoPages } from "@/lib/production-seo-pages";
 import { productionMetadata } from "@/lib/production-seo";
@@ -18,6 +21,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const post = (await getPublishedBlogPosts()).find(item => item.slug === slug);
+  if (post) return blogPostMetadata(post);
   const productionPage = getProductionSeoPage("blog", slug);
   if (productionPage) return productionMetadata(productionPage);
   const guide = getEcommerceIntegrationGuide(slug);
@@ -45,6 +50,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function EcommerceGuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const post = (await getPublishedBlogPosts()).find(item => item.slug === slug);
+  if (post) {
+    const site = await getConfiguredSiteContentConfig();
+    return <><Header navLinks={site.navLinks} /><main className="container section blog-article-page"><article className="card admin-wide-card"><header><Link href="/blog">Blog</Link><h1>{post.title}</h1><p className="section-lead">{post.excerpt}</p><p>{post.author} · <time dateTime={post.publishedAt!}>{post.publishedAt!.slice(0, 10)}</time></p>{post.coverImage && <img src={post.coverImage} alt={post.coverAlt} style={{ maxWidth: "100%", height: "auto" }} />}</header><BlogArticleContent content={post.content} /></article><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogArticleJsonLd(post) }} /></main></>;
+  }
   const productionPage = getProductionSeoPage("blog", slug);
   if (productionPage) return <ProductionSeoPage page={productionPage} />;
   const [siteContent, guide] = await Promise.all([getConfiguredSiteContentConfig(), Promise.resolve(getEcommerceIntegrationGuide(slug))]);

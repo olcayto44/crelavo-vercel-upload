@@ -1,3 +1,5 @@
+import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
+export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
 import { productionPagePath, productionSeoPages } from "@/lib/production-seo-pages";
 import { footerInfoPages } from "@/lib/footer-info-pages";
@@ -111,7 +113,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const productionRoutes = productionSeoPages.map(page => ({ path: productionPagePath(page), priority: 0.8, changeFrequency: "monthly" as const }));
 
-  const routes = [...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
+  const managedBlogRoutes = (await getPublishedBlogPosts()).map(post => ({ path: "/blog/" + post.slug, priority: 0.78, changeFrequency: "monthly" as const, lastModified: post.updatedAt || post.publishedAt! }));
+  const routes = [...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
 
   return routes
     .filter((route, index, all) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)

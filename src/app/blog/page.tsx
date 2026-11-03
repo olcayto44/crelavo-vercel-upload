@@ -1,3 +1,5 @@
+import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
+export const dynamic = "force-dynamic";
 import { ProductionPageCards } from "@/components/ProductionSeoPage";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -105,7 +107,7 @@ function renderLinkedText(text: string, linkedKeywords: Set<string>) {
 }
 
 export default async function BlogPage() {
-  const siteContent = await getConfiguredSiteContentConfig();
+  const [siteContent, posts] = await Promise.all([getConfiguredSiteContentConfig(), getPublishedBlogPosts()]);
   const activeTopics = siteContent.blogTopics.filter((topic) => topic.active).sort((a, b) => a.order - b.order);
   const heroLinkedKeywords = new Set<string>();
 
@@ -125,6 +127,7 @@ export default async function BlogPage() {
           </div>
         </section>
 
+        {posts.length > 0 && <section className="blog-topic-stack" aria-label="Latest articles">{posts.map(post => <article className="blog-topic-card" key={post.id}><div className="blog-topic-copy"><h2><Link href={"/blog/" + post.slug}>{post.title}</Link></h2><p>{post.excerpt}</p><p><span>{post.author}</span> · <time dateTime={post.publishedAt!}>{post.publishedAt!.slice(0, 10)}</time></p><Link className="btn secondary" href={"/blog/" + post.slug}>Read article</Link></div>{post.coverImage && <figure className="blog-topic-media"><Link href={"/blog/" + post.slug}><img src={post.coverImage} alt={post.coverAlt} loading="lazy" /></Link></figure>}</article>)}</section>}
         <section className="blog-topic-stack" aria-label="Crelavo content topics">
           {activeTopics.map((topic, index) => {
             const articleLinkedKeywords = new Set<string>();
