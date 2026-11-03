@@ -10,3 +10,7 @@
 - Taslaklar public liste, yazı rotası ve sitemap dışında kalır. Canonical, Open Graph, Twitter ve güvenli BlogPosting JSON-LD eklenir. Yayınlanmış URL sabitlenir; eski bağlantılar değişmez.
 - Yazı kaydı revision karşılaştırmasıyla korunur. Çakışmada yerel metin saklanır, kullanıcı metni kopyalayıp yeniden yüklemelidir.
 - Test: npm run smoke:blog-admin. Testler mock veritabanı ile yereldir. Canlı admin oturumu, platform_configs yazma izni, yayın/gizleme ve Google çıktı kontrolü yayından sonra ayrıca doğrulanmalıdır.
+
+## Bağlantı hatası davranışı
+- Veritabanı okunamazsa public blog, eski rehberler ve site haritası hata ekranına düşmez; yönetilen yazılar geçici olarak listelenmez ve sunucuda hata kodu loglanır.
+- Admin hata nedenini gösterir (eksik bağlantı ayarı, tablo, alan veya erişim). Yeni yazı editörü açılabilir, ancak bağlantı sağlanmadan kayıt/yayın kapalı kalır. Bu yerel taslağın kalıcı kaydedildiği anlamına gelmez.

@@ -1,7 +1,7 @@
 import { requireAdminPermission } from "@/lib/admin-guard";
 import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
 import { supabaseAdmin } from "@/lib/supabase";
-import { BLOG_CONFIG_KEY, readBlogPosts, validateBlogPost } from "@/lib/blog-posts";
+import { BLOG_CONFIG_KEY, readBlogPosts, validateBlogPost, blogStorageError } from "@/lib/blog-posts";
 import { productionSeoPages } from "@/lib/production-seo-pages";
 import { ecommerceIntegrationGuides } from "@/lib/ecommerce-integration-guides";
 export const dynamic = "force-dynamic";
@@ -15,12 +15,15 @@ async function authorize(request: Request) {
   return access.ok ? null : access.response;
 }
 export async function GET(request: Request) {
+  try {
   const denied = await authorize(request); if (denied) return denied;
   const { data, error } = await supabaseAdmin().from("platform_configs").select("value, updated_at").eq("key", BLOG_CONFIG_KEY).maybeSingle();
-  if (error) return Response.json({ error: "Yazılar yüklenemedi. Kaydetmeden önce yeniden deneyin." }, { status: 503 });
+  if (error) throw error;
   return Response.json({ posts: readBlogPosts(data?.value), revision: data?.updated_at ?? null }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { const detail = blogStorageError(error); console.error("blog_admin_read_failed", detail.code); return Response.json({ error: detail.message, code: detail.code }, { status: 503 }); }
 }
 export async function POST(request: Request) {
+  try {
   const denied = await authorize(request); if (denied) return denied;
   if (Number(request.headers.get("content-length") || 0) > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
   const raw = await request.text(); if (raw.length > 200000) return Response.json({ error: "İstek çok büyük." }, { status: 413 });
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object" || !["save", "delete"].includes(body.action)) return Response.json({ error: "İşlem geçersiz." }, { status: 400 });
   const db = supabaseAdmin();
   const { data, error } = await db.from("platform_configs").select("value, updated_at").eq("key", BLOG_CONFIG_KEY).maybeSingle();
-  if (error) return Response.json({ error: "Kayıt okunamadı; hiçbir değişiklik yapılmadı." }, { status: 503 });
+  if (error) throw error;
   if (body.revision !== (data?.updated_at ?? null)) return Response.json({ error: "Başka bir değişiklik var. Yazıları yeniden yükleyin; yerel metninizi önce kopyalayın." }, { status: 409 });
   let posts = readBlogPosts(data?.value);
   try {
@@ -54,4 +57,5 @@ export async function POST(request: Request) {
     : await db.from("platform_configs").insert(record).select("updated_at").single();
   if (saved.error || !saved.data) return Response.json({ error: "Kaydedilemedi veya kayıt değişti. Yeniden yükleyip deneyin." }, { status: saved.error?.code === "23505" || !saved.error ? 409 : 503 });
   return Response.json({ posts, revision: saved.data.updated_at }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) { const detail = blogStorageError(error); console.error("blog_admin_write_failed", detail.code); return Response.json({ error: detail.message, code: detail.code }, { status: 503 }); }
 }

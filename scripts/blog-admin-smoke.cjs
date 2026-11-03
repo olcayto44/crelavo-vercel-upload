@@ -14,8 +14,9 @@ const React = require("react"), { renderToStaticMarkup } = require("react-dom/se
 const renderer = load("src/components/BlogArticleContent.tsx", { "@/lib/blog-posts": blog });
 const html = renderToStaticMarkup(React.createElement(renderer.BlogArticleContent, { content: "## Section\n\n<script>alert(1)</script>\n\n[unsafe](javascript:alert) [safe](/pricing)" }));
 assert(html.includes("<h2>Section</h2>") && !html.includes("<script>") && !html.includes('href="javascript:') && html.includes('href="/pricing"'));
+let throwConnection = false;
 let row = null, session = true, permitted = true, failRead = false, failWrite = false;
-const db = { from: () => { let record, creating = false; const filters = []; const query = { select: () => query, eq: (key, value) => { filters.push([key, value]); return query; }, update: value => { record = value; return query; }, insert: value => { record = value; creating = true; return query; }, single: async () => query.maybeSingle(), maybeSingle: async () => {
+const db = { from: () => { if (throwConnection) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY"); let record, creating = false; const filters = []; const query = { select: () => query, eq: (key, value) => { filters.push([key, value]); return query; }, update: value => { record = value; return query; }, insert: value => { record = value; creating = true; return query; }, single: async () => query.maybeSingle(), maybeSingle: async () => {
  if (!record) return failRead ? { error: {} } : { data: row ? structuredClone(row) : null };
  if (failWrite) return { error: { code: "failure" } };
  if ((creating && row) || (!creating && (!row || filters.some(([key,value]) => row[key] !== value)))) return { data: null, error: creating ? { code: "23505" } : null };
@@ -37,6 +38,16 @@ const request = (body, origin = "https://www.crelavo.com") => new Request("https
  failRead = true; assert.equal((await api.GET(request({}))).status, 503); assert.equal((await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id }))).status, 503); failRead = false;
  failWrite = true; assert.equal((await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id }))).status, 503); assert(row.value.posts.length); failWrite = false;
  const deleted = await api.POST(request({ action: "delete", revision: hidden.revision, id: candidate.id })); assert.equal(deleted.status, 200); assert.equal((await deleted.json()).posts.length, 0);
+ throwConnection = true;
+ const unavailable = await api.GET(request({})); assert.equal(unavailable.status, 503); assert.equal((await unavailable.json()).code, "blog_database_config_missing");
+ assert.equal((await api.POST(request({ action: "save", revision: null, post: candidate }))).status, 503);
+ const publicLoader = load("src/lib/blog-posts-loader.ts", { "@/lib/supabase": { supabaseAdmin: () => db }, "@/lib/blog-posts": blog });
+ assert.deepEqual(await publicLoader.getPublishedBlogPosts(), [], "public blog must remain renderable during storage outage");
+ throwConnection = false;
+ assert.equal(blog.blogStorageError({ code: "42P01" }).code, "blog_table_missing");
+ assert.equal(blog.blogStorageError({ code: "42703" }).code, "blog_schema_mismatch");
+ const manager = fs.readFileSync("src/components/AdminBlogManager.tsx", "utf8");
+ assert(manager.includes('disabled={busy} onClick={() => select(emptyPost())}') && manager.includes('setStorageError') && manager.includes('href="https://www.crelavo.com/blog"'), "editor must open during storage failure and blog link must target public blog");
  const listing = fs.readFileSync("src/app/blog/page.tsx", "utf8"), article = fs.readFileSync("src/app/blog/[slug]/page.tsx", "utf8"), sitemap = fs.readFileSync("src/app/sitemap.ts", "utf8");
  for (const source of [listing, article, sitemap]) assert(source.includes("getPublishedBlogPosts") && source.includes('"force-dynamic"'));
  assert(article.includes("blogArticleJsonLd(post)") && article.includes("blogPostMetadata(post)") && article.includes("getEcommerceIntegrationGuide(slug)"));

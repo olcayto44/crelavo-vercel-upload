@@ -4,6 +4,16 @@ export type BlogPost = {
   keywords: string[]; coverImage: string; coverAlt: string; author: string;
   publishedAt: string | null; updatedAt: string;
 };
+export function blogStorageError(error: unknown) {
+  const record = error && typeof error === "object" ? error as Record<string, unknown> : {};
+  const code = String(record.code || "");
+  const message = error instanceof Error ? error.message : String(record.message || "");
+  if (/Missing SUPABASE|supabaseUrl|supabaseKey/i.test(message)) return { code: "blog_database_config_missing", message: "Sunucuda Supabase bağlantı ayarları eksik. Yönetici ortam değişkenlerini kontrol etmeli." };
+  if (["42P01", "PGRST205"].includes(code)) return { code: "blog_table_missing", message: "Blog kayıt tablosu bulunamadı. platform_configs veritabanı kurulumu gerekli." };
+  if (["42703", "PGRST204"].includes(code)) return { code: "blog_schema_mismatch", message: "Blog veritabanı alanları uyumsuz. platform_configs tablosunda key, value ve updated_at alanlarını kontrol edin." };
+  if (["42501", "PGRST301", "PGRST302"].includes(code)) return { code: "blog_database_permission", message: "Blog veritabanı erişim izni reddedildi. Sunucu servis anahtarı kontrol edilmeli." };
+  return { code: "blog_storage_unavailable", message: "Blog kayıtları okunamıyor. Veritabanı bağlantısı ve servis ayarları kontrol edilmeli." };
+}
 export const BLOG_CONFIG_KEY = "blog_posts_v1";
 export function safeBlogUrl(value: string): boolean {
   if (!value || value.includes("\\") || /[\u0000-\u0020]/.test(value)) return false;

@@ -6,14 +6,15 @@ import { BlogArticleContent } from "@/components/BlogArticleContent";
 function emptyPost(): BlogPost { return { id: crypto.randomUUID(), slug: "", title: "", excerpt: "", content: "", status: "draft", seoTitle: "", seoDescription: "", keywords: [], coverImage: "", coverAlt: "", author: "Crelavo", publishedAt: null, updatedAt: "" }; }
 export function AdminBlogManager() {
   const [posts, setPosts] = useState<BlogPost[]>([]), [post, setPost] = useState<BlogPost | null>(null);
+  const [storageError, setStorageError] = useState("");
   const [revision, setRevision] = useState<string | null>(null), [loaded, setLoaded] = useState(false), [busy, setBusy] = useState(false), [dirty, setDirty] = useState(false), [preview, setPreview] = useState(false), [message, setMessage] = useState("");
   useEffect(() => { void load(); }, []);
   useEffect(() => { const warn = (event: BeforeUnloadEvent) => { if (dirty) { event.preventDefault(); event.returnValue = ""; } }; window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn); }, [dirty]);
   async function load() {
     if (dirty && !window.confirm("Kaydedilmemiş değişiklikler kaybolacak. Devam edilsin mi?")) return;
     setBusy(true); setMessage("");
-    try { const response = await fetch("/api/admin/blog", { cache: "no-store", credentials: "same-origin" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setPosts(data.posts); setRevision(data.revision); setLoaded(true); setPost(null); setDirty(false); }
-    catch (error) { setLoaded(false); setMessage(error instanceof Error ? error.message : "Yazılar yüklenemedi."); } finally { setBusy(false); }
+    try { const response = await fetch("/api/admin/blog", { cache: "no-store", credentials: "same-origin" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setStorageError(""); setPosts(data.posts); setRevision(data.revision); setLoaded(true); setPost(null); setDirty(false); }
+    catch (error) { setLoaded(false); setStorageError(error instanceof Error ? error.message : "Yazılar yüklenemedi."); } finally { setBusy(false); }
   }
   function select(next: BlogPost) { if (dirty && !window.confirm("Kaydedilmemiş değişiklikler kaybolacak. Devam edilsin mi?")) return; setPost({ ...next, keywords: [...next.keywords] }); setDirty(false); setPreview(false); setMessage(""); }
   function change(patch: Partial<BlogPost>) { setPost(current => current ? { ...current, ...patch } : current); setDirty(true); }
@@ -31,7 +32,8 @@ export function AdminBlogManager() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "Kaydedilemedi."); } finally { setBusy(false); }
   }
   return <section className="card admin-wide-card" style={{ display: "grid", gap: 16 }}>
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn secondary" disabled={busy} onClick={load}>Yazıları yeniden yükle</button><button className="btn" disabled={busy || !loaded} onClick={() => select(emptyPost())}>Yeni yazı ekle</button><Link className="btn secondary" href="/blog" target="_blank">Blogu aç</Link></div>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn secondary" disabled={busy} onClick={load}>Yazıları yeniden yükle</button><button className="btn" disabled={busy} onClick={() => select(emptyPost())}>Yeni yazı ekle</button><a className="btn secondary" href="https://www.crelavo.com/blog" target="_blank" rel="noopener noreferrer">Blogu aç</a></div>
+    {storageError && <p role="alert">{storageError} Yazı taslağını bu ekranda hazırlayabilirsiniz; sunucu bağlantısı düzelmeden kaydetme ve yayınlama kapalıdır. Sayfadan ayrılmadan metninizi kopyalayın.</p>}
     <p role="status" aria-live="polite">{busy ? "İşlem sürüyor…" : message || (loaded ? posts.length + " kayıtlı yazı" : "Yazılar henüz yüklenmedi.")}</p>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{posts.map(item => <button className="btn secondary" disabled={busy} key={item.id} onClick={() => select(item)}>{item.title} · {item.status === "published" ? "Yayında" : "Taslak"}</button>)}</div>
     {post && <form onSubmit={event => { event.preventDefault(); void mutate("save"); }} style={{ display: "grid", gap: 14 }}>
