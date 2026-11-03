@@ -1,6 +1,8 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase";
 import { BLOG_CONFIG_KEY, readBlogPosts, publishedBlogPosts, blogStorageError } from "@/lib/blog-posts";
 export async function getPublishedBlogPosts() {
+  noStore();
   try {
   const { data, error } = await supabaseAdmin().from("platform_configs").select("value").eq("key", BLOG_CONFIG_KEY).maybeSingle();
   if (error) throw error;

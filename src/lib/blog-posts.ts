@@ -2,7 +2,7 @@ export type BlogPost = {
   id: string; slug: string; title: string; excerpt: string; content: string;
   status: "draft" | "published"; seoTitle: string; seoDescription: string;
   keywords: string[]; coverImage: string; coverAlt: string; author: string;
-  publishedAt: string | null; updatedAt: string;
+  createdAt?: string; publishedAt: string | null; updatedAt: string;
 };
 export function blogStorageError(error: unknown) {
   const record = error && typeof error === "object" ? error as Record<string, unknown> : {};
@@ -47,7 +47,9 @@ export function readBlogPosts(value: unknown): BlogPost[] {
     try {
       const post = validateBlogPost(item); const raw = item as Record<string, unknown>;
       post.publishedAt = typeof raw.publishedAt === "string" && Number.isFinite(Date.parse(raw.publishedAt)) ? raw.publishedAt : null;
+      post.createdAt = typeof raw.createdAt === "string" && Number.isFinite(Date.parse(raw.createdAt)) ? raw.createdAt : post.publishedAt || (typeof raw.updatedAt === "string" && Number.isFinite(Date.parse(raw.updatedAt)) ? raw.updatedAt : undefined);
       post.updatedAt = typeof raw.updatedAt === "string" && Number.isFinite(Date.parse(raw.updatedAt)) ? raw.updatedAt : "";
+      if (post.status === "published" && !post.publishedAt) post.publishedAt = post.createdAt || null;
       return [post];
     } catch { return []; }
   });
