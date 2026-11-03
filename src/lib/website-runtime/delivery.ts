@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { runtimeDeliveryBlockers, type RuntimeAcceptance } from "./acceptance.ts";
-export function runtimeArtifactDelivery(output: Record<string, any>) {
+export function runtimeArtifactDelivery(output: Record<string, any>, requireFinalized = true) {
   const artifact = output.runtimeArtifact, blueprint = output.runtimeBlueprint;
   const blockers: string[] = [];
+  if (requireFinalized && (output.websiteAssistant?.phase !== "ready" || output.websiteBillingPending !== false || output.runtimeBilledArtifactVersion !== artifact?.artifactVersion)) blockers.push("runtime_project_not_finalized");
   if (!artifact || !blueprint) return { blockers: ["runtime_artifact_required"], files: [] };
   if (blueprint.sourcePlanHash !== output.websiteAssistant?.planHash || artifact.blueprintHash !== blueprint.hash) blockers.push("runtime_plan_stale");
   const files = Array.isArray(artifact.files) ? artifact.files : [];
@@ -27,6 +28,7 @@ export function runtimeArtifactDelivery(output: Record<string, any>) {
       blockers.push(...runtimeDeliveryBlockers(report));
       for (const capability of required) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && item.status === "implemented")) blockers.push("runtime_capability_unverified:" + capability.name);
     }
+    if (!output.runtimePreview?.expiresAt || Date.parse(output.runtimePreview.expiresAt) <= Date.now() || !Number.isFinite(Date.parse(output.runtimePreview.expiresAt))) blockers.push("runtime_preview_expired");
     if (output.runtimePreview?.artifactVersion !== artifact.artifactVersion || output.runtimePreview?.url !== report.previewUrl || output.runtimePreview?.status !== "running") blockers.push("runtime_preview_unverified");
   }
   if (Array.isArray(artifact.blockers) && artifact.blockers.length) blockers.push(...artifact.blockers);

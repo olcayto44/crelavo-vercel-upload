@@ -72,7 +72,9 @@
     "smoke:website-blueprint-route": "node scripts/website-blueprint-route-smoke.cjs",
     "smoke:website-business": "node scripts/website-business-smoke.cjs",
     "smoke:website-runtime-delivery": "node scripts/website-runtime-delivery-smoke.cjs",
-    "smoke:website-runtime-revision": "node scripts/website-runtime-revision-smoke.cjs"
+    "smoke:website-runtime-revision": "node scripts/website-runtime-revision-smoke.cjs",
+    "smoke:website-live-migration": "node scripts/website-live-migration-smoke.cjs",
+    "smoke:website-runtime-worker": "node scripts/website-runtime-worker-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",
