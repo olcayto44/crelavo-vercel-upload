@@ -41,3 +41,9 @@ Remote Preview için güvenli container/VM veya eşdeğer izole uygulama çalı�
 - Blueprint eklenen projede statik üretime sessiz düşüş engellenir; runtime kabulü beklenirken kredi harcayıp hazır teslim edilmez.
 - Önceki geliştirme runtime yolu ayrı Builder endpoint'i kaldırıldığından şu anda yalnız doğrudan motor geliştirme/test çağrısı üzerinden kullanılabilir. Otomatik runtime üretimi halen tamamlanmadı.
 - İzole Preview sağlayıcısı, otomatik kabul worker'ı, tam kaynak revizyonu ve gerçek checkout/booking/membership iş akışları halen eksik. Tüm ürün tamamlandı iddiası yok.
+
+## Push sonrası yeni çalışma
+- 180b4a2 geliştirme dalına pushlandı, main/Production değiştirilmedi.
+- Yeni compileRuntimeBlueprint onay hash kontrolüyle sektör bağımsız planı runtime sayfa/block/koleksiyon kaynaklarına çevirir. Private koleksiyonlar ziyaretçi sayfasına bağlanmaz. Sabit içerik hash ile artifactVersion oluşturulur.
+- Geliştirme blueprint API compile eylemi: aynı sahip/proje/CAS, açık approve ve blueprintHash ister. Statik brief değişince eski plan derlenemez. Runtime artifact ve önceki 5 artifact ayrı saklanır; mevcut statik çıktı üzerine yazılmaz, kredi harcanmaz, ready verilmez.
+- Derleme burada kaynak üretimi anlamındadır; çalışan uzak build/Preview ve kabul testi anlamına gelmez. Bu son tur henüz pushlanmadı.
