@@ -69,7 +69,10 @@
     "smoke:website-unified-entry": "node scripts/website-unified-entry-smoke.cjs",
     "smoke:website-blueprint": "node scripts/website-blueprint-smoke.cjs",
     "smoke:website-runtime-compile": "node scripts/website-runtime-compile-smoke.cjs",
-    "smoke:website-blueprint-route": "node scripts/website-blueprint-route-smoke.cjs"
+    "smoke:website-blueprint-route": "node scripts/website-blueprint-route-smoke.cjs",
+    "smoke:website-business": "node scripts/website-business-smoke.cjs",
+    "smoke:website-runtime-delivery": "node scripts/website-runtime-delivery-smoke.cjs",
+    "smoke:website-runtime-revision": "node scripts/website-runtime-revision-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",
@@ -95,12 +98,14 @@
     "@img/sharp-linux-x64": "0.35.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/geoip-lite": "^1.4.4",
     "@types/node": "^26.1.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.12",
+    "fflate": "^0.8.3",
     "typescript": "6.0.3"
   }
 }

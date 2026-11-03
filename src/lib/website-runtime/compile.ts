@@ -13,8 +13,9 @@ export function compileRuntimeBlueprint(input: WebsiteEngineInput, proposed: unk
   seed.documents = seed.documents.filter((document: { collection: string }) => document.collection !== "pages");
   const ordered = [...blueprint.pages].sort((a, b) => Number(b.slug === "home") - Number(a.slug === "home"));
   for (const [index, page] of ordered.entries()) {
-    seed.documents.push({ id: "page-" + index, collection: "pages", payload: { title: page.title, slug: page.slug, published: true, menuOrder: index, showInMenu: true, seoDescription: page.purpose.slice(0, 170), blocks: page.blocks || [{ type: "text", title: page.title, text: page.purpose }, ...page.collections.map(key => ({ type: "collection", title: key, collection: key }))] } });
+    seed.documents.push({ id: "page-" + page.slug, collection: "pages", payload: { title: page.title, slug: page.slug, published: true, menuOrder: index, showInMenu: true, seoDescription: page.purpose.slice(0, 170), blocks: page.blocks || [{ type: "text", title: page.title, text: page.purpose }, ...page.collections.map(key => ({ type: "collection", title: key, collection: key }))] } });
   }
+  seed.workflows = blueprint.workflows || [];
   seed.blueprintHash = blueprint.hash;
   seed.integrations = blueprint.capabilities.filter(capability => capability.kind !== "crud").map(capability => ({ name: capability.name, status: "not_implemented" }));
   seedFile.content = JSON.stringify(seed, null, 2);
@@ -24,5 +25,5 @@ export function compileRuntimeBlueprint(input: WebsiteEngineInput, proposed: unk
   const designBlockers = blueprint.pages.filter(page => !page.blocks?.length).map(page => "design_content:" + page.slug);
   if (!blueprint.theme) designBlockers.push("design_theme_required");
   const blockers = blueprint.capabilities.filter(capability => capability.kind !== "crud").map(capability => "implementation:" + capability.name);
-  return { files, blueprintHash: blueprint.hash, artifactVersion, status: "acceptance_pending" as const, blockers: [...designBlockers, ...blockers, "isolated_preview_required", "project_acceptance_required"] };
+  return { files, blueprintSnapshot: blueprint, blueprintHash: blueprint.hash, artifactVersion, status: "acceptance_pending" as const, blockers: [...designBlockers, ...blockers, "isolated_preview_required", "project_acceptance_required"] };
 }

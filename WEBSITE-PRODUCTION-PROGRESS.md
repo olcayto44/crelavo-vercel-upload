@@ -53,3 +53,22 @@ Remote Preview için güvenli container/VM veya eşdeğer izole uygulama çalı�
 - Plan revizyonuna önceki blueprint gönderilir; açıkça değişmeyen gereksinimleri koruma talimatı verilir. Bu tam kaynak kodu/veritabanı migration revizyonu değildir.
 - API rotası için Production kilidi, kullanıcı sahipliği, açık onay, CAS çakışması ve eski plan/artifact durumları mock testte doğrulandı.
 - Tamamlanmayanlar: uzak Preview hesabı/sağlayıcısı, çalışma ortamı, ödeme/rezervasyon/üyelik süreçleri, özgün tasarım/kod revizyonu, mobil browser ve temiz ZIP kabul worker. Yeni eklemeler pushlanmadı.
+
+## İş süreçleri, gerçek tarayıcı ve teslim kilidi turu — yerel geliştirme
+- Blogun canlı düzeltmesi main dalından bu geliştirme dalına birleştirildi; website geliştirmesi Production'a alınmadı.
+- Onaylı blueprint workflows ile sektör bağımsız müşteri hesapları, owner kontrollü özel koleksiyon grant/revoke, tek kaynak için UTC aralık rezervasyonu, müsaitlik sorgusu, çakışma ve müşteri sahipliği kontrolleri üretilebilir. Hesap/admin oturumları ve tabloları ayrıdır.
+- Sepet fiyatı sunucu kayıtlarından hesaplanır; tamsayı küçük para birimi, opsiyonel stok ayırma, idempotent sipariş ve Stripe Checkout API adaptörü eklendi. Yalnız tutar/para birimi/session eşleşen imzalı webhook paid yapar; iptal/başarısız event stok ayırmayı yalnız bir kez geri alır. Gerçek Stripe hesabı ve test-mode/live uçtan uca ödeme kabulü YAPILMADI.
+- /account müşteri giriş, üyelik içeriği, rezervasyon ve sepet; /business-admin owner erişim yönetimi ve sipariş/rezervasyon görünümü eklendi.
+- Dockerfile, kalıcı volume, non-root/read-only uygulama, kaynak limitleri, HTTPS ve parola korumalı Caddy Preview tarifi üretime eklendi. Bu makinada Docker yok; Docker dağıtımı test edilmedi ve uzak Preview oluşturulmadı. Parolalı Preview webhook'a da kapalı; gerçek ödeme için ayrıca erişim politikası gerekir.
+- Teslim API'sine mevcut plan, kaynak hash'i, kabul durumu, bütün gerekli yetenekler, aynı sürüm testleri ve çalışan HTTPS Preview kontrolü bağlandı. Eksik runtime projesi eski/statik ZIP'e düşmez; admin de bu kilidi atlayamaz.
+- Gerçek üretilen teslim ZIP'i bağımsız unzip kütüphanesiyle temiz klasöre açıldı ve byte-byte kaynak eşleşmesi doğrulandı; Node/SQLite çalıştırıldı. Gerçek Chromium'da masaüstü müşteri giriş/sepet/ödeme yönlendirmesi ve mobil menü/hesap/taşma/JS hata kontrolleri geçti. Ödeme sağlayıcı HTTP isteği testte mock'tur.
+- API, auth/CSRF, özel veri erişimi, grant/revoke, iki eşzamanlı rezervasyon, kayıt sahipliği, fiyat manipülasyonu, stok yetersizliği, idempotency, imzalı webhook/replay/stock release ve restart sonrası veri testleri geçti.
+- Bunlar geliştirme fixture testleri: her müşteri projesini izole ortamda test edip imzalı raporla otomatik sonlandıran remote worker hâlâ yok. Teslim kilidi bu nedenle kaldırılmadı.
+- Açık kalanlar: özgün görsel tasarım kalite kabulü; sohbetten tam frontend/backend/DB migration ve güvenli rollback; remote provisioning/lifecycle ve worker bağlantısı; gerçek müşteri ödeme hesabı kabulü; özel sektör iş kuralları; tax/shipping/refund/subscription; provider kesintisindeki pending siparişlerin otomatik uzlaştırılması; imzalı özel medya dağıtımı.
+
+## Veri koruma ve kaynak geri alma turu
+- Runtime revision analizi: koleksiyon/alan silme, private->public veri açılması, mevcut URL kaybı ve workflow sözleşmesi değişiklikleri migration_required olarak engellenir. Ekleme ve içerik/tasarım değişiklikleri ayrı raporlanır. Bu koruma gerçek müşteri DB migration çalıştırıcısı değildir.
+- Kaynak artifact'ine normalize blueprint snapshot ve sourcePlanHash bağlandı. Kaynak geri alma yalnız aynı brief'e bağlı, kaynak hash'i doğrulanmış geçmiş sürüm ve açık kullanıcı onayı ile yapılır. CAS/expectedArtifactVersion korunur; acceptance sıfırlanır ve Preview stale yapılır. Müşteri canlı verisi silinmez/geri alınmaz, uzak dağıtım yapılmaz.
+- Setup ekranına revizyon riskleri ve geçmiş kaynak sürümünü geri alma eklendi; destructive derleme migration olmadan açılmaz.
+- Sayfa seed kimlikleri liste sırası yerine slug'a bağlandı. Yeni sayfa eklenince diğer sayfaların kimliği değişmez.
+- Gerçek onaylı veri migration/deployment çalıştırıcısı ve tam AI kaynak kodu revizyonu hâlâ eksik; bu tur bunların tamamlandığını iddia etmez.
