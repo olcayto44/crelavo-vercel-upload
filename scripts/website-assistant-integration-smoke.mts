@@ -164,6 +164,28 @@ try {
   globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Referans talebini aldım.', brief: { brief: 'Kısa', locale: 'tr' } }) } }] })) as typeof fetch;
   const preservedReference = await legacy.call({ action: 'revise', productionId: legacyId, prompt: 'Bu bilgilerle devam.', websiteBrief: emptySnapshot, packId: '' });
   assert(!(preservedReference.payload as any).website.missing.length && (preservedReference.payload as any).website.brief.brief.includes(referenceRequest), 'short provider summaries must not erase supplied description and reference requirements');
+  const contradictoryReplies = [
+    'FilmAtlas için mevcut brief güncellenmiştir. Ancak, site açıklaması eksik. Lütfen site hakkında daha fazla bilgi verin, böylece brief tamamlanabilir. Diğer bilgiler doğru ve güncel.',
+    'The site description is missing. Please describe the website.',
+    'Die Website-Beschreibung fehlt. Bitte beschreiben Sie Ihre Website.',
+    'Falta la descripción del sitio.',
+    'La description du site est manquante.',
+    'وصف الموقع مفقود',
+    'Lütfen site açıklamasını yazın.',
+  ];
+  for (const contradictory of contradictoryReplies) {
+    globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: contradictory, brief: {} }) } }] })) as typeof fetch;
+    const checked = await legacy.call({ action: 'revise', productionId: legacyId, prompt: 'Mevcut brief bilgilerini kontrol et.', packId: '' });
+    const checkedWebsite = (checked.payload as any).website;
+    const checkedReply = checkedWebsite.messages.at(-1).content;
+    assert(!checkedWebsite.missing.length && checkedWebsite.review.blockers.join(',') === 'package', 'server must retain complete brief with package as only blocker');
+    assert(!checkedReply.includes(contradictory) && !/site açıklaması eksik|bilgi verin|description is missing/i.test(checkedReply), 'contradictory model missing-field claims must never reach the displayed or persisted reply');
+    assert(checkedReply.includes('FilmAtlas') && checkedReply.includes('İngilizce') && checkedReply.includes('Eksik bilgiler: paket'), 'server reply must show actual project and website language with only true missing fields');
+    assert(checked.payload.body === checkedReply, 'response body and stored chat must use the same validated reply');
+  }
+  globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Evet, referans site adresini paylaşabilirsiniz.', brief: {} }) } }] })) as typeof fetch;
+  const usefulAnswer = await legacy.call({ action: 'revise', productionId: legacyId, prompt: 'Referans paylaşabilir miyim?', packId: '' });
+  assert((usefulAnswer.payload as any).body.includes('Evet, referans site adresini paylaşabilirsiniz.'), 'useful conversational answers must survive the state guard');
   globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Bilgileri korudum.', brief: { brief: '', brand: '', pages: [], locale: 'tr' } }) } }] })) as typeof fetch;
   const preserve = await converseWebsiteBrief(normalizeAssistantWebsiteBrief(brief), [], 'Keep the existing brief.', undefined);
   assert(preserve.brief.locale === brief.locale, 'provider must not change website language without a user request');
