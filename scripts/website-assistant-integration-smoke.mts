@@ -130,6 +130,26 @@ assert(film.counts().charges === 0 && film.counts().generates === 0 && !(filmRes
 const oldFilm = environment(); const old = await oldFilm.prepare();
 const replaced = await oldFilm.call({ action: 'revise', productionId: old.id, prompt: filmRequest, packId: '', websiteBrief: { ...brief, locale: 'tr' } });
 assert((replaced.payload as any).website.brief.locale === 'en' && (replaced.payload as any).website.brief.brand === 'FilmAtlas', 'latest explicit facts must override stale form and project facts');
+// Reproduce the actual persisted conversation, not just a fresh single-message request.
+const referenceRequest = 'https://dizipablo.org/ bu tarz bir site olacak ayrıca katagoriler kısmı yıll kısmı ve ülkeler kısmı olacak';
+const legacy = environment();
+const legacyInitial = await legacy.call({ action: 'revise', prompt: filmRequest, packId: '' });
+const legacyId = legacyInitial.payload.productionId;
+const legacyState = legacy.rows.get(legacyId).output_json.websiteAssistant;
+legacyState.brief.brief = ''; legacyState.brief.locale = 'tr';
+legacyState.messages.push({ role: 'assistant', content: 'Eksik bilgiler: site açıklaması, paket' });
+const emptySnapshot = normalizeAssistantWebsiteBrief({});
+for (const prompt of ['sana referans site örneği yazayım mı', referenceRequest, 'Tamam devam edelim']) {
+ const result = await legacy.call({ action: 'revise', productionId: legacyId, prompt, websiteBrief: emptySnapshot, packId: '' });
+ const website = (result.payload as any).website;
+ assert(result.status === 200 && !website.missing.length && website.brief.locale === 'en', 'legacy chat facts must repair empty persisted brief despite a stale empty form snapshot');
+ assert(website.review.blockers.join(',') === 'package', 'legacy follow-up must only ask for the unselected package');
+}
+const recoveredLegacy = legacy.rows.get(legacyId).output_json.websiteAssistant.brief;
+assert(recoveredLegacy.brief.includes(filmRequest) && recoveredLegacy.brief.includes(referenceRequest), 'reference URL and categories/year/country request must survive subsequent turns');
+assert(legacy.counts().charges === 0 && legacy.counts().generates === 0, 'legacy recovery must neither charge nor generate');
+const editForm = await converseWebsiteBrief(normalizeAssistantWebsiteBrief(brief), [{ role: 'user', content: filmRequest }], 'Review form.', { ...brief, brief: '' }, { form_submission: true });
+assert(!editForm.brief.brief, 'intentional Setup clearing must not be silently restored from history');
 const originalFetch = globalThis.fetch; process.env.OPENAI_API_KEY = 'local-test-key'; let conversationalCalls = 0;
 try {
   globalThis.fetch = (async () => { conversationalCalls++; return Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'We can prepare a static services website and keep revisions on the same project.', brief }) } }] }); }) as typeof fetch;
@@ -141,6 +161,10 @@ try {
   const recoveredWebsite = (recovered.payload as any).website;
   assert(recovered.status === 200 && !recoveredWebsite.missing.length && recoveredWebsite.brief.locale === 'en' && recoveredWebsite.brief.brief === filmRequest, 'empty provider fields and chat-language locale must not erase explicit facts');
   assert(recoveredWebsite.review.blockers.join(',') === 'package' && recoveredWebsite.messages.at(-1).content.includes('paket') && !recoveredWebsite.messages.at(-1).content.includes('site açıklaması'), 'provider omissions must not become false missing-field notices');
+  globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Referans talebini aldım.', brief: { brief: 'Kısa', locale: 'tr' } }) } }] })) as typeof fetch;
+  const preservedReference = await legacy.call({ action: 'revise', productionId: legacyId, prompt: 'Bu bilgilerle devam.', websiteBrief: emptySnapshot, packId: '' });
+  assert(!(preservedReference.payload as any).website.missing.length && (preservedReference.payload as any).website.brief.brief.includes(referenceRequest), 'short provider summaries must not erase supplied description and reference requirements');
+  globalThis.fetch = (async () => Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'Bilgileri korudum.', brief: { brief: '', brand: '', pages: [], locale: 'tr' } }) } }] })) as typeof fetch;
   const preserve = await converseWebsiteBrief(normalizeAssistantWebsiteBrief(brief), [], 'Keep the existing brief.', undefined);
   assert(preserve.brief.locale === brief.locale, 'provider must not change website language without a user request');
   assert(preserve.brief.brand === brief.brand && preserve.brief.brief === brief.brief && preserve.brief.pages.length === brief.pages.length, 'empty provider values must preserve existing facts');

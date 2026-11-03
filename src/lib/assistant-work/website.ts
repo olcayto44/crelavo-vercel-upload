@@ -54,7 +54,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
       if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
       const message = String(body.prompt ?? '').trim(); if (!message || message.length > 6000) return fail(400, 'website_message_required_max_6000');
       const replyLanguage = resolveReplyLanguage(body.uiAction === true ? "" : message, state.messages ?? []);
-      const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, { ...json(body.extras), reply_language: replyLanguage });
+      const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, { ...json(body.extras), reply_language: replyLanguage, form_submission: body.uiAction === true });
       const packId = String(typeof body.packId === "string" ? body.packId : state.packId || ""); const pack = deps.pack(packId);
       const reply = groundedWebsiteReply(result.reply, result.brief, replyLanguage, Boolean(pack && !/admin|commerce|checkout/i.test(pack.label)));
       const next = { replyLanguage, brief: result.brief, messages: [...(state.messages ?? []), ...(body.uiAction === true ? [] : [{ role: "user", content: message }]), { role: 'assistant', content: reply }].slice(-30) as WebsiteMessage[], phase: 'draft', packId, credits: pack?.credits ?? null, planHash: websitePlanHash(result.brief, packId), approvedHash: null };
