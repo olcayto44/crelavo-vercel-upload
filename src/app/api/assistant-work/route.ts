@@ -1,3 +1,5 @@
+import { resolveReplyLanguage } from "@/lib/assistant-work/chat-language";
+import { translateWorkspaceText } from "@/lib/assistant-work/workspace-i18n";
 import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
 import { converseWorkspacePlan } from "@/lib/assistant-work/conversation";
 import { handleWebsiteAssistant } from "@/lib/assistant-work/website";
@@ -94,7 +96,8 @@ export async function POST(req: NextRequest) {
         const reply = await converseWorkspacePlan(prompt, category, body.messages);
         return NextResponse.json({ ok: true, spend: false, engine: "assistant_plan", category, type, status: "draft", title: "Production brief", reply, body: reply, plan: { stage: "draft", scene, direction: prompt, nextAction: "Review the plan and credit estimate before final production." }, media: null, files: [] });
       } catch {
-        const message = /[çğıöşü]|istiyorum|merhaba|sitesi/i.test(prompt) ? "Asistan yanıt servisine şu anda ulaşılamıyor. Mesajınız üretime gönderilmedi ve kredi harcanmadı. Lütfen tekrar deneyin." : "The assistant reply service is unavailable. No production was submitted and no credits were spent. Please try again.";
+        const language = resolveReplyLanguage(prompt, body.messages);
+        const message = translateWorkspaceText("The assistant reply service is unavailable. Please try again.", language) + " " + translateWorkspaceText("No production has started and no credits have been spent.", language);
         return NextResponse.json({ ok: false, spend: false, code: "assistant_conversation_unavailable", message }, { status: 503 });
       }
     }

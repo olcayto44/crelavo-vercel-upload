@@ -57,3 +57,10 @@ Bu aşama statik website ve kaynak dosya teslimidir. Özel sayfalar statik bilgi
 - Kullanıcı/asistan mesajları yalnız sağ sohbet panelindedir. Sol sayfa sekmelerinden konuşma çıkarılmıştır. Mesaj gönderimi önizlemeyi veya dosyaları silmez; bekleme ve hata sohbet içinde görünür.
 - Sohbet bağlamı sunucuya iletilir. Genel yerel kayıt kullanıcı/kategori bazında ayrılır; farklı kategoriye ait eski sayfa durumu General ekranına yüklenmez. Geciken kayıt yüklemesi yeni gönderilen mesajı ezemez.
 - smoke:workspace-conversation, gerçek POST işleyicisini kontrollü bağımlılıklarla test eder: General üzerinden film sitesi, açık kategori ayrımı, gerçek cevap sözleşmesi, geçmiş, sağlayıcı hatası ve konuşmada üretim kredisi harcanmaması. Canlı sağlayıcı/Supabase kabulü ayrıca gereklidir.
+
+## Arayüz dili, sohbet dili ve doğru onay durumu
+- Arayüz EN/TR/DE/ES/FR/AR site tercihini ve dil değişikliği olayını izler; asistan başlığındaki dil seçici aynı tercihi günceller. Ekranın mevcut düzeni korunur.
+- Kullanıcı/asistan mesajları arayüz çevirisinin dışında kalır. Yanıt dili son anlamlı kullanıcı mesajından belirlenir; üretilen sitenin dili bağımsızdır. Plan güncelleme düğmesinin yapay mesajı kullanıcı geçmişine yazılmaz.
+- Eksik brief, seçilmemiş paket, statik kapsam, fiyat ve plan özeti sunucuda kontrol edilir. Hazır/onay durumları gerçek proje aşamasını izler. Paket seçimini boşaltmak eski paketi geri getirmez.
+- Gerçek kişisel öneriler ve kullanıcı yorumları çalışan servis olarak vaat edilmez; açıkça statik örnek olarak belirtilen içerikler ayrı değerlendirilir.
+- Yeni test: npm run smoke:workspace-language. Kontroller yereldir; gerçek sağlayıcı, tarayıcı/mobil görünüm ve canlı üretim-kredi-ZIP kabulü ayrıca gereklidir.

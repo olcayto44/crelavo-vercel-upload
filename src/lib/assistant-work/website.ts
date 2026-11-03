@@ -1,6 +1,7 @@
+import { resolveReplyLanguage } from "./chat-language.ts";
 import { generateWebsiteArtifact } from "../website-engine.ts";
 import { automaticDeliveryLinks } from "../automatic-delivery-builder.ts";
-import { converseWebsiteBrief, missingWebsiteBrief, normalizeAssistantWebsiteBrief, unsupportedWebsiteScope, websiteEngineInput, websitePlanHash, type AssistantWebsiteBrief, type WebsiteMessage } from "./website-brief.ts";
+import { groundedWebsiteReply, converseWebsiteBrief, missingWebsiteBrief, normalizeAssistantWebsiteBrief, unsupportedWebsiteScope, websiteEngineInput, websitePlanHash, type AssistantWebsiteBrief, type WebsiteMessage } from "./website-brief.ts";
 type Json = Record<string, any>;
 export type WebsiteAssistantDependencies = {
   db: any;
@@ -26,7 +27,11 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
   }
   function payload() {
     const output = json(row!.output_json); const state = json(output.websiteAssistant);
-    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief)), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
+    const currentBrief = normalizeAssistantWebsiteBrief(state.brief); const currentPack = deps.pack(String(state.packId || ""));
+    const validPackage = Boolean(currentPack && !/admin|commerce|checkout/i.test(currentPack.label));
+    const blockers = [...missingWebsiteBrief(currentBrief), ...(unsupportedWebsiteScope(currentBrief).length ? ["scope"] : []), ...(!validPackage ? ["package"] : []), ...(currentPack && state.credits !== currentPack.credits ? ["price"] : []), ...(state.planHash !== websitePlanHash(currentBrief, String(state.packId || "")) ? ["plan"] : [])];
+
+    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { review: { ready: blockers.length === 0, blockers }, brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief)), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
   }
   try {
     if (body.productionId) {
@@ -48,9 +53,11 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     if (body.render !== true && body.action !== 'website_approve') {
       if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
       const message = String(body.prompt ?? '').trim(); if (!message || message.length > 6000) return fail(400, 'website_message_required_max_6000');
-      const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, json(body.extras));
-      const packId = String(body.packId || state.packId || ''); const pack = deps.pack(packId);
-      const next = { brief: result.brief, messages: [...(state.messages ?? []), { role: 'user', content: message }, { role: 'assistant', content: result.reply }].slice(-30) as WebsiteMessage[], phase: 'draft', packId, credits: pack?.credits ?? null, planHash: websitePlanHash(result.brief, packId), approvedHash: null };
+      const replyLanguage = resolveReplyLanguage(body.uiAction === true ? "" : message, state.messages ?? []);
+      const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, { ...json(body.extras), reply_language: replyLanguage });
+      const packId = String(typeof body.packId === "string" ? body.packId : state.packId || ""); const pack = deps.pack(packId);
+      const reply = groundedWebsiteReply(result.reply, result.brief, replyLanguage, Boolean(pack && !/admin|commerce|checkout/i.test(pack.label)));
+      const next = { replyLanguage, brief: result.brief, messages: [...(state.messages ?? []), ...(body.uiAction === true ? [] : [{ role: "user", content: message }]), { role: 'assistant', content: reply }].slice(-30) as WebsiteMessage[], phase: 'draft', packId, credits: pack?.credits ?? null, planHash: websitePlanHash(result.brief, packId), approvedHash: null };
       await save({ title: result.brief.brand ? result.brief.brand + ' website' : 'Website brief', prompt: result.brief.brief || message, input_json: { ...json(row!.input_json), websiteBrief: result.brief }, output_json: { ...output, websiteAssistant: next } });
       return { status: 200, payload: { ...payload(), spend: false } };
     }
@@ -60,6 +67,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     if (unsupportedWebsiteScope(brief).length) return fail(422, 'website_static_scope_only');
     const pack = deps.pack(String(state.packId)); if (!pack || /admin|commerce|checkout/i.test(pack.label)) return fail(422, 'website_select_static_package');
     if (body.action === 'website_approve') {
+      if (state.credits !== pack.credits) return fail(409, 'website_package_price_changed_review_again');
       if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
       await save({ estimated_credits: pack.credits, output_json: { ...output, websiteAssistant: { ...state, approvedHash: hash, credits: pack.credits, phase: 'approved', approvedAt: new Date().toISOString() } } });
       return { status: 200, payload: { ...payload(), spend: false } };

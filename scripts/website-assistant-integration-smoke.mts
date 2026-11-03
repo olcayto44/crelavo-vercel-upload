@@ -10,7 +10,7 @@ delete process.env.OPENAI_API_KEY;
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 const brief = { brand: 'Ortak Marka', brief: 'Small business providing reliable team scheduling services.', audience: 'Small business teams', siteType: 'Business website', style: 'Clean and minimal', pages: ['Home', 'About', 'Services', 'Contact'], features: ['Responsive layout', 'FAQ'], locale: 'en' };
 function environment() {
-  const rows = new Map<string, any>(); const ledger = new Set<string>(); let balance = 2000; let generates = 0; let charges = 0; let failGeneration = false; let failPayment = false; let failFinalize = false;
+  const rows = new Map<string, any>(); const ledger = new Set<string>(); let balance = 2000; let generates = 0; let charges = 0; let failGeneration = false; let failPayment = false; let failFinalize = false; let packageCredits = 1500;
   const db = { from: (_table: string) => {
     let insert: any; let patch: any; const filters: Array<[string, unknown]> = [];
     const read = (row: any, path: string) => path.split(/->>?/).reduce((value, key) => value?.[key], row);
@@ -22,10 +22,10 @@ function environment() {
       const next = patch ? { ...row, ...structuredClone(patch) } : row; rows.set(row.id, next); return { data: structuredClone(next), error: null };
     } }; return query;
   } };
-  const deps = { db, pack: (id: string) => id === 'business' ? { label: 'Business Website', credits: 1500 } : undefined, balance: async () => balance, spend: async (amount: number, session: string) => { if (ledger.has(session)) return { ok: true, balance, charged: 0 }; if (failPayment) return { ok: false, balance, error: 'forced_payment_failure' }; if (balance < amount) return { ok: false, balance, error: 'insufficient_credits' }; ledger.add(session); balance -= amount; charges++; return { ok: true, balance, charged: amount }; }, generate: async (...args: Parameters<typeof generateWebsiteArtifact>) => { generates++; if (failGeneration) throw new Error('forced_generation_failure'); return generateWebsiteArtifact(...args); } };
+  const deps = { db, pack: (id: string) => id === 'business' ? { label: 'Business Website', credits: packageCredits } : undefined, balance: async () => balance, spend: async (amount: number, session: string) => { if (ledger.has(session)) return { ok: true, balance, charged: 0 }; if (failPayment) return { ok: false, balance, error: 'forced_payment_failure' }; if (balance < amount) return { ok: false, balance, error: 'insufficient_credits' }; ledger.add(session); balance -= amount; charges++; return { ok: true, balance, charged: amount }; }, generate: async (...args: Parameters<typeof generateWebsiteArtifact>) => { generates++; if (failGeneration) throw new Error('forced_generation_failure'); return generateWebsiteArtifact(...args); } };
   const call = (body: Record<string, unknown>, user = 'owner') => handleWebsiteAssistant({ category: 'website', type: 'Website', packId: 'business', ...body }, { id: user }, deps);
   const prepare = async () => { const draft = await call({ action: 'revise', prompt: 'Please prepare our business website.', websiteBrief: brief }); assert(draft.status === 200, 'brief preparation failed'); const id = draft.payload.productionId!; const hash = (draft.payload as any).website.planHash; return { id, hash, draft }; };
-  return { rows, db, call, prepare, counts: () => ({ generates, charges, balance }), controls: { balance: (n: number) => balance = n, generation: (value: boolean) => failGeneration = value, payment: (value: boolean) => failPayment = value, finalize: () => failFinalize = true } };
+  return { rows, db, call, prepare, counts: () => ({ generates, charges, balance }), controls: { price: (n: number) => packageCredits = n, balance: (n: number) => balance = n, generation: (value: boolean) => failGeneration = value, payment: (value: boolean) => failPayment = value, finalize: () => failFinalize = true } };
 }
 const env = environment(); const { id, hash, draft } = await env.prepare();
 assert(env.counts().charges === 0 && env.counts().generates === 0, 'conversation must not charge or generate');
@@ -75,7 +75,7 @@ const finalization = environment(); const zp = await finalization.prepare(); awa
 assert((await finalization.call({ action: 'render', render: true, productionId: zp.id, planHash: zp.hash })).status === 502, 'forced finalize failure not surfaced');
 assert((await finalization.call({ action: 'render', render: true, productionId: zp.id, planHash: zp.hash })).status === 200 && finalization.counts().charges === 1 && finalization.counts().generates === 1, 'charged production must finalize without a second charge even with lower remaining balance');
 const missing = await converseWebsiteBrief(normalizeAssistantWebsiteBrief({}), [], 'Bir web sitesi istiyorum.', undefined);
-assert(missing.reply.includes('eksik') && !missing.brief.brand, 'missing facts must be asked, not invented');
+assert(missing.reply.toLocaleLowerCase('tr-TR').includes('eksik') && !missing.brief.brand, 'missing facts must be asked, not invented');
 const document = websitePreviewDocument('<html><head></head><body><a href="./about.html">About</a></body></html>');
 assert(document.includes('crelavo-website-page') && document.includes('form-action'), 'safe preview navigation missing');
 const directRoute = readFileSync('src/app/api/websites/generate/route.ts', 'utf8'); const localEngine = readFileSync('src/lib/assistant-work/runLocalEngine.ts', 'utf8');
@@ -100,6 +100,20 @@ for (const file of ["preview", "zip", "source", "readme"]) assert((await deliver
 storedRow.output_json.websiteBillingPending = false;
 const zipResponse = await deliveryGet(deliveryRequest("file=zip"), params);
 assert(zipResponse.status === 200 && new TextDecoder().decode(await zipResponse.arrayBuffer()).includes("source/contact.html"), "actual delivery API ZIP must contain generated subpages");
+const cleared = environment(); const clearPlan = await cleared.prepare();
+const clearedReply = await cleared.call({ action: 'revise', productionId: clearPlan.id, prompt: 'Please review the brief.', uiAction: true, packId: '' });
+assert(clearedReply.status === 200 && !(clearedReply.payload as any).website.review.ready && (clearedReply.payload as any).website.packId === '' && (clearedReply.payload as any).website.credits === null, 'cleared package must not silently restore the old selection');
+assert((clearedReply.payload as any).website.messages.filter((m: any) => m.role === 'user').length === 1, 'UI actions must not enter the user conversation history');
+assert((await cleared.call({ action: 'website_approve', productionId: clearPlan.id, planHash: (clearedReply.payload as any).website.planHash })).status === 422, 'missing package must block approval');
+const pricing = environment(); const priced = await pricing.prepare(); pricing.controls.price(1600);
+const repriced = await pricing.call({ action: 'website_open', productionId: priced.id });
+assert(!(repriced.payload as any).website.review.ready && (repriced.payload as any).website.review.blockers.includes('price'), 'price changes must invalidate review');
+assert((await pricing.call({ action: 'website_approve', productionId: priced.id, planHash: priced.hash })).status === 409 && pricing.counts().charges === 0, 'changed price must not be approved without review');
+const languages = environment(); const turkishDraft = await languages.call({ action: 'revise', prompt: 'Bir film sitesi istiyorum, site İngilizce olsun.', websiteBrief: brief });
+for (let i = 0; i < 2; i++) {
+ const updated = await languages.call({ action: 'revise', productionId: turkishDraft.payload.productionId, prompt: 'Please review the website brief.', uiAction: true });
+ assert(languages.rows.get(turkishDraft.payload.productionId).output_json.websiteAssistant.replyLanguage === 'tr' && (updated.payload as any).website.messages.filter((m: any) => m.role === 'user').length === 1, 'repeated UI actions must retain the substantive chat language');
+}
 const originalFetch = globalThis.fetch; process.env.OPENAI_API_KEY = 'local-test-key'; let conversationalCalls = 0;
 try {
   globalThis.fetch = (async () => { conversationalCalls++; return Response.json({ choices: [{ message: { content: JSON.stringify({ reply: 'We can prepare a static services website and keep revisions on the same project.', brief }) } }] }); }) as typeof fetch;
