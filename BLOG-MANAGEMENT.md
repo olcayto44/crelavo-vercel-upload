@@ -14,3 +14,8 @@
 ## Bağlantı hatası davranışı
 - Veritabanı okunamazsa public blog, eski rehberler ve site haritası hata ekranına düşmez; yönetilen yazılar geçici olarak listelenmez ve sunucuda hata kodu loglanır.
 - Admin hata nedenini gösterir (eksik bağlantı ayarı, tablo, alan veya erişim). Yeni yazı editörü açılabilir, ancak bağlantı sağlanmadan kayıt/yayın kapalı kalır. Bu yerel taslağın kalıcı kaydedildiği anlamına gelmez.
+
+## Yayın doğrulaması ve tarihler
+- Yayın/kaldırma/silme sonrası kalıcı kayıt yeniden okunup doğrulanır; ardından blog, yazı ve sitemap cache geçersizleştirilir. Başarı mesajı doğrulanmış duruma bağlıdır.
+- İlk kayıt createdAt sunucuda atanır ve düzenlemelerde korunur. Eski kayıtlarda varsa yayın/son güncelleme tarihi geriye uyumluluk için kullanılır; tarih yoksa uydurulmaz.
+- Yazı kartı, yazı altı ve admin editöründe ekleme tarihi gösterilir. Canlı veri veya Production doğrulaması yapılmadan hata nedeninin kesin çözüldüğü iddia edilmez.

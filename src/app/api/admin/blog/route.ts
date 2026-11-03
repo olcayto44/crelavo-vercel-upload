@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { requireAdminPermission } from "@/lib/admin-guard";
 import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       const old = posts.find(item => item.id === post.id);
       if (old?.publishedAt && old.slug !== post.slug) return Response.json({ error: "Yayınlanmış yazının URL'si SEO bağlantılarını korumak için değiştirilemez." }, { status: 400 });
       post.updatedAt = new Date().toISOString();
+      post.createdAt = old?.createdAt || old?.publishedAt || old?.updatedAt || post.updatedAt;
       post.publishedAt = old?.publishedAt || (post.status === "published" ? post.updatedAt : null);
       posts = [...posts.filter(item => item.id !== post.id), post];
       if (posts.length > 500) return Response.json({ error: "En fazla 500 yazı saklanabilir." }, { status: 400 });
@@ -56,6 +58,18 @@ export async function POST(request: Request) {
     ? await db.from("platform_configs").update(record).eq("key", BLOG_CONFIG_KEY).eq("updated_at", data.updated_at).select("updated_at").maybeSingle()
     : await db.from("platform_configs").insert(record).select("updated_at").single();
   if (saved.error || !saved.data) return Response.json({ error: "Kaydedilemedi veya kayıt değişti. Yeniden yükleyip deneyin." }, { status: saved.error?.code === "23505" || !saved.error ? 409 : 503 });
-  return Response.json({ posts, revision: saved.data.updated_at }, { headers: { "Cache-Control": "no-store" } });
+  // Re-read persisted state before telling the editor that publication succeeded.
+  const verified = await db.from("platform_configs").select("value, updated_at").eq("key", BLOG_CONFIG_KEY).maybeSingle();
+  if (verified.error || !verified.data) return Response.json({ error: "Kayıt sonrası doğrulama yapılamadı. Yazıları yeniden yükleyip durumu kontrol edin." }, { status: 503 });
+  const persistedPosts = readBlogPosts(verified.data.value);
+  const targetId = body.action === "delete" ? body.id : body.post?.id;
+  const intended = posts.find(post => post.id === targetId);
+  const actual = persistedPosts.find(post => post.id === targetId);
+  if ((body.action === "delete" && actual) || (body.action === "save" && (!actual || JSON.stringify(actual) !== JSON.stringify(intended)))) return Response.json({ error: "Kayıt doğrulanamadı veya başka bir işlemle değişti. Yazıları yeniden yükleyin." }, { status: 409 });
+  revalidatePath("/blog");
+  revalidatePath("/sitemap.xml");
+  if (actual) revalidatePath("/blog/" + actual.slug);
+  else if (body.action === "delete") { const previous = readBlogPosts(data?.value).find(post => post.id === body.id); if (previous) revalidatePath("/blog/" + previous.slug); }
+  return Response.json({ posts: persistedPosts, revision: verified.data.updated_at, publication: actual?.status === "published" ? { status: "published", path: "/blog/" + actual.slug, verified: true } : { status: "not_public", verified: true } }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) { const detail = blogStorageError(error); console.error("blog_admin_write_failed", detail.code); return Response.json({ error: detail.message, code: detail.code }, { status: 503 }); }
 }

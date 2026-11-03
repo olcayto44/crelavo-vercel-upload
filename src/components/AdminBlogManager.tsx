@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { type BlogPost, validateBlogPost } from "@/lib/blog-posts";
+import { BlogPostDates } from "@/components/BlogPostDates";
 import { BlogArticleContent } from "@/components/BlogArticleContent";
 function emptyPost(): BlogPost { return { id: crypto.randomUUID(), slug: "", title: "", excerpt: "", content: "", status: "draft", seoTitle: "", seoDescription: "", keywords: [], coverImage: "", coverAlt: "", author: "Crelavo", publishedAt: null, updatedAt: "" }; }
 export function AdminBlogManager() {
@@ -29,6 +30,7 @@ export function AdminBlogManager() {
       const response = await fetch("/api/admin/blog", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, revision, id: post.id, post: candidate }) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error || "Kaydedilemedi.");
       setPosts(data.posts); setRevision(data.revision); setPost(action === "delete" ? null : data.posts.find((item: BlogPost) => item.id === post.id)); setDirty(false); setMessage(action === "delete" ? "Yazı silindi." : candidate.status === "published" ? "Yazı yayınlandı. Blog ve site haritasına eklendi." : "Taslak kaydedildi; herkese açık değil.");
+      if (candidate.status === "published" && action === "save") { if (!data.publication?.verified || data.publication.status !== "published") throw new Error("Yayın kaydı doğrulanmadı. Yazıları yeniden yükleyin."); setMessage("Yayın kaydı doğrulandı. Blogu yenileyin veya canlı yazı bağlantısını açın."); }
     } catch (error) { setMessage(error instanceof Error ? error.message : "Kaydedilemedi."); } finally { setBusy(false); }
   }
   return <section className="card admin-wide-card" style={{ display: "grid", gap: 16 }}>
@@ -46,6 +48,7 @@ export function AdminBlogManager() {
       <small>Alt başlık: ## Başlık · İkinci alt başlık: ### Başlık · Liste: - Madde · Bağlantı: [metin](/sayfa). Paragrafları boş satırla ayır. HTML çalıştırılmaz. Yazı başlığı H1 olarak otomatik eklenir.</small>
       <div className="card"><strong>Google arama görünümü</strong><div style={{ color: "#86b7ff", marginTop: 8 }}>{post.seoTitle || post.title}</div><small>https://www.crelavo.com/blog/{post.slug || "yazi-url"}</small><p>{post.seoDescription || post.excerpt}</p></div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}><button className="btn" disabled={busy || !loaded} type="submit">{post.status === "published" ? "Yayındaki yazıyı güncelle" : "Taslağı kaydet"}</button><button className="btn secondary" disabled={busy || !loaded} type="button" onClick={() => mutate("save", post.status === "published" ? "draft" : "published")}>{post.status === "published" ? "Yayından kaldır / taslağa al" : "Yayınla"}</button><button className="btn secondary" type="button" onClick={() => setPreview(!preview)}>İçerik önizlemesi</button>{post.publishedAt && <Link className="btn secondary" href={"/blog/" + post.slug} target="_blank">Canlı yazıyı aç</Link>}<button className="btn secondary" type="button" disabled={busy || !posts.some(item => item.id === post.id)} onClick={() => mutate("delete")}>Yazıyı sil</button></div>
+      <BlogPostDates post={post} />
       {preview && <article className="card"><h2>{post.title}</h2><BlogArticleContent content={post.content} /></article>}
     </form>}
   </section>;
