@@ -26,7 +26,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     if (!saved.data) throw new WebsiteFlowError(409, 'website_project_changed_reload');
     row = saved.data;
   }
-  const runtimePacks = () => process.env.WEBSITE_RUNTIME_DEVELOPMENT === "1" && process.env.VERCEL_ENV !== "production" ? String(process.env.WEBSITE_RUNTIME_ALLOWED_PACK_IDS || "").split(",").map(value => value.trim()).filter(Boolean) : [];
+  const runtimePacks = () => process.env.WEBSITE_RUNTIME_ENABLED === "1" ? String(process.env.WEBSITE_RUNTIME_ALLOWED_PACK_IDS || "").split(",").map(value => value.trim()).filter(Boolean) : [];
   function payload() {
     const output = json(row!.output_json); const state = json(output.websiteAssistant);
     const currentBrief = normalizeAssistantWebsiteBrief(state.brief); const currentPack = deps.pack(String(state.packId || ""));
@@ -35,7 +35,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
      const validPackage = Boolean(currentPack && (hasRuntime ? runtimePacks().includes(String(state.packId)) : !/admin|commerce|checkout/i.test(currentPack.label)));
     const blockers = [...missingWebsiteBrief(currentBrief), ...runtimeBlockers, ...(!hasRuntime && unsupportedWebsiteScope(currentBrief).length ? ["scope"] : []), ...(!validPackage ? ["package"] : []), ...(currentPack && state.credits !== currentPack.credits ? ["price"] : []), ...(state.planHash !== websitePlanHash(currentBrief, String(state.packId || "")) ? ["plan"] : [])];
 
-    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { runtimeAccepted: hasRuntime && runtimeBlockers.length === 0, runtimePackIds: runtimePacks(), runtimeDevelopment: process.env.WEBSITE_RUNTIME_DEVELOPMENT === "1" && process.env.VERCEL_ENV !== "production", review: { ready: blockers.length === 0, blockers }, brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: hasRuntime ? [] : unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief)), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
+    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { runtimeAccepted: hasRuntime && runtimeBlockers.length === 0, runtimePackIds: runtimePacks(), runtimeDevelopment: process.env.WEBSITE_RUNTIME_ENABLED === "1", review: { ready: blockers.length === 0, blockers }, brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: hasRuntime ? [] : unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief)), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
   }
   try {
     if (body.productionId) {
@@ -108,7 +108,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     const paid = await deps.spend(pack.credits, isRuntime ? 'website-runtime:' + row!.id + ':' + output.runtimeArtifact.artifactVersion : 'website:' + row!.id + ':' + hash);
     if (!paid.ok) return { status: 402, payload: { ...fail(402, paid.error || 'website_payment_pending_retry').payload, balance: paid.balance } };
     const links = automaticDeliveryLinks(String(row!.id));
-    await save({ status: 'ready', generation_status: 'completed', preview_url: isRuntime ? output.runtimePreview.url : links.previewUrl, delivery_zip_url: links.deliveryZipUrl, delivery_link: links.deliveryLink, source_files_url: links.sourceFilesUrl, readme_url: links.readmeUrl, completed_at: new Date().toISOString(), output_json: { ...output, websiteBillingPending: false, ...(isRuntime ? { runtimeBilledArtifactVersion: output.runtimeArtifact.artifactVersion } : {}), charged: pack.credits, websiteAssistant: { ...state, phase: 'ready', charged: pack.credits } } }, 'awaiting_payment');
+    await save({ status: 'ready', generation_status: 'completed', preview_url: isRuntime ? output.runtimeAcceptance.previewUrl || null : links.previewUrl, delivery_zip_url: links.deliveryZipUrl, delivery_link: links.deliveryLink, source_files_url: links.sourceFilesUrl, readme_url: links.readmeUrl, completed_at: new Date().toISOString(), output_json: { ...output, websiteBillingPending: false, ...(isRuntime ? { runtimeBilledArtifactVersion: output.runtimeArtifact.artifactVersion } : {}), charged: pack.credits, websiteAssistant: { ...state, phase: 'ready', charged: pack.credits } } }, 'awaiting_payment');
     return { status: 200, payload: { ...payload(), charged: paid.charged ?? pack.credits, balance: paid.balance } };
   } catch (error) { return fail(error instanceof WebsiteFlowError ? error.status : 502, error instanceof Error ? error.message : 'website_flow_failed'); }
 }

@@ -1,5 +1,5 @@
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { runtimeDeliveryBlockers, type RuntimeAcceptance } from "./acceptance.ts";
+import { runtimeDeliveryBlockers, runtimeCapabilityAccepted, RUNTIME_ACCEPTANCE_CHECKS, type RuntimeAcceptance } from "./acceptance.ts";
 export type RuntimeWorkerJob = { id: string; projectId: string; userId: string; artifactVersion: string; blueprintHash: string; sourcePlanHash: string; status: "queued" | "running" | "passed" | "failed"; createdAt: string; expiresAt: string };
 function config() {
   const endpoint = process.env.WEBSITE_RUNTIME_WORKER_URL, token = process.env.WEBSITE_RUNTIME_WORKER_TOKEN, secret = process.env.WEBSITE_RUNTIME_WORKER_REPORT_SECRET;
@@ -19,7 +19,7 @@ export function createRuntimeWorkerJob(projectId: string, userId: string, output
 }
 export async function dispatchRuntimeWorker(job: RuntimeWorkerJob, output: any) {
   const c = config();
-  const response = await fetch(c.origin + "/v1/jobs/" + encodeURIComponent(job.id), { method: "PUT", redirect: "error", signal: AbortSignal.timeout(20000), headers: { Authorization: "Bearer " + c.token, "Content-Type": "application/json", "Idempotency-Key": job.id }, body: JSON.stringify({ job, artifact: output.runtimeArtifact, blueprint: output.runtimeBlueprint, requiredChecks: ["syntax_build", "admin_login", "unauthorized_access", "csrf", "persistent_crud", "public_reflection", "upload", "mobile_browser", "clean_install"], isolation: { dedicated: true, persistentVolume: true, egress: "deny_by_default", cpuLimit: 1, memoryMb: 512, expiresAt: job.expiresAt } }) });
+  const response = await fetch(c.origin + "/v1/jobs/" + encodeURIComponent(job.id), { method: "PUT", redirect: "error", signal: AbortSignal.timeout(20000), headers: { Authorization: "Bearer " + c.token, "Content-Type": "application/json", "Idempotency-Key": job.id }, body: JSON.stringify({ job, artifact: output.runtimeArtifact, blueprint: output.runtimeBlueprint, deliveryMode: "downloadable_self_hosted", customerCredentialsRequired: false, requiredChecks: RUNTIME_ACCEPTANCE_CHECKS, isolation: { dedicated: true, persistentVolume: true, egress: "deny_by_default", cpuLimit: 1, memoryMb: 512, expiresAt: job.expiresAt } }) });
   if (!response.ok) throw new Error("runtime_worker_dispatch_failed");
   const data = await response.json();
   if (data.jobId !== job.id || data.artifactVersion !== job.artifactVersion) throw new Error("runtime_worker_response_mismatch");
@@ -35,11 +35,11 @@ export function verifyRuntimeWorkerReport(raw: string, signature: string, job: R
   const report = data.acceptance as RuntimeAcceptance;
   if (!report || !report.checks || !Array.isArray(report.capabilities) || report.artifactVersion !== job.artifactVersion) throw new Error("runtime_worker_report_invalid");
   const blockers = runtimeDeliveryBlockers(report);
-  for (const capability of output.runtimeBlueprint.capabilities || []) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && item.status === "implemented")) blockers.push("capability:" + capability.name);
+  for (const capability of output.runtimeBlueprint.capabilities || []) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && runtimeCapabilityAccepted(item, job.artifactVersion, capability.kind))) blockers.push("capability:" + capability.name);
   for (const blocker of output.runtimeArtifact.blockers || []) if (blocker !== "isolated_preview_required" && blocker !== "project_acceptance_required" && !String(blocker).startsWith("implementation:")) blockers.push(blocker);
   if (data.status !== "passed") blockers.push("runtime_worker_tests_failed");
   if (data.isolation?.dedicated !== true || data.isolation?.persistentVolume !== true || data.isolation?.egress !== "deny_by_default") blockers.push("runtime_worker_isolation_unverified");
-  return { job: { ...job, status: blockers.length ? "failed" as const : "passed" as const }, blockers: [...new Set(blockers)], report, preview: { url: report.previewUrl, artifactVersion: job.artifactVersion, status: blockers.length ? "unverified" : "running", expiresAt: job.expiresAt } };
+  return { job: { ...job, status: blockers.length ? "failed" as const : "passed" as const }, blockers: [...new Set(blockers)], report, preview: { url: report.previewUrl || "", artifactVersion: job.artifactVersion, status: blockers.length ? "unverified" : "running", expiresAt: job.expiresAt } };
 }
 export async function pollRuntimeWorker(job: RuntimeWorkerJob, output: any) {
   const c = config();

@@ -47,7 +47,7 @@ export async function generateWebsiteArtifact(input: WebsiteEngineInput, project
     const pageHtml = '<!doctype html><html lang="' + escapeHtml(input.locale || 'en') + '">' + pageHead + '<body>' + header.replace(/href="#/g, 'href="./index.html#') + '<main>' + body.replace(/href="#/g, 'href="./index.html#') + '</main>' + footer.replace(/href="#/g, 'href="./index.html#') + modal.replace(/href="#/g, 'href="./index.html#') + '<script src="./script.js"></script></body></html>';
     files.push({ path: page.path, content: pageHtml, contentType: 'text/html' });
   }
-  const runtimeEnabled = input.scope === "website_with_admin" && process.env.WEBSITE_RUNTIME_DEVELOPMENT === "1" && process.env.VERCEL_ENV !== "production";
+  const runtimeEnabled = input.scope === "website_with_admin" && process.env.WEBSITE_RUNTIME_ENABLED === "1";
   if (runtimeEnabled) files.push(...generateCustomerRuntime(input));
   validateWebsiteSourceFiles(files, input.scope);
   for (const page of pageManifest) if (!files.some((file) => file.path === page.path)) throw new Error('website_missing_page:' + page.path);

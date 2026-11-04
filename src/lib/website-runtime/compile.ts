@@ -17,7 +17,7 @@ export function compileRuntimeBlueprint(input: WebsiteEngineInput, proposed: unk
   }
   seed.workflows = blueprint.workflows || [];
   seed.blueprintHash = blueprint.hash;
-  seed.integrations = blueprint.capabilities.filter(capability => capability.kind !== "crud").map(capability => ({ name: capability.name, status: "not_implemented" }));
+  seed.integrations = blueprint.capabilities.filter(capability => capability.kind !== "crud").map(capability => ({ name: capability.name, kind: capability.kind, status: "not_implemented" }));
   seedFile.content = JSON.stringify(seed, null, 2);
   const acceptance = files.find(file => file.path === "runtime/acceptance.json")!;
   acceptance.content = JSON.stringify({ status: "not_run", blueprintHash: blueprint.hash, integrations: seed.integrations }, null, 2);
@@ -25,5 +25,5 @@ export function compileRuntimeBlueprint(input: WebsiteEngineInput, proposed: unk
   const designBlockers = blueprint.pages.filter(page => !page.blocks?.length).map(page => "design_content:" + page.slug);
   if (!blueprint.theme) designBlockers.push("design_theme_required");
   const blockers = blueprint.capabilities.filter(capability => capability.kind !== "crud").map(capability => "implementation:" + capability.name);
-  return { files, blueprintSnapshot: blueprint, blueprintHash: blueprint.hash, artifactVersion, status: "acceptance_pending" as const, blockers: [...designBlockers, ...blockers, "isolated_preview_required", "project_acceptance_required"] };
+  return { files, blueprintSnapshot: blueprint, blueprintHash: blueprint.hash, artifactVersion, status: "acceptance_pending" as const, blockers: [...designBlockers, ...blockers, "project_acceptance_required"] };
 }

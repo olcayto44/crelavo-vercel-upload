@@ -11,7 +11,7 @@ const {runtimeDeliveryBlockers,RUNTIME_ACCEPTANCE_CHECKS}=load('src/lib/website-
 const report={artifactVersion:'v1',previewUrl:'https://preview.example.test',checks:Object.fromEntries(RUNTIME_ACCEPTANCE_CHECKS.map(key=>[key,{status:'passed',artifactVersion:'v1'}])),capabilities:[]};assert.deepEqual(runtimeDeliveryBlockers(report),[]);
 assert(runtimeDeliveryBlockers({...report,artifactVersion:'v2'}).length>=RUNTIME_ACCEPTANCE_CHECKS.length,'Older tests cannot approve a new revision');
 assert(runtimeDeliveryBlockers({...report,capabilities:[{name:'checkout',required:true,status:'not_implemented'}]}).includes('capability:checkout:not_implemented'));
-assert(runtimeDeliveryBlockers({...report,previewUrl:''}).includes('secure_preview_required'));
+assert.deepEqual(runtimeDeliveryBlockers({...report,previewUrl:undefined}),[]);
 const dir=fs.mkdtempSync(path.join('C:/Users/casper/AppData/Local/Temp/opencode','customer-runtime-'));
 for(const f of files){const target=path.join(dir,f.path.replace(/^runtime\//,''));fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,f.content);}
 const run=args=>{const result=spawnSync(process.execPath,args,{cwd:dir,env:{...process.env,ELECTRON_RUN_AS_NODE:'1',INITIAL_ADMIN_EMAIL:'owner@example.test',INITIAL_ADMIN_PASSWORD:'test-password-unique-123'},encoding:'utf8'});assert.equal(result.status,0,result.stderr);};

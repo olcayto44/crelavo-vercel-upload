@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { runtimeDeliveryBlockers, type RuntimeAcceptance } from "./acceptance.ts";
+import { runtimeDeliveryBlockers, runtimeCapabilityAccepted, type RuntimeAcceptance } from "./acceptance.ts";
 export function runtimeArtifactDelivery(output: Record<string, any>, requireFinalized = true) {
   const artifact = output.runtimeArtifact, blueprint = output.runtimeBlueprint;
   const blockers: string[] = [];
@@ -26,11 +26,11 @@ export function runtimeArtifactDelivery(output: Record<string, any>, requireFina
     if (!report.checks || !Array.isArray(report.capabilities)) blockers.push("runtime_acceptance_invalid");
     else {
       blockers.push(...runtimeDeliveryBlockers(report));
-      for (const capability of required) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && item.status === "implemented")) blockers.push("runtime_capability_unverified:" + capability.name);
+      for (const capability of required) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && runtimeCapabilityAccepted(item, artifact.artifactVersion, capability.kind))) blockers.push("runtime_capability_unverified:" + capability.name);
     }
-    if (!output.runtimePreview?.expiresAt || Date.parse(output.runtimePreview.expiresAt) <= Date.now() || !Number.isFinite(Date.parse(output.runtimePreview.expiresAt))) blockers.push("runtime_preview_expired");
-    if (output.runtimePreview?.artifactVersion !== artifact.artifactVersion || output.runtimePreview?.url !== report.previewUrl || output.runtimePreview?.status !== "running") blockers.push("runtime_preview_unverified");
+
   }
-  if (Array.isArray(artifact.blockers) && artifact.blockers.length) blockers.push(...artifact.blockers);
-  return { blockers: [...new Set(blockers)], files: blockers.length ? [] : files, previewUrl: report?.previewUrl || "" };
+  for (const capability of report?.capabilities || []) if (capability.status === "configuration_pending" && !files.some((file: any) => file.path === capability.setupGuidePath)) blockers.push("integration_guide_missing:" + capability.name);
+  if (Array.isArray(artifact.blockers)) blockers.push(...artifact.blockers.filter((value: string) => value !== "isolated_preview_required"));
+  return { blockers: [...new Set(blockers)], files: blockers.length ? [] : files, configurationPending: (report?.capabilities || []).filter(item => item.status === "configuration_pending").map(item => item.name), previewUrl: report?.previewUrl || "" };
 }

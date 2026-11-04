@@ -8,7 +8,7 @@ import { clientIpFromRequest, rateLimit, rateLimitResponse } from "@/lib/securit
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(request: Request) {
-  if (process.env.WEBSITE_RUNTIME_DEVELOPMENT !== "1" || process.env.VERCEL_ENV === "production") return Response.json({ error: "runtime_development_only" }, { status: 403 });
+  if (process.env.WEBSITE_RUNTIME_ENABLED !== "1") return Response.json({ error: "runtime_development_only" }, { status: 403 });
   const raw = await request.text(); if (raw.length > 20000) return Response.json({ error: "request_too_large" }, { status: 413 });
   let body; try { body = JSON.parse(raw); } catch { return Response.json({ error: "invalid_json" }, { status: 400 }); }
   if (!body || typeof body !== "object" || typeof body.user_id !== "string" || typeof body.productionId !== "string") return Response.json({ error: "project_and_user_required" }, { status: 400 });
