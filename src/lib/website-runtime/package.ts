@@ -1,3 +1,4 @@
+import { integrationsSource } from "./deployment-source.ts";
 import { runtimePreviewDocument } from "./preview.ts";
 import { customerIntegrationSettingsSource } from "./integration-settings-source.ts";
 import { customerSeedRevisionSource } from "./seed-revision-source.ts";
@@ -37,6 +38,7 @@ export function generateCustomerRuntime(input: WebsiteEngineInput): WebsiteGener
     file("runtime/compose.yaml", composeSource),
     file("runtime/Caddyfile", caddySource),
     file("runtime/DEPLOYMENT.md", docsSource),
+    file("runtime/integrations.md", integrationsSource),
     file("runtime/.dockerignore", ".env\ndata\nnode_modules\n.git\n*.sqlite*\n"),
     file("runtime/.gitignore", ".env\ndata/\nnode_modules/\n*.sqlite*\n"),
     file("runtime/package.json", JSON.stringify({ name: "customer-website", private: true, type: "module", version: "1.0.0", engines: { node: ">=22.13.0" }, scripts: { start: "node --env-file-if-exists=.env server.mjs", build: "node --check server.mjs && node --check public/admin.js && node --check public/site.js && node --check seed-revision.mjs && node --check preview.mjs && node --check integration-settings.mjs && node --check business.mjs && node --check public/account.js", "admin:create": "node --env-file-if-exists=.env server.mjs --create-admin", "db:check": "node --env-file-if-exists=.env server.mjs --check", "db:backup": "node --env-file-if-exists=.env server.mjs --backup", "revision:plan": "node --env-file-if-exists=.env server.mjs --revision-plan", "revision:apply": "node --env-file-if-exists=.env server.mjs --revision-apply", "revision:rollback": "node --env-file-if-exists=.env server.mjs --revision-rollback" } }, null, 2), "application/json"),
