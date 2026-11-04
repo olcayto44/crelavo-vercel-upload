@@ -16,6 +16,7 @@ export function validateRuntimeWorkflows(value: unknown, schema: RuntimeSchema):
     if (raw.kind === "booking") return { id: raw.id, kind: "booking", collection: collection.key };
     if (raw.kind !== "checkout" || typeof raw.priceField !== "string" || !collection.fields.includes(raw.priceField) || !["usd", "eur", "gbp", "try", "cad", "aud"].includes(String(raw.currency))) throw new Error("runtime_checkout_configuration_invalid");
     if (raw.stockField !== undefined && (typeof raw.stockField !== "string" || !collection.fields.includes(raw.stockField) || raw.stockField === raw.priceField)) throw new Error("runtime_checkout_stock_field_invalid");
+    for (const field of [raw.priceField, raw.stockField].filter(Boolean) as string[]) if (collection.fieldTypes?.[field] && collection.fieldTypes[field] !== "integer") throw new Error("runtime_checkout_integer_type_required");
     return { id: raw.id, kind: "checkout", collection: collection.key, priceField: raw.priceField, currency: raw.currency as string, ...(raw.stockField ? { stockField: raw.stockField as string } : {}) };
   });
 }

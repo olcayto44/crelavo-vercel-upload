@@ -10,7 +10,7 @@ import type { WebsiteGeneratedFile } from "../providers/openai";
 import { customerServerSource } from "./server-source.ts";
 import { customerAdminSource } from "./admin-source.ts";
 import { validateRuntimeSchema } from "./schema.ts";
-export type WebsiteModule = { key: string; fields: string[]; private: boolean };
+export type WebsiteModule = import("./schema.ts").RuntimeCollection;
 export function websiteModules(input: WebsiteEngineInput): WebsiteModule[] {
   if (input.runtimeSchema) return validateRuntimeSchema(input.runtimeSchema).collections;
   const text = [input.siteType, input.brief, ...input.features].join(" ");

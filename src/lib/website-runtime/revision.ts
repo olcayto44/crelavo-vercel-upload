@@ -10,6 +10,7 @@ export function reviewRuntimeRevision(previous: unknown, proposed: unknown): Run
     if (!target) { blockers.push("collection_removal:" + collection.key); continue; }
     if (collection.private && !target.private) blockers.push("private_data_exposure:" + collection.key);
     for (const field of collection.fields) if (!target.fields.includes(field)) blockers.push("field_removal:" + collection.key + "." + field);
+    for (const field of collection.fields) if (target.fields.includes(field) && (collection.fieldTypes?.[field] || "text") !== (target.fieldTypes?.[field] || "text")) blockers.push("field_type_migration:" + collection.key + "." + field);
     for (const field of target.fields) if (!collection.fields.includes(field)) additions.push("field:" + collection.key + "." + field);
   }
   for (const collection of next.schema.collections) if (!old.schema.collections.some(item => item.key === collection.key)) additions.push("collection:" + collection.key);
@@ -26,4 +27,11 @@ export function checkedRuntimeSnapshot(artifact: any, expectedPlanHash: string):
   const blueprint = validateRuntimeBlueprint(artifact.blueprintSnapshot);
   if (hash !== artifact.artifactVersion || artifact.blueprintHash !== blueprint.hash) throw new Error("runtime_snapshot_hash_mismatch");
   return blueprint;
+}
+
+/** Source-level change list; the artifact hash still covers every emitted byte. */
+export function runtimeSourceChanges(previous: any, next: any) {
+  const before = new Map<string, string>((previous?.files || []).map((file: any) => [file.path, file.content]));
+  const after = new Map<string, string>((next?.files || []).map((file: any) => [file.path, file.content]));
+  return { fromVersion: previous?.artifactVersion || null, toVersion: next.artifactVersion, added: [...after.keys()].filter(path => !before.has(path)), modified: [...after.keys()].filter(path => before.has(path) && before.get(path) !== after.get(path)), removed: [...before.keys()].filter(path => !after.has(path)) };
 }

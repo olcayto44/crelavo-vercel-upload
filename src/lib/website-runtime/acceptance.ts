@@ -1,4 +1,4 @@
-export const RUNTIME_ACCEPTANCE_CHECKS = ["syntax_build", "admin_login", "unauthorized_access", "csrf", "persistent_crud", "public_reflection", "upload", "mobile_browser", "clean_install", "public_routes", "admin_routes", "internal_links"] as const;
+export const RUNTIME_ACCEPTANCE_CHECKS = ["syntax_build", "admin_login", "unauthorized_access", "csrf", "persistent_crud", "public_reflection", "upload", "mobile_browser", "clean_install", "public_routes", "admin_routes", "internal_links", "business_workflows"] as const;
 export type AcceptanceCheck = typeof RUNTIME_ACCEPTANCE_CHECKS[number];
 export type RuntimeCapabilityAcceptance = { name: string; required: boolean; status: "implemented" | "configuration_pending" | "not_implemented"; adapterImplemented?: boolean; adapterTest?: { status: "passed" | "failed" | "not_run"; artifactVersion: string }; setupGuidePath?: string; settingsPath?: string };
 export type RuntimeAcceptance = { artifactVersion: string; previewUrl?: string; checks: Partial<Record<AcceptanceCheck, { status: "passed" | "failed" | "not_run"; artifactVersion: string }>>; capabilities: RuntimeCapabilityAcceptance[] };

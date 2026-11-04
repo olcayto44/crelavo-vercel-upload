@@ -36,10 +36,10 @@ export function verifyRuntimeWorkerReport(raw: string, signature: string, job: R
   if (!report || !report.checks || !Array.isArray(report.capabilities) || report.artifactVersion !== job.artifactVersion) throw new Error("runtime_worker_report_invalid");
   const blockers = runtimeDeliveryBlockers(report);
   for (const capability of output.runtimeBlueprint.capabilities || []) if (!report.capabilities.some(item => item.name === capability.name && item.required === true && runtimeCapabilityAccepted(item, job.artifactVersion, capability.kind))) blockers.push("capability:" + capability.name);
-  for (const blocker of output.runtimeArtifact.blockers || []) if (blocker !== "isolated_preview_required" && blocker !== "project_acceptance_required" && !String(blocker).startsWith("implementation:")) blockers.push(blocker);
+  for (const blocker of output.runtimeArtifact.blockers || []) if (blocker !== "isolated_preview_required" && blocker !== "project_acceptance_required" && blocker !== "restored_source_requires_acceptance" && !String(blocker).startsWith("implementation:")) blockers.push(blocker);
   if (data.status !== "passed") blockers.push("runtime_worker_tests_failed");
   if (data.isolation?.dedicated !== true || data.isolation?.persistentVolume !== true || data.isolation?.egress !== "deny_by_default") blockers.push("runtime_worker_isolation_unverified");
-  return { job: { ...job, status: blockers.length ? "failed" as const : "passed" as const }, blockers: [...new Set(blockers)], report, preview: { url: report.previewUrl || "", artifactVersion: job.artifactVersion, status: blockers.length ? "unverified" : "running", expiresAt: job.expiresAt } };
+  return { job: { ...job, status: blockers.length ? "failed" as const : "passed" as const }, blockers: [...new Set(blockers)], report, preview: { url: report.previewUrl || "", artifactVersion: job.artifactVersion, status: blockers.length ? "unverified" : report.previewUrl ? "running" : "not_provisioned", expiresAt: job.expiresAt } };
 }
 export async function pollRuntimeWorker(job: RuntimeWorkerJob, output: any) {
   const c = config();
