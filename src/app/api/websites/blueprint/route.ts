@@ -2,7 +2,7 @@ import { createRuntimeWorkerJob, dispatchRuntimeWorker, pollRuntimeWorker, runti
 import { reviewRuntimeRevision, checkedRuntimeSnapshot, runtimeSourceChanges } from "@/lib/website-runtime/revision";
 import { compileRuntimeBlueprint } from "@/lib/website-runtime/compile";
 import { websiteEngineInput } from "@/lib/assistant-work/website-brief";
-import { proposeRuntimeBlueprint } from "@/lib/website-runtime/blueprint";
+import { proposeRuntimeBlueprint, blueprintFailure } from "@/lib/website-runtime/blueprint";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
 import { clientIpFromRequest, rateLimit, rateLimitResponse } from "@/lib/security";
 export const runtime = "nodejs";
@@ -122,5 +122,5 @@ export async function POST(request: Request) {
     if (result.error) return Response.json({ error: "blueprint_save_failed" }, { status: 503 });
     if (!result.data) return Response.json({ error: "project_changed_reload" }, { status: 409 });
     return Response.json({ productionId: data.id, blueprint: { ...blueprint, revision }, messages, status: "plan_review", productionStarted: false, charged: 0 });
-  } catch { return Response.json({ error: "blueprint_generation_failed", productionStarted: false, charged: 0 }, { status: 503 }); }
+  } catch (error) { const failure = blueprintFailure(error); console.error("[website-blueprint]", failure.code); return Response.json({ error: failure.code, productionStarted: false, charged: 0 }, { status: failure.status }); }
 }
