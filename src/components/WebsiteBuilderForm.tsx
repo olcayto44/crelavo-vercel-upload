@@ -11,6 +11,10 @@ type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUr
 
 export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onContentChange }: { initialProjectId?: string; editorOnly?: boolean; onContentChange?: () => void } = {}) {
   const { t } = useWorkspaceLanguage();
+  const [review, setReview] = useState<{ productionId: string; hash: string; credits: number | null; blockers: string[]; approved: boolean } | null>(null);
+  const [packageId, setPackageId] = useState("");
+  const [packageChoices, setPackageChoices] = useState<Array<{ id: string; label: string; credits?: number }>>([]);
+  useEffect(() => { void import("@/lib/crelavo/categoryCatalog").then(({ getCategory }) => setPackageChoices(getCategory("website")?.packs.filter(pack => !/admin|commerce/i.test(pack.label)) || [])); }, []);
   const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewPages, setPreviewPages] = useState<Array<{ title: string; path: string }>>([]);
@@ -25,7 +29,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   const [history, setHistory] = useState<Array<{ revision: number; createdAt: string; source?: string }>>([]);
   const [outputs, setOutputs] = useState<Outputs | null>(null);
   const [content, setContent] = useState<WebsiteContent>({ heroTitle: "", heroBody: "", primaryCta: "" });
-  const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  const update = (key: keyof typeof fields, value: string) => { setReview(null); setFields((current) => ({ ...current, [key]: value })); };
   const scopeLabel = fields.scope === "website_with_admin" ? t("Public website + admin starter") : t("Public static website");
   const list = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
@@ -67,15 +71,30 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   function moveFaq(index: number, direction: number) { setContent((current) => { const items = [...(Array.isArray(current.faq) ? current.faq : [])]; const next = index + direction; if (next < 0 || next >= items.length) return current; [items[index], items[next]] = [items[next], items[index]]; return { ...current, faq: items }; }); }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true); setOutputs(null); setPreviewHtml(""); setStatus("Building a premium static template and shaping the brief copy...");
+    setBusy(true); setOutputs(null); setPreviewHtml(""); setStatus("Plan hazırlanıyor; üretim başlamadı ve kredi harcanmadı.");
     try {
       const { user, token } = await session();
-      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, site_scope: fields.scope, pages: list(fields.pages), features: list(fields.features) }) });
+      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, action: "revise", productionId: review?.productionId || projectId || undefined, packId: packageId, ...fields, site_type: fields.siteType, site_scope: fields.scope, pages: list(fields.pages), features: list(fields.features) }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : ""; throw new Error(`${data.message || data.error || "Website generation failed."}${missing}`); }
-      const initialContent = { ...data.production?.output_json?.websiteContent, ...data.outputs?.content, heroTitle: data.production?.output_json?.websiteContent?.heroTitle || data.outputs?.content?.heroTitle || data.plan?.brief?.businessName || "", heroBody: data.production?.output_json?.websiteContent?.heroBody || data.outputs?.content?.heroBody || data.plan?.brief?.businessDescription || "", primaryCta: data.production?.output_json?.websiteContent?.primaryCta || data.outputs?.content?.primaryCta || "Get started" };
-      setContent(initialContent); setPreviewPages(data.production?.output_json?.pageManifest || []); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
+      setProjectId(data.productionId);
+      setReview({ productionId: data.productionId, hash: data.website.planHash, credits: data.website.credits, blockers: data.website.review.blockers, approved: false });
+      setStatus(data.body || "Plan hazırlandı. Onaydan önce inceleyin.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website generation failed."); } finally { setBusy(false); }
+  }
+
+  async function productionAction(action: "website_approve" | "render") {
+    if (!review || busy) return;
+    if (action === "render" && !window.confirm("Onaylanan " + review.credits + " kredi tutarıyla üretim başlatılsın mı?")) return;
+    setBusy(true);
+    try {
+      const { token } = await session();
+      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) }, body: JSON.stringify({ action, productionId: review.productionId, planHash: review.hash, prompt: "" }) });
+      const data = await response.json(); if (!response.ok) throw new Error(data.message || data.error || data.code || "Üretim işlemi başarısız.");
+      if (action === "website_approve") { setReview({ ...review, approved: true }); setStatus("Plan onaylandı. Henüz üretim başlamadı."); }
+      else if (data.status === "ready") { await openProject(data.productionId); setReview(null); }
+      else setStatus(data.body || "Üretim henüz teslimata hazır değil.");
+    } catch (error) { setStatus(error instanceof Error ? error.message : "İşlem başarısız."); } finally { setBusy(false); }
   }
 
   async function applyRevision(event: FormEvent) {
@@ -121,6 +140,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       {!editorOnly ? <><span className="badge">{t("AI Website Builder")}</span>
       <h1>{t("Generate a premium website source package from a brief")}</h1>
       <p>{t("Enter the site type, brand context, target audience, pages, features and visual direction. The output includes renderable HTML/CSS/JS, a preview, a ZIP source bundle and an installation README.")}</p>
+      <div className="mini-card"><label>Üretim paketi<select value={packageId} disabled={busy} onChange={event => { setPackageId(event.target.value); setReview(null); }}><option value="">Paket seçin</option>{packageChoices.map(pack => <option key={pack.id} value={pack.id}>{t(pack.label)} — {pack.credits} kredi</option>)}</select></label><p>Önce planı hazırlayın, ardından tutarı inceleyip onaylayın. Admin runtime henüz geliştirme aşamasındadır.</p>{review && <><p>Proje: {review.productionId} · Tahmini kredi: {review.credits ?? "Paket seçilmedi"}</p>{review.blockers.length > 0 && <p role="status">Eksikler: {review.blockers.join(", ")}</p>}<button type="button" className="btn" disabled={busy || review.blockers.length > 0 || review.approved} onClick={() => productionAction("website_approve")}>Planı onayla</button><button type="button" className="btn" disabled={busy || !review.approved} onClick={() => productionAction("render")}>Onaylanan üretimi başlat</button></>}</div>
       <div className="mini-card" style={{ marginBottom: '1rem' }}>
         <h2>{t("Open a saved website")}</h2>
         <button className="btn secondary" type="button" disabled={contentBusy} onClick={listProjects}>{t("Load my websites")}</button>
@@ -131,7 +151,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       <form onSubmit={submit} className="form-grid">
         <label>{t("Website brief")}<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder={t("What does it offer, what problem does it solve and what should the user do?")} /></label>
         <label>{t("Site type")}<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
-        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option><option value="website_with_admin">{t("Public website + admin panel source starter")}</option></select><small>{t(scopeLabel)}{t(". Admin files are included only when selected.")}</small></label>
+        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option><option disabled value="website_with_admin">{t("Public website + admin panel source starter")}</option></select><small>{t(scopeLabel)}{t(". Admin files are included only when selected.")}</small></label>
         <label>{t("Brand / product")}<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
         <label>{t("Target audience")}<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
         <label>{t("Pages")}<small>{t("comma-separated")}</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>

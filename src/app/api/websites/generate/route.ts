@@ -1,86 +1,26 @@
-import { generateWebsiteArtifact } from "@/lib/website-engine";
-import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
-
-
-import { hasProviderEnv } from "@/lib/providers/env";
-import { uploadProviderAsset } from "@/lib/providers/storage";
+import { executeWebsiteRequest } from "@/lib/assistant-work/website-request";
+import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
-import { validateProductionSafety } from "@/lib/content-safety";
-import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
-
-const MAX_BRIEF_LENGTH = 6000;
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Website generation failed.";
-}
-
-function cleanList(value: unknown) {
-  return Array.isArray(value) ? value.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, 20) : String(value ?? "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 20);
-}
-
+export const runtime = "nodejs";
+export const maxDuration = 120;
+export const dynamic = "force-dynamic";
+// Website Builder is an adapter to the same project/approval/billing state machine.
 export async function POST(request: Request) {
-  const limit = rateLimit({ key: `website-generate:${clientIpFromRequest(request)}`, limit: 5, windowMs: 15 * 60 * 1000 });
+  const token = bearerTokenFromRequest(request);
+  if (!token) return Response.json({ error: "sign_in" }, { status: 401 });
+  const { data, error } = await supabaseAdmin().auth.getUser(token);
+  if (error || !data.user) return Response.json({ error: "sign_in" }, { status: 401 });
+  const raw = await request.text();
+  if (raw.length > 50000) return Response.json({ error: "website_request_too_large" }, { status: 413 });
+  let body; try { body = JSON.parse(raw); } catch { return Response.json({ error: "invalid_json" }, { status: 400 }); }
+  if (!body || typeof body !== "object" || Array.isArray(body)) return Response.json({ error: "invalid_request" }, { status: 400 });
+  const limit = rateLimit({ key: "website-assistant:" + data.user.id + ":" + clientIpFromRequest(request), limit: 30, windowMs: 15 * 60 * 1000 });
   if (!limit.allowed) return rateLimitResponse(limit.resetAt);
-  try {
-    const body = await request.json();
-    const userId = String(body.user_id ?? "").trim();
-    const userEmail = String(body.user_email ?? "").trim().toLowerCase();
-    if (!userId || !userEmail) return Response.json({ error: "user_required" }, { status: 401 });
-    const verified = await requireVerifiedRequestUser(request, userId);
-    if (!verified.ok) return verified.response;
-
-    const brief = String(body.brief ?? "").trim().slice(0, MAX_BRIEF_LENGTH);
-    const brand = String(body.brand ?? "").trim().slice(0, 160);
-    const siteType = String(body.site_type ?? "").trim().slice(0, 120);
-    const requestedScope = String(body.site_scope ?? body.scope ?? "marketing_website").trim();
-    const scope: WebsiteScope = requestedScope === "website_with_admin" ? "website_with_admin" : "marketing_website";
-    const audience = String(body.audience ?? "").trim().slice(0, 500);
-    const style = String(body.style ?? "").trim().slice(0, 500);
-    const pages = cleanList(body.pages);
-    const features = cleanList(body.features);
-    if (!brief || !siteType || !brand || !audience || !style) return Response.json({ error: "brief_site_type_brand_audience_style_required", message: "Brief, site type, brand/product, target audience and style are required." }, { status: 400 });
-    if (brief.length < 20) return Response.json({ error: "brief_too_short" }, { status: 400 });
-    const suspicious = rejectSuspiciousText([brief, siteType, brand, audience, style, pages.join(","), features.join(",")]);
-    if (!suspicious.ok) return Response.json({ error: suspicious.message }, { status: 400 });
-    const safety = validateProductionSafety([brief, siteType, brand, audience, style]);
-    if (!safety.ok) return Response.json({ error: safety.message }, { status: 400 });
-
-    const supabase = supabaseAdmin();
-    const { data: production, error: insertError } = await supabase.from("production_requests").insert({
-      user_id: userId,
-      production_type: "website",
-      package_id: "website_builder",
-      title: `${brand} website`,
-      prompt: brief,
-      status: "in_production",
-      generation_status: "provider_generating",
-      estimated_credits: 0,
-      reserved_credits: 0,
-      request_metadata: { source: "website_builder", siteType, scope, brand, audience, pages, features, style, provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template" },
-      input_json: { brief, siteType, scope, brand, audience, pages, features, style },
-      output_json: { provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerStatus: "generating", scope }
-    }).select("*").single();
-    if (insertError || !production) throw insertError ?? new Error("Website production record could not be created.");
-
-    try {
-      const generated = await generateWebsiteArtifact({ brief, siteType, scope, brand, audience, pages, features, style, locale: String(body.locale ?? "en") }, String(production.id));
-      const plan = generated.plan;
-      const storedFiles = await Promise.all(generated.files.map(async (file) => ({
-        ...file,
-        url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
-      })));
-      const websiteContent = { ...generated.websiteContent, pages };
-      const outputJson = { plan, pageManifest: generated.pageManifest, websiteContent, websiteContentUpdatedAt: new Date().toISOString(), provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerModel: hasProviderEnv("openai") ? (process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini") : null, providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
-      const { data: completed, error: updateError } = await supabase.from("production_requests").update({ status: "ready", generation_status: "completed", preview_url: `/api/productions/${production.id}/delivery?file=preview`, delivery_link: `/api/productions/${production.id}/delivery?file=zip`, delivery_zip_url: `/api/productions/${production.id}/delivery?file=zip`, source_files_url: `/api/productions/${production.id}/delivery?file=source`, readme_url: `/api/productions/${production.id}/delivery?file=readme`, output_json: outputJson, updated_at: new Date().toISOString() }).eq("id", production.id).select("*").single();
-      if (updateError || !completed) throw updateError ?? new Error("Website production could not be finalized.");
-      return Response.json({ plan, production: completed, outputs: { previewUrl: completed.preview_url, zipUrl: completed.delivery_zip_url, sourceUrl: completed.source_files_url, readmeUrl: completed.readme_url, scope } });
-    } catch (error) {
-      await supabase.from("production_requests").update({ status: "failed", generation_status: "failed", output_json: { provider: "openai", providerStatus: "failed", error: errorMessage(error) }, admin_notes: errorMessage(error), updated_at: new Date().toISOString() }).eq("id", production.id);
-      throw error;
-    }
-  } catch (error) {
-        if (error instanceof WebsiteQualityError) return Response.json({ error: error.code, message: "Generated website failed the deterministic quality gate.", missing: error.missing }, { status: 422 });
-    return Response.json({ error: "website_generation_failed", message: errorMessage(error) }, { status: 502 });
-  }
+  const safe = rejectSuspiciousText([String(body.prompt ?? body.brief ?? ""), JSON.stringify(body.websiteBrief ?? {})]);
+  if (!safe.ok) return Response.json({ error: safe.message }, { status: 400 });
+  const action = String(body.action || "revise");
+  if (!["revise", "website_open", "website_approve", "render", "website_retry"].includes(action)) return Response.json({ error: "unsupported_action" }, { status: 400 });
+  // No separate/free generation or implicit approval is permitted here.
+  const result = await executeWebsiteRequest(request, { ...body, category: "website", type: "Website", action, render: action === "render", prompt: String(body.prompt ?? body.brief ?? ""), ...(action === "revise" ? { uiAction: true, websiteBrief: body.websiteBrief ?? { brand: body.brand, brief: body.brief, audience: body.audience, siteType: body.site_type, style: body.style, pages: body.pages, features: body.features, locale: body.locale } } : {}) }, { id: data.user.id, email: data.user.email });
+  return Response.json(result.payload, { status: result.status, headers: { "Cache-Control": "no-store" } });
 }
-
