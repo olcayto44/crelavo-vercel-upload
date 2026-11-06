@@ -1,4 +1,4 @@
-import { createRuntimeWorkerJob, dispatchRuntimeWorker, pollRuntimeWorker } from "@/lib/website-runtime/worker";
+import { createRuntimeWorkerJob, dispatchRuntimeWorker, pollRuntimeWorker, runtimeWorkerConfigured } from "@/lib/website-runtime/worker";
 import { reviewRuntimeRevision, checkedRuntimeSnapshot, runtimeSourceChanges } from "@/lib/website-runtime/revision";
 import { compileRuntimeBlueprint } from "@/lib/website-runtime/compile";
 import { websiteEngineInput } from "@/lib/assistant-work/website-brief";
@@ -8,8 +8,8 @@ import { clientIpFromRequest, rateLimit, rateLimitResponse } from "@/lib/securit
 export const runtime = "nodejs";
 export const maxDuration = 60;
 function automaticAcceptance(output: any, projectId: string, userId: string) {
-  const next = { ...output, runtimeJob: null as ReturnType<typeof createRuntimeWorkerJob> | null, runtimeAutomation: { status: "configuration_pending", error: "runtime_worker_not_configured" } as { status: string; error?: string } };
-  if (process.env.WEBSITE_RUNTIME_WORKER_URL && process.env.WEBSITE_RUNTIME_WORKER_TOKEN && process.env.WEBSITE_RUNTIME_WORKER_REPORT_SECRET) {
+  const next = { ...output, runtimeActionsClaim: null, runtimeActionsReceipt: null, runtimeJob: null as ReturnType<typeof createRuntimeWorkerJob> | null, runtimeAutomation: { status: "configuration_pending", error: "runtime_worker_not_configured" } as { status: string; error?: string } };
+  if (runtimeWorkerConfigured()) {
     next.runtimeJob = createRuntimeWorkerJob(projectId, userId, next);
     next.runtimeAutomation = { status: "queued" };
   }
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (data.output_json.runtimeJob && ["queued", "running"].includes(data.output_json.runtimeJob.status) && Date.parse(data.output_json.runtimeJob.expiresAt) > Date.now() && !["status", "test", "poll"].includes(body.action)) return Response.json({ error: "runtime_worker_in_progress" }, { status: 409 });
   if (body.action === "test") {
     if (body.approve !== true || body.artifactVersion !== data.output_json.runtimeArtifact?.artifactVersion) return Response.json({ error: "runtime_test_approval_required" }, { status: 409 });
-    if (!process.env.WEBSITE_RUNTIME_WORKER_URL || !process.env.WEBSITE_RUNTIME_WORKER_TOKEN || !process.env.WEBSITE_RUNTIME_WORKER_REPORT_SECRET) return Response.json({ error: "runtime_worker_not_configured" }, { status: 503 });
+    if (!runtimeWorkerConfigured()) return Response.json({ error: "runtime_worker_not_configured" }, { status: 503 });
     let job;
     try { job = createRuntimeWorkerJob(data.id, body.user_id, data.output_json); }
     catch (error) { return Response.json({ error: error instanceof Error ? error.message : "runtime_worker_artifact_invalid" }, { status: 422 }); }
@@ -43,12 +43,12 @@ export async function POST(request: Request) {
       return Response.json({ job: old, charged: 0 }, { status: 202 });
     }
     const queuedAt = new Date().toISOString();
-    const queued = await db.from("production_requests").update({ updated_at: queuedAt, output_json: { ...data.output_json, runtimeJob: job, runtimeAutomation: { status: "queued" }, runtimeAcceptance: null, acceptancePending: true } }).eq("id", data.id).eq("user_id", body.user_id).eq("updated_at", data.updated_at).select("id").maybeSingle();
+    const queued = await db.from("production_requests").update({ updated_at: queuedAt, output_json: { ...data.output_json, runtimeActionsClaim: null, runtimeActionsReceipt: null, runtimeJob: job, runtimeAutomation: { status: "queued" }, runtimeAcceptance: null, acceptancePending: true } }).eq("id", data.id).eq("user_id", body.user_id).eq("updated_at", data.updated_at).select("id").maybeSingle();
     if (queued.error) return Response.json({ error: "runtime_worker_job_save_failed" }, { status: 503 });
     if (!queued.data) return Response.json({ error: "project_changed_reload" }, { status: 409 });
     try {
       const running = await dispatchRuntimeWorker(job, data.output_json);
-      const saved = await db.from("production_requests").update({ updated_at: new Date().toISOString(), output_json: { ...data.output_json, runtimeJob: running, runtimeAutomation: { status: "running" }, runtimeAcceptance: null, acceptancePending: true } }).eq("id", data.id).eq("user_id", body.user_id).eq("updated_at", queuedAt).select("id").maybeSingle();
+      const saved = await db.from("production_requests").update({ updated_at: new Date().toISOString(), output_json: { ...data.output_json, runtimeActionsClaim: null, runtimeActionsReceipt: null, runtimeJob: running, runtimeAutomation: { status: "running" }, runtimeAcceptance: null, acceptancePending: true } }).eq("id", data.id).eq("user_id", body.user_id).eq("updated_at", queuedAt).select("id").maybeSingle();
       if (!saved.data || saved.error) return Response.json({ error: "runtime_worker_job_status_pending", job }, { status: 202 });
       return Response.json({ job: running, charged: 0 }, { status: 202 });
     } catch { return Response.json({ error: "runtime_worker_dispatch_failed_retry_same_job", job, charged: 0 }, { status: 503 }); }

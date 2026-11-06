@@ -1,6 +1,11 @@
+import { actionsPreviewOrigin } from "./actions-identity.ts";
 import { randomUUID, createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { runtimeDeliveryBlockers, runtimeCapabilityAccepted, RUNTIME_ACCEPTANCE_CHECKS, type RuntimeAcceptance } from "./acceptance.ts";
-export type RuntimeWorkerJob = { id: string; projectId: string; userId: string; artifactVersion: string; blueprintHash: string; sourcePlanHash: string; status: "queued" | "running" | "passed" | "failed"; createdAt: string; expiresAt: string };
+export type RuntimeWorkerJob = { id: string; projectId: string; userId: string; artifactVersion: string; blueprintHash: string; sourcePlanHash: string; provider?: "github-actions"; callbackOrigin?: string; status: "queued" | "running" | "passed" | "failed"; createdAt: string; expiresAt: string };
+export function runtimeWorkerConfigured() {
+  if (process.env.WEBSITE_RUNTIME_WORKER_PROVIDER === "github-actions") return process.env.VERCEL_ENV === "preview" && !!process.env.VERCEL_URL && !!process.env.WEBSITE_RUNTIME_GITHUB_TOKEN;
+  return !!(process.env.WEBSITE_RUNTIME_WORKER_URL && process.env.WEBSITE_RUNTIME_WORKER_TOKEN && process.env.WEBSITE_RUNTIME_WORKER_REPORT_SECRET);
+}
 function config() {
   const endpoint = process.env.WEBSITE_RUNTIME_WORKER_URL, token = process.env.WEBSITE_RUNTIME_WORKER_TOKEN, secret = process.env.WEBSITE_RUNTIME_WORKER_REPORT_SECRET;
   if (!endpoint || !token || !secret || secret.length < 32) throw new Error("runtime_worker_not_configured");
@@ -15,9 +20,19 @@ export function createRuntimeWorkerJob(projectId: string, userId: string, output
   const paths = artifact.files.map((file: any) => file.path.toLowerCase());
   if (new Set(paths).size !== paths.length || artifact.files.reduce((sum: number, file: any) => sum + Buffer.byteLength(file.content), 0) > 20000000) throw new Error("runtime_worker_sources_invalid");
   if (createHash("sha256").update(JSON.stringify(artifact.files.map((f: any) => [f.path, f.content]))).digest("hex") !== artifact.artifactVersion) throw new Error("runtime_worker_source_hash_mismatch");
-  return { id: randomUUID(), projectId, userId, artifactVersion: artifact.artifactVersion, blueprintHash: blueprint.hash, sourcePlanHash: blueprint.sourcePlanHash, status: "queued", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 1800000).toISOString() };
+  if (process.env.WEBSITE_RUNTIME_WORKER_PROVIDER === "github-actions" && Buffer.byteLength(JSON.stringify({ artifact, blueprint })) > 3000000) throw new Error("runtime_actions_sources_exceed_preview_limit");
+  return { ...(process.env.WEBSITE_RUNTIME_WORKER_PROVIDER === "github-actions" ? { provider: "github-actions" as const, callbackOrigin: actionsPreviewOrigin() } : {}), id: randomUUID(), projectId, userId, artifactVersion: artifact.artifactVersion, blueprintHash: blueprint.hash, sourcePlanHash: blueprint.sourcePlanHash, status: "queued", createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 1800000).toISOString() };
 }
 export async function dispatchRuntimeWorker(job: RuntimeWorkerJob, output: any) {
+  if (job.provider === "github-actions") {
+    const origin = actionsPreviewOrigin();
+    if (job.callbackOrigin !== origin || Date.parse(job.expiresAt) <= Date.now()) throw new Error("runtime_actions_job_stale");
+    const token = process.env.WEBSITE_RUNTIME_GITHUB_TOKEN;
+    if (!token) throw new Error("runtime_actions_not_configured");
+    const response = await fetch("https://api.github.com/repos/olcayto44/crelavo-acceptance-worker/actions/workflows/project-acceptance.yml/dispatches", { method: "POST", redirect: "error", signal: AbortSignal.timeout(15000), headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28" }, body: JSON.stringify({ ref: "main", inputs: { job_id: job.id, project_id: job.projectId, preview_origin: origin } }) });
+    if (response.status !== 204) throw new Error("runtime_actions_dispatch_failed");
+    return { ...job, status: "running" as const };
+  }
   const c = config();
   const response = await fetch(c.origin + "/v1/jobs/" + encodeURIComponent(job.id), { method: "PUT", redirect: "error", signal: AbortSignal.timeout(20000), headers: { Authorization: "Bearer " + c.token, "Content-Type": "application/json", "Idempotency-Key": job.id }, body: JSON.stringify({ job, artifact: output.runtimeArtifact, blueprint: output.runtimeBlueprint, deliveryMode: "downloadable_self_hosted", customerCredentialsRequired: false, requiredChecks: RUNTIME_ACCEPTANCE_CHECKS, isolation: { dedicated: true, persistentVolume: true, egress: "deny_by_default", cpuLimit: 1, memoryMb: 512, expiresAt: job.expiresAt } }) });
   if (!response.ok) throw new Error("runtime_worker_dispatch_failed");
@@ -42,6 +57,7 @@ export function verifyRuntimeWorkerReport(raw: string, signature: string, job: R
   return { job: { ...job, status: blockers.length ? "failed" as const : "passed" as const }, blockers: [...new Set(blockers)], report, preview: { url: report.previewUrl || "", artifactVersion: job.artifactVersion, status: blockers.length ? "unverified" : report.previewUrl ? "running" : "not_provisioned", expiresAt: job.expiresAt } };
 }
 export async function pollRuntimeWorker(job: RuntimeWorkerJob, output: any) {
+  if (job.provider === "github-actions") return null;
   const c = config();
   const response = await fetch(c.origin + "/v1/jobs/" + encodeURIComponent(job.id), { redirect: "error", signal: AbortSignal.timeout(15000), headers: { Authorization: "Bearer " + c.token }, cache: "no-store" });
   if (response.status === 202) return null;

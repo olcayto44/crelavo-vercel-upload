@@ -80,7 +80,8 @@
     "smoke:website-worker-service": "node scripts/website-worker-service-smoke.cjs",
     "worker:website-runtime": "node scripts/runtime-worker/service.mjs",
     "smoke:website-production-manager": "npm run smoke:website-sector-profile && npm run smoke:website-blueprint && npm run smoke:website-blueprint-route && npm run smoke:website-runtime-compile && npm run smoke:website-runtime-revision && npm run smoke:website-runtime && npm run smoke:website-live-migration && npm run smoke:website-business && npm run smoke:website-runtime-delivery && npm run smoke:website-runtime-worker && npm run smoke:website-worker-service && npm run smoke:website-project-acceptance && npm run smoke:website-runtime-chat",
-    "smoke:website-runtime-chat": "node scripts/website-runtime-chat-smoke.cjs"
+    "smoke:website-runtime-chat": "node scripts/website-runtime-chat-smoke.cjs",
+    "smoke:website-actions": "node scripts/website-actions-identity-smoke.cjs && node scripts/website-actions-callback-smoke.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",
