@@ -14,7 +14,11 @@ export function validateRuntimeSchema(value: unknown): RuntimeSchema {
     if (typeof entry.key !== "string" || !/^[a-z][a-z0-9-]{0,49}$/.test(entry.key) || reserved.has(entry.key) || keys.has(entry.key)) throw new Error("runtime_collection_key_invalid");
     keys.add(entry.key);
     if (typeof entry.private !== "boolean") throw new Error("runtime_collection_privacy_required");
-    if (!Array.isArray(entry.fields) || entry.fields.length < 1 || entry.fields.length > 40 || entry.fields.some(field => typeof field !== "string" || !/^[a-z][a-z0-9_]{0,49}$/.test(field) || dangerous.has(field))) throw new Error("runtime_collection_fields_invalid");
+    if (!Array.isArray(entry.fields)) throw new Error("runtime_collection_fields_array_required");
+    if (entry.fields.length < 1 || entry.fields.length > 40) throw new Error("runtime_collection_fields_count_invalid");
+    if (entry.fields.some(field => typeof field !== "string")) throw new Error("runtime_collection_fields_strings_required");
+    if (entry.fields.some(field => !/^[a-z][a-z0-9_]{0,49}$/.test(String(field)))) throw new Error("runtime_collection_field_name_invalid");
+    if (entry.fields.some(field => dangerous.has(String(field)))) throw new Error("runtime_collection_field_reserved");
     const fields = Array.from(new Set(entry.fields as string[]));
     if (!fields.includes("title") && !fields.includes("name")) throw new Error("runtime_collection_title_required");
     let fieldTypes: RuntimeCollection["fieldTypes"];
