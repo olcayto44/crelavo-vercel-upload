@@ -122,5 +122,5 @@ export async function POST(request: Request) {
     if (result.error) return Response.json({ error: "blueprint_save_failed" }, { status: 503 });
     if (!result.data) return Response.json({ error: "project_changed_reload" }, { status: 409 });
     return Response.json({ productionId: data.id, blueprint: { ...blueprint, revision }, messages, status: "plan_review", productionStarted: false, charged: 0 });
-  } catch (error) { const failure = blueprintFailure(error); console.error("[website-blueprint]", failure.code); return Response.json({ error: failure.code, productionStarted: false, charged: 0 }, { status: failure.status }); }
+  } catch (error) { const failure = blueprintFailure(error); console.error("[website-blueprint]", failure.code, "validationCode" in failure ? failure.validationCode : ""); return Response.json({ error: failure.code, ...("validationCode" in failure ? { validationCode: failure.validationCode } : {}), productionStarted: false, charged: 0 }, { status: failure.status }); }
 }

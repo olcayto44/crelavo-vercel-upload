@@ -67,6 +67,6 @@ export function blueprintFailure(error: unknown) {
   const providers = new Set(["blueprint_provider_unavailable", "blueprint_provider_timeout", "blueprint_provider_network_failed", "blueprint_provider_auth_failed", "blueprint_provider_access_denied", "blueprint_provider_rate_or_quota", "blueprint_provider_model_or_request_invalid", "blueprint_provider_failed", "blueprint_provider_response_invalid", "blueprint_provider_response_truncated", "blueprint_provider_refused", "blueprint_provider_response_empty", "blueprint_provider_json_invalid"]);
   if (providers.has(message)) return { code: message, status: message === "blueprint_provider_timeout" ? 504 : 503 };
   if (message === "blueprint_instruction_too_long") return { code: message, status: 400 };
-  if (/^(blueprint|runtime)_[a-z0-9_]+$/.test(message)) return { code: "blueprint_plan_validation_failed", status: 422 };
+  if (/^(blueprint|runtime)_[a-z0-9_]+$/.test(message)) return { code: "blueprint_plan_validation_failed", status: 422, validationCode: message };
   return { code: "blueprint_generation_failed", status: 503 };
 }
