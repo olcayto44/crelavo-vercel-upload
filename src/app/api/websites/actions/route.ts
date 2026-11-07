@@ -13,8 +13,16 @@ export async function POST(request: Request) {
   const token = request.headers.get("authorization")?.match(/^Bearer ([A-Za-z0-9_.-]+)$/)?.[1];
   if (!token) return respond(401, { error: "actions_identity_required" });
   let identity;
-  try { identity = await verifyActionsIdentity(token, origin + "/api/websites/actions/" + jobId); await verifyActionsRun(identity.runId, jobId); }
-  catch { return respond(401, { error: "actions_identity_rejected" }); }
+  const rejectIdentity = (stage: "identity" | "run", error: unknown) => {
+    const allowed = new Set(["actions_identity_invalid", "actions_identity_keys_unavailable", "actions_identity_keys_invalid", "actions_identity_issuer_invalid", "actions_identity_audience_invalid", "actions_identity_expired", "actions_identity_repository_invalid", "actions_identity_visibility_invalid", "actions_identity_workflow_invalid", "actions_identity_event_invalid", "actions_identity_runner_invalid", "actions_identity_subject_invalid", "actions_identity_run_invalid", "runtime_actions_not_configured", "actions_run_auth_failed", "actions_run_access_denied", "actions_run_not_found", "actions_run_unavailable", "actions_run_job_mismatch"]);
+    const code = error instanceof Error && allowed.has(error.message) ? error.message : "actions_identity_unclassified";
+    console.error("[website-actions-auth]", stage, code);
+    return respond(401, { error: "actions_identity_rejected", validationStage: stage, validationCode: code });
+  };
+  try { identity = await verifyActionsIdentity(token, origin + "/api/websites/actions/" + jobId); }
+  catch (error) { return rejectIdentity("identity", error); }
+  try { await verifyActionsRun(identity.runId, jobId); }
+  catch (error) { return rejectIdentity("run", error); }
   const db = supabaseAdmin();
   const { data, error } = await db.from("production_requests").select("id,user_id,output_json,updated_at").eq("id", projectId).eq("production_type", "website").maybeSingle();
   if (error) return respond(503, { error: "actions_project_read_failed" });

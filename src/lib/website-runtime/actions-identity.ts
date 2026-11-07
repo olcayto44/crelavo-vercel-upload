@@ -24,14 +24,25 @@ export async function verifyActionsIdentity(token: string, audience: string) {
   const key = keys.values.find(key => key.kid === header.kid && key.kty === "RSA" && key.use === "sig" && key.alg === "RS256");
   if (!key || !verify("RSA-SHA256", Buffer.from(parts[0] + "." + parts[1]), createPublicKey({ key, format: "jwk" }), Buffer.from(parts[2], "base64url"))) throw new Error("actions_identity_invalid");
   const now = Math.floor(Date.now() / 1000);
-  if (claims.iss !== "https://token.actions.githubusercontent.com" || claims.aud !== audience || !Number.isFinite(claims.exp) || !Number.isFinite(claims.iat) || claims.exp <= now || claims.iat > now + 30 || claims.exp - claims.iat > 600 || (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now + 30))) throw new Error("actions_identity_expired");
-  if (claims.repository !== repository || claims.repository_owner !== "olcayto44" || claims.repository_visibility !== "private" || claims.workflow_ref !== workflow || claims.ref !== "refs/heads/main" || claims.event_name !== "workflow_dispatch" || claims.runner_environment !== "github-hosted" || claims.sub !== "repo:" + repository + ":ref:refs/heads/main" || !/^\d+$/.test(claims.run_id) || !/^\d+$/.test(claims.run_attempt)) throw new Error("actions_identity_scope_invalid");
+  if (claims.iss !== "https://token.actions.githubusercontent.com") throw new Error("actions_identity_issuer_invalid");
+  if (claims.aud !== audience) throw new Error("actions_identity_audience_invalid");
+  if (!Number.isFinite(claims.exp) || !Number.isFinite(claims.iat) || claims.exp <= now || claims.iat > now + 30 || claims.exp - claims.iat > 600 || (claims.nbf !== undefined && (!Number.isFinite(claims.nbf) || claims.nbf > now + 30))) throw new Error("actions_identity_expired");
+  if (claims.repository !== repository || claims.repository_owner !== "olcayto44") throw new Error("actions_identity_repository_invalid");
+  if (claims.repository_visibility !== "private") throw new Error("actions_identity_visibility_invalid");
+  if (claims.workflow_ref !== workflow || claims.ref !== "refs/heads/main") throw new Error("actions_identity_workflow_invalid");
+  if (claims.event_name !== "workflow_dispatch") throw new Error("actions_identity_event_invalid");
+  if (claims.runner_environment !== "github-hosted") throw new Error("actions_identity_runner_invalid");
+  if (claims.sub !== "repo:" + repository + ":ref:refs/heads/main") throw new Error("actions_identity_subject_invalid");
+  if (!/^\d+$/.test(claims.run_id) || !/^\d+$/.test(claims.run_attempt)) throw new Error("actions_identity_run_invalid");
   return { runId: String(claims.run_id), attempt: String(claims.run_attempt) };
 }
 export async function verifyActionsRun(runId: string, jobId: string) {
   const token = process.env.WEBSITE_RUNTIME_GITHUB_TOKEN;
   if (!token) throw new Error("runtime_actions_not_configured");
   const response = await fetch("https://api.github.com/repos/" + repository + "/actions/runs/" + runId, { redirect: "error", signal: AbortSignal.timeout(10000), headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }, cache: "no-store" });
+  if (response.status === 401) throw new Error("actions_run_auth_failed");
+  if (response.status === 403) throw new Error("actions_run_access_denied");
+  if (response.status === 404) throw new Error("actions_run_not_found");
   if (!response.ok) throw new Error("actions_run_unavailable");
   const run = await response.json();
   if (run.path !== ".github/workflows/project-acceptance.yml" || run.event !== "workflow_dispatch" || run.head_branch !== "main" || run.display_title !== "Acceptance " + jobId || run.repository?.full_name !== repository) throw new Error("actions_run_job_mismatch");
