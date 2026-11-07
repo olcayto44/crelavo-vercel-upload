@@ -6,6 +6,8 @@ export function actionsPreviewOrigin() {
   if (process.env.VERCEL_ENV !== "preview" || process.env.WEBSITE_RUNTIME_ENABLED !== "1") throw new Error("runtime_actions_preview_only");
   const host = process.env.VERCEL_URL;
   if (!host || !/^[a-z0-9-]+\.vercel\.app$/.test(host)) throw new Error("runtime_actions_preview_origin_missing");
+  // Bind this branch to its stable alias; other branches retain deployment isolation.
+  if (process.env.VERCEL_GIT_COMMIT_REF === "feature/website-production-manager") return "https://crelavo-git-feature-website-production-manager-olcaytoo44.vercel.app";
   return "https://" + host;
 }
 export async function verifyActionsIdentity(token: string, audience: string) {
