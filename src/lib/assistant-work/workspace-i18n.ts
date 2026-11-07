@@ -252,14 +252,15 @@ export function translateWorkspaceText(value: string, language = "en", variables
   const translated = table.get(source)?.[language] || table.get(source)?.en || normalized;
   return (translated + colon).replace(/\{(\w+)\}/g, (match, name) => String(variables[name] ?? match));
 }
-export function websiteWorkspaceStatus(project: { status: string; website: { missing: string[]; unsupported: string[]; packId: string; credits: number | null; review?: { ready: boolean; blockers: string[] } } } | null, dirty: boolean, approved: boolean) {
+export function websiteWorkspaceStatus(project: { status: string; website: { runtimeDevelopment?: boolean; runtimeAccepted?: boolean; missing: string[]; unsupported: string[]; packId: string; credits: number | null; review?: { ready: boolean; blockers: string[] } } } | null, dirty: boolean, approved: boolean) {
   if (!project) return "Waiting for Website Brief";
   if (project.status === "generating") return "Generating website";
   if (project.status === "awaiting_payment") return "Payment finalization pending";
   if (project.status === "generation_failed") return "Generation failed — retry available";
   if (dirty) return "Review the updated plan";
   if (project.status === "ready") return "Website ready";
-  if (project.website.unsupported.length) return "Static scope needs revision";
+  if (project.website.runtimeDevelopment && !project.website.runtimeAccepted && !project.website.missing.length) return "Uygulama planı ve kaynak kabul testi bekleniyor";
+  if (!project.website.runtimeDevelopment && project.website.unsupported.length) return "Static scope needs revision";
   if (project.website.missing.length) return "Complete the brief before approval";
   if (!project.website.packId || project.website.credits === null) return "Select a static website package";
   if (project.website.review && !project.website.review.ready) return "Review the updated plan";
