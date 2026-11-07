@@ -22,6 +22,8 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
   const [runtimeJob, setRuntimeJob] = useState<{ id: string; status: string } | null>(null);
   const [runtimeAutomation, setRuntimeAutomation] = useState<{ status: string; error?: string } | null>(null);
   const runtimeLoaded = useRef("");
+  const polling = useRef(false);
+  const [pollTick, setPollTick] = useState(0);
   const [runtimeInstruction, setRuntimeInstruction] = useState("");
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(true);
@@ -60,7 +62,11 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
   async function runtimeAction(action: "status" | "propose" | "compile" | "restore" | "test" | "poll", artifactVersion?: string, instruction?: string) {
     if (!enabled || busy || (dirty && action !== "status" && action !== "poll") || !project?.website.runtimeDevelopment || !userId) return false;
     if (action === "compile" && (!runtimePlan || runtimePlan.stale)) return false;
-    const sequence = ++activeRequest.current; setBusy(true); setError("");
+    const background = action === "poll";
+    if (background && polling.current) return false;
+    const sequence = background ? activeRequest.current : ++activeRequest.current;
+    if (background) polling.current = true;
+    else { setBusy(true); setError(""); }
     try {
       const response = await request("/api/websites/blueprint", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, productionId: project.productionId, user_id: userId, instruction: instruction ?? runtimeInstruction, ...(action === "propose" ? { expectedBlueprintHash: runtimePlan?.hash || null } : {}), ...(action === "test" ? { approve: true, artifactVersion: runtimeArtifact?.artifactVersion } : {}), ...(action === "restore" ? { approve: true, artifactVersion, expectedArtifactVersion: runtimeArtifact?.artifactVersion } : {}), ...(action === "compile" ? { approve: true, blueprintHash: runtimePlan?.hash } : {}) }) });
       const data = await response.json();
@@ -76,7 +82,10 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
       if (action === "poll") { if (data.artifact) setRuntimeArtifact(current => ({ ...current, ...data.artifact })); setNotice(data.job?.status === "passed" ? "Bu kaynak sürümünün kabul testleri geçti. Paket/kredi onayı ayrı aşamadır." : data.job?.status === "failed" ? "Kabul testi başarısız; engeller düzeltilmeden ZIP teslim edilmez." : "Projeye özel kabul testleri çalışıyor."); }
       return true;
     } catch (error) { if (sequence === activeRequest.current) { setError(error instanceof Error ? error.message : "Uygulama işlemi başarısız."); if (action === "poll") setRuntimeJob(current => current ? { ...current, status: "connection_failed" } : null); } return false; }
-    finally { if (sequence === activeRequest.current) setBusy(false); }
+    finally {
+      if (background) { polling.current = false; if (enabledRef.current && sequence === activeRequest.current) setPollTick(value => value + 1); }
+      else if (sequence === activeRequest.current) setBusy(false);
+    }
   }
   useEffect(() => {
     if (!enabled || busy || dirty || !userId || !project?.website.runtimeDevelopment || runtimeLoaded.current === project.productionId) return;
@@ -85,7 +94,7 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
   useEffect(() => {
     if (!enabled || busy || !runtimeJob || !["queued", "running"].includes(runtimeJob.status)) return;
     const timer = setTimeout(() => { void runtimeAction("poll"); }, 2500); return () => clearTimeout(timer);
-  }, [enabled, busy, runtimeJob?.id, runtimeJob?.status]);
+  }, [enabled, busy, runtimeJob?.id, runtimeJob?.status, pollTick]);
   async function loadProjects() { setBusy(true); setError(""); try { const response = await request("/api/websites?user_id=" + encodeURIComponent(userId), { method: "GET" }); const data = await response.json(); if (!response.ok) throw new Error(data.error); setProjects(data.websites ?? []); } catch (error) { setError(error instanceof Error ? error.message : "Project list failed."); } finally { setBusy(false); } }
   function newProject() { runtimeLoaded.current = ""; setRuntimeMessages([]); setRuntimeJob(null); setRuntimeAutomation(null); activeRequest.current++; setRuntimePlan(null); setRuntimeArtifact(null); setRuntimeHistory([]); setRuntimeInstruction(""); setError(""); setTransientMessages([]); setActiveId(""); setProject(null); setBrief(emptyBrief()); setDirty(true); if (userId) window.sessionStorage.removeItem("crelavo-website-project:" + userId); setNotice("New Website Brief. No production has started."); }
   const reviewed = Boolean(project && !dirty && packId && project.website.packId === packId && typeof project.website.credits === "number" && !project.website.missing.length && !project.website.unsupported.length && (project.website.review?.ready ?? true));
