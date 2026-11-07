@@ -100,7 +100,12 @@ export async function POST(request: Request) {
     if (revision.blockers.length) return Response.json({ error: "runtime_data_migration_required", revision }, { status: 409 });
     let artifact;
     try { artifact = compileRuntimeBlueprint(websiteEngineInput(state.brief), stored, body.blueprintHash); }
-    catch { return Response.json({ error: "runtime_blueprint_validation_failed" }, { status: 422 }); }
+    catch (error) {
+      const failure = blueprintFailure(error);
+      const validationCode = "validationCode" in failure ? failure.validationCode : undefined;
+      console.error("[website-blueprint-compile]", "runtime_blueprint_validation_failed", validationCode || "unclassified");
+      return Response.json({ error: "runtime_blueprint_validation_failed", ...(validationCode ? { validationCode } : {}), productionStarted: false, charged: 0 }, { status: 422 });
+    }
     const sourceChanges = runtimeSourceChanges(data.output_json.runtimeArtifact, artifact);
     let nextOutput;
     try { nextOutput = automaticAcceptance({ ...data.output_json, runtimeBlueprint: { ...stored, review: "approved_for_development", approvedAt: new Date().toISOString() }, runtimeAcceptance: null, runtimePreview: data.output_json.runtimePreview ? { ...data.output_json.runtimePreview, status: "stale" } : null, runtimeArtifact: { ...artifact, sourceChanges, sourcePlanHash: state.planHash, createdAt: new Date().toISOString() }, acceptancePending: true }, data.id, body.user_id); }

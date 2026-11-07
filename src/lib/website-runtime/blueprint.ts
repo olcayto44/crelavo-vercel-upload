@@ -37,7 +37,9 @@ export function validateRuntimeBlueprint(value: unknown): RuntimeBlueprint {
     return { name: entry.name.trim(), kind, ...(entry.collections ? { collections: [...new Set(entry.collections as string[])] } : {}), ...(entry.workflowIds ? { workflowIds: [...new Set(entry.workflowIds as string[])] } : {}), status: (kind === "crud" ? "planned" : "requires_implementation") as "planned" | "requires_implementation" };
   });
   const normalized = { version: 1 as const, schema, pages, capabilities, ...(raw.workflows === undefined ? {} : { workflows }), ...(raw.theme === undefined ? {} : { theme: validateRuntimeTheme(raw.theme) }) };
-  return { ...normalized, hash: createHash("sha256").update(JSON.stringify(normalized)).digest("hex") };
+  // JSONB may reorder object keys; approval hashes must describe content, not key order.
+  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical((value as Record<string, unknown>)[key])])) : value;
+  return { ...normalized, hash: createHash("sha256").update(JSON.stringify(canonical(normalized))).digest("hex") };
 }
 /** Check explicit page requests without inventing content or changing approved pages. */
 export function validateBlueprintPageCoverage(brief: unknown, blueprint: RuntimeBlueprint): RuntimeBlueprint {

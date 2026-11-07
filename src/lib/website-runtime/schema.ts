@@ -25,7 +25,7 @@ export function validateRuntimeSchema(value: unknown): RuntimeSchema {
     if (entry.fieldTypes !== undefined) {
       if (!entry.fieldTypes || typeof entry.fieldTypes !== "object" || Array.isArray(entry.fieldTypes)) throw new Error("runtime_field_types_invalid");
       fieldTypes = {};
-      for (const [field, type] of Object.entries(entry.fieldTypes)) {
+      for (const [field, type] of Object.entries(entry.fieldTypes).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) {
         if (!fields.includes(field) || !["text", "integer", "number", "boolean", "url", "date"].includes(String(type))) throw new Error("runtime_field_type_invalid");
         if (["title", "name"].includes(field) && type !== "text") throw new Error("runtime_title_type_invalid");
         fieldTypes[field] = type as RuntimeFieldType;
