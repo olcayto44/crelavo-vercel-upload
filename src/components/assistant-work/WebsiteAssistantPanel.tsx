@@ -80,6 +80,13 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
       if (action === "restore") { setRuntimePlan(data.blueprint); setRuntimeArtifact({ artifactVersion: data.artifactVersion, blockers: data.blockers }); setRuntimeHistory([]); setNotice("Kaynak sürümü geri alındı. Canlı veri değiştirilmedi; dağıtım ve kabul yeniden gerekiyor."); }
       if (action === "compile") { setRuntimeArtifact({ artifactVersion: data.artifactVersion, blockers: data.blockers, sourceChanges: data.sourceChanges }); setNotice(data.job ? "Yeni kaynak sürümü kaydedildi; projeye özel kabul testleri otomatik sıraya alındı." : "Kaynaklar kaydedildi. Kabul worker bağlantısı eksik; test edilmeden teslim açılmaz."); }
       if (action === "poll") { if (data.artifact) setRuntimeArtifact(current => ({ ...current, ...data.artifact })); setNotice(data.job?.status === "passed" ? "Bu kaynak sürümünün kabul testleri geçti. Paket/kredi onayı ayrı aşamadır." : data.job?.status === "failed" ? "Kabul testi başarısız; engeller düzeltilmeden ZIP teslim edilmez." : "Projeye özel kabul testleri çalışıyor."); }
+      if ((action === "status" || action === "poll") && data.job?.status === "passed") {
+        const refreshed = await request("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: "website", type: "Website", action: "website_open", productionId: project.productionId }) });
+        const latest = await refreshed.json();
+        if (!enabledRef.current || sequence !== activeRequest.current) return false;
+        if (!refreshed.ok || !latest.ok || latest.productionId !== project.productionId) throw new Error("Kabul sonucu kaydedildi; paket onay durumu yenilenemedi. Projeyi yenileyin.");
+        setProject(latest);
+      }
       return true;
     } catch (error) { if (sequence === activeRequest.current) { setError(error instanceof Error ? error.message : "Uygulama işlemi başarısız."); if (action === "poll") setRuntimeJob(current => current ? { ...current, status: "connection_failed" } : null); } return false; }
     finally {
