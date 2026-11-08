@@ -34,7 +34,10 @@ export async function verifyActionsIdentity(token: string, audience: string) {
   if (claims.workflow_ref !== workflow || claims.ref !== "refs/heads/main") throw new Error("actions_identity_workflow_invalid");
   if (claims.event_name !== "workflow_dispatch") throw new Error("actions_identity_event_invalid");
   if (claims.runner_environment !== "github-hosted") throw new Error("actions_identity_runner_invalid");
-  if (claims.sub !== "repo:" + repository + ":ref:refs/heads/main") throw new Error("actions_identity_subject_invalid");
+  const legacySubject = "repo:" + repository + ":ref:refs/heads/main";
+  const immutableSubject = "repo:olcayto44@295817177/crelavo-acceptance-worker@1445531291:ref:refs/heads/main";
+  if (claims.sub !== legacySubject && claims.sub !== immutableSubject) throw new Error("actions_identity_subject_invalid");
+  if (claims.sub === immutableSubject && (claims.repository_owner_id !== "295817177" || claims.repository_id !== "1445531291")) throw new Error("actions_identity_repository_invalid");
   if (!/^\d+$/.test(claims.run_id) || !/^\d+$/.test(claims.run_attempt)) throw new Error("actions_identity_run_invalid");
   return { runId: String(claims.run_id), attempt: String(claims.run_attempt) };
 }
