@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { WebsiteEngineInput } from "../website-engine";
-import { validateRuntimeBlueprint, validateBlueprintPageCoverage } from "./blueprint.ts";
+import { validateRuntimeBlueprint, validateBlueprintPageCoverage, validateBlueprintLinks } from "./blueprint.ts";
 import { generateCustomerRuntime } from "./package.ts";
 export function compileRuntimeBlueprint(input: WebsiteEngineInput, proposed: unknown, approvedHash: string) {
-  const blueprint = validateBlueprintPageCoverage(input, validateRuntimeBlueprint(proposed));
+  const blueprint = validateBlueprintLinks(validateBlueprintPageCoverage(input, validateRuntimeBlueprint(proposed)));
   if (!approvedHash || approvedHash !== blueprint.hash) throw new Error("runtime_blueprint_approval_required");
   const files = generateCustomerRuntime({ ...input, runtimeSchema: blueprint.schema });
   const seedFile = files.find(file => file.path === "runtime/seed.json");
