@@ -1,3 +1,4 @@
+import { runtimePreviewDocument } from "@/lib/website-runtime/preview";
 import { createRuntimeWorkerJob, dispatchRuntimeWorker, pollRuntimeWorker, runtimeWorkerConfigured } from "@/lib/website-runtime/worker";
 import { reviewRuntimeRevision, checkedRuntimeSnapshot, runtimeSourceChanges } from "@/lib/website-runtime/revision";
 import { compileRuntimeBlueprint } from "@/lib/website-runtime/compile";
@@ -30,7 +31,19 @@ export async function POST(request: Request) {
   const state = data.output_json?.websiteAssistant;
   if (!state?.brief) return Response.json({ error: "shared_website_brief_required" }, { status: 409 });
   if (["generating", "awaiting_payment"].includes(state.phase)) return Response.json({ error: "production_in_progress" }, { status: 409 });
-  if (data.output_json.runtimeJob && ["queued", "running"].includes(data.output_json.runtimeJob.status) && Date.parse(data.output_json.runtimeJob.expiresAt) > Date.now() && !["status", "test", "poll"].includes(body.action)) return Response.json({ error: "runtime_worker_in_progress" }, { status: 409 });
+  if (data.output_json.runtimeJob && ["queued", "running"].includes(data.output_json.runtimeJob.status) && Date.parse(data.output_json.runtimeJob.expiresAt) > Date.now() && !["status", "test", "poll", "preview"].includes(body.action)) return Response.json({ error: "runtime_worker_in_progress" }, { status: 409 });
+  if (body.action === "preview") {
+    const stored = data.output_json.runtimeBlueprint;
+    if (!stored || stored.sourcePlanHash !== state.planHash || body.blueprintHash !== stored.hash) return Response.json({ error: "runtime_plan_changed_review_again" }, { status: 409 });
+    if (body.view !== undefined && !["public", "admin"].includes(body.view)) return Response.json({ error: "runtime_preview_view_invalid" }, { status: 422 });
+    const view = body.view === "admin" ? "admin" : "public";
+    const page = typeof body.page === "string" ? body.page : "index.html";
+    if (!/^(?:[a-z0-9][a-z0-9-]{0,79}\.html|items\/[a-z0-9]+(?:-[a-z0-9]+)*\/[a-zA-Z0-9_%.-]+)$/.test(page)) return Response.json({ error: "runtime_preview_page_invalid" }, { status: 422 });
+    try {
+      const artifact = compileRuntimeBlueprint(websiteEngineInput(state.brief), stored, stored.hash);
+      return new Response(runtimePreviewDocument(artifact, view, page), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    } catch { return Response.json({ error: "runtime_design_preview_invalid" }, { status: 422 }); }
+  }
   if (body.action === "test") {
     if (body.approve !== true || body.artifactVersion !== data.output_json.runtimeArtifact?.artifactVersion) return Response.json({ error: "runtime_test_approval_required" }, { status: 409 });
     if (!runtimeWorkerConfigured()) return Response.json({ error: "runtime_worker_not_configured" }, { status: 503 });

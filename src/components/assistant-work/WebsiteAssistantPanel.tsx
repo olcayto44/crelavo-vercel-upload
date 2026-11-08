@@ -15,7 +15,7 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
   const [brief, setBrief] = useState<Brief>(emptyBrief);
   const [activeId, setActiveId] = useState("");
   const [project, setProject] = useState<Project | null>(null);
-  const [runtimePlan, setRuntimePlan] = useState<{ hash: string; stale?: boolean; revision?: { status: string; blockers: string[]; additions: string[] }; pages: Array<{ title: string; purpose: string }>; capabilities: Array<{ name: string; kind: string; status: string }> } | null>(null);
+  const [runtimePlan, setRuntimePlan] = useState<{ hash: string; stale?: boolean; revision?: { status: string; blockers: string[]; additions: string[] }; pages: Array<{ slug?: string; title: string; purpose: string }>; capabilities: Array<{ name: string; kind: string; status: string }> } | null>(null);
   const [runtimeArtifact, setRuntimeArtifact] = useState<{ artifactVersion: string; stale?: boolean; blockers: string[]; sourceChanges?: { added: string[]; modified: string[]; removed: string[] } } | null>(null);
   const [runtimeHistory, setRuntimeHistory] = useState<Array<{ artifactVersion: string; createdAt?: string; canRestore: boolean }>>([]);
   const [runtimeMessages, setRuntimeMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
@@ -76,7 +76,7 @@ export function useWebsiteAssistant({ enabled, selection, request }: { enabled: 
       if (data.job) setRuntimeJob(data.job);
       if (data.automation) setRuntimeAutomation(data.automation);
       if (action === "status") { setRuntimeJob(data.job || null); setRuntimePlan(data.blueprint); setRuntimeArtifact(data.artifact); setRuntimeHistory(data.history || []); }
-      if (action === "propose") { setRuntimePlan(data.blueprint); setRuntimeArtifact(null); setNotice("Uygulama planını inceleyin. Kaynak üretimi ve canlı Preview henüz başlamadı."); setProject(current => current ? { ...current, website: { ...current.website, approvedHash: undefined, review: { ready: false, blockers: ["runtime_acceptance_pending"] } } } : current); }
+      if (action === "propose") { setRuntimePlan(data.blueprint); setRuntimeArtifact(null); setNotice("Uygulama planını inceleyin. Kaynak üretimi ve canlı Preview henüz başlamadı."); setProject(current => current ? { ...current, status: "draft", website: { ...current.website, runtimeAccepted: false, approvedHash: undefined, review: { ready: false, blockers: ["runtime_acceptance_pending"] } } } : current); }
       if (action === "restore") { setRuntimePlan(data.blueprint); setRuntimeArtifact({ artifactVersion: data.artifactVersion, blockers: data.blockers }); setRuntimeHistory([]); setNotice("Kaynak sürümü geri alındı. Canlı veri değiştirilmedi; dağıtım ve kabul yeniden gerekiyor."); }
       if (action === "compile") { setRuntimeArtifact({ artifactVersion: data.artifactVersion, blockers: data.blockers, sourceChanges: data.sourceChanges }); setNotice(data.job ? "Yeni kaynak sürümü kaydedildi; projeye özel kabul testleri otomatik sıraya alındı." : "Kaynaklar kaydedildi. Kabul worker bağlantısı eksik; test edilmeden teslim açılmaz."); }
       if (action === "poll") { if (data.artifact) setRuntimeArtifact(current => ({ ...current, ...data.artifact })); setNotice(data.job?.status === "passed" ? "Bu kaynak sürümünün kabul testleri geçti. Paket/kredi onayı ayrı aşamadır." : data.job?.status === "failed" ? "Kabul testi başarısız; engeller düzeltilmeden ZIP teslim edilmez." : "Projeye özel kabul testleri çalışıyor."); }

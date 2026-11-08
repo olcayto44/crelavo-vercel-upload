@@ -140,7 +140,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const runtimeResult = runtimeArtifactDelivery(output);
       if (runtimeResult.blockers.length) return Response.json({ error: "Runtime kabul testleri tamamlanmadı. Statik veya eski ZIP teslim edilmez.", blockers: runtimeResult.blockers }, { status: 409 });
       if (file === "preview") {
-        try { return new Response(runtimePreviewDocument(output.runtimeArtifact, "public", new URL(request.url).searchParams.get("page") || "index.html"), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }); }
+        const view = new URL(request.url).searchParams.get("view") || "public";
+        if (!["public", "admin"].includes(view)) return Response.json({ error: "runtime_preview_view_invalid" }, { status: 422 });
+        try { return new Response(runtimePreviewDocument(output.runtimeArtifact, view, new URL(request.url).searchParams.get("page") || "index.html"), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }); }
         catch { return Response.json({ error: "Kaynak tasar\u0131m \u00f6nizlemesi y\u00fcklenemedi." }, { status: 422 }); }
       }
       if (file === "manifest") return Response.json({ previewUrl: runtimeResult.previewUrl, artifactVersion: objectValue(output.runtimeArtifact).artifactVersion }, { headers: { "Cache-Control": "no-store" } });
