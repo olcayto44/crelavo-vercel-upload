@@ -13599,3 +13599,16 @@ html body:has(#clh) .crelavo-auth-sticky { display: none !important; }
 .stickman-sample-cta-bottom a:hover { background: #00ff66; }
 .stickman-sample-internal-link { margin-top: 28px; margin-bottom: 0; line-height: 1.6; }
 .stickman-sample-internal-link a { color: #00ff66; text-decoration: underline; }
+
+/* Scoped website planning controls: avoid global light form styles in dark studio. */
+html body .website-plan-controls { color-scheme: dark; color: #e5e7eb; }
+html body .website-plan-controls :is(input, textarea, select) { width: 100%; box-sizing: border-box; background: #191d26; color: #f3f4f6; border: 1px solid #4b5563; border-radius: 8px; padding: 9px 10px; font: inherit; }
+html body .website-plan-controls select option { background: #191d26; color: #f3f4f6; }
+html body .website-plan-controls :is(input, textarea)::placeholder { color: #a7b0be; opacity: 1; }
+html body .website-plan-controls :is(input, textarea, select, button):focus-visible { outline: 2px solid #f5c77a; outline-offset: 2px; }
+html body .website-plan-controls button { background: #262d3a; color: #f3f4f6; border: 1px solid #566174; border-radius: 8px; padding: 9px 10px; cursor: pointer; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+html body .website-plan-controls button:disabled { background: #1c2029; color: #a7b0be; cursor: not-allowed; }
+html body .website-plan-controls button small { display: block; margin-top: 4px; color: #b8c2d0; }
+html body .website-plan-controls .website-plan-hint { color: #c4cbd6; line-height: 1.5; }
+html body .website-plan-controls summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+html body .website-plan-controls [role="alert"] { color: #fca5a5; overflow-wrap: anywhere; }

@@ -1,3 +1,5 @@
+import { runtimePreviewDocument } from "@/lib/website-runtime/preview";
+import { runtimeArtifactDelivery } from "@/lib/website-runtime/delivery";
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
 import { isAdminRequest } from "@/lib/admin-guard";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
@@ -134,6 +136,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
    const output = objectValue(data.output_json);
    if (data.production_type === "website" && output.websiteBillingPending === true && !isAdminRequest(request)) return Response.json({ error: "Website generation/payment is not finalized. Retry from the same website project." }, { status: 409 });
+    if (data.production_type === "website" && (output.runtimeBlueprint || output.runtimeArtifact)) {
+      const runtimeResult = runtimeArtifactDelivery(output);
+      if (runtimeResult.blockers.length) return Response.json({ error: "Runtime kabul testleri tamamlanmadı. Statik veya eski ZIP teslim edilmez.", blockers: runtimeResult.blockers }, { status: 409 });
+      if (file === "preview") {
+        const view = new URL(request.url).searchParams.get("view") || "public";
+        if (!["public", "admin"].includes(view)) return Response.json({ error: "runtime_preview_view_invalid" }, { status: 422 });
+        try { return new Response(runtimePreviewDocument(output.runtimeArtifact, view, new URL(request.url).searchParams.get("page") || "index.html"), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } }); }
+        catch { return Response.json({ error: "Kaynak tasar\u0131m \u00f6nizlemesi y\u00fcklenemedi." }, { status: 422 }); }
+      }
+      if (file === "manifest") return Response.json({ previewUrl: runtimeResult.previewUrl, artifactVersion: objectValue(output.runtimeArtifact).artifactVersion }, { headers: { "Cache-Control": "no-store" } });
+      if (file === "zip") return new Response(buildDeliveryZip(runtimeResult.files.map((item: any) => ({ name: item.path, content: item.content }))), { headers: { "Content-Type": "application/zip", "Content-Disposition": 'attachment; filename="' + safeTitle + '-runtime.zip"', "Cache-Control": "no-store" } });
+      if (file === "readme") return responseWithText(runtimeResult.files.find((item: any) => item.path === "runtime/README.md")?.content || "", safeTitle + "-runtime-readme.md");
+      if (file === "source") return responseWithText(JSON.stringify(runtimeResult.files, null, 2), safeTitle + "-runtime-source.json", "application/json");
+      return Response.json({ artifactVersion: objectValue(output.runtimeArtifact).artifactVersion, previewUrl: runtimeResult.previewUrl, status: "accepted" }, { headers: { "Cache-Control": "no-store" } });
+    }
     const realOutputTypes = new Set(["music_video", "voice_clone", "visual_clone", "drama", "studio"]);
    if (realOutputTypes.has(String(data.production_type ?? "")) && data.status !== "ready") {
      return Response.json({ error: "Real provider output is not ready yet. Demo or placeholder delivery is unavailable." }, { status: 409 });
