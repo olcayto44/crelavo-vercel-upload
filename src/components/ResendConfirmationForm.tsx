@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { authDestination } from "@/lib/crelavo/authDestination";
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 type State = "idle" | "loading" | "success" | "error";
 
@@ -22,7 +22,7 @@ export function ResendConfirmationForm() {
     const { error } = await supabaseBrowser().auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: `${siteUrl || window.location.origin}/auth/login?confirmed=1` }
+      options: { emailRedirectTo: authDestination(window.location.origin, "/auth/login?confirmed=1") }
     });
 
     if (error) {

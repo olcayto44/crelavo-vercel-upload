@@ -20,7 +20,7 @@ const moduleMocks = {
   "@/lib/assistant-work/chat-language": language, "@/lib/assistant-work/workspace-i18n": load("src/lib/assistant-work/workspace-i18n.ts"),
   "@/lib/assistant-work/workspace-chat": chat,
   "@/lib/assistant-work/conversation": { converseWorkspacePlan: async (...args) => { calls.push(["conversation", ...args]); if (failProvider) throw new Error("Provider unavailable"); return "Gerçek plan yanıtı: Hedef kitleniz kim?"; } },
-  "@/lib/assistant-work/website": { handleWebsiteAssistant: async (body) => { calls.push(["website", body]); return { status: 200, payload: { ok: true, productionId: "same-project", website: { brief: { brand: "FilmAtlas" }, messages: [{ role: "user", content: body.prompt }, { role: "assistant", content: "FilmAtlas için statik kapsamı netleştirelim." }] } } }; } },
+  "@/lib/assistant-work/website-request": { executeWebsiteRequest: async (request, body) => { calls.push(["website", body]); return { status: 200, payload: { ok: true, productionId: "same-project", website: { brief: { brand: "FilmAtlas" }, messages: [{ role: "user", content: body.prompt }, { role: "assistant", content: "FilmAtlas için statik kapsamı netleştirelim." }] } } }; } },
   "@/lib/security": { clientIpFromRequest: () => "local-test", rateLimit: () => ({ allowed: true }), rateLimitResponse: () => Response.json({}, { status: 429 }), rejectSuspiciousText: () => ({ ok: true }) },
   "next/server": { NextResponse: { json: (data, init) => Response.json(data, init) } },
   "@/lib/assistant-work/core": { handleAssistantWork: () => { throw new Error("Unexpected legacy engine"); }, quote: () => { throw new Error("No credit quote for chat"); } },
