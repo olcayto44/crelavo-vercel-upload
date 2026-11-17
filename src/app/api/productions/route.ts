@@ -197,7 +197,7 @@ export async function GET(request: Request) {
     for (const item of Array.isArray(data) ? data as Record<string, unknown>[] : []) {
       const requestMetadata = item.request_metadata && typeof item.request_metadata === "object" ? item.request_metadata as Record<string, unknown> : {};
       const inputJson = item.input_json && typeof item.input_json === "object" ? item.input_json as Record<string, unknown> : {};
-      const fingerprint = normalizeFingerprintValue(requestMetadata.requestFingerprint ?? inputJson.requestFingerprint ?? buildProductionRequestFingerprint({
+      const fingerprint = inputJson.mergeJobId ? "merge:"+String(item.id) : normalizeFingerprintValue(requestMetadata.requestFingerprint ?? inputJson.requestFingerprint ?? buildProductionRequestFingerprint({
         productionType: String(item.production_type ?? ""),
         packageId: String(item.package_id ?? ""),
         title: String(item.title ?? ""),
@@ -210,6 +210,11 @@ export async function GET(request: Request) {
       }));
       if (seenFingerprints.has(fingerprint)) continue;
       seenFingerprints.add(fingerprint);
+      const out=item.output_json as Record<string,any>|undefined;
+      if(item.status==="ready"&&out?.mergeJobId&&out.media?.storagePath){
+        const signed=await supabase.storage.from(process.env.PRODUCTION_ASSETS_BUCKET||"production-assets").createSignedUrl(out.media.storagePath,3600);
+        if(signed.data?.signedUrl){item.preview_url=signed.data.signedUrl;item.delivery_link=signed.data.signedUrl;item.output_json={...out,media:{...out.media,url:signed.data.signedUrl}};}
+      }
       uniqueProductions.push(item);
     }
 

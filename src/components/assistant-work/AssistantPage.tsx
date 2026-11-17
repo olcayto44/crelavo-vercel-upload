@@ -285,6 +285,23 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [selected, setSelected] = useState(0);
   const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
   const categoryResetRef = useRef(category);
+  const [mediaProjectId,setMediaProjectId]=useState("");
+  const [mergeOrder,setMergeOrder]=useState<string[]>([]);
+  const [mergeBusy,setMergeBusy]=useState(false);
+  const [mergeProductionId,setMergeProductionId]=useState("");
+  const [mergedUrl,setMergedUrl]=useState("");
+  useEffect(()=>{if(!website&&!mediaProjectId)setMediaProjectId(crypto.randomUUID());},[website,mediaProjectId]);
+  async function mergeScenes(){
+    if(mergeBusy||mergeOrder.length<2||mergeOrder.length>12)return;
+    setMergeBusy(true);setMergedUrl("");
+    try{const r=await cinemaFetch("/api/assistant-work/merge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:mediaProjectId,productionIds:mergeOrder})});const d=await r.json();if(!r.ok||!d.productionId)throw new Error(d.message||"Merge could not start");setMergeProductionId(d.productionId);setNotice("SCENE MERGE QUEUED / MY PRODUCTIONS");}
+    catch(e){setNotice(e instanceof Error?e.message:"Merge failed");setMergeBusy(false);}
+  }
+  useEffect(()=>{
+    if(!mergeProductionId)return;let stopped=false;const controller=new AbortController();let timer:ReturnType<typeof setTimeout>;
+    const poll=async()=>{try{const r=await cinemaFetch("/api/assistant-work/status",{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({productionId:mergeProductionId})});const d=await r.json();if(stopped)return;if(r.ok&&d.status==="ready"&&d.mediaUrl){setMergedUrl(d.mediaUrl);setMergeBusy(false);setMergeProductionId("");setNotice("MERGED VIDEO READY / MY PRODUCTIONS");return;}if(r.ok&&d.status==="failed"){setMergeBusy(false);setMergeProductionId("");setNotice("SCENE MERGE FAILED");return;}}catch{}if(!stopped)timer=setTimeout(poll,4000);};void poll();
+    return()=>{stopped=true;controller.abort();clearTimeout(timer);};
+  },[mergeProductionId]);
   const [draft, setDraft] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
@@ -326,6 +343,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if (!active || !raw || typeof raw !== "object") return;
       const state = raw as Record<string, unknown>;
       if (state.category !== engineCategory) return;
+      if(typeof state.mediaProjectId==="string")setMediaProjectId(state.mediaProjectId);
+      if(typeof state.mergeProductionId==="string"){setMergeProductionId(state.mergeProductionId);setMergeBusy(Boolean(state.mergeProductionId));}
+      if(Array.isArray(state.mergeOrder))setMergeOrder(state.mergeOrder.filter((id):id is string=>typeof id==="string"));
       if (Array.isArray(state.shots) && state.shots.length) setShots(state.shots as Shot[]);
       if (Number.isInteger(state.selected)) setSelected(Math.max(0, Number(state.selected)));
       if (typeof state.notice === "string") setNotice(state.notice);
@@ -341,8 +361,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   useEffect(() => {
     if (website || !restoredRef.current || typeof window === "undefined") return;
     if (skipPersistRef.current) { skipPersistRef.current = false; return; }
-    try { window.sessionStorage.setItem(storageKey, JSON.stringify({ category: engineCategory, shots, selected, notice, referenceUrl, planApproved, chatMessages, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
-  }, [shots, selected, notice, referenceUrl, planApproved, chatMessages, storageKey, website, engineCategory]);
+    try { window.sessionStorage.setItem(storageKey, JSON.stringify({ mediaProjectId, mergeOrder, mergeProductionId, category: engineCategory, shots, selected, notice, referenceUrl, planApproved, chatMessages, savedAt: Date.now() })); } catch { /* ignore storage limits */ }
+  }, [mediaProjectId, mergeOrder, mergeProductionId, shots, selected, notice, referenceUrl, planApproved, chatMessages, storageKey, website, engineCategory]);
   useEffect(() => {
     const read = () => {
       const vv = window.visualViewport;
@@ -490,7 +510,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         method: "POST",
         signal:controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
+        body: JSON.stringify({ action: "revise", render: false, projectId:mediaProjectId, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
@@ -581,6 +601,13 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <section style={{ flex: "0 0 auto", display: "grid", gap: 8, padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><label style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ maxWidth: "100%", fontSize: 12, color: "#d1d5db" }} /><small style={{ color: "#6b7280" }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></section> : null}
 
+          {!website ? <section aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
+            <strong>{t("Scene merge order")}</strong>
+            <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 0"}}>{shots.filter(s=>s.status==="READY"&&s.mediaKind==="video"&&s.productionId).map(s=><button type="button" key={s.productionId} disabled={mergeBusy||mergeOrder.length>=12} onClick={()=>setMergeOrder(cur=>[...cur,s.productionId!])}>{t("Add scene")} {s.id}</button>)}</div>
+            <ol>{mergeOrder.map((id,i)=><li key={i}>{shots.find(s=>s.productionId===id)?.title||id} <button type="button" disabled={mergeBusy||i===0} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}>{t("Move left")}</button> <button type="button" disabled={mergeBusy||i===mergeOrder.length-1} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i],next[i+1]]=[next[i+1],next[i]];return next;})}>{t("Move right")}</button> <button type="button" disabled={mergeBusy} onClick={()=>setMergeOrder(cur=>cur.filter((_,j)=>i!==j))}>{t("Remove")}</button></li>)}</ol>
+            <button type="button" disabled={mergeBusy||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
+            {mergedUrl?<><video src={mergedUrl} controls playsInline style={{maxHeight:320,maxWidth:"100%"}}/><button type="button" onClick={()=>void downloadMedia(mergedUrl,"video")}>{t("DOWNLOAD MEDIA")}</button></>:null}
+          </section>:null}
           {(shot.status === "READY" && (shot.mediaUrl || shot.files.length > 0)) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => void downloadMedia(shot.mediaUrl!,shot.mediaKind).catch(()=>setNotice("MEDIA DOWNLOAD BLOCKED / OPEN THE PREVIEW SOURCE TO SAVE THE FILE"))} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>{t("UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.")}</div>
         </div>

@@ -84,7 +84,11 @@
     "test:assistant-atomic": "node scripts/assistant-atomic-production-smoke.cjs",
     "smoke:website-actions": "node scripts/website-actions-identity-smoke.cjs && node scripts/website-actions-callback-smoke.cjs",
     "test:assistant-atomic-accounting": "node scripts/assistant-atomic-accounting-regression.cjs",
-    "test:assistant-atomic-db": "node scripts/assistant-atomic-db-regression.cjs"
+    "test:assistant-atomic-db": "node scripts/assistant-atomic-db-regression.cjs",
+    "merge:worker": "node --experimental-strip-types worker/mergeWorker.ts",
+    "merge:once": "node --experimental-strip-types worker/mergeWorker.ts --once",
+    "test:merge-db": "node scripts/merge-db-regression.cjs",
+    "test:merge-integration": "node scripts/merge-integration-regression.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",

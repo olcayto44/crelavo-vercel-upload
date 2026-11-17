@@ -115,6 +115,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const access = await requireDeliveryAccess(request, data);
   if (!access.ok) return access.response;
+  if(file==="merge"){
+    const media=data.output_json?.media;
+    if(data.status!=="ready"||!data.output_json?.mergeJobId||media?.kind!=="video"||!media.storagePath)return Response.json({error:"merge_not_ready"},{status:404});
+    const signed=await supabaseAdmin().storage.from(process.env.PRODUCTION_ASSETS_BUCKET||"production-assets").createSignedUrl(media.storagePath,3600);
+    if(signed.error||!signed.data?.signedUrl)return Response.json({error:"merge_delivery_unavailable"},{status:503});
+    return new Response(null,{status:307,headers:{Location:signed.data.signedUrl,"Cache-Control":"no-store"}});
+  }
   let billingStatus = "active";
   let trialing = false;
   if (!isAdminRequest(request)) {

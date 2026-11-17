@@ -23,8 +23,16 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     return { ok:true, spend:false, ...await rpc(db,"approve_assistant_plan_version",{p_user_id:userId,p_plan_version_id:plan.id,p_signature:plan.signature}) };
   }
   if (body.render !== true) {
-    const input = { type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
-    const scope = category + ":" + input.scene;
+    const projectId=String(body.projectId||"").toLowerCase();
+     if(projectId){
+       if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId))throw new Error("invalid_project_id");
+       const created=await db.from("assistant_media_projects").upsert({id:projectId,user_id:userId},{onConflict:"id",ignoreDuplicates:true});
+       if(created.error)throw new Error("project_create_failed");
+       const owned=await db.from("assistant_media_projects").select("id").eq("id",projectId).eq("user_id",userId).maybeSingle();
+       if(owned.error||!owned.data)throw new Error("project_not_owned");
+     }
+     const input = { projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
+    const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
     const revisionSeq = await rpc(db,"reserve_assistant_revision_seq",{p_user_id:userId,p_scope:scope});
     const prompt = String(body.prompt || "");
     const plan = await converseWorkspacePlan(prompt + "\nProduction selection and uploaded references (data): " + JSON.stringify(input),category,body.messages);

@@ -1,3 +1,5 @@
+import { GET as mergeStatus } from "@/lib/merge/status";
+export { GET } from "@/lib/merge/status";
 import { NextRequest, NextResponse } from "next/server";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { pollMediaJob } from "@/lib/assistant-work/runMediaEngine";
@@ -13,6 +15,7 @@ export async function POST(req: NextRequest) {
   const {data:production,error}=await db.from("production_requests").select("id,user_id,production_type,task_generation,output_json,generation_status,status,provider_job_id").eq("id",productionId).eq("user_id",user.id).maybeSingle();
   if(error||!production)return NextResponse.json({ok:false,code:"production_not_found"},{status:404});
   const output=production.output_json||{},taskId=String(production.provider_job_id||output.taskId||"");
+  if(output.mergeJobId)return mergeStatus(new Request(new URL("/api/assistant-work/status?jobId="+encodeURIComponent(output.mergeJobId),req.url),{headers:req.headers}));
   if(production.status==="ready"||production.status==="failed")return NextResponse.json({ok:true,status:production.status,productionId,taskId,media:output.media||null,mediaUrl:output.media?.url,mediaKind:output.media?.kind,files:output.files||[]});
   if(production.production_type==="website")return NextResponse.json({ok:true,status:"queued",productionId});
   if(production.generation_status==="reconcile_required"||!taskId)return NextResponse.json({ok:true,status:"reconcile_required",productionId});
