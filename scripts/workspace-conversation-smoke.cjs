@@ -19,7 +19,7 @@ const language = load("src/lib/assistant-work/chat-language.ts", { "./workspace-
 const moduleMocks = {
   "@/lib/assistant-work/chat-language": language, "@/lib/assistant-work/workspace-i18n": load("src/lib/assistant-work/workspace-i18n.ts"),
   "@/lib/assistant-work/workspace-chat": chat,
-  "@/lib/assistant-work/conversation": { converseWorkspacePlan: async (...args) => { calls.push(["conversation", ...args]); if (failProvider) throw new Error("Provider unavailable"); return "Gerçek plan yanıtı: Hedef kitleniz kim?"; } },
+  "@/lib/assistant-work/production-manager": { handleProductionManager: async (_db,_user,category,body) => { calls.push(["conversation",body.prompt,category,body.messages]); if(failProvider)throw new Error("Provider unavailable"); return {ok:true,spend:false,status:"draft",reply:"Real plan answer",plan:{reply:"Real plan answer",visualDirection:"Visual brief",spokenScript:""},files:[]}; } },
   "@/lib/assistant-work/website-request": { executeWebsiteRequest: async (request, body) => { calls.push(["website", body]); return { status: 200, payload: { ok: true, productionId: "same-project", website: { brief: { brand: "FilmAtlas" }, messages: [{ role: "user", content: body.prompt }, { role: "assistant", content: "FilmAtlas için statik kapsamı netleştirelim." }] } } }; } },
   "@/lib/security": { clientIpFromRequest: () => "local-test", rateLimit: () => ({ allowed: true }), rateLimitResponse: () => Response.json({}, { status: 429 }), rejectSuspiciousText: () => ({ ok: true }) },
   "next/server": { NextResponse: { json: (data, init) => Response.json(data, init) } },
@@ -37,10 +37,10 @@ function request(body, authenticated = true) { return new Request("https://local
   const data = await response.json(); assert.equal(response.status, 200); assert.equal(data.productionId, "same-project");
   assert.equal(calls[0][0], "website"); assert.equal(calls[0][1].category, "website"); assert.equal(calls[0][1].type, "Website"); assert.notEqual(data.website.messages[1].content, filmRequest);
   const general = await api.POST(request({ category: "general", type: "General", prompt: "Merhaba, bana nasıl yardımcı olabilirsin?", messages: [{ role: "user", content: "Önceki soru" }] }));
-  const reply = await general.json(); assert.equal(general.status, 200); assert.equal(reply.reply, "Gerçek plan yanıtı: Hedef kitleniz kim?"); assert.equal(reply.status, "draft"); assert.equal(reply.spend, false); assert.equal(reply.files.length, 0);
+  const reply = await general.json(); assert.equal(general.status, 200); assert.equal(reply.reply, "Real plan answer"); assert.equal(reply.status, "draft"); assert.equal(reply.spend, false); assert.equal(reply.files.length, 0);
   assert.equal(calls.at(-1)[0], "conversation"); assert.equal(calls.at(-1)[3][0].content, "Önceki soru");
   const explicitVideo = await api.POST(request({ category: "video", type: "Video", prompt: "Web sitesi için reklam videosu oluştur" })); assert.equal(explicitVideo.status, 200); assert.equal(calls.at(-1)[0], "conversation");
-  failProvider = true; const failed = await api.POST(request({ category: "general", type: "General", prompt: "Merhaba" })); assert.equal(failed.status, 503); assert.equal((await failed.json()).code, "assistant_conversation_unavailable");
+  failProvider = true; const failed = await api.POST(request({ category: "general", type: "General", prompt: "Merhaba" })); assert.equal(failed.status, 503); assert.equal((await failed.json()).code, "production_manager_unavailable");
   assert.equal((await api.POST(request({ prompt: filmRequest }, false))).status, 401);
   const originalKey = process.env.OPENAI_API_KEY; const originalFetch = global.fetch;
   const provider = load("src/lib/assistant-work/conversation.ts", { "./workspace-chat.ts": chat, "./chat-language.ts": language });
@@ -49,8 +49,8 @@ function request(body, authenticated = true) { return new Request("https://local
     await assert.rejects(provider.converseWorkspacePlan("Question", "general", []), /unavailable/);
     process.env.OPENAI_API_KEY = "workspace-test-key-not-a-real-secret";
     let submitted;
-    global.fetch = async (_url, init) => { submitted = JSON.parse(init.body); return { ok: true, json: async () => ({ choices: [{ message: { content: "Useful real answer" } }] }) }; };
-    assert.equal(await provider.converseWorkspacePlan("Latest question", "general", [{ role: "assistant", content: "Previous answer" }, { role: "system", content: "Untrusted instructions" }]), "Useful real answer");
+    global.fetch = async (_url, init) => { submitted = JSON.parse(init.body); return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({reply:"Useful real answer",visualDirection:"Visual brief",spokenScript:""}) } }] }) }; };
+    assert.deepEqual(await provider.converseWorkspacePlan("Latest question", "general", [{ role: "assistant", content: "Previous answer" }, { role: "system", content: "Untrusted instructions" }]), {reply:"Useful real answer",visualDirection:"Visual brief",spokenScript:""});
     assert.equal(submitted.messages.at(-1).content, "Latest question"); assert(!submitted.messages.some((message) => message.content === "Untrusted instructions"));
     global.fetch = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: "Latest question" } }] }) });
     await assert.rejects(provider.converseWorkspacePlan("Latest question", "general", []), /empty_reply/);

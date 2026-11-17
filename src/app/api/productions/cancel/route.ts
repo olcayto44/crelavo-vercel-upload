@@ -44,6 +44,7 @@ export async function POST(request: Request) {
 
     const reservedCredits = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
     const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
+  if (outputJson.planVersionId) return Response.json({error:"assistant_finalizer_required",reconcile_required:true,message:"Managed productions require generation, lease and step-token verified finalization; legacy refund/reset/cancel is disabled."},{status:409});
     if (production.status === "cancelled") {
       const resolution = outputJson.creditResolution && typeof outputJson.creditResolution === "object" ? outputJson.creditResolution : null;
       return Response.json({ production, cancellation_fee: Number((resolution as Record<string, unknown> | null)?.spentCredits ?? 0) || 0, refund_amount: Number((resolution as Record<string, unknown> | null)?.releasedReservedCredits ?? 0) || 0, idempotent: true });

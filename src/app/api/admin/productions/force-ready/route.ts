@@ -64,6 +64,7 @@ export async function POST(request: Request) {
   if (!current) return Response.json({ error: "Production not found." }, { status: 404 });
 
   const outputJson = current.output_json && typeof current.output_json === "object" ? current.output_json as Record<string, unknown> : {};
+  if (outputJson.planVersionId) return Response.json({error:"assistant_finalizer_required",reconcile_required:true,message:"Managed productions require generation, lease and step-token verified finalization; legacy refund/reset/cancel is disabled."},{status:409});
   const visualStatus = outputJson.visualStatus && typeof outputJson.visualStatus === "object" ? outputJson.visualStatus as Record<string, unknown> : {};
   const renderStatus = outputJson.renderStatus && typeof outputJson.renderStatus === "object" ? outputJson.renderStatus as Record<string, unknown> : {};
   const visualJob = outputJson.visualJob && typeof outputJson.visualJob === "object" ? outputJson.visualJob as ProviderJob : null;

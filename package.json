@@ -81,7 +81,10 @@
     "worker:website-runtime": "node scripts/runtime-worker/service.mjs",
     "smoke:website-production-manager": "npm run smoke:website-sector-profile && npm run smoke:website-blueprint && npm run smoke:website-blueprint-route && npm run smoke:website-runtime-compile && npm run smoke:website-runtime-revision && npm run smoke:website-runtime && npm run smoke:website-live-migration && npm run smoke:website-business && npm run smoke:website-runtime-delivery && npm run smoke:website-runtime-worker && npm run smoke:website-worker-service && npm run smoke:website-project-acceptance && npm run smoke:website-runtime-chat",
     "smoke:website-runtime-chat": "node scripts/website-runtime-chat-smoke.cjs",
-    "smoke:website-actions": "node scripts/website-actions-identity-smoke.cjs && node scripts/website-actions-callback-smoke.cjs"
+    "test:assistant-atomic": "node scripts/assistant-atomic-production-smoke.cjs",
+    "smoke:website-actions": "node scripts/website-actions-identity-smoke.cjs && node scripts/website-actions-callback-smoke.cjs",
+    "test:assistant-atomic-accounting": "node scripts/assistant-atomic-accounting-regression.cjs",
+    "test:assistant-atomic-db": "node scripts/assistant-atomic-db-regression.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",
@@ -107,6 +110,7 @@
     "@img/sharp-linux-x64": "0.35.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@playwright/test": "^1.64.1",
     "@types/geoip-lite": "^1.4.4",
     "@types/node": "^26.1.2",

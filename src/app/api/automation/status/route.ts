@@ -480,6 +480,7 @@ export async function POST(request: Request) {
     if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
     const access = await requireAutomationStatusAccess(request, body, production);
     if (!access.ok) return access.response;
+    if (production.output_json && typeof production.output_json === "object" && production.output_json.planVersionId) return Response.json({error:"assistant_manager_status_required",reconcile_required:true},{status:409});
 
     const projectType = String(production.production_type ?? "");
     const projectPackage = String(production.package_id ?? "");

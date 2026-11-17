@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   const { data: production, error } = await supabase.from("production_requests").select("id,user_id,title,status,automation_status,generation_status,reserved_credits,estimated_credits,output_json").eq("id", productionId).single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const output = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
+  if (output.planVersionId) return Response.json({error:"assistant_finalizer_required",reconcile_required:true,message:"Managed productions require generation, lease and step-token verified finalization; legacy refund/reset/cancel is disabled."},{status:409});
   const resolution = output.creditResolution && typeof output.creditResolution === "object" ? output.creditResolution as Record<string, unknown> : null;
   if (["refunded_reserved", "refunded_reserved_no_provider_cost", "expired_before_provider_start_refunded"].includes(String(resolution?.status ?? ""))) return Response.json({ production, already_recovered: true, refunded_credits: 0 });
   const visualJob = output.visualJob && typeof output.visualJob === "object" ? output.visualJob as Record<string, unknown> : null;

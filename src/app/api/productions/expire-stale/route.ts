@@ -59,6 +59,7 @@ async function expireStaleProductions(request: Request) {
 
     for (const production of productions ?? []) {
       const outputJson = objectValue(production.output_json);
+      if(outputJson.planVersionId){skipped.push({id:production.id,reason:"assistant_finalizer_required"});continue;}
       const existingResolution = objectValue(outputJson.creditResolution);
       if (hasProviderStarted(production)) {
         skipped.push({ id: production.id, reason: "provider_started" });

@@ -5,6 +5,7 @@ import { WebsiteWorkspacePreview } from "./WebsiteWorkspacePreview";
 import { useWorkspaceLanguage } from "./useWorkspaceLanguage";
 import { websiteWorkspaceStatus, workspaceLanguages } from "@/lib/assistant-work/workspace-i18n";
 import { normalizeWorkspaceMessages } from "@/lib/assistant-work/workspace-chat";
+import { abortableDelay, createProductionPollingRegistry } from "@/lib/assistant-work/polling";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -38,7 +39,7 @@ type CreditState =
   | { kind: "unknown" }
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
-type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; progress?: number; };
+type Shot = { id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; planVersionId?: string; approvedPlanVersionId?: string; spokenScript?: string; mediaKind?: "video"|"image"|"audio"; estimatedCredits?: number; progress?: number; };
 type ChatMessage = { role: "user" | "assistant"; content: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
@@ -200,7 +201,7 @@ async function cinemaFetch(url: string, init: RequestInit): Promise<Response> {
 }
 function videoShots(): Shot[] {
   return [
-    { id: 1, label: "READY", status: "READY", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
+    { id: 1, label: "DRAFT", status: "DRAFT", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
     { id: 2, label: "REVISING", status: "REVISING", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null, files: [] },
     { id: 3, label: "RENDERING", status: "RENDERING", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null, files: [] },
     { id: 4, label: "QUEUED", status: "QUEUED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null, files: [] },
@@ -230,18 +231,23 @@ function applyPayload(shot: Shot, data: unknown, prompt: string, website: boolea
     return name ? [{ name, mime: typeof record.mime === "string" ? record.mime : undefined, content: typeof record.content === "string" ? record.content : undefined }] : [];
   }) : shot.files;
   const ready = String(root.status || "").toLowerCase() === "ready";
-  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: media || shot.mediaUrl, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, status: ready || !website ? "READY" : shot.status, label: ready || !website ? "READY" : shot.label };
+  return { ...shot, title: title || shot.title, body: body || prompt || shot.body, mediaUrl: ready ? media || null : null, files, taskId: taskId || shot.taskId, productionId: productionId || shot.productionId, mediaKind: ["video","image","audio"].includes(String(mediaObject.kind)) ? mediaObject.kind as Shot["mediaKind"] : shot.mediaKind, status: ready ? "READY" : String(root.status || "draft").toUpperCase(), label: ready ? "READY" : String(root.status || "draft").toUpperCase() };
 }
 function safeDownloadName(name: string) { return name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 120) || "crelavo-output.txt"; }
 function downloadDeliveryFile(file: DeliveryFile) {
   if (!file.content) return;
-  const blob = new Blob([file.content], { type: file.mime || "text/plain" });
+  const content = /^data:[^;]+;base64,/.test(file.content) ? Uint8Array.from(atob(file.content.split(",")[1]),char=>char.charCodeAt(0)) : file.content;
+  const blob = new Blob([content], { type: file.mime || "text/plain" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a"); a.href = url; a.download = safeDownloadName(file.name); document.body.appendChild(a); a.click(); a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function downloadMedia(url: string) {
-  const a = document.createElement("a"); a.href = url; a.download = "crelavo-output"; a.target = "_blank"; a.rel = "noreferrer"; document.body.appendChild(a); a.click(); a.remove();
+async function downloadMedia(url: string, kind?: Shot["mediaKind"]) {
+  const response=await fetch(url,{credentials:"omit"});if(!response.ok)throw new Error("Media download unavailable.");
+  const blob=await response.blob(),objectUrl=URL.createObjectURL(blob);
+  const mime=blob.type,extension=mime.includes("jpeg")?"jpg":mime.includes("png")?"png":mime.includes("webp")?"webp":mime.includes("wav")?"wav":mime.includes("mpeg")?"mp3":mime.includes("webm")?"webm":kind==="audio"?"mp3":kind==="image"?"jpg":"mp4";
+  try{const a=document.createElement("a");a.href=objectUrl;a.download="crelavo-output."+extension;document.body.appendChild(a);a.click();a.remove();}
+  finally{window.setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);}
 }
 
 async function downloadDeliveryZip(files: DeliveryFile[]) {
@@ -271,6 +277,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
   const resumedJobsRef = useRef(new Set<string>());
+  const pollingRef = useRef(createProductionPollingRegistry());
+  const contextRequestRef = useRef<AbortController | null>(null);
+  useEffect(() => { resumedJobsRef.current.clear(); setSending(false); return () => { pollingRef.current.cancelAll(); contextRequestRef.current?.abort(); resumedJobsRef.current.clear(); }; }, [storageKey, routeKey]);
   const [mounted, setMounted] = useState(false);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
@@ -321,7 +330,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if (Number.isInteger(state.selected)) setSelected(Math.max(0, Number(state.selected)));
       if (typeof state.notice === "string") setNotice(state.notice);
       if (typeof state.referenceUrl === "string") setReferenceUrl(state.referenceUrl);
-      if (state.planApproved === true) setPlanApproved(true);
+      // Restored client flags are not server approval. The explicit button verifies the saved version.
       setChatMessages(normalizeWorkspaceMessages(state.chatMessages));
     }
     try { const saved = window.sessionStorage.getItem(storageKey); if (saved) restore(JSON.parse(saved)); } catch { /* ignore invalid session state */ }
@@ -374,58 +383,80 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const activeIndex = Math.min(selected, Math.max(0, displayShots.length - 1));
   const shot = displayShots[activeIndex] || displayShots[0];
   const displayBusy = website ? websiteFlow.busy : sending;
-  const effectiveApproved = website ? websiteFlow.approved : planApproved;
+  const effectiveApproved = website ? websiteFlow.approved : Boolean(shot.planVersionId && shot.approvedPlanVersionId === shot.planVersionId && planApproved);
   const workspaceNotice = website ? websiteWorkspaceStatus(websiteFlow.project, websiteFlow.dirty, websiteFlow.approved) : notice;
-  const canRender = website ? websiteFlow.approved && !websiteFlow.busy && websitePhase !== "ready" && websitePhase !== "generating" : !sending && planApproved && Boolean(shot.body.trim());
+  const canRender = website ? websiteFlow.approved && !websiteFlow.busy && websitePhase !== "ready" && websitePhase !== "generating" : !sending && effectiveApproved && !shot.taskId && !["QUEUED","RENDERING","RECONCILE_REQUIRED"].includes(shot.status) && Boolean(shot.planPrompt?.trim());
   const kicker = website ? `${t("Page").toUpperCase()} ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `${t("Scene").toUpperCase()} ${String(shot.id).padStart(2, "0")} / SELECTED`;
   const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
   const selectedPack = categoryConfig?.packs.find((pack) => pack.id === (website ? websiteFlow.packId : chosen?.packId));
-  const estimatedCredits = website && !websiteFlow.dirty ? websiteFlow.project?.website.credits ?? 0 : selectedPack?.credits ?? 0;
+  const estimatedCredits = website && !websiteFlow.dirty ? websiteFlow.project?.website.credits ?? 0 : shot.estimatedCredits ?? selectedPack?.credits ?? 0;
   async function pollQueuedJob(index: number, initialTaskId: string, productionId?: string) {
-    let taskId = initialTaskId;
-    for (let attempt = 0; attempt < 36; attempt += 1) {
-      setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, progress: Math.min(95, 5 + Math.round((attempt / 36) * 90)), status: "RENDERING", label: "RENDERING" } : item));
-      await new Promise((resolve) => window.setTimeout(resolve, 10000));
-      try {
-        const response = await cinemaFetch("/api/assistant-work/status", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category, taskId, productionId: productionId || shots[index]?.productionId }) });
-        const data = await response.json().catch(() => null);
-        if (!response.ok || !data?.ok) { setNotice(readableMessage(data?.message, "PROVIDER STATUS CHECK FAILED").toUpperCase()); return; }
-        if (data.taskId && String(data.taskId) !== taskId) { taskId = String(data.taskId); setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, taskId } : item)); }
-        if (data.status === "failed") { setNotice(readableMessage(data.message, "PRODUCTION FAILED").toUpperCase()); return; }
-        if (data.status === "ready" && data.mediaUrl) { setShots((cur) => cur.map((item, shotIndex) => shotIndex === index ? { ...item, mediaUrl: String(data.mediaUrl), status: "READY", label: "READY", progress: 100, taskId: undefined } : item)); setNotice("SCENE READY / DOWNLOAD AVAILABLE"); return; }
-      } catch { return; }
-    }
+    if (!productionId) return;
+    const key=productionId,registry=pollingRef.current,loop=registry.begin(key);
+    if(!loop)return;
+    const signal=loop.controller.signal;
+    let taskId=initialTaskId;
+    const active=()=>registry.current(key,loop.id);
+    try {
+      for(let attempt=0;attempt<36 && active();attempt++) {
+        await abortableDelay(10000,signal);
+        try {
+          const response=await cinemaFetch("/api/assistant-work/status",{method:"POST",signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({productionId})});
+          const data=await response.json().catch(()=>null);
+          if(!active())return;
+          if(!response.ok||!data?.ok){setNotice("STATUS TEMPORARILY UNAVAILABLE / PRODUCTION STATE UNCHANGED");continue;}
+          if(data.taskId)taskId=String(data.taskId);
+          if(data.status==="reconcile_required"||data.status==="failed") {
+            setShots(cur=>cur.map(item=>item.productionId===productionId?{...item,status:String(data.status).toUpperCase(),label:String(data.status).toUpperCase(),taskId:undefined}:item));
+            setNotice(data.status==="failed"?"PRODUCTION FAILED":"RECONCILIATION REQUIRED / NO AUTOMATIC RETRY OR REFUND");return;
+          }
+          if(data.status==="ready" && (data.mediaUrl||data.files?.length)) {
+            setShots(cur=>cur.map(item=>item.productionId===productionId?{...item,mediaUrl:data.mediaUrl||null,mediaKind:data.mediaKind||data.media?.kind,files:data.files||item.files,status:"READY",label:"READY",progress:100,taskId:undefined}:item));
+            setNotice("SCENE READY / DOWNLOAD AVAILABLE");void loadCredits();return;
+          }
+          setShots(cur=>cur.map(item=>item.productionId===productionId?{...item,taskId,status:"RENDERING",label:"RENDERING",progress:Math.min(95,5+Math.round(attempt/36*90))}:item));
+        } catch { if(!active())return; setNotice("STATUS NETWORK ERROR / PRODUCTION STATE UNCHANGED"); }
+      }
+    } catch { /* Context cancellation is not a failed production. */ }
+    finally { registry.finish(key,loop.id); }
   }
   useEffect(() => {
-    if (!mounted || category === "website") {
-      if (mounted && category === "website") {
-        setShots((cur) => cur.map((item) => item.taskId ? { ...item, taskId: undefined, status: "READY", label: "READY", progress: 100 } : item));
-      }
-      return;
-    }
-    shots.forEach((item, index) => {
-      if (item.taskId && !resumedJobsRef.current.has(item.taskId)) {
-        resumedJobsRef.current.add(item.taskId);
-        void pollQueuedJob(index, item.taskId, item.productionId);
-      }
+    if(!mounted||website)return;
+    shots.forEach((item,index)=>{
+      const key=item.productionId;
+      if(item.taskId && key && !resumedJobsRef.current.has(key)) { resumedJobsRef.current.add(key); void pollQueuedJob(index,item.taskId,key); }
     });
-  }, [mounted, shots, category]);
+  },[mounted,shots,website,category]);
+  async function approveCurrentPlan() {
+    if (!shot.planVersionId || sending) { setNotice("UPDATE PLAN BEFORE APPROVAL"); return; }
+    const controller=new AbortController();contextRequestRef.current=controller;setSending(true);
+    try {
+      const response=await cinemaFetch("/api/assistant-work",{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"approve_plan",prompt:shot.planPrompt||shot.body,category,type,planVersionId:shot.planVersionId})});
+      const data=await response.json();if(!response.ok||!data.ok||!data.approved)throw new Error(data.message||"SERVER PLAN APPROVAL FAILED");
+      if(controller.signal.aborted)return;
+      setShots(cur=>cur.map(item=>item.planVersionId===shot.planVersionId?{...item,approvedPlanVersionId:shot.planVersionId}:item));
+      setPlanApproved(true);setNotice("PLAN APPROVED ON SERVER / FINAL PRODUCTION READY");
+    } catch(error) { if(!controller.signal.aborted)setNotice(error instanceof Error?error.message:"SERVER PLAN APPROVAL FAILED"); }
+    finally { if(!controller.signal.aborted)setSending(false); }
+  }
   async function renderFinalScene() {
     if (website) { if (websiteFlow.approved && await websiteFlow.perform("render")) await loadCredits(); return; }
     const currentPrompt = shot.planPrompt || shot.body;
-    if (!currentPrompt.trim() || sending || !planApproved) return;
+    if (!currentPrompt.trim() || sending || !effectiveApproved) return;
+    const controller=new AbortController();contextRequestRef.current=controller;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
-      const response = await cinemaFetch("/api/assistant-work", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", render: true, skipQueue: websiteRequested, prompt: currentPrompt, type: websiteRequested ? "Website" : type, category, scene: selected + 1, categoryId: websiteRequested ? "website" : chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }) });
+      const response = await cinemaFetch("/api/assistant-work", { method: "POST", signal:controller.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "render", planVersionId: shot.planVersionId, render: true, skipQueue: websiteRequested, prompt: currentPrompt, type: websiteRequested ? "Website" : type, category, scene: selected + 1, categoryId: websiteRequested ? "website" : chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }) });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok) throw new Error(readableMessage(data?.message || data?.error, "Final render did not start."));
+      if(controller.signal.aborted)return;
       const next = applyPayload(shot, data, currentPrompt, website);
       const websiteReady = category === "website";
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, status: websiteReady ? "READY" : next.status, label: websiteReady ? "READY" : next.label, taskId: websiteReady ? undefined : next.taskId, progress: websiteReady ? 100 : next.progress, planPrompt: currentPrompt } : item));
       const hasDelivery = Boolean(next.mediaUrl || next.files.length);
       setNotice(websiteReady || data.status === "ready" ? (hasDelivery ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / OUTPUT NOT ATTACHED") : "04 QUEUED / FINAL RENDER IN PROGRESS");
-      if (!websiteReady && data.status === "queued" && data.taskId) void pollQueuedJob(selected, String(data.taskId), String(data.productionId || ""));
-    } catch (error) { setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { setSending(false); }
+      // The shots effect owns the single polling loop for this production.
+    } catch (error) { if(!controller.signal.aborted)setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { if(!controller.signal.aborted)setSending(false); }
   }
   async function onSend() {
     const prompt = draft.trim();
@@ -436,6 +467,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if (!claims) { openAuth("login", { next: window.location.pathname + window.location.search }); return; }
     // Plan revisions are free and allowed before approval; credits are enforced only for final render.
 
+    const controller=new AbortController();contextRequestRef.current=controller;
     const prev = shots[selected];
     setChatMessages((cur) => [...cur, { role: "user", content: prompt }]);
     setDraft("");
@@ -445,23 +477,27 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
     try {
       let sourceVideoUrl: string | undefined;
-      if (category === "video_clipping" && materialFiles[0]) {
-        const form = new FormData(); form.set("user_id", claims.sub); form.set("file", materialFiles[0]); form.set("purpose", "video_clipping_source");
-        const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", body: form });
+      const uploadedUrls:string[]=[];
+      for (const material of materialFiles) {
+        const form = new FormData(); form.set("user_id", claims.sub); form.set("file", material); form.set("purpose", "video_clipping_source");
+        const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", signal:controller.signal, body: form });
         const uploadData = await uploadResponse.json().catch(() => ({}));
         if (!uploadResponse.ok || !uploadData.material?.file_url) throw new Error(readableMessage(uploadData.error, "Source video upload failed."));
-        sourceVideoUrl = String(uploadData.material.file_url);
+        const uploaded=String(uploadData.material.file_url);uploadedUrls.push(uploaded);
+        if(category==="video_clipping" && !sourceVideoUrl)sourceVideoUrl=uploaded;
       }
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
+        signal:controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, prompt, messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
+        body: JSON.stringify({ action: "revise", render: false, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
         if (response.status === 402) await loadCredits();
         throw new Error(readableMessage(data?.message ?? data?.error, "Production did not start."));
       }
+      if(controller.signal.aborted)return;
       if (data.website && data.productionId) {
         websiteFlow.acceptProject(data);
         setSelectionRoute(routeKey); setSelection({ categoryId: "website", type: "Website", packId: data.website.packId || "", features: [], extras: {} });
@@ -472,12 +508,13 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         if (!reply || reply === prompt) throw new Error("The assistant did not return a valid answer. No production was submitted.");
         const conversation = [...chatMessages, { role: "user" as const, content: prompt }, { role: "assistant" as const, content: reply }];
         setChatMessages(conversation);
-        setShots((cur) => cur.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item));
+        setShots((cur) => cur.map((item, index) => index === selected ? { ...item, body:data.plan.visualDirection, planPrompt:data.plan.visualDirection, spokenScript:data.plan.spokenScript, planVersionId:data.planVersionId, approvedPlanVersionId:undefined, estimatedCredits:data.estimatedCredits, status:"DRAFT",label:"DRAFT" } : item));
         setNotice("ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION");
         void persistProject({ category: engineCategory, type, shots: shots.map((item, index) => index === selected ? { ...item, planPrompt: prompt } : item), selected, chatMessages: conversation, referenceUrl, planApproved: false, notice: "ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION" });
       }
       setSending(false);
     } catch (error) {
+      if(controller.signal.aborted)return;
       setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
       const detail = error instanceof Error ? error.message : "The assistant request failed. No production was submitted.";
       setNotice(detail); setChatMessages((current) => [...current, { role: "assistant", content: "Request failed: " + detail }]);
@@ -526,7 +563,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           <section style={{ flex: "0 0 auto", minHeight: 320, position: "relative", overflow: "hidden", border: "1px solid #2e333d", borderRadius: 12, background: "linear-gradient(180deg, #d7b07a 0%, #9a5a28 42%, #3a1c0e 78%, #070605 100%)" }}>
             {website && websiteFlow.project && (websiteFlow.project.status === "ready" || (websiteFlow.runtimePlan && !websiteFlow.runtimePlan.stale)) ? <WebsiteWorkspacePreview projectId={websiteFlow.project.productionId} page={websitePages[activeIndex] || websitePages[0]} pages={websitePages} revision={previewRevision} runtimeViews={!!websiteFlow.project.website.runtimeDevelopment} draft={websiteFlow.runtimePlan && websiteFlow.project.status !== "ready" ? { hash: websiteFlow.runtimePlan.hash, userId: websiteFlow.userId } : undefined} request={cinemaFetch} onPage={(path) => { const index = websitePages.findIndex((page) => page.path === path); if (index >= 0) setSelected(index); }} /> : <>
-            {shot.mediaUrl ? ( /\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl) || /video/i.test(shot.mediaUrl) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
+            {shot.mediaUrl ? (shot.mediaKind === "audio" ? <audio src={shot.mediaUrl} controls style={{position:"relative",zIndex:2,width:"100%"}} /> : shot.mediaKind === "video" || (!shot.mediaKind && /\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl)) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 22, background: "linear-gradient(180deg, transparent 35%, rgba(7,6,5,0.9))" }}>
               {!shot.mediaUrl ? <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Output / preview area")}</div> : null}
               <strong style={{ fontFamily: "Georgia, serif", fontSize: 25, lineHeight: 1.2, marginTop: 8 }}>{shot.title}</strong>
@@ -544,7 +581,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <section style={{ flex: "0 0 auto", display: "grid", gap: 8, padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><label style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ maxWidth: "100%", fontSize: 12, color: "#d1d5db" }} /><small style={{ color: "#6b7280" }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></section> : null}
 
-          {(shot.mediaUrl || shot.files.length > 0) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => downloadMedia(shot.mediaUrl!)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
+          {(shot.status === "READY" && (shot.mediaUrl || shot.files.length > 0)) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => void downloadMedia(shot.mediaUrl!,shot.mediaKind).catch(()=>setNotice("MEDIA DOWNLOAD BLOCKED / OPEN THE PREVIEW SOURCE TO SAVE THE FILE"))} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>{t("UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.")}</div>
         </div>
       </main>
@@ -556,7 +593,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
           <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{t("Assistant is ready. Describe what you want to create.")}</p>{!website && categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>{t("Smart starting point:")}{Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")}{t("(editable)")}</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{t(choice)}</button>)}</div>
-          <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>{t("Plan and approval")}</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>{t("Category:")}<strong>{categoryConfig?.label || type}</strong></div><div>{t("Package:")}<strong>{selectedPack ? t(selectedPack.label) : t("Not selected yet")}</strong></div><div>{t("Estimated credits:")}<strong>{estimatedCredits ? `${estimatedCredits} credits` : t("No package selected")}</strong></div><div>{t("Delivery:")}<strong>{website ? t("Static website + preview + source ZIP") : chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : t("Setup incomplete")}</strong></div></div>{effectiveApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>{website && websitePhase === "ready" ? t("Website ready") : t("Plan approved. Final production is ready to start.")}</div> : <button type="button" disabled={website && (!websiteFlow.reviewed || websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")} onClick={() => { if (website) { if (!websiteFlow.reviewed) { void websiteFlow.perform("revise"); return; } void websiteFlow.perform("website_approve"); return; } if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } setPlanApproved(true); setNotice("PLAN APPROVED / FINAL PRODUCTION READY"); void persistProject({ category: engineCategory, type, selection: chosen, shots, selected, chatMessages, notice: "PLAN APPROVED / FINAL PRODUCTION READY", referenceUrl, planApproved: true }); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>{t("Approve plan and continue to production")}</button>}</div>
+          <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>{t("Plan and approval")}</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>{t("Category:")}<strong>{categoryConfig?.label || type}</strong></div><div>{t("Package:")}<strong>{selectedPack ? t(selectedPack.label) : t("Not selected yet")}</strong></div><div>{t("Estimated credits:")}<strong>{estimatedCredits ? `${estimatedCredits} credits` : t("No package selected")}</strong></div><div>{t("Delivery:")}<strong>{website ? t("Static website + preview + source ZIP") : chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : t("Setup incomplete")}</strong></div></div>{effectiveApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>{website && websitePhase === "ready" ? t("Website ready") : t("Plan approved. Final production is ready to start.")}</div> : <button type="button" disabled={website && (!websiteFlow.reviewed || websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")} onClick={() => { if (website) { if (!websiteFlow.reviewed) { void websiteFlow.perform("revise"); return; } void websiteFlow.perform("website_approve"); return; } if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } void approveCurrentPlan(); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>{t("Approve plan and continue to production")}</button>}</div>
           <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>{t("Active production plan")}</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{(website ? [t("Website Brief"), t("Plan and approval"), t("Generating website"), t("Revisions, history and ZIP delivery")] : enginePlan).map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
           {displayShots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === activeIndex ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === activeIndex ? t("Active") : t("Ready")} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
           <div aria-label={t("Assistant conversation")} aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 12 }}>{(website ? websiteFlow.messages : chatMessages).map((message, index) => <div key={index} style={{ padding: 10, borderRadius: 7, background: message.role === "assistant" ? "#1a2421" : "#222733", fontSize: 12, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><strong>{message.role === "assistant" ? t("Assistant") : t("You")}:</strong> <span translate="no" data-no-translate="true" className="notranslate" dir="auto">{message.content}</span></div>)}{(website ? websiteFlow.busy : sending) ? <div role="status">{t("Waiting for assistant response...")}</div> : null}<div ref={chatEndRef} /></div>

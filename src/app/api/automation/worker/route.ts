@@ -58,6 +58,7 @@ function isAutomationActive(row: Record<string, unknown>) {
   const automationStatus = String(row.automation_status ?? "").toLowerCase();
   const generationStatus = String(row.generation_status ?? "").toLowerCase();
   const output = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
+  if(output.planVersionId || automationStatus==="assistant_managed")return false;
   const providerStatus = String(output.providerStatus ?? "").toLowerCase();
   const requiredPipeline = String(output.requiredPipeline ?? "").toLowerCase();
   const hasDedicatedPlan = Boolean(output.characterDialoguePlan) || requiredPipeline === "character_consistent_dialogue_animation";
@@ -95,6 +96,7 @@ async function runWorkerPass(origin: string, targetProductionId?: string) {
     if (!productionId) continue;
     try {
       const rowOutput = row.output_json && typeof row.output_json === "object" ? row.output_json as Record<string, unknown> : {};
+      if(rowOutput.planVersionId || row.automation_status==="assistant_managed")continue;
       const hasProviderJob = Boolean(rowOutput.renderJob || rowOutput.providerJob || rowOutput.providerJobId || rowOutput.visualJob && typeof rowOutput.visualJob === "object" && !String((rowOutput.visualJob as Record<string, unknown>).id ?? "").startsWith("pending-") || Array.isArray(rowOutput.visualJobs) && rowOutput.visualJobs.some((job) => job && typeof job === "object" && !String((job as Record<string, unknown>).id ?? "").startsWith("pending-")));
       const productionType = String(row.production_type ?? "").toLowerCase();
       const automationStatus = String(row.automation_status ?? row.generation_status ?? row.status ?? "").toLowerCase();

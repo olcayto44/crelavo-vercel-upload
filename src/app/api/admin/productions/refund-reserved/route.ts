@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
 
     const outputJson = production.output_json && typeof production.output_json === "object" ? production.output_json as Record<string, unknown> : {};
+  if (outputJson.planVersionId) return Response.json({error:"assistant_finalizer_required",reconcile_required:true,message:"Managed productions require generation, lease and step-token verified finalization; legacy refund/reset/cancel is disabled."},{status:409});
     const creditResolution = outputJson.creditResolution && typeof outputJson.creditResolution === "object" ? outputJson.creditResolution as Record<string, unknown> : null;
     if (!allowCostAware) {
       if (production.status !== "failed") return Response.json({ error: "Only failed productions can be refunded from this endpoint." }, { status: 409 });

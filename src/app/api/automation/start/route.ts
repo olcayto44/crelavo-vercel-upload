@@ -542,6 +542,7 @@ export async function POST(request: Request) {
 
     if (!access.ok) return access.response;
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
+    if (existingOutput.planVersionId) return Response.json({error:"assistant_manager_required",reconcile_required:true},{status:409});
     const existingVisualJob = existingOutput.visualJob && typeof existingOutput.visualJob === "object" ? existingOutput.visualJob as Record<string, unknown> : null;
     const existingHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingVisualJob?.id && !String(existingVisualJob.id).startsWith("pending-"));
     if (currentProduction.status === "in_production" && currentProduction.generation_status === "provider_pending_unknown" && !existingHasProviderJob) {
