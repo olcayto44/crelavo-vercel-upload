@@ -1,3 +1,4 @@
+import { normalizeContentLanguage, contentLanguageLabel } from "../crelavo/languages.ts";
 import { resolveReplyLanguage, replyLanguageInstruction } from "./chat-language.ts";
 import { translateWorkspaceText } from "./workspace-i18n.ts";
 import { createHash } from "node:crypto";
@@ -8,7 +9,7 @@ const list = (value: unknown) => (Array.isArray(value) ? value : typeof value ==
 export function normalizeAssistantWebsiteBrief(value: unknown): AssistantWebsiteBrief {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   const text = (key: string, max = 500) => typeof raw[key] === 'string' ? String(raw[key]).trim().slice(0, max) : '';
-  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: /^(tr|turkish)$/i.test(text('locale')) ? 'tr' : 'en' };
+  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: normalizeContentLanguage(text('locale')) };
 }
 export function missingWebsiteBrief(brief: AssistantWebsiteBrief) {
   const missing = ['brand', 'audience', 'siteType', 'style'].filter((key) => !brief[key as keyof AssistantWebsiteBrief]);
@@ -119,7 +120,7 @@ export function groundedWebsiteReply(reply: string, brief: AssistantWebsiteBrief
   const parts = reply.trim() && !unsafe && !premature && !modelStateClaim && !requestsBriefFacts && !unsupported.length ? [reply.trim()] : [];
   if (!parts.length && !missing.length && !unsupported.length) {
     parts.push(t("Static website plan: {brand}. Pages: {pages}.", { brand: brief.brand, pages: brief.pages.join(", ") }));
-    parts.push(t("Website language") + ": " + t(brief.locale === "tr" ? "Turkish" : "English"));
+    parts.push(t("Website language") + ": " + t(contentLanguageLabel(brief.locale)));
   }
   if (unsupported.length || unsafe) parts.push(t("This is a static demo. Accounts, real user reviews, personalized recommendations, payments and databases are not delivered as working services."));
   if (blockers.length) parts.push(t("Missing information: {fields}", { fields: blockers.map((field) => t(field)).join(", ") }));

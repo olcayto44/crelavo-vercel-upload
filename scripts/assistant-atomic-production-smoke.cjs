@@ -23,7 +23,7 @@ function load(path,mocks={}){const exports={};const js=ts.transpileModule(fs.rea
  await assert.rejects(finalizer.finalizeAssistantProduction(db,{...fence,stepToken:null},"failed",{}),/fenced/);
  await assert.rejects(finalizer.finalizeAssistantProduction(db,{...fence,taskGeneration:1},"failed",{}),/fenced/);
  lock.steps[0].state="accepted";lock.provider_state="accepted";assert.equal((await finalizer.finalizeAssistantProduction(db,fence,"ready",{media:{kind:"video",url:"https://media.test/video.mp4"}})).status,"ready");assert.equal(finalCalls,1);
- const engine=load("src/lib/assistant-work/runMediaEngine.ts"),catalog=load("src/lib/crelavo/categoryCatalog.ts"),local=load("src/lib/assistant-work/runLocalEngine.ts");
+ const engine=load("src/lib/assistant-work/runMediaEngine.ts"),catalog=load("src/lib/crelavo/categoryCatalog.ts",{"./languages":load("src/lib/crelavo/languages.ts")}),local=load("src/lib/assistant-work/runLocalEngine.ts");
  const categories=catalog.CATEGORIES || catalog.categories;
  if(categories){for(const cat of categories){assert(cat.id==="website"||local.isLocalCategory(cat.id,cat.type)||engine.getCategoryEngine(cat.id),"Uncovered category: "+cat.id);}}
  for(const category of ["documentary","animation","brand_kit","visual_clone","voice_clone","live_sales_agent","ai_agent"]){assert(engine.getCategoryEngine(category));}

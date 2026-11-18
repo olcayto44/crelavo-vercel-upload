@@ -51,7 +51,8 @@ function readQuery(search: string) {
   const type = q.get("type") || "General";
   const direct = q.get("category") || "";
   const map: Record<string, string> = { media: "video", video: "video", "AI Video": "video", drone: "drone_video", live_sales: "live_sales_agent", commerce: "campaign", app: "mobile_app", ecommerce: "website", avatar: "avatar", image: "image", documentary: "documentary", animation: "animation" };
-  const category = direct || ((q.has("type") || q.has("category")) ? map[type] || map[type.toLowerCase()] || "" : "");
+  const raw = direct || type;
+  const category = getCategory(raw)?.id || map[raw] || map[raw.toLowerCase()] || CATEGORIES.find(item=>item.type.toLowerCase()===raw.toLowerCase() || item.label.toLowerCase()===raw.toLowerCase())?.id || "";
   // Kategori secildiginde baslikta ham sorgu dizesi degil, gercek kategori adi gosterilir.
   const label: Record<string, string> = { video: "AI Video", drone_video: "Drone Video", campaign: "Campaign", mobile_app: "Mobile App", website: "Website", avatar: "Avatar", image: "Image", documentary: "Documentary", animation: "Animation", live_sales_agent: "Live Sales Agent" };
   const resolvedType = category ? (getCategory(category)?.type || label[category] || type) : type;
@@ -650,6 +651,23 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         #${THREAD} .aw-merge-panel input::file-selector-button { padding: 6px 10px; border: 0; border-radius: 6px; background: #343f53; color: white; font: inherit; cursor: pointer; }
         #${THREAD} .aw-merge-panel video { max-height: 50vh; margin: 12px 0; }
         #${THREAD} video:fullscreen { width: 100vw !important; height: 100vh !important; max-height: none !important; object-fit: contain; background: black; }
+        #${THREAD} .aw-assistant button { flex-shrink:0; white-space:nowrap; word-break:normal; overflow-wrap:normal; }
+        #${THREAD} .aw-assistant button[type="submit"] { white-space:normal; }
+        #${THREAD} .aw-setup-panel { min-width:0; overflow-x:hidden; color:#eef1f7; }
+        #${THREAD} .aw-setup-panel > div:first-child { position:sticky; top:0; background:#111318; z-index:1; padding:8px 0; }
+        #${THREAD} .aw-production-options { font:12px/1.5 Inter,system-ui,sans-serif; overflow-wrap:anywhere; }
+        #${THREAD} .aw-production-options details { border:1px solid #343b49; border-radius:8px; margin:10px 0; background:#171a20; }
+        #${THREAD} .aw-production-options summary { cursor:pointer; padding:11px; font-weight:600; }
+        #${THREAD} .aw-options-list { display:grid; gap:8px; padding:0 10px 10px; }
+        #${THREAD} .aw-production-options button { width:100%; text-align:left; display:grid; gap:3px; padding:9px 10px; background:#202530; color:#eef1f7; border:1px solid #343b49; border-radius:7px; white-space:normal; }
+        #${THREAD} .aw-production-options button[aria-pressed="true"] { border-color:#f5c77a; background:#333022; }
+        #${THREAD} .aw-options-list label { display:flex; align-items:center; gap:8px; min-width:0; }
+        #${THREAD} .aw-options-list .aw-feature-choice { display:flex; align-items:flex-start; gap:8px; padding:8px 10px; border:1px solid #343b49; border-radius:6px; background:#202530; line-height:1.5; cursor:pointer; }
+        #${THREAD} .aw-feature-choice input[type="checkbox"] { appearance:auto; flex:0 0 16px; width:16px; height:16px; min-width:16px; margin:1px 0 0; padding:0; accent-color:#f5c77a; }
+        #${THREAD} .aw-feature-choice span { flex:1; min-width:0; }
+        #${THREAD} .aw-options-list .aw-option-field { display:grid; gap:5px; }
+        #${THREAD} .aw-option-field input, #${THREAD} .aw-option-field select { width:100%; min-width:0; padding:9px; border-radius:6px; border:1px solid #343b49; background:#202530; color:#eef1f7; }
+        #${THREAD} .aw-options-kicker { color:#f5c77a; font-weight:600; }
         #${THREAD} .aw-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; flex:0 0 auto; min-height:56px; padding:8px 12px; border-bottom:1px solid #2e333d; background:#111318; z-index:15; }
         #${THREAD} .aw-toolbar button, #${THREAD} .aw-toolbar a, #${THREAD} .aw-category-nav button { appearance:none; background:#202530; color:#eef1f7; border:1px solid #343b49; border-radius:8px; padding:9px 12px; font:12px/1.4 Inter,system-ui,sans-serif; white-space:normal; overflow-wrap:anywhere; cursor:pointer; min-height:36px; box-shadow:none; }
         #${THREAD} .aw-toolbar a { color:#f5c77a; }
@@ -791,7 +809,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       </aside>
 
       </div>
-      {setupOpen ? <aside aria-label={t("Production setup")} translate="yes" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>{t("CLOSE")}</button></div>{website ? <WebsitePlanControls controller={websiteFlow} /> : <AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelectionRoute(routeKey); setSelection(next); setPlanApproved(false); setSetupOpen(false); }} />}</aside> : null}
+      {setupOpen ? <aside className="aw-setup-panel" aria-label={t("Production setup")} translate="yes" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(340px, 100vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>{t("CLOSE")}</button></div>{website ? <WebsitePlanControls controller={websiteFlow} /> : <AssistantPreProduction key={category} compact initialSelection={chosen} initialCategoryId={category} onConfirm={(next) => { setSelectionRoute(routeKey); setSelection(next); setPlanApproved(false); setSetupOpen(false); }} />}</aside> : null}
     </div>
   );  return createPortal(shell, document.body);
 }

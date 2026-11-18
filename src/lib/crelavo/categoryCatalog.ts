@@ -1,3 +1,4 @@
+import { CONTENT_LANGUAGES } from "./languages";
 export type Billing = "credits" | "subscription";
 export type Pack = { id: string; label: string; credits?: number; priceLabel?: string };
 export type ExtraField = { id: string; label: string; kind: "select" | "text"; required?: boolean; placeholder?: string; options?: { id: string; label: string }[] };
@@ -75,6 +76,21 @@ export const CATEGORIES: Category[] = [
   category("community_showcase", "Community Showcase", "brand", "Community Showcase", ["Showcase page", "Caption", "Metadata"], [["Showcase Submission Pack", 500]], [{ id: "project", label: "Project description", kind: "text", required: true, placeholder: "Describe the project" }]),
   category("virtual_model_studio", "Virtual Model Studio", "avatar_voice", "Virtual Model Studio", ["Virtual presenter", "Shot list", "Usage notes"], [["Virtual Model Pack", 2500]], talkingExtras),
 ];
+// Non-video categories must not inherit video input, music or duration controls.
+const categorySpecificExtras: Record<string, ExtraField[]> = {
+  ad_score_checker: [{id:"ad_url",label:"Ad URL",kind:"text",required:true,placeholder:"https://"},{id:"audience",label:"Target audience",kind:"text"}],
+  campaign_calendar: [{id:"brand",label:"Brand / product",kind:"text",required:true},{id:"period",label:"Campaign period",kind:"text",required:true},{id:"channel",label:"Channels",kind:"text"}],
+  localization: [{id:"source_url",label:"Source video URL",kind:"text",required:true},{id:"language",label:"Target language",kind:"text",required:true}],
+  cultural_localization: [{id:"market",label:"Target country / market",kind:"text",required:true},{id:"language",label:"Target language",kind:"text",required:true},{id:"source_text",label:"Original campaign / script",kind:"text",required:true}],
+  document_pack: [{id:"document_type",label:"Document type",kind:"select",required:true,options:labels(["Pitch deck","Proposal","Catalog"])},{id:"audience",label:"Audience",kind:"text"},{id:"content",label:"Content / outline",kind:"text",required:true}],
+};
+for (const item of CATEGORIES) { if (categorySpecificExtras[item.id]) item.extras = categorySpecificExtras[item.id]; }
+// Keep content-language choices consistent across category-specific forms.
+for (const item of CATEGORIES) {
+  for (const field of item.extras) {
+    if (field.id === "language") field.options = CONTENT_LANGUAGES.map(language=>({id:language.label.toLowerCase(),label:language.label}));
+  }
+}
 export function getCategory(id?: string | null) { return id ? CATEGORIES.find((category) => category.id === id) ?? null : null; }
 export function formatPack(pack: Pack) { return pack.priceLabel ?? String(pack.credits ?? 0) + " credits"; }
 export function matchCategoryFromText(text: string) { const lower = text.toLowerCase(); return CATEGORIES.find((category) => lower.includes(category.id) || lower.includes(category.label.toLowerCase())) ?? null; }
