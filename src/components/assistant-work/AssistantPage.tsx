@@ -203,6 +203,20 @@ async function cinemaFetch(url: string, init: RequestInit): Promise<Response> {
   if (token && !headers.has("Authorization")) headers.set("Authorization", `Bearer ${token}`);
   return fetch(url, { ...init, headers, credentials: "include", cache: "no-store" });
 }
+const PLACEHOLDER_SCENE_TITLES = new Set([
+  "Morning window, product on a pale oak shelf",
+  "Hands enter the beam and turn the bottle",
+  "Close-up: texture, pour, catch-light",
+  "Hold on the shelf. One line. Cut.",
+]);
+/** Gercek uretim kaydi olmayan ornek kartlari gercek is gibi gostermez. */
+function normalizeSceneStates(list: Shot[]): Shot[] {
+  return list.map((shot) => {
+    if (shot.productionId || shot.taskId || shot.mediaUrl || shot.files?.length) return shot;
+    if (!PLACEHOLDER_SCENE_TITLES.has(shot.title)) return shot;
+    return { ...shot, status: "PLANNED", label: "PLANNED" };
+  });
+}
 function videoShots(): Shot[] {
   return [
     { id: 1, label: "PLANNED", status: "PLANNED", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
@@ -350,7 +364,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if(typeof state.mediaProjectId==="string")setMediaProjectId(state.mediaProjectId);
       if(typeof state.mergeProductionId==="string"){setMergeProductionId(state.mergeProductionId);setMergeBusy(Boolean(state.mergeProductionId));}
       if(Array.isArray(state.mergeOrder))setMergeOrder(state.mergeOrder.filter((id):id is string=>typeof id==="string"));
-      if (Array.isArray(state.shots) && state.shots.length) setShots(state.shots as Shot[]);
+      if (Array.isArray(state.shots) && state.shots.length) setShots(normalizeSceneStates(state.shots as Shot[]));
       if (Number.isInteger(state.selected)) setSelected(Math.max(0, Number(state.selected)));
       if (typeof state.notice === "string") setNotice(state.notice);
       if (typeof state.referenceUrl === "string") setReferenceUrl(state.referenceUrl);
