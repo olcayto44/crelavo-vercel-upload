@@ -31,7 +31,17 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
        const owned=await db.from("assistant_media_projects").select("id").eq("id",projectId).eq("user_id",userId).maybeSingle();
        if(owned.error||!owned.data)throw new Error("project_not_owned");
      }
-     const input = { projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
+     let continuation: {variant: string; parentPlanVersionId: string; parentProductionId: string; previousDirection: string} | undefined;
+     if (body.parentPlanVersionId) {
+       const parent = await ownedPlan(db,userId,String(body.parentPlanVersionId));
+       if (parent.payload.category !== category || parent.payload.input?.projectId !== projectId || !["continue","revision"].includes(body.variant)) throw new Error("continuation_context_invalid");
+       if (body.parentProductionId) {
+         const source = await db.from("production_requests").select("id,status").eq("id",String(body.parentProductionId)).eq("user_id",userId).maybeSingle();
+         if (source.error || !source.data || source.data.status !== "ready") throw new Error("continuation_source_not_ready");
+       }
+       continuation = {variant:body.variant,parentPlanVersionId:parent.id,parentProductionId:String(body.parentProductionId || ""),previousDirection:String(parent.payload.plan?.visualDirection || "").slice(0,6000)};
+     }
+     const input = { continuation, projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
     const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
     const revisionSeq = await rpc(db,"reserve_assistant_revision_seq",{p_user_id:userId,p_scope:scope});
     const prompt = String(body.prompt || "");
@@ -85,7 +95,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     } else result=await runMediaEngine({userId,category,prompt:direction.visualDirection+(urls.some(url=>!direction.visualDirection.includes(url))?"\nUser authorized references:\n"+urls.filter(url=>!direction.visualDirection.includes(url)).join("\n"): ""),spokenScript:direction.spokenScript,type:input.type,scene:input.scene,extras:input.extras,renderFinal:true,beforeProviderCall,afterProviderCall});
   } catch { result={ok:false,spend:false,status:"reconcile_required",providerOutcome:"uncertain",code:"reconcile_required",message:"Provider acceptance could not be established. No automatic retry or refund."}; }
   if(result.ok && result.status==="ready" && !result.media && !result.files?.length)result={...result,files:[{name:"production-output.txt",mime:"text/plain",content:result.body||direction.visualDirection}]};
-  const output = {...result,assistant:true,taskId:result.taskId ?? null};
+  const output = {...result,assistant:true,continuation:input.continuation ? {variant:input.continuation.variant,parentPlanVersionId:input.continuation.parentPlanVersionId,parentProductionId:input.continuation.parentProductionId} : null,taskId:result.taskId ?? null};
   await rpc(db,"save_assistant_provider_result",{...args(),p_result:output});
   let settled: {reconcileRequired?:boolean;available?:number} = {};
   if (result.status==="ready" || (result.status==="failed" && result.providerOutcome==="rejected")) settled=await finalizeAssistantProduction(db,fence,result.status,output);
