@@ -328,6 +328,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(!category);
   const videoWorkspace = Boolean(categoryConfig && ["media", "special_video"].includes(categoryConfig.group));
   useEffect(() => { setActiveTool("production"); setCategorySearch(""); setCategoryPickerOpen(!category); setSetupOpen(false); }, [category]);
+  useEffect(() => { if (window.innerWidth <= 760) setMenuOpen(false); }, []);
   function pickCategory(id: string) {
     const next = getCategory(id); if (!next) return;
     setCategorySearch(""); setCategoryPickerOpen(false); setSelection(null); setSetupOpen(false);
@@ -621,7 +622,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   if (!mounted) return null;
 
   const shell = (
-    <div id={THREAD} data-aw={AW} translate="yes" lang={language} dir="ltr" style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div id={THREAD} data-aw={AW} translate="yes" lang={language} dir="ltr" style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", flexDirection: "column", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input, #${THREAD} textarea { font-family: inherit; }`}</style>
 
       <style>{`
@@ -649,14 +650,32 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         #${THREAD} .aw-merge-panel input::file-selector-button { padding: 6px 10px; border: 0; border-radius: 6px; background: #343f53; color: white; font: inherit; cursor: pointer; }
         #${THREAD} .aw-merge-panel video { max-height: 50vh; margin: 12px 0; }
         #${THREAD} video:fullscreen { width: 100vw !important; height: 100vh !important; max-height: none !important; object-fit: contain; background: black; }
-        @media(max-width: 1000px) { #${THREAD} .aw-assistant { flex-basis: 290px !important; width: 290px !important; } }
-        @media(max-width: 760px) { #${THREAD} .aw-assistant { position:absolute; right:0; top:0; bottom:0; z-index:10; width:min(340px,85vw) !important; box-shadow:-12px 0 40px #0009; } #${THREAD} .aw-merge-panel fieldset { grid-template-columns:1fr; } #${THREAD} .aw-video-main { padding:12px !important; } }
+        #${THREAD} .aw-toolbar { display:flex; align-items:center; justify-content:space-between; gap:8px; flex:0 0 auto; min-height:56px; padding:8px 12px; border-bottom:1px solid #2e333d; background:#111318; z-index:15; }
+        #${THREAD} .aw-toolbar button, #${THREAD} .aw-toolbar a, #${THREAD} .aw-category-nav button { appearance:none; background:#202530; color:#eef1f7; border:1px solid #343b49; border-radius:8px; padding:9px 12px; font:12px/1.4 Inter,system-ui,sans-serif; white-space:normal; overflow-wrap:anywhere; cursor:pointer; min-height:36px; box-shadow:none; }
+        #${THREAD} .aw-toolbar a { color:#f5c77a; }
+        #${THREAD} .aw-toolbar button:focus-visible, #${THREAD} .aw-category-nav button:focus-visible, #${THREAD} .aw-toolbar a:focus-visible { outline:2px solid #f5c77a; outline-offset:2px; }
+        #${THREAD} .aw-category-nav button { display:block; width:100%; text-align:left; margin:6px 0; }
+        #${THREAD} .aw-category-nav button:hover { background:#2a3140; border-color:#8794ac; }
+        #${THREAD} .aw-category-nav button[aria-pressed="true"], #${THREAD} .aw-category-nav button[aria-current="page"] { background:#333022; border-color:#f5c77a; color:#f5c77a; }
+        #${THREAD} .aw-category-nav summary { cursor:pointer; padding:10px 0; overflow-wrap:anywhere; }
+        #${THREAD} .aw-panels { display:flex; position:relative; flex:1 1 auto; min-height:0; min-width:0; overflow:hidden; }
+        #${THREAD} .aw-category-nav, #${THREAD} .aw-assistant, #${THREAD} .aw-video-main { min-height:0; overflow-x:hidden; overscroll-behavior:contain; }
+        #${THREAD} .aw-video-main, #${THREAD} .aw-assistant { overflow-wrap:anywhere; }
+        #${THREAD} .aw-assistant > div, #${THREAD} .aw-assistant form { min-width:0; }
+        #${THREAD} .aw-assistant textarea { max-height:160px; }
+        #${THREAD} .aw-scene-summary > div > div { min-width:0; }
+        @media(max-width: 1100px) { #${THREAD} .aw-assistant { position:absolute; right:0; top:0; bottom:0; z-index:12; flex:none !important; width:min(340px,100%) !important; box-shadow:-12px 0 40px #0009; } }
+        @media(max-width: 760px) { #${THREAD} .aw-category-nav { position:absolute; left:0; top:0; bottom:0; z-index:13; width:min(280px,100%) !important; box-shadow:12px 0 40px #0009; } #${THREAD} .aw-merge-panel fieldset { grid-template-columns:1fr; } #${THREAD} .aw-video-main { padding:12px !important; } #${THREAD} .aw-toolbar { padding:8px; gap:6px; } #${THREAD} .aw-toolbar button, #${THREAD} .aw-toolbar a { padding:8px; } }
       `}</style>
-      <nav className="aw-category-nav" aria-label="Category navigation" style={{flex:menuOpen?"0 0 250px":"0 0 54px",width:menuOpen?250:54,height:"100%",overflowY:"auto",background:"#111318",padding:menuOpen?16:8,borderRight:"1px solid #2e333d"}}>
-        <button type="button" aria-label={menuOpen?"Collapse tools":"Expand tools"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?"Collapse tools":"Tools"}</button>
+      <header className="aw-toolbar" aria-label="Workspace navigation">
+        <button type="button" aria-controls="aw-tools-panel" aria-expanded={menuOpen} onClick={()=>{setMenuOpen(!menuOpen);if(!menuOpen && window.innerWidth<=760)setAssistantOpen(false);}}>{menuOpen?"Close menu":"Open menu"}</button>
+        <a href="/" aria-label="Home - main website">Home</a>
+        <button type="button" aria-controls="aw-assistant-panel" aria-expanded={assistantOpen} onClick={()=>{setAssistantOpen(!assistantOpen);if(!assistantOpen && window.innerWidth<=760)setMenuOpen(false);}}>{assistantOpen?"Close assistant":"Open assistant"}</button>
+      </header>
+      <div className="aw-panels">
+      <nav id="aw-tools-panel" className="aw-category-nav" hidden={!menuOpen} aria-label="Category navigation" style={{display:menuOpen?"block":"none",flex:"0 0 250px",width:250,minWidth:0,height:"100%",overflowY:"auto",background:"#111318",padding:16,borderRight:"1px solid #2e333d"}}>
         {menuOpen ? <>
-          <h2 style={{fontSize:16,margin:"18px 0 4px"}}>Crelavo Studio</h2>
-          <a href="/" style={{display:"block",padding:"8px 0",color:"#f5c77a"}}>Home</a>
+          <h2 style={{fontSize:16,margin:"0 0 12px"}}>Crelavo Studio</h2>
           <strong style={{display:"block",margin:"14px 0 8px"}}>{categoryConfig?.label || "Choose category"}</strong>
           <button type="button" aria-expanded={categoryPickerOpen} onClick={()=>setCategoryPickerOpen(!categoryPickerOpen)}>{categoryPickerOpen?"Close category picker":"Change category"}</button>
           {categoryPickerOpen ? <section aria-label="Category picker">
@@ -673,7 +692,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         <div style={{ maxWidth: 1100, width: "100%", minHeight: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
           <header style={{ flex: "0 0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, borderBottom: "1px solid #1f2229", paddingBottom: 16 }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}><a href="/dashboard" style={{ color: "#f5c77a", fontSize: 12 }}>&larr; Home</a><div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div></div>
               <h1 style={{ fontSize: 24, lineHeight: 1.15, margin: "6px 0 0", letterSpacing: "-0.03em" }}>{website ? t("Website production workspace") : t("AI production workspace")}</h1>
               <p style={{ margin: "6px 0 0", color: "#9ca3af", fontSize: 13 }}>{type} / {category}</p>
             </div>
@@ -695,7 +714,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
                 <button type="button" onClick={renderFinalScene} disabled={!canRender} style={{ border: "1px solid #2e333d", borderRadius: 8, padding: "9px 12px", background: "#f8fbff", color: "#111", cursor: displayBusy ? "default" : "pointer", fontSize: 12, opacity: canRender ? 1 : 0.5 }}>{t("Render final")}</button>
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginTop: 18 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(180px, 100%), 1fr))", gap: 10, marginTop: 18 }}>
               <div style={{ background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 13 }}><small style={{ display: "block", color: "#9ca3af", marginBottom: 6 }}>{t("Category")}</small><strong>{type}</strong></div>
               <div style={{ background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 13 }}><small style={{ display: "block", color: "#9ca3af", marginBottom: 6 }}>{t("Scene / page")}</small><strong>{activeIndex + 1} / {displayShots.length}</strong></div>
               <div style={{ background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 13 }}><small style={{ display: "block", color: "#9ca3af", marginBottom: 6 }}>{t("Status")}</small><strong>{displayBusy ? t("Processing") : t(workspaceNotice)}</strong>{shot.progress != null ? <div style={{ marginTop: 8 }}><div style={{ height: 5, borderRadius: 999, background: "#2e333d", overflow: "hidden" }}><div style={{ width: `${shot.progress}%`, height: "100%", background: "#34d399" }} /></div><small style={{ display: "block", marginTop: 4, color: "#9ca3af" }}>{shot.progress}{t("% completed")}</small></div> : null}</div>
@@ -752,9 +771,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </div>
       </main>
 
-      {!assistantOpen ? <button type="button" onClick={() => setAssistantOpen(true)} style={{ position: "fixed", right: 10, top: 12, zIndex: 15, padding: "8px 10px", background: "#f5c77a", color: "#111", border: 0, borderRadius: 8 }}>Open assistant</button> : null}
-      <aside className="aw-assistant" style={{ flex: "0 0 340px", width: 340, height: "100%", minWidth: 0, display: assistantOpen ? "flex" : "none", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
-        {assistantOpen ? <button type="button" onClick={()=>setAssistantOpen(false)} style={{alignSelf:"flex-end",margin:8,padding:"6px 10px",fontSize:12,color:"#cbd2df",background:"#202530",border:"1px solid #343b49",borderRadius:8}}>Close assistant</button> : null}
+      <aside id="aw-assistant-panel" className="aw-assistant" style={{ flex: "0 0 340px", width: 340, height: "100%", minWidth: 0, display: assistantOpen ? "flex" : "none", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
         <div style={{ flex: "0 0 auto", padding: 16, borderBottom: "1px solid #1f2229", background: "#14171d" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><strong style={{ fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }}>{t("Crelavo AI Production Manager")}</strong><button type="button" onClick={() => setSetupOpen(true)} style={{ border: "1px solid #2e333d", borderRadius: 7, padding: "6px 8px", background: "transparent", color: "#f5c77a", fontSize: 10, cursor: "pointer" }}>{t("SETUP")}</button></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />{t("Orchestrator & category engine active")}</div>
@@ -773,6 +790,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </form>
       </aside>
 
+      </div>
       {setupOpen ? <aside aria-label={t("Production setup")} translate="yes" style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "min(460px, 92vw)", zIndex: 20, overflow: "auto", padding: "18px 14px 42px", background: "rgba(7,6,5,0.98)", borderLeft: "1px solid rgba(245,199,122,0.35)", boxShadow: "-18px 0 48px rgba(0,0,0,0.4)" }}><div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}><button type="button" onClick={() => setSetupOpen(false)} style={{ border: "1px solid rgba(244,238,230,0.35)", borderRadius: 999, padding: "6px 10px", background: "transparent", color: "inherit", fontSize: 10 }}>{t("CLOSE")}</button></div>{website ? <WebsitePlanControls controller={websiteFlow} /> : <AssistantPreProduction initialCategoryId={chosen?.categoryId || query.category} onConfirm={(next) => { setSelectionRoute(routeKey); setSelection(next); setPlanApproved(false); setSetupOpen(false); }} />}</aside> : null}
     </div>
   );  return createPortal(shell, document.body);
