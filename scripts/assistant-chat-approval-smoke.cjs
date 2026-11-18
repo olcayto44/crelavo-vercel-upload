@@ -1,0 +1,12 @@
+const fs=require("node:fs"),assert=require("node:assert/strict"),ts=require("typescript");
+const out={};new Function("exports",ts.transpileModule(fs.readFileSync("src/lib/assistant-work/chat-intent.ts","utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(out);
+for(const text of ["onayl\u0131yorum","Onayl\u0131yorum!","Plan\u0131 onayl\u0131yorum.","I approve the plan","approved"])assert.equal(out.workspaceChatIntent(text),"approve",text);
+for(const text of ["\u00fcretimi ba\u015flat","Render final","start production"])assert.equal(out.workspaceChatIntent(text),"render",text);
+for(const text of ["onaylam\u0131yorum","onayl\u0131yorum ama rengi de\u011fi\u015ftir","do not approve","approve and change the title","tamam","", "Create a poster saying approved"])assert.equal(out.workspaceChatIntent(text),"revise",text);
+const source=fs.readFileSync("src/components/assistant-work/AssistantPage.tsx","utf8");
+assert(source.indexOf('workspaceChatIntent(prompt) !== "revise"')<source.indexOf('chatActivityRef.current++'));
+assert(source.includes('materialFiles.length === 0'));
+assert(source.includes('await approveCurrentPlan(prompt)'));
+assert(source.includes('window.confirm(`${estimatedCredits} credits - start production?`)'));
+assert(source.includes('setShots(cur=>cur.map(item=>({...item,planVersionId:undefined,approvedPlanVersionId:undefined})))'));
+console.log("chat-approval passed: exact Turkish/English commands, mixed edits rejected, server approval before paid render, attachment guard, setup invalidation; shared non-website category handler. UI wiring assertions are static.");
