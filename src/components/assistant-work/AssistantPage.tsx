@@ -312,6 +312,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [mergeFit,setMergeFit]=useState("cover");
   const [mergeTransition,setMergeTransition]=useState("fade");
   const mergedVideoRef=useRef<HTMLVideoElement>(null);
+  const [assistantOpen,setAssistantOpen]=useState(true);
   const [uploadBusy,setUploadBusy]=useState(false);
   const [uploadNotice,setUploadNotice]=useState("");
   async function uploadVideos(files: File[]) {
@@ -333,7 +334,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         setShots(cur=>[...cur,{id:Math.max(0,...cur.map(s=>s.id))+1,title:result.title,body:"Bilgisayardan yuklenen video",status:"READY",label:"READY",mediaUrl:result.mediaUrl,mediaKind:"video",productionId:result.productionId,files:[]}]);
         setMergeOrder(cur=>[...cur,result.productionId]);
       }
-      setUploadNotice("Videolar yuklendi. Sirayi kontrol edip birlestirme dugmesine basin.");
+      setUploadNotice("Videolar y\u00fcklendi. S\u0131ray\u0131 kontrol edip birle\u015ftirme d\u00fc\u011fmesine bas\u0131n.");
     } catch(error){setUploadNotice(error instanceof Error?error.message:"Yukleme basarisiz.");}
     finally{setUploadBusy(false);}
   }
@@ -594,9 +595,38 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     <div id={THREAD} data-aw={AW} translate="yes" lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input, #${THREAD} textarea { font-family: inherit; }`}</style>
 
-      <main style={{ flex: "1 1 auto", minWidth: 0, height: "100%", overflowY: "auto", background: "#0f1115", borderRight: "1px solid #1f2229", padding: 24 }}>
+      <style>{`
+        #${THREAD} .aw-video-main { padding: 18px !important; }
+        #${THREAD} .aw-video-main > div { gap: 12px !important; }
+        #${THREAD} .aw-video-main header { order: -5; padding-bottom: 10px !important; gap: 10px !important; flex-wrap: wrap; }
+        #${THREAD} .aw-video-main h1 { font-size: 19px !important; }
+        #${THREAD} .aw-merge-panel { order: -4; background: #14171d; border-color: #2e333d !important; padding: 14px !important; }
+        #${THREAD} .aw-preview { order: -3; min-height: 220px !important; height: clamp(220px,32vh,380px); }
+        #${THREAD} .aw-video-main [aria-label="Page navigation"] { order: -2; display: flex !important; overflow-x: auto !important; }
+        #${THREAD} .aw-video-main [aria-label="Page navigation"] button { flex: 0 0 170px; }
+        #${THREAD} .aw-scene-summary { padding: 12px !important; }
+        #${THREAD} .aw-video-main h2 { font-size: 16px !important; }
+        #${THREAD} .aw-video-main button, #${THREAD} .aw-merge-panel input, #${THREAD} .aw-merge-panel select { font: 12px/1.4 Inter,system-ui,sans-serif !important; min-height: 32px !important; height: auto !important; max-width: 100%; width: auto; padding: 6px 10px !important; border: 1px solid #343b49; border-radius: 8px; background: #202530; color: #eef1f7; box-shadow: none; letter-spacing: normal; }
+        #${THREAD} .aw-video-main button:disabled { opacity: .4; cursor: not-allowed; }
+        #${THREAD} .aw-video-main button:not(:disabled):hover { border-color: #8794ac; background: #2a3140; }
+        #${THREAD} .aw-merge-panel fieldset { grid-template-columns: repeat(3,minmax(0,1fr)); border: 0; padding: 0; margin: 12px 0 0 !important; gap: 10px !important; }
+        #${THREAD} .aw-merge-panel legend { display: none; }
+        #${THREAD} .aw-merge-panel fieldset label { display: grid; gap: 5px; font-size: 11px; color: #a8b1c0; min-width: 0; }
+        #${THREAD} .aw-merge-panel select { width: 100%; }
+        #${THREAD} .aw-merge-panel fieldset small { grid-column: 1 / -1; font-size: 11px; color: #8d98ab; }
+        #${THREAD} .aw-merge-panel ol { max-height: 148px; overflow-y: auto; margin: 6px 0 12px; padding-left: 24px; }
+        #${THREAD} .aw-merge-panel li { padding: 6px 0; font-size: 12px; overflow-wrap: anywhere; border-bottom: 1px solid #262d38; }
+        #${THREAD} .aw-merge-panel li button { margin: 3px; }
+        #${THREAD} .aw-merge-panel input::file-selector-button { padding: 6px 10px; border: 0; border-radius: 6px; background: #343f53; color: white; font: inherit; cursor: pointer; }
+        #${THREAD} .aw-merge-panel video { max-height: 50vh; margin: 12px 0; }
+        #${THREAD} video:fullscreen { width: 100vw !important; height: 100vh !important; max-height: none !important; object-fit: contain; background: black; }
+        @media(max-width: 1000px) { #${THREAD} .aw-assistant { flex-basis: 290px !important; width: 290px !important; } }
+        @media(max-width: 760px) { #${THREAD} .aw-assistant { position:absolute; right:0; top:0; bottom:0; z-index:10; width:min(340px,85vw) !important; box-shadow:-12px 0 40px #0009; } #${THREAD} .aw-merge-panel fieldset { grid-template-columns:1fr; } #${THREAD} .aw-video-main { padding:12px !important; } }
+      `}</style>
+      <main className={!website ? "aw-video-main" : undefined} style={{ flex: "1 1 auto", minWidth: 0, height: "100%", overflowY: "auto", background: "#0f1115", borderRight: "1px solid #1f2229", padding: 24 }}>
         <div style={{ maxWidth: 1100, width: "100%", minHeight: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
           <header style={{ flex: "0 0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, borderBottom: "1px solid #1f2229", paddingBottom: 16 }}>
+            {!website ? <button type="button" onClick={()=>setAssistantOpen(!assistantOpen)} aria-expanded={assistantOpen}>{assistantOpen ? "Asistan\u0131 gizle" : "Asistan\u0131 a\u00e7"}</button> : null}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div>
               <h1 style={{ fontSize: 24, lineHeight: 1.15, margin: "6px 0 0", letterSpacing: "-0.03em" }}>{website ? t("Website production workspace") : t("AI production workspace")}</h1>
@@ -609,7 +639,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             <label style={{ fontSize: 11 }}>{t("Language")} <select aria-label={t("Language")} value={language} onChange={(event) => setLanguage(event.target.value)} style={{ background: "#1c1f26", color: "#fff", padding: 5 }}>{workspaceLanguages.map((code) => <option key={code} value={code}>{code.toUpperCase()}</option>)}</select></label>
           </header>
 
-          <section style={{ flex: "0 0 auto", background: "#111318", border: "1px solid #1f2229", borderRadius: 12, padding: 20 }}>
+          <section className="aw-scene-summary" style={{ flex: "0 0 auto", background: "#111318", border: "1px solid #1f2229", borderRadius: 12, padding: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
               <div style={{ minWidth: 0, flex: "1 1 420px" }}>
                 <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.12em", textTransform: "uppercase" }}>{kicker}</div>
@@ -628,7 +658,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             </div>
           </section>
 
-          <section style={{ flex: "0 0 auto", minHeight: 320, position: "relative", overflow: "hidden", border: "1px solid #2e333d", borderRadius: 12, background: "linear-gradient(180deg, #d7b07a 0%, #9a5a28 42%, #3a1c0e 78%, #070605 100%)" }}>
+          <section className="aw-preview" style={{ flex: "0 0 auto", minHeight: 320, position: "relative", overflow: "hidden", border: "1px solid #2e333d", borderRadius: 12, background: website ? "#171a20" : "#090b10" }}>
             {website && websiteFlow.project && (websiteFlow.project.status === "ready" || (websiteFlow.runtimePlan && !websiteFlow.runtimePlan.stale)) ? <WebsiteWorkspacePreview projectId={websiteFlow.project.productionId} page={websitePages[activeIndex] || websitePages[0]} pages={websitePages} revision={previewRevision} runtimeViews={!!websiteFlow.project.website.runtimeDevelopment} draft={websiteFlow.runtimePlan && websiteFlow.project.status !== "ready" ? { hash: websiteFlow.runtimePlan.hash, userId: websiteFlow.userId } : undefined} request={cinemaFetch} onPage={(path) => { const index = websitePages.findIndex((page) => page.path === path); if (index >= 0) setSelected(index); }} /> : <>
             {shot.mediaUrl ? (shot.mediaKind === "audio" ? <audio src={shot.mediaUrl} controls style={{position:"relative",zIndex:2,width:"100%"}} /> : shot.mediaKind === "video" || (!shot.mediaKind && /\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl)) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 22, background: "linear-gradient(180deg, transparent 35%, rgba(7,6,5,0.9))" }}>
@@ -648,19 +678,19 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <section style={{ flex: "0 0 auto", display: "grid", gap: 8, padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><label style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ maxWidth: "100%", fontSize: 12, color: "#d1d5db" }} /><small style={{ color: "#6b7280" }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></section> : null}
 
-          {!website ? <section aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
+          {!website ? <section className="aw-merge-panel" aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
             <strong>{t("Scene merge order")}</strong>
             <fieldset disabled={mergeBusy||uploadBusy} style={{display:"grid",gap:12,marginTop:12}}>
-              <legend>Birle?tirme ayarlar?</legend>
-              <label>Video ?l??s? <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">?nce format se?in</option><option value="16:9">Yatay ? 1920 ? 1080 (16:9)</option><option value="9:16">Shorts / Reels ? 1080 ? 1920 (9:16)</option></select></label>
-              <label>G?r?nt? <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Doldur ? kenarlar k?rp?labilir</option><option value="contain">S??d?r ? bo? kenarlar olu?abilir</option></select></label>
-              <label>Ge?i? <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Yumu?ak ? k?sa kararma ve ses yumu?atma</option><option value="cut">D?z kesme ? ge?i? efekti yok</option></select></label>
-              <small>Yatay bir videoyu dikey tam ekranda bo?luksuz g?stermek i?in kenarlar? k?rpmak gerekir. Kaynak videoya g?m?l? bo?luklar otomatik kald?r?lmaz.</small>
+              <legend>Birle&#351;tirme ayarlar&#305;</legend>
+              <label>Video &#246;l&#231;&#252;s&#252; <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">Format se&#231;in</option><option value="16:9">Yatay - 1920 x 1080</option><option value="9:16">Shorts / Reels - 1080 x 1920</option></select></label>
+              <label>G&#246;r&#252;nt&#252; <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Doldur (kenarlar k&#305;rp&#305;labilir)</option><option value="contain">S&#305;&#287;d&#305;r (bo&#351;luk kalabilir)</option></select></label>
+              <label>Ge&#231;i&#351; <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Yumu&#351;ak kararma</option><option value="cut">D&#252;z kesme</option></select></label>
+              <small>Doldur: kenarlar k&#305;rp&#305;labilir. S&#305;&#287;d&#305;r: g&#246;r&#252;nt&#252; korunur, bo&#351;luk kalabilir.</small>
             </fieldset>
             <div style={{padding:"12px 0"}}>
-              <label style={{display:"block",marginBottom:8}}>Bilgisayardan video yukle (MP4)</label>
-              <input aria-label="Bilgisayardan video yukle" type="file" accept="video/mp4,.mp4" multiple disabled={uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
-              <p style={{fontSize:12,color:"#9ca3af"}}>Dosya basina en fazla 50 MB. 2-12 video birlestirilebilir. Uretim kredisi harcanmaz.</p>
+              <label style={{display:"block",marginBottom:8}}>Bilgisayardan video y&#252;kle</label>
+              <input aria-label={"Bilgisayardan video y\u00fckle"} type="file" accept="video/mp4,.mp4" multiple disabled={uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
+              <p style={{fontSize:12,color:"#9ca3af"}}>MP4 &middot; 50 MB / dosya &middot; 2-12 video &middot; &#220;retim kredisi harcanmaz</p>
               {uploadNotice?<p role="status">{uploadNotice}</p>:null}
             </div>
             <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 0"}}>{shots.filter(s=>s.status==="READY"&&s.mediaKind==="video"&&s.productionId).map(s=><button type="button" key={s.productionId} disabled={mergeBusy||mergeOrder.length>=12} onClick={()=>setMergeOrder(cur=>[...cur,s.productionId!])}>{t("Add scene")} {s.id}</button>)}</div>
@@ -673,7 +703,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         </div>
       </main>
 
-      <aside style={{ flex: "0 0 390px", width: 390, height: "100%", minWidth: 0, display: "flex", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
+      <aside className={!website ? "aw-assistant" : undefined} style={{ flex: "0 0 340px", width: 340, height: "100%", minWidth: 0, display: !website&&!assistantOpen ? "none" : "flex", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
+        {!website ? <button type="button" onClick={()=>setAssistantOpen(false)} style={{alignSelf:"flex-end",margin:8,padding:"6px 10px",fontSize:12,color:"#cbd2df",background:"#202530",border:"1px solid #343b49",borderRadius:8}}>{"Paneli kapat"}</button> : null}
         <div style={{ flex: "0 0 auto", padding: 16, borderBottom: "1px solid #1f2229", background: "#14171d" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><strong style={{ fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }}>{t("Crelavo AI Production Manager")}</strong><button type="button" onClick={() => setSetupOpen(true)} style={{ border: "1px solid #2e333d", borderRadius: 7, padding: "6px 8px", background: "transparent", color: "#f5c77a", fontSize: 10, cursor: "pointer" }}>{t("SETUP")}</button></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />{t("Orchestrator & category engine active")}</div>
