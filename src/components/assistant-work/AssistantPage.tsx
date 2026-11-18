@@ -10,7 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
-import { getCategory } from "@/lib/crelavo/categoryCatalog";
+import { CATEGORIES, GROUPS, getCategory } from "@/lib/crelavo/categoryCatalog";
 import { createPortal } from "react-dom";
 const AW = "aw6";
 const THREAD = "crelavo-aw-thread";
@@ -291,6 +291,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const website = isWebsiteType(type, category);
   const websiteFlow = useWebsiteAssistant({ enabled: website, selection: chosen || undefined, request: cinemaFetch });
   const categoryConfig = getCategory(engineCategory);
+  const catalogGroups = GROUPS || [];
+  const catalogCategories = CATEGORIES || [];
   const storageKey = "crelavo-aw-project-v5:" + (authUser?.id || "signed-out") + ":" + engineCategory;
   const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
@@ -313,6 +315,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [mergeTransition,setMergeTransition]=useState("fade");
   const mergedVideoRef=useRef<HTMLVideoElement>(null);
   const [assistantOpen,setAssistantOpen]=useState(true);
+  const [previewMode, setPreviewMode] = useState<"scene" | "merged">("scene");
+  const [activeTool, setActiveTool] = useState("upload");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [uploadBusy,setUploadBusy]=useState(false);
   const [uploadNotice,setUploadNotice]=useState("");
   async function uploadVideos(files: File[]) {
@@ -341,13 +346,13 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   useEffect(()=>{if(!website&&!mediaProjectId)setMediaProjectId(crypto.randomUUID());},[website,mediaProjectId]);
   async function mergeScenes(){
     if(uploadBusy||mergeBusy||!mergeAspect||mergeOrder.length<2||mergeOrder.length>12)return;
-    setMergeBusy(true);setMergedUrl("");
+    setMergeBusy(true);
     try{const r=await cinemaFetch("/api/assistant-work/merge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:mediaProjectId,productionIds:mergeOrder,options:{aspect:mergeAspect,fit:mergeFit,transition:mergeTransition}})});const d=await r.json();if(!r.ok||!d.productionId)throw new Error(d.message||"Merge could not start");setMergeProductionId(d.productionId);setNotice("SCENE MERGE QUEUED / MY PRODUCTIONS");}
     catch(e){setNotice(e instanceof Error?e.message:"Merge failed");setMergeBusy(false);}
   }
   useEffect(()=>{
     if(!mergeProductionId)return;let stopped=false;const controller=new AbortController();let timer:ReturnType<typeof setTimeout>;
-    const poll=async()=>{try{const r=await cinemaFetch("/api/assistant-work/status",{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({productionId:mergeProductionId})});const d=await r.json();if(stopped)return;if(r.ok&&d.status==="ready"&&d.mediaUrl){setMergedUrl(d.mediaUrl);setMergeBusy(false);setMergeProductionId("");setNotice("MERGED VIDEO READY / MY PRODUCTIONS");return;}if(r.ok&&d.status==="failed"){setMergeBusy(false);setMergeProductionId("");setNotice("SCENE MERGE FAILED");return;}}catch{}if(!stopped)timer=setTimeout(poll,4000);};void poll();
+    const poll=async()=>{try{const r=await cinemaFetch("/api/assistant-work/status",{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json"},body:JSON.stringify({productionId:mergeProductionId})});const d=await r.json();if(stopped)return;if(r.ok&&d.status==="ready"&&d.mediaUrl){setMergedUrl(d.mediaUrl);setPreviewMode("merged");setMergeBusy(false);setMergeProductionId("");setNotice("MERGED VIDEO READY / MY PRODUCTIONS");return;}if(r.ok&&d.status==="failed"){setMergeBusy(false);setMergeProductionId("");setNotice("SCENE MERGE FAILED");return;}}catch{}if(!stopped)timer=setTimeout(poll,4000);};void poll();
     return()=>{stopped=true;controller.abort();clearTimeout(timer);};
   },[mergeProductionId]);
   const [draft, setDraft] = useState("");
@@ -455,6 +460,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const workspaceNotice = website ? websiteWorkspaceStatus(websiteFlow.project, websiteFlow.dirty, websiteFlow.approved) : notice;
   const canRender = website ? websiteFlow.approved && !websiteFlow.busy && websitePhase !== "ready" && websitePhase !== "generating" : !sending && effectiveApproved && !shot.taskId && !["QUEUED","RENDERING","RECONCILE_REQUIRED"].includes(shot.status) && Boolean(shot.planPrompt?.trim());
   const kicker = website ? `${t("Page").toUpperCase()} ${String(shot.id).padStart(2, "0")} / ${shot.label}` : `${t("Scene").toUpperCase()} ${String(shot.id).padStart(2, "0")} / SELECTED`;
+  const previewIsMerged = previewMode === "merged" && Boolean(mergedUrl);
+  const previewUrl = previewIsMerged ? mergedUrl : shot.mediaUrl;
+  const previewKind = previewIsMerged ? "video" : shot.mediaKind;
   const creditLabel = credits.kind === "loading" ? "..." : credits.kind === "signed_out" ? "SIGN IN" : credits.kind === "unknown" ? "--" : String(credits.value);
   const selectedPack = categoryConfig?.packs.find((pack) => pack.id === (website ? websiteFlow.packId : chosen?.packId));
   const estimatedCredits = website && !websiteFlow.dirty ? websiteFlow.project?.website.credits ?? 0 : shot.estimatedCredits ?? selectedPack?.credits ?? 0;
@@ -509,6 +517,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   async function renderFinalScene() {
     if (website) { if (websiteFlow.approved && await websiteFlow.perform("render")) await loadCredits(); return; }
+    if (!window.confirm(`${estimatedCredits} ${t("credits")} — ${t("Render final")}?`)) return;
     const currentPrompt = shot.planPrompt || shot.body;
     if (!currentPrompt.trim() || sending || !effectiveApproved) return;
     const controller=new AbortController();contextRequestRef.current=controller;
@@ -623,9 +632,11 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         @media(max-width: 1000px) { #${THREAD} .aw-assistant { flex-basis: 290px !important; width: 290px !important; } }
         @media(max-width: 760px) { #${THREAD} .aw-assistant { position:absolute; right:0; top:0; bottom:0; z-index:10; width:min(340px,85vw) !important; box-shadow:-12px 0 40px #0009; } #${THREAD} .aw-merge-panel fieldset { grid-template-columns:1fr; } #${THREAD} .aw-video-main { padding:12px !important; } }
       `}</style>
+      {!website && menuOpen ? <nav className="aw-category-nav" aria-label="Kategori menüsü" style={{ flex: "0 0 230px", width: 230, height: "100%", overflowY: "auto", background: "#111318", padding: 14, borderRight: "1px solid #2e333d" }}><strong>Kategoriler ve araçlar</strong><p>Katalog kapsamı; üretim desteği kategoriye bağlıdır.</p>{(GROUPS || []).map(group => <details key={group.id} open={group.id === categoryConfig?.group}><summary>{t(group.label)}</summary>{(CATEGORIES || []).filter(item => item.group === group.id).map(item => <div key={item.id}><a aria-current={item.id === category ? "page" : undefined} href={"?" + new URLSearchParams({ category: item.id, type: item.type }).toString()}>{t(item.label)}</a><ul>{item.features.map(feature => <li key={feature.id}>{t(feature.label)}</li>)}</ul></div>)}</details>)}<details open><summary>Çalışma araçları</summary>{[["upload","Video yükle"],["merge","Videoları birleştir"],["references","Karakter ve referanslar"],["music","Müzik klibi / ses"],["production","Üretim ayarları"]].map(([id,label]) => <button type="button" key={id} aria-pressed={activeTool === id} onClick={() => { setActiveTool(id); setMenuOpen(false); }}>{label}</button>)}</details><a href="/dashboard/my-productions">Üretimlerim</a></nav> : null}
       <main className={!website ? "aw-video-main" : undefined} style={{ flex: "1 1 auto", minWidth: 0, height: "100%", overflowY: "auto", background: "#0f1115", borderRight: "1px solid #1f2229", padding: 24 }}>
         <div style={{ maxWidth: 1100, width: "100%", minHeight: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
           <header style={{ flex: "0 0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, borderBottom: "1px solid #1f2229", paddingBottom: 16 }}>
+            {!website ? <button type="button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen}>Menü / araçlar</button> : null}
             {!website ? <button type="button" onClick={()=>setAssistantOpen(!assistantOpen)} aria-expanded={assistantOpen}>{assistantOpen ? "Asistan\u0131 gizle" : "Asistan\u0131 a\u00e7"}</button> : null}
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div>
@@ -660,17 +671,14 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           <section className="aw-preview" style={{ flex: "0 0 auto", minHeight: 320, position: "relative", overflow: "hidden", border: "1px solid #2e333d", borderRadius: 12, background: website ? "#171a20" : "#090b10" }}>
             {website && websiteFlow.project && (websiteFlow.project.status === "ready" || (websiteFlow.runtimePlan && !websiteFlow.runtimePlan.stale)) ? <WebsiteWorkspacePreview projectId={websiteFlow.project.productionId} page={websitePages[activeIndex] || websitePages[0]} pages={websitePages} revision={previewRevision} runtimeViews={!!websiteFlow.project.website.runtimeDevelopment} draft={websiteFlow.runtimePlan && websiteFlow.project.status !== "ready" ? { hash: websiteFlow.runtimePlan.hash, userId: websiteFlow.userId } : undefined} request={cinemaFetch} onPage={(path) => { const index = websitePages.findIndex((page) => page.path === path); if (index >= 0) setSelected(index); }} /> : <>
-            {shot.mediaUrl ? (shot.mediaKind === "audio" ? <audio src={shot.mediaUrl} controls style={{position:"relative",zIndex:2,width:"100%"}} /> : shot.mediaKind === "video" || (!shot.mediaKind && /\.(mp4|webm|mov)(\?|$)/i.test(shot.mediaUrl)) ? <video src={shot.mediaUrl} muted playsInline autoPlay loop style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} /> : <img src={shot.mediaUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />) : null}
-            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: 22, background: "linear-gradient(180deg, transparent 35%, rgba(7,6,5,0.9))" }}>
-              {!shot.mediaUrl ? <div style={{ color: "rgba(255,255,255,0.72)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" }}>{t("Output / preview area")}</div> : null}
-              <strong style={{ fontFamily: "Georgia, serif", fontSize: 25, lineHeight: 1.2, marginTop: 8 }}>{shot.title}</strong>
-              <span style={{ color: "rgba(255,255,255,0.78)", fontSize: 13, marginTop: 6 }}>{shot.mediaUrl ? t("Media output ready") : t("Generated media output will appear here.")}</span>
-            </div>
+            {previewUrl ? (previewKind === "audio" ? <audio src={previewUrl} controls style={{width:"100%"}} /> : previewKind === "video" || (!previewKind && /\.(mp4|webm|mov)(\?|$)/i.test(previewUrl)) ? <video key={previewUrl} ref={mergedVideoRef} src={previewUrl} controls playsInline style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain",background:"black"}} /> : <img src={previewUrl} alt={shot.title} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"contain"}} />) : <div style={{padding:22}}><p>{t("Output / preview area")}</p><strong>{shot.title}</strong><p>{t("Generated media output will appear here.")}</p></div>}
+
             </>}
           </section>
 
+          {!website ? <div className="aw-preview-controls"><button type="button" aria-pressed={!previewIsMerged} onClick={() => setPreviewMode("scene")}>Seçili sahne</button><button type="button" disabled={!mergedUrl} aria-pressed={previewIsMerged} onClick={() => setPreviewMode("merged")}>Birleşmiş sonuç</button>{previewUrl && previewKind === "video" ? <button type="button" onClick={() => void mergedVideoRef.current?.requestFullscreen?.().catch(() => setNotice("Tam ekran desteklenmiyor."))}>Tam ekran</button> : null}{previewUrl ? <button type="button" onClick={() => void downloadMedia(previewUrl, previewKind).catch(() => setNotice("İndirme başarısız."))}>{t("DOWNLOAD MEDIA")}</button> : null}</div> : null}
           <section aria-label={t("Page navigation")} style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", border: "1px solid #2e333d", borderRadius: 8, overflow: "hidden" }}>
-           {displayShots.map((item, index) => <button key={item.id} type="button" onClick={() => setSelected(index)} style={{ minWidth: 0, border: "none", borderRight: index < displayShots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === activeIndex ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === activeIndex ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
+           {displayShots.map((item, index) => <button key={item.id} type="button" onClick={() => { setSelected(index); setPreviewMode("scene"); }} style={{ minWidth: 0, border: "none", borderRight: index < displayShots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === activeIndex ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === activeIndex ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
           </section>
 
           {website && websiteFlow.project && !websiteFlow.reviewed ? <div role="status" style={{ fontSize: 12 }}>{t(workspaceNotice)}{websiteFlow.project.website.missing.length ? <p>{t("Missing")}: {websiteFlow.project.website.missing.map((field) => t(field)).join(", ")}</p> : null}<button type="button" onClick={() => setSetupOpen(true)}>{t("Review brief in Setup")}</button></div> : null}
@@ -678,25 +686,25 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {(["lip_sync", "voice_clone", "visual_clone", "localization", "video_tools", "video_clipping"].includes(category)) ? <section style={{ flex: "0 0 auto", display: "grid", gap: 8, padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><label style={{ fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{category === "lip_sync" ? "SOURCE VIDEO + AUDIO" : category === "voice_clone" ? "AUTHORIZED VOICE AUDIO" : category === "visual_clone" ? "AUTHORIZED REFERENCE IMAGE" : category === "localization" ? "SOURCE VIDEO" : category === "video_clipping" ? "SOURCE VIDEO" : "OPTIONAL SOURCE MEDIA"}</label><input type="file" multiple={category === "lip_sync" || category === "video_tools" || category === "video_clipping"} accept={category === "voice_clone" ? "audio/*" : category === "visual_clone" ? "image/*" : category === "localization" || category === "video_clipping" ? "video/*" : category === "lip_sync" ? "video/*,audio/*" : "video/*,image/*,audio/*"} onChange={(event) => setMaterialFiles(Array.from(event.currentTarget.files || []))} style={{ maxWidth: "100%", fontSize: 12, color: "#d1d5db" }} /><small style={{ color: "#6b7280" }}>{materialFiles.length ? materialFiles.map((file) => file.name).join(", ") : "Maximum 50 MB per file. Only use media you own or are authorized to use."}</small></section> : null}
 
-          {!website ? <section className="aw-merge-panel" aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
+          {!website && ["upload", "merge"].includes(activeTool) ? <section className="aw-merge-panel" aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
             <strong>{t("Scene merge order")}</strong>
-            <fieldset disabled={mergeBusy||uploadBusy} style={{display:"grid",gap:12,marginTop:12}}>
+            <fieldset hidden={activeTool !== "merge"} disabled={mergeBusy||uploadBusy} style={{display:"grid",gap:12,marginTop:12}}>
               <legend>Birle&#351;tirme ayarlar&#305;</legend>
               <label>Video &#246;l&#231;&#252;s&#252; <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">Format se&#231;in</option><option value="16:9">Yatay - 1920 x 1080</option><option value="9:16">Shorts / Reels - 1080 x 1920</option></select></label>
               <label>G&#246;r&#252;nt&#252; <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Doldur (kenarlar k&#305;rp&#305;labilir)</option><option value="contain">S&#305;&#287;d&#305;r (bo&#351;luk kalabilir)</option></select></label>
               <label>Ge&#231;i&#351; <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Yumu&#351;ak kararma</option><option value="cut">D&#252;z kesme</option></select></label>
               <small>Doldur: kenarlar k&#305;rp&#305;labilir. S&#305;&#287;d&#305;r: g&#246;r&#252;nt&#252; korunur, bo&#351;luk kalabilir.</small>
             </fieldset>
-            <div style={{padding:"12px 0"}}>
+            <div hidden={activeTool !== "upload"} style={{padding:"12px 0"}}>
               <label style={{display:"block",marginBottom:8}}>Bilgisayardan video y&#252;kle</label>
               <input aria-label={"Bilgisayardan video y\u00fckle"} type="file" accept="video/mp4,.mp4" multiple disabled={uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
               <p style={{fontSize:12,color:"#9ca3af"}}>MP4 &middot; 50 MB / dosya &middot; 2-12 video &middot; &#220;retim kredisi harcanmaz</p>
               {uploadNotice?<p role="status">{uploadNotice}</p>:null}
             </div>
             <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 0"}}>{shots.filter(s=>s.status==="READY"&&s.mediaKind==="video"&&s.productionId).map(s=><button type="button" key={s.productionId} disabled={mergeBusy||mergeOrder.length>=12} onClick={()=>setMergeOrder(cur=>[...cur,s.productionId!])}>{t("Add scene")} {s.id}</button>)}</div>
-            <ol>{mergeOrder.map((id,i)=><li key={i}>{shots.find(s=>s.productionId===id)?.title||id} <button type="button" disabled={mergeBusy||i===0} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}>{t("Move left")}</button> <button type="button" disabled={mergeBusy||i===mergeOrder.length-1} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i],next[i+1]]=[next[i+1],next[i]];return next;})}>{t("Move right")}</button> <button type="button" disabled={mergeBusy} onClick={()=>setMergeOrder(cur=>cur.filter((_,j)=>i!==j))}>{t("Remove")}</button></li>)}</ol>
-            <button type="button" disabled={uploadBusy||mergeBusy||!mergeAspect||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
-            {mergedUrl?<><video ref={mergedVideoRef} src={mergedUrl} controls playsInline style={{display:"block",width:"100%",height:"auto",objectFit:"contain",background:"black"}}/><button type="button" onClick={()=>void mergedVideoRef.current?.requestFullscreen?.().catch(()=>setNotice("Tam ekran tarayicinizda desteklenmiyor."))}>Tam ekran</button><button type="button" onClick={()=>void downloadMedia(mergedUrl,"video")}>{t("DOWNLOAD MEDIA")}</button></>:null}
+            <ol hidden={activeTool !== "merge"}>{mergeOrder.map((id,i)=><li key={i}>{shots.find(s=>s.productionId===id)?.title||id} <button type="button" disabled={mergeBusy||i===0} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}>{t("Move left")}</button> <button type="button" disabled={mergeBusy||i===mergeOrder.length-1} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i],next[i+1]]=[next[i+1],next[i]];return next;})}>{t("Move right")}</button> <button type="button" disabled={mergeBusy} onClick={()=>setMergeOrder(cur=>cur.filter((_,j)=>i!==j))}>{t("Remove")}</button></li>)}</ol>
+            <button hidden={activeTool !== "merge"} type="button" disabled={uploadBusy||mergeBusy||!mergeAspect||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
+             {mergedUrl ? <button type="button" onClick={() => setPreviewMode("merged")}>Birleşmiş sonucu merkezde göster</button> : null}
           </section>:null}
           {(shot.status === "READY" && (shot.mediaUrl || shot.files.length > 0)) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => void downloadMedia(shot.mediaUrl!,shot.mediaKind).catch(()=>setNotice("MEDIA DOWNLOAD BLOCKED / OPEN THE PREVIEW SOURCE TO SAVE THE FILE"))} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>{t("UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.")}</div>
