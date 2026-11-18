@@ -3,10 +3,10 @@ import { useWebsiteAssistant, WebsitePlanControls } from "./WebsiteAssistantPane
 import { WebsiteBuilderForm } from "@/components/WebsiteBuilderForm";
 import { WebsiteWorkspacePreview } from "./WebsiteWorkspacePreview";
 import { useWorkspaceLanguage } from "./useWorkspaceLanguage";
-import { websiteWorkspaceStatus, workspaceLanguages } from "@/lib/assistant-work/workspace-i18n";
+import { websiteWorkspaceStatus, translateWorkspaceText } from "@/lib/assistant-work/workspace-i18n";
 import { normalizeWorkspaceMessages } from "@/lib/assistant-work/workspace-chat";
 import { abortableDelay, createProductionPollingRegistry } from "@/lib/assistant-work/polling";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AssistantPreProduction, type ProductionSelection } from "@/components/assistant/AssistantPreProduction";
@@ -54,15 +54,15 @@ function readQuery(search: string) {
   const category = direct || ((q.has("type") || q.has("category")) ? map[type] || map[type.toLowerCase()] || "" : "");
   // Kategori secildiginde baslikta ham sorgu dizesi degil, gercek kategori adi gosterilir.
   const label: Record<string, string> = { video: "AI Video", drone_video: "Drone Video", campaign: "Campaign", mobile_app: "Mobile App", website: "Website", avatar: "Avatar", image: "Image", documentary: "Documentary", animation: "Animation", live_sales_agent: "Live Sales Agent" };
-  const resolvedType = category ? (label[category] || type) : type;
+  const resolvedType = category ? (getCategory(category)?.type || label[category] || type) : type;
   return { type: resolvedType, category };
 }
 function isWebsiteType(type: string, category: string) { return /website/i.test(type) || /website/i.test(category); }
 function categoryEnginePlan(type: string, category: string): string[] {
-  if (category === "website") return ["✓ Request received: Website production selected", "⏳ Site type, industry, and features", "○ Website builder foundation", "○ Page plan and credit estimate"];
-  if (category === "video") return ["✓ Request received: AI video selected", "⏳ Product, audience, and platform", "○ TikTok / Reels hook plan", "○ Video brief and credit estimate"];
-  if (category) return [`✓ Request received: ${type} selected`, "⏳ Identify category-specific requirements", "○ Select the right tools and production path", "○ Plan the task and calculate credits"];
-  return ["⏳ Waiting for your production request", "○ Choose web, video, app, or social production", "○ Activate the relevant category engine", "○ Plan the task and start production"];
+  if (category === "website") return ["[done] Request received: Website production selected", "[next] Site type, industry, and features", "[ ] Website builder foundation", "[ ] Page plan and credit estimate"];
+  if (category === "video") return ["[done] Request received: AI video selected", "[next] Product, audience, and platform", "[ ] TikTok / Reels hook plan", "[ ] Video brief and credit estimate"];
+  if (category) return [`[done] Request received: ${type} selected`, "[next] Identify category-specific requirements", "[ ] Select the right tools and production path", "[ ] Plan the task and calculate credits"];
+  return ["[next] Waiting for your production request", "[ ] Choose web, video, app, or social production", "[ ] Activate the relevant category engine", "[ ] Plan the task and start production"];
 }
 function fromAuthJson(raw: string | null): string | null {
   if (!raw) return null;
@@ -225,6 +225,11 @@ function videoShots(): Shot[] {
     { id: 4, label: "PLANNED", status: "PLANNED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null, files: [] },
   ];
 }
+function categoryShots(id: string): Shot[] {
+  const config = getCategory(id);
+  if (!config) return [{ id:1, label:"PLANNED", status:"PLANNED", title:"Select a production category", body:"Choose a category to create a plan. No production has started.", mediaUrl:null, files:[] }];
+  return config.features.map((feature,index) => ({ id:index+1, label:"PLANNED", status:"PLANNED", title:feature.label, body:`Plan ${feature.label.toLowerCase()} for your ${config.label} project. Review the scope and credit estimate before production.`, mediaUrl:null, files:[] }));
+}
 function websiteShots(): Shot[] {
   return [
     { id: 1, label: "HOME", status: "HOME", title: "Home", body: "Hero, proof, and one clear start.", mediaUrl: null, files: [] },
@@ -274,8 +279,11 @@ async function downloadDeliveryZip(files: DeliveryFile[]) {
   const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "crelavo-delivery.zip"; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function AssistantPage({ preProduction }: { preProduction?: ProductionSelection } = {}) {
-  const { language, t, setLanguage } = useWorkspaceLanguage();
+  useWorkspaceLanguage();
+  const t = useCallback((value: string, variables?: Record<string, string | number>) => translateWorkspaceText(value, "en", variables), []);
+  const language = "en";
   const { openAuth, user: authUser } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const routeKey = searchParams.toString();
   const query = useMemo(() => readQuery(routeKey), [routeKey]);
@@ -301,7 +309,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [mounted, setMounted] = useState(false);
   const [vp, setVp] = useState({ w: 0, h: 0 });
   const [selected, setSelected] = useState(0);
-  const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : videoShots()));
+  const [shots, setShots] = useState<Shot[]>(() => (website ? websiteShots() : categoryShots(category)));
   const categoryResetRef = useRef(category);
   const [mediaProjectId,setMediaProjectId]=useState("");
   const [mergeOrder,setMergeOrder]=useState<string[]>([]);
@@ -314,32 +322,40 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const mergedVideoRef=useRef<HTMLVideoElement>(null);
   const [assistantOpen,setAssistantOpen]=useState(true);
   const [previewMode, setPreviewMode] = useState<"scene" | "merged">("scene");
-  const [activeTool, setActiveTool] = useState("upload");
+  const [activeTool, setActiveTool] = useState("production");
   const [menuOpen, setMenuOpen] = useState(true);
   const [categorySearch, setCategorySearch] = useState("");
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(!category);
+  const videoWorkspace = Boolean(categoryConfig && ["media", "special_video"].includes(categoryConfig.group));
+  useEffect(() => { setActiveTool("production"); setCategorySearch(""); setCategoryPickerOpen(!category); setSetupOpen(false); }, [category]);
+  function pickCategory(id: string) {
+    const next = getCategory(id); if (!next) return;
+    setCategorySearch(""); setCategoryPickerOpen(false); setSelection(null); setSetupOpen(false);
+    router.push("?" + new URLSearchParams({ category: next.id, type: next.type }).toString());
+  }
   const [uploadBusy,setUploadBusy]=useState(false);
   const [uploadNotice,setUploadNotice]=useState("");
   async function uploadVideos(files: File[]) {
     if(!projectLoaded||uploadBusy||mergeBusy||!mediaProjectId||!files.length)return;
-    if(files.length+mergeOrder.length>12){setUploadNotice("En fazla 12 video secebilirsiniz.");return;}
+    if(files.length+mergeOrder.length>12){setUploadNotice("Select no more than 12 videos.");return;}
     if(files.some(file=>!file.name.toLowerCase().endsWith(".mp4")||file.size===0||file.size>50*1024*1024)){
-      setUploadNotice("Yalniz MP4 dosyalari desteklenir. Dosya basina sinir 50 MB.");return;
+      setUploadNotice("Only MP4 files are supported, up to 50 MB per file.");return;
     }
     setUploadBusy(true);
     try {
       for(let i=0;i<files.length;i++){
-        const file=files[i];setUploadNotice(`${i+1}/${files.length}: ${file.name} yukleniyor...`);
+        const file=files[i];setUploadNotice(`${i+1}/${files.length}: ${file.name} uploading...`);
         const prepared=await cinemaFetch("/api/assistant-work/merge/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"prepare",projectId:mediaProjectId,name:file.name,size:file.size})});
-        const ticket=await prepared.json();if(!prepared.ok||!ticket.signedUrl)throw new Error(ticket.message||ticket.error||"Yukleme baslatilamadi.");
+        const ticket=await prepared.json();if(!prepared.ok||!ticket.signedUrl)throw new Error(ticket.message||ticket.error||"Upload baslatilamadi.");
         const sent=await fetch(ticket.signedUrl,{method:"PUT",headers:{"Content-Type":"video/mp4","x-upsert":"false"},body:file,credentials:"omit"});
-        if(!sent.ok)throw new Error("Dosya yuklenemedi. Baglantinizi ve dosya boyutunu kontrol edin.");
+        if(!sent.ok)throw new Error("Upload failed. Check the connection and file size.");
         const completed=await cinemaFetch("/api/assistant-work/merge/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"complete",projectId:mediaProjectId,productionId:ticket.productionId})});
-        const result=await completed.json();if(!completed.ok)throw new Error(result.message||result.error||"Yukleme dogrulanamadi.");
-        setShots(cur=>[...cur,{id:Math.max(0,...cur.map(s=>s.id))+1,title:result.title,body:"Bilgisayardan yuklenen video",status:"READY",label:"READY",mediaUrl:result.mediaUrl,mediaKind:"video",productionId:result.productionId,files:[]}]);
+        const result=await completed.json();if(!completed.ok)throw new Error(result.message||result.error||"Upload dogrulanamadi.");
+        setShots(cur=>[...cur,{id:Math.max(0,...cur.map(s=>s.id))+1,title:result.title,body:"Uploaded video",status:"READY",label:"READY",mediaUrl:result.mediaUrl,mediaKind:"video",productionId:result.productionId,files:[]}]);
         setMergeOrder(cur=>[...cur,result.productionId]);
       }
-      setUploadNotice("Videolar y\u00fcklendi. S\u0131ray\u0131 kontrol edip birle\u015ftirme d\u00fc\u011fmesine bas\u0131n.");
-    } catch(error){setUploadNotice(error instanceof Error?error.message:"Yukleme basarisiz.");}
+      setUploadNotice("Videos uploaded. Review the order before merging.");
+    } catch(error){setUploadNotice(error instanceof Error?error.message:"Upload failed.");}
     finally{setUploadBusy(false);}
   }
   useEffect(()=>{if(!website&&!mediaProjectId)setMediaProjectId(crypto.randomUUID());},[website,mediaProjectId]);
@@ -390,7 +406,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     setMounted(true);
     if (website) return;
     let active = true; const restoreVersion = chatActivityRef.current;
-    setChatMessages([]); setShots(videoShots()); setSelected(0); setPlanApproved(false); setMaterialFiles([]); setReferenceUrl(""); setProjectLoaded(false); setMergeOrder([]); setMergeProductionId(""); setMergeBusy(false); setMergedUrl(""); setPreviewMode("scene"); setMergeAspect(""); setMergeFit("cover"); setMergeTransition("fade"); setMediaProjectId(crypto.randomUUID());
+    setChatMessages([]); setShots(categoryShots(category)); setSelected(0); setPlanApproved(false); setMaterialFiles([]); setReferenceUrl(""); setProjectLoaded(false); setMergeOrder([]); setMergeProductionId(""); setMergeBusy(false); setMergedUrl(""); setPreviewMode("scene"); setMergeAspect(""); setMergeFit("cover"); setMergeTransition("fade"); setMediaProjectId(crypto.randomUUID());
     function restore(raw: unknown) {
       if (!active || !raw || typeof raw !== "object") return;
       const state = raw as Record<string, unknown>;
@@ -520,10 +536,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   async function renderFinalScene() {
     if (website) { if (websiteFlow.approved && await websiteFlow.perform("render")) await loadCredits(); return; }
-    if (!window.confirm(`${estimatedCredits} ${t("credits")} — ${t("Render final")}?`)) return;
     const currentPrompt = shot.planPrompt || shot.body;
     if (!currentPrompt.trim() || sending || !effectiveApproved) return;
-    if (!window.confirm(`${estimatedCredits} ${t("credits")} ? ${t("Render final")}?`)) return;
+    if (!window.confirm(`${estimatedCredits} credits - start production?`)) return;
     const controller=new AbortController();contextRequestRef.current=controller;
     setSending(true); setNotice("03 RENDERING / STARTING FINAL PROVIDER JOB");
     try {
@@ -543,7 +558,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     const prompt = draft.trim();
     if (!prompt || sending || (website && websiteFlow.busy)) return;
     chatActivityRef.current++;
-    if (materialFiles.some(file => file.size === 0 || file.size > 50 * 1024 * 1024)) { setNotice("Dosya ba??na s?n?r 50 MB; bo? dosya y?klenemez."); return; }
+    if (materialFiles.some(file => file.size === 0 || file.size > 50 * 1024 * 1024)) { setNotice("Maximum 50 MB per file; empty files are not allowed."); return; }
     if (website) { const message = referenceUrl.trim() ? prompt + "\nReference URL supplied by user: " + referenceUrl.trim() : prompt; if (await websiteFlow.perform("revise", undefined, message)) setDraft(""); return; }
     const claims = readSessionClaims();
     if (!claims) { openAuth("login", { next: window.location.pathname + window.location.search }); return; }
@@ -606,7 +621,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   if (!mounted) return null;
 
   const shell = (
-    <div id={THREAD} data-aw={AW} translate="yes" lang={language} dir={language === "ar" ? "rtl" : "ltr"} style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div id={THREAD} data-aw={AW} translate="yes" lang={language} dir="ltr" style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", overflow: "hidden", zIndex: 9999, display: "flex", background: "#0b0c0e", color: "#fff", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`#${THREAD}, #${THREAD} * { box-sizing: border-box; } #${THREAD} a { color: inherit; text-decoration: none; } #${THREAD} button, #${THREAD} input, #${THREAD} textarea { font-family: inherit; }`}</style>
 
       <style>{`
@@ -637,21 +652,28 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         @media(max-width: 1000px) { #${THREAD} .aw-assistant { flex-basis: 290px !important; width: 290px !important; } }
         @media(max-width: 760px) { #${THREAD} .aw-assistant { position:absolute; right:0; top:0; bottom:0; z-index:10; width:min(340px,85vw) !important; box-shadow:-12px 0 40px #0009; } #${THREAD} .aw-merge-panel fieldset { grid-template-columns:1fr; } #${THREAD} .aw-video-main { padding:12px !important; } }
       `}</style>
-      {!website && menuOpen ? <nav className="aw-category-nav" aria-label="Kategori menusu" style={{ flex: "0 0 250px", width: 250, height: "100%", overflowY: "auto", background: "#111318", padding: 16, borderRight: "1px solid #2e333d" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 14 }}><div><strong style={{ display: "block", fontSize: 14 }}>Crelavo Studio</strong><small style={{ color: "#8d98ab" }}>Calisma alani / arac secimi</small></div><button type="button" aria-label="Menuyu kapat" onClick={() => setMenuOpen(false)} style={{ width: 28, minHeight: 28, padding: 0 }}>?</button></div>
-        <label style={{ display: "block", color: "#9ca3af", fontSize: 11, marginBottom: 6 }} htmlFor="aw-category-search">Arac ara</label><input id="aw-category-search" value={categorySearch} onChange={event => setCategorySearch(event.target.value)} placeholder="Video, avatar, gorsel..." style={{ width: "100%", minHeight: 36, padding: "8px 10px", background: "#1c1f26", color: "#fff", border: "1px solid #343b49", borderRadius: 8, marginBottom: 14 }} />
-        <div style={{ display: "grid", gap: 6, marginBottom: 18 }}>{[['upload', 'Video yukle'], ['merge', 'Videolari birlestir'], ['references', 'Karakter / referans'], ['music', 'Muzik klibi / ses'], ['production', 'Uretim ayarlari']].map(([id, label]) => <button type="button" key={id} aria-pressed={activeTool === id} onClick={() => setActiveTool(id)} style={{ textAlign: "left", padding: "9px 10px", borderRadius: 8, border: activeTool === id ? "1px solid #f5c77a" : "1px solid #2e333d", background: activeTool === id ? "#29241b" : "#1a1d24", color: activeTool === id ? "#f5c77a" : "#d1d5db" }}>{label}</button>)}</div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><strong style={{ fontSize: 11, color: "#8d98ab", letterSpacing: "0.12em", textTransform: "uppercase" }}>Uretim araclari</strong><span style={{ color: "#596273", fontSize: 11 }}>{CATEGORIES.length}</span></div>
-        {(GROUPS || []).map(group => { const items = (CATEGORIES || []).filter(item => item.group === group.id && (!categorySearch.trim() || `${item.label} ${item.type} ${item.features.map(feature => feature.label).join(" ")}`.toLowerCase().includes(categorySearch.trim().toLowerCase()))); if (!items.length) return null; return <details key={group.id} open={Boolean(categorySearch.trim()) || group.id === categoryConfig?.group} style={{ borderTop: "1px solid #202530", padding: "10px 0" }}><summary style={{ cursor: "pointer", color: "#e5e7eb", fontWeight: 700, fontSize: 12, listStyle: "none" }}>{group.label}<span style={{ color: "#6f7b8e", fontWeight: 400, marginLeft: 8 }}>{items.length}</span></summary><div style={{ display: "grid", gap: 4, marginTop: 8 }}>{items.map(item => <a key={item.id} aria-current={item.id === category ? "page" : undefined} href={`?category=${item.id}&type=${encodeURIComponent(item.type)}`} style={{ display: "block", padding: "8px 9px", borderRadius: 7, color: item.id === category ? "#f5c77a" : "#cbd2df", background: item.id === category ? "#29241b" : "transparent", fontSize: 12, fontWeight: item.id === category ? 700 : 500 }}>{item.label}<span style={{ display: "block", marginTop: 3, color: item.id === category ? "#d7c08a" : "#687386", fontSize: 10 }}>{item.id === category ? item.features.slice(0, 3).map(feature => feature.label).join(" / ") : item.type}</span></a>)}</div></details>; })}
-        <a href="/dashboard/productions" style={{ display: "block", marginTop: 14, padding: "10px 9px", color: "#9ca3af", borderTop: "1px solid #202530", fontSize: 12 }}>Uretimlerim ?</a>
-      </nav> : null}
-      <main className={!website ? "aw-video-main" : undefined} style={{ flex: "1 1 auto", minWidth: 0, height: "100%", overflowY: "auto", background: "#0f1115", borderRight: "1px solid #1f2229", padding: 24 }}>
+      <nav className="aw-category-nav" aria-label="Category navigation" style={{flex:menuOpen?"0 0 250px":"0 0 54px",width:menuOpen?250:54,height:"100%",overflowY:"auto",background:"#111318",padding:menuOpen?16:8,borderRight:"1px solid #2e333d"}}>
+        <button type="button" aria-label={menuOpen?"Collapse tools":"Expand tools"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)}>{menuOpen?"Collapse tools":"Tools"}</button>
+        {menuOpen ? <>
+          <h2 style={{fontSize:16,margin:"18px 0 4px"}}>Crelavo Studio</h2>
+          <a href="/" style={{display:"block",padding:"8px 0",color:"#f5c77a"}}>Home</a>
+          <strong style={{display:"block",margin:"14px 0 8px"}}>{categoryConfig?.label || "Choose category"}</strong>
+          <button type="button" aria-expanded={categoryPickerOpen} onClick={()=>setCategoryPickerOpen(!categoryPickerOpen)}>{categoryPickerOpen?"Close category picker":"Change category"}</button>
+          {categoryPickerOpen ? <section aria-label="Category picker">
+            <input aria-label="Search categories" value={categorySearch} onChange={event=>setCategorySearch(event.target.value)} placeholder="Search categories..." style={{width:"100%",margin:"12px 0",padding:10,background:"#1c1f26",color:"white",border:"1px solid #343b49",borderRadius:8}} />
+            {(GROUPS || []).map(group=>{const items=(CATEGORIES || []).filter(item=>item.group===group.id && (!categorySearch.trim() || (item.label+" "+item.features.map(f=>f.label).join(" ")).toLowerCase().includes(categorySearch.toLowerCase().trim())));return items.length?<details key={group.id} open={Boolean(categorySearch.trim())||group.id===categoryConfig?.group}><summary>{group.label}</summary>{items.map(item=><button type="button" key={item.id} aria-current={item.id===category?"page":undefined} onClick={()=>pickCategory(item.id)}>{item.label}</button>)}</details>:null;})}
+            {categorySearch.trim() && !(CATEGORIES || []).some(item=>(item.label+" "+item.features.map(f=>f.label).join(" ")).toLowerCase().includes(categorySearch.toLowerCase().trim()))?<p>No matching categories.</p>:null}
+          </section>:null}
+          <section aria-label="Selected category features" style={{marginTop:16}}><h3 style={{fontSize:11,color:"#9ca3af",textTransform:"uppercase"}}>Category scope</h3>{categoryConfig?.features.map(feature=><button type="button" key={feature.id} onClick={()=>{setActiveTool("production");setDraft("Help me plan "+feature.label+" for my "+categoryConfig.label+" project.");setAssistantOpen(true);}}>{feature.label}</button>)}</section>
+          <section aria-label="Workspace tools" style={{marginTop:16}}><h3 style={{fontSize:11,color:"#9ca3af",textTransform:"uppercase"}}>Workspace tools</h3>{[["production","Production settings"],...(videoWorkspace?[["upload","Upload clips"],["merge","Merge clips"]]:[]),...(!website&&categoryConfig?.group!=="build"?[["references","Sources / references"]]:[]),...(category==="music_video"?[["music","Music video / sound"]]:[])].map(([id,label])=><button type="button" key={id} aria-pressed={activeTool===id} onClick={()=>setActiveTool(id)}>{label}</button>)}</section>
+          <a href="/dashboard/productions" style={{display:"block",marginTop:18}}>My productions</a>
+        </>:null}
+      </nav>
+      <main className="aw-video-main" style={{ flex: "1 1 auto", minWidth: 0, height: "100%", overflowY: "auto", background: "#0f1115", borderRight: "1px solid #1f2229", padding: 24 }}>
         <div style={{ maxWidth: 1100, width: "100%", minHeight: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
           <header style={{ flex: "0 0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, borderBottom: "1px solid #1f2229", paddingBottom: 16 }}>
-            {!website ? <button type="button" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen}>Menü / araçlar</button> : null}
-            {!website ? <button type="button" onClick={()=>setAssistantOpen(!assistantOpen)} aria-expanded={assistantOpen}>{assistantOpen ? "Asistan\u0131 gizle" : "Asistan\u0131 a\u00e7"}</button> : null}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}><a href="/dashboard" style={{ color: "#f5c77a", fontSize: 12 }}>&larr; Home</a><div style={{ fontSize: 11, color: "#f5c77a", letterSpacing: "0.16em", textTransform: "uppercase" }}>Crelavo AI Studio</div></div>
               <h1 style={{ fontSize: 24, lineHeight: 1.15, margin: "6px 0 0", letterSpacing: "-0.03em" }}>{website ? t("Website production workspace") : t("AI production workspace")}</h1>
               <p style={{ margin: "6px 0 0", color: "#9ca3af", fontSize: 13 }}>{type} / {category}</p>
             </div>
@@ -659,7 +681,6 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
               <span style={{ display: "block", fontSize: 11, color: "#9ca3af" }}>{t("Available credits")}</span>
               <strong style={{ color: "#34d399", fontFamily: "monospace", fontSize: 15 }}>{t(creditLabel)}</strong>
             </div>
-            <label style={{ fontSize: 11 }}>{t("Language")} <select aria-label={t("Language")} value={language} onChange={(event) => setLanguage(event.target.value)} style={{ background: "#1c1f26", color: "#fff", padding: 5 }}>{workspaceLanguages.map((code) => <option key={code} value={code}>{code.toUpperCase()}</option>)}</select></label>
           </header>
 
           <section className="aw-scene-summary" style={{ flex: "0 0 auto", background: "#111318", border: "1px solid #1f2229", borderRadius: 12, padding: 20 }}>
@@ -688,7 +709,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             </>}
           </section>
 
-          {!website ? <div className="aw-preview-controls"><button type="button" aria-pressed={!previewIsMerged} onClick={() => setPreviewMode("scene")}>Seçili sahne</button><button type="button" disabled={!mergedUrl} aria-pressed={previewIsMerged} onClick={() => setPreviewMode("merged")}>Birleşmiş sonuç</button>{previewUrl && previewKind === "video" ? <button type="button" onClick={() => void mergedVideoRef.current?.requestFullscreen?.().catch(() => setNotice("Tam ekran desteklenmiyor."))}>Tam ekran</button> : null}{previewUrl ? <button type="button" onClick={() => void downloadMedia(previewUrl, previewKind).catch(() => setNotice("İndirme başarısız."))}>{t("DOWNLOAD MEDIA")}</button> : null}</div> : null}
+          {videoWorkspace ? <div className="aw-preview-controls"><button type="button" onClick={()=>setPreviewMode("scene")}>Selected scene</button><button type="button" disabled={!mergedUrl} onClick={()=>setPreviewMode("merged")}>Merged result</button>{previewUrl && previewKind==="video"?<button type="button" onClick={()=>void mergedVideoRef.current?.requestFullscreen?.().catch(()=>setNotice("Fullscreen is not supported."))}>Fullscreen</button>:null}</div>:null}
           <section aria-label={t("Page navigation")} style={{ flex: "0 0 auto", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", border: "1px solid #2e333d", borderRadius: 8, overflow: "hidden" }}>
            {displayShots.map((item, index) => <button key={item.id} type="button" onClick={() => { setSelected(index); setPreviewMode("scene"); }} style={{ minWidth: 0, border: "none", borderRight: index < displayShots.length - 1 ? "1px solid #2e333d" : "none", padding: "12px 8px", background: index === activeIndex ? "#1c1f26" : "#111318", color: "#fff", cursor: "pointer", textAlign: "left" }}><small style={{ display: "block", color: index === activeIndex ? "#f5c77a" : "#9ca3af", marginBottom: 4 }}>{String(item.id).padStart(2, "0")} / {item.label}</small><strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>{item.title}</strong></button>)}
           </section>
@@ -696,54 +717,53 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           {website && websiteFlow.project && !websiteFlow.reviewed ? <div role="status" style={{ fontSize: 12 }}>{t(workspaceNotice)}{websiteFlow.project.website.missing.length ? <p>{t("Missing")}: {websiteFlow.project.website.missing.map((field) => t(field)).join(", ")}</p> : null}<button type="button" onClick={() => setSetupOpen(true)}>{t("Review brief in Setup")}</button></div> : null}
           {website && websiteFlow.project?.status === "ready" ? <details><summary>{t("Revisions, history and ZIP delivery")}</summary><WebsiteBuilderForm key={websiteFlow.project.productionId} initialProjectId={websiteFlow.project.productionId} editorOnly onContentChange={() => setPreviewRevision((current) => current + 1)} /></details> : null}
 
-          {!website && ["references", "music", "production"].includes(activeTool) ? <section className="aw-tool-panel">
-            <h3>{activeTool === "references" ? "Karakter ve referanslar" : activeTool === "music" ? "M?zik klibi / ses" : "?retim ayarlar?"}</h3>
-            {activeTool === "production" ? <><p>{estimatedCredits ? `${estimatedCredits} kredi ? sunucu plan tahmini` : "?nce paket ve plan se?in."}</p><button type="button" onClick={() => setSetupOpen(true)}>{t("Setup")}</button><p>Y?kleme ?cretli ?retim ba?latmaz. G?ncel plan onay? ve kredi tutar? onay? olmadan ?retim ba?lamaz.</p></> : <>
-              <p>{activeTool === "music" ? "M?zik klibi bir video kategorisidir; ba??ms?z ?ark? veya m?zik ?retimi de?ildir. Bu ?al??ma motorunda m?zik ?retimi ve ses dosyas?n? videoya miksleme desteklenmiyor." : "Karakterinizi asistana metinle tarif edin. ?ok sahneli karakter kimli?i tutarl?l??? garanti edilmez."}</p>
-              <p>{category === "lip_sync" ? "Dudak e?leme i?in video + ses kayna?? gerekir." : category === "localization" ? "Yerelle?tirme i?in video kayna?? gerekir." : category === "video_clipping" ? "Klip ??karma i?in kaynak video gerekir." : ["image", "visual_clone", "brand_kit", "avatar", "talking_video"].includes(category) ? "Bu kategoride tek g?rsel kaynak ?retim adapt?r?ne iletilebilir. Sa?lay?c? kabul? ayr?ca do?rulan?r." : "Bu kategoride dosyalar plan girdisidir; g?rsel/ses/video referans?n? do?rudan ?retime aktarma deste?i yoktur."}</p>
-              <input aria-label="Referans dosyalar?" type="file" multiple accept="image/*,audio/*,video/*" onChange={event => { setMaterialFiles(Array.from(event.currentTarget.files || [])); setPlanApproved(false); }} />
-              <p>{materialFiles.length ? materialFiles.map(file => file.name).join(" ? ") : "Dosya ba??na 50 MB. Yaln?z kullan?m hakk?n?z olan dosyalar? se?in."}</p>
-              <button type="button" onClick={() => { setAssistantOpen(true); setDraft(current => current || "Se?ti?im referanslarla plan? g?ncelle; desteklenmeyen ?retim ad?mlar?n? belirt."); }}>Asistana plan? g?ncellet</button>
-              <p>Dosya se?imi ?retim ba?latmaz. Referanslar PLANI G?NCELLE ile kaydedilir. Referans ses klonlama adapt?r? bu ?al??ma motorunda desteklenmiyor.</p>
+          {["references", "music", "production"].includes(activeTool) ? <section className="aw-tool-panel">
+            <h3>{activeTool === "references" ? "Character and references" : activeTool === "music" ? "Music video and sound" : "Production settings"}</h3>
+            {activeTool === "production" ? <><p>{categoryConfig?.intake.greeting}</p><p>{estimatedCredits ? `${estimatedCredits} credits - server estimate` : "Select a package and create a plan first."}</p><button type="button" onClick={() => setSetupOpen(true)}>{t("Setup")}</button><p>Uploading never starts paid production. A current plan and explicit approval are required before credits can be spent.</p></> : <>
+              <p>{activeTool === "music" ? "Music video is a video category, not independent music or song generation. This workspace does not generate music or mix a separate audio file into the video." : "Describe the character in the assistant. Consistent identity across multiple scenes is not guaranteed by this workspace."}</p>
+              <p>{category === "lip_sync" ? "Lip sync requires a video and an audio source." : category === "localization" ? "Localization requires a source video." : category === "video_clipping" ? "Clipping requires a source video." : ["image", "visual_clone", "brand_kit", "avatar", "talking_video"].includes(category) ? "This category can pass one visual source to its production adapter when supported." : "In this category files are planning inputs only; direct reference transfer is not supported."}</p>
+              <input aria-label="Reference files" type="file" multiple accept="image/*,audio/*,video/*" onChange={event => { setMaterialFiles(Array.from(event.currentTarget.files || [])); setPlanApproved(false); }} />
+              <p>{materialFiles.length ? materialFiles.map(file => file.name).join(" / ") : "Maximum 50 MB per file. Use files you own or are authorized to use."}</p>
+              <button type="button" onClick={() => { setAssistantOpen(true); setDraft(current => current || "Update the plan using my selected references and clearly state unsupported steps."); }}>Update plan with references</button>
+              <p>Selecting a file never starts production. References are sent only when the plan is updated. Voice cloning from a reference is not supported by this workspace engine.</p>
             </>}
           </section> : null}
-
-          {!website && ["upload", "merge"].includes(activeTool) ? <section className="aw-merge-panel" aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
-            <strong>{activeTool === "upload" ? "Bilgisayardan video y?kle" : t("Scene merge order")}</strong><div style={{display:"flex",gap:8,marginTop:10}}><button type="button" onClick={() => setActiveTool("upload")}>Y?kleme</button><button type="button" onClick={() => setActiveTool("merge")}>Birle?tirme ayarlar?</button></div>
+          {videoWorkspace && ["upload", "merge"].includes(activeTool) ? <section className="aw-merge-panel" aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
+            <strong>{activeTool === "upload" ? "Upload MP4 clips" : "Merge clips"}</strong>
             <fieldset hidden={activeTool !== "merge"} disabled={mergeBusy||uploadBusy} style={{display:"grid",gap:12,marginTop:12}}>
-              <legend>Birle&#351;tirme ayarlar&#305;</legend>
-              <label>Video &#246;l&#231;&#252;s&#252; <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">Format se&#231;in</option><option value="16:9">Yatay - 1920 x 1080</option><option value="9:16">Shorts / Reels - 1080 x 1920</option></select></label>
-              <label>G&#246;r&#252;nt&#252; <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Doldur (kenarlar k&#305;rp&#305;labilir)</option><option value="contain">S&#305;&#287;d&#305;r (bo&#351;luk kalabilir)</option></select></label>
-              <label>Ge&#231;i&#351; <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Yumu&#351;ak kararma</option><option value="cut">D&#252;z kesme</option></select></label>
-              <small>Doldur: kenarlar k&#305;rp&#305;labilir. S&#305;&#287;d&#305;r: g&#246;r&#252;nt&#252; korunur, bo&#351;luk kalabilir.</small>
+              <legend>Merge settings</legend>
+              <label>Aspect ratio <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">Select format</option><option value="16:9">Landscape - 1920 x 1080</option><option value="9:16">Portrait - 1080 x 1920</option></select></label>
+              <label>Fit <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Fill (may crop edges)</option><option value="contain">Fit (may leave empty space)</option></select></label>
+              <label>Transition <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Fade</option><option value="cut">Cut</option></select></label>
+              <small>Fill may crop edges. Fit preserves the full image.</small>
             </fieldset>
             <div hidden={activeTool !== "upload"} style={{padding:"12px 0"}}>
-              <label style={{display:"block",marginBottom:8}}>Bilgisayardan video y&#252;kle</label>
-              <input aria-label={"Bilgisayardan video y\u00fckle"} type="file" accept="video/mp4,.mp4" multiple disabled={!projectLoaded||uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
-              <p style={{fontSize:12,color:"#9ca3af"}}>MP4 &middot; 50 MB / dosya &middot; 2-12 video &middot; &#220;retim kredisi harcanmaz</p>
+              <input aria-label={"Upload video"} type="file" accept="video/mp4,.mp4" multiple disabled={!projectLoaded||uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
+              <p style={{fontSize:12,color:"#9ca3af"}}>MP4 - 50 MB per file - 2 to 12 videos - no production credits charged</p>
               {uploadNotice?<p role="status">{uploadNotice}</p>:null}
             </div>
             <div hidden={activeTool !== "merge"} style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 0"}}>{shots.filter(s=>s.status==="READY"&&s.mediaKind==="video"&&s.productionId).map(s=><button type="button" key={s.productionId} disabled={uploadBusy||mergeBusy||mergeOrder.length>=12} onClick={()=>setMergeOrder(cur=>[...cur,s.productionId!])}>{t("Add scene")} {s.id}</button>)}</div>
             <ol hidden={activeTool !== "merge"}>{mergeOrder.map((id,i)=><li key={i}>{shots.find(s=>s.productionId===id)?.title||id} <button type="button" disabled={uploadBusy||mergeBusy||i===0} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}>{t("Move left")}</button> <button type="button" disabled={uploadBusy||mergeBusy||i===mergeOrder.length-1} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i],next[i+1]]=[next[i+1],next[i]];return next;})}>{t("Move right")}</button> <button type="button" disabled={uploadBusy||mergeBusy} onClick={()=>setMergeOrder(cur=>cur.filter((_,j)=>i!==j))}>{t("Remove")}</button></li>)}</ol>
             <button hidden={activeTool !== "merge"} type="button" disabled={!projectLoaded||uploadBusy||mergeBusy||!mergeAspect||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
-             {mergedUrl ? <button type="button" onClick={() => setPreviewMode("merged")}>Birleşmiş sonucu merkezde göster</button> : null}
+             {mergedUrl ? <button type="button" onClick={()=>setPreviewMode("merged")}>Show merged result</button>:null}
           </section>:null}
           {(shot.status === "READY" && (shot.mediaUrl || shot.files.length > 0)) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => void downloadMedia(shot.mediaUrl!,shot.mediaKind).catch(()=>setNotice("MEDIA DOWNLOAD BLOCKED / OPEN THE PREVIEW SOURCE TO SAVE THE FILE"))} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>{t("UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.")}</div>
         </div>
       </main>
 
-      <aside className={!website ? "aw-assistant" : undefined} style={{ flex: "0 0 340px", width: 340, height: "100%", minWidth: 0, display: !website&&!assistantOpen ? "none" : "flex", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
-        {!website ? <button type="button" onClick={()=>setAssistantOpen(false)} style={{alignSelf:"flex-end",margin:8,padding:"6px 10px",fontSize:12,color:"#cbd2df",background:"#202530",border:"1px solid #343b49",borderRadius:8}}>{"Paneli kapat"}</button> : null}
+      {!assistantOpen ? <button type="button" onClick={() => setAssistantOpen(true)} style={{ position: "fixed", right: 10, top: 12, zIndex: 15, padding: "8px 10px", background: "#f5c77a", color: "#111", border: 0, borderRadius: 8 }}>Open assistant</button> : null}
+      <aside className="aw-assistant" style={{ flex: "0 0 340px", width: 340, height: "100%", minWidth: 0, display: assistantOpen ? "flex" : "none", flexDirection: "column", background: "#111318", borderLeft: "1px solid #1f2229" }} aria-label={t("Crelavo AI Production Manager")}>
+        {assistantOpen ? <button type="button" onClick={()=>setAssistantOpen(false)} style={{alignSelf:"flex-end",margin:8,padding:"6px 10px",fontSize:12,color:"#cbd2df",background:"#202530",border:"1px solid #343b49",borderRadius:8}}>Close assistant</button> : null}
         <div style={{ flex: "0 0 auto", padding: 16, borderBottom: "1px solid #1f2229", background: "#14171d" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}><strong style={{ fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }}>{t("Crelavo AI Production Manager")}</strong><button type="button" onClick={() => setSetupOpen(true)} style={{ border: "1px solid #2e333d", borderRadius: 7, padding: "6px 8px", background: "transparent", color: "#f5c77a", fontSize: 10, cursor: "pointer" }}>{t("SETUP")}</button></div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, color: "#34d399", fontSize: 11 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981" }} />{t("Orchestrator & category engine active")}</div>
         </div>
         <div style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto", padding: 16 }}>
-          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{t("Assistant is ready. Describe what you want to create.")}</p>{!website && categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>{t("Smart starting point:")}{Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" · ")}{t("(editable)")}</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{t(choice)}</button>)}</div>
+          <div style={{ background: "#1a1d24", border: "1px solid #2e333d", padding: 12, borderRadius: 8, marginBottom: 14 }}><p style={{ margin: 0, fontSize: 13, color: "#d1d5db", lineHeight: 1.5 }}>{categoryConfig?.intake.greeting || t("Assistant is ready. Describe what you want to create.")}</p>{!website && categoryConfig?.intake.defaults && Object.keys(categoryConfig.intake.defaults).length > 0 ? <small style={{ display: "block", marginTop: 8, color: "#9ca3af" }}>{t("Smart starting point:")}{Object.entries(categoryConfig.intake.defaults).map(([key, value]) => `${key.replace(/_/g, " ")}: ${value.replace(/_/g, " ")}`).join(" / ")}{t("(editable)")}</small> : null}</div><div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>{(categoryConfig?.intake.quickChoices || []).map((choice) => <button key={choice} type="button" onClick={() => setDraft(choice)} style={{ border: "1px solid #2e333d", borderRadius: 999, padding: "7px 10px", background: "#1c1f26", color: "#d1d5db", cursor: "pointer", fontSize: 11 }}>{t(choice)}</button>)}</div>
           <div style={{ border: "1px solid #2e333d", borderRadius: 8, padding: 12, background: "#171a20", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#f5c77a", textTransform: "uppercase" }}>{t("Plan and approval")}</p><div style={{ display: "grid", gap: 6, fontSize: 12, color: "#d1d5db" }}><div>{t("Category:")}<strong>{categoryConfig?.label || type}</strong></div><div>{t("Package:")}<strong>{selectedPack ? t(selectedPack.label) : t("Not selected yet")}</strong></div><div>{t("Estimated credits:")}<strong>{estimatedCredits ? `${estimatedCredits} credits` : t("No package selected")}</strong></div><div>{t("Delivery:")}<strong>{website ? t("Static website + preview + source ZIP") : chosen?.extras?.stack ? String(chosen.extras.stack).replace(/_/g, " ") : t("Setup incomplete")}</strong></div></div>{effectiveApproved ? <div style={{ marginTop: 10, color: "#34d399", fontSize: 11 }}>{website && websitePhase === "ready" ? t("Website ready") : t("Plan approved. Final production is ready to start.")}</div> : <button type="button" disabled={website && (!websiteFlow.reviewed || websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")} onClick={() => { if (website) { if (!websiteFlow.reviewed) { void websiteFlow.perform("revise"); return; } void websiteFlow.perform("website_approve"); return; } if (!chosen?.packId) { setSetupOpen(true); setNotice("COMPLETE PACKAGE AND SETUP FIRST"); return; } void approveCurrentPlan(); }} style={{ marginTop: 10, width: "100%", border: "1px solid #f5c77a", borderRadius: 8, padding: "9px 10px", background: "#f5c77a", color: "#111", cursor: "pointer", fontSize: 11 }}>{t("Approve plan and continue to production")}</button>}</div>
-          <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>{t("Active production plan")}</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{(website ? [t("Website Brief"), t("Plan and approval"), t("Generating website"), t("Revisions, history and ZIP delivery")] : enginePlan).map((step) => <div key={step} style={{ color: step.startsWith("✓") ? "#34d399" : step.startsWith("⏳") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("⏳") ? 600 : 400 }}>{step}</div>)}</div></div>
-          {displayShots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === activeIndex ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === activeIndex ? t("Active") : t("Ready")} · {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
+          <div style={{ border: "1px solid #1f2229", borderRadius: 8, padding: 12, background: "#0d0f12", marginBottom: 14 }}><p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" }}>{t("Active production plan")}</p><div style={{ display: "grid", gap: 8, fontSize: 12 }}>{(website ? [t("Website Brief"), t("Plan and approval"), t("Generating website"), t("Revisions, history and ZIP delivery")] : enginePlan).map((step) => <div key={step} style={{ color: step.startsWith("[next]") ? "#34d399" : step.startsWith("[next]") ? "#60a5fa" : "#6b7280", fontWeight: step.startsWith("[next]") ? 600 : 400 }}>{step}</div>)}</div></div>
+          {displayShots.map((item, index) => <div key={`chat-shot-${item.id}`} style={{ borderBottom: "1px solid #1f2229", padding: "10px 0", color: index === activeIndex ? "#fff" : "#9ca3af", fontSize: 12 }}><strong>{index === activeIndex ? t("Active") : t("Ready")} A {item.label}</strong><div style={{ marginTop: 4, lineHeight: 1.4 }}>{item.title}</div></div>)}
           <div aria-label={t("Assistant conversation")} aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 12 }}>{(website ? websiteFlow.messages : chatMessages).map((message, index) => <div key={index} style={{ padding: 10, borderRadius: 7, background: message.role === "assistant" ? "#1a2421" : "#222733", fontSize: 12, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><strong>{message.role === "assistant" ? t("Assistant") : t("You")}:</strong> <span translate="no" data-no-translate="true" className="notranslate" dir="auto">{message.content}</span></div>)}{(website ? websiteFlow.busy : sending) ? <div role="status">{t("Waiting for assistant response...")}</div> : null}<div ref={chatEndRef} /></div>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
