@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/merge/auth";
 import { MAX_ACTIVE_JOBS_PER_USER, getAdmin } from "@/lib/merge/config";
 import { loadReadyProductions } from "@/lib/merge/sources";
 import { orderHash, parseMergeBody } from "@/lib/merge/validate";
+import { parseOptions } from "@/lib/merge/options";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,9 @@ export async function POST(req: Request): Promise<Response> {
   if ("error" in parsed) return json(400, { error: "INVALID_REQUEST", message: parsed.error });
   const { projectId, productionIds } = parsed;
 
-  const hash = orderHash(user.id, projectId, productionIds);
+  const options = parseOptions((raw as Record<string, unknown>).options);
+  if (!options) return json(400, { error: "INVALID_OPTIONS" });
+  const hash = orderHash(user.id, projectId, [...productionIds, JSON.stringify(options)]);
 
   // 1) Aynı sıralama zaten varsa yeni iş açma (çift tıklama, yenileme, tekrar gönderim).
   const existing = await findExisting(user.id, projectId, hash);
@@ -65,7 +68,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // 4) Kalıcı kuyruğa yaz. Eşzamanlı iki istek gelirse benzersiz indeks ikincisini reddeder.
-  const {data,error}=await admin.rpc("enqueue_merge_job",{p_user:user.id,p_project:projectId,p_ids:productionIds,p_hash:hash});
+  const {data,error}=await admin.rpc("enqueue_merge_job_with_options",{p_user:user.id,p_project:projectId,p_ids:productionIds,p_hash:hash,p_options:options});
   if (error) {
     if (error.code === "23505") {
       const again = await findExisting(user.id, projectId, hash);

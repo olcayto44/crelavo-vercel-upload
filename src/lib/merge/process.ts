@@ -155,7 +155,7 @@ async function runPipeline(job: MergeJob, workerId: string, guard: LeaseGuard, w
   // 4) Birleştirme (20-95%)
   const out = path.join(workDir, "merged.mp4");
   await rm(out, { force: true });
-  const merged = await mergeClips({ clipPaths: files, outPath: out, signal, onProgress: (p) => progress(20 + p * 0.75) });
+  const merged = await mergeClips({ clipPaths: files, outPath: out, signal, options: job.options, onProgress: (p) => progress(20 + p * 0.75) });
   guard.throwIfLost();
 
   // 5) Yükleme (95-100%). Deterministik yol + upsert: tekrar denemede güvenli.

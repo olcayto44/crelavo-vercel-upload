@@ -308,6 +308,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [mergeBusy,setMergeBusy]=useState(false);
   const [mergeProductionId,setMergeProductionId]=useState("");
   const [mergedUrl,setMergedUrl]=useState("");
+  const [mergeAspect,setMergeAspect]=useState("");
+  const [mergeFit,setMergeFit]=useState("cover");
+  const [mergeTransition,setMergeTransition]=useState("fade");
+  const mergedVideoRef=useRef<HTMLVideoElement>(null);
   const [uploadBusy,setUploadBusy]=useState(false);
   const [uploadNotice,setUploadNotice]=useState("");
   async function uploadVideos(files: File[]) {
@@ -335,9 +339,9 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   useEffect(()=>{if(!website&&!mediaProjectId)setMediaProjectId(crypto.randomUUID());},[website,mediaProjectId]);
   async function mergeScenes(){
-    if(mergeBusy||mergeOrder.length<2||mergeOrder.length>12)return;
+    if(uploadBusy||mergeBusy||!mergeAspect||mergeOrder.length<2||mergeOrder.length>12)return;
     setMergeBusy(true);setMergedUrl("");
-    try{const r=await cinemaFetch("/api/assistant-work/merge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:mediaProjectId,productionIds:mergeOrder})});const d=await r.json();if(!r.ok||!d.productionId)throw new Error(d.message||"Merge could not start");setMergeProductionId(d.productionId);setNotice("SCENE MERGE QUEUED / MY PRODUCTIONS");}
+    try{const r=await cinemaFetch("/api/assistant-work/merge",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({projectId:mediaProjectId,productionIds:mergeOrder,options:{aspect:mergeAspect,fit:mergeFit,transition:mergeTransition}})});const d=await r.json();if(!r.ok||!d.productionId)throw new Error(d.message||"Merge could not start");setMergeProductionId(d.productionId);setNotice("SCENE MERGE QUEUED / MY PRODUCTIONS");}
     catch(e){setNotice(e instanceof Error?e.message:"Merge failed");setMergeBusy(false);}
   }
   useEffect(()=>{
@@ -646,6 +650,13 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
 
           {!website ? <section aria-label={t("Scene merge order")} style={{padding:12,border:"1px solid #333",borderRadius:10}}>
             <strong>{t("Scene merge order")}</strong>
+            <fieldset disabled={mergeBusy||uploadBusy} style={{display:"grid",gap:12,marginTop:12}}>
+              <legend>Birle?tirme ayarlar?</legend>
+              <label>Video ?l??s? <select value={mergeAspect} onChange={e=>setMergeAspect(e.target.value)}><option value="">?nce format se?in</option><option value="16:9">Yatay ? 1920 ? 1080 (16:9)</option><option value="9:16">Shorts / Reels ? 1080 ? 1920 (9:16)</option></select></label>
+              <label>G?r?nt? <select value={mergeFit} onChange={e=>setMergeFit(e.target.value)}><option value="cover">Doldur ? kenarlar k?rp?labilir</option><option value="contain">S??d?r ? bo? kenarlar olu?abilir</option></select></label>
+              <label>Ge?i? <select value={mergeTransition} onChange={e=>setMergeTransition(e.target.value)}><option value="fade">Yumu?ak ? k?sa kararma ve ses yumu?atma</option><option value="cut">D?z kesme ? ge?i? efekti yok</option></select></label>
+              <small>Yatay bir videoyu dikey tam ekranda bo?luksuz g?stermek i?in kenarlar? k?rpmak gerekir. Kaynak videoya g?m?l? bo?luklar otomatik kald?r?lmaz.</small>
+            </fieldset>
             <div style={{padding:"12px 0"}}>
               <label style={{display:"block",marginBottom:8}}>Bilgisayardan video yukle (MP4)</label>
               <input aria-label="Bilgisayardan video yukle" type="file" accept="video/mp4,.mp4" multiple disabled={uploadBusy||mergeBusy||!mediaProjectId} onChange={event=>{const files=Array.from(event.currentTarget.files||[]);event.currentTarget.value="";void uploadVideos(files);}} />
@@ -654,8 +665,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             </div>
             <div style={{display:"flex",gap:8,overflowX:"auto",padding:"10px 0"}}>{shots.filter(s=>s.status==="READY"&&s.mediaKind==="video"&&s.productionId).map(s=><button type="button" key={s.productionId} disabled={mergeBusy||mergeOrder.length>=12} onClick={()=>setMergeOrder(cur=>[...cur,s.productionId!])}>{t("Add scene")} {s.id}</button>)}</div>
             <ol>{mergeOrder.map((id,i)=><li key={i}>{shots.find(s=>s.productionId===id)?.title||id} <button type="button" disabled={mergeBusy||i===0} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i-1],next[i]]=[next[i],next[i-1]];return next;})}>{t("Move left")}</button> <button type="button" disabled={mergeBusy||i===mergeOrder.length-1} onClick={()=>setMergeOrder(cur=>{const next=[...cur];[next[i],next[i+1]]=[next[i+1],next[i]];return next;})}>{t("Move right")}</button> <button type="button" disabled={mergeBusy} onClick={()=>setMergeOrder(cur=>cur.filter((_,j)=>i!==j))}>{t("Remove")}</button></li>)}</ol>
-            <button type="button" disabled={uploadBusy||mergeBusy||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
-            {mergedUrl?<><video src={mergedUrl} controls playsInline style={{maxHeight:320,maxWidth:"100%"}}/><button type="button" onClick={()=>void downloadMedia(mergedUrl,"video")}>{t("DOWNLOAD MEDIA")}</button></>:null}
+            <button type="button" disabled={uploadBusy||mergeBusy||!mergeAspect||!mediaProjectId||mergeOrder.length<2||mergeOrder.length>12} onClick={()=>void mergeScenes()}>{t(mergeBusy?"Merging scenes":"Merge scenes")}</button>
+            {mergedUrl?<><video ref={mergedVideoRef} src={mergedUrl} controls playsInline style={{display:"block",width:"100%",height:"auto",objectFit:"contain",background:"black"}}/><button type="button" onClick={()=>void mergedVideoRef.current?.requestFullscreen?.().catch(()=>setNotice("Tam ekran tarayicinizda desteklenmiyor."))}>Tam ekran</button><button type="button" onClick={()=>void downloadMedia(mergedUrl,"video")}>{t("DOWNLOAD MEDIA")}</button></>:null}
           </section>:null}
           {(shot.status === "READY" && (shot.mediaUrl || shot.files.length > 0)) ? <section style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", padding: 14, background: "#111318", border: "1px solid #1f2229", borderRadius: 10 }}><strong style={{ width: "100%", fontSize: 11, color: "#9ca3af", letterSpacing: "0.1em" }}>{t("DELIVERY READY")}</strong>{shot.mediaUrl ? <button type="button" onClick={() => void downloadMedia(shot.mediaUrl!,shot.mediaKind).catch(()=>setNotice("MEDIA DOWNLOAD BLOCKED / OPEN THE PREVIEW SOURCE TO SAVE THE FILE"))} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD MEDIA")}</button> : null}{shot.files.length > 0 ? <button type="button" onClick={() => void downloadDeliveryZip(shot.files)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{t("DOWNLOAD ZIP")}</button> : null}{shot.files.map((file) => <button key={file.name} type="button" onClick={() => downloadDeliveryFile(file)} style={{ border: "1px solid #2e333d", borderRadius: 8, background: "#1c1f26", color: "#fff", padding: "8px 10px", fontSize: 11 }}>{file.name}</button>)}</section> : null}
           <div style={{ flex: "0 0 auto", color: "#6b7280", fontSize: 10, lineHeight: 1.4 }}>{t("UPDATE PLAN saves your current production brief. Only RENDER FINAL starts credit-priced production; copy/layout/color-only revisions do not spend credits.")}</div>

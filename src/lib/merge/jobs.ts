@@ -12,6 +12,7 @@ export interface Checkpoint {
 
 export interface MergeJob {
   id: string;
+  options?: import("./options.ts").MergeOptions;
   lease_token: string;
   production_id: string | null;
   user_id: string;
