@@ -51,7 +51,11 @@ function readQuery(search: string) {
   const type = q.get("type") || "General";
   const direct = q.get("category") || "";
   const map: Record<string, string> = { media: "video", video: "video", "AI Video": "video", drone: "drone_video", live_sales: "live_sales_agent", commerce: "campaign", app: "mobile_app", ecommerce: "website", avatar: "avatar", image: "image", documentary: "documentary", animation: "animation" };
-  return { type, category: direct || ((q.has("type") || q.has("category")) ? map[type] || map[type.toLowerCase()] || "" : "") };
+  const category = direct || ((q.has("type") || q.has("category")) ? map[type] || map[type.toLowerCase()] || "" : "");
+  // Kategori secildiginde baslikta ham sorgu dizesi degil, gercek kategori adi gosterilir.
+  const label: Record<string, string> = { video: "AI Video", drone_video: "Drone Video", campaign: "Campaign", mobile_app: "Mobile App", website: "Website", avatar: "Avatar", image: "Image", documentary: "Documentary", animation: "Animation", live_sales_agent: "Live Sales Agent" };
+  const resolvedType = category ? (label[category] || type) : type;
+  return { type: resolvedType, category };
 }
 function isWebsiteType(type: string, category: string) { return /website/i.test(type) || /website/i.test(category); }
 function categoryEnginePlan(type: string, category: string): string[] {
@@ -201,10 +205,10 @@ async function cinemaFetch(url: string, init: RequestInit): Promise<Response> {
 }
 function videoShots(): Shot[] {
   return [
-    { id: 1, label: "DRAFT", status: "DRAFT", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
-    { id: 2, label: "REVISING", status: "REVISING", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null, files: [] },
-    { id: 3, label: "RENDERING", status: "RENDERING", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null, files: [] },
-    { id: 4, label: "QUEUED", status: "QUEUED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null, files: [] },
+    { id: 1, label: "PLANNED", status: "PLANNED", title: "Morning window, product on a pale oak shelf", body: "Soft sidelight. Dust in the beam. Hold, then a slow push.", mediaUrl: null, files: [] },
+    { id: 2, label: "PLANNED", status: "PLANNED", title: "Hands enter the beam and turn the bottle", body: "Skin, glass, label. Keep the same window light.", mediaUrl: null, files: [] },
+    { id: 3, label: "PLANNED", status: "PLANNED", title: "Close-up: texture, pour, catch-light", body: "Slow enough to read the grain. No extra cuts.", mediaUrl: null, files: [] },
+    { id: 4, label: "PLANNED", status: "PLANNED", title: "Hold on the shelf. One line. Cut.", body: "Product still. Quiet end card. Same room.", mediaUrl: null, files: [] },
   ];
 }
 function websiteShots(): Shot[] {
