@@ -41,7 +41,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
        }
        continuation = {variant:body.variant,parentPlanVersionId:parent.id,parentProductionId:String(body.parentProductionId || ""),previousDirection:String(parent.payload.plan?.visualDirection || "").slice(0,6000)};
      }
-     const input = { continuation, projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
+     const input = { ...(continuation ? {continuation} : {}), projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
     const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
     const revisionSeq = await rpc(db,"reserve_assistant_revision_seq",{p_user_id:userId,p_scope:scope});
     const prompt = String(body.prompt || "");

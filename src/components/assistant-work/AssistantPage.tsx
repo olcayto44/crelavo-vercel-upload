@@ -548,6 +548,16 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     setShots(cur=>[...cur,next]); setSelected(shots.length); setPlanApproved(false); setPreviewMode("scene");
     setNotice(variant === "continue" ? "Describe the next production. The original is preserved; continuity will be reviewed in the new plan." : "Describe your changes. A separate revision will be created; the original is preserved.");
   }
+  function recoverInvalidPlan(error: unknown) {
+    const message = error instanceof Error ? error.message : "";
+    if (!/valid_server_plan_required/.test(message)) return false;
+    setShots(cur=>cur.map((item,index)=>index===selected?{...item,planVersionId:undefined,approvedPlanVersionId:undefined,parentPlanVersionId:undefined}:item));
+    setPlanApproved(false);
+    if (!draft.trim()) setDraft(shot.planPrompt || shot.body);
+    const detail = "The saved plan could not be verified. Send the brief again to create a fresh plan. Production was not started.";
+    setNotice(detail); setChatMessages(cur=>[...cur,{role:"assistant",content:detail}]);
+    return true;
+  }
   async function approveCurrentPlan(chatApproval?: string) {
     if (!shot.planVersionId || sending) { setNotice("UPDATE PLAN BEFORE APPROVAL"); return; }
     const controller=new AbortController();contextRequestRef.current=controller;setSending(true);
@@ -561,7 +571,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         setDraft("");
         setChatMessages(cur=>[...cur,{role:"user",content:chatApproval},{role:"assistant",content:"Plan approved. Select Render final below to review the credit confirmation and start production. No credits have been spent."}]);
       }
-    } catch(error) { if(!controller.signal.aborted)setNotice(error instanceof Error?error.message:"SERVER PLAN APPROVAL FAILED"); }
+    } catch(error) { if(!controller.signal.aborted && !recoverInvalidPlan(error))setNotice(error instanceof Error?error.message:"SERVER PLAN APPROVAL FAILED"); }
     finally { if(!controller.signal.aborted)setSending(false); }
   }
   async function renderFinalScene(creditConfirmed = false) {
@@ -594,7 +604,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const hasDelivery = Boolean(next.mediaUrl || next.files.length);
       setNotice(websiteReady || data.status === "ready" ? (hasDelivery ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / OUTPUT NOT ATTACHED") : "04 QUEUED / FINAL RENDER IN PROGRESS");
       // The shots effect owns the single polling loop for this production.
-    } catch (error) { if(!controller.signal.aborted)setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { imageProductionLock.current = false; if(!controller.signal.aborted)setSending(false); }
+    } catch (error) { if(!controller.signal.aborted && !recoverInvalidPlan(error))setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { imageProductionLock.current = false; if(!controller.signal.aborted)setSending(false); }
   }
   async function onSend() {
     const prompt = draft.trim() || (!website && materialFiles.length ? "Use the attached files as references for the current production plan." : "");
@@ -669,6 +679,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       if(controller.signal.aborted)return;
       setShots((cur) => cur.map((item, index) => index === selected ? prev : item));
       const detail = error instanceof Error ? error.message : "The assistant request failed. No production was submitted.";
+      if (recoverInvalidPlan(error)) { setSending(false); return; }
       setNotice(detail); setChatMessages((current) => [...current, { role: "assistant", content: "Request failed: " + detail }]);
       setSending(false);
     }
