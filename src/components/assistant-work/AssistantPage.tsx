@@ -523,6 +523,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           setShots(cur=>cur.map(item=>item.productionId===productionId?{...item,taskId,status:"RENDERING",label:"RENDERING",progress:category === "image" ? undefined : Math.min(95,5+Math.round(attempt/36*90))}:item));
         } catch { if(!active())return; setNotice("STATUS NETWORK ERROR / PRODUCTION STATE UNCHANGED"); }
       }
+      if(active())setNotice("Automatic status checks paused. Use Check status; do not start another production.");
     } catch { /* Context cancellation is not a failed production. */ }
     finally { registry.finish(key,loop.id); }
   }
@@ -530,9 +531,21 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     if(!mounted||website)return;
     shots.forEach((item,index)=>{
       const key=item.productionId;
-      if(item.taskId && key && !resumedJobsRef.current.has(key)) { resumedJobsRef.current.add(key); void pollQueuedJob(index,item.taskId,key); }
+      if(key && (item.taskId || ["QUEUED","RENDERING"].includes(item.status)) && !resumedJobsRef.current.has(key)) { resumedJobsRef.current.add(key); void pollQueuedJob(index,item.taskId || "",key); }
     });
   },[mounted,shots,website,category]);
+  async function checkExistingProduction() {
+    if (!shot.productionId || sending) return;
+    setNotice("Checking existing production. No new generation request is being sent.");
+    try {
+      const response=await cinemaFetch("/api/assistant-work/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productionId:shot.productionId})});
+      const data=await response.json();
+      if(!response.ok || !data.ok)throw new Error(data.message || data.code || "Status is temporarily unavailable.");
+      setShots(cur=>cur.map(item=>item.productionId===shot.productionId?{...item,status:String(data.status).toUpperCase(),label:String(data.status).toUpperCase(),taskId:["ready","failed","reconcile_required"].includes(data.status)?undefined:data.taskId||item.taskId,mediaUrl:data.status==="ready"?data.mediaUrl||data.media?.url||item.mediaUrl:item.mediaUrl,mediaKind:data.mediaKind||data.media?.kind||item.mediaKind,files:data.files||item.files}:item));
+      setNotice(data.status==="ready"?"Production completed. Open the result.":data.status==="reconcile_required"?"Provider outcome requires verification. Do not submit again.":data.status==="failed"?data.message||"Production failed. No automatic retry was started.":data.message||"The server still reports this production as pending. No new request was started.");
+      if(data.status==="ready" || data.status==="failed")void loadCredits();
+    } catch(error) {setNotice(error instanceof Error?error.message:"Status unavailable. Do not submit again.");}
+  }
   function updateImageOptions(packId: string, aspect: string) {
     if (sending || shot.productionId || shot.taskId || !categoryConfig) return;
     setSelectionRoute(routeKey);
@@ -602,7 +615,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
       const websiteReady = category === "website";
       setShots((cur) => cur.map((item, index) => index === selected ? { ...next, status: websiteReady ? "READY" : next.status, label: websiteReady ? "READY" : next.label, taskId: websiteReady ? undefined : next.taskId, progress: websiteReady ? 100 : next.progress, planPrompt: currentPrompt } : item));
       const hasDelivery = Boolean(next.mediaUrl || next.files.length);
-      setNotice(websiteReady || data.status === "ready" ? (hasDelivery ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / OUTPUT NOT ATTACHED") : "04 QUEUED / FINAL RENDER IN PROGRESS");
+      setNotice(data.status === "reconcile_required" ? "PROVIDER OUTCOME REQUIRES VERIFICATION / DO NOT SUBMIT AGAIN" : websiteReady || data.status === "ready" ? (hasDelivery ? "SCENE READY / FILES AVAILABLE" : "SCENE READY / OUTPUT NOT ATTACHED") : "04 QUEUED / FINAL RENDER IN PROGRESS");
       // The shots effect owns the single polling loop for this production.
     } catch (error) { if(!controller.signal.aborted && !recoverInvalidPlan(error))setNotice(error instanceof Error ? error.message.toUpperCase() : "FINAL RENDER FAILED"); } finally { imageProductionLock.current = false; if(!controller.signal.aborted)setSending(false); }
   }
@@ -866,6 +879,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
           <div aria-label={t("Assistant conversation")} aria-live="polite" style={{ display: "grid", gap: 8, marginTop: 12 }}>{(website ? websiteFlow.messages : chatMessages).map((message, index) => <div key={index} style={{ padding: 10, borderRadius: 7, background: message.role === "assistant" ? "#1a2421" : "#222733", fontSize: 12, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}><strong>{message.role === "assistant" ? t("Assistant") : t("You")}:</strong> <span translate="no" data-no-translate="true" className="notranslate" dir="auto">{message.content}</span></div>)}{(website ? websiteFlow.busy : sending) ? <div role="status">{t("Waiting for assistant response...")}</div> : null}<div ref={chatEndRef} /></div>
           {!website ? <section aria-label="Project continuity" style={{marginTop:14,padding:12,border:"1px solid #4b5563",borderRadius:8,fontSize:12}}>
             <strong>{t("Project / production history")}</strong>
+            {shot.productionId ? <div><button type="button" disabled={sending} onClick={()=>void checkExistingProduction()}>{t("Check status (no new production)")}</button><p role="status">{t(notice)}</p><small>{t("Production reference")}: {shot.productionId}</small></div> : null}
             <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>{shots.map((item,index)=><button type="button" key={item.id} aria-pressed={selected===index} disabled={sending} onClick={()=>{setSelected(index);setPlanApproved(false);setPreviewMode("scene");}}>{item.title} / {item.status}</button>)}</div>
             {visualFormatRequired && !imageChatFlow ? <label style={{display:"block",marginTop:10}}>{t("Production format")}<select disabled={sending || Boolean(shot.productionId) || Boolean(shot.taskId)} value={productionAspect} onChange={event=>{const aspect=event.target.value;setShots(cur=>cur.map((item,index)=>index===selected?{...item,aspect,planVersionId:undefined,approvedPlanVersionId:undefined}:item));setPlanApproved(false);setNotice("Format changed. Send a message to update the plan before production.");}}><option value="">{t("Choose format")}</option><option value="16:9">16:9 - Horizontal</option><option value="9:16">9:16 - Vertical</option><option value="1:1">1:1 - Square</option></select></label> : null}
             {shot.status === "READY" ? <div style={{display:"flex",gap:8,marginTop:10}}><button type="button" disabled={sending} onClick={()=>addProductionVariant("continue")}>{t("Continue / next production")}</button><button type="button" disabled={sending} onClick={()=>addProductionVariant("revision")}>{t("New revision (keep original)")}</button>{videoWorkspace && shot.mediaKind === "video" ? <button type="button" onClick={()=>setActiveTool("merge")}>{t("Select and order videos to merge")}</button> : null}</div> : null}
