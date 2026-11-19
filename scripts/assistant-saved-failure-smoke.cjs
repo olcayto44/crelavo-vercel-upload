@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/app/api/assistant-work/status/route.ts','utf8');
+const helper=source.slice(source.indexOf('function savedFailureMessage'),source.indexOf('export async function POST')).replace('output: Record<string, unknown>', 'output').replace('): string {', ') {');
+const context={};vm.createContext(context);vm.runInContext(helper,context);
+const f=context.savedFailureMessage;
+const safe='Provider rejected the request (HTTP 401; authorization; code AUTH_FAILED). No automatic retry was started.';
+assert.equal(f({message:safe}),safe);
+assert.match(f({code:'engine_not_configured'}),/configuration is missing/);
+assert.match(f({code:'provider_rejected',message:'secret-token private prompt'}),/no safe detailed rejection code/);
+assert(!f({message:'secret-token private prompt'}).includes('secret-token'));
+assert(!f({message:safe+' secret-token'}).includes('secret-token'));
+assert(source.includes('message:savedFailureMessage(output)'));
+console.log('Saved failure diagnostics passed; raw stored messages are not exposed.');

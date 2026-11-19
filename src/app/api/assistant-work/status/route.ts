@@ -5,6 +5,14 @@ import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { pollMediaJob } from "@/lib/assistant-work/runMediaEngine";
 import { finalizeAssistantProduction } from "@/lib/assistant-work/production-finalizer";
 export const runtime = "nodejs"; export const dynamic = "force-dynamic";
+function savedFailureMessage(output: Record<string, unknown>): string {
+  if (output.code === "engine_not_configured") return "Production failed: provider configuration is missing. No automatic retry was started.";
+  const message = typeof output.message === "string" ? output.message : "";
+  const safeRejection = message.match(/^Provider rejected the request \(HTTP [1-5][0-9]{2}; (?:authorization|endpoint_unavailable|invalid_request|provider_error)(?:; code [a-zA-Z0-9_-]{1,64})?\)\. No automatic retry was started\.$/);
+  if (safeRejection) return safeRejection[0];
+  if (output.code === "provider_rejected") return "The provider rejected this production. The saved record contains no safe detailed rejection code. No automatic retry was started.";
+  return "Production failed. The saved record contains no safe detailed failure reason. No automatic retry was started.";
+}
 export async function POST(req: NextRequest) {
   const token=bearerTokenFromRequest(req);
   if (!token) return NextResponse.json({ok:false,code:"sign_in"},{status:401});
@@ -16,7 +24,7 @@ export async function POST(req: NextRequest) {
   if(error||!production)return NextResponse.json({ok:false,code:"production_not_found"},{status:404});
   const output=production.output_json||{},taskId=String(production.provider_job_id||output.taskId||"");
   if(output.mergeJobId)return mergeStatus(new Request(new URL("/api/assistant-work/status?jobId="+encodeURIComponent(output.mergeJobId),req.url),{headers:req.headers}));
-  if(production.status==="ready"||production.status==="failed")return NextResponse.json({ok:true,status:production.status,productionId,taskId,media:output.media||null,mediaUrl:output.media?.url,mediaKind:output.media?.kind,files:output.files||[]});
+  if(production.status==="ready"||production.status==="failed")return NextResponse.json({ok:true,status:production.status,productionId,taskId,...(production.status==="failed"?{message:savedFailureMessage(output)}:{}),media:output.media||null,mediaUrl:output.media?.url,mediaKind:output.media?.kind,files:output.files||[]});
   if(production.production_type==="website")return NextResponse.json({ok:true,status:"queued",productionId});
   if(production.generation_status==="reconcile_required"||!taskId)return NextResponse.json({ok:true,status:"reconcile_required",productionId});
   // Category/task identity comes only from the owned server row, never browser input.
