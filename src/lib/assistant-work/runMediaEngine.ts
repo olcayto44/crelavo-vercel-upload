@@ -1,3 +1,4 @@
+import { providerRejection } from "./provider-rejection.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 /** Crelavo media production. Server-side MiniMax + HeyGen only. Do not call this from the browser. Do not log API keys. */
 export type EngineKind = "minimax" | "heygen" | "runway" | "fal";
@@ -7,7 +8,7 @@ export type EngineResult = { ok: boolean; spend: boolean; code?: string; message
 export type EngineInput = {
   userId: string; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
 const providerContext = new AsyncLocalStorage<EngineInput>();
-class ProviderOutcomeError extends Error { outcome: "rejected" | "uncertain"; constructor(outcome: "rejected" | "uncertain") { super(outcome); this.outcome=outcome; } }
+class ProviderOutcomeError extends Error { outcome: "rejected" | "uncertain"; constructor(outcome: "rejected" | "uncertain", readonly rejection?: ReturnType<typeof providerRejection>) { super(outcome); this.outcome=outcome; } }
 async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Response> {
   const paid = String(init?.method || "GET").toUpperCase() === "POST";
   const context = providerContext.getStore();
@@ -23,7 +24,11 @@ async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Re
   const accepted = response.ok && !rejected && Boolean(data?.task_id || data?.id || data?.request_id || data?.video_id || data?.voice_id || data?.session_id || data?.data?.id || data?.data?.video_id || data?.data?.voice_id || data?.data?.session_id || data?.data?.video_translate_id || data?.data?.audio || data?.data?.audio_url || data?.data?.url || data?.data?.image_urls?.length || data?.data?.image_url || data?.data?.image_base64?.length);
   const outcome = rejected ? "rejected" : accepted ? "accepted" : "uncertain";
   await context!.afterProviderCall!(outcome);
-  if (outcome !== "accepted") throw new ProviderOutcomeError(outcome);
+  if (outcome !== "accepted") {
+    const rejection = outcome === "rejected" ? providerRejection(response.status,data) : undefined;
+    if (rejection) console.error("[assistant-provider-rejected]",JSON.stringify({endpoint:new URL(url).pathname,...rejection}));
+    throw new ProviderOutcomeError(outcome,rejection);
+  }
   return response;
 }
 const HEYGEN_CATEGORIES = new Set(["talking_video","avatar","lip_sync","voice_clone","live_sales_agent","ai_agent","localization"]);
@@ -109,7 +114,9 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
       return {...result,providerOutcome:result.ok?"accepted":"uncertain",status:result.ok?result.status:"reconcile_required"};
     } catch(error) {
       const outcome=error instanceof ProviderOutcomeError?error.outcome:"uncertain";
-      return {ok:false,spend:false,providerOutcome:outcome,status:outcome==="uncertain"?"reconcile_required":"failed",code:outcome==="uncertain"?"reconcile_required":"provider_rejected",message:outcome==="uncertain"?"Provider acceptance uncertain. Reconciliation required.":"Provider rejected the request."};
+      const rejection=error instanceof ProviderOutcomeError?error.rejection:undefined;
+      const detail=rejection?`Provider rejected the request (HTTP ${rejection.status}; ${rejection.reason}${rejection.providerCode ? "; code " + rejection.providerCode : ""}). No automatic retry was started.`:"Provider rejected the request.";
+      return {ok:false,spend:false,providerOutcome:outcome,status:outcome==="uncertain"?"reconcile_required":"failed",code:outcome==="uncertain"?"reconcile_required":"provider_rejected",message:outcome==="uncertain"?"Provider acceptance uncertain. Reconciliation required.":detail};
     }
   });
 }
