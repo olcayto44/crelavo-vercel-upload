@@ -92,7 +92,9 @@ export async function getStabilityEngines() {
   return response.json();
 }
 
-export async function createStabilityImage(input: { productionId: string; prompt: string; filenameBase: string; aspectRatio?: string }): Promise<ImageProviderResult> {
+export async function createStabilityImage(input: { productionId: string; prompt: string; filenameBase: string; aspectRatio?: string; singleAttempt?: boolean; providerFetch?: typeof fetch }): Promise<ImageProviderResult> {
+  // Assistant callers inject their fenced transport; never replace global fetch.
+  const paidFetch = input.providerFetch ?? fetch;
   const apiKey = requireProviderEnv("stability");
   const model = optionalEnv("STABILITY_IMAGE_MODEL") || "core";
   const aspectRatio = input.aspectRatio || "9:16";
@@ -100,7 +102,7 @@ export async function createStabilityImage(input: { productionId: string; prompt
   form.append("prompt", input.prompt);
   form.append("aspect_ratio", providerAspectRatio(aspectRatio));
   form.append("output_format", "png");
-  const response = await fetch(`${baseUrl()}/v2beta/stable-image/generate/${model}`, {
+  const response = await paidFetch(`${baseUrl()}/v2beta/stable-image/generate/${model}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -114,6 +116,8 @@ export async function createStabilityImage(input: { productionId: string; prompt
     return { provider: "stability", model, imageUrl, prompt: input.prompt, aspectRatio };
   }
 
+  // A rejected or uncertain request must not silently start a second paid job.
+  if (input.singleAttempt) throw new Error(`Stability request failed (HTTP ${response.status}); automatic fallback disabled.`);
   const v2Error = await response.text();
   const legacyRatio = providerAspectRatio(aspectRatio);
   const legacySize = legacyRatio === "16:9" ? { width: 1344, height: 768 } : legacyRatio === "1:1" ? { width: 1024, height: 1024 } : { width: 1024, height: 1536 };
@@ -124,7 +128,7 @@ export async function createStabilityImage(input: { productionId: string; prompt
   legacyForm.append("steps", "30");
   legacyForm.append("samples", "1");
   legacyForm.append("output_format", "png");
-  const legacyResponse = await fetch(`${baseUrl()}/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image`, {
+  const legacyResponse = await paidFetch(`${baseUrl()}/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,

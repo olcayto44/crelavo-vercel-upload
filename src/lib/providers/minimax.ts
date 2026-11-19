@@ -148,7 +148,7 @@ function redactedShape(value: unknown, depth = 0): unknown {
   return { type: typeof value };
 }
 
-export async function minimaxJson<T>(path: string, init?: RequestInit) {
+export async function minimaxJson<T>(path: string, init?: RequestInit, providerFetch: typeof fetch = fetch) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
   const groupId = minimaxGroupId();
@@ -156,7 +156,7 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
     ? `${path}${path.includes("?") ? "&" : "?"}GroupId=${encodeURIComponent(groupId)}`
     : path;
   try {
-    const response = await fetch(`${minimaxBaseUrl()}${requestPath}`, {
+    const response = await providerFetch(`${minimaxBaseUrl()}${requestPath}`, {
       ...init,
       signal: init?.signal ?? controller.signal,
       headers: {
@@ -198,7 +198,7 @@ export async function minimaxJson<T>(path: string, init?: RequestInit) {
   }
 }
 
-export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
+export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput, providerFetch?: typeof fetch) {
   if (input.duration !== undefined && (input.duration < 5 || input.duration > 15)) {
     throw new Error("MiniMax video duration must be between 5 and 15 seconds.");
   }
@@ -216,7 +216,7 @@ export async function createMiniMaxH3VideoTask(input: MiniMaxH3CreateInput) {
       ...input,
       content: safeContent
     })
-  });
+  }, providerFetch);
 }
 
 export async function createMiniMaxH3VideoShotTasks(

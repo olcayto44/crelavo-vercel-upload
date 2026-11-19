@@ -179,7 +179,8 @@ export async function createVisualVideoSegments(input: { productionId: string; s
   return jobs;
 }
 
-export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean }): Promise<ProviderJob> {
+export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean; singleAttempt?: boolean; providerFetch?: typeof fetch }): Promise<ProviderJob> {
+  const paidFetch = input.providerFetch ?? fetch;
   const requestedProvider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const provider = requestedProvider;
   if (provider === "minimax" && !hasMiniMaxVideoConfig()) {
@@ -220,7 +221,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
       resolution: settings.resolution,
       duration: settings.duration,
       ratio: settings.ratio
-    });
+    }, input.providerFetch);
     const task = miniMaxTaskRecord(result);
     if (!task.taskId) throw new Error(`MiniMax did not return a task id: ${JSON.stringify(result).slice(0, 500)}`);
     return { provider: "minimax", id: task.taskId, task_id: task.taskId, status: task.status, raw: { ...result, resolution: settings.resolution, ratio: settings.ratio, providerPrompt: settings.providerPrompt } };
@@ -237,7 +238,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
     };
     const endpoint = version ? "https://api.replicate.com/v1/predictions" : `https://api.replicate.com/v1/models/${model}/predictions`;
     const body = version ? { version, input: inputPayload } : { input: inputPayload };
-    let response = await fetch(endpoint, {
+    let response = await paidFetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Token ${apiKey}`,
@@ -245,10 +246,10 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
       },
       body: JSON.stringify(body)
     });
-    if (response.status === 429) {
+    if (response.status === 429 && !input.singleAttempt) {
       const retryAfter = Number(response.headers.get("retry-after") ?? 10) || 10;
       await new Promise((resolve) => setTimeout(resolve, Math.min(20, retryAfter + 1) * 1000));
-      response = await fetch(endpoint, {
+      response = await paidFetch(endpoint, {
         method: "POST",
         headers: { Authorization: `Token ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -262,14 +263,14 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
 
   if (provider === "runway") {
     const apiKey = requireProviderEnv("runway");
-    const response = await fetch("https://api.dev.runwayml.com/v1/image_to_video", {
+    const response = await paidFetch(input.singleAttempt ? "https://api.dev.runwayml.com/v1/text_to_video" : "https://api.dev.runwayml.com/v1/image_to_video", {
       method: "POST",
       headers: {
         Authorization: asciiHeaderValue(`Bearer ${apiKey}`),
         "Content-Type": "application/json",
         "X-Runway-Version": asciiHeaderValue(process.env.RUNWAY_API_VERSION, "2024-11-06")
       },
-      body: JSON.stringify({ promptText: prompt, duration: safeDuration, ratio: runwayRatio })
+      body: JSON.stringify({ ...(input.singleAttempt ? {model: optionalEnv("RUNWAY_TEXT_MODEL") || "gen4.5"} : {}), promptText: input.singleAttempt ? input.providerPrompt || prompt : prompt, duration: safeDuration, ratio: runwayRatio })
     });
 
     if (!response.ok) throw new Error(`Runway video generation failed: ${response.status} ${await response.text()}`);
@@ -279,7 +280,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
 
   if (provider === "kling") {
     const apiKey = requireProviderEnv("kling");
-    const response = await fetch(process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video", {
+    const response = await paidFetch(process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -290,13 +291,13 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
 
     if (!response.ok) throw new Error(`Kling video generation failed: ${response.status} ${await response.text()}`);
     const data = await response.json();
-    return { provider: "kling", id: data.id ?? data.task_id, status: data.status ?? "starting", raw: data };
+    return { provider: "kling", id: data.data?.task_id ?? data.id ?? data.task_id, status: data.data?.task_status ?? data.status ?? "starting", raw: data };
   }
 
   if (provider === "fal") {
     const apiKey = falApiKey();
     const model = optionalEnv("FAL_VIDEO_MODEL") || "fal-ai/wan/v2.2-a14b/text-to-video/turbo";
-    const response = await fetch(`https://queue.fal.run/${model}`, {
+    const response = await paidFetch(`https://queue.fal.run/${model}`, {
       method: "POST",
       headers: {
         Authorization: `Key ${apiKey}`,

@@ -1,3 +1,4 @@
+import { resolveLegacyRoute, legacyRouteConfigured, LEGACY_IMAGE_CATEGORIES } from "./legacy-provider-route";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { converseWorkspacePlan } from "./conversation.ts";
 import { signAssistantPlan, verifyAssistantPlan, canonicalPlan } from "./plan-signature.ts";
@@ -42,7 +43,8 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
        continuation = {variant:body.variant,parentPlanVersionId:parent.id,parentProductionId:String(body.parentProductionId || ""),previousDirection:String(parent.payload.plan?.visualDirection || "").slice(0,6000)};
      }
      const input = { ...(continuation ? {continuation} : {}), projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
-    const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
+    const providerRoute = resolveLegacyRoute(category,input);
+     const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
     const revisionSeq = await rpc(db,"reserve_assistant_revision_seq",{p_user_id:userId,p_scope:scope});
     const prompt = String(body.prompt || "");
     const plan = await converseWorkspacePlan(prompt + "\nProduction selection and uploaded references (data): " + JSON.stringify(input),category,body.messages);
@@ -50,7 +52,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     const pack = getCategory(category)?.packs.find(p=>p.id===input.packId);
     const copyOnly = isLocalCategory(category,input.type) ? localCopyOnly(plan.visualDirection) : isCopyLayoutColorOnly(plan.visualDirection);
     const credits = !plan.visualDirection || copyOnly || getCategory(category)?.billing === "subscription" ? 0 : pack?.credits ?? quote(category,[],"produce",plan.visualDirection).credits;
-    const payload = {userId,scope,revisionSeq,category,credits,input,plan,originalPrompt:prompt};
+    const payload = {userId,scope,revisionSeq,category,credits,input,...(providerRoute ? {providerRoute} : {}),plan,originalPrompt:prompt};
     const signature = signAssistantPlan(payload);
     const stored = await rpc(db,"create_assistant_plan_draft",{p_user_id:userId,p_scope:scope,p_revision_seq:revisionSeq,p_payload:payload,p_signature:signature});
     return {ok:true,spend:false,status:"draft",engine:"assistant_plan",reply:plan.reply,body:plan.reply,plan,planVersionId:stored.id,revisionSeq,estimatedCredits:credits,media:null,files:[]};
@@ -63,7 +65,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
   const copyOnly=isLocalCategory(category,input.type)?localCopyOnly(direction.visualDirection):isCopyLayoutColorOnly(direction.visualDirection);
   if (!copyOnly && getCategory(category)?.billing!=="subscription" && (!currentPack || currentPack.credits!==plan.payload.credits)) throw new Error("current_package_plan_required");
   if ((body.extras && canonicalPlan(body.extras)!==canonicalPlan(input.extras)) || (body.features && canonicalPlan(body.features)!==canonicalPlan(input.features))) throw new Error("plan_selection_changed");
-  if (!isLocalCategory(category,input.type) && (!getCategoryEngine(category) || !engineConfigured(category))) throw new Error("engine_not_configured");
+  if (!plan.payload.providerRoute && !isLocalCategory(category,input.type) && (!getCategoryEngine(category) || !engineConfigured(category))) throw new Error("engine_not_configured");
   const urls = [input.sourceVideoUrl, ...String(plan.payload.originalPrompt + "\n" + direction.visualDirection).matchAll(/https?:\/\/[^\s<>"]+/g)].map(v=>typeof v==="string"?v:v[0]).filter(Boolean);
   for (const url of urls) { if (url.includes("/storage/v1/object/") || ["voice_clone","visual_clone","lip_sync","localization","video_clipping"].includes(category)) await requireAssistantStorageOwner(db,userId,url); }
   if (["voice_clone","visual_clone","lip_sync","localization","video_clipping"].includes(category) && !urls.length) throw new Error("source_material_required");
@@ -71,6 +73,14 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
   if (direction.spokenScript && getCategoryEngine(category)==="minimax" && !["image","brand_kit","visual_clone"].includes(category)) throw new Error("approved_spoken_audio_steps_required");
   if (["talking_video","avatar"].includes(category) && !direction.spokenScript) throw new Error("approved_spoken_script_required");
   if (category === "voice_clone") throw new Error("voice_clone_requires_authorized_audio_clone_adapter");
+  if (!plan.payload.providerRoute && resolveLegacyRoute(category,input)) throw new Error("provider_route_plan_refresh_required");
+  if (plan.payload.providerRoute && !legacyRouteConfigured(plan.payload.providerRoute)) throw new Error("selected_provider_not_configured");
+  if (LEGACY_IMAGE_CATEGORIES.has(category) && urls.length) throw new Error("reference_capable_image_adapter_required");
+  if (plan.payload.providerRoute?.kind === "video" && ["minimax","runway","kling","fal","replicate"].includes(plan.payload.providerRoute.provider)) {
+    if (urls.length) throw new Error("reference_capable_video_adapter_required");
+    const duration=Number(String(input.extras?.duration || "5").match(/\d+/)?.[0]);
+    if (duration<5 || duration>15 || /min|dakika|dk/i.test(String(input.extras?.duration || ""))) throw new Error("approved_segment_plan_required");
+  }
   const started = await rpc(db,"begin_assistant_production",{p_user_id:userId,p_plan_version_id:plan.id,p_signature:plan.signature});
   if (!started.fresh) {
     const {data:existing,error}=await db.from("production_requests").select("status,generation_status,output_json,provider_job_id").eq("id",started.productionId).eq("user_id",userId).single();
@@ -89,10 +99,10 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
       await beforeProviderCall("video_clipping_pipeline");
       result = await clipping({...input,userId,productionId:fence.productionId,prompt:direction.visualDirection});
       await afterProviderCall(result.ok?"accepted":"uncertain");
-    } else if (isLocalCategory(category,input.type)) {
+    } else if (isLocalCategory(category,input.type) && !LEGACY_IMAGE_CATEGORIES.has(category)) {
       const local = await runLocalEngine({userId,prompt:direction.visualDirection,type:input.type,category,scene:input.scene,action:"render"});
       result = {...local,engine:"none",status:local.ok?"ready":"failed",files:local.files.length?local.files.map(f=>({name:f.path,mime:f.mime,content:f.content})):[{name:"updated-copy.txt",mime:"text/plain",content:local.body}],providerOutcome:local.ok?"accepted":"rejected"};
-    } else result=await runMediaEngine({userId,category,prompt:direction.visualDirection+(urls.some(url=>!direction.visualDirection.includes(url))?"\nUser authorized references:\n"+urls.filter(url=>!direction.visualDirection.includes(url)).join("\n"): ""),spokenScript:direction.spokenScript,type:input.type,scene:input.scene,extras:input.extras,renderFinal:true,beforeProviderCall,afterProviderCall});
+    } else result=await runMediaEngine({userId,productionId:fence.productionId,providerRoute:plan.payload.providerRoute,category,prompt:direction.visualDirection+(urls.some(url=>!direction.visualDirection.includes(url))?"\nUser authorized references:\n"+urls.filter(url=>!direction.visualDirection.includes(url)).join("\n"): ""),spokenScript:direction.spokenScript,type:input.type,scene:input.scene,extras:input.extras,renderFinal:true,beforeProviderCall,afterProviderCall});
   } catch { result={ok:false,spend:false,status:"reconcile_required",providerOutcome:"uncertain",code:"reconcile_required",message:"Provider acceptance could not be established. No automatic retry or refund."}; }
   if(result.ok && result.status==="ready" && !result.media && !result.files?.length)result={...result,files:[{name:"production-output.txt",mime:"text/plain",content:result.body||direction.visualDirection}]};
   const output = {...result,assistant:true,continuation:input.continuation ? {variant:input.continuation.variant,parentPlanVersionId:input.continuation.parentPlanVersionId,parentProductionId:input.continuation.parentProductionId} : null,taskId:result.taskId ?? null};

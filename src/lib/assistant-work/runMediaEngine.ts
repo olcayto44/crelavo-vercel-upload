@@ -1,12 +1,16 @@
+import { LEGACY_IMAGE_CATEGORIES, type LegacyRoute } from "./legacy-provider-route";
+import { createStabilityImage } from "../providers/stability";
+import { createVisualVideo } from "../providers/visuals";
+import { getProviderStatus } from "../providers/status";
 import { providerRejection } from "./provider-rejection.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 /** Crelavo media production. Server-side MiniMax + HeyGen only. Do not call this from the browser. Do not log API keys. */
-export type EngineKind = "minimax" | "heygen" | "runway" | "fal";
+export type EngineKind = "minimax" | "heygen" | "runway" | "fal" | "stability" | "replicate" | "kling";
 export type EngineMedia = { kind: "video" | "image" | "audio"; url: string };
 export type EngineFile = { name: string; mime: string; content: string };
 export type EngineResult = { ok: boolean; spend: boolean; code?: string; message?: string; title?: string; body?: string; media?: EngineMedia | null; files?: EngineFile[]; status?: "ready" | "queued" | "rendering" | "failed" | "reconcile_required"; providerOutcome?: "accepted" | "rejected" | "uncertain"; engine?: EngineKind | "none"; taskId?: string; category?: string };
 export type EngineInput = {
-  userId: string; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
+  userId: string; productionId?: string; providerRoute?: LegacyRoute; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
 const providerContext = new AsyncLocalStorage<EngineInput>();
 class ProviderOutcomeError extends Error { outcome: "rejected" | "uncertain"; constructor(outcome: "rejected" | "uncertain", readonly rejection?: ReturnType<typeof providerRejection>) { super(outcome); this.outcome=outcome; } }
 async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Response> {
@@ -18,10 +22,13 @@ async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Re
   try { response = await fetch(url,{...init,signal:init?.signal || AbortSignal.timeout(45000)}); }
   catch { if (paid) await context!.afterProviderCall!("uncertain"); throw new ProviderOutcomeError("uncertain"); }
   if (!paid) { if (!response.ok) throw new Error("provider_status_http_error"); return response; }
+  if (response.ok && response.headers.get("content-type")?.startsWith("image/")) {
+    await context!.afterProviderCall!("accepted"); return response;
+  }
   let data: any;
   try { data=await response.clone().json(); } catch { await context!.afterProviderCall!("uncertain"); throw new ProviderOutcomeError("uncertain"); }
   const rejected = [400,401,403,404,422].includes(response.status) || (response.ok && Number(data?.base_resp?.status_code)>0);
-  const accepted = response.ok && !rejected && Boolean(data?.task_id || data?.id || data?.request_id || data?.video_id || data?.voice_id || data?.session_id || data?.data?.id || data?.data?.video_id || data?.data?.voice_id || data?.data?.session_id || data?.data?.video_translate_id || data?.data?.audio || data?.data?.audio_url || data?.data?.url || data?.data?.image_urls?.length || data?.data?.image_url || data?.data?.image_base64?.length);
+  const accepted = response.ok && !rejected && Boolean(data?.task?.id || data?.data?.task_id || data?.task_id || data?.id || data?.request_id || data?.video_id || data?.voice_id || data?.session_id || data?.data?.id || data?.data?.video_id || data?.data?.voice_id || data?.data?.session_id || data?.data?.video_translate_id || data?.data?.audio || data?.data?.audio_url || data?.data?.url || data?.data?.image_urls?.length || data?.data?.image_url || data?.data?.image_base64?.length);
   const outcome = rejected ? "rejected" : accepted ? "accepted" : "uncertain";
   await context!.afterProviderCall!(outcome);
   if (outcome !== "accepted") {
@@ -109,6 +116,20 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
     const engine=getCategoryEngine(category);
     if(!engine || !engineConfigured(category))return fail("Provider not configured.","engine_not_configured",{providerOutcome:"rejected"});
     try {
+      if (input.providerRoute && (LEGACY_IMAGE_CATEGORIES.has(category) || ["minimax","replicate","kling","runway","fal"].includes(input.providerRoute.provider))) {
+        const route=input.providerRoute;
+        if (!input.productionId) throw new Error("production_id_required");
+        if (route.kind === "image") {
+          if (firstUrl(prompt)) throw new Error("reference_capable_image_adapter_required");
+          const image=await createStabilityImage({productionId:input.productionId,prompt,filenameBase:"assistant-image",aspectRatio:assistantRatio(input.extras),singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
+          return {ok:true,spend:true,providerOutcome:"accepted",engine:"stability",category,status:"ready",media:{kind:"image",url:image.imageUrl}};
+        }
+        const duration=Number(String(input.extras?.duration || "5").match(/\d+/)?.[0]);
+        if (duration<5 || duration>15) throw new Error("approved_segment_plan_required");
+        const job=await createVisualVideo({productionId:input.productionId,scenes:[prompt],productImageUrls:[],durationSeconds:duration,aspectRatio:assistantRatio(input.extras),provider:route.provider,providerPrompt:prompt,singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
+        if (!job.id) throw new Error("provider_job_id_missing");
+        return {ok:true,spend:true,providerOutcome:"accepted",engine:route.provider as EngineKind,category,status:"queued",media:null,taskId:"legacy:"+encodeURIComponent(JSON.stringify({provider:job.provider,id:job.id,kind:route.kind}))};
+      }
       // One selected provider per dispatch; unknown acceptance never permits fallback.
       const result = engine==="heygen" ? await runHeygen({...input,category,prompt}) : minimaxKey() ? await runMinimax({...input,category,prompt}) : runwayConfigured() ? await startRunwayFallback({...input,category,prompt}) : await startFalFallback({...input,category,prompt});
       return {...result,providerOutcome:result.ok?"accepted":"uncertain",status:result.ok?result.status:"reconcile_required"};
@@ -123,6 +144,14 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
 
 async function pollMediaJobReadOnly(category:string,taskId:string):Promise<{status:"ready"|"queued"|"failed";mediaUrl?:string;message?:string;provider?:EngineKind;taskId?:string}> {
   const cat=String(category||"").trim(); const id=String(taskId||"").trim(); if(!id)return{status:"queued",message:"Missing provider task id; reconciliation required."};
+  if(id.startsWith("legacy:")) {
+    const job=JSON.parse(decodeURIComponent(id.slice(7)));
+    if (!["minimax","replicate","runway","kling","fal"].includes(job.provider) || !/^[a-zA-Z0-9_-]+$/.test(job.id)) return {status:"queued",message:"Stored provider job requires reconciliation."};
+    const result=await getProviderStatus({provider:job.provider,id:job.id,status:"queued"});
+    if(result.status==="failed")return {status:"failed",message:"Provider job failed. No automatic retry was started."};
+    if(result.status==="succeeded" && result.outputUrl)return {status:"ready",mediaUrl:result.outputUrl};
+    return {status:"queued"};
+  }
   if(id.startsWith("fal:")){let falDetails:any;try{falDetails=JSON.parse(decodeURIComponent(id.slice(4)));}catch{return{status:"queued",provider:"fal",taskId:id,message:"Invalid FAL task details; reconciliation required."};}const falId=String(falDetails?.id||"");if(!falConfigured())return{status:"queued",provider:"fal",taskId:id,message:"FAL_KEY/FAL_API_KEY missing on this host."};try{const model=String(falDetails?.model||falModel());if(!/^[a-zA-Z0-9_./-]+$/.test(model)||model.includes(".."))return{status:"queued",message:"Invalid stored provider model."};const headers={Authorization:`Key ${falKey()}`};const statusUrl=String(falDetails?.statusUrl||`https://queue.fal.run/${model}/requests/${encodeURIComponent(falId)}/status`);const responseUrl=String(falDetails?.responseUrl||`https://queue.fal.run/${model}/requests/${encodeURIComponent(falId)}`);if([statusUrl,responseUrl].some(raw=>{try{const u=new URL(raw);return u.origin!=="https://queue.fal.run"||Boolean(u.username||u.password);}catch{return true;}}))return{status:"queued",message:"Invalid stored provider endpoint."};const statusResponse=await fetch(statusUrl,{headers,redirect:"error",signal:AbortSignal.timeout(15000)});const statusData=await readJson(statusResponse);if(!statusResponse.ok)return{status:"queued",provider:"fal",taskId:id,message:`FAL status failed: ${statusResponse.status} ${String(statusData?.error||statusData?.message||"").slice(0,300)}`};const state=String(statusData?.status||statusData?.state||"").toUpperCase();if(state==="COMPLETED"||state==="SUCCEEDED"){const response=await fetch(responseUrl,{headers,redirect:"error",signal:AbortSignal.timeout(15000)});if(!response.ok)return{status:"queued",provider:"fal",taskId:id};const data=await readJson(response);const output=data?.video?.url||data?.video_url||data?.output?.video_url||data?.output?.url||data?.output?.[0];return output?{status:"ready",provider:"fal",taskId:id,mediaUrl:String(output)}:{status:"queued",provider:"fal",taskId:id,message:"FAL completed without a video URL."};}if(["FAILED","CANCELLED","ERROR"].includes(state))return{status:"failed",provider:"fal",taskId:id,message:String(statusData?.error||statusData?.message||"FAL video failed.")};return{status:"queued",provider:"fal",taskId:id};}catch(error){return{status:"queued",provider:"fal",taskId:id,message:error instanceof Error?error.message:"FAL status check failed."};}}if(id.startsWith("runway:")){const runwayId=id.slice(7);if(!runwayConfigured())return{status:"queued",provider:"runway",taskId:id,message:"RUNWAY_API_KEY missing on this host."};try{const{res,data}=await runwayFetch(`/v1/tasks/${encodeURIComponent(runwayId)}`,{method:"GET"});if(!res.ok)return{status:"failed",provider:"runway",taskId:id,message:`Runway status failed: ${res.status}`};const state=String(data?.status||"").toUpperCase();const mediaUrl=runwayOutputUrl(data);if(state==="SUCCEEDED")return mediaUrl?{status:"ready",provider:"runway",taskId:id,mediaUrl}:{status:"failed",provider:"runway",taskId:id,message:"Runway succeeded but returned no video URL."};if(["FAILED","CANCELLED"].includes(state))return{status:"failed",provider:"runway",taskId:id,message:String(data?.failure||data?.error||"Runway video failed.")};return{status:"queued",provider:"runway",taskId:id};}catch(error){return{status:"queued",provider:"runway",taskId:id,message:error instanceof Error?error.message:"Runway status check failed."};}}
   if(HEYGEN_CATEGORIES.has(cat)){
     if(id.startsWith("agent:")){
