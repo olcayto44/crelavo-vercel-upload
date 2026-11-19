@@ -280,7 +280,8 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
 
   if (provider === "kling") {
     const apiKey = requireProviderEnv("kling");
-    const response = await paidFetch(process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video", {
+    const statusBaseUrl = process.env.KLING_API_URL || "https://api.klingai.com/v1/videos/text2video";
+    const response = await paidFetch(statusBaseUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -291,7 +292,7 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
 
     if (!response.ok) throw new Error(`Kling video generation failed: ${response.status} ${await response.text()}`);
     const data = await response.json();
-    return { provider: "kling", id: data.data?.task_id ?? data.id ?? data.task_id, status: data.data?.task_status ?? data.status ?? "starting", raw: data };
+    return { provider: "kling", id: data.data?.task_id ?? data.id ?? data.task_id, status: data.data?.task_status ?? data.status ?? "starting", raw: { ...data, statusBaseUrl } };
   }
 
   if (provider === "fal") {

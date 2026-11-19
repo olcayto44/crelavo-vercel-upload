@@ -10,7 +10,7 @@ function asciiHeaderValue(value: unknown, fallback = "") {
 
 function normalizeStatus(value: string): NormalizedProviderStatus["status"] {
   const status = value.toLowerCase();
-  if (["succeeded", "success", "completed", "complete", "done", "ready"].includes(status)) return "succeeded";
+  if (["succeeded", "succeed", "success", "completed", "complete", "done", "ready"].includes(status)) return "succeeded";
   if (["failed", "failure", "error", "canceled", "cancelled"].includes(status)) return "failed";
   if (["starting", "processing", "running", "rendering", "generating", "in_progress"].includes(status)) return "running";
   if (["queued", "submitted", "pending"].includes(status)) return "queued";
@@ -152,9 +152,14 @@ export async function getRunwayStatus(job: ProviderJob): Promise<NormalizedProvi
 export async function getKlingStatus(job: ProviderJob): Promise<NormalizedProviderStatus> {
   const apiKey = requireProviderEnv("kling");
   if (!job.id) return { provider: "kling", status: "unknown", error: "Missing Kling job id" };
-  const baseUrl = optionalEnv("KLING_STATUS_API_URL") || optionalEnv("KLING_API_URL") || optionalEnv("KLING_I2V_API_URL") || "https://api.klingai.com/v1/videos/image2video";
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${job.id}`, {
-    headers: { Authorization: `Bearer ${apiKey}` }
+  const raw = job.raw && typeof job.raw === "object" ? job.raw as Record<string, unknown> : {};
+  const allowedBases = [optionalEnv("KLING_STATUS_API_URL"), optionalEnv("KLING_API_URL"), optionalEnv("KLING_I2V_API_URL"), "https://api.klingai.com/v1/videos/text2video", "https://api.klingai.com/v1/videos/image2video"].filter(Boolean).map(value => String(value).replace(/\/$/, ""));
+  const storedBase = typeof raw.statusBaseUrl === "string" ? raw.statusBaseUrl.replace(/\/$/, "") : "";
+  if (storedBase && !allowedBases.includes(storedBase)) throw new Error("Invalid stored Kling status endpoint");
+  const baseUrl = optionalEnv("KLING_STATUS_API_URL") || storedBase || optionalEnv("KLING_API_URL") || optionalEnv("KLING_I2V_API_URL") || "https://api.klingai.com/v1/videos/text2video";
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${encodeURIComponent(job.id)}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    redirect: "error", signal: AbortSignal.timeout(15000)
   });
   if (!response.ok) throw new Error(`Kling status failed: ${response.status} ${await response.text()}`);
   const data = await response.json();
@@ -181,11 +186,17 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
   if (!job.id) return { provider: "fal", status: "unknown", error: "Missing FAL request id" };
   const raw = job.raw && typeof job.raw === "object" ? job.raw as Record<string, unknown> : {};
   const model = falModel(job);
+  if (!/^[a-zA-Z0-9_./-]+$/.test(model) || model.includes("..")) throw new Error("Invalid stored FAL model");
   const statusUrl = String(raw.status_url ?? raw.statusUrl ?? "").trim() || `https://queue.fal.run/${model}/requests/${job.id}/status`;
   const responseUrl = String(raw.response_url ?? raw.responseUrl ?? "").trim() || `https://queue.fal.run/${model}/requests/${job.id}`;
+  for (const endpoint of [statusUrl, responseUrl]) {
+    const url = new URL(endpoint);
+    if (url.origin !== "https://queue.fal.run" || url.username || url.password || url.hash) throw new Error("Invalid stored FAL status endpoint");
+  }
   const statusResponse = await fetch(statusUrl, {
     method: "GET",
-    headers: { Authorization: `Key ${apiKey}` }
+    headers: { Authorization: `Key ${apiKey}` },
+    redirect: "error", signal: AbortSignal.timeout(15000)
   });
   if (!statusResponse.ok) throw new Error(`FAL status failed: ${statusResponse.status} ${await statusResponse.text()}`);
   const statusData = await statusResponse.json();
@@ -196,7 +207,8 @@ export async function getFalStatus(job: ProviderJob): Promise<NormalizedProvider
   if (normalized === "succeeded") {
     const resultResponse = await fetch(responseUrl, {
       method: "GET",
-      headers: { Authorization: `Key ${apiKey}` }
+      headers: { Authorization: `Key ${apiKey}` },
+      redirect: "error", signal: AbortSignal.timeout(15000)
     });
     if (resultResponse.ok) {
       resultData = await resultResponse.json();

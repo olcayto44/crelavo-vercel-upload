@@ -1,4 +1,4 @@
-import { LEGACY_IMAGE_CATEGORIES, type LegacyRoute } from "./legacy-provider-route";
+import { LEGACY_IMAGE_CATEGORIES, legacyRouteConfigured, type LegacyRoute } from "./legacy-provider-route";
 import { createStabilityImage } from "../providers/stability";
 import { createVisualVideo } from "../providers/visuals";
 import { getProviderStatus } from "../providers/status";
@@ -114,7 +114,7 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
     if(!prompt)return fail("Write something first.","empty_prompt",{providerOutcome:"rejected"});
     if(isCopyLayoutColorOnly(prompt))return{ok:true,spend:false,engine:"none",category,status:"ready",title:"Copy / layout / color",body:prompt,media:null,providerOutcome:"accepted"};
     const engine=getCategoryEngine(category);
-    if(!engine || !engineConfigured(category))return fail("Provider not configured.","engine_not_configured",{providerOutcome:"rejected"});
+    if(input.providerRoute ? !legacyRouteConfigured(input.providerRoute) : !engine || !engineConfigured(category))return fail("Provider not configured.","engine_not_configured",{providerOutcome:"rejected"});
     try {
       if (input.providerRoute && (LEGACY_IMAGE_CATEGORIES.has(category) || ["minimax","replicate","kling","runway","fal"].includes(input.providerRoute.provider))) {
         const route=input.providerRoute;
@@ -128,7 +128,7 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
         if (duration<5 || duration>15) throw new Error("approved_segment_plan_required");
         const job=await createVisualVideo({productionId:input.productionId,scenes:[prompt],productImageUrls:[],durationSeconds:duration,aspectRatio:assistantRatio(input.extras),provider:route.provider,providerPrompt:prompt,singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
         if (!job.id) throw new Error("provider_job_id_missing");
-        return {ok:true,spend:true,providerOutcome:"accepted",engine:route.provider as EngineKind,category,status:"queued",media:null,taskId:"legacy:"+encodeURIComponent(JSON.stringify({provider:job.provider,id:job.id,kind:route.kind}))};
+        return {ok:true,spend:true,providerOutcome:"accepted",engine:route.provider as EngineKind,category,status:"queued",media:null,taskId:"legacy:"+encodeURIComponent(JSON.stringify({provider:job.provider,id:job.id,kind:route.kind,raw:providerTracking(job.raw)}))};
       }
       // One selected provider per dispatch; unknown acceptance never permits fallback.
       const result = engine==="heygen" ? await runHeygen({...input,category,prompt}) : minimaxKey() ? await runMinimax({...input,category,prompt}) : runwayConfigured() ? await startRunwayFallback({...input,category,prompt}) : await startFalFallback({...input,category,prompt});
@@ -142,12 +142,22 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
   });
 }
 
+// Persist only tracking fields, never the entire provider response or credentials.
+function providerTracking(raw: unknown): Record<string,string> {
+  const source=raw && typeof raw==="object" ? raw as Record<string,unknown> : {};
+  const tracking: Record<string,string>={};
+  for (const key of ["model","status_url","statusUrl","response_url","responseUrl","statusBaseUrl"]) {
+    if (typeof source[key]==="string" && source[key].length<=2048) tracking[key]=source[key];
+  }
+  return tracking;
+}
+
 async function pollMediaJobReadOnly(category:string,taskId:string):Promise<{status:"ready"|"queued"|"failed";mediaUrl?:string;message?:string;provider?:EngineKind;taskId?:string}> {
   const cat=String(category||"").trim(); const id=String(taskId||"").trim(); if(!id)return{status:"queued",message:"Missing provider task id; reconciliation required."};
   if(id.startsWith("legacy:")) {
     const job=JSON.parse(decodeURIComponent(id.slice(7)));
     if (!["minimax","replicate","runway","kling","fal"].includes(job.provider) || !/^[a-zA-Z0-9_-]+$/.test(job.id)) return {status:"queued",message:"Stored provider job requires reconciliation."};
-    const result=await getProviderStatus({provider:job.provider,id:job.id,status:"queued"});
+    const result=await getProviderStatus({provider:job.provider,id:job.id,status:"queued",raw:providerTracking(job.raw)});
     if(result.status==="failed")return {status:"failed",message:"Provider job failed. No automatic retry was started."};
     if(result.status==="succeeded" && result.outputUrl)return {status:"ready",mediaUrl:result.outputUrl};
     return {status:"queued"};
