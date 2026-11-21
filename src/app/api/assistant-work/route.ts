@@ -1,4 +1,5 @@
 import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
+import { assistantProductionError } from "@/lib/assistant-work/production-errors";
 import { handleProductionManager } from "@/lib/assistant-work/production-manager";
 import { executeWebsiteRequest } from "@/lib/assistant-work/website-request";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
@@ -71,9 +72,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(result,{headers:{"Cache-Control":"no-store"}});
     } catch (error) {
       const detail = error instanceof Error ? error.message : "production_manager_unavailable";
-      const code = detail.includes("insufficient") ? "insufficient" : detail.includes("plan") || detail.includes("fenced") ? "plan_required" : "production_manager_unavailable";
-      const status = code === "insufficient" ? 402 : code === "plan_required" ? 409 : 503;
-      return NextResponse.json({ok:false,spend:false,code,message:detail},{status});
+      const {code,status,message} = assistantProductionError(detail);
+      return NextResponse.json({ok:false,spend:false,code,message},{status});
     }
   }
 

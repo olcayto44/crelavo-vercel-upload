@@ -1,3 +1,4 @@
+import { validateAssistantReferenceRoute, type AssistantReference } from "../assistant-work/reference-contract.ts";
 import { optionalEnv, requireProviderEnv } from "./env";
 import { createMiniMaxH3VideoTask, hasMiniMaxVideoConfig, miniMaxTaskRecord } from "./minimax";
 import { assertFfmpegAvailable } from "@/lib/ffmpeg-runtime";
@@ -179,7 +180,7 @@ export async function createVisualVideoSegments(input: { productionId: string; s
   return jobs;
 }
 
-export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean; singleAttempt?: boolean; providerFetch?: typeof fetch }): Promise<ProviderJob> {
+export async function createVisualVideo(input: { productionId: string; scenes: string[]; productImageUrls: string[]; durationSeconds: number; style?: string; provider?: string; aspectRatio?: string; providerPrompt?: string; quality?: string; testMode?: boolean; singleAttempt?: boolean; references?: AssistantReference[]; providerFetch?: typeof fetch }): Promise<ProviderJob> {
   const paidFetch = input.providerFetch ?? fetch;
   const requestedProvider = String(input.provider || optionalEnv("VIDEO_PROVIDER") || optionalEnv("GENERATION_PROVIDER") || "replicate").trim().toLowerCase();
   const provider = requestedProvider;
@@ -214,10 +215,11 @@ export async function createVisualVideo(input: { productionId: string; scenes: s
     input.productImageUrls.length ? `Product references: ${input.productImageUrls.join(", ")}` : ""
   ].filter(Boolean).join("\n");
 
+  validateAssistantReferenceRoute(provider,"video",input.references || []);
   if (provider === "minimax") {
     const settings = miniMaxProductionSettings({ durationSeconds: safeDuration, aspectRatio: requestedRatio, quality: input.quality, prompt: input.providerPrompt ?? prompt, testMode: input.testMode });
     const result = await createMiniMaxH3VideoTask({
-      content: [{ type: "text", text: settings.providerPrompt }],
+      content: [{ type: "text", text: settings.providerPrompt },...(input.references || []).map(ref => ref.kind === "image" ? {type:"image_url" as const,image_url:{url:ref.url},role:ref.role === "reference" ? "reference_image" as const : ref.role} : ref.kind === "video" ? {type:"video_url" as const,video_url:{url:ref.url},role:"reference_video" as const} : {type:"audio_url" as const,audio_url:{url:ref.url},role:"reference_audio" as const})],
       resolution: settings.resolution,
       duration: settings.duration,
       ratio: settings.ratio

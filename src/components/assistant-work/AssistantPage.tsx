@@ -563,11 +563,11 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   function recoverInvalidPlan(error: unknown) {
     const message = error instanceof Error ? error.message : "";
-    if (!/valid_server_plan_required/.test(message)) return false;
+    if (!/valid_server_plan_required|approved_current_plan_required|current_package_plan_required|plan_selection_changed|plan_references_changed|provider_route_plan_refresh_required/.test(message)) return false;
     setShots(cur=>cur.map((item,index)=>index===selected?{...item,planVersionId:undefined,approvedPlanVersionId:undefined,parentPlanVersionId:undefined}:item));
     setPlanApproved(false);
     if (!draft.trim()) setDraft(shot.planPrompt || shot.body);
-    const detail = "The saved plan could not be verified. Send the brief again to create a fresh plan. Production was not started.";
+    const detail = "The saved plan is no longer valid for the current selection. Send the brief again and approve the updated plan. No new paid request was started.";
     setNotice(detail); setChatMessages(cur=>[...cur,{role:"assistant",content:detail}]);
     return true;
   }
@@ -652,19 +652,22 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     try {
       let sourceVideoUrl: string | undefined;
       const uploadedUrls:string[]=[];
+      const references:Array<{url:string;kind:"image"|"video"|"audio"}>=[];
       for (const material of materialFiles) {
         const form = new FormData(); form.set("user_id", claims.sub); form.set("file", material); form.set("purpose", category === "video_clipping" ? "video_clipping_source" : "user_material");
         const uploadResponse = await cinemaFetch("/api/materials/upload", { method: "POST", signal:controller.signal, body: form });
         const uploadData = await uploadResponse.json().catch(() => ({}));
         if (!uploadResponse.ok || !uploadData.material?.file_url) throw new Error(readableMessage(uploadData.error, "Source video upload failed."));
         const uploaded=String(uploadData.material.file_url);uploadedUrls.push(uploaded);
+        const kind=material.type.startsWith("image/")?"image":material.type.startsWith("video/")?"video":material.type.startsWith("audio/")?"audio":null;
+        if(kind)references.push({url:uploaded,kind});
         if(category==="video_clipping" && !sourceVideoUrl)sourceVideoUrl=uploaded;
       }
       const response = await cinemaFetch("/api/assistant-work", {
         method: "POST",
         signal:controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, parentPlanVersionId:shots[selected]?.parentPlanVersionId, parentProductionId:shots[selected]?.parentProductionId, variant:shots[selected]?.variant, projectId:mediaProjectId, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
+        body: JSON.stringify({ action: "revise", render: false, references, referencePlanVersionId:shots[selected]?.planVersionId, parentPlanVersionId:shots[selected]?.parentPlanVersionId, parentProductionId:shots[selected]?.parentProductionId, variant:shots[selected]?.variant, projectId:mediaProjectId, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {

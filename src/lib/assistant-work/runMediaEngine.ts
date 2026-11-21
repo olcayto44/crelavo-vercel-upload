@@ -3,6 +3,7 @@ import { createStabilityImage } from "../providers/stability";
 import { createVisualVideo } from "../providers/visuals";
 import { getProviderStatus } from "../providers/status";
 import { providerRejection } from "./provider-rejection.ts";
+import { assistantReferencePrompt, validateAssistantReferenceRoute, type AssistantReference } from "./reference-contract.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 /** Crelavo media production. Server-side MiniMax + HeyGen only. Do not call this from the browser. Do not log API keys. */
 export type EngineKind = "minimax" | "heygen" | "runway" | "fal" | "stability" | "replicate" | "kling";
@@ -10,7 +11,7 @@ export type EngineMedia = { kind: "video" | "image" | "audio"; url: string };
 export type EngineFile = { name: string; mime: string; content: string };
 export type EngineResult = { ok: boolean; spend: boolean; code?: string; message?: string; title?: string; body?: string; media?: EngineMedia | null; files?: EngineFile[]; status?: "ready" | "queued" | "rendering" | "failed" | "reconcile_required"; providerOutcome?: "accepted" | "rejected" | "uncertain"; engine?: EngineKind | "none"; taskId?: string; category?: string };
 export type EngineInput = {
-  userId: string; productionId?: string; providerRoute?: LegacyRoute; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
+  userId: string; preparedReferenceImage?: Blob; references?: AssistantReference[]; productionId?: string; providerRoute?: LegacyRoute; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
 const providerContext = new AsyncLocalStorage<EngineInput>();
 class ProviderOutcomeError extends Error { outcome: "rejected" | "uncertain"; constructor(outcome: "rejected" | "uncertain", readonly rejection?: ReturnType<typeof providerRejection>) { super(outcome); this.outcome=outcome; } }
 async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Response> {
@@ -119,14 +120,15 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
       if (input.providerRoute && (LEGACY_IMAGE_CATEGORIES.has(category) || ["minimax","replicate","kling","runway","fal"].includes(input.providerRoute.provider))) {
         const route=input.providerRoute;
         if (!input.productionId) throw new Error("production_id_required");
+        const references=input.references || [];
+        validateAssistantReferenceRoute(route.provider,route.kind,references);
         if (route.kind === "image") {
-          if (firstUrl(prompt)) throw new Error("reference_capable_image_adapter_required");
-          const image=await createStabilityImage({productionId:input.productionId,prompt,filenameBase:"assistant-image",aspectRatio:assistantRatio(input.extras),singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
+          const image=await createStabilityImage({productionId:input.productionId,prompt,filenameBase:"assistant-image",referenceImageUrl:references[0]?.url,referenceImage:input.preparedReferenceImage,aspectRatio:assistantRatio(input.extras),singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
           return {ok:true,spend:true,providerOutcome:"accepted",engine:"stability",category,status:"ready",media:{kind:"image",url:image.imageUrl}};
         }
         const duration=Number(String(input.extras?.duration || "5").match(/\d+/)?.[0]);
         if (duration<5 || duration>15) throw new Error("approved_segment_plan_required");
-        const job=await createVisualVideo({productionId:input.productionId,scenes:[prompt],productImageUrls:[],durationSeconds:duration,aspectRatio:assistantRatio(input.extras),provider:route.provider,providerPrompt:prompt,singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
+        const job=await createVisualVideo({productionId:input.productionId,scenes:[prompt],productImageUrls:[],references,durationSeconds:duration,aspectRatio:assistantRatio(input.extras),provider:route.provider,providerPrompt:prompt+(references.length?"\n"+assistantReferencePrompt(references):""),singleAttempt:true,providerFetch:((url,init)=>guardedProviderFetch(String(url),init)) as typeof fetch});
         if (!job.id) throw new Error("provider_job_id_missing");
         return {ok:true,spend:true,providerOutcome:"accepted",engine:route.provider as EngineKind,category,status:"queued",media:null,taskId:"legacy:"+encodeURIComponent(JSON.stringify({provider:job.provider,id:job.id,kind:route.kind,raw:providerTracking(job.raw)}))};
       }

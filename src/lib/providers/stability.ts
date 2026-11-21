@@ -1,3 +1,4 @@
+import { downloadAssistantImageReference } from "./reference-download.ts";
 import { optionalEnv, requireProviderEnv } from "./env";
 import { mirrorProviderAsset, uploadProviderAsset } from "./storage";
 
@@ -92,15 +93,21 @@ export async function getStabilityEngines() {
   return response.json();
 }
 
-export async function createStabilityImage(input: { productionId: string; prompt: string; filenameBase: string; aspectRatio?: string; singleAttempt?: boolean; providerFetch?: typeof fetch }): Promise<ImageProviderResult> {
+export async function createStabilityImage(input: { productionId: string; prompt: string; filenameBase: string; aspectRatio?: string; referenceImageUrl?: string; referenceImage?: Blob; singleAttempt?: boolean; providerFetch?: typeof fetch }): Promise<ImageProviderResult> {
   // Assistant callers inject their fenced transport; never replace global fetch.
   const paidFetch = input.providerFetch ?? fetch;
   const apiKey = requireProviderEnv("stability");
-  const model = optionalEnv("STABILITY_IMAGE_MODEL") || "core";
+  const model = input.referenceImageUrl ? "sd3" : optionalEnv("STABILITY_IMAGE_MODEL") || "core";
   const aspectRatio = input.aspectRatio || "9:16";
   const form = new FormData();
   form.append("prompt", input.prompt);
-  form.append("aspect_ratio", providerAspectRatio(aspectRatio));
+  if (input.referenceImageUrl) {
+    const image=input.referenceImage || await downloadAssistantImageReference(input.referenceImageUrl,providerAspectRatio(aspectRatio));
+    form.append("image",image,"reference-image");
+    form.append("mode","image-to-image");
+    form.append("model","sd3.5-large");
+    form.append("strength","0.65");
+  } else form.append("aspect_ratio", providerAspectRatio(aspectRatio));
   form.append("output_format", "png");
   const response = await paidFetch(`${baseUrl()}/v2beta/stable-image/generate/${model}`, {
     method: "POST",
@@ -117,7 +124,7 @@ export async function createStabilityImage(input: { productionId: string; prompt
   }
 
   // A rejected or uncertain request must not silently start a second paid job.
-  if (input.singleAttempt) throw new Error(`Stability request failed (HTTP ${response.status}); automatic fallback disabled.`);
+  if (input.singleAttempt || input.referenceImageUrl) throw new Error(`Stability request failed (HTTP ${response.status}); automatic fallback disabled.`);
   const v2Error = await response.text();
   const legacyRatio = providerAspectRatio(aspectRatio);
   const legacySize = legacyRatio === "16:9" ? { width: 1344, height: 768 } : legacyRatio === "1:1" ? { width: 1024, height: 1024 } : { width: 1024, height: 1536 };
