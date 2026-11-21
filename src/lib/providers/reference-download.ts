@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import { parseAssistantStorageUrl } from "../assistant-work/storage-ownership.ts";
 // Ownership must be checked by the manager; this independently prevents SSRF and unbounded downloads.
 export async function downloadAssistantImageReference(url: string, aspectRatio = "1:1"): Promise<Blob> {
@@ -17,6 +16,7 @@ export async function downloadAssistantImageReference(url: string, aspectRatio =
   if (!size) throw new Error("reference_image_download_failed");
   const ratios: Record<string,[number,number]>={"16:9":[1344,768],"9:16":[768,1344],"1:1":[1024,1024]};
   const [width,height]=ratios[aspectRatio] || ratios["1:1"];
+  const {default:sharp}=await import("sharp");
   const image=await sharp(Buffer.concat(chunks),{limitInputPixels:40000000}).rotate().resize(width,height,{fit:"contain",background:"#ffffff"}).png().toBuffer();
   return new Blob([new Uint8Array(image)],{type:"image/png"});
 }
