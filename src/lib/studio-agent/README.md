@@ -1,5 +1,7 @@
 # Studio V2 — B1 sözleşmeleri
 
+Bu B1 aşamasının arşiv raporudur. B2 bağlantıları ve güvenli aktivasyon koşulları için `B2-README.md` belgesine bakın.
+
 Bu dizin yalnızca B1 kapsamıdır. Studio arayüzüne veya API rotalarına bağlı değildir.
 Gerçek LLM, DB, üretim, bakiye yazımı, migration ve deploy içermez. B2/C1/C2/C3 uygulanmadı.
 
