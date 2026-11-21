@@ -64,7 +64,7 @@ const fields: Record<string,string[]> = {
     "Factual claims to verify",
     "Narration script",
     "Interview participants",
-    "Archive permissions",
+    "Archive permissions", "Narration language", "Scene plan",
     "Duration",
     "Visual references"
   ],
@@ -391,6 +391,9 @@ export function studioCategoryConfiguration() {
     const kind=kinds[c.id] || "video"; const panel=panels[kind];
     const catalogFields=c.extras.map(f=>({id:f.id,label:f.label,kind:f.kind,required:!!f.required,options:f.options || [],placeholder:f.placeholder || ""}));
     const extraFields=fields[c.id].filter(label=>!catalogFields.some(f=>f.label.toLowerCase()===label.toLowerCase())).map((label,index)=>({id:c.id+"_"+index,label,kind:"text",required:false,options:[],placeholder:label}));
-    return {id:c.id,label:c.label,group:c.group,kind,canvasTitle:c.label+" Canvas",panel,fields:[...catalogFields,...extraFields],packs:c.packs,features:c.features,greeting:"Let's define your "+c.label+" project. Start with "+fields[c.id].slice(0,3).join(", ")+". No AI production starts in this design test."};
+    return {id:c.id,label:c.label,group:c.group,kind,canvasTitle:c.label+" Canvas",panel,fields:[...catalogFields,...extraFields],packs:c.packs,features:c.features,
+      questions:fields[c.id].map((label,index)=>({id:c.id+"_question_"+index,label,prompt:"For your "+c.label+" project, what should we use for "+label.toLowerCase()+"?",options:catalogFields.find(f=>f.label.toLowerCase()===label.toLowerCase())?.options || [],reference:/reference|source video|authorized audio|ad url or creative|archive/i.test(label)})),
+      tabs:kind==="website"?["Pages","Preview","Assets","Settings"]:kind==="app"?["Screens","Preview","Assets","Settings"]:kind==="audio"?["Audio","Script","References","Export"]:["report","calendar","document","lesson"].includes(kind)?["Report","Evidence","Export"]:kind==="character"?["Character","References","Poses","Assets"]:kind==="campaign"?["Creatives","Platforms","Assets","Export"]:["Canvas","Scenes","Timeline","Assets"],
+      greeting:"Let's define your "+c.label+" project. Start with "+fields[c.id].slice(0,3).join(", ")+". No AI production starts in this design test."};
   })};
 }
