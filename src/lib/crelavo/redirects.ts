@@ -10,6 +10,8 @@ export function safeReturnTo(returnTo?: string | null): string | null {
 }
 
 export function postAuthPath(opts: { isNew: boolean; returnTo?: string | null }) {
+  const studioReturn = safeReturnTo(opts.returnTo);
+  if (studioReturn?.split("?")[0] === "/dashboard/studio-v2") return studioReturn;
   if (opts.isNew) return "/dashboard/assistant-workspace";
   return safeReturnTo(opts.returnTo) ?? AFTER_SIGNIN_PATH;
 }
