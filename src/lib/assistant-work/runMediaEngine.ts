@@ -4,14 +4,16 @@ import { createVisualVideo } from "../providers/visuals";
 import { getProviderStatus } from "../providers/status";
 import { providerRejection } from "./provider-rejection.ts";
 import { assistantReferencePrompt, validateAssistantReferenceRoute, type AssistantReference } from "./reference-contract.ts";
+import { cloneVoiceFromUrl } from "../providers/elevenlabs";
+import { validateVoiceCloneRequest } from "./voice-clone-contract.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 /** Crelavo media production. Server-side MiniMax + HeyGen only. Do not call this from the browser. Do not log API keys. */
-export type EngineKind = "minimax" | "heygen" | "runway" | "fal" | "stability" | "replicate" | "kling";
+export type EngineKind = "minimax" | "heygen" | "runway" | "fal" | "stability" | "replicate" | "kling" | "elevenlabs";
 export type EngineMedia = { kind: "video" | "image" | "audio"; url: string };
 export type EngineFile = { name: string; mime: string; content: string };
 export type EngineResult = { ok: boolean; spend: boolean; code?: string; message?: string; title?: string; body?: string; media?: EngineMedia | null; files?: EngineFile[]; status?: "ready" | "queued" | "rendering" | "failed" | "reconcile_required"; providerOutcome?: "accepted" | "rejected" | "uncertain"; engine?: EngineKind | "none"; taskId?: string; category?: string };
 export type EngineInput = {
-  userId: string; preparedReferenceImage?: Blob; references?: AssistantReference[]; productionId?: string; providerRoute?: LegacyRoute; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
+  userId: string; preparedVoiceReference?: Blob; voiceCloneConsent?: unknown; preparedReferenceImage?: Blob; references?: AssistantReference[]; productionId?: string; providerRoute?: LegacyRoute; spokenScript?: string; beforeProviderCall?: (endpoint: string) => Promise<void>; afterProviderCall?: (state: "accepted" | "rejected" | "uncertain") => Promise<void>; renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
 const providerContext = new AsyncLocalStorage<EngineInput>();
 class ProviderOutcomeError extends Error { outcome: "rejected" | "uncertain"; constructor(outcome: "rejected" | "uncertain", readonly rejection?: ReturnType<typeof providerRejection>) { super(outcome); this.outcome=outcome; } }
 async function guardedProviderFetch(url: string, init?: RequestInit): Promise<Response> {
@@ -117,6 +119,13 @@ export async function runMediaEngine(input:EngineInput):Promise<EngineResult> {
     const engine=getCategoryEngine(category);
     if(input.providerRoute ? !legacyRouteConfigured(input.providerRoute) : !engine || !engineConfigured(category))return fail("Provider not configured.","engine_not_configured",{providerOutcome:"rejected"});
     try {
+      if (category === "voice_clone") {
+        if (input.providerRoute?.provider !== "elevenlabs" || input.providerRoute.kind !== "audio" || !input.productionId) throw new Error("provider_route_plan_refresh_required");
+        const reference=validateVoiceCloneRequest(input.references || [],input.voiceCloneConsent);
+        if (!input.preparedVoiceReference) throw new Error("prepared_voice_reference_required");
+        const clone=await cloneVoiceFromUrl({productionId:input.productionId,sourceAudioUrl:reference.url,sourceAudio:input.preparedVoiceReference,name:clip(prompt,80) || "Crelavo authorized voice",providerFetch:((url,init)=>guardedProviderFetch(String(url),{...init,redirect:"error"})) as typeof fetch});
+        return {ok:true,spend:true,providerOutcome:"accepted",engine:"elevenlabs",category,status:"ready",title:"Authorized voice clone",body:clone.requiresVerification ? "The voice was created; provider verification is required before synthesis." : "Your authorized voice was created. No extra speech generation was started.",media:null,files:[{name:"authorized-voice.json",mime:"application/json",content:JSON.stringify({provider:clone.provider,voiceId:clone.voiceId,requiresVerification:clone.requiresVerification,rightsConfirmed:true,sourceAudioUrl:reference.url})}]};
+      }
       if (input.providerRoute && (LEGACY_IMAGE_CATEGORIES.has(category) || ["minimax","replicate","kling","runway","fal"].includes(input.providerRoute.provider))) {
         const route=input.providerRoute;
         if (!input.productionId) throw new Error("production_id_required");

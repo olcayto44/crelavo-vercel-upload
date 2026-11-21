@@ -1,4 +1,7 @@
+import { buildProductionChain } from "./production-chain.ts";
 import { resolveLegacyRoute, legacyRouteConfigured, LEGACY_IMAGE_CATEGORIES } from "./legacy-provider-route";
+import { downloadAssistantVoiceReference } from "../providers/voice-reference-download.ts";
+import { validateVoiceCloneRequest, VOICE_CLONE_CONSENT_VERSION } from "./voice-clone-contract.ts";
 import { downloadAssistantImageReference } from "../providers/reference-download.ts";
 import { collectAssistantReferences, validateAssistantReferenceRoute } from "./reference-contract.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -23,6 +26,10 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
   if (body.action === "approve_plan") {
     const plan = await ownedPlan(db,userId,String(body.planVersionId || ""));
     if (plan.payload.category !== category) throw new Error("plan_category_changed");
+    if (category === "voice_clone") {
+      if (plan.payload.input?.voiceCloneConsent?.userId !== userId) throw new Error("voice_clone_explicit_consent_required");
+      validateVoiceCloneRequest(collectAssistantReferences(plan.payload.input?.references,plan.payload.originalPrompt),plan.payload.input.voiceCloneConsent);
+    }
     return { ok:true, spend:false, ...await rpc(db,"approve_assistant_plan_version",{p_user_id:userId,p_plan_version_id:plan.id,p_signature:plan.signature}) };
   }
   if (body.render !== true) {
@@ -53,7 +60,8 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
       }
       const references = collectAssistantReferences([...inheritedReferences,...collectAssistantReferences(body.references,String(body.prompt || ""))]);
       for (const reference of references) await requireAssistantStorageOwner(db,userId,reference.url);
-      const input = { references, ...(continuation ? {continuation} : {}), projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
+      const voiceCloneConsent = category === "voice_clone" ? {version:VOICE_CLONE_CONSENT_VERSION,rightsConfirmed:body.voiceCloneConsent?.version === VOICE_CLONE_CONSENT_VERSION && body.voiceCloneConsent?.rightsConfirmed === true,userId,recordedAt:new Date().toISOString()} : undefined;
+      const input = { references, ...(voiceCloneConsent ? {voiceCloneConsent} : {}), ...(continuation ? {continuation} : {}), projectId, type:String(body.type || ""), scene:String(body.scene || "1"), packId:String(body.packId || ""), features:Array.isArray(body.features)?body.features:[], extras:body.extras || {}, sourceVideoUrl:String(body.sourceVideoUrl || "") };
     const providerRoute = resolveLegacyRoute(category,input);
      const scope = category + ":" + (projectId ? projectId + ":" : "") + input.scene;
     const revisionSeq = await rpc(db,"reserve_assistant_revision_seq",{p_user_id:userId,p_scope:scope});
@@ -63,10 +71,11 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     const pack = getCategory(category)?.packs.find(p=>p.id===input.packId);
     const copyOnly = isLocalCategory(category,input.type) ? localCopyOnly(plan.visualDirection) : isCopyLayoutColorOnly(plan.visualDirection);
     const credits = !plan.visualDirection || copyOnly || getCategory(category)?.billing === "subscription" ? 0 : pack?.credits ?? quote(category,[],"produce",plan.visualDirection).credits;
-    const payload = {userId,scope,revisionSeq,category,credits,input,...(providerRoute ? {providerRoute} : {}),plan,originalPrompt:prompt};
+    const chain = buildProductionChain(providerRoute,input.extras,plan);
+    const payload = {...(chain ? {chain} : {}),userId,scope,revisionSeq,category,credits,input,...(providerRoute ? {providerRoute} : {}),plan,originalPrompt:prompt};
     const signature = signAssistantPlan(payload);
     const stored = await rpc(db,"create_assistant_plan_draft",{p_user_id:userId,p_scope:scope,p_revision_seq:revisionSeq,p_payload:payload,p_signature:signature});
-    return {ok:true,spend:false,status:"draft",engine:"assistant_plan",reply:plan.reply,body:plan.reply,plan,planVersionId:stored.id,revisionSeq,estimatedCredits:credits,media:null,files:[]};
+    return {ok:true,spend:false,status:"draft",engine:"assistant_plan",reply:plan.reply,body:plan.reply,plan,planVersionId:stored.id,revisionSeq,estimatedCredits:credits,...(chain ? {chain,chainNeedsReview:true,creditEstimateScope:"selected_package_only"} : {}),media:null,files:[]};
   }
   const plan = await ownedPlan(db,userId,String(body.planVersionId || ""));
   const { input, plan: direction } = plan.payload;
@@ -77,6 +86,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
   if (!copyOnly && getCategory(category)?.billing!=="subscription" && (!currentPack || currentPack.credits!==plan.payload.credits)) throw new Error("current_package_plan_required");
   if ((body.extras && canonicalPlan(body.extras)!==canonicalPlan(input.extras)) || (body.features && canonicalPlan(body.features)!==canonicalPlan(input.features))) throw new Error("plan_selection_changed");
   if (!plan.payload.providerRoute && !isLocalCategory(category,input.type) && (!getCategoryEngine(category) || !engineConfigured(category))) throw new Error("engine_not_configured");
+  if (plan.payload.chain) throw new Error("approved_chain_execution_adapter_required");
   const references = collectAssistantReferences(input.references,plan.payload.originalPrompt);
   if (body.references && canonicalPlan(collectAssistantReferences(body.references)) !== canonicalPlan(references)) throw new Error("plan_references_changed");
    const urls = [...new Set([input.sourceVideoUrl,...references.map(ref=>ref.url)].filter(Boolean))];
@@ -85,7 +95,11 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
   if (!isLocalCategory(category,input.type) && input.extras?.sound && !["none","silent","no_audio","no_music","provider_audio"].includes(input.extras.sound)) throw new Error("approved_audio_steps_required");
   if (direction.spokenScript && getCategoryEngine(category)==="minimax" && !["image","brand_kit","visual_clone"].includes(category)) throw new Error("approved_spoken_audio_steps_required");
   if (["talking_video","avatar"].includes(category) && !direction.spokenScript) throw new Error("approved_spoken_script_required");
-  if (category === "voice_clone") throw new Error("voice_clone_requires_authorized_audio_clone_adapter");
+  if (category === "voice_clone") {
+    if (plan.payload.providerRoute?.provider !== "elevenlabs" || plan.payload.providerRoute?.kind !== "audio") throw new Error("provider_route_plan_refresh_required");
+    if (input.voiceCloneConsent?.userId !== userId) throw new Error("voice_clone_explicit_consent_required");
+    validateVoiceCloneRequest(references,input.voiceCloneConsent);
+  }
   if (!plan.payload.providerRoute && resolveLegacyRoute(category,input)) throw new Error("provider_route_plan_refresh_required");
   if (plan.payload.providerRoute && !legacyRouteConfigured(plan.payload.providerRoute)) throw new Error("selected_provider_not_configured");
   if (plan.payload.providerRoute && (LEGACY_IMAGE_CATEGORIES.has(category) || ["minimax","runway","kling","fal","replicate"].includes(plan.payload.providerRoute.provider))) validateAssistantReferenceRoute(plan.payload.providerRoute.provider,plan.payload.providerRoute.kind,references);
@@ -94,6 +108,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     const duration=Number(String(input.extras?.duration || "5").match(/\d+/)?.[0]);
     if (duration<5 || duration>15 || /min|dakika|dk/i.test(String(input.extras?.duration || ""))) throw new Error("approved_segment_plan_required");
   }
+  const preparedVoiceReference = category === "voice_clone" ? await downloadAssistantVoiceReference(references[0].url) : undefined;
   const preparedReferenceImage = references.length && plan.payload.providerRoute?.provider === "stability" ? await downloadAssistantImageReference(references[0].url,String(input.extras?.aspect || input.extras?.format || "16:9")) : undefined;
   const started = await rpc(db,"begin_assistant_production",{p_user_id:userId,p_plan_version_id:plan.id,p_signature:plan.signature});
   if (!started.fresh) {
@@ -116,7 +131,7 @@ export async function handleProductionManager(db: SupabaseClient, userId: string
     } else if (isLocalCategory(category,input.type) && !LEGACY_IMAGE_CATEGORIES.has(category)) {
       const local = await runLocalEngine({userId,prompt:direction.visualDirection,type:input.type,category,scene:input.scene,action:"render"});
       result = {...local,engine:"none",status:local.ok?"ready":"failed",files:local.files.length?local.files.map(f=>({name:f.path,mime:f.mime,content:f.content})):[{name:"updated-copy.txt",mime:"text/plain",content:local.body}],providerOutcome:local.ok?"accepted":"rejected"};
-    } else result=await runMediaEngine({userId,productionId:fence.productionId,providerRoute:plan.payload.providerRoute,references,preparedReferenceImage,category,prompt:direction.visualDirection+(urls.some(url=>!direction.visualDirection.includes(url))?"\nUser authorized references:\n"+urls.filter(url=>!direction.visualDirection.includes(url)).join("\n"): ""),spokenScript:direction.spokenScript,type:input.type,scene:input.scene,extras:input.extras,renderFinal:true,beforeProviderCall,afterProviderCall});
+    } else result=await runMediaEngine({userId,productionId:fence.productionId,providerRoute:plan.payload.providerRoute,references,preparedReferenceImage,preparedVoiceReference,voiceCloneConsent:input.voiceCloneConsent,category,prompt:direction.visualDirection+(urls.some(url=>!direction.visualDirection.includes(url))?"\nUser authorized references:\n"+urls.filter(url=>!direction.visualDirection.includes(url)).join("\n"): ""),spokenScript:direction.spokenScript,type:input.type,scene:input.scene,extras:input.extras,renderFinal:true,beforeProviderCall,afterProviderCall});
   } catch { result={ok:false,spend:false,status:"reconcile_required",providerOutcome:"uncertain",code:"reconcile_required",message:"Provider acceptance could not be established. No automatic retry or refund."}; }
   if(result.ok && result.status==="ready" && !result.media && !result.files?.length)result={...result,files:[{name:"production-output.txt",mime:"text/plain",content:result.body||direction.visualDirection}]};
   const output = {...result,assistant:true,references,continuation:input.continuation ? {variant:input.continuation.variant,parentPlanVersionId:input.continuation.parentPlanVersionId,parentProductionId:input.continuation.parentProductionId} : null,taskId:result.taskId ?? null};

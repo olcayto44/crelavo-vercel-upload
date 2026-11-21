@@ -41,7 +41,7 @@ type CreditState =
   | { kind: "unknown" }
   | { kind: "number"; value: number };
 type DeliveryFile = { name: string; mime?: string; content?: string };
-type Shot = { aspect?: string; parentPlanVersionId?: string; parentProductionId?: string; variant?: ProductionVariant; id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; planVersionId?: string; approvedPlanVersionId?: string; spokenScript?: string; mediaKind?: "video"|"image"|"audio"; estimatedCredits?: number; progress?: number; };
+type Shot = { chainSummary?: string; aspect?: string; parentPlanVersionId?: string; parentProductionId?: string; variant?: ProductionVariant; id: number; label: string; title: string; body: string; status: string; mediaUrl: string | null; files: DeliveryFile[]; taskId?: string; productionId?: string; planPrompt?: string; planVersionId?: string; approvedPlanVersionId?: string; spokenScript?: string; mediaKind?: "video"|"image"|"audio"; estimatedCredits?: number; progress?: number; };
 type ChatMessage = { role: "user" | "assistant"; content: string; };
 export function CinemaRouteGuard() {
   useEffect(() => { window.onbeforeunload = null; }, []);
@@ -378,6 +378,8 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [materialFiles, setMaterialFiles] = useState<File[]>([]);
   const [referenceUrl, setReferenceUrl] = useState("");
+  const [voiceCloneRightsConfirmed,setVoiceCloneRightsConfirmed] = useState(false);
+  useEffect(()=>setVoiceCloneRightsConfirmed(false),[category,selected]);
   const [planApproved, setPlanApproved] = useState(false);
   const [projectLoaded, setProjectLoaded] = useState(false);
   const [sending, setSending] = useState(false);
@@ -557,6 +559,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
   }
   function addProductionVariant(variant: ProductionVariant) {
     if (sending || shot.taskId || ["QUEUED","RENDERING","RECONCILE_REQUIRED"].includes(shot.status)) return;
+    setVoiceCloneRightsConfirmed(false);
     const next = forkProduction({...shot,aspect:productionAspect},shots,variant);
     setShots(cur=>[...cur,next]); setSelected(shots.length); setPlanApproved(false); setPreviewMode("scene");
     setNotice(variant === "continue" ? "Describe the next production. The original is preserved; continuity will be reviewed in the new plan." : "Describe your changes. A separate revision will be created; the original is preserved.");
@@ -572,6 +575,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     return true;
   }
   async function approveCurrentPlan(chatApproval?: string) {
+    if (category === "voice_clone" && !voiceCloneRightsConfirmed) {setNotice("Confirm voice permission and update the plan first.");return;}
     if (!shot.planVersionId || sending) { setNotice("UPDATE PLAN BEFORE APPROVAL"); return; }
     const controller=new AbortController();contextRequestRef.current=controller;setSending(true);
     try {
@@ -588,6 +592,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
     finally { if(!controller.signal.aborted)setSending(false); }
   }
   async function renderFinalScene(creditConfirmed = false) {
+    if (category === "voice_clone" && !voiceCloneRightsConfirmed) {setNotice("Confirm voice permission and update the plan first.");return;}
     if (website) { if (websiteFlow.approved && await websiteFlow.perform("render")) await loadCredits(); return; }
     const currentPrompt = shot.planPrompt || shot.body;
     const inlineImageApproval = creditConfirmed && imageChatFlow;
@@ -667,7 +672,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         method: "POST",
         signal:controller.signal,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revise", render: false, references, referencePlanVersionId:shots[selected]?.planVersionId, parentPlanVersionId:shots[selected]?.parentPlanVersionId, parentProductionId:shots[selected]?.parentProductionId, variant:shots[selected]?.variant, projectId:mediaProjectId, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
+        body: JSON.stringify({ action: "revise", render: false, voiceCloneConsent:category === "voice_clone" ? {version:"voice-clone-v1",rightsConfirmed:voiceCloneRightsConfirmed} : undefined, references, referencePlanVersionId:shots[selected]?.planVersionId, parentPlanVersionId:shots[selected]?.parentPlanVersionId, parentProductionId:shots[selected]?.parentProductionId, variant:shots[selected]?.variant, projectId:mediaProjectId, prompt:prompt+(uploadedUrls.length?"\nUser supplied references:\n"+uploadedUrls.join("\n"): ""), messages: chatMessages, type, category, scene: selected + 1, sourceVideoUrl, categoryId: chosen?.categoryId, packId: chosen?.packId, features: chosen?.features, extras: currentExtras, planApproved, planSnapshot }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data || data.ok === false) {
@@ -685,7 +690,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         if (!reply || reply === prompt) throw new Error("The assistant did not return a valid answer. No production was submitted.");
         const conversation = [...chatMessages, { role: "user" as const, content: prompt }, { role: "assistant" as const, content: reply }];
         setChatMessages(conversation);
-        setShots((cur) => cur.map((item, index) => index === selected ? { ...item, aspect:productionAspect, body:data.plan.visualDirection, planPrompt:data.plan.visualDirection, spokenScript:data.plan.spokenScript, planVersionId:data.planVersionId, approvedPlanVersionId:undefined, estimatedCredits:data.estimatedCredits, status:"DRAFT",label:"DRAFT" } : item));
+        setShots((cur) => cur.map((item, index) => index === selected ? { ...item, aspect:productionAspect, body:data.plan.visualDirection, planPrompt:data.plan.visualDirection, spokenScript:data.plan.spokenScript, chainSummary:data.chain ? `${data.chain.durationSeconds}s / ${data.chain.steps.length} steps. Execution adapter and full credit estimate pending; production cannot start yet.` : undefined, planVersionId:data.planVersionId, approvedPlanVersionId:undefined, estimatedCredits:data.estimatedCredits, status:"DRAFT",label:"DRAFT" } : item));
         setNotice("ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION");
         void persistProject({ mediaProjectId, mergeOrder, mergeProductionId, mergedUrl, mergeAspect, mergeFit, mergeTransition, category: engineCategory, type, shots: shots.map((item, index) => index === selected ? { ...item, body:data.plan.visualDirection, planPrompt:data.plan.visualDirection, planVersionId:data.planVersionId, approvedPlanVersionId:undefined, estimatedCredits:data.estimatedCredits } : item), selected, chatMessages: conversation, referenceUrl, planApproved: false, notice: "ASSISTANT REPLIED / REVIEW PLAN BEFORE PRODUCTION" });
       }
@@ -888,6 +893,7 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
             {shot.status === "READY" ? <div style={{display:"flex",gap:8,marginTop:10}}><button type="button" disabled={sending} onClick={()=>addProductionVariant("continue")}>{t("Continue / next production")}</button><button type="button" disabled={sending} onClick={()=>addProductionVariant("revision")}>{t("New revision (keep original)")}</button>{videoWorkspace && shot.mediaKind === "video" ? <button type="button" onClick={()=>setActiveTool("merge")}>{t("Select and order videos to merge")}</button> : null}</div> : null}
             {shot.parentProductionId ? <p>{t("Linked to an earlier production. The original file is preserved. Review the new plan for continuity; exact character continuity is not guaranteed by every production tool.")}</p> : null}
           </section> : null}
+          {shot.chainSummary ? <p role="status">{t(shot.chainSummary)}</p> : null}
           {imageChatFlow ? <section aria-label="Image production" style={{marginTop:16,padding:14,border:"1px solid #4b5563",borderRadius:10,background:"#1a202b",fontSize:13}}>
             <strong>{t(shot.status === "READY" ? "Result" : shot.taskId || ["QUEUED","RENDERING"].includes(shot.status) ? "Production" : "Review image plan")}</strong>
             <p>{categoryConfig?.label}</p>
@@ -906,9 +912,10 @@ export default function AssistantPage({ preProduction }: { preProduction?: Produ
         <form onSubmit={(e) => { e.preventDefault(); void onSend(); }} style={{ flex: "0 0 auto", padding: 16, borderTop: "1px solid #1f2229", background: "#14171d" }}>
           <textarea translate="no" data-no-translate="true" className="notranslate" dir="auto" rows={3} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={t("Tell the assistant what you want to create...")} disabled={sending || (website && websiteFlow.busy)} style={{ display: "block", width: "100%", minHeight: 74, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: 12, color: "#fff", outline: "none", resize: "vertical", fontSize: 13 }} />
           {website ? <input value={referenceUrl} onChange={(event) => { setReferenceUrl(event.target.value); websiteFlow.setDirty(true); }} placeholder={t("Optional product or reference URL (no file upload in MVP)")} disabled={websiteFlow.busy} style={{ display: "block", width: "100%", marginTop: 8, background: "#1c1f26", border: "1px solid #2e333d", borderRadius: 8, padding: "10px 12px", color: "#fff", outline: "none", fontSize: 12 }} /> : null}
+          {category === "voice_clone" ? <label style={{display:"block",marginTop:10,fontSize:12}}><input type="checkbox" checked={voiceCloneRightsConfirmed} disabled={sending} onChange={event=>{setVoiceCloneRightsConfirmed(event.target.checked);setPlanApproved(false);setShots(cur=>cur.map((item,index)=>index===selected?{...item,approvedPlanVersionId:undefined}:item));setNotice("Voice permission changed. Update and approve the plan before production.");}} /> {t("I own this voice or have explicit permission to clone it. I authorize use of the uploaded audio for voice cloning.")}</label> : null}
           <small>{t("Enter to send / Shift+Enter for a new line")}</small>
           {!website && materialFiles.length > 0 ? <ul aria-label="Selected attachments" style={{maxHeight:100,overflowY:"auto",paddingLeft:18,fontSize:12}}>{materialFiles.map((file,index)=><li key={index}>{file.name} ({Math.ceil(file.size/1024)} KB) <button type="button" disabled={sending} onClick={()=>setMaterialFiles(current=>current.filter((_,i)=>i!==index))}>{t("Remove")}</button></li>)}</ul> : null}
-          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>{!website ? <label title={t("Attach file")} style={{ position:"relative", flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>{t("FILE")}</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={sending} onChange={(event) => { const files=Array.from(event.currentTarget.files || []); event.currentTarget.value=""; if (!files.length) return; if (files.some(file=>file.size===0 || file.size>50*1024*1024)) { setNotice("Maximum 50 MB per file; empty files are not allowed."); return; } setMaterialFiles(current=>[...current,...files]); setPlanApproved(false); setNotice("Files selected. Send the message to upload references and update the plan. No production has started."); }} style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0, cursor:"pointer" }} /></label> : null}<button type="submit" disabled={sending || (website && (websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")) || (!draft.trim() && (website || !materialFiles.length))} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || (!draft.trim() && !materialFiles.length) ? "default" : "pointer", opacity: sending || (!draft.trim() && !materialFiles.length) ? 0.5 : 1, fontSize: 12 }}>{sending || (website && websiteFlow.busy) ? t("Sending...") : t("UPDATE PLAN")}</button></div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>{!website ? <label title={t("Attach file")} style={{ position:"relative", flex: "0 0 auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #2e333d", borderRadius: 8, padding: "9px 10px", background: "#1c1f26", color: "#fff", cursor: "pointer", fontSize: 11 }}><span>{t("FILE")}</span><input type="file" multiple accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt,.zip" disabled={sending} onChange={(event) => { const files=Array.from(event.currentTarget.files || []); event.currentTarget.value=""; if (!files.length) return; if (files.some(file=>file.size===0 || file.size>50*1024*1024)) { setNotice("Maximum 50 MB per file; empty files are not allowed."); return; } setVoiceCloneRightsConfirmed(false);setMaterialFiles(current=>[...current,...files]); setPlanApproved(false); setNotice("Files selected. Send the message to upload references and update the plan. No production has started."); }} style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:0, cursor:"pointer" }} /></label> : null}<button type="submit" disabled={sending || (website && (websiteFlow.busy || websiteFlow.project?.status === "generating" || websiteFlow.project?.status === "awaiting_payment")) || (!draft.trim() && (website || !materialFiles.length))} style={{ flex: 1, border: "none", borderRadius: 8, padding: "10px 12px", background: "#ff4757", color: "#fff", cursor: sending || (!draft.trim() && !materialFiles.length) ? "default" : "pointer", opacity: sending || (!draft.trim() && !materialFiles.length) ? 0.5 : 1, fontSize: 12 }}>{sending || (website && websiteFlow.busy) ? t("Sending...") : t("UPDATE PLAN")}</button></div>
         </form>
       </aside>
 

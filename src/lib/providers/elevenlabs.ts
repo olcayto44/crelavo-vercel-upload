@@ -9,19 +9,24 @@ function cleanVoiceScript(script: string) {
   return cleanProviderText(script, MAX_TTS_CHARS);
 }
 
-export async function cloneVoiceFromUrl(input: { productionId: string; sourceAudioUrl: string; name: string }) {
+export async function cloneVoiceFromUrl(input: { productionId: string; sourceAudioUrl: string; name: string; sourceAudio?: Blob; providerFetch?: typeof fetch }) {
   const apiKey = requireProviderEnv("elevenlabs");
-  const source = await fetch(input.sourceAudioUrl, { cache: "no-store" });
-  if (!source.ok || !source.body) throw new Error(`Voice reference download failed: ${source.status}`);
+  let audio=input.sourceAudio;
+  if (!audio) {
+    const source = await fetch(input.sourceAudioUrl, { cache: "no-store", redirect:"error", signal:AbortSignal.timeout(15000) });
+    if (!source.ok || !source.body) throw new Error(`Voice reference download failed: ${source.status}`);
+    audio=new Blob([await source.arrayBuffer()],{type:source.headers.get("content-type") || "audio/mpeg"});
+  }
   const form = new FormData();
   form.append("name", input.name);
   form.append("description", "User-authorized voice clone created by Crelavo.");
-  form.append("files", new Blob([await source.arrayBuffer()], { type: source.headers.get("content-type") || "audio/mpeg" }), "voice-reference.mp3");
-  const response = await fetch("https://api.elevenlabs.io/v1/voices/add", { method: "POST", headers: { "xi-api-key": apiKey }, body: form });
+  const extension=audio.type.includes("wav")?"wav":audio.type.includes("mp4")||audio.type.includes("m4a")?"m4a":audio.type.includes("ogg")?"ogg":"mp3";
+  form.append("files", audio, "voice-reference."+extension);
+  const response = await (input.providerFetch ?? fetch)("https://api.elevenlabs.io/v1/voices/add", { method: "POST", headers: { "xi-api-key": apiKey }, body: form });
   if (!response.ok) throw new Error(`ElevenLabs voice clone failed: ${response.status} ${await response.text()}`);
-  const data = await response.json() as { voice_id?: string };
+  const data = await response.json() as { voice_id?: string; requires_verification?: boolean };
   if (!data.voice_id) throw new Error("ElevenLabs voice clone returned no voice_id.");
-  return { provider: "elevenlabs", voiceId: data.voice_id, sourceAudioUrl: input.sourceAudioUrl };
+  return { provider: "elevenlabs", voiceId: data.voice_id, requiresVerification: data.requires_verification === true, sourceAudioUrl: input.sourceAudioUrl };
 }
 
 function voiceSettings(direction: string) {

@@ -13,7 +13,7 @@ function load(path, mocks = {}) {
     const routes = load("src/lib/assistant-work/legacy-provider-route.ts", {"../automation-preflight":{},"../providers/env":env});
     const visuals = load("src/lib/providers/visuals.ts", {"../assistant-work/reference-contract.ts":load("src/lib/assistant-work/reference-contract.ts"),"./env":env,"./minimax":{},"@/lib/ffmpeg-runtime":{},"./minimax-production-settings":{}});
     const status = load("src/lib/providers/status.ts", {"./env.ts":env,"./heygen.ts":{},"./minimax.ts":{},"./minimax-status.ts":{}});
-    const engine = load("src/lib/assistant-work/runMediaEngine.ts", {"./reference-contract.ts":load("src/lib/assistant-work/reference-contract.ts"),"./legacy-provider-route":routes,"../providers/visuals":visuals,"../providers/status":status,"../providers/stability":{createStabilityImage:async input => {
+    const engine = load("src/lib/assistant-work/runMediaEngine.ts", {"../providers/elevenlabs":{},"./voice-clone-contract.ts":load("src/lib/assistant-work/voice-clone-contract.ts"),"./reference-contract.ts":load("src/lib/assistant-work/reference-contract.ts"),"./legacy-provider-route":routes,"../providers/visuals":visuals,"../providers/status":status,"../providers/stability":{createStabilityImage:async input => {
       await input.providerFetch("https://api.stability.ai/fake",{method:"POST"});
       return {imageUrl:"https://media.test/image.png"};
     }},"./provider-rejection.ts":load("src/lib/assistant-work/provider-rejection.ts")});
