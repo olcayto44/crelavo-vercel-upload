@@ -86,7 +86,9 @@ assert((await paused.call({ action: 'website_retry', productionId: interrupted.i
 interruptedRow.output_json.websiteAssistant.generationStartedAt = new Date(Date.now() - 240000).toISOString();
 assert((await paused.call({ action: 'website_retry', productionId: interrupted.id })).status === 200, 'interrupted generation must be recoverable on the same record');
 const workRoute = readFileSync('src/app/api/assistant-work/route.ts', 'utf8');
-assert(workRoute.indexOf('executeWebsiteRequest(req') < workRoute.indexOf('if (body.render !== true)'), 'website must be dispatched before generic plan echo/local engine');
+const websiteDispatch=workRoute.indexOf('executeWebsiteRequest(req'); const genericDispatch=workRoute.indexOf('handleProductionManager(');
+assert(websiteDispatch >= 0 && genericDispatch > websiteDispatch, 'website must be dispatched before generic production manager');
+assert(workRoute.slice(websiteDispatch,genericDispatch).includes('return NextResponse.json'), 'website dispatch must return without falling through');
 const deliverySource = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8").replace(/^import .*;\r?\n/gm, "").replace(/export async function /g, "async function ");
 const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", stripTypeScriptTypes(deliverySource) + "; return GET;");
 const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, () => env.db, async () => ({ status: "active" }));
