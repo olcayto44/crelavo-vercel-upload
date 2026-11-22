@@ -7,8 +7,16 @@ export function StudioConversationFrame({document}:{document:string}) {
   useEffect(()=>{
     let active=true;const client=supabaseBrowser();
     const assign=(value:{access_token:string;user:{id:string}}|null)=>{if(active)setSession(value?{accessToken:value.access_token,userId:value.user.id}:null)};
-    void client.auth.getSession().then(({data})=>assign(data.session));
-    const {data}=client.auth.onAuthStateChange((_event,value)=>assign(value));
+    // Auth events can arrive before getSession resolves. Never let an older
+    // getSession response overwrite a newer sign-in, refresh, or sign-out.
+    let authEventReceived=false;
+    const {data}=client.auth.onAuthStateChange((_event,value)=>{
+      authEventReceived=true;
+      assign(value);
+    });
+    void client.auth.getSession().then(({data})=>{
+      if(!authEventReceived)assign(data.session);
+    }).catch(()=>{if(!authEventReceived)assign(null)});
     return()=>{active=false;data.subscription.unsubscribe()};
   },[]);
   const deliver=()=>frame.current?.contentWindow?.postMessage({type:"crelavo-studio-session",accessToken:session?.accessToken??null,userId:session?.userId??null},window.location.origin);
