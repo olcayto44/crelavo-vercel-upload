@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { hydrateProject } from "./project-memory";
+import { handleMockPlanCommand } from "./assistant-core";
 import type { supabaseAdmin } from "@/lib/supabase";
 import { ZodError } from "zod";
 import { ConversationError, ConversationRequestSchema, type TurnResponse, type ConversationProject } from "./conversation-contract";
@@ -6,13 +9,13 @@ import { readAssistantTariff, runConversation, conversationPayloadHash } from ".
 import { createExistingProviderAdapter } from "./provider-adapter";
 import { MemoryConversationStore, createMockConversationProvider } from "./mock-conversation";
 import { mockPreviewAllowed, newPreviewState, readPreviewState, signPreviewState } from "./preview-state";
-import { evaluateRequirements } from "./requirements";
+import { studioReadiness } from "./readiness"; import { studioPlanningState } from "./planning-state";
 type DB = ReturnType<typeof supabaseAdmin>;
 export async function handleStudioConversation(request:Request,deps:{authenticate:()=>Promise<{userId:string;db:DB}>}) {
-  const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{"Cache-Control":"no-store"}});
+  const json=(body:unknown,status=200)=>{const result=body as {project?:ConversationProject};return Response.json(result?.project?{...result,planning:studioPlanningState(result.project)}:body,{status,headers:{"Cache-Control":"no-store"}})};
   try {
     const {userId,db}=await deps.authenticate();
-    if(request.method==="GET")return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:process.env.STUDIO_AGENT_REAL_AI_ENABLED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true",executionReady:false});
+    if(request.method==="GET"){const readiness=await studioReadiness(db);return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:readiness.ready,readiness,isolatedPreview:process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true",executionReady:false});}
     if(request.method!=="POST")return json({ok:false,code:"method_not_allowed"},405);
     if(Number(request.headers.get("content-length")||0)>450000)throw new ConversationError("request_too_large",413);
     const raw=await request.text();if(Buffer.byteLength(raw)>450000)throw new ConversationError("request_too_large",413);
@@ -22,17 +25,24 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
       if(!mockPreviewAllowed())throw new ConversationError("mock_mode_not_allowed",403);
       if(body.action==="projects")return json({ok:true,mode:"mock",projects:[],memory:"signed_browser_demo"});
       if(body.action==="create") {
-        if(body.productionId&&body.categoryId!=="website")throw new ConversationError("category_scope_mismatch",403);
+        if(body.productionId&&process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")throw new ConversationError("isolated_preview_no_production_access",403); if(body.productionId&&body.categoryId!=="website")throw new ConversationError("category_scope_mismatch",403);
         const initial=await legacyWebsiteMemory(db,userId,body.productionId);
         const store=new MemoryConversationStore();
-        const project=store.create(userId,body.categoryId,body.title||initial.title,{productionId:initial.productionId,
-          snapshot:{categoryId:body.categoryId,revision:0,fields:initial.fields},messages:initial.messages});
+        const project=hydrateProject(store.create(userId,body.categoryId,body.title||initial.title,{productionId:initial.productionId,
+          snapshot:{categoryId:body.categoryId,revision:0,fields:initial.fields},messages:initial.messages}));
         const state=newPreviewState(project,store.wallets);
         return json({ok:true,mode:"mock",project,wallets:state.wallets,mockState:signPreviewState(state),memory:"signed_browser_demo",executionReady:false});
       }
       if(!body.mockState)throw new ConversationError("mock_state_required",400);
       const state=readPreviewState(body.mockState,userId,body.projectId,body.categoryId);
-      if(body.action==="load")return json({ok:true,mode:"mock",project:state.project,wallets:state.wallets,mockState:body.mockState,memory:"signed_browser_demo",executionReady:false});
+      state.project=hydrateProject(state.project);
+      if(body.action==="load")return json({ok:true,mode:"mock",project:state.project,wallets:state.wallets,mockState:signPreviewState(state),memory:"signed_browser_demo",executionReady:false});
+      if(body.action==="plan"){
+        const hash=createHash("sha256").update(JSON.stringify([body.projectId,body.categoryId,body.operation,body.expectedPlanVersion,body.expectedPlanHash,body.note||""])).digest("hex");
+        if(state.last?.requestId===body.requestId){if(state.last.hash!==hash)throw new ConversationError("request_payload_conflict",409);return json({ok:true,mode:"mock",project:state.project,reply:state.last.reply,wallets:state.wallets,chargedCredits:0,executionReady:false,memory:"signed_browser_demo",mockState:signPreviewState(state)});}
+        const result=handleMockPlanCommand(state.project,userId,body);
+        return json({ok:true,mode:"mock",...result,wallets:state.wallets,chargedCredits:0,executionReady:false,memory:"signed_browser_demo",mockState:signPreviewState({...state,project:result.project,last:{requestId:body.requestId,hash,reply:result.reply,chargedCredits:0}})});
+      }
       const hash=conversationPayloadHash(body);
       if(state.last?.requestId===body.requestId) {
         if(state.last.hash!==hash)throw new ConversationError("request_payload_conflict",409);
@@ -46,8 +56,9 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
       const project:ConversationProject={...result.project,messages};
       return json({...result,project,memory:"signed_browser_demo",mockState:signPreviewState({...state,project,wallets:result.wallets,last:{requestId:body.requestId,hash,reply:result.reply,chargedCredits:result.chargedCredits}})});
     }
+    if(body.action==="plan")throw new ConversationError("advanced_planning_mock_only",403);
     // No implicit mock fallback. New server flags are off unless explicitly configured AFTER offline migration review.
-    const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();
+    const readiness=await studioReadiness(db);if(!readiness.ready)throw new ConversationError("studio_not_ready"); const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();
     const store=createDatabaseConversationStore(db);
     if(body.action==="projects")return json({ok:true,mode:"real",projects:await store.list(userId,body.categoryId),wallets:await store.wallets(userId),memory:"database"});
     if(body.action==="create")return json({ok:true,mode:"real",project:await store.create(userId,body.categoryId,body.title,body.productionId),wallets:await store.wallets(userId),memory:"database",executionReady:false});
