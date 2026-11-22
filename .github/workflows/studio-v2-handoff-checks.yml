@@ -1,5 +1,15 @@
 name: Studio V2 handoff checks
 on:
+  push:
+    branches:
+      - 'review/studio-v2-handoff-*'
+    paths:
+      - 'src/lib/studio-agent/**'
+      - 'src/components/StudioConversationFrame.tsx'
+      - 'src/app/dashboard/studio-v2/**'
+      - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - '.github/workflows/studio-v2-handoff-checks.yml'
   pull_request:
     branches:
       - preview/studio-v2-reference-ui
