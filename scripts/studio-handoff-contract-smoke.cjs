@@ -13,6 +13,8 @@ for (const token of ['class="sidebar"', 'class="work"', 'class="assistant"', 'id
 for (const token of ['function selectCategory', 'data-panel="canvas"']) assert(view.includes(token), `missing navigation ${token}`);
 for (const token of ['function sendMessage', 'function previewWebsite', 'function installWebsite', 'event.source!==parent', 'event.origin!==parent.location.origin']) assert(client.includes(token), `missing assistant guard ${token}`);
 for (const token of ['sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"', 'window.location.origin']) assert(frame.includes(token), `missing iframe integration ${token}`);
+assert(client.includes('try{sessionStorage.setItem('), 'blocked session storage must not prevent conversation display');
+assert(client.includes('try{saved=JSON.parse(sessionStorage.getItem('), 'blocked session storage must not prevent project restoration');
 assert(frame.includes('authEventReceived=true'), 'auth state events must take precedence over initial session load');
 assert(frame.includes('if(!authEventReceived)assign(data.session)'), 'stale initial session must not overwrite auth event');
 assert(page.includes('configuration.categories.map'), 'category contracts must come from configuration');
