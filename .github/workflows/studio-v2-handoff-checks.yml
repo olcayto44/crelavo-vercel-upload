@@ -1,0 +1,42 @@
+name: Studio V2 handoff checks
+on:
+  pull_request:
+    branches:
+      - preview/studio-v2-reference-ui
+    paths:
+      - 'src/lib/studio-agent/**'
+      - 'src/components/StudioConversationFrame.tsx'
+      - 'src/app/dashboard/studio-v2/**'
+      - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - '.github/workflows/studio-v2-handoff-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio-static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      STUDIO_AGENT_PREVIEW_MOCK: 'true'
+      VERCEL_ENV: preview
+    steps:
+      - name: Checkout pull request code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Studio shell and conversation static contracts
+        run: node scripts/studio-handoff-contract-smoke.cjs
+      - name: Production route dry-run static contracts
+        run: npm run smoke:e2e-dry-run
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
