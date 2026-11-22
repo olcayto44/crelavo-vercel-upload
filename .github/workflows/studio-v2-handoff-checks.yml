@@ -48,5 +48,7 @@ jobs:
         run: node scripts/studio-handoff-contract-smoke.cjs
       - name: Production route dry-run static contracts
         run: npm run smoke:e2e-dry-run
+      - name: Advanced Studio mock integration (network blocked)
+        run: node scripts/studio-advanced-mock-smoke.cjs
       - name: TypeScript typecheck
         run: npx tsc --noEmit
