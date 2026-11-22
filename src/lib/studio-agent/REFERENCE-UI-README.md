@@ -1,7 +1,7 @@
 # Studio V2 — Nova referans arayüz düzeltmesi
 
 ## Kapsam
-37 kategorinin tek Studio kabuğu vardır. Kategori seçimi Canvas başlığını, boş durumu ve araçları değiştirir; panel düzenini değiştirmez. B1/B2 konuşma motoru, tarife, Tool Registry, kredi politikası, migration ve auth bileşenleri değişmedi. `/studio-design-test` aynı kaldı. C1 uygulanmadı.
+37 kategorinin tek Studio kabuğu vardır. Kategori seçimi Canvas başlığını, boş durumu ve araçları değiştirir; panel düzenini değiştirmez. Tarife, store/RPC atomik akışı, Tool Registry, kredi politikası, migration ve auth bileşenleri değişmedi. B1 chat sınıfının brief yazması reddedilir; B2 küçük Mock niyet ayrımı ve doğal yanıt/soru sunumu güncellendi. `/studio-design-test` aynı kaldı. C1 uygulanmadı.
 
 ## Canvas
 - Boş: çıktı yok; sohbet veya sahip olunan projeyi açma yönlendirmesi.
@@ -27,9 +27,20 @@ Mesaj geçmişi ve alt composer ana deneyimdir. Mod açık küçük rozet; kredi
 ## Ücretsiz doğrulama
 B1 21 grup; B2 konuşma 20 grup; izole PostgreSQL/RPC 12 grup; mevcut B2 browser suite; yeni UI/API suite (37 kategori, dört Canvas durumu, kaynak/sahiplik, sayfa ve cihazlar, scriptsiz iframe, gecikmiş yanıt izolasyonu, dar ekran); TypeScript.
 
-1280×720 DOM ölçümü: sütunlar 196/744/340px; Canvas 712×432px; mesaj alanı 307×377px; composer ekran altına erişilebilir. 1920×1080 ve 390×844 testleri de vardır. Görsel referans 1280×720 Nova video karesiyle aynı ölçekte karşılaştırılır.
+1280×720 DOM ölçümü: sütunlar 196/744/340px; Canvas 668×371px (yan araçlar ve alt çalışma alanı dahil yeni düzen); mesaj alanı 307×374px; composer ekran altına erişilebilir. 1920×1080 ve 390×844 testleri de vardır. Website, AI Video ve AI Character için güncel kayıtla aynı 1918×1012 çözünürlükte test görüntüleri alınır. Önceki 1280×720 karşılaştırması önceki revizyona aittir.
 
 ## Görsel farklar ve test sınırı
 Bu bir influencer kopyası değildir: referanstaki medya/filmstrip yerine Website boş durumu veya saklanan site kaynağı, sayfa/cihaz araçları vardır. Sol listede gerçek 37 kategori korunur; örnek Nova projesi ve tek toplam kredi göstergesi kopyalanmaz. İkonlar/başlıklar tipografik olarak birebir değildir. Dar ekranda üç panel aynı anda sıkıştırılmaz; panel sekmeleri vardır.
 
 Ekran görüntüleri gerçek Studio UI koduyla kontrollü browser fixture'ında alınır; mock sohbet ve sahte oturum kullanırlar. Test Website dosyaları yalnız fixture'dır; gerçek müşteri üretimi diye sunulmaz. Gerçek ücretli AI/üretim/tahsilat yapılmadı. PGlite çok oturumlu concurrency kanıtı değildir. Gerçek kullanıcı e-posta dönüşü Supabase redirect allowlist'e bağlıdır; auth ayarları değiştirilmedi. Preview deployment auth/API 401 ayrıca kontrol edilir. B2 sonunda kullanıcı değerlendirmesi beklenir.
+
+
+## Çalışma alanı bileşenleri — ikinci düzeltme
+- Altı ortak işlem: Create, Edit, Enhance, Upscale, Translate, Export. Üretim/düzenleme bağlı olmadığından açıkça disabled; salt okunur görünüm, sekme, dosya seçme ve sohbet kontrolleri kullanılabilir.
+- Yeni workspace.ts katmanı sadece sunumdur: video 16:9 boş önizleme, disabled oynatıcı, sıfır klip/ses timeline, boş varyasyon/medya; Website sayfa/cihaz/tasarım çalışma alanı; karakter kimlik/poz/görünüm boş referansları.
+- Website Preview/Pages/Design/Assets/History; video Canvas/Variants/Timeline/Assets/Details; image Canvas/Variations/Layers/Assets. Bağlı olmayan Design/History/Layers disabled, fake geçmiş veya katman üretilmez.
+- 37 kategori aynı kabuktadır. Altı açılır grup, dikey kaydırma ve yatay taşma kontrolleri vardır. AI Character, mevcut visual_clone ID'sinin görünür çalışma alanıdır; yeni kategori eklenmedi.
+- Mock turn ayrımı sınırlı deterministik kurallardır, gerçek doğal dil modeli değildir. Selam/teşekkür/genel soru brief alanlarını değiştirmez; açık bilgi/tercih değişikliği kanonik ve alıntı kanıtlı kaydedilir; üretim komutu daima bloklanır. Bilinmeyen mesaj chat kalır. Teknik değerler doğal etiketlerle gösterilir.
+- Snapshot revision, B2 atomik settlement için konuşma sürümüdür; selamda ilerleyebilir, brief alanları değişmez. SQL/RPC sürüm sözleşmesi korunur.
+- B1 21 + B2 20 + izole SQL 12 + yeni Mock 12 = 65 test grubu; B2 browser ve genişletilmiş UI suite ayrıca. Görüntüler kontrollü fixture, canlı kullanıcıya ait Demo Dijital çıktısı değildir.
+- Gerçek AI, Assistant Credits muhasebesinin canlı doğrulaması, plan/onay ve gerçek üretim zinciri sonraki ayrı aşamadır; bu çalışma bunları etkinleştirmez. Production config/deploy/migration/bakiye değişikliği yapılmaz.

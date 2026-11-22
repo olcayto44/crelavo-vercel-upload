@@ -1,33 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { ConversationError, type ConversationProject, type ConversationProvider, type ConversationStore, type TurnResponse, type Wallets } from "./conversation-contract";
-import { createBriefFieldsSchema, evaluateRequirements, getCategoryContract } from "./requirements";
+import { mockTurn } from "./mock-turn";
 
-// Deterministic demonstration, NOT a semantic LLM or a live wallet.
+// Deterministic fixture only; no remote provider calls.
 export function createMockConversationProvider(): ConversationProvider {
-  return {preflight(){},prepare(input) {return {inputUpperBound:200,async call() {
-    const contract = getCategoryContract(input.project.categoryId);
-    const briefPatch: Record<string,string> = {}, evidence: Record<string,string> = {};
-    const add = (key:string,value:string,quote:string) => {if(createBriefFieldsSchema(contract.id).safeParse({[key]:value}).success){briefPatch[key]=value;evidence[key]=quote;}};
-    if (!input.project.snapshot.fields.brief) add("brief",input.message,input.message.slice(0,1000));
-    const brand = input.message.match(/(.{1,120}?)\s+adında\s+/i);
-    if (brand && contract.id==="website") add("business_name",brand[1].trim(),brand[0]);
-    const before = evaluateRequirements(input.project.snapshot).nextQuestion;
-    if (before && before.fieldId!=="brief") {
-      const field = contract.fields.find(field=>field.id===before.fieldId);
-      if (field && !field.serverOnly && field.kind!=="references") {
-        const value = field.options.find(value => value === input.message || value.replace(/_/g," ").toLowerCase()===input.message.toLowerCase()) ?? input.message;
-        add(field.id,value,input.message.slice(0,1000));
-      }
-    }
-    for (const field of contract.fields.filter(field=>!field.serverOnly && field.kind!=="references")) {
-      const match=input.message.match(new RegExp("(?:^|\\n)"+field.id+"\\s*:\\s*([^\\n]+)","i"));
-      if (match) add(field.id,match[1].trim(),match[0].trim().slice(0,1000));
-    }
-    const lower = input.message.toLowerCase();
-    const operational = /üret|uret|render|onay|approve|generate|reviz|background|arka plan/.test(lower);
-    const reply = input.uiLanguage === "tr" ? "Mock modunda bu bilgiyi brief'e ekledim. Bu gerçek AI yanıtı veya üretim değildir." : "I added this detail to the mock brief. This is not a real AI response or production.";
-    return {output:{categoryId:contract.id,intent:operational?"request_production":"clarify",briefPatch,evidence,reply,question:null,toolCalls:[]},usage:{inputTokens:10,outputTokens:10}};
-  }};}};
+ return {preflight(){},prepare(input){return {inputUpperBound:200,async call(){return {output:mockTurn(input),usage:{inputTokens:10,outputTokens:10}};}};}};
 }
 type RequestRow = {hash:string;projectId:string;state:string;reserve:number;message:string;result?:Parameters<ConversationStore["record"]>[2];response?:TurnResponse};
 export class MemoryConversationStore implements ConversationStore {

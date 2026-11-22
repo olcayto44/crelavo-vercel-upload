@@ -21,6 +21,7 @@ export function applyModelProposal(rawSnapshot: unknown, rawProposal: unknown): 
   const proposal = createModelProposalSchema(previous.categoryId).parse(rawProposal);
   // A category proposal is not permission to switch or transplant another project's facts.
   if (proposal.intent === "change_category" && Object.keys(proposal.briefPatch).length) throw new Error("category_change_cannot_patch_current_brief");
+  if (proposal.intent === "chat" && Object.keys(proposal.briefPatch).length) throw new Error("chat_cannot_patch_brief");
   const fields = { ...previous.fields, ...proposal.briefPatch };
   const changed = JSON.stringify(fields) !== JSON.stringify(previous.fields);
   const snapshot = BriefSnapshotSchema.parse({ categoryId: previous.categoryId, revision: previous.revision + Number(changed), fields });

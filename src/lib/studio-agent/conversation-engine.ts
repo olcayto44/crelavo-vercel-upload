@@ -43,20 +43,21 @@ export function applyCompletion(input: ProviderInput, raw: unknown) {
   for (const field of contract.fields.filter(field => field.kind === "references")) {
     if (field.id in proposal.briefPatch) throw new ConversationError("reference_binding_not_connected", 502);
   }
+  const technicalText=(text:string)=>contract.fields.some(field=>new RegExp('(?:^|\\s)'+field.id+'\\s*:').test(text)||field.options.some(value=>value.includes('_')&&new RegExp('\\b'+value+'\\b').test(text)));
   const merged = applyModelProposal(input.project.snapshot, {
     categoryId: proposal.categoryId, intent: proposal.intent, briefPatch: proposal.briefPatch,
     proposedCategory: proposal.proposedCategory, reply: proposal.reply, toolCalls: proposal.toolCalls,
   });
   for (const key of input.acceptedDefaults) if (!Object.prototype.hasOwnProperty.call(contract.defaults, key)) throw new ConversationError("unknown_default", 400);
-  const requirements = evaluateRequirements(merged.snapshot, {acceptedDefaults: input.acceptedDefaults});
+  const requirements = evaluateRequirements(merged.snapshot, {acceptedDefaults: proposal.intent === "chat" ? [] : input.acceptedDefaults});
   const fieldsChanged = JSON.stringify(requirements.fields) !== JSON.stringify(merged.snapshot.fields);
   const snapshot = {...merged.snapshot, fields: requirements.fields, revision: Math.max(input.project.snapshot.revision + 1, merged.snapshot.revision + Number(fieldsChanged))};
-  const next = requirements.nextQuestion;
-  const question = next ? (proposal.question?.fieldId === next.fieldId ? proposal.question.text
-    : input.uiLanguage === "tr" ? next.question : `${next.fieldId}: ${requiredDetail[input.uiLanguage]}`) : "";
+  const next = proposal.intent === "chat" || proposal.intent === "request_production" ? null : requirements.nextQuestion;
+  const question = next ? (proposal.question?.fieldId === next.fieldId && !technicalText(proposal.question.text) ? proposal.question.text
+    : input.uiLanguage === "tr" ? next.question : requiredDetail[input.uiLanguage]) : "";
   const blockedTools = proposal.toolCalls.map(action => action.tool);
   const operational = ["edit_content", "request_production", "read_project", "change_category"].includes(proposal.intent) || blockedTools.length > 0;
-  const answer = operational ? disabledReply[input.uiLanguage] : proposal.reply;
+  const answer = operational ? disabledReply[input.uiLanguage] : technicalText(proposal.reply) ? (input.uiLanguage === "tr" ? "Mevcut proje bilgileri üzerinden devam edebiliriz." : "We can continue with the current project details.") : proposal.reply;
   const reply = [answer, question].filter(Boolean).join("\n\n").slice(0,6000);
   const project = {...input.project, snapshot,
     messages: [...input.project.messages, {role:"user" as const,content:input.message}, {role:"assistant" as const,content:reply}].slice(-50)};

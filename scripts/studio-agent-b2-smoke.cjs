@@ -18,7 +18,7 @@ const result=patch=>({categoryId:'website',intent:'clarify',briefPatch:patch,evi
  await test('37 kategori gerçek konuşma motorunda B1 gereksinimlerini kullanıyor',async()=>{for(const category of CATEGORIES){const deps=setup(category.id);const response=await runConversation(input(deps,'Bu proje fikrini hazırlayalım.'),deps);assert.equal(response.project.categoryId,category.id);assert.equal(response.executionReady,false);assert.equal(response.chargedAccount,'assistant');assert.equal(response.project.messages.length,2);}});
  await test('Doğal brief, kalıcı mock hafızası ve site dili/sohbet dili ayrımı',async()=>{
   const deps=setup();let r=await runConversation(input(deps,'Demo Dijital adında bir hizmet sitesi istiyorum.'),deps);
-  assert.equal(r.project.snapshot.fields.business_name,'Demo Dijital');assert.equal(r.nextQuestion.fieldId,'site_type');
+  assert.equal(r.project.snapshot.fields.business_name,'Demo Dijital');assert.equal(r.project.snapshot.fields.site_type,'service_business_website');assert.equal(r.nextQuestion.fieldId,'language');
   r=await runConversation(input(deps,'site_type: landing_page'),deps);assert.equal(r.nextQuestion.fieldId,'language');
   r=await runConversation(input(deps,'language: english'),deps);assert.equal(r.project.snapshot.fields.language,'english');
   r=await runConversation(input(deps,'Önerilen varsayılanları kullan.',{acceptedDefaults:['stack']}),deps);
