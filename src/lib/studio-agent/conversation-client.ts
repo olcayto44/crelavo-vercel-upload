@@ -20,7 +20,7 @@ const valueNames={service_business_website:"Hizmet işletmesi sitesi",corporate_
  const fieldNames={brief:"Proje fikri",business_name:"İşletme adı",site_type:"Site türü",language:"İçerik dili",stack:"Teslim biçimi",aspect:"En-boy oranı",duration:"Süre",sound:"Ses tercihi",input:"Başlangıç kaynağı"};
  const fieldLabel=id=>fieldNames[id]||(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.id===id)?.label||id.replace(/_/g,' ');
 window.studioBriefPresentation={label:fieldLabel,value:valueLabel};
-function remember(data){project=data.project;mockState=data.mockState||'';if(project&&session)sessionStorage.setItem(key(),JSON.stringify({projectId:project.id,mockState}));if(project){const url=new URL(parent.location.href);url.searchParams.set('chatProject',project.id);url.searchParams.set('category',current.id);parent.history.replaceState(null,'',url);}draw(data.wallets);}
+function remember(data){project=data.project;mockState=data.mockState||'';if(project&&session){try{sessionStorage.setItem(key(),JSON.stringify({projectId:project.id,mockState}));}catch(_error){/* Storage can be unavailable in private or restricted browser contexts. */}}if(project){const url=new URL(parent.location.href);url.searchParams.set('chatProject',project.id);url.searchParams.set('category',current.id);parent.history.replaceState(null,'',url);}draw(data.wallets);}
 function draw(wallets){
  if(wallets)walletCache=wallets;
  const messages=$('#messages');messages.replaceChildren();(project?.messages||[]).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
