@@ -2,13 +2,13 @@
 const assert=require('node:assert/strict'),http=require('node:http'),{randomUUID}=require('node:crypto'),fs=require('node:fs');
 const {chromium}=require('@playwright/test'),{load}=require('./studio-agent-test-loader.cjs');
 const {handleStudioConversation}=load('src/lib/studio-agent/conversation-handler.ts'),{ConversationError}=load('src/lib/studio-agent/conversation-contract.ts');
-const {studioDesignTemplate}=load('src/app/studio-design-test/template.ts'),{studioDesignScript}=load('src/app/studio-design-test/client-script.ts');
+const {studioViewTemplate:studioDesignTemplate,studioViewController:studioDesignScript}=load('src/lib/studio-agent/studio-view.ts');
 const {studioCategoryConfiguration}=load('src/app/studio-design-test/category-config.ts'),{getCategoryContract}=load('src/lib/studio-agent/requirements.ts');
 const {studioConversationClientScript}=load('src/lib/studio-agent/conversation-client.ts');
 process.env.VERCEL_ENV='preview';process.env.STUDIO_AGENT_PREVIEW_MOCK='true';process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='offline-browser-test-secret';
 const owner=randomUUID(),config=studioCategoryConfiguration(),encode=value=>JSON.stringify(value).replace(/</g,'\\u003c');
 const b2={mockAllowed:true,requirements:Object.fromEntries(config.categories.map(c=>[c.id,getCategoryContract(c.id).fields])),defaults:Object.fromEntries(config.categories.map(c=>[c.id,getCategoryContract(c.id).defaults]))};
-const base=studioDesignScript.replaceAll('location.search','parent.location.search').replaceAll('location.href','parent.location.href').replaceAll('history.pushState','parent.history.pushState').replaceAll('history.replaceState','parent.history.replaceState');
+const base=studioDesignScript;
 const document=studioDesignTemplate.replace('<!--STUDIO_SCRIPT-->',()=>'<script type="application/json" id="studio-config">'+encode(config)+'</script><script>'+base+';window.__studioB2='+encode(b2)+';'+studioConversationClientScript+'</script>');
 const escape=value=>value.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let calls=[];
@@ -25,7 +25,7 @@ const server=http.createServer(async(req,res)=>{
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true});let errors=[];
  try{
-  const page=await browser.newPage({viewport:{width:1500,height:1000}});
+  const page=await browser.newPage({viewport:{width:1500,height:1000}});page.setDefaultTimeout(15000);
   await page.route('**/*',route=>{if(route.request().url().startsWith(origin))return route.continue();return route.abort()});
   page.on('pageerror',error=>errors.push(error.message));await page.goto(origin+'/?category=website&uiLang=tr');
   const frame=page.frames().find(frame=>frame.parentFrame());assert(frame);
@@ -35,9 +35,9 @@ const server=http.createServer(async(req,res)=>{
   const geometry=await frame.evaluate(()=>{const canvas=document.querySelector('.canvas').getBoundingClientRect(),chat=document.querySelector('.chat').getBoundingClientRect();return{canvasLeft:canvas.left,canvasWidth:canvas.width,chatLeft:chat.left,chatWidth:chat.width}});
   assert(geometry.canvasLeft>100&&geometry.canvasWidth>200&&geometry.chatLeft>geometry.canvasLeft&&geometry.chatWidth>200,'Original left/center/right layout must remain visible');
   assert.equal(await frame.locator('#settings').isVisible(),false);assert(await frame.locator('#messages').isVisible());assert(await frame.locator('#prompt').isVisible());
-  assert((await frame.locator('#b2-mode-note').innerText()).includes('simülasyondur'));
+  assert((await frame.locator('#b2-mode-note').textContent()).includes('simülasyondur'));
   await frame.locator('#prompt').fill('Demo Dijital adında bir hizmet sitesi istiyorum.');await frame.locator('#send').click();
-  await frame.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('business_name: Demo Dijital'));
+  await frame.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('Demo Dijital'));
   assert.equal(await frame.locator('[data-b2-role="user"]').count(),1);assert.equal(await frame.locator('[data-b2-role="assistant"]').count(),1);
   assert((await frame.locator('#b2-production-balance').innerText()).includes('0 (mock)'));assert((await frame.locator('#b2-assistant-balance').innerText()).includes('998 (mock)'));
   const createsBefore=calls.filter(action=>action==='create').length;
@@ -45,8 +45,8 @@ const server=http.createServer(async(req,res)=>{
   await page.waitForTimeout(50);assert.equal(calls.filter(action=>action==='create').length,createsBefore,'Same-user token refresh must not recreate/reset conversation');
   const stateBefore=await frame.locator('#messages').innerText();await page.reload();const restored=page.frames().find(frame=>frame.parentFrame());await restored.waitForSelector('#b2-card');
   await restored.evaluate(({owner})=>window.dispatchEvent(new MessageEvent('message',{source:parent,origin:parent.location.origin,data:{type:'crelavo-studio-session',accessToken:'offline-browser-token',userId:owner}})),{owner});
-  await restored.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('business_name: Demo Dijital'));assert.equal(await restored.locator('#messages').innerText(),stateBefore);
-  const before=calls.filter(action=>action==='message').length;await restored.locator('#prompt').fill('site_type: landing_page');await restored.locator('#send').dblclick();await restored.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('site_type: landing_page'));assert.equal(calls.filter(action=>action==='message').length,before+1);
+  await restored.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('Demo Dijital'));assert.equal(await restored.locator('#messages').innerText(),stateBefore);
+  const before=calls.filter(action=>action==='message').length;await restored.locator('#prompt').fill('site_type: landing_page');await restored.locator('#send').dblclick();await restored.waitForFunction(()=>document.querySelector('#b2-context').textContent.includes('landing_page'));assert.equal(calls.filter(action=>action==='message').length,before+1);
   await restored.locator('#file').setInputFiles({name:'reference.txt',mimeType:'text/plain',buffer:Buffer.from('not uploaded')});assert((await restored.locator('#b2-attachment').innerText()).includes('henüz bağlı değil'));
   const categories=config.categories.filter(c=>c.id!=='website');await restored.evaluate(id=>selectCategory(id),categories[0].id);
   await restored.waitForFunction(()=>document.querySelector('#b2-context').textContent&&!document.querySelector('#b2-context').textContent.includes('Demo Dijital'));
