@@ -142,7 +142,7 @@ assert.ok(view.includes("document.querySelector('#project-title').textContent=cu
 assert.match(localEditor,/function parseSrt\(source: string\)/,'SRT parser must be available');
 assert.match(localEditor,/function paintOverlay\(/,'captions and titles need real canvas render');
 assert.match(localEditor,/captionAt\(captionCues,at\)/,'SRT cues must be burned into output');
-assert.match(localEditor,/musicSource\?\.start\(\)/,'licensed background track must be rendered');
+assert.match(localEditor,/musicSource\.start\(\)/,'licensed background track must be rendered');
 assert.match(localEditor,/audio\.decodeAudioData\(await backgroundMusic\.arrayBuffer\(\)\)/,'music must be decoded, not just linked');
 assert.match(localEditor,/if \(audio && includeAudio\)/,'source-audio mute must work with background track');
 assert.ok(localEditor.indexOf('destination.stream.getAudioTracks()') <
