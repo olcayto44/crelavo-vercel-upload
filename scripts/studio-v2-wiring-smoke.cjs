@@ -176,3 +176,8 @@ const authGate=read('src/components/auth/RequireFreeAccount.tsx');
 assert.match(authReturn,/STUDIO_AUTH_RETURN_PATHS/,'Studio return paths must be explicitly recognized');
 assert.match(authReturn,/if \(safe && STUDIO_AUTH_RETURN_PATHS\.has/,'Studio return should precede default new-user destination');
 assert.match(authGate,/isAssistantWorkspace \|\| isStudioEditor/,'Studio editors must use login modal, not the paid join route');
+
+const dashboardLayout=read('src/app/dashboard/layout.tsx');
+assert.match(dashboardLayout,/process\.env\.VERCEL_ENV === "preview"/,'Anonymous Studio shell must be preview-only');
+assert.match(authGate,/previewStudioShell && pathname === "\/dashboard\/studio-v2"|previewStudioShell = allowStudioPreview && pathname === "\/dashboard\/studio-v2"/,'Unauthenticated preview access must be scoped to Studio V2');
+assert.match(authGate,/if \(previewStudioShell\) return <>{children}<\/>/,'Preview Studio shell must render without auth redirect');
