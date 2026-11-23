@@ -68,6 +68,15 @@ export async function POST(req: NextRequest) {
       // Studio's existing plan approval stays intact; paid rendering goes ONLY
       // through the independent, fail-closed atomic credit coordinator.
       if (action === "render" || body.render === true) {
+        // Apply the same bounded, authenticated input controls on Studio render as
+        // on the standalone paid-render endpoint before any database operation.
+        if (JSON.stringify(body).length > 4096)
+          return NextResponse.json({ ok: false, code: "website_render_request_too_large" }, { status: 413 });
+        const renderLimit = rateLimit({
+          key: `website-paid-render:${user.id}:${clientIpFromRequest(req)}`,
+          limit: 10, windowMs: 15 * 60 * 1000,
+        });
+        if (!renderLimit.allowed) return rateLimitResponse(renderLimit.resetAt);
         const outcome = await executePaidWebsiteProduction({
           productionId: body.productionId, planHash: body.planHash,
         }, { id: user.id });
