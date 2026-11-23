@@ -41,19 +41,23 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
  });
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const origin='http://127.0.0.1:'+server.address().port;
- // Reject unauthenticated requests before the conversation handler or DB is reached.
- for(const method of ['GET','POST']){
-  console.log('STUDIO AUTH CHECK:',method);
-  const unauthorized=await fetch(origin+'/api/studio/conversation',{method,headers:method==='POST'?{'content-type':'application/json'}:{},...(method==='POST'?{body:JSON.stringify({action:'create'})}:{}),signal:AbortSignal.timeout(10000)});
-  assert.equal(unauthorized.status,401,method+' without a session must be rejected');
-  assert.equal((await unauthorized.json()).code,'unauthorized');
- }
- assert.equal(dbCalls,0,'unauthorized requests must not reach database');
- console.log('STUDIO AUTH CHECK: unauthorized requests rejected');
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  // Use Playwright's request client: the offline preload deliberately blocks
+  // global.fetch to prevent accidental provider/network calls.
+  for(const method of ['GET','POST']){
+   console.log('STUDIO AUTH CHECK:',method);
+   const unauthorized=method==='GET'
+    ?await page.request.get(origin+'/api/studio/conversation',{timeout:10000})
+    :await page.request.post(origin+'/api/studio/conversation',{data:{action:'create'},timeout:10000});
+   assert.equal(unauthorized.status(),401,method+' without a session must be rejected');
+   assert.equal((await unauthorized.json()).code,'unauthorized');
+  }
+  assert.equal(dbCalls,0,'unauthorized requests must not reach database');
+  console.log('STUDIO AUTH CHECK: unauthorized requests rejected');
+
   await page.goto(origin);
   await page.locator('#studio').evaluate((frame,doc)=>{frame.srcdoc=doc},html);
   const frame=page.frameLocator('#studio');
