@@ -38,6 +38,12 @@ begin
  then raise exception 'approved_website_plan_required'; end if;
  select * into wallet from credit_balances where user_id=p_user for update;
  if not found or wallet.balance-wallet.reserved < p_credits then raise exception 'insufficient_production_credits'; end if;
+ -- Existing balances may have a different bucket total after legacy test billing.
+ -- Never reserve new Website credits from a wallet with inconsistent buckets.
+ if wallet.balance <> coalesce(wallet.current_subscription_credits,0)+coalesce(wallet.rolled_over_credits,0)
+    +coalesce(wallet.topup_credits,0)+coalesce(wallet.bonus_credits,0) then
+    raise exception 'website_credit_bucket_reconciliation_required';
+ end if;
  update credit_balances set reserved=reserved+p_credits,updated_at=now() where user_id=p_user;
  update production_requests set reserved_credits=p_credits,
  output_json=jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb('reserved'::text)),
