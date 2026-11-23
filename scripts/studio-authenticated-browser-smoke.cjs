@@ -19,6 +19,7 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
  const b2={mockAllowed:true,requirements:Object.fromEntries(categories.categories.map(c=>[c.id,getCategoryContract(c.id).fields])),defaults:Object.fromEntries(categories.categories.map(c=>[c.id,getCategoryContract(c.id).defaults]))};
  const html=studioViewTemplate.replace('<!--STUDIO_SCRIPT-->',()=>'<script type="application/json" id="studio-config">'+safe(categories)+'</script><script>'+studioViewController+';window.__studioB2='+safe(b2)+';'+studioConversationClientScript+'</script>');
  let apiCalls=0,dbCalls=0,providerCalls=0;
+ const planTransitions=[];
  const db=new Proxy({},{get(){dbCalls++;throw Error('database forbidden in isolated browser smoke')}});
  const server=http.createServer(async(req,res)=>{
   if(req.url?.split('?')[0]==='/'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body style="margin:0"><iframe id="studio" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style="width:100%;height:900px;border:0"></iframe></body></html>');return;}
@@ -30,7 +31,9 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
    if(req.method==='GET'){res.writeHead(200,{'content-type':'application/json'});res.end(JSON.stringify({ok:true,mockAllowed:true,realEnabled:false,isolatedPreview:true,executionReady:false,readiness:{ready:false}}));return;}
    try{
     const response=await handleStudioConversation(new Request('http://localhost/api/studio/conversation',{method:'POST',headers:{'content-type':'application/json'},body}),{authenticate:async()=>({userId,db})});
-    res.writeHead(response.status,{'content-type':'application/json'});res.end(await response.text());
+    const responseText=await response.text();
+    if(JSON.parse(body.toString('utf8')).action==='plan'&&response.ok){const parsed=JSON.parse(responseText);planTransitions.push({operation:JSON.parse(body.toString('utf8')).operation,project:parsed.project});}
+    res.writeHead(response.status,{'content-type':'application/json'});res.end(responseText);
    }catch(e){res.writeHead(500,{'content-type':'application/json'});res.end(JSON.stringify({ok:false,code:'mock_test_exception'}));}
    return;
   }
@@ -74,6 +77,18 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
   await plan.locator('[data-plan-action="revoke"]').click();
   await plan.locator('[data-plan-action="approve"]').waitFor();
   assert.equal(await plan.locator('[data-plan-action="approve"]').isDisabled(),false,'revoking approval must re-enable approval');
+  // Verify exact version/hash binding and approval state, not only button visibility.
+  assert.deepEqual(planTransitions.map(t=>t.operation),['create','approve','revise','approve','revoke']);
+  const [draft,firstApproval,revision,secondApproval,revocation]=planTransitions.map(t=>t.project);
+  assert.equal(draft.advanced.approval,null,'new draft must be unapproved');
+  assert(firstApproval.advanced.approval,'approval must be recorded');
+  assert.equal(revision.advanced.approval,null,'revision must clear prior approval');
+  assert(revision.advanced.plan.version>draft.advanced.plan.version,'revision must increment plan version');
+  assert.notEqual(revision.advanced.plan.hash,draft.advanced.plan.hash,'revision must change plan hash');
+  assert(secondApproval.advanced.approval,'revised plan must allow a fresh approval');
+  assert.equal(revocation.advanced.approval,null,'revoke must clear the new approval');
+  const {handleMockPlanCommand}=load('src/lib/studio-agent/assistant-core.ts');
+  assert.throws(()=>handleMockPlanCommand(revision,userId,{operation:'approve',expectedPlanVersion:draft.advanced.plan.version,expectedPlanHash:draft.advanced.plan.hash}),e=>e.code==='stale_plan_approval','stale approval must fail closed');
   const saved=await frame.locator('#prompt').evaluate(()=>Object.keys(sessionStorage).filter(k=>k.includes('studio')));
   assert(saved.length>0,'mock conversation must persist a session-scoped restore pointer');
   const callsBeforeReload=apiCalls;
