@@ -159,7 +159,23 @@ function showView(view){
   const root=q('#aux-panel');root.replaceChildren();
   const title=make('h2',view==='variants'?'Saved video outputs':view==='timeline'?'Scenes / Timeline':view==='assets'?'Saved media':'Video project details');
   root.append(title);
-  if(!readyVideos.length){root.append(make('p','No completed video available for this account. Video production and editing are not enabled in this view.'));return;}
+  if(!readyVideos.length){
+   root.append(make('p','No completed video is available in this session. This does not mean the saved outputs of an authenticated account are missing.'));
+   const local=make('button','✂ Open local video editor');
+   local.type='button';
+   local.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
+   root.append(local);
+   if(view==='assets'){
+    const elements=make('button','Open Elements library');
+    elements.type='button';
+    elements.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-elements'));
+    root.append(elements);
+   }
+   const helper=make('p','You can import your own video clips into the local editor. Cloud projects and generated AI variants require sign-in and a completed production.');
+   helper.style.cssText='font-size:12px;color:#bdaecb;line-height:1.5';
+   root.append(helper);
+   return;
+  }
   if(view==='variants'){
    const list=make('div',undefined,'studio-video-browser');
    list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px';
