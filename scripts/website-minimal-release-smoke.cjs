@@ -28,6 +28,6 @@ function load(path){
  const record={production_type:'website',status:'ready',reserved_credits:0,output_json:{websiteBillingMode:'atomic_v1',websiteBillingPending:false,charged:30}};
  assert.equal(websiteCreditDeliveryProof(record,{state:'settled',credits:30}),true);
  for(const proof of [null,{state:'reserved',credits:30},{state:'settled',credits:31}]) assert.equal(websiteCreditDeliveryProof(record,proof),false);
- await assert.rejects(()=>ledger.reserve({userId:uid,productionId:pid,planHash:hash,credits:-1}));
+ assert.throws(()=>ledger.reserve({userId:uid,productionId:pid,planHash:hash,credits:-1}));
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
