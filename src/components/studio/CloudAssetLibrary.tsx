@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CloudRecord = {
  id: string; label: string; kind: string; content_type: string | null;
@@ -31,7 +32,7 @@ export default function CloudAssetLibrary() {
  const [rights,setRights]=useState(false);
  const [file,setFile]=useState<File|null>(null);
  const [preview,setPreview]=useState<{id:string;url:string;mime:string}|null>(null);
- const db=supabaseBrowser();
+ const db=supabaseBrowser() as SupabaseClient<any>;
  const refresh=useCallback(async (uid:string, pid:string)=>{
   const {data,error}=await db.from("studio_assets").select("id,label,kind,content_type,byte_size,object_path,metadata")
    .eq("user_id",uid).eq("project_id",pid).order("created_at",{ascending:false}).limit(100);
