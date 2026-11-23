@@ -4,6 +4,13 @@ import { POST as creditsSpend } from "@/app/api/credits/spend/route";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
 export async function executeWebsiteRequest(request: Request, body: Record<string, unknown>, user: { id: string; email?: string }) {
+  // Shared billing boundary: every caller of this adapter must fail closed until
+  // Website Builder is migrated from the legacy /api/credits/spend endpoint to
+  // an atomic reserve / settle / release ledger. Never accept a render flag or
+  // a direct render action, even from another authenticated API route.
+  if (body.action === "render" || body.render === true) {
+    return { status: 503, payload: { ok: false, code: "website_atomic_billing_required", executionReady: false, safeToRetryAutomatically: false } };
+  }
   const headers = new Headers(request.headers);
   return handleWebsiteAssistant(body, user, {
     db: supabaseAdmin(),
