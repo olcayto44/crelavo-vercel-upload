@@ -82,7 +82,7 @@ async function reviewWebsiteDraft(){
  if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
-  const result=await request('/api/websites/generate',{action:'website_open',productionId:project.productionId});
+  const result=await websiteAssistantRequest({action:'website_open',productionId:project.productionId});
   if(seq!==epoch)return;
   websiteData=result;
   selectedProduction=result.productionId;
@@ -101,7 +101,7 @@ async function approveWebsitePlan(){
  if(!confirmed)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
-  const result=await request('/api/websites/generate',{action:'website_approve',productionId,planHash});
+  const result=await websiteAssistantRequest({action:'website_approve',productionId,planHash});
   if(seq!==epoch)return;
   if(result.productionId!==productionId||result.website?.approvedHash!==planHash)throw Error('Website onayı doğrulanamadı. Planı yeniden açın.');
   websiteData=result;
@@ -130,10 +130,10 @@ async function renderApprovedWebsite(){
  const seq=epoch,productionId=project.productionId,planHash=w.planHash;
  busy=true;uiError='';draw();
  try{
-  const result=await request('/api/websites/generate',{action:'render',productionId,planHash});
+  const result=await websiteAssistantRequest({action:'render',productionId,planHash});
   if(seq!==epoch)return;
-  if(result.state!=='ready'||result.productionId!==productionId)throw Error('Website teslimatı henüz doğrulanmadı. Tekrar üretim başlatmayın; proje durumunu kontrol edin.');
-  const fresh=await request('/api/websites/generate',{action:'website_open',productionId});
+  if((result.state!=='ready'&&result.status!=='ready')||result.productionId!==productionId)throw Error('Website teslimatı henüz doğrulanmadı. Tekrar üretim başlatmayın; proje durumunu kontrol edin.');
+  const fresh=await websiteAssistantRequest({action:'website_open',productionId});
   if(seq!==epoch)return;
   if(fresh.productionId!==productionId)throw Error('Website proje bağlantısı doğrulanamadı.');
   websiteData=fresh;
@@ -156,12 +156,15 @@ async function handoffWebsiteDraft(){
   const chosen=packs.find(pack=>pack.id===websiteSelectedPackId);
   if(!chosen)throw Error('Önce Website paketini seçin.');
   if(/admin|commerce|checkout/i.test(chosen.label))throw Error('Bu paket statik Website üretiminde desteklenmiyor.');
-  const result=await request('/api/websites/generate',{action:'revise',prompt:fields.brief,packId:chosen.id,websiteBrief,...(project.productionId&&selectedProduction===project.productionId?{productionId:project.productionId}:{})});
+  const result=await websiteAssistantRequest({action:'revise',prompt:fields.brief,packId:chosen.id,websiteBrief,...(project.productionId&&selectedProduction===project.productionId?{productionId:project.productionId}:{})});
   if(seq!==epoch)return;
   if(!result.productionId)throw Error('Website taslağı kimliği alınamadı.');
-  const linked=await api({action:'bind_website',projectId:project.id,productionId:result.productionId});
-  if(seq!==epoch)return;
-  remember(linked);
+  if(!status?.realEnabled){applyWebsiteChat(result);}
+  else {
+    const linked=await api({action:'bind_website',projectId:project.id,productionId:result.productionId});
+    if(seq!==epoch)return;
+    remember(linked);
+  }
   selectedProduction=result.productionId;
   websiteData=result;
   websiteSelectedPackId=result.website?.packId||chosen.id;
@@ -172,7 +175,21 @@ async function handoffWebsiteDraft(){
 async function createProject(productionId){const seq=epoch;const data=await api({action:'create',...(productionId?{productionId}:{})});if(seq!==epoch)return;pending=null;remember(data);}
 async function restore(){const seq=epoch;try{let saved=null;try{saved=JSON.parse(sessionStorage.getItem(key())||'null');}catch(_error){/* Continue without persisted conversation when browser storage is blocked. */}if(saved){const data=await api({action:'load',projectId:saved.projectId,...(saved.mockState?{mockState:saved.mockState}:{})});if(seq!==epoch)return;remember(data);if(current.id==='website'&&data.project.productionId){selectedProduction=data.project.productionId;await previewWebsite(selectedProduction);}}else await createProject();}catch(error){if(seq===epoch)showError(error)}}
 function showError(error){uiError=error.message;draw();}
-async function openWebsite(id){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';clearCanvas();selectedProduction=id;showAux('canvas');showCanvas('loading');draw();const seq=epoch;const preview=previewWebsite(id);try{await createProject(id);}catch(error){if(seq===epoch)showError(error);}await preview;}
+async function openWebsite(id){
+ epoch++;project=null;websiteData=null;mockState='';pending=null;busy=false;uiError='';clearCanvas();selectedProduction=id;showAux('canvas');showCanvas('loading');draw();
+ const seq=epoch;const preview=previewWebsite(id);
+ try{
+  if(current.id==='website'&&!status?.realEnabled){
+   const result=await websiteAssistantRequest({action:'website_open',productionId:id});
+   if(seq===epoch)applyWebsiteChat(result);
+  }else await createProject(id);
+ }catch(error){
+  if(seq===epoch&&current.id==='website'&&!status?.realEnabled){
+   uiError='Eski Website Builder projesi: Canvas önizlemesini ve Website oluştur aracını kullanabilirsiniz.';draw();
+  }else if(seq===epoch)showError(error);
+ }
+ await preview;
+}
 function applyWebsiteChat(result){
  if(!result||!result.productionId||!result.website)throw Error('Website sohbet projesi doğrulanamadı.');
  const b=result.website.brief||{};
@@ -215,7 +232,7 @@ async function sendMessage(defaults=[]){
  }catch(error){if(seq===epoch)showError(error)}
  finally{if(seq===epoch){busy=false;draw();}}
 }
-async function savedConversations(){if(mode==='mock'){await restore();return;}const seq=epoch,data=await api({action:'projects'});if(seq!==epoch)return;const select=$('#b2-projects');select.replaceChildren(node('option',t(17)));for(const p of data.projects||[]){const o=node('option',p.title);o.value=p.id;select.appendChild(o);}}
+async function savedConversations(){if(current.id==='website'&&!status?.realEnabled){await savedWebsites();return;}if(mode==='mock'){await restore();return;}const seq=epoch,data=await api({action:'projects'});if(seq!==epoch)return;const select=$('#b2-projects');select.replaceChildren(node('option',t(17)));for(const p of data.projects||[]){const o=node('option',p.title);o.value=p.id;select.appendChild(o);}}
 async function savedWebsites(){if(status?.isolatedPreview){uiError='İzole Preview: Production projelerine erişim kapalı; yalnızca demo brief ve plan gösterilir.';draw();return;} if(current.id!=='website'){await savedConversations();return;}const seq=epoch;const root=$('#saved-websites');root.hidden=false;root.replaceChildren(node('span','Projeler yükleniyor…'));const data=await request('/api/websites?user_id='+encodeURIComponent(session.userId));if(seq!==epoch)return;root.replaceChildren();if(!data.websites?.length)root.appendChild(node('span','Henüz kayıtlı Website yok.'));for(const item of data.websites||[]){const button=node('button',item.title||'Website projesi');button.dataset.productionId=item.id;button.onclick=()=>openWebsite(item.id).catch(showError);root.appendChild(button);}}
 function tools(){const root=$('#category-tools');root.replaceChildren(node('strong',current.panel.title));current.panel.tools.forEach(name=>{const button=node('button',name);const free=['Responsive preview','Device preview','Platform preview','Review evidence','Review language','Review tasks','Review script'].includes(name);button.disabled=!free;button.dataset.tool=name;button.dataset.requiresProduction=String(!free);button.title=free?'Ücretsiz çalışma alanı görünümü':'Bu araç bu aşamada bağlı değil; üretim veya kredi işlemi yapılmaz.';if(free)button.onclick=()=>showAux(name.includes('preview')?'canvas':name.includes('evidence')?'assets':'brief');root.appendChild(button);});}
 function openFunctionalWebsiteBuilder(){
