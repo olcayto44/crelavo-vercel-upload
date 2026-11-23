@@ -280,7 +280,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     }
     if (incoming.length) {
       cleanupOutput(); setClips(existing => [...existing, ...incoming]); setActive(current => current || incoming[0].id);
-      setState(incoming.length + " clip(s) added. Rearrange, trim, or remove before exporting.");
+      setState(incoming.length + " new clip(s) added · " + (clips.length + incoming.length) + " clips in timeline. Rearrange, trim, or remove before exporting.");
     }
   }
   function update(id: string, patch: Partial<Clip>) {
