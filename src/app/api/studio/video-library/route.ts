@@ -13,7 +13,7 @@ function safeVideoUrl(value: unknown): string | null {
     const url = new URL(value);
     if (url.protocol !== "https:" || url.username || url.password ||
       /^(localhost|127\.|0\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?|169\.254\.)/i.test(url.hostname)) return null;
-    if (/placeholder|preview\.html|manifest|readme|\.json(?:\?|$)/i.test(url.pathname)) return null;
+    if (/placeholder|preview\.html|manifest|readme|\.(?:json|png|jpe?g|svg|gif|webp|pdf|html)(?:$|\?)/i.test(url.pathname)) return null;
     return url.href;
   } catch { return null; }
 }
