@@ -191,7 +191,7 @@ function showView(view){
     const meta=make('small',[specs.provider,specs.durationSeconds?specs.durationSeconds+'s':null,specs.aspectRatio].filter(Boolean).join(' · ')||'Saved video');
     meta.style.color='#bfaed1';
     const open=make('button','Open in Canvas');open.type='button';
-    open.onclick=()=>{showVideoProject(item);window.studioWorkspace?.setView('canvas')};
+    open.onclick=()=>{showVideoProject(item);q('.tabs [data-view="canvas"]')?.click()};
     card.append(video,previewHint,title,meta,open);list.append(card);
    });
    root.append(list);return;
@@ -205,7 +205,7 @@ function showView(view){
    edit.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
    root.append(notice,edit);
    (clips.length?clips:[{title:'Final video',url:selected?.videoUrl}]).forEach((clip,index)=>{
-    const button=make('button',clip.title||'Scene '+(index+1));button.onclick=()=>{showVideoProject(selected);const items=q('.studio-video-strip');items?.querySelectorAll('button')[index]?.click();window.studioWorkspace?.setView('canvas')};root.append(button);
+    const button=make('button',clip.title||'Scene '+(index+1));button.onclick=()=>{showVideoProject(selected);const items=q('.studio-video-strip');items?.querySelectorAll('button')[index]?.click();q('.tabs [data-view="canvas"]')?.click()};root.append(button);
    });return;
   }
   root.append(make('p',activeVideo?.title||'Saved video'));
