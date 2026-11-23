@@ -1,0 +1,26 @@
+name: Website minimal release checks
+on:
+  push:
+    branches:
+      - release/website-builder-minimal-20261123
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  website-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/website-minimal-release-smoke.cjs
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          VERCEL_ENV: preview
