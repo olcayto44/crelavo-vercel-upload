@@ -34,4 +34,6 @@ const contract=read('src/lib/studio-agent/conversation-contract.ts');
 for(const token of ['action: z.literal("bind_website")','productionId: z.string().uuid()'])assert(contract.includes(token),'missing website binding contract '+token);
 for(const token of ['mock_binding_not_allowed','website_already_bound','website_binding_conflict','eq("user_id",userId)','is("production_id",null)'])assert(handler.includes(token),'missing owner-safe website binding '+token);
 assert(client.includes("action:'bind_website'"),'website draft must persist its production link');
+assert(page.includes("getCategory('website')?.packs"),'website prices must come from the canonical category catalog');
+assert(client.includes('window.__studioB2?.websitePacks'),'website package labels and credit costs must be visible in brief');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
