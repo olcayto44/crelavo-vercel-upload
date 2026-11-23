@@ -77,7 +77,7 @@ const {load}=require('./studio-agent-test-loader.cjs');
   // The minimal branch does not yet contain Studio V2's separate preview API.
   // Assert its existing delivery route uses the settled-ledger proof.
   const deliverySource=fs.readFileSync('src/app/api/productions/[id]/delivery/route.ts','utf8');
-  assert.match(deliverySource,/websiteCreditDeliveryProof\\(data,\\s*proof\\.data\\)/);
+  assert.ok(deliverySource.includes('websiteCreditDeliveryProof(data, proof.data)'), 'settled ledger proof must guard delivery');
   const {websiteCreditDeliveryProof}=load('src/lib/assistant-work/website-paid-delivery.ts');
   const reservation=(await db.query('select state,credits from website_credit_reservations where production_id=$1',[productionId])).rows[0];
   assert.equal(websiteCreditDeliveryProof(delivered,reservation),true);
