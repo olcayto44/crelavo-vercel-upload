@@ -9,6 +9,7 @@ on:
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
       - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-atomic-flow-smoke.cjs'
       - 'supabase/migration_website_atomic_credits_draft.sql'
       - 'scripts/studio-advanced-mock-smoke.cjs'
       - 'scripts/studio-agent-test-loader.cjs'
@@ -26,6 +27,7 @@ on:
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
       - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-atomic-flow-smoke.cjs'
       - 'supabase/migration_website_atomic_credits_draft.sql'
       - 'scripts/studio-advanced-mock-smoke.cjs'
       - 'scripts/studio-agent-test-loader.cjs'
@@ -62,6 +64,10 @@ jobs:
         run: node scripts/studio-handoff-contract-smoke.cjs
       - name: Offline Website atomic credit migration regression
         run: node scripts/website-atomic-db-regression.cjs
+      - name: Isolated Website production and delivery end-to-end regression
+        run: node scripts/website-atomic-flow-smoke.cjs
+      - name: Existing Website Builder preview, revision and ZIP integration smoke
+        run: npm run smoke:website-assistant && npm run smoke:automatic-delivery-builder
       - name: Production route dry-run static contracts
         run: npm run smoke:e2e-dry-run
       - name: Advanced Studio mock integration (network blocked)
