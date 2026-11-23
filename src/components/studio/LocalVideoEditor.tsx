@@ -1,9 +1,35 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase";
 
 type Clip = { id: string; file: File; name: string; url: string; duration: number; start: number; end: number };
 const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
+const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean };
+async function projectDb() {
+ return await new Promise<IDBDatabase>((resolve,reject)=>{
+  const request=indexedDB.open(VIDEO_PROJECT_DB,1);
+  request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains("projects"))db.createObjectStore("projects",{keyPath:"id"});};
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ });
+}
+async function saveProjectLocally(value: SavedVideoProject) {
+ const db=await projectDb();
+ await new Promise<void>((resolve,reject)=>{
+  const tx=db.transaction("projects","readwrite");
+  tx.objectStore("projects").put(value);
+  tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);
+ });db.close();
+}
+async function openProjectLocally(id: string) {
+ const db=await projectDb();
+ const item=await new Promise<SavedVideoProject|undefined>((resolve,reject)=>{
+  const tx=db.transaction("projects","readonly");const result=tx.objectStore("projects").get(id);
+  result.onsuccess=()=>resolve(result.result as SavedVideoProject|undefined);
+  result.onerror=()=>reject(result.error);
+ });db.close();return item;
+}
 function supportedMime() {
   if (typeof MediaRecorder === "undefined") return "";
   return ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(type => MediaRecorder.isTypeSupported(type)) || "";
@@ -31,6 +57,8 @@ async function seek(video: HTMLVideoElement, at: number) {
   });
 }
 export default function LocalVideoEditor() {
+  const [projectOwner,setProjectOwner] = useState("");
+  const [projectSaving,setProjectSaving] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
   const [active, setActive] = useState<string | null>(null);
   const [state, setState] = useState("Add local clips to start. Videos remain on your device.");
@@ -49,8 +77,47 @@ export default function LocalVideoEditor() {
   const output = useRef<string | null>(null);
   const cancel = useRef(false);
   const preview = useRef<HTMLVideoElement>(null);
+  useEffect(()=>{
+    let live=true;
+    void supabaseBrowser().auth.getUser().then(({data,error})=>{
+      if(live&&!error&&data.user)setProjectOwner(data.user.id);
+    }).catch(()=>{});
+    return()=>{live=false};
+  },[]);
   useEffect(() => { files.current = clips; }, [clips]);
   useEffect(() => () => { files.current.forEach(c => URL.revokeObjectURL(c.url)); if (output.current) URL.revokeObjectURL(output.current); }, []);
+  async function saveTimeline(){
+    if(!projectOwner||!clips.length||busy||projectSaving)return;
+    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0);
+    if(size>150_000_000){setState("Local project save supports up to 150 MB of source clips. Export or reduce source size.");return;}
+    setProjectSaving(true);
+    try{
+      const project: SavedVideoProject={
+        id:projectOwner,owner:projectOwner,savedAt:Date.now(),
+        clips:clips.map(({url,...data})=>data),
+        ratio,resolution,includeAudio
+      };
+      await saveProjectLocally(project);
+      setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
+    }catch{setState("Could not save locally. Check available browser storage space.");}
+    finally{setProjectSaving(false)}
+  }
+  async function reopenTimeline(){
+    if(!projectOwner||busy||projectSaving)return;
+    setProjectSaving(true);
+    try{
+      const project=await openProjectLocally(projectOwner);
+      if(!project||project.owner!==projectOwner){setState("No locally saved video timeline found for this account.");return;}
+      const restored: Clip[]=project.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
+      files.current.forEach(old=>URL.revokeObjectURL(old.url));
+      files.current=restored;
+      setClips(restored);setActive(restored[0]?.id||null);
+      setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
+      cleanupOutput();
+      setState("Local timeline reopened. You can continue editing and exporting.");
+    }catch{setState("Could not reopen this timeline in the current browser.");}
+    finally{setProjectSaving(false)}
+  }
   const chosen = clips.find(c => c.id === active);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start), 0);
   function cleanupOutput() {
@@ -201,7 +268,11 @@ export default function LocalVideoEditor() {
   return <section style={{ color: "#f4f0ff", background: "#110e1b", padding: 18, minHeight: "100%", fontFamily: "Inter,system-ui,sans-serif" }}>
     <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
       <div><h1 style={{ fontSize: 18, margin: 0 }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "6px 0 14px", fontSize: 12 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
+      <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
+       <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save local timeline</button>
+       <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen timeline</button>
       <label style={{ background: "#7036b5", padding: "10px 15px", borderRadius: 9, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
+      </div>
     </header>
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(190px,260px)", gap: 12 }}>
@@ -241,6 +312,6 @@ export default function LocalVideoEditor() {
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. No cloud storage, saved project, transitions or MP4 export in this editor yet.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
   </section>;
 }
