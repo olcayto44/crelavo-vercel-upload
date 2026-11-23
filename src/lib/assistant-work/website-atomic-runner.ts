@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { generateWebsiteArtifact } from "../website-engine";
-import { websiteEngineInput, normalizeAssistantWebsiteBrief } from "./website-brief";
+import { websiteEngineInput, normalizeAssistantWebsiteBrief, websitePlanHash, missingWebsiteBrief, unsupportedWebsiteScope } from "./website-brief";
+import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import type { WebsiteCreditLedger } from "./website-credit-ledger";
 
 // NOT exported as an HTTP endpoint. Isolated orchestration only until DB concurrency,
@@ -10,14 +11,13 @@ const Input = z.strictObject({
   productionId: z.string().uuid(),
   planHash: z.string().regex(/^[a-f0-9]{64}$/),
   credits: z.number().int().positive().max(100000),
-  brief: z.record(z.string(), z.unknown()),
 });
 type WebsiteArtifact = Awaited<ReturnType<typeof generateWebsiteArtifact>>;
 type Generate = (brief: ReturnType<typeof websiteEngineInput>, projectId: string) => Promise<WebsiteArtifact>;
 
 export async function runIsolatedWebsiteGeneration(
   raw: z.input<typeof Input>,
-  deps: { ledger: WebsiteCreditLedger; generate?: Generate },
+  deps: { ledger: WebsiteCreditLedger; loadReserved: (productionId: string, userId: string) => Promise<unknown>; generate?: Generate },
 ) {
   const input = Input.parse(raw);
   const identity = {
@@ -30,13 +30,31 @@ export async function runIsolatedWebsiteGeneration(
     // needs server-side inspection, never a second provider invocation.
     return { state: "already_reserved_or_finished" as const, charged: false };
   }
+  // The website brief must come from the owner-scoped, atomically reserved row,
+  // never from the browser request or an untrusted pre-reservation snapshot.
+  const stored = z.strictObject({
+    userId: z.string().uuid(), productionId: z.string().uuid(),
+    phase: z.literal("reserved"), planHash: z.string(), approvedHash: z.string(),
+    packId: z.string(), credits: z.number().int(),
+    brief: z.record(z.string(), z.unknown()),
+  }).parse(await deps.loadReserved(input.productionId, input.userId));
+  const brief = normalizeAssistantWebsiteBrief(stored.brief);
+  const pack = getCategory("website")?.packs.find(p => p.id === stored.packId);
+  if (stored.userId !== input.userId || stored.productionId !== input.productionId ||
+    stored.planHash !== input.planHash || stored.approvedHash !== input.planHash ||
+    stored.credits !== input.credits || pack?.credits !== input.credits ||
+    /admin|commerce|checkout/i.test(pack.label) ||
+    websitePlanHash(brief, stored.packId) !== input.planHash ||
+    missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
+    throw new Error("website_reserved_plan_mismatch_reconciliation_required");
+  }
   if (!await deps.ledger.claim(identity)) {
     return { state: "claim_conflict" as const, charged: false };
   }
   let artifact: WebsiteArtifact;
   try {
     artifact = await (deps.generate ?? generateWebsiteArtifact)(
-      websiteEngineInput(normalizeAssistantWebsiteBrief(input.brief)), input.productionId,
+      websiteEngineInput(brief), input.productionId,
     );
   } catch {
     // The deterministic local generator has no remote provider submission.
