@@ -197,3 +197,18 @@ assert.match(client,/previewDraftEnabled\(\)/,'anonymous preview must have a loc
 assert.match(client,/\$\('#prompt'\)\.disabled=busy\|\|\(!session&&!previewDraftEnabled\(\)\)/,'preview textarea must remain editable');
 assert.match(client,/previewDraftMessages=\[/,'preview draft must save messages');
 assert.match(client,/sessionStorage\.setItem\(previewDraftKey\(\)/,'preview draft must persist by category in browser tab');
+
+const renderRoute=read('src/app/api/studio/render-jobs/route.ts');
+const jobMigration=read('supabase/migrations/20261124001500_studio_render_jobs.sql');
+assert.match(renderRoute,/bearerTokenFromRequest\(request\)/,'render jobs must require an authenticated token');
+assert.match(renderRoute,/STUDIO_MP4_RENDER_ENABLED !== "1"/,'no actual worker means paid MP4 jobs must stay disabled');
+assert.match(renderRoute,/creditsReserved: false/,'scaffolding cannot bill customers');
+assert.match(renderRoute,/\.eq\("user_id", user\.id\)/,'render status must scope to owner');
+assert.match(renderRoute,/createSignedUrl/,'render completed files must use time-limited private URLs');
+assert.match(jobMigration,/enable row level security/,'persistent MP4 jobs must have RLS');
+assert.match(jobMigration,/unique \(user_id, request_id\)/,'render jobs must be idempotent');
+assert.match(jobMigration,/for select to authenticated/,'no browser write access to jobs');
+assert.match(localEditor,/studio-compact-video-editor/,'the local video editor must retain compact responsive layout');
+assert.match(localEditor,/Back to Studio V2/,'top level clip editor must navigate back to Studio');
+assert.match(localEditor,/preview-local/,'preview must allow local clips without opening real account cloud');
+assert.match(elements,/studio-compact-elements/,'Elements library must have compact responsive layout');
