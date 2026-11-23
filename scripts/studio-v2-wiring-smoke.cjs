@@ -47,4 +47,13 @@ assert.match(builderForm,/event\.origin !== window\.location\.origin/,'Builder m
 assert.match(builderForm,/event\.source !== window\.parent/,'Builder must verify parent sender');
 assert.match(builderForm,/crelavo-studio-website-created/,'Builder must notify Canvas on successful production');
 assert.match(client,/id!==selectedProduction/,'ZIP must target the verified current Canvas production');
+const view=read('src/lib/studio-agent/studio-view.ts');
+const footer=read('src/components/RouteAwareFooter.tsx');
+const mobileNav=read('src/lib/mobile-navigation.ts');
+assert.match(footer,/pathname\?\.startsWith\("\/dashboard\/studio-v2"\)/,'full-screen Studio must not render dashboard footer');
+assert.match(mobileNav,/"\/dashboard\/studio-v2"/,'full-screen Studio must not show mobile site header');
+assert.match(view,/id="studio-ui-language"/,'Studio must have built-in language selector');
+for(const code of ['en','tr','de','es','fr','ar'])assert.match(view,new RegExp('value="'+code+'"'),'missing site language '+code);
+assert.match(client,/localStorage\.setItem\('clipora_language'/,'Studio language must persist with site language settings');
+assert.match(client,/language='en'/,'Studio must default to English');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
