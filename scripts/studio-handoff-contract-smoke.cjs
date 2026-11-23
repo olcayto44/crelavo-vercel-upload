@@ -60,4 +60,6 @@ assert(websiteAdapter.includes('website_atomic_billing_required'), 'website adap
 assert(websiteAdapter.indexOf('website_atomic_billing_required') < websiteAdapter.indexOf('handleWebsiteAssistant(body'), 'billing safety gate must precede website generation handler');
 assert(!websiteAdapter.includes('creditsSpend') && !websiteAdapter.includes('POST as creditsSpend'), 'website adapter must not import legacy credit spending');
 assert(websiteAdapter.includes('spend: async () => ({ ok: false, charged: 0'), 'website adapter must fail closed if legacy handler reaches spending');
+assert(client.includes('websiteSelectedPackId=pack.id;websiteData=null'), 'package changes must invalidate an old approval review');
+assert(client.includes('project.productionId&&selectedProduction!==project.productionId'), 'mismatched website project link must fail before draft mutation');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
