@@ -442,7 +442,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
     <div className="editor-main-grid">
       <div style={{ minWidth: 0 }}>
-        <div className="studio-video-preview-stage">
+        <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}> 
           <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
             {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
