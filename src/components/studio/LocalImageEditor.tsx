@@ -75,16 +75,16 @@ export default function LocalImageEditor(){
  const reset=()=>{
   setRotation(0);setFlipped(false);setBrightness(100);setContrast(100);setSaturation(100);setRatio("original");setCompare(false);
  };
- return <section style={{minHeight:"100%",background:"#120e1b",color:"#f4eefe",padding:16,fontFamily:"Inter,system-ui,sans-serif"}}>
+ return <section className="studio-compact-image-editor" style={{minHeight:"100%",background:"#120e1b",color:"#f4eefe",padding:"12px 16px",maxWidth:1250,margin:"0 auto",fontFamily:"Inter,system-ui,sans-serif"}}>\n  <style>{`.studio-compact-image-editor *{box-sizing:border-box}.studio-compact-image-editor .image-editor-main{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:10px;align-items:start}.studio-compact-image-editor .image-editor-main canvas{max-height:48vh!important}@media(max-width:750px){.studio-compact-image-editor .image-editor-main{grid-template-columns:1fr}}`}</style>
   <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-   <div><h1 style={{fontSize:19,margin:"0 0 4px"}}>Image Editor</h1><p style={{fontSize:12,color:"#b9accb",margin:0}}>Rotate, flip, center crop, adjust color, and export PNG. No AI generation.</p></div>
+   <div><a href="/dashboard/studio-v2?category=image&uiLang=en" style={{display:"inline-block",color:"#dec8f5",fontSize:12,marginBottom:6}}>← Back to Studio V2</a><h1 style={{fontSize:18,margin:"0 0 4px"}}>Image Editor</h1><p style={{fontSize:12,color:"#b9accb",margin:0}}>Rotate, flip, center crop, adjust color, and export PNG. No AI generation.</p></div>
    <label style={{background:"#7134b8",padding:"9px 14px",borderRadius:9,cursor:"pointer"}}>+ Add image
     <input type="file" accept="image/*" hidden aria-label="Select local image" onChange={e=>{void loadFile(e.target.files?.[0]||null);e.currentTarget.value=""}}/>
    </label>
   </header>
   <p role="status" style={{color:"#c2aadb",fontSize:12}}>{status}</p>
-  <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(185px,240px)",gap:12,alignItems:"start"}}>
-   <div style={{background:"#0a0711",border:"1px solid #4b365d",borderRadius:11,padding:8,minHeight:240,display:"grid",placeItems:"center",minWidth:0}}>
+  <div className="image-editor-main">
+   <div style={{background:"#0a0711",border:"1px solid #4b365d",borderRadius:11,padding:8,minHeight:195,display:"grid",placeItems:"center",minWidth:0}}>
     {ready?<canvas ref={canvas} style={{maxWidth:"100%",maxHeight:"55vh",objectFit:"contain"}} aria-label="Image preview"/>:<p style={{color:"#a696ba"}}>Choose an image to edit</p>}
    </div>
    <aside style={{border:"1px solid #443354",borderRadius:11,padding:12,background:"#20182a",display:"grid",gap:11}}>
