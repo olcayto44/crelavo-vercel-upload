@@ -45,10 +45,38 @@ function showVideoProject(item){
    track.querySelectorAll('button').forEach(el=>el.setAttribute('aria-pressed','false'));
    button.setAttribute('aria-pressed','true');video.pause();video.src=clip.url;video.load();
   };track.append(button);
- });lower.append(heading,track);
+ });
+ // Existing records may contain only the final video, not separately rendered
+ // scene files. In that case show genuine seek points on the actual media,
+ // never invent clips or scene thumbnails.
+ if(clips.length===1&&clips[0].id==='final'){
+  video.addEventListener('loadedmetadata',()=>{
+   const duration=video.duration;
+   if(!Number.isFinite(duration)||duration<=0||duration>7200)return;
+   const format=seconds=>{const m=Math.floor(seconds/60),t=Math.floor(seconds%60);return String(m).padStart(2,'0')+':'+String(t).padStart(2,'0')};
+   const count=Math.min(6,Math.max(2,Math.ceil(duration/3)));
+   heading.querySelector('span').textContent=format(duration)+' · video timeline';
+   track.replaceChildren();
+   for(let i=0;i<count;i++){
+    const at=duration*i/count;
+    const button=make('button');button.type='button';
+    button.setAttribute('aria-pressed',String(i===0));
+    button.append(make('strong','▣ '+format(at)),make('small','Seek in final video'));
+    button.onclick=()=>{
+     track.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false'));
+     button.setAttribute('aria-pressed','true');
+     video.pause();video.currentTime=at;
+    };track.append(button);
+   }
+  },{once:true});
+ }
+ lower.append(heading,track);
  const actions=make('div',undefined,'studio-video-clip-actions');
  const info=make('span','Saved video output · playback only. Editing or new renders require a separate confirmed production.','studio-video-meta');
  actions.append(info);lower.append(actions);
+ video.addEventListener('error',()=>{
+  if(video.isConnected)info.textContent='The saved video could not be played. The provider URL may have expired; no new production was started.';
+ });
  const tabs=q('.tabs');const variants=tabs.querySelector('[data-view="variants"]');
  if(variants)variants.textContent='Variants ('+readyVideos.length+')';
  q('#aux-panel').hidden=true;adjust();
