@@ -87,6 +87,9 @@ async function handoffWebsiteDraft(){
   const result=await request('/api/websites/generate',{action:'revise',prompt:fields.brief,websiteBrief,...(project.productionId&&selectedProduction===project.productionId?{productionId:project.productionId}:{})});
   if(seq!==epoch)return;
   if(!result.productionId)throw Error('Website taslağı kimliği alınamadı.');
+  const linked=await api({action:'bind_website',projectId:project.id,productionId:result.productionId});
+  if(seq!==epoch)return;
+  remember(linked);
   selectedProduction=result.productionId;
   websiteData=null;
   showCanvas('unavailable','output_not_ready');
