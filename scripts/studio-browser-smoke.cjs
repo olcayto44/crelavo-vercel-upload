@@ -31,11 +31,13 @@ const { getCategoryContract }=load('src/lib/studio-agent/requirements.ts');
   assert.equal(await studio.locator('.studio').getAttribute('data-category'),other.id);
   assert.equal(await studio.locator('.category.active').count(),1);
   // A message from the child frame itself is not a trusted parent auth event.
-  await studio.locator('#prompt').fill('draft must survive spoofed auth event');
+  assert.equal(await studio.locator('#prompt').isDisabled(),true,'anonymous prompt must remain disabled');
+  await studio.locator('#prompt').evaluate(input=>{input.value='draft must survive spoofed auth event'});
   await studio.locator('#prompt').evaluate(input=>window.postMessage({type:'crelavo-studio-session',accessToken:'forged',userId:'forged'},'*'));
   await studio.locator('#prompt').evaluate(()=>new Promise(resolve=>setTimeout(resolve,50)));
   assert.equal(await studio.locator('#prompt').inputValue(),'draft must survive spoofed auth event');
-  await studio.locator('#send').click();
+  assert.equal(await studio.locator('#send').isDisabled(),true,'anonymous send must remain disabled');
+  await studio.locator('#send').evaluate(button=>button.click());
   assert.equal(apiRequests,0,'unauthenticated UI must never call Studio API');
   await page.setViewportSize({width:390,height:844});
   await studio.locator('.mobile button[data-panel="assistant"]').click();
