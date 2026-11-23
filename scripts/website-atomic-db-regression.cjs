@@ -12,7 +12,7 @@ const { PGlite } = require('@electric-sql/pglite');
   const table=name=>{const match=schema.match(new RegExp('create table '+name+' \\([^]*?\\n\\);'));assert(match,'missing '+name);return match[0];};
   await db.exec(`create role anon;create role authenticated;create role service_role;
    create schema auth;create table auth.users(id uuid primary key);
-   create function auth.uid() returns uuid language sql as $ select null::uuid $;
+   create function auth.uid() returns uuid language sql as $body$ select null::uuid $body$;
    create schema storage; create table storage.objects(id uuid primary key,bucket_id text,name text,owner_id text);
    create type credit_event_type as enum ('purchase','reserve','spend','refund','adjustment');
    ${table('profiles')} ${table('credit_balances')} ${table('credit_events')}`);
