@@ -183,14 +183,103 @@ function showCanvas(state,reason){
  $('#start-conversation').hidden=state==='loading';
  $('#open-projects').hidden=state==='loading'||current.id!=='website';
 }
+// Native Assets panel avoids navigating a full dashboard inside a srcDoc iframe.
+// It uses the same owner-keyed IndexedDB records as the standalone Elements tool.
+async function studioElementsDb(){
+ return new Promise((resolve,reject)=>{
+  const req=indexedDB.open('crelavo-studio-local-elements-v1',1);
+  req.onupgradeneeded=()=>{
+   const db=req.result;
+   if(!db.objectStoreNames.contains('elements')){
+    const store=db.createObjectStore('elements',{keyPath:'key'});
+    store.createIndex('owner','owner',{unique:false});
+   }
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
+}
+async function studioElementsOperation(operation,record,key){
+ const db=await studioElementsDb();
+ try{return await new Promise((resolve,reject)=>{
+  const tx=db.transaction('elements',operation==='list'?'readonly':'readwrite');
+  const store=tx.objectStore('elements');
+  const req=operation==='list'?store.index('owner').getAll(session.userId):
+   operation==='get'?store.get(key):operation==='save'?store.put(record):store.delete(key);
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ })}finally{db.close()}
+}
+async function showStudioElements(){
+ const root=$('#aux-panel');root.hidden=false;root.style.padding='16px';root.style.overflow='auto';root.replaceChildren();
+ const heading=node('h2',language==='tr'?'Elements · Referans Kütüphanesi':'Elements · Reference Library');
+ const help=node('p',language==='tr'?'Karakter, ürün, mekân ve ses referanslarını bu tarayıcıda kaydedin. AI üretimine dosya gönderilmez.':'Save character, product, location and voice references in this browser. Media is not sent to AI production.');
+ root.append(heading,help);
+ if(!session?.userId){root.append(node('p','Sign in to access your library.'));return;}
+ const kinds=['character','product','location','wardrobe','voice','style','reference'];
+ const controls=node('div');controls.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;align-items:center';
+ const category=node('select');kinds.forEach(k=>{const option=node('option',k);option.value=k;category.append(option)});
+ const name=node('input');name.placeholder=language==='tr'?'Referans adı':'Reference name';name.maxLength=100;
+ const description=node('input');description.placeholder=language==='tr'?'Görünüm ve tutarlılık notları':'Appearance and consistency notes';description.maxLength=500;
+ const file=node('input');file.type='file';file.accept='image/*,audio/*,video/*';
+ const consentWrap=node('label');const consent=node('input');consent.type='checkbox';consentWrap.append(consent,node('span',language==='tr'?'Yüz veya ses için kullanım iznim var':'I have permission to use this face or voice'));
+ const save=node('button',language==='tr'?'Referansı kaydet':'Save reference');save.type='button';
+ const note=node('p','');note.style.color='#bca7d2';
+ controls.append(category,name,description,file,consentWrap,save);
+ const listing=node('div');listing.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px';
+ root.append(controls,note,listing);
+ const feedback=message=>note.textContent=message;
+ const render=async()=>{
+  listing.replaceChildren();
+  try{
+   const records=await studioElementsOperation('list');
+   if(!root.isConnected)return;
+   const items=Array.isArray(records)?records.filter(item=>item&&item.owner===session.userId).slice(-80).reverse():[];
+   if(!items.length){listing.append(node('p',language==='tr'?'Henüz kayıtlı referans yok':'No references saved yet'));return;}
+   for(const item of items){
+    const card=node('div');card.style.cssText='padding:11px;border:1px solid #503363;border-radius:10px;background:#1b1528;min-width:0';
+    const label=node('strong',String(item.name||'Reference').slice(0,100));label.style.cssText='display:block;overflow-wrap:anywhere';
+    card.append(label,node('small',String(item.kind||'reference')));
+    const use=node('button',language==='tr'?'Brief\'te kullan':'Use in brief');use.type='button';
+    use.onclick=()=>{
+     const message='Reference ('+String(item.kind).slice(0,30)+'): '+String(item.name).slice(0,100)+
+      (item.description?' — '+String(item.description).slice(0,400):'')+
+      '\\nLocal reference notes only; file is not attached to the AI.';
+     $('#prompt').value=($('#prompt').value.trim()?$('#prompt').value.trim()+'\\n':'')+message;
+     showAux('canvas');$('#prompt').focus();
+    };
+    const remove=node('button',language==='tr'?'Sil':'Delete');remove.type='button';
+    remove.onclick=async()=>{
+     if(!confirm(language==='tr'?'Bu referans silinsin mi?':'Delete this reference?'))return;
+     try{await studioElementsOperation('delete',null,item.key);await render()}catch(_error){feedback('Could not remove this reference.')}
+    };
+    card.append(use,remove);listing.append(card);
+   }
+  }catch(_error){feedback(language==='tr'?'Yerel kütüphane kullanılamıyor. Tarayıcı depolamasını kontrol edin.':'Local storage unavailable. Check your browser storage settings.')}
+ };
+ save.onclick=async()=>{
+  const media=file.files?.[0],label=name.value.trim();
+  if(!media||!label){feedback('Choose a file and enter a reference name.');return;}
+  if(media.size>25_000_000||!(/^(image|audio|video)\\//.test(media.type))){feedback('Use an image, audio or video file smaller than 25 MB.');return;}
+  if(['character','voice'].includes(category.value)&&!consent.checked){feedback('Please confirm face or voice usage permission.');return;}
+  try{
+   const records=await studioElementsOperation('list');
+   if(Array.isArray(records)&&records.length>=80){feedback('Maximum 80 saved references.');return;}
+   await studioElementsOperation('save',{
+    key:session.userId+':'+crypto.randomUUID(),owner:session.userId,
+    name:label.slice(0,100),description:description.value.trim().slice(0,500),
+    kind:category.value,mime:media.type,size:media.size,createdAt:Date.now(),
+    blob:media,permission:consent.checked
+   });
+   name.value='';description.value='';file.value='';consent.checked=false;
+   feedback(language==='tr'?'Referans kaydedildi (yalnızca bu tarayıcı).':'Reference saved in this browser.');
+   await render();
+  }catch(_error){feedback('Could not save file in this browser.')}
+ };
+ await render();
+}
 function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;
- if(view==='assets'){
-  const root=$('#aux-panel');root.replaceChildren();root.style.padding='0';root.style.overflow='hidden';
-  const frame=node('iframe');frame.title='Crelavo Elements and reference library';
-  frame.src='/dashboard/studio-elements';frame.setAttribute('loading','eager');
-  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1d';
-  root.append(frame);return;
- }if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
+ if(view==='assets'){void showStudioElements();return;}if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
  if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));
   if(current.id!=='website'&&!status?.realEnabled&&mode==='real'&&project?.messages?.length){
