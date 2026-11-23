@@ -62,4 +62,10 @@ assert(!websiteAdapter.includes('creditsSpend') && !websiteAdapter.includes('POS
 assert(websiteAdapter.includes('spend: async () => ({ ok: false, charged: 0'), 'website adapter must fail closed if legacy handler reaches spending');
 assert(client.includes('websiteSelectedPackId=pack.id;websiteData=null'), 'package changes must invalidate an old approval review');
 assert(client.includes('project.productionId&&selectedProduction!==project.productionId'), 'mismatched website project link must fail before draft mutation');
+const atomicAdapter=read('src/lib/assistant-work/website-credit-ledger.ts');
+assert(atomicAdapter.includes('website_credit_reserve')&&atomicAdapter.includes('website_credit_finalize'), 'Website credit adapter must only call atomic RPCs');
+assert(!atomicAdapter.includes('creditsSpend')&&!atomicAdapter.includes('fetch('), 'Website atomic adapter must not use legacy spending or browser endpoints');
+assert(atomicAdapter.includes('z.enum(["ready", "failed"])'), 'Website finalization must accept explicit terminal outcomes only');
+const websiteFlow=read('src/lib/assistant-work/website.ts');
+assert(websiteFlow.includes("state.phase === 'reserved' && body.action !== 'website_open'"), 'reserved plan must remain immutable through Website API');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
