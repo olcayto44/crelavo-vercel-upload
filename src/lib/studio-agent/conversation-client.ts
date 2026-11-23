@@ -72,7 +72,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  if(current.id==='website'&&mode==='real'&&session){
   const progress=node('section',null,'studio-website-progress');
   progress.setAttribute('aria-label','Website proje durumu');
-  progress.style.cssText='margin:10px 0;padding:12px;border:1px solid #594071;border-radius:10px;background:#24162f;display:grid;gap:7px';
+  progress.style.cssText='margin:8px 0;padding:11px;border:1px solid #342740;border-radius:10px;background:#1a1526;display:grid;gap:7px';
   const w=websiteData?.website;
   const fields=project?.snapshot?.fields||{};
   progress.appendChild(node('strong','Website üretim planı'));
@@ -401,24 +401,23 @@ function setup(){
  const studioLang=$('#studio-ui-language');if(studioLang){studioLang.value=language;studioLang.onchange=()=>setStudioLanguage(studioLang.value);}
  updateStudioLanguage();
  const lang=$('#b2-language');lang.replaceChildren();['tr','en','de','es','fr','ar'].forEach(code=>{const o=node('option',code.toUpperCase());o.value=code;lang.appendChild(o)});lang.value=language;lang.onchange=()=>setStudioLanguage(lang.value);
- if(current.id==='website'){
-   if(!$('#website-builder-open')){
-    const button=node('button','✦ Website oluştur');
-    button.id='website-builder-open';button.type='button';
-    button.title='Website oluşturma, önizleme, revizyon ve ZIP';
-    button.onclick=openFunctionalWebsiteBuilder;
-    $('.empty-actions').appendChild(button);
-   }
-   if(!$('#website-builder-rail')){
-    const button=node('button','▣');
-    button.id='website-builder-rail';button.type='button';button.title='Website Builder';
-    button.onclick=openFunctionalWebsiteBuilder;
-    $('.canvas-rail').appendChild(button);
-   }
- }else{
-   $('#website-builder-open')?.remove();
-   $('#website-builder-rail')?.remove();
+ // Use the original top-toolbar Create action, not an extra button
+ // pasted over the reference Canvas artwork.
+ const createControl=$('[data-global="create"]');
+ if(createControl){
+  createControl.disabled=current.id!=='website';
+  createControl.title=current.id==='website'?'Open Website Builder':'Production not enabled for this category';
+  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:null;
  }
+ $('#website-builder-open')?.remove();
+ if(current.id==='website'){
+  if(!$('#website-builder-rail')){
+   const button=node('button','▣');
+   button.id='website-builder-rail';button.type='button';button.title='Website Builder';
+   button.onclick=openFunctionalWebsiteBuilder;
+   $('.canvas-rail').appendChild(button);
+  }
+ }else $('#website-builder-rail')?.remove();
  const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:false;modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();else if(current.id!=='website')restoreLocalCategoryChat()};
  $('#b2-new-project').onclick=()=>{epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}try{sessionStorage.removeItem(localCategoryKey());}catch(_error){}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
  $('#b2-defaults').onclick=()=>{const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});if(!list.length)return;$('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';sendMessage(list)};
