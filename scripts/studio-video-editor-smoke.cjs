@@ -68,4 +68,15 @@ assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must b
 assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
 assert.match(source,/studio-video-preview-stage"\+\(ratio===/,'outer video player must change size with aspect ratio');
 assert.match(css,/studio-video-preview-stage.is-portrait/,'outer portrait container must be compact');
+assert.match(source,/function ClipThumbnail\(/,'every timeline card must have real video thumbnail renderer');
+assert.match(source,/canvas\.toDataURL\("image\/jpeg"/,'thumbnails must be generated from actual clip pixels');
+assert.match(source,/onDragStart=\{e=>/,'timeline clips need drag start handler');
+assert.match(source,/onDragOver=\{e=>/,'timeline must advertise valid reorder drop target');
+assert.match(source,/onDrop=\{e=>\{e\.preventDefault\(\);reorderByDrop\(clip\.id\);\}\}/,'dropping must change timeline order');
+assert.match(source,/next\.splice\(to,0,item\)/,'drag-drop must physically reorder source timeline');
+assert.match(source,/aria-pressed=\{ratio===value\}/,'format selection must expose selected orientation');
+assert.match(source,/Choose video orientation before uploading/,'format preset must be near upload control');
+assert.match(source,/Move clip left/,'keyboard-friendly alternative to drag-drop must remain');
+assert.match(css,/studio-timeline-thumb img/,'real thumbnail needs fit-safe styling');
+assert.match(css,/studio-timeline-clip\.is-drop-target/,'drag target must show visual feedback');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
