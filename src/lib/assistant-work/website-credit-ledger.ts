@@ -12,14 +12,16 @@ const FINALIZE = z.strictObject({
   userId: UUID, productionId: UUID, planHash: HASH,
   outcome: z.enum(["ready", "failed"]),
 });
+const CLAIM = z.strictObject({ userId: UUID, productionId: UUID, planHash: HASH });
 type RPC = (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }>;
 export type WebsiteCreditLedger = {
   reserve(input: z.input<typeof RESERVE>): Promise<unknown>;
+  claim(input: z.input<typeof CLAIM>): Promise<boolean>;
   finalize(input: z.input<typeof FINALIZE>): Promise<unknown>;
 };
 
 export function createWebsiteCreditLedger(rpc: RPC): WebsiteCreditLedger {
-  async function call(name: "website_credit_reserve" | "website_credit_finalize", args: Record<string, unknown>) {
+  async function call(name: "website_credit_reserve" | "website_credit_claim" | "website_credit_finalize", args: Record<string, unknown>) {
     const { data, error } = await rpc(name, args);
     // Fail closed, do not fall back to non-atomic /api/credits/spend.
     if (error || !data || typeof data !== "object" || Array.isArray(data)) {
@@ -34,6 +36,14 @@ export function createWebsiteCreditLedger(rpc: RPC): WebsiteCreditLedger {
         p_user: input.userId, p_production: input.productionId,
         p_hash: input.planHash, p_credits: input.credits,
       });
+    },
+    async claim(raw) {
+      const input = CLAIM.parse(raw);
+      const { data, error } = await rpc("website_credit_claim", {
+        p_user: input.userId, p_production: input.productionId, p_hash: input.planHash,
+      });
+      if (error || typeof data !== "boolean") throw new Error("website_atomic_claim_unavailable");
+      return data;
     },
     finalize(raw) {
       const input = FINALIZE.parse(raw);
