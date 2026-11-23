@@ -9,7 +9,7 @@ Status: **NOT READY FOR PRODUCTION**. Owner: Crelavo. Target: Studio V2 / Websit
 - Production-credit holds preserve per-credit-bucket accounting and credit-period fencing. Ledger mutations, source persistence, completion state and delivery URLs are transactional.
 - Non-atomic `/api/credits/spend` is not used for new Website atomic execution.
 - A test-only atomic Website route exists at `/api/studio/website-atomic`. It requires all of: `VERCEL_ENV=preview`, `STUDIO_AGENT_WEBSITE_ATOMIC_TEST_ENABLED=true`, an exact **isolated** Supabase target, a matching isolated origin, and a valid test-user bearer token.
-- Production `/api/websites/generate` still denies `render`. No flag in the isolated route can enable Production rendering.
+- Production `/api/websites/generate` routes `render` through the atomic adapter only when **both** `CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED=true` and `CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS` contains the verified user's exact UUID. Both default to closed. The isolated route cannot enable Production rendering.
 
 ## Automated tests
 
@@ -39,3 +39,11 @@ Status: **NOT READY FOR PRODUCTION**. Owner: Crelavo. Target: Studio V2 / Websit
 - If a rollout fails, stop new render requests; reconcile unsettled reservations from ledger evidence without direct wallet edits.
 
 Last reviewed 2026-11-23. This is a deployment checklist, not evidence that Production release was completed.
+
+
+## November 23 release staging
+
+- GitHub draft production release review: PR #7. **255 commits / 261 files ahead of main; do not merge wholesale without scope review.**
+- Vercel staging deployment `dpl_BNL8WBJCZSX1Ea3pLuA2eTJyVVKY` reached READY and the Studio V2 Website page responded 200. It has **not** passed authenticated Website generation/payment test.
+- Production deployment and custom domain aliases were left unchanged. Paid feature-flag and canary UUID allowlist were not enabled.
+- Canary gate: only verified user UUIDs explicitly listed in `CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS` (at most 25, strict CSV) can initiate paid generation when the independent production feature flag is also enabled.
