@@ -8,6 +8,8 @@ on:
       - 'src/components/StudioConversationFrame.tsx'
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/website-atomic-db-regression.cjs'
+      - 'supabase/migration_website_atomic_credits_draft.sql'
       - 'scripts/studio-advanced-mock-smoke.cjs'
       - 'scripts/studio-agent-test-loader.cjs'
       - 'scripts/studio-offline-preload.cjs'
@@ -23,6 +25,8 @@ on:
       - 'src/components/StudioConversationFrame.tsx'
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/website-atomic-db-regression.cjs'
+      - 'supabase/migration_website_atomic_credits_draft.sql'
       - 'scripts/studio-advanced-mock-smoke.cjs'
       - 'scripts/studio-agent-test-loader.cjs'
       - 'scripts/studio-offline-preload.cjs'
@@ -56,6 +60,8 @@ jobs:
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Studio shell and conversation static contracts
         run: node scripts/studio-handoff-contract-smoke.cjs
+      - name: Offline Website atomic credit migration regression
+        run: node scripts/website-atomic-db-regression.cjs
       - name: Production route dry-run static contracts
         run: npm run smoke:e2e-dry-run
       - name: Advanced Studio mock integration (network blocked)
