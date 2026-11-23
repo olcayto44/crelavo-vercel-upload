@@ -90,7 +90,9 @@ begin
   update production_requests set generation_status='completed',
    output_json=(output_json||jsonb_build_object('websiteFiles',files,
     'websiteContent',coalesce(p_result->'websiteContent','{}'::jsonb),
+    'websiteContentRevision',0,'websiteContentHistory','[]'::jsonb,'websiteContentHistoryVersion',2,
     'pageManifest',coalesce(p_result->'pageManifest','[]'::jsonb),
+    'plan',coalesce(p_result->'plan','{}'::jsonb),
     'scope','marketing_website')),
    updated_at=now() where id=p_production and user_id=p_user;
   update production_requests set output_json=jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb('awaiting_payment'::text)) where id=p_production;
@@ -160,7 +162,7 @@ begin
  status=case when p_outcome='ready' then 'ready' else 'failed' end,
  generation_status=case when p_outcome='ready' then 'completed' else 'failed' end,
  output_json=jsonb_set(jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb(case when p_outcome='ready' then 'ready' else 'generation_failed' end)),
- '{websiteBillingPending}','false'::jsonb)||case when p_outcome='ready' then jsonb_build_object('charged',reservation.credits) else '{}'::jsonb end,
+ '{websiteBillingPending}','false'::jsonb)||case when p_outcome='ready' then jsonb_build_object('charged',reservation.credits,'websiteBillingMode','atomic_v1') else '{}'::jsonb end,
  preview_url=case when p_outcome='ready' then '/api/productions/'||p_production::text||'/delivery?file=preview' else preview_url end,
  delivery_zip_url=case when p_outcome='ready' then '/api/productions/'||p_production::text||'/delivery?file=zip' else delivery_zip_url end,
  delivery_link=case when p_outcome='ready' then '/api/productions/'||p_production::text||'/delivery?file=manifest' else delivery_link end,
