@@ -684,6 +684,18 @@ function setup(){
  $('#file').accept=current.panel.accept||'image/*,audio/*,video/*,.pdf,.txt';$('#file').onchange=()=>{referenceFile=$('#file').files?.[0]||null;$('#b2-attachment').textContent=referenceFile?referenceFile.name+' — '+t(9):'';window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(activeView==='assets')showAux('assets')};$('#b2-file-button').onclick=()=>$('#file').click();$('#add-reference').onclick=()=>$('#file').click();
  $('#b2-saved-sites').onclick=()=>savedWebsites().catch(showError);$('#open-projects').onclick=()=>{if(innerWidth<=900)setPanel('categories');savedWebsites().catch(showError)};$('#start-conversation').onclick=()=>{if(innerWidth<=900)setPanel('assistant');$('#prompt').focus()};$('#studio-home').onclick=()=>setPanel('canvas');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showAux(b.dataset.view));document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>setDevice(b.dataset.device));$('#website-pages').onchange=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value)};$('#refresh-preview').onclick=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value||'index.html');else showCanvas('empty')};tools();showCanvas(canvasState);draw();
 }
+addEventListener('crelavo-studio-video-metadata',event=>{
+ const data=event.detail||{};
+ if(!activeVideoSelection||activeVideoSelection.id!==data.id)return;
+ const specs={...(activeVideoSelection.specs||{})};
+ const duration=Number(data.durationSeconds);
+ if(!Number.isFinite(Number(specs.durationSeconds))||Number(specs.durationSeconds)<=0)
+  if(Number.isFinite(duration)&&duration>0&&duration<=7200)specs.durationSeconds=Math.round(duration*10)/10;
+ if(!specs.aspectRatio&&typeof data.aspectRatio==='string'&&data.aspectRatio.length<30)
+  specs.aspectRatio=data.aspectRatio;
+ activeVideoSelection={...activeVideoSelection,specs};
+ draw();
+});
 addEventListener('crelavo-studio-video-selected',event=>{
  if(!current||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
  const detail=event.detail||{};
