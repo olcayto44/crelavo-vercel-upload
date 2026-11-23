@@ -1,0 +1,40 @@
+'use strict';
+const assert=require('node:assert/strict');
+const { chromium }=require('@playwright/test');
+const { load }=require('./studio-agent-test-loader.cjs');
+const { studioViewTemplate,studioViewController }=load('src/lib/studio-agent/studio-view.ts');
+const { studioConversationClientScript }=load('src/lib/studio-agent/conversation-client.ts');
+const { studioCategoryConfiguration }=load('src/app/studio-design-test/category-config.ts');
+const { getCategoryContract }=load('src/lib/studio-agent/requirements.ts');
+(async()=>{
+ const config=studioCategoryConfiguration();
+ assert.equal(config.categories.length,37,'all categories must render');
+ const b2={mockAllowed:false,requirements:Object.fromEntries(config.categories.map(c=>[c.id,getCategoryContract(c.id).fields])),defaults:Object.fromEntries(config.categories.map(c=>[c.id,getCategoryContract(c.id).defaults]))};
+ const safe=x=>JSON.stringify(x).replace(/</g,'\\u003c');
+ const html=studioViewTemplate.replace('<!--STUDIO_SCRIPT-->',()=>'<script type="application/json" id="studio-config">'+safe(config)+'</script><script>'+studioViewController+';window.__studioB2='+safe(b2)+';'+studioConversationClientScript+'</script>');
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ try{
+  const page=await browser.newPage({viewport:{width:1440,height:900}});
+  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('about:blank');
+  await page.setContent('<iframe title="studio-test" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style="width:100%;height:900px;border:0"></iframe>');
+  await page.locator('iframe').evaluate((frame,srcdoc)=>{frame.srcdoc=srcdoc},html);
+  const studio=page.frameLocator('iframe');
+  await studio.locator('.studio').waitFor();
+  assert.equal(await studio.locator('.category').count(),37);
+  for(const selector of ['.sidebar','.work','.assistant','#prompt','#send'])assert.equal(await studio.locator(selector).count(),1,selector);
+  await studio.locator('.category[data-category="website"]').click();
+  assert.equal(await studio.locator('.studio').getAttribute('data-category'),'website');
+  const other=config.categories.find(c=>c.id!=='website');
+  await studio.locator('.category[data-category="'+other.id+'"]').click();
+  assert.equal(await studio.locator('.studio').getAttribute('data-category'),other.id);
+  assert.equal(await studio.locator('.category.active').count(),1);
+  await page.setViewportSize({width:390,height:844});
+  await studio.locator('.mobile button[data-panel="assistant"]').click();
+  assert.equal(await studio.locator('.studio').getAttribute('data-panel'),'assistant');
+  await studio.locator('.mobile button[data-panel="categories"]').click();
+  assert.equal(await studio.locator('.studio').getAttribute('data-panel'),'categories');
+  assert.deepEqual(errors,[],'browser JS must not crash');
+  console.log('STUDIO BROWSER SMOKE PASS: 37 categories, three panes, category navigation, mobile tabs, no JS errors (offline, no auth/provider/db).');
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});
