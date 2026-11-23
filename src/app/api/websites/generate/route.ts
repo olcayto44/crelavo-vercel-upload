@@ -20,6 +20,12 @@ export async function POST(request: Request) {
   if (!safe.ok) return Response.json({ error: safe.message }, { status: 400 });
   const action = String(body.action || "revise");
   if (!["revise", "website_open", "website_approve", "render", "website_retry"].includes(action)) return Response.json({ error: "unsupported_action" }, { status: 400 });
+  // Fail closed until Website Builder billing uses the atomic reserve/settle/release ledger.
+  // The legacy spend endpoint updates wallet and ledger separately; it cannot safely
+  // charge a completed website or recover from a partial payment failure.
+  if (action === "render") {
+    return Response.json({ ok: false, code: "website_atomic_billing_required", message: "Website generation is temporarily unavailable until atomic credit billing is connected." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   // No separate/free generation or implicit approval is permitted here.
   const result = await executeWebsiteRequest(request, { ...body, category: "website", type: "Website", action, render: action === "render", prompt: String(body.prompt ?? body.brief ?? ""), ...(action === "revise" ? { uiAction: true, websiteBrief: body.websiteBrief ?? { brand: body.brand, brief: body.brief, audience: body.audience, siteType: body.site_type, style: body.style, pages: body.pages, features: body.features, locale: body.locale } } : {}) }, { id: data.user.id, email: data.user.email });
   return Response.json(result.payload, { status: result.status, headers: { "Cache-Control": "no-store" } });
