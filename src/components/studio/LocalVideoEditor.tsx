@@ -7,7 +7,7 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number };
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -123,6 +123,7 @@ export default function LocalVideoEditor() {
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
   const [backgroundMusic,setBackgroundMusic] = useState<File|null>(null);
   const [musicVolume,setMusicVolume] = useState(0.3);
+  const [fadeBetweenClips,setFadeBetweenClips] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [editorLanguage, setEditorLanguage] = useState<"en" | "tr">("en");
   useEffect(() => {
@@ -151,7 +152,7 @@ export default function LocalVideoEditor() {
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -172,6 +173,7 @@ export default function LocalVideoEditor() {
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
+      setFadeBetweenClips(Boolean(project.fadeBetweenClips));
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -288,7 +290,8 @@ export default function LocalVideoEditor() {
       recorder.start(750);
       musicSource?.start();
       let elapsed = 0;
-      for (const clip of clips) {
+      for (let clipIndex=0;clipIndex<clips.length;clipIndex++) {
+        const clip=clips[clipIndex];
         if (cancel.current) throw new Error("Export cancelled.");
         const video = document.createElement("video"); currentVideo = video;
         video.preload = "auto"; video.playsInline = true; video.src = clip.url;
@@ -303,7 +306,21 @@ export default function LocalVideoEditor() {
         let source: MediaElementAudioSourceNode | null = null;
         if (audio && includeAudio) {
           source = audio.createMediaElementSource(video);
-          source.connect((canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination!);
+          const inputGain=audio.createGain();
+          inputGain.gain.value=1;
+          source.connect(inputGain);
+          inputGain.connect((canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination!);
+          if(fadeBetweenClips&&clips.length>1){
+            const now=audio.currentTime;
+            const segmentLength=clip.end-clip.start;
+            const fade=Math.min(.4,segmentLength/3);
+            inputGain.gain.setValueAtTime(clipIndex===0?1:0,now);
+            if(clipIndex>0)inputGain.gain.linearRampToValueAtTime(1,now+fade);
+            if(clipIndex<clips.length-1){
+              inputGain.gain.setValueAtTime(1,now+Math.max(fade,segmentLength-fade));
+              inputGain.gain.linearRampToValueAtTime(0,now+segmentLength);
+            }
+          }
         } else video.muted = true;
         const segment = clip.end - clip.start;
         if (segment <= .05) throw new Error("Invalid trim range for " + clip.name);
@@ -321,6 +338,15 @@ export default function LocalVideoEditor() {
               const at=elapsed+Math.min(segment,Math.max(0,video.currentTime-clip.start));
               paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
+              if(fadeBetweenClips&&clips.length>1){
+                const fade=Math.min(.4,segment/3);
+                const local=Math.max(0,video.currentTime-clip.start);
+                let opacity=0;
+                if(clipIndex>0&&local<fade)opacity=1-local/fade;
+                if(clipIndex<clips.length-1&&segment-local<fade)
+                  opacity=Math.max(opacity,1-Math.max(0,segment-local)/fade);
+                if(opacity>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,opacity)+')';ctx.fillRect(0,0,width,height);}
+              }
             }
             setProgress(Math.min(99, Math.round(100 * (elapsed + Math.min(segment, Math.max(0, video.currentTime - clip.start))) / duration)));
             if (video.currentTime >= clip.end - .04 || video.ended || performance.now() - begin > (segment + 6) * 1000) { resolve(); return; }
@@ -394,6 +420,7 @@ export default function LocalVideoEditor() {
       <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
       <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
+      <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} /> Fade between clips</label>
       <label style={{fontSize:12}}>Background music (licensed audio)
         <input aria-label="Background music file" type="file" accept="audio/*" disabled={busy}
           onChange={e=>{const next=e.target.files?.[0]||null;e.target.value="";
@@ -425,6 +452,6 @@ export default function LocalVideoEditor() {
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  No cloud storage, cross-device project sync, advanced crossfades or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
   </section>;
 }
