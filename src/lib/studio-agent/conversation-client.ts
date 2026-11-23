@@ -618,37 +618,24 @@ addEventListener('message',event=>{
  composer.focus();
  showAux('canvas');
 });
+// Navigate the top-level preview to working editor routes. The Vercel-protected
+// preview denies nested iframes, which previously displayed 'refused to connect'.
+function openStudioTool(tool){
+ const allowed=tool==='video'||tool==='image'||tool==='elements';
+ if(!allowed||(!session&&!window.__studioB2?.previewOnly))return;
+ parent.postMessage({type:'crelavo-studio-open-tool',tool},parent.location.origin);
+}
 function openStudioImageEditor(){
- if((!session&&!window.__studioB2?.previewOnly)||!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
- activeView='image-editor';
- const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
- root.style.padding='0';root.style.overflow='hidden';
- const frame=node('iframe');frame.id='studio-image-editor-frame';
- frame.title='Crelavo local image editor';frame.src='/dashboard/studio-image-editor';
- frame.setAttribute('loading','eager');
- frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1b';
- root.append(frame);
+ if(!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
+ openStudioTool('image');
+}
+function openStudioVideoEditor(){
+ if(!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
+ openStudioTool('video');
 }
 addEventListener('crelavo-studio-open-image-editor',openStudioImageEditor);
-function openStudioVideoEditor(){
- if((!session&&!window.__studioB2?.previewOnly)||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
- activeView='video-editor';
- const root=$('#aux-panel');
- root.replaceChildren();
- root.hidden=false;
- root.style.padding='0';
- root.style.overflow='hidden';
- const frame=node('iframe');
- frame.id='studio-video-editor-frame';
- frame.title='Crelavo local video timeline editor';
- frame.src='/dashboard/studio-video-editor';
- frame.setAttribute('loading','eager');
- frame.style.cssText='display:block;border:0;width:100%;height:100%;background:#110e1b';
- root.append(frame);
-}
 addEventListener('crelavo-studio-open-video-editor',openStudioVideoEditor);
 addEventListener('crelavo-studio-open-elements',()=>showAux('assets'));
-
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
  if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
