@@ -22,6 +22,7 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
     let parsed:unknown;try{parsed=JSON.parse(raw);}catch{throw new ConversationError("invalid_json",400);}
     const body=ConversationRequestSchema.parse(parsed);
     if(body.mode==="mock") {
+      if(body.action==="bind_website")throw new ConversationError("mock_binding_not_allowed",403);
       if(!mockPreviewAllowed())throw new ConversationError("mock_mode_not_allowed",403);
       if(body.action==="projects")return json({ok:true,mode:"mock",projects:[],memory:"signed_browser_demo"});
       if(body.action==="create") {
@@ -60,6 +61,20 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
     // No implicit mock fallback. New server flags are off unless explicitly configured AFTER offline migration review.
     const readiness=await studioReadiness(db);if(!readiness.ready)throw new ConversationError("studio_not_ready"); const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();
     const store=createDatabaseConversationStore(db);
+    if(body.action==="bind_website") {
+      if(body.categoryId!=="website"||process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")throw new ConversationError("website_binding_not_allowed",403);
+      const {data:website,error:websiteError}=await db.from("production_requests").select("id").eq("id",body.productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();
+      if(websiteError)throw new ConversationError("studio_storage_unavailable");
+      if(!website)throw new ConversationError("website_project_not_found",404);
+      const existing=await store.load(userId,body.projectId,"website");
+      if(existing.productionId&&existing.productionId!==body.productionId)throw new ConversationError("website_already_bound",409);
+      if(!existing.productionId){
+        const {data:bound,error:bindError}=await db.from("studio_agent_projects").update({production_id:body.productionId}).eq("id",body.projectId).eq("user_id",userId).eq("category_id","website").is("production_id",null).select("id").maybeSingle();
+        if(bindError)throw new ConversationError("studio_storage_unavailable");
+        if(!bound){const latest=await store.load(userId,body.projectId,"website");if(latest.productionId!==body.productionId)throw new ConversationError("website_binding_conflict",409);}
+      }
+      return json({ok:true,mode:"real",project:await store.load(userId,body.projectId,"website"),wallets:await store.wallets(userId),memory:"database",executionReady:false});
+    }
     if(body.action==="projects")return json({ok:true,mode:"real",projects:await store.list(userId,body.categoryId),wallets:await store.wallets(userId),memory:"database"});
     if(body.action==="create")return json({ok:true,mode:"real",project:await store.create(userId,body.categoryId,body.title,body.productionId),wallets:await store.wallets(userId),memory:"database",executionReady:false});
     if(body.action==="load")return json({ok:true,mode:"real",project:await store.load(userId,body.projectId,body.categoryId),wallets:await store.wallets(userId),memory:"database",executionReady:false});
