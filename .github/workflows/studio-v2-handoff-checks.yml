@@ -12,6 +12,7 @@ on:
       - 'scripts/studio-agent-test-loader.cjs'
       - 'scripts/studio-offline-preload.cjs'
       - 'scripts/studio-browser-smoke.cjs'
+      - 'scripts/studio-authenticated-browser-smoke.cjs'
       - 'scripts/e2e-dry-run-smoke.mts'
       - '.github/workflows/studio-v2-handoff-checks.yml'
   pull_request:
@@ -26,6 +27,7 @@ on:
       - 'scripts/studio-agent-test-loader.cjs'
       - 'scripts/studio-offline-preload.cjs'
       - 'scripts/studio-browser-smoke.cjs'
+      - 'scripts/studio-authenticated-browser-smoke.cjs'
       - 'scripts/e2e-dry-run-smoke.mts'
       - '.github/workflows/studio-v2-handoff-checks.yml'
   workflow_dispatch:
@@ -62,6 +64,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Offline browser smoke (37 categories and mobile navigation)
         run: node scripts/studio-browser-smoke.cjs
+      - name: Authenticated isolated Mock browser conversation
+        run: node scripts/studio-authenticated-browser-smoke.cjs
       - name: TypeScript typecheck
         run: npx tsc --noEmit
       - name: Next.js build with no Production credentials
