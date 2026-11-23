@@ -11,11 +11,16 @@ async function atomicWebsiteContentAccess(record: {
 }): Promise<Response | null> {
   const output = record.output_json && typeof record.output_json === "object" &&
     !Array.isArray(record.output_json) ? record.output_json as Record<string, unknown> : {};
-  if (record.production_type !== "website" || output.websiteBillingMode !== "atomic_v1") return null;
+  if (record.production_type !== "website") return null;
+  // Reservation is created before the final billing marker exists.
   const { data, error } = await supabaseAdmin().from("website_credit_reservations")
     .select("state,credits").eq("production_id", String(record.id))
     .eq("user_id", String(record.user_id)).maybeSingle();
-  if (error || !websiteCreditDeliveryProof(record, data))
+  if (error) return Response.json({ error: "website_credit_proof_unavailable" },
+    { status: 503, headers: { "Cache-Control": "no-store" } });
+  const hasAtomicClaim = Boolean(data) || output.websiteBillingMode === "atomic_v1" ||
+    output.websiteBillingPending === true;
+  if (hasAtomicClaim && !websiteCreditDeliveryProof(record, data))
     return Response.json({ error: "website_atomic_delivery_not_settled" },
       { status: 409, headers: { "Cache-Control": "no-store" } });
   return null;
