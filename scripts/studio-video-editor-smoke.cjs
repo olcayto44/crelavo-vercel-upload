@@ -89,4 +89,5 @@ assert.match(source,/objectFit:framing/,'actual preview must use selected fit mo
 assert.match(source,/framing === "cover" \? Math.max/,'export must apply the same selected fit or crop mode');
 assert.match(cloudTimelineSource,/t.framing==="cover"\?"cover":"contain"/,'legacy cloud projects default to non-cropping display');
 assert.match(ffmpegComposeSource,/timeline.framing==="cover"\?"cover":"contain"/,'staged MP4 worker must default to non-crop too');
+assert.match(source,/new clip\(s\) added · /,'upload status must distinguish newly imported clips from existing timeline total');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
