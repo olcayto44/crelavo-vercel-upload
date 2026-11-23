@@ -190,10 +190,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  for(const bubble of bubbles)messages.appendChild(bubble);
  if(chat){
   chat.scrollTop=chat.scrollHeight;
-  requestAnimationFrame(()=>{
-   const last=messages.querySelector('.message:last-child');
-   if(last){const bottom=last.offsetTop+last.offsetHeight;chat.scrollTop=Math.max(0,bottom-chat.clientHeight+16)}
-  });
+  requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight});
  }
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
