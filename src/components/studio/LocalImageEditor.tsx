@@ -21,6 +21,7 @@ export default function LocalImageEditor(){
     if(candidate&&/^[a-z0-9_]{1,40}$/.test(candidate))setStudioReturnCategory(candidate);
   },[]);
  const canvas=useRef<HTMLCanvasElement>(null);
+ const picker=useRef<HTMLInputElement>(null);
  const bitmap=useRef<ImageBitmap|null>(null);
  const [filename,setFilename]=useState("");
  const [status,setStatus]=useState("Choose an image. It stays in your browser.");
@@ -31,6 +32,7 @@ export default function LocalImageEditor(){
  const [saturation,setSaturation]=useState(100);
  const [ratio,setRatio]=useState<ImageRatio>("original");
  const [compare,setCompare]=useState(false);
+ const [dragOver,setDragOver]=useState(false);
  const [ready,setReady]=useState(false);
  useEffect(()=>()=>{bitmap.current?.close()},[]);
  async function loadFile(file:File|null){
@@ -85,16 +87,18 @@ export default function LocalImageEditor(){
   <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,flexWrap:"wrap"}}>
    <div><a href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"} style={{display:"inline-block",color:"#dec8f5",fontSize:12,marginBottom:6}}>← Back to Studio V2</a><h1 style={{fontSize:18,margin:"0 0 4px"}}>Image Editor</h1><p style={{fontSize:12,color:"#b9accb",margin:0}}>Rotate, flip, center crop, adjust color, and export PNG. No AI generation.</p></div>
    <label style={{background:"#7134b8",padding:"9px 14px",borderRadius:9,cursor:"pointer"}}>+ Add image
-    <input type="file" accept="image/*" hidden aria-label="Select local image" onChange={e=>{void loadFile(e.target.files?.[0]||null);e.currentTarget.value=""}}/>
+    <input ref={picker} type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" hidden aria-label="Select local image" onChange={e=>{void loadFile(e.target.files?.[0]||null);e.currentTarget.value=""}}/>
    </label>
   </header>
   <p role="status" style={{color:"#c2aadb",fontSize:12}}>{status}</p>
   <div className="image-editor-main">
-   <div style={{background:"#0a0711",border:"1px solid #4b365d",borderRadius:11,padding:8,minHeight:195,display:"grid",placeItems:"center",minWidth:0}}>
-    {ready?<canvas ref={canvas} style={{maxWidth:"100%",maxHeight:"55vh",objectFit:"contain"}} aria-label="Image preview"/>:<p style={{color:"#a696ba"}}>Choose an image to edit</p>}
+   <div className={"image-editor-dropzone"+(dragOver?" dragging":"")} onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={e=>{e.preventDefault();setDragOver(false)}} onDrop={e=>{e.preventDefault();setDragOver(false);void loadFile(e.dataTransfer.files?.[0]||null)}} style={{background:"#0a0711",border:"1px solid #4b365d",borderRadius:11,padding:8,minHeight:195,display:"grid",placeItems:"center",minWidth:0}}>
+    {ready?<canvas ref={canvas} style={{maxWidth:"100%",maxHeight:"55vh",objectFit:"contain"}} aria-label="Image preview"/>:<div className="image-editor-empty"><p>Choose an image to edit</p><button type="button" onClick={()=>picker.current?.click()}>+ Select image</button><small>PNG, JPEG, WebP, GIF or AVIF · up to 25 MB</small></div>}
    </div>
    <aside style={{border:"1px solid #443354",borderRadius:11,padding:12,background:"#20182a",display:"grid",gap:11}}>
     <strong style={{fontSize:13}}>Image controls</strong>
+    {!ready&&<div className="image-editor-controls-prompt" role="status"><p>Upload a picture to activate crop, rotate, sliders and export.</p><button type="button" onClick={()=>picker.current?.click()}>+ Add image to enable controls</button></div>}
+    {ready&&<p className="image-editor-active-note" role="status">Editing {filename}. Every adjustment updates the preview.</p>}
     <label style={{fontSize:12}}>Aspect ratio <select disabled={!ready} value={ratio} onChange={e=>setRatio(e.target.value as ImageRatio)} style={{width:"100%"}}>
       <option value="original">Original</option><option value="1:1">1:1</option><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="4:5">4:5</option>
     </select></label>
@@ -104,11 +108,11 @@ export default function LocalImageEditor(){
      <button type="button" disabled={!ready} onClick={()=>setFlipped(v=>!v)}>↔ Flip</button>
     </div>
     {([{key:"Brightness",val:brightness,change:setBrightness},{key:"Contrast",val:contrast,change:setContrast},{key:"Saturation",val:saturation,change:setSaturation}]).map(control=>
-      <label key={control.key} style={{fontSize:12}}>{control.key} {control.val}%
-       <input disabled={!ready} type="range" min={control.key==="Brightness"?0:10} max={200} step={5} value={control.val} onChange={e=>control.change(Number(e.target.value))} style={{width:"100%"}}/>
+      <label className="image-editor-slider" key={control.key} style={{fontSize:12}}><span>{control.key} <output>{control.val}%</output></span>
+       <input aria-label={control.key} disabled={!ready} type="range" min={control.key==="Brightness"?0:10} max={200} step={5} value={control.val} onChange={e=>control.change(Number(e.currentTarget.value))} style={{width:"100%"}}/>
       </label>)}
     <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
-     <button type="button" disabled={!ready} onPointerDown={()=>setCompare(true)} onPointerUp={()=>setCompare(false)} onPointerLeave={()=>setCompare(false)}>Hold to compare</button>
+     <button type="button" disabled={!ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);setCompare(true)}} onPointerUp={()=>setCompare(false)} onPointerCancel={()=>setCompare(false)} onPointerLeave={()=>setCompare(false)}>Hold to compare</button>
      <button type="button" disabled={!ready} onClick={reset}>Reset</button>
     </div>
     <button type="button" disabled={!ready} onClick={exportImage} style={{padding:11,background:"#7235b9",color:"#fff",border:0,borderRadius:9}}>Download PNG</button>
