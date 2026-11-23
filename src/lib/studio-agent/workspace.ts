@@ -29,7 +29,13 @@ function showVideoProject(item){
  wrapper.replaceChildren();const video=make('video');video.className='studio-video';video.controls=true;
  video.preload='metadata';video.playsInline=true;video.src=item.videoUrl;video.setAttribute('controlsList','nodownload');
  video.setAttribute('aria-label',item.title);
- wrapper.append(video);stage.hidden=false;empty.hidden=true;
+ const playbackStatus=make('div','Loading saved video…','studio-video-meta');
+ playbackStatus.setAttribute('role','status');
+ playbackStatus.style.cssText='font-size:12px;text-align:center;padding:8px;color:#bcb0d1';
+ wrapper.append(video,playbackStatus);stage.hidden=false;empty.hidden=true;
+ video.addEventListener('loadeddata',()=>{
+  if(playbackStatus.isConnected)playbackStatus.textContent='';
+ },{once:true});
  // Actual media metadata is more trustworthy than missing historical plan fields.
  // This does not invent model names, charge credits or start a production.
  video.addEventListener('loadedmetadata',()=>{
@@ -45,7 +51,7 @@ function showVideoProject(item){
  },{once:true});
  q('#canvas-source').hidden=true;q('#playback').hidden=true;
  q('#view-status').textContent=item.title;
- q('#canvas-caption').textContent='16:9 · '+item.title;
+ q('#canvas-caption').textContent=(item.specs?.aspectRatio||'Video')+' · '+item.title;
  const lower=q('#workspace-lower');lower.replaceChildren();
  const heading=make('h3','Scenes / Timeline');heading.append(make('span',String(playList.length)+' '+(playList.length===1?'clip':'clips')));
  const track=make('div',undefined,'studio-video-strip');
@@ -91,7 +97,10 @@ function showVideoProject(item){
  const info=make('span','Saved video output · playback only. Editing or new renders require a separate confirmed production.','studio-video-meta');
  actions.append(info);lower.append(actions);
  video.addEventListener('error',()=>{
-  if(video.isConnected)info.textContent='The saved video could not be played. The provider URL may have expired; no new production was started.';
+  if(video.isConnected){
+   info.textContent='The saved video could not be played. The provider URL may have expired; no new production was started.';
+   playbackStatus.textContent='Video unavailable. Check the saved file or try another output.';
+  }
  });
  const tabs=q('.tabs');const variants=tabs.querySelector('[data-view="variants"]');
  if(variants)variants.textContent='Variants ('+readyVideos.length+')';
