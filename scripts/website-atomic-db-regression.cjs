@@ -44,6 +44,9 @@ const { PGlite } = require('@electric-sql/pglite');
 
   await assert.rejects(call('website_credit_reserve',[owner,first,hash,61]),/website_reservation_conflict/);
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'ready']),/website_delivery_and_approval_required/);
+  assert.equal(await call('website_credit_claim',[owner,first,hash]),true);
+  assert.equal(await call('website_credit_claim',[owner,first,hash]),false,'generation claim is single-use');
+  await assert.rejects(call('website_credit_claim',[stranger,first,hash]),/website_project_not_found/);
   await generated(first,false);
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'ready']),/website_delivery_and_approval_required/);
   await generated(first,true);
@@ -66,6 +69,7 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal((await wallet()).reserved,0);
   const third=await make(10);
   await call('website_credit_reserve',[owner,third,hash,10]);
+  assert.equal(await call('website_credit_claim',[owner,third,hash]),true);
   await generated(third,true);
   await db.query('update credit_balances set last_rollover_at=now() where user_id=$1',[owner]);
   assert.equal((await call('website_credit_finalize',[owner,third,hash,'ready'])).reason,'credit_period_changed');
