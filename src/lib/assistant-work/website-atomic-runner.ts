@@ -23,29 +23,41 @@ export async function runIsolatedWebsiteGeneration(
   const identity = {
     userId: input.userId, productionId: input.productionId, planHash: input.planHash,
   };
-  const reservation = await deps.ledger.reserve({ ...identity, credits: input.credits });
-  if (!reservation || typeof reservation !== "object" || !("fresh" in reservation) ||
-      (reservation as { fresh?: unknown }).fresh !== true) {
-    // No automatic replay: a crashed, uncertain or previously completed request
-    // needs server-side inspection, never a second provider invocation.
-    return { state: "already_reserved_or_finished" as const, charged: false };
-  }
   // The website brief must come from the owner-scoped, atomically reserved row,
   // never from the browser request or an untrusted pre-reservation snapshot.
   const stored = z.strictObject({
     userId: z.string().uuid(), productionId: z.string().uuid(),
-    phase: z.literal("reserved"), planHash: z.string(), approvedHash: z.string(),
+    phase: z.enum(["approved", "reserved"]), planHash: z.string(), approvedHash: z.string(),
     packId: z.string(), credits: z.number().int(),
     brief: z.record(z.string(), z.unknown()),
   }).parse(await deps.loadReserved(input.productionId, input.userId));
   const brief = normalizeAssistantWebsiteBrief(stored.brief);
   const pack = getCategory("website")?.packs.find(p => p.id === stored.packId);
-  if (stored.userId !== input.userId || stored.productionId !== input.productionId ||
+  if (!["approved","reserved"].includes(stored.phase) || stored.userId !== input.userId || stored.productionId !== input.productionId ||
     stored.planHash !== input.planHash || stored.approvedHash !== input.planHash ||
     stored.credits !== input.credits || pack?.credits !== input.credits ||
     /admin|commerce|checkout/i.test(pack.label) ||
     websitePlanHash(brief, stored.packId) !== input.planHash ||
     missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
+    throw new Error("website_reserved_plan_mismatch_reconciliation_required");
+  }
+  // Validate before reserving so invalid/stale packs never hold a user's credits.
+  const reservation = await deps.ledger.reserve({ ...identity, credits: input.credits });
+  if (!reservation || typeof reservation !== "object" || !("fresh" in reservation) ||
+      (reservation as { fresh?: unknown }).fresh !== true) {
+    return { state: "already_reserved_or_finished" as const, charged: false };
+  }
+  // Refetch after the transaction to confirm the plan stayed locked.
+  const confirmed = await deps.loadReserved(input.productionId, input.userId);
+  const held = z.strictObject({
+    userId: z.string().uuid(), productionId: z.string().uuid(), phase: z.literal("reserved"),
+    planHash: z.string(), approvedHash: z.string(), packId: z.string(), credits: z.number().int(),
+    brief: z.record(z.string(), z.unknown()),
+  }).parse(confirmed);
+  if (held.userId !== stored.userId || held.productionId !== stored.productionId ||
+      held.planHash !== stored.planHash || held.approvedHash !== stored.approvedHash ||
+      held.packId !== stored.packId || held.credits !== stored.credits ||
+      websitePlanHash(normalizeAssistantWebsiteBrief(held.brief), held.packId) !== input.planHash) {
     throw new Error("website_reserved_plan_mismatch_reconciliation_required");
   }
   if (!await deps.ledger.claim(identity)) {
