@@ -3,7 +3,11 @@ const $=selector=>document.querySelector(selector);
 let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'mock':'real',epoch=0,busy=false,pending=null,status=null,walletCache=null,uiError='';
 let liveProductionBalance=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
-let language=new URLSearchParams(parent.location.search).get('uiLang')||'tr';
+const availableStudioLanguages=['en','tr','de','es','fr','ar'];
+let storedStudioLanguage='en';
+try{storedStudioLanguage=localStorage.getItem('clipora_language')||'en'}catch(_error){}
+let language=new URLSearchParams(parent.location.search).get('uiLang')||storedStudioLanguage;
+if(!availableStudioLanguages.includes(language))language='en';
 const words={
 tr:['Konuşma','Yeni sohbet projesi','Mesaj gönder','Dosya seç','Proje bağlamı','Önce oturum açın.','Bir mesaj yazın…','Mock demo: Yanıtlar ve bakiyeler simülasyondur. Hafıza tarayıcıda imzalı demo kaydıdır; gerçek AI/DB değildir.','Gerçek AI yalnızca atomik muhasebe ve sunucu tarifesi etkinse çalışır.','Dosya yalnızca seçildi; yükleme ve modele aktarım henüz bağlı değil.','Üretim ve revizyon araçları henüz bağlı değil.','Varsayılanları kullan','Kayıtlı Website projeleri','Salt okunur önizleme','İşlem tamamlanamadı. Otomatik tekrar yapılmadı.','Gönderiliyor…','Bu kategori için projenizi konuşarak hazırlayalım.','Kayıtlı sohbetler'],
 en:['Conversation','New chat project','Send message','Choose file','Project context','Sign in first.','Write a message…','Mock demo: replies and balances are simulated. Memory is a signed browser demo, not real AI/database storage.','Real AI requires enabled atomic accounting and a server tariff.','File selected only; upload and model attachment are not connected yet.','Production and revision tools are not connected yet.','Use defaults','Saved Website projects','Read-only preview','The request failed. It was not retried automatically.','Sending…','Let’s prepare your project through conversation.','Saved conversations'],
@@ -11,8 +15,40 @@ de:['Gespräch','Neues Chat-Projekt','Nachricht senden','Datei auswählen','Proj
 es:['Conversación','Nuevo proyecto','Enviar mensaje','Elegir archivo','Contexto del proyecto','Inicia sesión primero.','Escribe un mensaje…','Demo mock: respuestas y saldos simulados. Memoria firmada en el navegador, no IA/base de datos real.','La IA real requiere contabilidad atómica y tarifa del servidor.','Archivo seleccionado; la carga y el adjunto al modelo aún no están conectados.','Producción y revisión aún no están conectadas.','Usar valores predeterminados','Sitios guardados','Vista de solo lectura','Falló la solicitud. No hubo reintento automático.','Enviando…','Preparemos tu proyecto conversando.','Conversaciones guardadas'],
 fr:['Conversation','Nouveau projet','Envoyer','Choisir un fichier','Contexte du projet','Connectez-vous d’abord.','Écrivez un message…','Démo mock : réponses et soldes simulés. Mémoire signée du navigateur, pas une vraie IA/base de données.','L’IA réelle exige une comptabilité atomique et un tarif serveur.','Fichier sélectionné seulement ; téléversement et pièce jointe non connectés.','Production et révision non connectées.','Utiliser les valeurs par défaut','Sites enregistrés','Aperçu en lecture seule','La demande a échoué, sans nouvelle tentative automatique.','Envoi…','Préparons votre projet par la conversation.','Conversations enregistrées'],
 ar:['المحادثة','مشروع محادثة جديد','إرسال رسالة','اختيار ملف','سياق المشروع','سجل الدخول أولاً.','اكتب رسالة…','عرض تجريبي: الردود والأرصدة محاكاة. ذاكرة موقعة في المتصفح وليست ذكاءً أو قاعدة بيانات حقيقية.','الذكاء الحقيقي يتطلب محاسبة ذرية وتسعير الخادم.','تم اختيار الملف فقط؛ الرفع وإرفاقه بالنموذج غير متصلين.','أدوات الإنتاج والمراجعة غير متصلة.','استخدام الإعدادات الافتراضية','المواقع المحفوظة','معاينة للقراءة فقط','فشل الطلب دون إعادة محاولة تلقائية.','جارٍ الإرسال…','لنجهز مشروعك عبر المحادثة.','المحادثات المحفوظة']};
-if(!words[language])language='tr';const t=index=>words[language][index];
+if(!words[language])language='en';const t=index=>words[language][index];
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
+const studioUiTranslations=[["Oluştur, düzenle ve üret","Create, edit and produce","Erstellen, bearbeiten und produzieren","Crea, edita y produce","Créer, modifier et produire","أنشئ وعدّل وأنتج"],["Kategoriler","Categories","Kategorien","Categorías","Catégories","الفئات"],["Assistant","Assistant","Assistent","Asistente","Assistant","المساعد"],["Projelerim","My projects","Meine Projekte","Mis proyectos","Mes projets","مشاريعي"],["Sohbet projeleri","Chat projects","Chatprojekte","Proyectos de chat","Projets de discussion","مشاريع المحادثة"],["Kayıtlı sohbetler","Saved chats","Gespeicherte Chats","Chats guardados","Discussions enregistrées","محادثات محفوظة"],["Projelerin için ortak çalışma alanı.","One workspace for all your projects.","Ein Arbeitsbereich für alle Projekte.","Un espacio para tus proyectos.","Un espace pour tous vos projets.","مساحة عمل لجميع مشاريعك"],["Üretim bu aşamada kapalı.","Production is not enabled for all tools.","Produktion ist nicht für alle Tools aktiviert.","La producción no está activa para todas las herramientas.","La production n'est pas activée pour tous les outils.","الإنتاج غير متاح لجميع الأدوات"],["Yeni proje","New project","Neues Projekt","Nuevo proyecto","Nouveau projet","مشروع جديد"],["Website çalışma alanı","Website workspace","Website-Arbeitsbereich","Espacio de sitios web","Espace de site web","مساحة عمل الموقع"],["Referanslar","References","Referenzen","Referencias","Références","المراجع"],["Henüz çıktı yok","No output yet","Noch keine Ausgabe","Sin resultados todavía","Aucun résultat","لا توجد نتائج"],["Website projen için boş bir Canvas","Your website Canvas is empty","Deine Website-Arbeitsfläche ist leer","El lienzo de tu sitio está vacío","Votre espace web est vide","مساحة موقعك فارغة"],["İstediğin siteyi sağdaki asistanla konuşarak hazırlayabilir veya kayıtlı bir Website projesini açabilirsin.","Describe your website to the assistant or open a saved project.","Beschreibe deine Website dem Assistenten oder öffne ein Projekt.","Describe tu web al asistente o abre un proyecto.","Décrivez votre site à l'assistant ou ouvrez un projet.","صف موقعك للمساعد أو افتح مشروعًا محفوظًا"],["Asistanla başla","Start with assistant","Mit Assistent starten","Empezar con asistente","Démarrer avec l'assistant","ابدأ مع المساعد"],["Proje aç","Open project","Projekt öffnen","Abrir proyecto","Ouvrir le projet","افتح المشروع"],["Mevcut Website kaynağı · salt okunur","Existing website · read only","Bestehende Website · schreibgeschützt","Sitio existente · solo lectura","Site existant · lecture seule","موقع موجود · قراءة فقط"],["Website sayfası","Website page","Website-Seite","Página web","Page du site","صفحة الموقع"],["Masaüstü","Desktop","Desktop","Escritorio","Ordinateur","سطح المكتب"],["Tablet","Tablet","Tablet","Tableta","Tablette","جهاز لوحي"],["Mobil","Mobile","Mobil","Móvil","Mobile","الهاتف"],["Crelavo AI Assistant","Crelavo AI Assistant","Crelavo KI-Assistent","Asistente IA de Crelavo","Assistant IA Crelavo","مساعد كريلافو الذكي"],["Yaratıcı çalışma arkadaşın","Your creative partner","Dein kreativer Partner","Tu socio creativo","Votre partenaire créatif","شريكك الإبداعي"],["Sohbet ayarları","Chat settings","Chat-Einstellungen","Ajustes del chat","Paramètres du chat","إعدادات المحادثة"],["Konuşma dili","Conversation language","Gesprächssprache","Idioma de conversación","Langue de conversation","لغة المحادثة"],["Çalışma modu","Workspace mode","Arbeitsmodus","Modo de trabajo","Mode de travail","وضع العمل"],["Yeni sohbet projesi","New chat project","Neues Chatprojekt","Nuevo proyecto de chat","Nouveau projet de chat","مشروع محادثة جديد"],["Proje bağlamı","Project context","Projektkontext","Contexto del proyecto","Contexte du projet","سياق المشروع"],["Varsayılanları kullan","Use defaults","Standardwerte nutzen","Usar valores predeterminados","Utiliser les paramètres par défaut","استخدم الإعدادات الافتراضية"],["Bir mesaj yazın…","Write a message…","Nachricht schreiben…","Escribe un mensaje…","Écrire un message…","اكتب رسالة…"],["Mesaj gönder ↗","Send message ↗","Nachricht senden ↗","Enviar mensaje ↗","Envoyer le message ↗","إرسال ↗"],["＋ Dosya","＋ File","＋ Datei","＋ Archivo","＋ Fichier","＋ ملف"],["Sohbet çıktısı, üretilmiş medya veya Website değildir.","A chat response is not a generated file or website.","Eine Chatantwort ist keine erstellte Datei oder Website.","Una respuesta de chat no es un archivo ni sitio generado.","Une réponse n'est pas un fichier ou un site généré.","رد المحادثة ليس ملفاً أو موقعاً مُنشأً"],["Website üretim planı","Website production plan","Website-Produktionsplan","Plan de producción web","Plan de production web","خطة إنشاء الموقع"],["Website oluştur","Create website","Website erstellen","Crear sitio web","Créer un site web","إنشاء موقع"],["Canvas önizleme","Canvas preview","Canvas-Vorschau","Vista previa","Aperçu du Canvas","معاينة اللوحة"],["ZIP indir","Download ZIP","ZIP herunterladen","Descargar ZIP","Télécharger ZIP","تنزيل ZIP"],["Planı Canvas'ta incele","Review plan in Canvas","Plan im Canvas prüfen","Revisar plan en Canvas","Voir le plan dans Canvas","راجع الخطة"],["Brief hazır · plan kontrolü bekleniyor","Brief ready · review plan","Brief bereit · Plan prüfen","Brief listo · revisar plan","Brief prêt · revoir le plan","الموجز جاهز · راجع الخطة"],["İşletme adını ve istediğin web sitesini anlat","Describe your business and website","Beschreibe Unternehmen und Website","Describe tu empresa y sitio","Décrivez votre entreprise et votre site","صف عملك والموقع المطلوب"],["Plan onaylandı","Plan approved","Plan bestätigt","Plan aprobado","Plan approuvé","تمت الموافقة على الخطة"],["Brief hazırlanıyor · eksik bilgileri tamamlayın","Preparing brief · add missing details","Brief vorbereiten · Angaben ergänzen","Preparando brief · completa datos","Préparation du brief · complétez","جارٍ إعداد الموجز"],["Henüz referans seçilmedi. Dosya seçimi sunucuya yükleme veya üretim başlatmaz.","No reference selected. Selecting a file does not upload it or start production.","Keine Referenz ausgewählt.","No hay referencia seleccionada.","Aucune référence sélectionnée.","لم يتم اختيار مرجع"]];
+const localizedUi=value=>{
+ if(typeof value!=='string')return value;
+ const row=studioUiTranslations.find(item=>item.includes(value));
+ return row?(row[availableStudioLanguages.indexOf(language)===-1?1:({en:1,tr:0,de:2,es:3,fr:4,ar:5}[language]) ]||row[1]):value;
+};
+function updateStudioLanguage(){
+ document.documentElement.lang=language;
+ document.documentElement.dir=language==='ar'?'rtl':'ltr';
+ const selector=$('#studio-ui-language');if(selector)selector.value=language;
+ const label=$('#studio-language-label');if(label)label.textContent=({en:'Language',tr:'Dil',de:'Sprache',es:'Idioma',fr:'Langue',ar:'اللغة'})[language]||'Language';
+ const scan=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+ let item;
+ while((item=scan.nextNode())){
+  const parentNode=item.parentElement;
+  if(!parentNode||parentNode.closest('script,style,textarea,option,.message,[data-user-content="true"],#b2-context,#studio-ui-language'))continue;
+  const original=item.textContent||'';
+  const trimmed=original.trim();
+  if(!trimmed)continue;
+  const translated=localizedUi(trimmed);
+  if(translated!==trimmed)item.textContent=original.replace(trimmed,translated);
+ }
+ const composer=$('#prompt');if(composer)composer.placeholder=localizedUi('Bir mesaj yazın…');
+}
+function setStudioLanguage(next){
+ if(!availableStudioLanguages.includes(next))return;
+ language=next;
+ try{localStorage.setItem('clipora_language',next);parent.dispatchEvent(new Event('clipora-language-change'))}catch(_error){}
+ try{const url=new URL(parent.location.href);url.searchParams.set('uiLang',next);parent.history.replaceState(null,'',url)}catch(_error){}
+ updateStudioLanguage();
+ draw();
+}
 const key=()=> 'crelavo-studio-b2:'+session?.userId+':'+mode+':'+current.id;
 async function request(path,body){if(!session?.accessToken)throw Error(t(5));const r=await fetch(path,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+session.accessToken,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,credentials:'include',redirect:'error',cache:'no-store'});if(!/application\/(?:[\w.-]+\+)?json/i.test(r.headers.get('content-type')||''))throw Error(t(14));const data=await r.json();if(!r.ok||data.ok===false)throw Error(t(14)+' ('+(data.code||data.error||r.status)+')');return data;}
 const api=body=>request('/api/studio/conversation',{mode,categoryId:current.id,uiLanguage:language,...body});
@@ -357,7 +393,9 @@ function openFunctionalWebsiteBuilder(){
 function setup(){
  window.studioWorkspace?.configure(current,project,websiteData,referenceFile);
   if(!$('#advanced-open-plan')){const b=node('button','≡');b.id='advanced-open-plan';b.type='button';b.title='Brief & Plan';b.setAttribute('aria-label','Brief & Plan');b.onclick=()=>showAux('brief');$('.canvas-rail').appendChild(b);}
- const lang=$('#b2-language');lang.replaceChildren();['tr','en','de','es','fr','ar'].forEach(code=>{const o=node('option',code.toUpperCase());o.value=code;lang.appendChild(o)});lang.value=language;lang.onchange=()=>{language=lang.value;draw()};
+ const studioLang=$('#studio-ui-language');if(studioLang){studioLang.value=language;studioLang.onchange=()=>setStudioLanguage(studioLang.value);}
+ updateStudioLanguage();
+ const lang=$('#b2-language');lang.replaceChildren();['tr','en','de','es','fr','ar'].forEach(code=>{const o=node('option',code.toUpperCase());o.value=code;lang.appendChild(o)});lang.value=language;lang.onchange=()=>setStudioLanguage(lang.value);
  if(current.id==='website'){
    if(!$('#website-builder-open')){
     const button=node('button','✦ Website oluştur');
@@ -413,5 +451,8 @@ addEventListener('message',async event=>{if(event.source!==parent||event.origin!
   if(current.id!=='website')restoreLocalCategoryChat();
   else draw();
  }}catch(error){showError(error)}});
+const localizeObserver=new MutationObserver(()=>updateStudioLanguage());
+localizeObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
 setup();
+updateStudioLanguage();
 })();`;
