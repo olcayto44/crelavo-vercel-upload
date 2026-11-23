@@ -45,7 +45,7 @@ async function dbWrite(record: Stored | null, key?: string) {
 function title(kind: Kind) {
  return ({character:"Character / Twin",product:"Product / Object",location:"Location / Environment",wardrobe:"Outfit / Wardrobe",voice:"Voice / Audio",style:"Visual Style",reference:"Reference"} as Record<Kind,string>)[kind];
 }
-export default function LocalAssetLibrary() {
+export default function LocalAssetLibrary({allowAnonymousLocalSave=false}:{allowAnonymousLocalSave?:boolean}={}) {
  const [owner,setOwner]=useState("");
  const [status,setStatus]=useState("Checking your Crelavo account…");
  const [records,setRecords]=useState<DisplayAsset[]>([]);
@@ -63,13 +63,17 @@ export default function LocalAssetLibrary() {
   let active=true;
   supabaseBrowser().auth.getUser().then(async({data,error})=>{
    if(!active)return;
-   if(error||!data.user){setStatus("Sign in to access your personal reference library.");return;}
+   if(error||!data.user){
+    if(allowAnonymousLocalSave){const previewOwner="preview-local";setOwner(previewOwner);const items=await dbAll(previewOwner);if(active){setRecords(items.map(({blob,...rest})=>rest).sort((a,b)=>b.createdAt-a.createdAt));setStatus("Preview reference library: files stay on this browser, not in private cloud storage.")}}
+    else setStatus("Sign in to access your personal reference library.");
+    return;
+   }
    setOwner(data.user.id);
    const items=await dbAll(data.user.id);
    if(active){setRecords(items.map(({blob,...rest})=>rest).sort((a,b)=>b.createdAt-a.createdAt));setStatus("References are saved only in this browser, not the cloud.");}
-  }).catch(()=>{if(active)setStatus("The local library is unavailable in this browser.");});
+  }).catch(()=>{if(!active)return;if(allowAnonymousLocalSave){setOwner("preview-local");void dbAll("preview-local").then(items=>{if(active)setRecords(items.map(({blob,...rest})=>rest)}).catch(()=>{});setStatus("Preview local references only.");}else setStatus("The local library is unavailable in this browser.");});
   return ()=>{active=false};
- },[]);
+ },[allowAnonymousLocalSave]);
  useEffect(()=>{
   let active=true;let url: string|null=null;
   if(selection&&owner)dbGet(selection).then(item=>{
