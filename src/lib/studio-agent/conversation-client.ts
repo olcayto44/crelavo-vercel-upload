@@ -406,11 +406,25 @@ function openFunctionalWebsiteBuilder(){
  frame.setAttribute('loading','eager');
  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#0c0914';
  frame.addEventListener('load',()=>{
-  if(frame.isConnected&&frame.contentWindow)
-   frame.contentWindow.postMessage({type:'crelavo-studio-website-brief',brief:studioWebsiteBrief()},parent.location.origin);
+  if(!frame.isConnected||!frame.contentWindow)return;
+  frame.contentWindow.postMessage({type:'crelavo-studio-website-brief',brief:studioWebsiteBrief()},parent.location.origin);
+  if(selectedProduction&&canvasState==='ready')
+   frame.contentWindow.postMessage({type:'crelavo-studio-website-open',productionId:selectedProduction},parent.location.origin);
  });
  root.appendChild(frame);
 }
+function studioWebsiteAction(action){
+ if(current.id!=='website'||!session)return;
+ if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder();return;}
+ if(action==='zip'&&selectedProduction&&canvasState==='ready'){
+  void downloadWebsiteZip(selectedProduction);return;
+ }
+ if(action==='preview'&&selectedProduction)void previewWebsite(selectedProduction);
+}
+addEventListener('crelavo-studio-action',event=>{
+ const action=event?.detail?.action;
+ if(typeof action==='string')studioWebsiteAction(action);
+});
 function setup(){
  window.studioWorkspace?.configure(current,project,websiteData,referenceFile);
   if(!$('#advanced-open-plan')){const b=node('button','≡');b.id='advanced-open-plan';b.type='button';b.title='Brief & Plan';b.setAttribute('aria-label','Brief & Plan');b.onclick=()=>showAux('brief');$('.canvas-rail').appendChild(b);}
