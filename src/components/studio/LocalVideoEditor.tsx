@@ -442,15 +442,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <div style={{ border: "1px solid #422b54", borderRadius: 12, padding: 9, background: "#090711" }}>
           {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls preload="metadata" style={{ width: "100%", maxHeight: 240, objectFit: "contain", display: "block" }} onLoadedMetadata={e => { e.currentTarget.currentTime = chosen.start; }} /> : <div style={{ height: 164, display: "grid", placeItems: "center", color: "#a999bb", fontSize: 13 }}>Add video files to begin editing · no clips selected</div>}
         </div>
+        {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 8 }}>Clip timeline · {sec(duration)} total</h2>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
-          {clips.map((clip, index) => <div key={clip.id} style={{ flex: "0 0 145px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
+          {clips.map((clip, index) => <div key={clip.id} className={"studio-timeline-clip"+(active===clip.id?" is-active":"")} style={{ flex: "0 0 145px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
             <button type="button" disabled={busy} onClick={() => setActive(clip.id)} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, overflowWrap: "anywhere", color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
             <small style={{ color: "#c2b4d5" }}>{sec(clip.end - clip.start)}</small>
-            <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
-              <button disabled={busy || index === 0} onClick={() => move(clip.id, -1)} aria-label="Move clip left">←</button>
-              <button disabled={busy || index === clips.length - 1} onClick={() => move(clip.id, 1)} aria-label="Move clip right">→</button>
-              <button disabled={busy} onClick={() => remove(clip.id)} aria-label="Remove clip">×</button>
+            <div className="studio-timeline-actions" style={{ display: "flex", gap: 5, marginTop: 10 }}>
+              <button disabled={busy || index === 0} onClick={() => move(clip.id, -1)} title="Move clip earlier" aria-label="Move clip left">←</button>
+              <button disabled={busy || index === clips.length - 1} onClick={() => move(clip.id, 1)} title="Move clip later" aria-label="Move clip right">→</button>
+              <button disabled={busy} onClick={() => remove(clip.id)} title="Remove clip from timeline" aria-label="Remove clip">×</button>
             </div>
           </div>)}
         </div>
