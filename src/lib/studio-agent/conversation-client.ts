@@ -2,6 +2,7 @@ export const studioConversationClientScript=String.raw`(()=>{
 const $=selector=>document.querySelector(selector);
 let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'mock':'real',epoch=0,busy=false,pending=null,status=null,walletCache=null,uiError='';
 let liveProductionBalance=null;
+let activeVideoSelection=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
 const availableStudioLanguages=['en','tr','de','es','fr','ar'];
 let storedStudioLanguage='en',siteLanguageExplicit=false;
@@ -105,6 +106,37 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   const button=node('button','Planı Canvas\'ta incele');button.type='button';button.disabled=busy;
   button.onclick=()=>showAux('brief');card.appendChild(button);
   messages.appendChild(card);
+ }
+ if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind)&&mode==='real'){
+  const panel=node('section',undefined,'studio-video-plan');
+  panel.setAttribute('aria-label','Video production plan');
+  panel.style.cssText='margin:10px 0;padding:13px;border:1px solid #594071;border-radius:12px;background:#1b1327;display:grid;gap:8px';
+  panel.appendChild(node('strong',language==='tr'?'Video üretim planı':'Video production plan'));
+  const request=[...(project?.messages||[])].reverse().find(item=>item.role==='user')?.content||'';
+  const model=request.match(/\b(runway|kling|veo|pika|minimax|fal[.]ai)\b/i);
+  const duration=request.match(/\b(\d{1,3})\s*(?:saniye|seconds?|secs?|sn)\b/i);
+  const ratio=request.match(/\b(16:9|9:16|1:1|4:5)\b/);
+  const quality=request.match(/\b(4k|1080p|720p)\b/i);
+  const row=(label,value)=>{const line=node('div');line.style.cssText='display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #382944;padding:5px 0;font-size:12px';
+   const head=node('span',label);head.style.color='#ad9dbf';line.append(head,node('strong',value));panel.append(line);};
+  const unset=language==='tr'?'Belirtilmedi':'Not specified';
+  row(language==='tr'?'Video modeli':'Video model',model?.[1]||unset);
+  row(language==='tr'?'Süre':'Duration',duration?duration[1]+'s':unset);
+  row(language==='tr'?'Oran':'Aspect ratio',ratio?.[1]||unset);
+  row(language==='tr'?'Kalite':'Quality',quality?.[1]||unset);
+  if(activeVideoSelection){
+   row(language==='tr'?'Kayıtlı çıktı':'Saved output',activeVideoSelection.title);
+   row(language==='tr'?'Sahne / klip':'Scenes / clips',String(activeVideoSelection.scenes));
+  }
+  const controls=node('div');controls.style.cssText='display:flex;gap:7px;flex-wrap:wrap';
+  const review=node('button',language==='tr'?'Planı görüntüle':'Review plan');review.onclick=()=>showAux('brief');controls.append(review);
+  if(activeVideoSelection){
+   const timeline=node('button',language==='tr'?'Sahneleri aç':'Open scenes');timeline.onclick=()=>showAux('timeline');controls.append(timeline);
+  }
+  panel.append(controls);
+  const status=node('small',language==='tr'?'Üretimi başlatmak için uygun model, fiyat ve açık onay gerekir. Bu ekranda video üretimi başlatılmaz.':'Production requires an available model, verified price and explicit approval. This view cannot start a new render.');
+  status.style.color='#a99bb4';panel.append(status);
+  messages.append(panel);
  }
 
  const fields=Object.entries(project?.snapshot.fields||{});$('#b2-context').textContent=project?project.title+'\n'+fields.map(([k,v])=>fieldLabel(k)+': '+valueLabel(k,v)).join('\n'):current.label;$('#b2-context').dataset.userContent='true';
@@ -456,7 +488,15 @@ function setup(){
  $('#file').accept=current.panel.accept||'image/*,audio/*,video/*,.pdf,.txt';$('#file').onchange=()=>{referenceFile=$('#file').files?.[0]||null;$('#b2-attachment').textContent=referenceFile?referenceFile.name+' — '+t(9):'';window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(activeView==='assets')showAux('assets')};$('#b2-file-button').onclick=()=>$('#file').click();$('#add-reference').onclick=()=>$('#file').click();
  $('#b2-saved-sites').onclick=()=>savedWebsites().catch(showError);$('#open-projects').onclick=()=>{if(innerWidth<=900)setPanel('categories');savedWebsites().catch(showError)};$('#start-conversation').onclick=()=>{if(innerWidth<=900)setPanel('assistant');$('#prompt').focus()};$('#studio-home').onclick=()=>setPanel('canvas');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showAux(b.dataset.view));document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>setDevice(b.dataset.device));$('#website-pages').onchange=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value)};$('#refresh-preview').onclick=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value||'index.html');else showCanvas('empty')};tools();showCanvas(canvasState);draw();
 }
-const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){
+addEventListener('crelavo-studio-video-selected',event=>{
+ if(!current||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
+ const detail=event.detail||{};
+ if(typeof detail.id!=='string'||typeof detail.title!=='string')return;
+ activeVideoSelection={id:detail.id,title:detail.title,scenes:Number(detail.scenes)||1};
+ $('#project-title').textContent=detail.title;
+ draw();
+});
+const originalSelect=selectCategory;selectCategory=function(...args){epoch++;activeVideoSelection=null;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){
  if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();
  else if(current.id!=='website')restoreLocalCategoryChat();
  void loadReadyVideoCanvas();
