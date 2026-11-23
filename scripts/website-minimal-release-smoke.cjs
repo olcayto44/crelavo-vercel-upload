@@ -49,5 +49,8 @@ function load(path){
  assert.match(paid,/website_generation_reconciliation_required/);
  assert.match(studio,/website_render_request_too_large/);
  assert.match(studio,/website-paid-render:/);
+ const legacyGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
+ assert.ok(legacyGenerator.includes('CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED'), 'legacy free generation must be gated when paid');
+ assert.ok(legacyGenerator.includes('website_paid_studio_required'), 'legacy generator must not bypass paid Studio flow');
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
