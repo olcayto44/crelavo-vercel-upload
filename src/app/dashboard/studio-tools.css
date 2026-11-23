@@ -76,3 +76,20 @@
  .studio-compact-video-editor .editor-main-grid aside,.studio-compact-elements .elements-grid>section:first-child {position:static}
  .studio-compact-video-editor .editor-output-controls {grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}
 }
+
+/* Image transform row: three equally sized, baseline-aligned controls.
+   Avoid the legacy inline flex row where the center button floats upward. */
+.studio-tool-page .studio-compact-image-editor .image-transform-buttons{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:6px;align-items:stretch;width:100%;
+}
+.studio-tool-page .studio-compact-image-editor .image-transform-buttons button{
+ display:inline-flex;align-items:center;justify-content:center;
+ width:100%;min-width:0;height:36px;min-height:36px;
+ margin:0!important;padding:6px 3px!important;
+ line-height:1.15;vertical-align:middle;border:1px solid #533a68;
+ border-radius:8px;background:#2a2036;white-space:nowrap;
+}
+.studio-tool-page .studio-compact-image-editor .image-transform-buttons button:disabled{
+ opacity:.42;background:#261e30;
+}
