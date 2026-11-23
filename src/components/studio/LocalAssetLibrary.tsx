@@ -100,6 +100,16 @@ export default function LocalAssetLibrary() {
   }catch{setStatus("Could not store this file. Check browser storage permissions and free space.")}
   finally{setBusy(false)}
  }
+ function useInStudio(key: string) {
+    const item = records.find(r => r.key === key && r.owner === owner);
+    if (!item || !owner || window.parent === window) return;
+    window.parent.postMessage({
+      type: "crelavo-studio-asset-reference",
+      owner, name: item.name, kind: item.kind,
+      description: item.description
+    }, window.location.origin);
+    setStatus("Reference notes inserted into the Studio prompt. The original file remains on this device and is not uploaded to AI.");
+  }
  async function remove(key: string){
   if(!owner||!key.startsWith(owner+":")||busy)return;
   if(!window.confirm("Delete this local reference? This cannot be undone."))return;
@@ -138,7 +148,10 @@ export default function LocalAssetLibrary() {
      {selection&&records.some(r=>r.key===selection)&&<div style={{border:"1px solid #4d345e",borderRadius:10,padding:12}}>
       {preview?(selectedMime.startsWith("image/")?<img src={preview} alt="Saved reference preview" style={{maxHeight:200,maxWidth:"100%",objectFit:"contain"}}/>:selectedMime.startsWith("video/")?<video src={preview} controls style={{maxHeight:200,maxWidth:"100%"}}/>:selectedMime.startsWith("audio/")?<audio src={preview} controls/>:null):<p>Loading reference…</p>}
       <p style={{fontSize:12,whiteSpace:"pre-wrap"}}>{records.find(r=>r.key===selection)?.description||"No description"}</p>
-      <button onClick={()=>{void remove(selection)}} disabled={busy} style={{background:"#4a2432",color:"#fff",border:0,padding:"8px 13px",borderRadius:8}}>Delete reference</button>
+      <div style={{display:"flex",gap:9,flexWrap:"wrap"}}>
+        <button onClick={()=>useInStudio(selection)} disabled={busy} style={{background:"#7037b5",color:"#fff",border:0,padding:"8px 13px",borderRadius:8}}>Use notes in Studio brief</button>
+        <button onClick={()=>{void remove(selection)}} disabled={busy} style={{background:"#4a2432",color:"#fff",border:0,padding:"8px 13px",borderRadius:8}}>Delete reference</button>
+      </div>
      </div>}
     </section>
    </div>
