@@ -240,3 +240,14 @@ for(const [name,source] of [['video editor',localEditor],['image editor',imageEd
 assert.ok(sharedToolsCss.includes('input[type=checkbox]'),'reference consent checkbox must use predictable compact size');
 assert.ok(sharedToolsCss.includes('@media(max-width:800px)'),'all tool layouts must fit narrow screens');
 assert.ok(elements.includes('className="cloud-details"'),'cloud controls must collapse instead of overwhelming local reference library');
+
+const assistantShell=read('src/lib/studio-agent/studio-view.ts');
+assert.ok(assistantShell.includes('.assistant #messages{display:flex;flex-direction:column'),'chat message layout must remain independently scrollable');
+assert.ok(assistantShell.includes('overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain'),'chat scroller must not disappear behind fixed header');
+assert.ok(client.includes("for(const bubble of bubbles)messages.appendChild(bubble)"),'actual messages must appear after plan cards');
+assert.ok(client.includes("requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight})"),'latest chat message must be scrolled into view after layout');
+assert.ok(client.includes('createControl.disabled=false'),'Create must launch actual brief workflow');
+assert.ok(client.includes("for(const name of ['edit','export'])"),'Edit and Export must have functional local navigation');
+assert.ok(client.includes("$('#b2-defaults').disabled=busy||(!session&&!previewDraftEnabled())"),'preview defaults button must accept brief text');
+assert.ok(imageEditor.includes('className="image-transform-buttons"'),'image transform three-button row must be aligned');
+assert.ok(sharedToolsCss.includes('.image-transform-buttons button'),'image transform row must have fixed-size action controls');
