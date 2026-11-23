@@ -54,4 +54,8 @@ assert(client.includes("w.approvedHash===w.planHash"),'approved website plan mus
 assert(websiteRoute.includes('if (action === "render")'), 'website render must fail closed until atomic billing is ready');
 assert(websiteRoute.includes('website_atomic_billing_required'), 'website render must report a stable atomic-billing error');
 assert(websiteRoute.indexOf('if (action === "render")') < websiteRoute.indexOf('executeWebsiteRequest('), 'render must be denied before legacy payment and generation');
+const websiteAdapter=read('src/lib/assistant-work/website-request.ts');
+assert(websiteAdapter.includes('body.action === "render" || body.render === true'), 'every website adapter caller must reject rendering');
+assert(websiteAdapter.includes('website_atomic_billing_required'), 'website adapter must fail closed with explicit billing error');
+assert(websiteAdapter.indexOf('website_atomic_billing_required') < websiteAdapter.indexOf('handleWebsiteAssistant(body'), 'billing safety gate must precede website generation handler');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
