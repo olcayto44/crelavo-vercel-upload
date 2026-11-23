@@ -19,6 +19,7 @@ export const ConversationRequestSchema = z.discriminatedUnion("action", [
   z.strictObject({ ...common, action: z.literal("message"), projectId: z.string().uuid(), requestId: z.string().uuid(),
     message: z.string().trim().min(1).max(6000), acceptedDefaults: z.array(z.string().max(80)).max(10).default([]), mockState: z.string().max(400000).optional() }),
   z.strictObject({ ...common, action: z.literal("plan"), projectId:z.string().uuid(),requestId:z.string().uuid(),mockState:z.string().max(400000).optional(),operation:z.enum(["create","rebuild","revise","approve","revoke"]),expectedPlanVersion:z.number().int().nonnegative(),expectedPlanHash:z.string().length(64).nullable(),note:z.string().trim().min(1).max(1000).optional() }),
+  z.strictObject({ ...common, action: z.literal("bind_website"), projectId: z.string().uuid(), productionId: z.string().uuid() }),
   z.strictObject({ ...common, action: z.literal("projects") }),
 ]);
 export function completionSchema(categoryId: string) {
