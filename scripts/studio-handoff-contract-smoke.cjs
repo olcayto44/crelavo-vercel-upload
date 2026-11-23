@@ -78,7 +78,7 @@ assert(atomicRunner.includes('deps.loadReserved(input.productionId, input.userId
 assert(atomicRunner.includes('websitePlanHash(brief, stored.packId)'), 'Website generation must verify exact approved brief hash');
 assert(!atomicRunner.includes('input.brief'), 'Website generation must never trust browser supplied brief');
 const isolatedRenderRoute=read('src/app/api/studio/website-atomic/route.ts');
-for(const token of ['process.env.VERCEL_ENV === "preview"','STUDIO_AGENT_WEBSITE_ATOMIC_TEST_ENABLED','isolatedDatabaseTarget()','auth.db.auth.getUser(token)','runIsolatedWebsiteGeneration','websiteView(data, page)','buildDeliveryZip(buildDeliveryEntries(data))']) assert(isolatedRenderRoute.includes(token),'isolated Website route missing gate '+token);
+for(const token of ['process.env.VERCEL_ENV === "preview"','STUDIO_AGENT_WEBSITE_ATOMIC_TEST_ENABLED','isolatedDatabaseTarget()','db.auth.getUser(token)','runIsolatedWebsiteGeneration','websiteView(data, page)','buildDeliveryZip(buildDeliveryEntries(data))']) assert(isolatedRenderRoute.includes(token),'isolated Website route missing gate '+token);
 assert(!isolatedRenderRoute.includes('SUPABASE_SERVICE_ROLE_KEY'), 'isolated Website API must not use Production database secrets');
 assert(!isolatedRenderRoute.includes('/api/credits/spend'), 'isolated Website API must not use legacy billing');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
