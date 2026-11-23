@@ -154,4 +154,10 @@ assert.match(localEditor,/inputGain\.gain\.linearRampToValueAtTime/,'clip audio 
 assert.match(localEditor,/paintOverlay\(ctx,width,height,captionAt\(captionCues,at\),true\)/,'caption cues must be painted on real rendered frames');
 assert.match(localEditor,/const at=elapsed\+Math\.min\(segment/,'captions must be positioned against output timeline');
 assert.ok(localEditor.indexOf('musicSource.start()')>localEditor.indexOf('await video.play()'),'music must begin with first playable video instead of while the file loads');
+assert.match(workspace,/if\(active==='canvas'\)q\('#aux-panel'\)\.hidden=true/,'video library hydration may not hide active Assets, Timeline or Variants');
+assert.match(workspace,/These are saved scene navigation points, not editable source clips/,'Timeline must distinguish final video from editable source clips');
+assert.match(workspace,/const edit=make\('button','✂ Open clip editor'\)/,'saved timeline must link to real clip editor');
+assert.match(client,/className='studio-elements-controls'/,'Assets panel must use a responsive native form');
+assert.match(client,/grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,220px\),1fr\)\)/,'Assets should remain readable in narrow Canvas');
+assert.match(client,/image\.src=localUrl/,'saved image references need local thumbnails');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
