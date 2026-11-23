@@ -125,6 +125,6 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
   captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
   titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
   musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
-  fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="contain"?"contain":"cover",backgroundMusic
+  fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="cover"?"cover":"contain",backgroundMusic
  };
 }
