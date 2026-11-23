@@ -127,7 +127,8 @@ export default function LocalAssetLibrary({allowAnonymousLocalSave=false}:{allow
   catch{setStatus("Could not delete the reference.");}finally{setBusy(false)}
  }
  const visible=records.filter(r=>filter==="all"||r.kind===filter);
- return <main className="studio-compact-elements" style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",maxWidth:1250,margin:"0 auto",padding:"12px 16px",fontFamily:"Inter,system-ui,sans-serif"}}>\n  <style>{`.studio-compact-elements *{box-sizing:border-box}.studio-compact-elements .elements-grid{display:grid;grid-template-columns:minmax(220px,350px) minmax(0,1fr);gap:12px}@media(max-width:740px){.studio-compact-elements .elements-grid{grid-template-columns:1fr}}`}</style>
+ return <main className="studio-compact-elements" style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",maxWidth:1250,margin:"0 auto",padding:"12px 16px",fontFamily:"Inter,system-ui,sans-serif"}}>
+
    <header style={{marginBottom:10}}><a href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"} style={{display:"inline-block",color:"#dec8f5",fontSize:12,marginBottom:6}}>← Back to Studio V2</a><h1 style={{fontSize:18,margin:0}}>Elements & Reference Library</h1><p style={{color:"#b5a6c5",fontSize:12}}>Create a reusable collection of characters, objects, locations, outfits, visual styles, and authorized voice references.</p></header>
    <p role="status" aria-live="polite" style={{color:"#d5c2e8",fontSize:12}}>{status}</p>
    <div className="elements-grid">
@@ -165,7 +166,7 @@ export default function LocalAssetLibrary({allowAnonymousLocalSave=false}:{allow
      </div>}
     </section>
    </div>
-   <CloudAssetLibrary />
+   <details className="cloud-details"><summary>Cloud sync & private references (sign-in required)</summary><CloudAssetLibrary /></details>
    <p style={{fontSize:11,color:"#aa99b9",marginTop:16}}>These are real media files stored in IndexedDB on this device, separated by signed-in account. They are not synchronized across devices or connected to AI identity training, motion transfer, or render pipelines yet.</p>
  </main>;
 }
