@@ -134,10 +134,12 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   messages.appendChild(card);
  }
  if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind)&&mode==='real'){
-  const panel=node('section',undefined,'studio-video-plan');
+  const panel=node('details',undefined,'studio-video-plan');
   panel.setAttribute('aria-label','Video production plan');
-  panel.style.cssText='margin:10px 0;padding:13px;border:1px solid #594071;border-radius:12px;background:#1b1327;display:grid;gap:8px';
-  panel.appendChild(node('strong',language==='tr'?'Video üretim planı':'Video production plan'));
+  panel.style.cssText='margin:6px 0;padding:10px 12px;border:1px solid #594071;border-radius:10px;background:#1b1327';
+  const summary=node('summary',language==='tr'?'Video üretim planı · ayrıntıları aç':'Video production plan · expand details');
+  summary.style.cssText='font-size:12px;font-weight:650;cursor:pointer;line-height:1.6';
+  panel.appendChild(summary);
   const request=[...(project?.messages||[])].reverse().find(item=>item.role==='user')?.content||'';
   const model=request.match(/\b(runway|kling|veo|pika|minimax|fal[.]ai)\b/i);
   const duration=request.match(/\b(\d{1,3})\s*(?:saniye|seconds?|secs?|sn)\b/i);
@@ -159,6 +161,8 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   }
   const controls=node('div');controls.style.cssText='display:flex;gap:7px;flex-wrap:wrap';
   const review=node('button',language==='tr'?'Planı görüntüle':'Review plan');review.onclick=()=>showAux('brief');controls.append(review);
+  const localEditor=node('button',language==='tr'?'Yerel video editörünü aç':'Open local video editor');
+  localEditor.type='button';localEditor.onclick=()=>openStudioTool('video');controls.append(localEditor);
   if(activeVideoSelection){
    const timeline=node('button',language==='tr'?'Sahneleri aç':'Open scenes');timeline.onclick=()=>showAux('timeline');controls.append(timeline);
   }
