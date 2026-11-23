@@ -35,4 +35,7 @@ assert.match(client,/sessionStorage\.setItem\(localCategoryKey\(\)/,'non-Website
 assert.match(client,/prompt:message,messages:history,render:false/,'all-category chat must never invoke rendering');
 assert.match(client,/response\.spend!==false/,'planning must reject a response that performed debit');
 assert.match(client,/if\(!status\?\.realEnabled&&mode==='real'&&current\.id!=='website'\)/,'do not claim server conversation storage for other categories');
+assert.match(client,/Kategori planı · sohbet taslağı/,'non-Website plan must be inspectable in Canvas');
+assert.match(client,/Planı Canvas/,'non-Website chat must expose a visible plan control');
+assert.match(client,/restoreLocalCategoryChat/,'plan conversation should restore active tab history');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
