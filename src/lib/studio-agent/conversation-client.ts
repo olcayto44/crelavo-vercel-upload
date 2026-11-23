@@ -471,6 +471,23 @@ function openFunctionalWebsiteBuilder(panel='builder'){
  });
  root.appendChild(frame);
 }
+addEventListener('message',event=>{
+ const library=$('#aux-panel iframe[src="/dashboard/studio-elements"]');
+ if(!session||!library||event.origin!==parent.location.origin||
+     event.source!==library.contentWindow||
+     event.data?.type!=='crelavo-studio-asset-reference'||
+     event.data.owner!==session.userId)return;
+ const name=typeof event.data.name==='string'?event.data.name.trim().slice(0,100):'';
+ const kind=typeof event.data.kind==='string'?event.data.kind.trim().slice(0,30):'';
+ const description=typeof event.data.description==='string'?event.data.description.trim().slice(0,400):'';
+ if(!name||!/^(character|product|location|wardrobe|voice|style|reference)$/.test(kind))return;
+ const next='Reference ('+kind+'): '+name+(description?' — '+description:'')+
+  '\\nNote: source file is saved locally; file content is not attached to the AI.';
+ const composer=$('#prompt');
+ composer.value=(composer.value.trim()?composer.value.trim()+'\\n':'')+next;
+ composer.focus();
+ showAux('canvas');
+});
 function openStudioVideoEditor(){
  if(!session||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
  activeView='video-editor';
