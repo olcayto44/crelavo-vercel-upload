@@ -156,15 +156,34 @@ function showView(view){
    list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px';
    readyVideos.forEach(item=>{
     const card=make('article');card.style.cssText='min-width:0;border:1px solid #453156;border-radius:12px;background:#21192d;padding:9px;display:grid;gap:7px';
-    const video=make('video');video.src=item.videoUrl;video.preload='none';video.muted=true;video.playsInline=true;
-    video.controls=true;video.style.cssText='width:100%;aspect-ratio:16/9;object-fit:contain;background:#090810;border-radius:7px';
+    const video=make('video');video.preload='metadata';video.muted=true;video.playsInline=true;
+    video.controls=false;video.setAttribute('aria-label','Preview: '+item.title);
+    video.style.cssText='width:100%;aspect-ratio:16/9;object-fit:contain;background:#090810;border-radius:7px';
+    const previewHint=make('small','Loading preview…');previewHint.style.cssText='color:#b5a4c9;font-size:11px';
+    const lazyLoad=()=>{
+      if(video.src)return;
+      video.src=item.videoUrl;
+      video.addEventListener('loadedmetadata',()=>{
+        if(Number.isFinite(video.duration)&&video.duration>.4){
+          try{video.currentTime=Math.min(0.3,video.duration/4)}catch(_error){}
+        }
+      },{once:true});
+      video.addEventListener('loadeddata',()=>{previewHint.textContent='Video preview ready'},{once:true});
+      video.addEventListener('error',()=>{previewHint.textContent='Preview unavailable · Open in Canvas to retry'},{once:true});
+    };
+    if(typeof IntersectionObserver==='function'){
+      const observer=new IntersectionObserver(entries=>{
+        if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();lazyLoad()}
+      },{root:root,rootMargin:'160px'});
+      observer.observe(video);
+    }else lazyLoad();
     const title=make('strong',item.title);title.style.cssText='font-size:12px;overflow-wrap:anywhere';
     const specs=item.specs||{};
     const meta=make('small',[specs.provider,specs.durationSeconds?specs.durationSeconds+'s':null,specs.aspectRatio].filter(Boolean).join(' · ')||'Saved video');
     meta.style.color='#bfaed1';
     const open=make('button','Open in Canvas');open.type='button';
     open.onclick=()=>{showVideoProject(item);window.studioWorkspace?.setView('canvas')};
-    card.append(video,title,meta,open);list.append(card);
+    card.append(video,previewHint,title,meta,open);list.append(card);
    });
    root.append(list);return;
   }
