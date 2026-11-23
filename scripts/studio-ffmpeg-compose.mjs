@@ -58,7 +58,7 @@ export function validateTimeline(timeline, userId, projectId) {
   const musicPath=typeof timeline.musicPath==="string"?timeline.musicPath:null;
   if(musicPath&&(!musicPath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg)$/i.test(musicPath)))
     throw new Error("MUSIC_PATH_INVALID");
-  return {clips,musicPath,width,height,framing:timeline.framing==="contain"?"contain":"cover",includeAudio:timeline.includeAudio!==false,
+  return {clips,musicPath,width,height,framing:timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
