@@ -68,7 +68,8 @@ begin
  -- Never charge without durable generated website files and a completed generation record.
  if p_outcome='ready' and (project.output_json->'websiteAssistant'->>'phase'<>'awaiting_payment'
     or project.generation_status<>'completed'
-    or project.output_json->'websiteFiles' is null
+    or jsonb_typeof(project.output_json->'websiteFiles')<>'object'
+    or (select count(*) from jsonb_each(project.output_json->'websiteFiles'))=0
     or project.output_json->'websiteAssistant'->>'planHash' is distinct from p_hash
     or project.output_json->'websiteAssistant'->>'approvedHash' is distinct from p_hash)
  then raise exception 'website_delivery_and_approval_required'; end if;
