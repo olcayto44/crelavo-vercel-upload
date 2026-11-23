@@ -137,7 +137,7 @@ assert.match(videoLibrary,/genericVideoPlan/,'video model and aspect should use 
 assert.match(workspace,/specs:item\.specs\|\|null/,'selected video metadata must reach assistant');
 assert.match(client,/specs\.provider/,'assistant must use persisted provider');
 assert.match(client,/specs\.durationSeconds/,'assistant must use persisted video duration');
-assert.match(workspace,/const video=make\('video'\);video\.src=item\.videoUrl/,'variant cards must offer real media preview instead of title buttons');
+assert.match(workspace,/const video=make\('video'\);video\.preload='metadata'/,'variant cards must load real preview frames instead of plain buttons');
 assert.ok(view.includes("document.querySelector('#project-title').textContent=current.label"),'initial category heading must not flicker between brief and project');
 assert.match(localEditor,/function parseSrt\(source: string\)/,'SRT parser must be available');
 assert.match(localEditor,/function paintOverlay\(/,'captions and titles need real canvas render');
