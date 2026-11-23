@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { useAuth } from "@/components/auth/AuthProvider";
 export function StudioConversationFrame({document}:{document:string}) {
   const frame=useRef<HTMLIFrameElement>(null);
+  const { openAuth } = useAuth();
   const [session,setSession]=useState<{accessToken:string;userId:string}|null>(null);
   useEffect(()=>{
     let active=true;const client=supabaseBrowser();
@@ -19,6 +21,26 @@ export function StudioConversationFrame({document}:{document:string}) {
     }).catch(()=>{if(!authEventReceived)assign(null)});
     return()=>{active=false;data.subscription.unsubscribe()};
   },[]);
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if(event.origin!==window.location.origin||event.source!==frame.current?.contentWindow)return;
+      if(event.data?.type==="crelavo-studio-request-login"){
+        openAuth("login",{next:window.location.pathname+window.location.search});
+        return;
+      }
+      if(event.data?.type!=="crelavo-studio-open-tool")return;
+      const tool=event.data.tool;
+      const paths:Record<string,string>={
+        video:"/dashboard/studio-video-editor",
+        image:"/dashboard/studio-image-editor",
+        elements:"/dashboard/studio-elements"
+      };
+      if(typeof tool!=="string"||!Object.prototype.hasOwnProperty.call(paths,tool))return;
+      window.location.assign(paths[tool]);
+    };
+    window.addEventListener("message",onMessage);
+    return()=>window.removeEventListener("message",onMessage);
+  },[openAuth]);
   const deliver=()=>frame.current?.contentWindow?.postMessage({type:"crelavo-studio-session",accessToken:session?.accessToken??null,userId:session?.userId??null},window.location.origin);
   useEffect(deliver,[session]);
   return <iframe ref={frame} title="Crelavo Studio V2 conversation" allowFullScreen srcDoc={document} onLoad={deliver} sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style={{display:"block",width:"100%",height:"100dvh",border:0}}/>;
