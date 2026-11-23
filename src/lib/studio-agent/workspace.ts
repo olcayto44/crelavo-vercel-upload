@@ -113,7 +113,12 @@ else if(settings.kind==='website'){const heading=make('h3','Sayfalar / Cihaz / T
 else if(settings.kind==='character'){const h=make('h3','AI Character · Referanslar ve tutarlılık');h.append(make('span','0 çıktı'));const slots=make('div',undefined,'character-slots');for(const name of ['Kimlik','Poz','Görünüm']){const slot=make('div',undefined,'empty-reference-slot');slot.append(make('strong',name),make('span','Henüz referans yok'));slots.append(slot)}lower.append(h,slots);}
 else if(settings.kind==='image'){lower.append(make('h3','Variations / Assets'),make('div','Henüz görsel veya varyasyon yok. Katman düzenleme bağlı değil.','media-empty'));}
 else {lower.append(make('h3',c.panel.title),make('div','Henüz '+c.label+' çıktısı yok. Çalışma bilgileri asistanla hazırlanabilir.','media-empty'));}
-if(settings.kind!=='website')q('#website-controls').hidden=true;const actions=make('div',undefined,'lower-actions');actions.append(disabled('İşaretle'),disabled(settings.kind==='video'?'Sahneyi düzenle':settings.kind==='website'?'Sayfayı düzenle':'Düzenle'),disabled('Yeniden boyutlandır'));if(settings.kind==='video'){
+if(settings.kind!=='website')q('#website-controls').hidden=true;const actions=make('div',undefined,'lower-actions');actions.append(disabled('İşaretle'),disabled(settings.kind==='video'?'Sahneyi düzenle':settings.kind==='website'?'Sayfayı düzenle':'Düzenle'),disabled('Yeniden boyutlandır'));if(['image','character','brand'].includes(settings.kind)){
+ const imageEditor=make('button','✎ Edit image');
+ imageEditor.type='button';imageEditor.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-image-editor'));
+ actions.prepend(imageEditor);
+}
+if(settings.kind==='video'){
  const editor=make('button','✂ Edit & merge clips');
  editor.type='button';editor.dataset.studioClipEditor='true';
  editor.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
