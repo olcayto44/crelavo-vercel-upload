@@ -49,6 +49,23 @@ begin
  return jsonb_build_object('fresh',true,'state','reserved','productionId',p_production,'credits',p_credits);
 end $$;
 
+-- A lease-free single-claim fence for deterministic synchronous Website generation.
+-- Interruption remains in 'generating' for explicit reconciliation, not auto-retry.
+create function public.website_credit_claim(p_user uuid,p_production uuid,p_hash text) returns boolean
+language plpgsql security definer set search_path=public,pg_temp as $
+declare project production_requests%rowtype; reservation website_credit_reservations%rowtype;
+begin
+ select * into project from production_requests where id=p_production and user_id=p_user and production_type='website' for update;
+ if not found then raise exception 'website_project_not_found'; end if;
+ select * into reservation from website_credit_reservations where production_id=p_production and user_id=p_user for update;
+ if not found or reservation.plan_hash is distinct from p_hash or reservation.state<>'reserved' then raise exception 'website_reservation_required'; end if;
+ if project.output_json->'websiteAssistant'->>'phase'<>'reserved' then return false; end if;
+ update production_requests set status='in_production',generation_status='provider_generating',
+ output_json=jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb('generating'::text)),
+ updated_at=now() where id=p_production and user_id=p_user;
+ return true;
+end $;
+
 create function public.website_credit_finalize(p_user uuid,p_production uuid,p_hash text,p_outcome text) returns jsonb
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare project production_requests%rowtype; wallet credit_balances%rowtype; reservation website_credit_reservations%rowtype;
@@ -115,7 +132,9 @@ begin
  return jsonb_build_object('state',case when p_outcome='ready' then 'settled' else 'released' end,'credits',reservation.credits);
 end $$;
 revoke all on function public.website_credit_reserve(uuid,uuid,text,integer) from public,anon,authenticated;
+revoke all on function public.website_credit_claim(uuid,uuid,text) from public,anon,authenticated;
 revoke all on function public.website_credit_finalize(uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function public.website_credit_reserve(uuid,uuid,text,integer) to service_role;
+grant execute on function public.website_credit_claim(uuid,uuid,text) to service_role;
 grant execute on function public.website_credit_finalize(uuid,uuid,text,text) to service_role;
 commit;
