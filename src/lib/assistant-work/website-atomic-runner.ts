@@ -27,13 +27,13 @@ export async function runIsolatedWebsiteGeneration(
   // never from the browser request or an untrusted pre-reservation snapshot.
   const stored = z.strictObject({
     userId: z.string().uuid(), productionId: z.string().uuid(),
-    phase: z.enum(["approved", "reserved"]), planHash: z.string(), approvedHash: z.string(),
+    phase: z.enum(["approved", "reserved", "generating", "awaiting_payment", "ready", "generation_failed"]), planHash: z.string(), approvedHash: z.string(),
     packId: z.string(), credits: z.number().int(),
     brief: z.record(z.string(), z.unknown()),
   }).parse(await deps.loadReserved(input.productionId, input.userId));
   const brief = normalizeAssistantWebsiteBrief(stored.brief);
   const pack = getCategory("website")?.packs.find(p => p.id === stored.packId);
-  if (!["approved","reserved"].includes(stored.phase) || stored.userId !== input.userId || stored.productionId !== input.productionId ||
+  if (stored.userId !== input.userId || stored.productionId !== input.productionId ||
     stored.planHash !== input.planHash || stored.approvedHash !== input.planHash ||
     stored.credits !== input.credits || pack?.credits !== input.credits ||
     /admin|commerce|checkout/i.test(pack.label) ||
@@ -41,6 +41,8 @@ export async function runIsolatedWebsiteGeneration(
     missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
     throw new Error("website_reserved_plan_mismatch_reconciliation_required");
   }
+  // Finished or interrupted attempts are never sent to the provider again.
+  if (stored.phase !== "approved") return { state: "already_reserved_or_finished" as const, charged: false };
   // Validate before reserving so invalid/stale packs never hold a user's credits.
   const reservation = await deps.ledger.reserve({ ...identity, credits: input.credits });
   if (!reservation || typeof reservation !== "object" || !("fresh" in reservation) ||
