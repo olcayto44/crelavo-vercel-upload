@@ -20,6 +20,8 @@ export function RouteAwareFooter({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/auth") ||
     pathname?.startsWith("/dashboard/assistant-workspace") ||
+    pathname?.startsWith("/dashboard/studio-v2") ||
+    pathname?.startsWith("/dashboard/website-builder") ||
     pathname?.startsWith("/ai-mobile-app-builder") ||
     pathname?.startsWith("/ai-ecommerce-builder") ||
     pathname?.startsWith("/ai-video-agent") ||
