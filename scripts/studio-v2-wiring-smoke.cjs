@@ -30,4 +30,9 @@ assert.match(client,/Canvas önizleme/,'ready Websites should be previewable fro
 assert.match(client,/ZIP indir/,'ready Websites should be downloadable from assistant sidebar');
 assert.match(client,/showCanvas\('unavailable','output_not_ready'\)/,'revised Website must not display stale preview');
 assert.match(client,/websiteAssistantRequest\(\{action:'revise'/,'Website brief must use actual Website Assistant');
+assert.match(client,/localCategoryKey\(\)/,'other categories must isolate tab-local chat by user and category');
+assert.match(client,/sessionStorage\.setItem\(localCategoryKey\(\)/,'non-Website conversation must persist in active tab');
+assert.match(client,/prompt:message,messages:history,render:false/,'all-category chat must never invoke rendering');
+assert.match(client,/response\.spend!==false/,'planning must reject a response that performed debit');
+assert.match(client,/if\(!status\?\.realEnabled&&mode==='real'&&current\.id!=='website'\)/,'do not claim server conversation storage for other categories');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
