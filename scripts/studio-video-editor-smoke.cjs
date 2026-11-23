@@ -66,4 +66,6 @@ assert.match(source,/setFraming\(saved.framing\)/,'saved cloud projects must res
 assert.match(source,/aria-label="Video framing mode"/,'user must be able to switch crop or letterbox');
 assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must be narrow, not full-width');
 assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
+assert.match(source,/studio-video-preview-stage"\+\(ratio===/,'outer video player must change size with aspect ratio');
+assert.match(css,/studio-video-preview-stage.is-portrait/,'outer portrait container must be compact');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
