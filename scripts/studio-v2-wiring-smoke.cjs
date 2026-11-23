@@ -224,3 +224,19 @@ assert.match(compose,/validateTimeline/,'MP4 jobs must validate source paths and
 assert.match(worker,/CLIP_REFERENCE_NOT_OWNED/,'worker must revalidate clip ownership');
 assert.match(worker,/eq\("worker_id",workerId\)/,'worker must use exclusive lease checks');
 assert.match(worker,/processJob/,'worker must process queued render jobs');
+
+const sharedToolsCss=read('src/app/dashboard/studio-tools.css');
+const imageEditor=read('src/components/studio/LocalImageEditor.tsx');
+const toolPages=['src/app/dashboard/studio-video-editor/page.tsx','src/app/dashboard/studio-image-editor/page.tsx','src/app/dashboard/studio-elements/page.tsx'];
+for(const path of toolPages){
+ const file=read(path);
+ assert.match(file,/import "..\\/studio-tools\\.css"/,'all standalone editor routes must use the same visual system');
+ assert.match(file,/className="studio-tool-page"/,'standalone editors require a consistent full-page background');
+}
+for(const [name,source] of [['video editor',localEditor],['image editor',imageEditor],['Elements library',elements]]){
+ assert.ok(!source.includes('>\\\\n  <style>')&&!source.includes('>\\\\n    <style>'),'visible literal backslash-n must never appear before styles: '+name);
+ assert.ok(!source.includes('<style>{`'),'patchwork inline CSS must not be embedded per editor: '+name);
+}
+assert.match(sharedToolsCss,/input\\[type=checkbox\\]/,'reference consent checkbox must use predictable compact size');
+assert.match(sharedToolsCss,/@media\\(max-width:800px\\)/,'all tool layouts must fit narrow screens');
+assert.match(elements,/className="cloud-details"/,'cloud controls must collapse instead of overwhelming local reference library');
