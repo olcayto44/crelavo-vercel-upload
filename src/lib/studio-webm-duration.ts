@@ -89,7 +89,7 @@ export async function addMediaRecorderWebmDuration(blob:Blob,ms:number):Promise<
     if(!child||child.unknown||child.end>info.end||child.end<=at)return original("invalid-info-child");
     if(child.id===0x4489){
       if((child.size===4&&header.getFloat32(child.dataAt,false)>0)||
-         (child.size===8&&header.getFloat64(child.dataAt,false)>0))return original("duration-already-present");
+         (child.size===8&&header.getFloat64(child.dataAt,false)>0))return {blob,fixed:true,reason:"duration-already-present"};
       return original("duration-field-not-replaceable");
     }
     at=child.end;
