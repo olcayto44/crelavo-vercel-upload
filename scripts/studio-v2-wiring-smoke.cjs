@@ -179,5 +179,10 @@ assert.match(authGate,/isAssistantWorkspace \|\| isStudioEditor/,'Studio editors
 
 const dashboardLayout=read('src/app/dashboard/layout.tsx');
 assert.match(dashboardLayout,/process\.env\.VERCEL_ENV === "preview"/,'Anonymous Studio shell must be preview-only');
-assert.match(authGate,/previewStudioShell && pathname === "\/dashboard\/studio-v2"|previewStudioShell = allowStudioPreview && pathname === "\/dashboard\/studio-v2"/,'Unauthenticated preview access must be scoped to Studio V2');
+assert.match(authGate,/previewStudioShell = allowStudioPreview && \[/,'Unauthenticated preview access must be scoped to explicit Studio routes');
+for(const path of ['/dashboard/studio-v2','/dashboard/studio-elements','/dashboard/studio-video-editor','/dashboard/studio-image-editor']) assert.ok(authGate.includes('"'+path+'"'),'missing safe preview route '+path);
 assert.match(authGate,/if \(previewStudioShell\) return <>{children}<\/>/,'Preview Studio shell must render without auth redirect');
+
+assert.match(studio,/previewOnly: process\.env\.VERCEL_ENV === "preview"/,'Local editor open flag must only be set on previews');
+assert.match(client,/!session&&!window\.__studioB2\?\.previewOnly/,'Local editors must not bypass production auth');
+assert.match(workspace,/Open local video editor/,'Video empty state must link working editor');
