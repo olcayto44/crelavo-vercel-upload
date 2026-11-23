@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import CloudAssetLibrary from "./CloudAssetLibrary";
 
 type Kind = "character" | "product" | "location" | "wardrobe" | "voice" | "style" | "reference";
 type Stored = { key: string; owner: string; name: string; kind: Kind; description: string; mime: string; size: number; createdAt: number; blob: Blob; permission: boolean };
@@ -155,6 +156,7 @@ export default function LocalAssetLibrary() {
      </div>}
     </section>
    </div>
+   <CloudAssetLibrary />
    <p style={{fontSize:11,color:"#aa99b9",marginTop:16}}>These are real media files stored in IndexedDB on this device, separated by signed-in account. They are not synchronized across devices or connected to AI identity training, motion transfer, or render pipelines yet.</p>
  </main>;
 }
