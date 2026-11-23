@@ -68,9 +68,10 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
   await frame.locator('#send').evaluate(async button=>{const start=Date.now();while(button.getAttribute('aria-busy')==='true'&&Date.now()-start<15000)await new Promise(r=>setTimeout(r,50));});
   await frame.locator('[data-view="brief"]').first().click();
   const plan=frame.locator('#aux-panel');
-  await plan.locator('[data-plan-action="create"]').waitFor();
-  assert.equal(await plan.locator('[data-plan-action="create"]').isDisabled(),false,'completed brief must enable draft plan; context: '+(await frame.locator('#b2-context').innerText()));
-  await plan.locator('[data-plan-action="create"]').click();
+  // Completing the brief automatically generates Plan v1. A disabled "create"
+  // control here is correct: do not generate a duplicate draft.
+  assert.match(await frame.locator('#b2-context').innerText(),/Plan v1.*review/,'completed brief must automatically create a reviewable draft');
+  assert.equal(await plan.locator('[data-plan-action="create"]').isDisabled(),true,'existing draft must not be recreated');
   await plan.locator('[data-plan-action="approve"]').waitFor();
   await plan.locator('[data-plan-action="approve"]').click();
   await plan.locator('[data-plan-action="revoke"]').waitFor();
@@ -84,17 +85,16 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
   await plan.locator('[data-plan-action="approve"]').waitFor();
   assert.equal(await plan.locator('[data-plan-action="approve"]').isDisabled(),false,'revoking approval must re-enable approval');
   // Verify exact version/hash binding and approval state, not only button visibility.
-  assert.deepEqual(planTransitions.map(t=>t.operation),['create','approve','revise','approve','revoke']);
-  const [draft,firstApproval,revision,secondApproval,revocation]=planTransitions.map(t=>t.project);
-  assert.equal(draft.advanced.approval,null,'new draft must be unapproved');
+  assert.deepEqual(planTransitions.map(t=>t.operation),['approve','revise','approve','revoke']);
+  const [firstApproval,revision,secondApproval,revocation]=planTransitions.map(t=>t.project);
   assert(firstApproval.advanced.approval,'approval must be recorded');
   assert.equal(revision.advanced.approval,null,'revision must clear prior approval');
-  assert(revision.advanced.plan.version>draft.advanced.plan.version,'revision must increment plan version');
-  assert.notEqual(revision.advanced.plan.hash,draft.advanced.plan.hash,'revision must change plan hash');
+  assert(revision.advanced.plan.version>firstApproval.advanced.plan.version,'revision must increment plan version');
+  assert.notEqual(revision.advanced.plan.hash,firstApproval.advanced.plan.hash,'revision must change plan hash');
   assert(secondApproval.advanced.approval,'revised plan must allow a fresh approval');
   assert.equal(revocation.advanced.approval,null,'revoke must clear the new approval');
   const {handleMockPlanCommand}=load('src/lib/studio-agent/assistant-core.ts');
-  assert.throws(()=>handleMockPlanCommand(revision,userId,{operation:'approve',expectedPlanVersion:draft.advanced.plan.version,expectedPlanHash:draft.advanced.plan.hash}),e=>e.code==='stale_plan_approval','stale approval must fail closed');
+  assert.throws(()=>handleMockPlanCommand(revision,userId,{operation:'approve',expectedPlanVersion:firstApproval.advanced.plan.version,expectedPlanHash:firstApproval.advanced.plan.hash}),e=>e.code==='stale_plan_approval','stale approval must fail closed');
   const saved=await frame.locator('#prompt').evaluate(()=>Object.keys(sessionStorage).filter(k=>k.includes('studio')));
   assert(saved.length>0,'mock conversation must persist a session-scoped restore pointer');
   const callsBeforeReload=apiCalls;
