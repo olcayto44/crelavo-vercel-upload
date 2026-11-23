@@ -30,6 +30,19 @@ function showVideoProject(item){
  video.preload='metadata';video.playsInline=true;video.src=item.videoUrl;video.setAttribute('controlsList','nodownload');
  video.setAttribute('aria-label',item.title);
  wrapper.append(video);stage.hidden=false;empty.hidden=true;
+ // Actual media metadata is more trustworthy than missing historical plan fields.
+ // This does not invent model names, charge credits or start a production.
+ video.addEventListener('loadedmetadata',()=>{
+  const duration=Number(video.duration);
+  const width=Number(video.videoWidth),height=Number(video.videoHeight);
+  if(!video.isConnected||!Number.isFinite(duration)||duration<=0||duration>7200)return;
+  const ratio=width>0&&height>0?(Math.abs(width/height-16/9)<.09?'16:9':
+   Math.abs(width/height-9/16)<.09?'9:16':
+   Math.abs(width/height-1)<.07?'1:1':width+'×'+height):null;
+  window.dispatchEvent(new CustomEvent('crelavo-studio-video-metadata',{
+   detail:{id:item.id,durationSeconds:duration,aspectRatio:ratio}
+  }));
+ },{once:true});
  q('#canvas-source').hidden=true;q('#playback').hidden=true;
  q('#view-status').textContent=item.title;
  q('#canvas-caption').textContent='16:9 · '+item.title;
