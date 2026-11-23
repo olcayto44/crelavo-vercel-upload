@@ -44,7 +44,7 @@ function showCanvas(state,reason){canvasState=state;$('.canvas').dataset.state=s
 }
 function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
- if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));root.dataset.planState=p.state;const fields=Object.entries(project?.snapshot.fields||{});if(!fields.length){root.appendChild(node('p','Brief henüz oluşmadı. Asistanla konuşarak proje bilgilerini ekleyebilirsin.'));return;}const dl=node('dl');fields.forEach(([k,v])=>dl.append(node('dt',fieldLabel(k)),node('dd',valueLabel(k,v))));root.append(dl,node('p',language==='tr'?'Bu bilgiler proje brief’idir; üretim sonucu değildir.':'These are project requirements, not produced artifacts.'));renderAdvancedPlan(root,p);}
+ if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));if(current.id==='website'&&mode==='real'&&project&&!status?.isolatedPreview){const handoff=node('button',selectedProduction?'Website taslağını güncelle':'Website Builder taslağı oluştur');handoff.type='button';handoff.disabled=busy;handoff.onclick=()=>handoffWebsiteDraft();root.appendChild(handoff);root.appendChild(node('p','Taslak kaydı üretim başlatmaz ve kredi harcamaz. Paket seçimi ve açık onay ayrıca gereklidir.'));}root.dataset.planState=p.state;const fields=Object.entries(project?.snapshot.fields||{});if(!fields.length){root.appendChild(node('p','Brief henüz oluşmadı. Asistanla konuşarak proje bilgilerini ekleyebilirsin.'));return;}const dl=node('dl');fields.forEach(([k,v])=>dl.append(node('dt',fieldLabel(k)),node('dd',valueLabel(k,v))));root.append(dl,node('p',language==='tr'?'Bu bilgiler proje brief’idir; üretim sonucu değildir.':'These are project requirements, not produced artifacts.'));renderAdvancedPlan(root,p);}
  else root.appendChild(node('p',referenceFile?referenceFile.name+' — '+t(9):'Henüz referans seçilmedi. Dosya seçimi sunucuya yükleme veya üretim başlatmaz.'));
 }
 function planSummary(p){const a=p.advanced;return (p.state==='collecting'?(language==='tr'?'Bilgi toplanıyor · ':'Collecting requirements · ')+p.missing.length+' · ':'')+(language==='tr'?'Brief sürümü ':'Brief version ')+(a?.briefVersion??p.revision)+' · '+(a?.plan?'Plan v'+a.planVersion+' · '+a.planState:(language==='tr'?'Plan oluşturulmadı':'No plan yet'))+' · '+(language==='tr'?'Üretim kapalı':'Production disabled');}
@@ -73,6 +73,26 @@ function installWebsite(data){websiteData=data;if(data.state!=='ready'||typeof d
  const pages=$('#website-pages');pages.replaceChildren();data.pages.forEach(p=>{const option=node('option',p.label);option.value=p.path;pages.appendChild(option)});pages.disabled=false;pages.value=data.page||'index.html';showCanvas('ready');showAux('canvas');resizePreview();draw();
 }
 async function previewWebsite(id,page='index.html'){const seq=epoch,load=++previewEpoch;showCanvas('loading');try{const data=await request('/api/studio/website-preview?projectId='+encodeURIComponent(id)+'&page='+encodeURIComponent(page));if(seq!==epoch||load!==previewEpoch||current.id!=='website'||selectedProduction!==id)return;if(data.projectId!==id)throw Error('Önizleme proje eşleşmesi doğrulanamadı.');installWebsite({...data,page});}catch(error){if(seq===epoch&&load===previewEpoch){websiteData=null;showCanvas('unavailable');uiError=error.message;draw();}}}
+// Explicit handoff to the existing Website Builder draft API. This does not approve,
+// render, spend credits, or silently create a production from a chat message.
+async function handoffWebsiteDraft(){
+ if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview)return;
+ const fields=project.snapshot?.fields||{};
+ if(typeof fields.brief!=='string'||!fields.brief.trim()||typeof fields.business_name!=='string'||!fields.business_name.trim()){
+  uiError='Önce proje fikrini ve işletme adını tamamlayın.';draw();return;
+ }
+ const seq=epoch;busy=true;uiError='';draw();
+ try{
+  const websiteBrief={brand:fields.business_name,brief:fields.brief,...(fields.audience?{audience:String(fields.audience)}:{}),...(fields.site_type?{siteType:String(fields.site_type)}:{}),...(fields.design_style?{style:String(fields.design_style)}:{}),...(fields.pages?{pages:String(fields.pages)}:{}),...(fields.language?{locale:String(fields.language)}:{})};
+  const result=await request('/api/websites/generate',{action:'revise',prompt:fields.brief,websiteBrief,...(selectedProduction?{productionId:selectedProduction}:{})});
+  if(seq!==epoch)return;
+  if(!result.productionId)throw Error('Website taslağı kimliği alınamadı.');
+  selectedProduction=result.productionId;
+  websiteData=null;
+  showCanvas('unavailable','output_not_ready');
+  uiError='Website Builder taslağı kaydedildi. Üretim başlatılmadı, kredi harcanmadı. Onay ve paket seçimi mevcut Website Builder akışında yapılmalıdır.';
+ }catch(error){if(seq===epoch)showError(error);}finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
+}
 async function createProject(productionId){const seq=epoch;const data=await api({action:'create',...(productionId?{productionId}:{})});if(seq!==epoch)return;pending=null;remember(data);}
 async function restore(){const seq=epoch;try{let saved=null;try{saved=JSON.parse(sessionStorage.getItem(key())||'null');}catch(_error){/* Continue without persisted conversation when browser storage is blocked. */}if(saved){const data=await api({action:'load',projectId:saved.projectId,...(saved.mockState?{mockState:saved.mockState}:{})});if(seq!==epoch)return;remember(data);if(current.id==='website'&&data.project.productionId){selectedProduction=data.project.productionId;await previewWebsite(selectedProduction);}}else await createProject();}catch(error){if(seq===epoch)showError(error)}}
 function showError(error){uiError=error.message;draw();}
