@@ -7,10 +7,10 @@ let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteD
 const availableStudioLanguages=['en','tr','de','es','fr','ar'];
 let storedStudioLanguage='en',siteLanguageExplicit=false;
 try{const saved=localStorage.getItem('clipora_language');siteLanguageExplicit=Boolean(saved);storedStudioLanguage=saved||'en'}catch(_error){}
-// A previously saved site-language choice wins over old Studio links.
-// First-time visitors may still deliberately select a URL locale.
-let language=siteLanguageExplicit?storedStudioLanguage:
-  (new URLSearchParams(parent.location.search).get('uiLang')||'en');
+// Explicit uiLang always wins. Otherwise inherit the homepage choice.
+const requestedStudioLanguage=new URLSearchParams(parent.location.search).get('uiLang');
+let language=availableStudioLanguages.includes(requestedStudioLanguage)?requestedStudioLanguage:
+ (siteLanguageExplicit?storedStudioLanguage:'en');
 if(!availableStudioLanguages.includes(language))language='en';
 const words={
 tr:['Konuşma','Yeni sohbet projesi','Mesaj gönder','Dosya seç','Proje bağlamı','Önce oturum açın.','Bir mesaj yazın…','Mock demo: Yanıtlar ve bakiyeler simülasyondur. Hafıza tarayıcıda imzalı demo kaydıdır; gerçek AI/DB değildir.','Gerçek AI yalnızca atomik muhasebe ve sunucu tarifesi etkinse çalışır.','Dosya yalnızca seçildi; yükleme ve modele aktarım henüz bağlı değil.','Üretim ve revizyon araçları henüz bağlı değil.','Varsayılanları kullan','Kayıtlı Website projeleri','Salt okunur önizleme','İşlem tamamlanamadı. Otomatik tekrar yapılmadı.','Gönderiliyor…','Bu kategori için projenizi konuşarak hazırlayalım.','Kayıtlı sohbetler'],
@@ -153,7 +153,10 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
 
  $('#category-title').textContent=current.label+({en:' workspace',tr:' çalışma alanı',de:' Arbeitsbereich',es:' espacio de trabajo',fr:' espace de travail',ar:' مساحة العمل'}[language]||' workspace');
  const fields=Object.entries(project?.snapshot.fields||{});$('#b2-context').textContent=project?project.title+'\n'+fields.map(([k,v])=>fieldLabel(k)+': '+valueLabel(k,v)).join('\n'):current.label;$('#b2-context').dataset.userContent='true';
- const title=project?.title&&project.title!=='Studio projesi'?project.title:current.label+' projesi';$('#project-title').textContent=websiteData?.title||title;
+ const title=activeVideoSelection?.title||websiteData?.title||(
+ project?.title&&!/ (brief|projesi|project)$/i.test(project.title)?project.title:
+ current.label+({tr:' projesi',en:' project',de:' Projekt',es:' proyecto',fr:' projet',ar:' مشروع'}[language]||' project'));
+ $('#project-title').textContent=title;
  for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:(account==='production'&&Number.isFinite(liveProductionBalance)?liveProductionBalance:'—'))+(mode==='mock'?' (mock)':'');
  $('#mode-badge').textContent=mode==='mock'?'Demo · simülasyon':'Gerçek sohbet';$('#b2-mode-note').textContent=current.id==='website'&&mode==='real'&&!status?.realEnabled
  ?'Website brief sohbeti etkin. Site üretimi için Canvas üzerindeki Website oluştur aracını kullanın; otomatik kredi tahsilatı kapalı.'
@@ -379,7 +382,7 @@ function restoreLocalCategoryChat(){
  let saved=[];try{const parsed=JSON.parse(sessionStorage.getItem(localCategoryKey())||'[]');if(Array.isArray(parsed))saved=parsed;}catch(_error){}
  const messages=saved.filter(item=>item&&['user','assistant'].includes(item.role)&&typeof item.content==='string')
   .slice(-24).map(item=>({role:item.role,content:item.content.slice(0,6000)}));
- project={id:crypto.randomUUID(),userId:session.userId,categoryId:current.id,title:current.label+' brief',
+ project={id:crypto.randomUUID(),userId:session.userId,categoryId:current.id,title:current.label,
   productionId:null,snapshot:{categoryId:current.id,revision:messages.length,fields:{}},messages};
  serverPlanning=null;walletCache=null;draw();
 }
