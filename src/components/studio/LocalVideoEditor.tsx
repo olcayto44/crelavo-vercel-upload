@@ -241,14 +241,7 @@ export default function LocalVideoEditor() {
     let currentVideo: HTMLVideoElement | null = null;
     let raf = 0;
     const chunks: BlobPart[] = [];
-    const recordDone = new Promise<void>((resolve, reject) => {
-      try {
-        recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3_000_000 });
-        recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-        recorder.onerror = () => reject(new Error("Video recorder failed."));
-        recorder.onstop = () => resolve();
-      } catch (error) { reject(error); }
-    });
+    let recordDone: Promise<void> | undefined;
     try {
       if (includeAudio) {
         audio = new AudioContextConstructor();
@@ -259,7 +252,16 @@ export default function LocalVideoEditor() {
         // to the captured stream only, avoiding unexpected speaker playback.
         (canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination = destination;
       }
-      recorder!.start(750);
+      // Register all intended tracks before constructing MediaRecorder:
+      // a recorder created with a video-only stream may omit later audio.
+      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3_000_000 });
+      const configuredRecorder = recorder;
+      recordDone = new Promise<void>((resolve, reject) => {
+        configuredRecorder.ondataavailable = event => { if(event.data.size)chunks.push(event.data); };
+        configuredRecorder.onerror = () => reject(new Error("Video recorder failed."));
+        configuredRecorder.onstop = () => resolve();
+      });
+      recorder.start(750);
       let elapsed = 0;
       for (const clip of clips) {
         if (cancel.current) throw new Error("Export cancelled.");
@@ -305,6 +307,7 @@ export default function LocalVideoEditor() {
         elapsed += segment;
       }
       recorder!.stop();
+      if(!recordDone)throw new Error("Recording was not initialized.");
       await recordDone;
       if (cancel.current) throw new Error("Export cancelled.");
       const blob = new Blob(chunks, { type: "video/webm" });
