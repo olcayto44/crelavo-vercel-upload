@@ -30,9 +30,7 @@ const { PGlite } = require('@electric-sql/pglite');
     values($1,'website','landing_page','Offline test','Offline','pending','pending',$2,0,'{}'::jsonb,$3::jsonb) returning id`,[owner,credits,JSON.stringify({websiteAssistant:state})]);
    return rows[0].id;
   }
-  async function generated(id,files=true){await db.query(`update production_requests set generation_status='completed',
-   output_json=jsonb_set(jsonb_set(output_json,'{websiteAssistant,phase}','"awaiting_payment"'::jsonb),'{websiteFiles}',$2::jsonb) where id=$1`,
-   [id,JSON.stringify(files?[{path:'index.html',content:'<html>Offline</html>'}]:[])]);}
+  async function generated(id,files=true){return call('website_credit_record',[owner,id,hash,'ready',JSON.stringify({files:files?[{path:'index.html',content:'<html>Offline</html>'}]:[],pageManifest:[{path:'index.html'}],websiteContent:{}})]);}
   const first=await make(60);
   await assert.rejects(call('website_credit_reserve',[stranger,first,hash,60]),/website_project_not_found/);
   await assert.rejects(call('website_credit_reserve',[owner,first,'b'.repeat(64),60]),/approved_website_plan_required/);
@@ -47,7 +45,7 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal(await call('website_credit_claim',[owner,first,hash]),true);
   assert.equal(await call('website_credit_claim',[owner,first,hash]),false,'generation claim is single-use');
   await assert.rejects(call('website_credit_claim',[stranger,first,hash]),/website_project_not_found/);
-  await generated(first,false);
+  await assert.rejects(generated(first,false),/website_artifact_invalid/);
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'ready']),/website_delivery_and_approval_required/);
   await generated(first,true);
   const before=await wallet();
@@ -64,7 +62,9 @@ const { PGlite } = require('@electric-sql/pglite');
   await call('website_credit_reserve',[owner,second,hash,15]);
   assert.equal((await wallet()).reserved,15);
   await assert.rejects(call('website_credit_finalize',[owner,second,hash,'failed']),/website_confirmed_failure_required/);
-  await db.query(`update production_requests set generation_status='failed',output_json=jsonb_set(output_json,'{websiteAssistant,phase}','"generation_failed"'::jsonb) where id=$1`,[second]);
+  assert.equal(await call('website_credit_claim',[owner,second,hash]),true);
+  await assert.rejects(call('website_credit_record',[owner,second,hash,'failed',JSON.stringify({kind:'unknown_failure'})]),/website_failure_evidence_required/);
+  assert.equal(await call('website_credit_record',[owner,second,hash,'failed',JSON.stringify({kind:'confirmed_local_generation_failure'})]),true);
   assert.equal((await call('website_credit_finalize',[owner,second,hash,'failed'])).state,'released');
   assert.equal((await wallet()).reserved,0);
   const third=await make(10);
