@@ -171,7 +171,48 @@ async function createProject(productionId){const seq=epoch;const data=await api(
 async function restore(){const seq=epoch;try{let saved=null;try{saved=JSON.parse(sessionStorage.getItem(key())||'null');}catch(_error){/* Continue without persisted conversation when browser storage is blocked. */}if(saved){const data=await api({action:'load',projectId:saved.projectId,...(saved.mockState?{mockState:saved.mockState}:{})});if(seq!==epoch)return;remember(data);if(current.id==='website'&&data.project.productionId){selectedProduction=data.project.productionId;await previewWebsite(selectedProduction);}}else await createProject();}catch(error){if(seq===epoch)showError(error)}}
 function showError(error){uiError=error.message;draw();}
 async function openWebsite(id){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';clearCanvas();selectedProduction=id;showAux('canvas');showCanvas('loading');draw();const seq=epoch;const preview=previewWebsite(id);try{await createProject(id);}catch(error){if(seq===epoch)showError(error);}await preview;}
-async function sendMessage(defaults=[]){const message=$('#prompt').value.trim();if(!message||busy||!session)return;const seq=epoch;busy=true;uiError='';draw();try{if(!project)await createProject();if(seq!==epoch||!project)return;const signature=JSON.stringify([project.id,message,defaults]);if(!pending||pending.signature!==signature)pending={signature,requestId:crypto.randomUUID()};const data=await api({action:'message',projectId:project.id,requestId:pending.requestId,message,acceptedDefaults:defaults,...(mockState?{mockState}:{})});if(seq!==epoch)return;$('#prompt').value='';pending=null;remember(data);}catch(error){if(seq===epoch)showError(error)}finally{if(seq===epoch){busy=false;draw();}}}
+function applyWebsiteChat(result){
+ if(!result||!result.productionId||!result.website)throw Error('Website sohbet projesi doğrulanamadı.');
+ const b=result.website.brief||{};
+ const fields={};
+ const mapping={brief:'brief',brand:'business_name',audience:'audience',siteType:'site_type',style:'design_style',locale:'language'};
+ Object.keys(mapping).forEach(key=>{if(typeof b[key]==='string'&&b[key].trim())fields[mapping[key]]=b[key]});
+ if(Array.isArray(b.pages)&&b.pages.length)fields.pages=b.pages.join(', ');
+ if(Array.isArray(b.features)&&b.features.length)fields.features_and_integrations=b.features.join(', ');
+ const messages=Array.isArray(result.website.messages)?result.website.messages
+   .filter(item=>item&&['user','assistant'].includes(item.role)&&typeof item.content==='string').slice(-30):[];
+ const previous=project?.id===result.productionId?project:null;
+ project={id:result.productionId,userId:session.userId,categoryId:'website',title:result.title||'Website projesi',
+  productionId:result.productionId,snapshot:{categoryId:'website',revision:(previous?.snapshot?.revision||0)+1,fields},
+  messages};
+ serverPlanning=null;
+ websiteData=result;
+ selectedProduction=result.productionId;
+ websiteSelectedPackId=result.website.packId||websiteSelectedPackId;
+ draw();
+}
+function websiteAssistantRequest(payload){
+ return request('/api/assistant-work',{category:'website',type:'Website',prompt:'',...payload});
+}
+async function sendMessage(defaults=[]){
+ const message=$('#prompt').value.trim();if(!message||busy||!session)return;
+ const seq=epoch;busy=true;uiError='';draw();
+ try{
+  if(current.id==='website'&&mode==='real'&&!status?.realEnabled){
+   const result=await websiteAssistantRequest({action:'revise',prompt:message,
+     ...(websiteData?.website&&websiteData.productionId?{productionId:websiteData.productionId}:{})});
+   if(seq!==epoch)return;
+   $('#prompt').value='';pending=null;applyWebsiteChat(result);return;
+  }
+  if(!project)await createProject();
+  if(seq!==epoch||!project)return;
+  const signature=JSON.stringify([project.id,message,defaults]);
+  if(!pending||pending.signature!==signature)pending={signature,requestId:crypto.randomUUID()};
+  const data=await api({action:'message',projectId:project.id,requestId:pending.requestId,message,acceptedDefaults:defaults,...(mockState?{mockState}:{})});
+  if(seq!==epoch)return;$('#prompt').value='';pending=null;remember(data);
+ }catch(error){if(seq===epoch)showError(error)}
+ finally{if(seq===epoch){busy=false;draw();}}
+}
 async function savedConversations(){if(mode==='mock'){await restore();return;}const seq=epoch,data=await api({action:'projects'});if(seq!==epoch)return;const select=$('#b2-projects');select.replaceChildren(node('option',t(17)));for(const p of data.projects||[]){const o=node('option',p.title);o.value=p.id;select.appendChild(o);}}
 async function savedWebsites(){if(status?.isolatedPreview){uiError='İzole Preview: Production projelerine erişim kapalı; yalnızca demo brief ve plan gösterilir.';draw();return;} if(current.id!=='website'){await savedConversations();return;}const seq=epoch;const root=$('#saved-websites');root.hidden=false;root.replaceChildren(node('span','Projeler yükleniyor…'));const data=await request('/api/websites?user_id='+encodeURIComponent(session.userId));if(seq!==epoch)return;root.replaceChildren();if(!data.websites?.length)root.appendChild(node('span','Henüz kayıtlı Website yok.'));for(const item of data.websites||[]){const button=node('button',item.title||'Website projesi');button.dataset.productionId=item.id;button.onclick=()=>openWebsite(item.id).catch(showError);root.appendChild(button);}}
 function tools(){const root=$('#category-tools');root.replaceChildren(node('strong',current.panel.title));current.panel.tools.forEach(name=>{const button=node('button',name);const free=['Responsive preview','Device preview','Platform preview','Review evidence','Review language','Review tasks','Review script'].includes(name);button.disabled=!free;button.dataset.tool=name;button.dataset.requiresProduction=String(!free);button.title=free?'Ücretsiz çalışma alanı görünümü':'Bu araç bu aşamada bağlı değil; üretim veya kredi işlemi yapılmaz.';if(free)button.onclick=()=>showAux(name.includes('preview')?'canvas':name.includes('evidence')?'assets':'brief');root.appendChild(button);});}
