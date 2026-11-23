@@ -400,3 +400,29 @@
  .studio-tool-page .studio-compact-video-editor .studio-format-label{width:100%}
  .studio-tool-page .studio-compact-video-editor .studio-format-button{flex:1 1 100px}
 }
+
+/* Safe framing selector immediately beside the video preview. The default
+   'Show full video' keeps faces, hats and edge subtitles in frame. */
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+ gap:7px;margin:10px auto 0;max-width:520px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls span{
+ font-size:11px;color:#c6b3d8;font-weight:600;margin-right:4px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls button{
+ display:inline-flex;align-items:center;justify-content:center;
+ padding:7px 10px;min-height:34px;border:1px solid #66507a;
+ border-radius:7px;background:#21162f;color:#e8d9f7;
+ font-size:11px;line-height:1.3;white-space:normal;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls button.is-active{
+ color:#fff;background:#7542ab;border-color:#c28dea;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-framing-note{
+ max-width:540px;margin:7px auto 5px;text-align:center;
+}
+@media(max-width:460px){
+ .studio-tool-page .studio-compact-video-editor .studio-video-preview-controls span{width:100%;text-align:center}
+ .studio-tool-page .studio-compact-video-editor .studio-video-preview-controls button{flex:1 1 140px}
+}
