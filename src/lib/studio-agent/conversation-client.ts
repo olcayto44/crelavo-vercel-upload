@@ -84,7 +84,7 @@ async function handoffWebsiteDraft(){
  const seq=epoch;busy=true;uiError='';draw();
  try{
   const websiteBrief={brand:fields.business_name,brief:fields.brief,...(fields.audience?{audience:String(fields.audience)}:{}),...(fields.site_type?{siteType:String(fields.site_type)}:{}),...(fields.design_style?{style:String(fields.design_style)}:{}),...(fields.pages?{pages:String(fields.pages)}:{}),...(fields.language?{locale:String(fields.language)}:{})};
-  const result=await request('/api/websites/generate',{action:'revise',prompt:fields.brief,websiteBrief,...(selectedProduction?{productionId:selectedProduction}:{})});
+  const result=await request('/api/websites/generate',{action:'revise',prompt:fields.brief,websiteBrief,...(project.productionId&&selectedProduction===project.productionId?{productionId:project.productionId}:{})});
   if(seq!==epoch)return;
   if(!result.productionId)throw Error('Website taslağı kimliği alınamadı.');
   selectedProduction=result.productionId;
