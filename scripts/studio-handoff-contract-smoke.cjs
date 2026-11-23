@@ -36,4 +36,9 @@ for(const token of ['mock_binding_not_allowed','website_already_bound','website_
 assert(client.includes("action:'bind_website'"),'website draft must persist its production link');
 assert(page.includes("getCategory('website')?.packs"),'website prices must come from the canonical category catalog');
 assert(client.includes('window.__studioB2?.websitePacks'),'website package labels and credit costs must be visible in brief');
+assert(client.includes("async function reviewWebsiteDraft()"),'website review must be explicitly user-triggered');
+const review=client.slice(client.indexOf('async function reviewWebsiteDraft()'),client.indexOf('async function handoffWebsiteDraft()'));
+assert(review.includes("action:'website_open'"),'website review must use read-only action');
+assert(!review.includes("action:'website_approve'")&&!review.includes("action:'render'")&&!review.includes('/api/credits/spend'),'website review must not approve, render or spend');
+assert(client.includes('w.review?.blockers'),'website approval blockers must be displayed');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
