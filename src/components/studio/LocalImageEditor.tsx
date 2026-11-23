@@ -6,7 +6,7 @@ const maxSourceBytes = 25_000_000;
 const ratioValues: Record<Exclude<ImageRatio,"original">,number> = {"1:1":1,"16:9":16/9,"9:16":9/16,"4:5":4/5};
 
 function adjustedCrop(sourceWidth:number,sourceHeight:number,ratio:ImageRatio,rotated:boolean){
- const goal = ratio==="original" ? sourceWidth/sourceHeight : ratioValues[ratio] * (rotated?1/1:1);
+ const goal = ratio==="original" ? (rotated?sourceHeight/sourceWidth:sourceWidth/sourceHeight) : ratioValues[ratio];
  // The output ratio reflects the image *after* rotation.
  const sourceRatio=rotated?1/goal:goal;
  let width=sourceWidth,height=sourceHeight;
@@ -43,7 +43,7 @@ export default function LocalImageEditor(){
  useEffect(()=>{
   const image=bitmap.current,output=canvas.current;
   if(!image||!output)return;
-  const rotated=rotation%180!==0;
+  const rotated=!compare&&rotation%180!==0;
   const crop=adjustedCrop(image.width,image.height,ratio,rotated);
   const intendedWidth=rotated?crop.height:crop.width;
   const intendedHeight=rotated?crop.width:crop.height;
@@ -66,7 +66,7 @@ export default function LocalImageEditor(){
    if(!blob){setStatus("Could not export this image.");return;}
    const url=URL.createObjectURL(blob);
    const link=document.createElement("a");link.href=url;
-   link.download="crelavo-edited-"+(filename.replace(/\\.[^.]+$/,"").replace(/[^a-z0-9_-]/gi,"-").slice(0,55)||"image")+".png";
+   link.download="crelavo-edited-"+(filename.replace(/\.[^.]+$/,"").replace(/[^a-z0-9_-]/gi,"-").slice(0,55)||"image")+".png";
    document.body.append(link);link.click();link.remove();
    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
    setStatus("Edited PNG ready. No server upload or charge.");
