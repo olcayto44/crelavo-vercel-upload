@@ -39,5 +39,10 @@ function load(path){
  assert.match(api,/executePaidWebsiteProduction\(body/);
  assert.match(delivery,/websiteCreditDeliveryProof\(data,\s*proof\.data\)/);
  assert.match(delivery,/website_atomic_delivery_not_settled/);
+ const studio=fs.readFileSync('src/app/api/assistant-work/route.ts','utf8');
+ assert.match(studio,/executePaidWebsiteProduction\(\{/);
+ assert.match(studio,/action:\s*"website_open"/);
+ assert.match(studio,/website_legacy_debit_blocked/);
+ assert.ok(studio.indexOf('if (action === "render" || body.render === true)') < studio.indexOf('spend: async (amount, session)'), 'new render path must bypass legacy credit spending');
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
