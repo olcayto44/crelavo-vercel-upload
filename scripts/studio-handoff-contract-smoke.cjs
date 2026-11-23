@@ -24,7 +24,7 @@ for (const token of ['async function handoffWebsiteDraft()', "mode!=='real'", "c
   assert(client.includes(token), 'website handoff missing safety contract: '+token);
 }
 const handoff=client.slice(client.indexOf('async function handoffWebsiteDraft()'),client.indexOf('async function createProject(productionId)'));
-assert(!/action:\\s*['\"](?:render|website_approve)['\"]/.test(handoff),'website handoff must not render or approve');
+assert(!/action:\s*['\"](?:render|website_approve)['\"]/.test(handoff),'website handoff must not render or approve');
 assert(!handoff.includes('/api/credits/spend'),'website handoff must not directly spend credits');
 const websiteRoute=read('src/app/api/websites/generate/route.ts');
 assert(websiteRoute.includes('executeWebsiteRequest('),'website draft must use the existing authenticated production API');
