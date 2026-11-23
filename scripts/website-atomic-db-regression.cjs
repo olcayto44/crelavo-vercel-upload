@@ -31,6 +31,12 @@ const { PGlite } = require('@electric-sql/pglite');
    return rows[0].id;
   }
   async function generated(id,files=true){return call('website_credit_record',[owner,id,hash,'ready',JSON.stringify({files:files?[{path:'index.html',content:'<html>Offline</html>'}]:[],pageManifest:[{path:'index.html'}],websiteContent:{}})]);}
+  // Existing test wallets can have legacy bucket drift; new reservations must fail closed.
+  const mismatched=await make(5);
+  await db.query('update credit_balances set bonus_credits=bonus_credits+1 where user_id=$1',[owner]);
+  await assert.rejects(call('website_credit_reserve',[owner,mismatched,hash,5]),/website_credit_bucket_reconciliation_required/);
+  assert.equal((await wallet()).reserved,0);
+  await db.query('update credit_balances set bonus_credits=bonus_credits-1 where user_id=$1',[owner]);
   const first=await make(60);
   await assert.rejects(call('website_credit_reserve',[stranger,first,hash,60]),/website_project_not_found/);
   await assert.rejects(call('website_credit_reserve',[owner,first,'b'.repeat(64),60]),/approved_website_plan_required/);
