@@ -63,7 +63,7 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
   // The first natural-language message does not promise to infer "called X" as
   // business_name. Supply the mandatory fact explicitly instead of weakening
   // production requirements or silently accepting an incomplete brief.
-  await frame.locator('#prompt').fill('brief: Build a landing page for Moonrise Bakes, a local bakery serving families.\\nbusiness_name: Moonrise Bakes');
+  await frame.locator('#prompt').fill('brief: Build a landing page for Moonrise Bakes, a local bakery serving families.\nbusiness_name: Moonrise Bakes');
   await frame.locator('#send').click();
   await frame.locator('#send').evaluate(async button=>{const start=Date.now();while(button.getAttribute('aria-busy')==='true'&&Date.now()-start<15000)await new Promise(r=>setTimeout(r,50));});
   await frame.locator('[data-view="brief"]').first().click();
