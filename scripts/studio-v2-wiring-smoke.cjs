@@ -105,7 +105,8 @@ assert.match(localEditor,/Move clip left/,'clips must allow reordering');
 assert.match(localEditor,/includeAudio/,'editor must support source audio');
 assert.match(localEditor,/URL\.revokeObjectURL/,'local video object URLs must be cleaned up');
 assert.match(workspace,/crelavo-studio-open-video-editor/,'original Canvas toolbar must open video editor');
-assert.match(client,/\/dashboard\/studio-video-editor/,'video editor must stay inside original Canvas');
+assert.match(client,/crelavo-studio-open-tool/,'video editor must securely open a working top-level route instead of a blocked iframe');
+assert.ok(!client.includes("frame.src='/dashboard/studio-video-editor'"),'blocked editor iframe must not be reintroduced');
 assert.match(videoEditorRoute,/LocalVideoEditor/);
 assert.match(elements,/indexedDB\.open/,'asset library must persist locally');
 assert.match(elements,/\.auth\.getUser\(\)/,'assets must be scoped to signed in user');
@@ -186,3 +187,13 @@ assert.match(authGate,/if \(previewStudioShell\) return <>{children}<\/>/,'Previ
 assert.match(studio,/previewOnly: process\.env\.VERCEL_ENV === "preview"/,'Local editor open flag must only be set on previews');
 assert.match(client,/!session&&!window\.__studioB2\?\.previewOnly/,'Local editors must not bypass production auth');
 assert.match(workspace,/Open local video editor/,'Video empty state must link working editor');
+
+const conversationFrame=read('src/components/StudioConversationFrame.tsx');
+assert.match(conversationFrame,/event\.origin!==window\.location\.origin/,'embedded Studio messages must check origin');
+assert.match(conversationFrame,/event\.source!==frame\.current\?\.contentWindow/,'embedded Studio messages must check source');
+assert.match(conversationFrame,/crelavo-studio-open-tool/,'working local tool links must reach the parent');
+assert.match(conversationFrame,/crelavo-studio-request-login/,'chat must offer explicit optional login');
+assert.match(client,/previewDraftEnabled\(\)/,'anonymous preview must have a local draft mode');
+assert.match(client,/\$\('#prompt'\)\.disabled=busy\|\|\(!session&&!previewDraftEnabled\(\)\)/,'preview textarea must remain editable');
+assert.match(client,/previewDraftMessages=\[/,'preview draft must save messages');
+assert.match(client,/sessionStorage\.setItem\(previewDraftKey\(\)/,'preview draft must persist by category in browser tab');
