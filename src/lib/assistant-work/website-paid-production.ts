@@ -44,10 +44,11 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   if (state?.phase !== "approved" || state?.planHash !== planHash || state?.approvedHash !== planHash)
     return reply({ ok: false, code: "website_current_approval_required" }, 409);
   const pack = getCategory("website")?.packs.find(p => p.id === state.packId);
+  const credits = pack?.credits;
   const brief = normalizeAssistantWebsiteBrief(state.brief);
-  if (!pack || !Number.isSafeInteger(pack.credits) || pack.credits <= 0 ||
+  if (!pack || typeof credits !== "number" || !Number.isSafeInteger(credits) || credits <= 0 ||
       /admin|commerce|checkout/i.test(pack.label) ||
-      state.credits !== pack.credits || row.estimated_credits !== pack.credits ||
+      state.credits !== credits || row.estimated_credits !== credits ||
       websitePlanHash(brief, String(state.packId)) !== planHash ||
       missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
@@ -68,11 +69,11 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   };
   try {
     const result = await runIsolatedWebsiteGeneration(
-      { userId: user.id, productionId, planHash, credits: pack.credits },
+      { userId: user.id, productionId, planHash, credits },
       { ledger, loadReserved },
     );
     if (result.state === "ready") return reply({
-      ok: true, state: "ready", productionId, charged: pack.credits,
+      ok: true, state: "ready", productionId, charged: credits,
       previewUrl: `/api/productions/${productionId}/delivery?file=preview`,
       deliveryZipUrl: `/api/productions/${productionId}/delivery?file=zip`,
     }, 200);
