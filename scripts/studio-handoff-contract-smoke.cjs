@@ -51,4 +51,7 @@ assert(approval.includes("action:'website_approve'"),'website approval must use 
 assert(approval.includes("planHash"),'website approval must bind the reviewed plan hash');
 assert(!approval.includes("render:true")&&!approval.includes("action:'render'")&&!approval.includes("spend("),'website approval must not trigger generation or spend');
 assert(client.includes("w.approvedHash===w.planHash"),'approved website plan must be shown as approved');
+assert(websiteRoute.includes('if (action === "render")'), 'website render must fail closed until atomic billing is ready');
+assert(websiteRoute.includes('website_atomic_billing_required'), 'website render must report a stable atomic-billing error');
+assert(websiteRoute.indexOf('if (action === "render")') < websiteRoute.indexOf('executeWebsiteRequest('), 'render must be denied before legacy payment and generation');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
