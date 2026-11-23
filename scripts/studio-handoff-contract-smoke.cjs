@@ -55,7 +55,7 @@ assert(websiteRoute.includes('if (action === "render")'), 'website rendering mus
 assert(websiteRoute.includes('executePaidWebsiteProduction('), 'website render must invoke atomic coordinator');
 assert(websiteRoute.indexOf('if (action === "render")') < websiteRoute.indexOf('executeWebsiteRequest('), 'render must bypass legacy generation adapter');
 const paidProduction=read('src/lib/assistant-work/website-paid-production.ts');
-for (const token of ['CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED', 'env.VERCEL_ENV === "production"', 'supabaseAdmin()', 'createWebsiteCreditLedger(', 'runIsolatedWebsiteGeneration(', 'approved_current_plan_required']) {
+for (const token of ['CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED', 'env.VERCEL_ENV === "production"', 'supabaseAdmin()', 'createWebsiteCreditLedger(', 'runIsolatedWebsiteGeneration(', 'website_current_approval_required']) {
  assert(paidProduction.includes(token), 'paid Website render missing guard '+token);
 }
 assert(!paidProduction.includes('creditsSpend') && !paidProduction.includes('/api/credits/spend'), 'production website must not fall back to legacy debit');
