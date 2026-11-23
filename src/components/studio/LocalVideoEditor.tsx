@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 import { saveCloudTimeline, loadCloudTimeline } from "@/lib/studio-cloud-timeline";
+import { addMediaRecorderWebmDuration } from "@/lib/studio-webm-duration";
 
 type Clip = { id: string; file: File; name: string; url: string; duration: number; start: number; end: number };
 const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
@@ -374,6 +375,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         configuredRecorder.onstop = () => resolve();
       });
       recorder.start(750);
+      const recordingStartedAt=performance.now();
       let elapsed = 0;
       for (let clipIndex=0;clipIndex<clips.length;clipIndex++) {
         const clip=clips[clipIndex];
@@ -459,10 +461,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       if(!recordDone)throw new Error("Recording was not initialized.");
       await recordDone;
       if (cancel.current) throw new Error("Export cancelled.");
-      const blob = new Blob(chunks, { type: "video/webm" });
-      if (blob.size < 1000) throw new Error("The exported video is empty.");
+      const rawBlob = new Blob(chunks, { type: "video/webm" });
+      if (rawBlob.size < 1000) throw new Error("The exported video is empty.");
+      // MediaRecorder usually omits the WebM Duration element. The player
+      // may show changing video frames but a frozen/unseekable time slider.
+      // Use actual recording elapsed time (not nominal trim sum), because
+      // decode/seek delays and hardware may extend the recording.
+      const recordedMs=Math.max(1,performance.now()-recordingStartedAt);
+      const fixed=await addMediaRecorderWebmDuration(rawBlob,recordedMs);
+      const blob=fixed.blob;
       const url = URL.createObjectURL(blob); output.current = url; setDownloadUrl(url);
-      setProgress(100); setState("Merged video ready (" + (blob.size / 1048576).toFixed(1) + " MB). Download the WebM file.");
+      setProgress(100);
+      setState(fixed.fixed
+        ?"Merged video ready ("+(blob.size/1048576).toFixed(1)+" MB) · duration metadata added. Download the WebM file."
+        :"Merged video ready ("+(blob.size/1048576).toFixed(1)+" MB), but seekable duration metadata could not be added ("+fixed.reason+"). Player timeline/scrubbing may be limited.");
     } catch (error) {
       const activeRecorder = recorder as MediaRecorder | null;
       if (activeRecorder && activeRecorder.state === "recording") activeRecorder.stop();
