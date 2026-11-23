@@ -39,7 +39,9 @@ begin
  select * into wallet from credit_balances where user_id=p_user for update;
  if not found or wallet.balance-wallet.reserved < p_credits then raise exception 'insufficient_production_credits'; end if;
  update credit_balances set reserved=reserved+p_credits,updated_at=now() where user_id=p_user;
- update production_requests set reserved_credits=p_credits,updated_at=now() where id=p_production and user_id=p_user;
+ update production_requests set reserved_credits=p_credits,
+ output_json=jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb('reserved'::text)),
+ updated_at=now() where id=p_production and user_id=p_user;
  insert into website_credit_reservations(production_id,user_id,plan_hash,credits,credit_period)
  values(p_production,p_user,p_hash,p_credits,
  jsonb_build_object('billing',wallet.billing_cycle_ends_at,'topup',wallet.topup_expires_at,'rollover',wallet.last_rollover_at));
