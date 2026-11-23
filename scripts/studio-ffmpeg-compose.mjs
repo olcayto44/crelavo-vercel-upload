@@ -78,7 +78,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
       vf.push("fade=t=out:st="+(c.seconds-fadeSeconds)+":d="+fadeSeconds);
     }
     const args=["-hide_banner","-loglevel","error","-nostdin","-y",
-      "-i",input,"-ss",String(c.start),"-t",String(c.seconds)];
+      "-ss",String(c.start),"-i",input];
     if(!hasAudio)args.push("-f","lavfi","-i","anullsrc=r=48000:cl=stereo");
     args.push("-map","0:v:0","-map",hasAudio?"0:a:0":"1:a:0","-vf",vf.join(","),
       "-af","aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
