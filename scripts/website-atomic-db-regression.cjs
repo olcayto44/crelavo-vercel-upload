@@ -55,6 +55,16 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.deepEqual(await wallet(),before,'all wallet and production writes must roll back');
   await db.exec('drop trigger offline_website_failure on credit_events;');
   assert.equal((await call('website_credit_finalize',[owner,first,hash,'ready'])).state,'settled');
+  const delivered=(await db.query('select status,preview_url,delivery_zip_url,source_files_url,readme_url,delivery_link,output_json from production_requests where id=$1',[first])).rows[0];
+  assert.equal(delivered.status,'ready');
+  for(const [key,file] of [['preview_url','preview'],['delivery_zip_url','zip'],['source_files_url','source'],['readme_url','readme'],['delivery_link','manifest']]) {
+    assert.equal(delivered[key],'/api/productions/'+first+'/delivery?file='+file);
+  }
+  assert.equal(delivered.output_json.websiteBillingPending,false);
+  assert.equal(delivered.output_json.charged,60);
+  assert.equal(delivered.output_json.websiteAssistant.phase,'ready');
+  assert.equal(delivered.output_json.websiteFiles[0].path,'index.html');
+
   assert.equal((await call('website_credit_finalize',[owner,first,hash,'ready'])).idempotent,true);
   assert.deepEqual(await wallet(),{balance:40,reserved:0,rolled_over_credits:0,current_subscription_credits:0,bonus_credits:0,topup_credits:40});
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'failed']),/website_already_finalized/);
