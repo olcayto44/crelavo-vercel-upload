@@ -41,4 +41,8 @@ const review=client.slice(client.indexOf('async function reviewWebsiteDraft()'),
 assert(review.includes("action:'website_open'"),'website review must use read-only action');
 assert(!review.includes("action:'website_approve'")&&!review.includes("action:'render'")&&!review.includes('/api/credits/spend'),'website review must not approve, render or spend');
 assert(client.includes('w.review?.blockers'),'website approval blockers must be displayed');
+assert(client.includes("packId:chosen.id"),'website handoff must pass an explicitly selected pack');
+assert(client.includes("if(!chosen)throw Error("),'website handoff must reject missing package');
+assert(client.includes("option.setAttribute('aria-pressed'"),'website package selection must be visible');
+assert(client.includes("if(/admin|commerce|checkout/i.test(chosen.label))"),'static website handoff must reject unsupported packages');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
