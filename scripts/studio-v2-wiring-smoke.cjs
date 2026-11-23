@@ -149,4 +149,9 @@ assert.ok(localEditor.indexOf('destination.stream.getAudioTracks()') <
  localEditor.indexOf('new MediaRecorder(stream'),'MediaRecorder must be constructed after audio tracks are attached');
 assert.match(localEditor,/source\.replace\(\/\\r\/g/,'SRT text must normalize CRLF');
 assert.match(localEditor,/\.split\(\/\\n\\s\*\\n\/\)/,'SRT parser must detect blank-line-separated cues');
+assert.match(localEditor,/fadeBetweenClips/,'timeline must expose fade transition controls');
+assert.match(localEditor,/inputGain\.gain\.linearRampToValueAtTime/,'clip audio gain fades should align with visual transitions');
+assert.match(localEditor,/paintOverlay\(ctx,width,height,captionAt\(captionCues,at\),true\)/,'caption cues must be painted on real rendered frames');
+assert.match(localEditor,/const at=elapsed\+Math\.min\(segment/,'captions must be positioned against output timeline');
+assert.ok(localEditor.indexOf('musicSource.start()')>localEditor.indexOf('await video.play()'),'music must begin with first playable video instead of while the file loads');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
