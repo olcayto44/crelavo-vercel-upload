@@ -29,4 +29,9 @@ assert(!handoff.includes('/api/credits/spend'),'website handoff must not directl
 const websiteRoute=read('src/app/api/websites/generate/route.ts');
 assert(websiteRoute.includes('executeWebsiteRequest('),'website draft must use the existing authenticated production API');
 assert(websiteRoute.includes('if (!token)'),'website production API must reject unauthenticated calls');
+const handler=read('src/lib/studio-agent/conversation-handler.ts');
+const contract=read('src/lib/studio-agent/conversation-contract.ts');
+for(const token of ['action: z.literal("bind_website")','productionId: z.string().uuid()'])assert(contract.includes(token),'missing website binding contract '+token);
+for(const token of ['mock_binding_not_allowed','website_already_bound','website_binding_conflict','eq("user_id",userId)','is("production_id",null)'])assert(handler.includes(token),'missing owner-safe website binding '+token);
+assert(client.includes("action:'bind_website'"),'website draft must persist its production link');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
