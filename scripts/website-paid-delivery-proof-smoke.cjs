@@ -20,4 +20,12 @@ for(const patch of [
  {output_json:{...record.output_json,charged:'30'}},
 ])
  assert.equal(websiteCreditDeliveryProof({...record,...patch},settled),false,'unsettled or non Website package must not bypass trial rules');
+// Both customer-facing delivery endpoints must enforce the same settlement proof.
+const fs=require('node:fs');
+const directDelivery=fs.readFileSync('src/app/api/productions/[id]/delivery/route.ts','utf8');
+const studioPreview=fs.readFileSync('src/app/api/studio/website-preview/route.ts','utf8');
+assert.match(directDelivery,/websiteCreditDeliveryProof\(data,\s*ledger\)/);
+assert.match(studioPreview,/websiteCreditDeliveryProof\(data,\s*settlement\.data\)/);
+assert.match(studioPreview,/website_atomic_delivery_not_settled/);
+assert.match(studioPreview,/\.eq\('user_id',auth\.data\.user\.id\)/);
 console.log('website-paid-delivery-proof-smoke ok');
