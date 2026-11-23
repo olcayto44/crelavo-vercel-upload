@@ -260,7 +260,7 @@ async function showStudioElements(){
  save.onclick=async()=>{
   const media=file.files?.[0],label=name.value.trim();
   if(!media||!label){feedback('Choose a file and enter a reference name.');return;}
-  if(media.size>25_000_000||!(/^(image|audio|video)\\//.test(media.type))){feedback('Use an image, audio or video file smaller than 25 MB.');return;}
+  if(media.size>25_000_000||!['image/','audio/','video/'].some(prefix=>media.type.startsWith(prefix))){feedback('Use an image, audio or video file smaller than 25 MB.');return;}
   if(['character','voice'].includes(category.value)&&!consent.checked){feedback('Please confirm face or voice usage permission.');return;}
   try{
    const records=await studioElementsOperation('list');
