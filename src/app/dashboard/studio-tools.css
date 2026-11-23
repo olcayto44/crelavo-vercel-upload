@@ -341,3 +341,18 @@
   grid-template-columns:minmax(0,1fr);
  }
 }
+
+/* Bound the OUTER player panel as well as the video, avoiding the previous
+   full-width black rectangle surrounding short clips. */
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage {
+ width:min(100%,630px);margin:0 auto;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage.is-portrait {
+ width:min(100%,245px);
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage.is-square {
+ width:min(100%,390px);
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage.is-landscape {
+ width:min(100%,630px);
+}
