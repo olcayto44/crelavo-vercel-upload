@@ -244,6 +244,7 @@ export default function LocalVideoEditor() {
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
     let musicSource: AudioBufferSourceNode | null = null;
+    let musicGainNode: GainNode | null = null;
     let recorder: MediaRecorder | null = null;
     let currentVideo: HTMLVideoElement | null = null;
     let raf = 0;
@@ -265,17 +266,10 @@ export default function LocalVideoEditor() {
           if(musicBuffer.duration<0.1 || musicBuffer.duration>7200)throw new Error('Background track duration is invalid.');
           const source=audio.createBufferSource();source.buffer=musicBuffer;source.loop=true;
           const volume=audio.createGain();
-          const gain=Math.max(0,Math.min(1,musicVolume));
-          const now=audio.currentTime;
-          volume.gain.setValueAtTime(0,now);
-          volume.gain.linearRampToValueAtTime(gain,now+Math.min(.6,duration/4));
-          if(duration>1.5){
-            const fadeStart=Math.max(now+.6,now+duration-.7);
-            volume.gain.setValueAtTime(gain,fadeStart);
-            volume.gain.linearRampToValueAtTime(0,now+duration);
-          }
+          volume.gain.value=0;
           source.connect(volume);volume.connect(destination);
           musicSource=source;
+          musicGainNode=volume;
         }
       }
       // Register all intended tracks before constructing MediaRecorder:
@@ -288,7 +282,6 @@ export default function LocalVideoEditor() {
         configuredRecorder.onstop = () => resolve();
       });
       recorder.start(750);
-      musicSource?.start();
       let elapsed = 0;
       for (let clipIndex=0;clipIndex<clips.length;clipIndex++) {
         const clip=clips[clipIndex];
@@ -325,6 +318,17 @@ export default function LocalVideoEditor() {
         const segment = clip.end - clip.start;
         if (segment <= .05) throw new Error("Invalid trim range for " + clip.name);
         await video.play();
+        if(clipIndex===0&&musicSource&&audio&&musicGainNode){
+          const now=audio.currentTime,level=Math.max(0,Math.min(1,musicVolume));
+          musicGainNode.gain.setValueAtTime(0,now);
+          musicGainNode.gain.linearRampToValueAtTime(level,now+Math.min(.6,duration/4));
+          if(duration>1.5){
+            const fadeStart=Math.max(now+.6,now+duration-.7);
+            musicGainNode.gain.setValueAtTime(level,fadeStart);
+            musicGainNode.gain.linearRampToValueAtTime(0,now+duration);
+          }
+          musicSource.start();
+        }
         await new Promise<void>((resolve, reject) => {
           const begin = performance.now();
           const render = () => {
