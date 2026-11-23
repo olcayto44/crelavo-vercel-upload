@@ -464,6 +464,23 @@ function openFunctionalWebsiteBuilder(panel='builder'){
  });
  root.appendChild(frame);
 }
+function openStudioVideoEditor(){
+ if(!session||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
+ activeView='video-editor';
+ const root=$('#aux-panel');
+ root.replaceChildren();
+ root.hidden=false;
+ root.style.padding='0';
+ root.style.overflow='hidden';
+ const frame=node('iframe');
+ frame.id='studio-video-editor-frame';
+ frame.title='Crelavo local video timeline editor';
+ frame.src='/dashboard/studio-video-editor';
+ frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;border:0;width:100%;height:100%;background:#110e1b';
+ root.append(frame);
+}
+addEventListener('crelavo-studio-open-video-editor',openStudioVideoEditor);
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
  if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
