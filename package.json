@@ -90,6 +90,7 @@
     "@img/sharp-linux-x64": "0.35.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@types/geoip-lite": "^1.4.4",
     "@types/node": "^26.1.2",
     "@types/react": "19.2.18",
