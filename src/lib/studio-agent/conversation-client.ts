@@ -218,7 +218,15 @@ async function showStudioElements(){
  const heading=node('h2',language==='tr'?'Elements · Referans Kütüphanesi':'Elements · Reference Library');
  const help=node('p',language==='tr'?'Karakter, ürün, mekân ve ses referanslarını bu tarayıcıda kaydedin. AI üretimine dosya gönderilmez.':'Save character, product, location and voice references in this browser. Media is not sent to AI production.');
  root.append(heading,help);
- if(!session?.userId){root.append(node('p','Sign in to access your library.'));return;}
+ if(!session?.userId){
+  root.append(node('p','You are viewing Studio without an account session. Your cloud library is private; local editor tools can still be inspected.'));
+  if(window.__studioB2?.previewOnly){
+   const open=node('button','Open local Elements tool (preview)');
+   open.type='button';open.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-elements'));
+   root.append(open);
+  }
+  return;
+ }
  const kinds=['character','product','location','wardrobe','voice','style','reference'];
  const controls=node('div');controls.className='studio-elements-controls';
  controls.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;margin:18px 0;align-items:end;padding:16px;border-radius:13px;background:#21172f;border:1px solid #49345a;max-width:100%;box-sizing:border-box';
@@ -613,7 +621,7 @@ addEventListener('message',event=>{
  showAux('canvas');
 });
 function openStudioImageEditor(){
- if(!session||!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
+ if((!session&&!window.__studioB2?.previewOnly)||!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
  activeView='image-editor';
  const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
  root.style.padding='0';root.style.overflow='hidden';
@@ -625,7 +633,7 @@ function openStudioImageEditor(){
 }
 addEventListener('crelavo-studio-open-image-editor',openStudioImageEditor);
 function openStudioVideoEditor(){
- if(!session||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
+ if((!session&&!window.__studioB2?.previewOnly)||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
  activeView='video-editor';
  const root=$('#aux-panel');
  root.replaceChildren();
@@ -641,6 +649,16 @@ function openStudioVideoEditor(){
  root.append(frame);
 }
 addEventListener('crelavo-studio-open-video-editor',openStudioVideoEditor);
+addEventListener('crelavo-studio-open-elements',()=>{
+ if(!session&&!window.__studioB2?.previewOnly)return;
+ activeView='assets';
+ const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
+ root.style.padding='0';root.style.overflow='hidden';
+ const frame=node('iframe');frame.title='Crelavo Elements Library';
+ frame.src='/dashboard/studio-elements';frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1b';
+ root.append(frame);
+});
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
  if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
