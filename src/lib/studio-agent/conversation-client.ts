@@ -61,9 +61,10 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:(account==='production'&&Number.isFinite(liveProductionBalance)?liveProductionBalance:'—'))+(mode==='mock'?' (mock)':'');
  $('#mode-badge').textContent=mode==='mock'?'Demo · simülasyon':'Gerçek sohbet';$('#b2-mode-note').textContent=current.id==='website'&&mode==='real'&&!status?.realEnabled
  ?'Website brief sohbeti etkin. Site üretimi için Canvas üzerindeki Website oluştur aracını kullanın; otomatik kredi tahsilatı kapalı.'
+ :mode==='real'&&!status?.realEnabled?'Planlama sohbeti mevcut asistan API ile çalışır. Üretim ve kredi tahsilatı başlatılmaz; sohbet yalnız bu tarayıcı sekmesinde saklanır.'
  :mode==='mock'?(project?.advanced?.memory==='isolated_postgres'?(language==='tr'?'Yerel PostgreSQL hafızası · Yanıtlar ve bakiyeler Mock simülasyondur. Gerçek AI kapalı.':'Isolated local PostgreSQL memory · Replies and balances are Mock simulations. Real AI disabled.'):t(7)):t(8);
  const choices=$('#b2-choices');choices.replaceChildren();if(project){const missing=(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.required&&!Object.prototype.hasOwnProperty.call(project.snapshot.fields,f.id)&&!f.serverOnly);missing?.options.slice(0,5).forEach(value=>{const b=node('button',valueLabel(missing.id,value));b.disabled=busy;b.onclick=()=>{$('#prompt').value=valueLabel(missing.id,value);sendMessage()};choices.appendChild(b)});}
- $('#send').disabled=busy||!session||!(mode==='mock'?status?.mockAllowed:(status?.realEnabled||current.id==='website'));$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||!session||(mode==='real'&&!status?.realEnabled&&current.id!=='website');$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||!session;$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
+ $('#send').disabled=busy||!session||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||!session;$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||!session;$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
  if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);} $('.chat').scrollTop=$('.chat').scrollHeight;
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
@@ -253,6 +254,20 @@ function applyWebsiteChat(result){
 function websiteAssistantRequest(payload){
  return request('/api/assistant-work',{category:'website',type:'Website',prompt:'',...payload});
 }
+function localCategoryKey(){return 'crelavo-studio-category-chat:'+session?.userId+':'+current.id;}
+function restoreLocalCategoryChat(){
+ if(current.id==='website'||!session||status?.realEnabled)return;
+ let saved=[];try{const parsed=JSON.parse(sessionStorage.getItem(localCategoryKey())||'[]');if(Array.isArray(parsed))saved=parsed;}catch(_error){}
+ const messages=saved.filter(item=>item&&['user','assistant'].includes(item.role)&&typeof item.content==='string')
+  .slice(-24).map(item=>({role:item.role,content:item.content.slice(0,6000)}));
+ project={id:crypto.randomUUID(),userId:session.userId,categoryId:current.id,title:current.label+' brief',
+  productionId:null,snapshot:{categoryId:current.id,revision:messages.length,fields:{}},messages};
+ serverPlanning=null;walletCache=null;draw();
+}
+function saveLocalCategoryChat(){
+ if(current.id==='website'||!session||!project)return;
+ try{sessionStorage.setItem(localCategoryKey(),JSON.stringify(project.messages.slice(-24)));}catch(_error){}
+}
 async function sendMessage(defaults=[]){
  const message=$('#prompt').value.trim();if(!message||busy||!session)return;
  const seq=epoch;busy=true;uiError='';draw();
@@ -262,6 +277,19 @@ async function sendMessage(defaults=[]){
      ...(websiteData?.website&&websiteData.productionId?{productionId:websiteData.productionId}:{})});
    if(seq!==epoch)return;
    $('#prompt').value='';pending=null;applyWebsiteChat(result);return;
+  }
+  if(mode==='real'&&!status?.realEnabled&&current.id!=='website'){
+   if(!project||project.categoryId!==current.id)restoreLocalCategoryChat();
+   const history=(project?.messages||[]).slice(-12);
+   const response=await request('/api/assistant-work',{category:current.id,type:current.label,
+     prompt:message,messages:history,render:false});
+   if(seq!==epoch)return;
+   if(typeof response.reply!=='string'||!response.reply.trim()||response.spend!==false)
+     throw Error('Planlama sohbeti yanıtı doğrulanamadı; üretim yapılmadı.');
+   project.messages=[...(project.messages||[]),{role:'user',content:message},
+     {role:'assistant',content:response.reply.slice(0,6000)}].slice(-24);
+   project.snapshot.revision+=1;
+   $('#prompt').value='';pending=null;saveLocalCategoryChat();draw();return;
   }
   if(!project)await createProject();
   if(seq!==epoch||!project)return;
@@ -313,15 +341,15 @@ function setup(){
    $('#website-builder-open')?.remove();
    $('#website-builder-rail')?.remove();
  }
- const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:!(status?.realEnabled||current.id==='website');modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();restore()};
- $('#b2-new-project').onclick=()=>{epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(current.id==='website'&&!status?.realEnabled){$('#prompt').focus();return;}createProject().catch(showError)};
+ const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:false;modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();restore()};
+ $('#b2-new-project').onclick=()=>{epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
  $('#b2-defaults').onclick=()=>{const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});if(!list.length)return;$('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';sendMessage(list)};
  $('#b2-projects').onfocus=()=>savedConversations().catch(showError);$('#b2-projects').onchange=async()=>{const value=$('#b2-projects').value;if(!value)return;epoch++;clearCanvas();const seq=epoch;try{const data=await api({action:'load',projectId:value});if(seq!==epoch)return;remember(data);if(current.id==='website'&&project.productionId){selectedProduction=project.productionId;await previewWebsite(selectedProduction)}}catch(error){if(seq===epoch)showError(error)}};
  $('#send').onclick=()=>sendMessage();$('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage()}};
  $('#file').accept=current.panel.accept||'image/*,audio/*,video/*,.pdf,.txt';$('#file').onchange=()=>{referenceFile=$('#file').files?.[0]||null;$('#b2-attachment').textContent=referenceFile?referenceFile.name+' — '+t(9):'';window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(activeView==='assets')showAux('assets')};$('#b2-file-button').onclick=()=>$('#file').click();$('#add-reference').onclick=()=>$('#file').click();
  $('#b2-saved-sites').onclick=()=>savedWebsites().catch(showError);$('#open-projects').onclick=()=>{if(innerWidth<=900)setPanel('categories');savedWebsites().catch(showError)};$('#start-conversation').onclick=()=>{if(innerWidth<=900)setPanel('assistant');$('#prompt').focus()};$('#studio-home').onclick=()=>setPanel('canvas');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showAux(b.dataset.view));document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>setDevice(b.dataset.device));$('#website-pages').onchange=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value)};$('#refresh-preview').onclick=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value||'index.html');else showCanvas('empty')};tools();showCanvas(canvasState);draw();
 }
-const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session&&(status?.realEnabled||status?.mockAllowed))restore()};send=()=>sendMessage();
+const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();else if(current.id!=='website')restoreLocalCategoryChat();}};send=()=>sendMessage();
 addEventListener('resize',resizePreview);new ResizeObserver(resizePreview).observe($('.canvas'));
 addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;liveProductionBalance=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');
  try{
@@ -332,10 +360,9 @@ addEventListener('message',async event=>{if(event.source!==parent||event.origin!
  if(status.realEnabled||status.mockAllowed){
   await restore();
  }else{
-  uiError=current.id==='website'?'':language==='tr'
-    ?'Bu kategori için Studio AI sohbeti henüz Production ortamında etkin değil.'
-    :'Studio AI chat is not enabled in Production for this category.';
-  draw();
+  uiError='';
+  if(current.id!=='website')restoreLocalCategoryChat();
+  else draw();
  }}catch(error){showError(error)}});
 setup();
 })();`;
