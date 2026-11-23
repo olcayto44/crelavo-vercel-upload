@@ -110,6 +110,11 @@ async function seek(video: HTMLVideoElement, at: number) {
   });
 }
 export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowAnonymousLocalSave?:boolean}={}) {
+  const [studioReturnCategory,setStudioReturnCategory]=useState("video");
+  useEffect(()=>{
+    const candidate=new URLSearchParams(window.location.search).get("studioCategory");
+    if(candidate&&/^[a-z0-9_]{1,40}$/.test(candidate))setStudioReturnCategory(candidate);
+  },[]);
   const [projectOwner,setProjectOwner] = useState("");
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
@@ -415,7 +420,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   return <section className="studio-compact-video-editor" style={{ color: "#f4f0ff", background: "#110e1b", padding: "12px 16px 22px", minHeight: "100%", maxWidth: 1320, margin: "0 auto", fontFamily: "Inter,system-ui,sans-serif" }}>\n    <style>{`\n      .studio-compact-video-editor * { box-sizing: border-box; }\n      .studio-compact-video-editor button, .studio-compact-video-editor select, .studio-compact-video-editor input { font: inherit; }\n      .studio-compact-video-editor header { padding: 5px 0 9px; border-bottom: 1px solid #33243d; margin-bottom: 10px; }\n      .studio-compact-video-editor .editor-main-grid { display: grid; grid-template-columns: minmax(0,1fr) 220px; gap: 10px; }\n      .studio-compact-video-editor .editor-output-controls { display:flex; gap: 10px; margin-top: 12px; align-items: center; flex-wrap: wrap; border-top: 1px solid #35253f; padding-top: 12px; }\n      .studio-compact-video-editor .editor-output-controls > label { font-size: 11px; }\n      .studio-compact-video-editor .editor-output-controls input[type=file] { max-width: 165px !important; }\n      .studio-compact-video-editor .editor-output-controls select { min-width: 80px; }\n      .studio-compact-video-editor .editor-back { color: #d9c5ed; border: 1px solid #614275; padding: 6px 10px; border-radius: 8px; font-size: 12px; text-decoration:none; white-space: nowrap; }\n      @media(max-width:800px){.studio-compact-video-editor .editor-main-grid{grid-template-columns:minmax(0,1fr)}.studio-compact-video-editor{padding:10px!important}}\n    `}</style>
     <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-      <div><a className="editor-back" href="/dashboard/studio-v2?category=video&uiLang=en">← Back to Studio V2</a><h1 style={{ fontSize: 17, margin: "12px 0 0" }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "3px 0 4px", fontSize: 11 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
+      <div><a className="editor-back" href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"}>← Back to Studio V2</a><h1 style={{ fontSize: 17, margin: "12px 0 0" }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "3px 0 4px", fontSize: 11 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
       <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
        <details style={{position:"relative",border:"1px solid #4c355d",borderRadius:8,padding:"6px 9px"}}><summary style={{cursor:"pointer",fontSize:12}}>Save / reopen project</summary><div style={{display:"flex",flexWrap:"wrap",gap:6,maxWidth:410,marginTop:8}}>
        <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"6px 9px",borderRadius:8}}>Save local timeline</button>
