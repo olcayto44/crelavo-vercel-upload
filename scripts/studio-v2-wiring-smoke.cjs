@@ -139,4 +139,14 @@ assert.match(client,/specs\.provider/,'assistant must use persisted provider');
 assert.match(client,/specs\.durationSeconds/,'assistant must use persisted video duration');
 assert.match(workspace,/const video=make\('video'\);video\.src=item\.videoUrl/,'variant cards must offer real media preview instead of title buttons');
 assert.ok(view.includes("document.querySelector('#project-title').textContent=current.label"),'initial category heading must not flicker between brief and project');
+assert.match(localEditor,/function parseSrt\(source: string\)/,'SRT parser must be available');
+assert.match(localEditor,/function paintOverlay\(/,'captions and titles need real canvas render');
+assert.match(localEditor,/captionAt\(captionCues,at\)/,'SRT cues must be burned into output');
+assert.match(localEditor,/musicSource\?\.start\(\)/,'licensed background track must be rendered');
+assert.match(localEditor,/audio\.decodeAudioData\(await backgroundMusic\.arrayBuffer\(\)\)/,'music must be decoded, not just linked');
+assert.match(localEditor,/if \(audio && includeAudio\)/,'source-audio mute must work with background track');
+assert.ok(localEditor.indexOf('destination.stream.getAudioTracks()') <
+ localEditor.indexOf('new MediaRecorder(stream'),'MediaRecorder must be constructed after audio tracks are attached');
+assert.match(localEditor,/source\.replace\(\/\\r\/g/,'SRT text must normalize CRLF');
+assert.match(localEditor,/\.split\(\/\\n\\s\*\\n\/\)/,'SRT parser must detect blank-line-separated cues');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
