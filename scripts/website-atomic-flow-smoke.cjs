@@ -40,7 +40,7 @@ const {load}=require('./studio-agent-test-loader.cjs');
   const mocks={
    '../website-engine':{generateWebsiteArtifact:()=>{throw Error('unexpected fallback generator');}},
    './website-brief':{
-    normalizeAssistantWebsiteBrief:value=>value,
+    normalizeAssistantWebsiteBrief:value=>({brand:value.brand,brief:value.brief,audience:value.audience,siteType:value.siteType,style:value.style,pages:value.pages,features:value.features,locale:value.locale}),
     websiteEngineInput:brief=>({...brief,scope:'marketing_website'}),
     websitePlanHash:(brief,pack)=>pack===packId?hash(brief):'mismatch',
     missingWebsiteBrief:brief=>brief.brand&&brief.brief&&brief.pages?.length?[]:['brief'],
