@@ -29,5 +29,15 @@ function load(path){
  assert.equal(websiteCreditDeliveryProof(record,{state:'settled',credits:30}),true);
  for(const proof of [null,{state:'reserved',credits:30},{state:'settled',credits:31}]) assert.equal(websiteCreditDeliveryProof(record,proof),false);
  assert.throws(()=>ledger.reserve({userId:uid,productionId:pid,planHash:hash,credits:-1}));
+ // Assert the additive endpoint is release-gated and direct ZIP/preview cannot bypass settlement.
+ const paid=fs.readFileSync('src/lib/assistant-work/website-paid-production.ts','utf8');
+ const api=fs.readFileSync('src/app/api/websites/paid-render/route.ts','utf8');
+ const delivery=fs.readFileSync('src/app/api/productions/[id]/delivery/route.ts','utf8');
+ assert.match(paid,/CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED/);
+ assert.match(paid,/CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS/);
+ assert.match(api,/getUser\(token\)/);
+ assert.match(api,/executePaidWebsiteProduction\(body/);
+ assert.match(delivery,/websiteCreditDeliveryProof\(data,\s*proof\.data\)/);
+ assert.match(delivery,/website_atomic_delivery_not_settled/);
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
