@@ -52,7 +52,7 @@ end $$;
 -- A lease-free single-claim fence for deterministic synchronous Website generation.
 -- Interruption remains in 'generating' for explicit reconciliation, not auto-retry.
 create function public.website_credit_claim(p_user uuid,p_production uuid,p_hash text) returns boolean
-language plpgsql security definer set search_path=public,pg_temp as $
+language plpgsql security definer set search_path=public,pg_temp as $$
 declare project production_requests%rowtype; reservation website_credit_reservations%rowtype;
 begin
  select * into project from production_requests where id=p_production and user_id=p_user and production_type='website' for update;
@@ -64,12 +64,12 @@ begin
  output_json=jsonb_set(output_json,'{websiteAssistant,phase}',to_jsonb('generating'::text)),
  updated_at=now() where id=p_production and user_id=p_user;
  return true;
-end $;
+end $$;
 
 -- Persist the deterministic artifact (or a verified local generation failure) with
 -- a strict phase fence. The credit settlement RPC checks this durable result.
 create function public.website_credit_record(p_user uuid,p_production uuid,p_hash text,p_outcome text,p_result jsonb) returns boolean
-language plpgsql security definer set search_path=public,pg_temp as $
+language plpgsql security definer set search_path=public,pg_temp as $$
 declare project production_requests%rowtype; reservation website_credit_reservations%rowtype; files jsonb;
 begin
  if p_outcome not in ('ready','failed') then raise exception 'invalid_website_outcome'; end if;
@@ -175,7 +175,7 @@ commit;
    updated_at=now() where id=p_production and user_id=p_user;
  end if;
  return true;
-end $;
+end $$;
 
 create function public.website_credit_finalize(p_user uuid,p_production uuid,p_hash text,p_outcome text) returns jsonb
 language plpgsql security definer set search_path=public,pg_temp as $$
