@@ -847,6 +847,13 @@ export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
     const segments = path.split("/");
     if (file && typeof file === "object" && typeof file.content === "string" && /^([a-z0-9][a-z0-9-]{0,79}\.html|styles\.css|script\.js|README\.md|\.env\.example|admin\/(index\.html|styles\.css|script\.js|env\.example)|data\/(schema\.json|data\.json)|src\/[a-zA-Z0-9._/-]+\.(tsx|ts|css|js|json|md))$/.test(path) && segments.every((segment: string) => segment && segment !== "." && segment !== "..") && !path.startsWith("/") && !path.includes("\\")) entries.push({ name: `source/${path}`, content: file.content });
   }
+  // Development runtime artifacts have a strict path allowlist and bypass generic starter generation.
+  const runtimeFiles = generatedWebsiteFiles.filter((file) => file && typeof file.path === "string" && /^runtime\/(?:package\.json|server\.mjs|seed\.json|acceptance\.json|README\.md|\.env\.example|public\/(?:site\.css|site\.js|admin\.js)|migrations\/001-initial\.sql)$/.test(file.path));
+  if (runtimeFiles.length) {
+    for (const file of runtimeFiles) if (typeof file.content === "string") entries.push({ name: "source/" + file.path, content: file.content });
+    entries.push({ name: "RUNTIME-STATUS.md", content: "# Runtime acceptance pending\nThis is a development runtime, not a completed production delivery. Run source/runtime as documented. Existing static preview does not execute this backend. Payment, booking and enrollment workflows are not implemented. No runtime acceptance result has been fabricated." });
+    return entries;
+  }
   if (manifest.scope === "website_with_admin" && ["website", "ecommerce"].includes(manifest.production_type)) {
     const sourceNames = new Set(entries.map((entry) => entry.name));
     const add = (name: string, content: string) => { if (!sourceNames.has(name)) entries.push({ name, content }); };

@@ -106,6 +106,8 @@ export async function POST(request: Request) {
 
     if (uploadError) throw uploadError;
 
+    const owned = await supabase.rpc("register_assistant_material_owner", { p_user_id: userId, p_bucket: bucket, p_path: path });
+    if (owned.error || owned.data !== true) throw new Error("material_owner_registration_failed");
     const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     const fileUrl = data.publicUrl;
 

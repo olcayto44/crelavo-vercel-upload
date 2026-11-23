@@ -1,0 +1,44 @@
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict'),ts=require('typescript'),{spawn,spawnSync}=require('node:child_process');
+function load(file){const ex={};const js=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;new Function('require','exports',js)(id=>id.startsWith('./')?load(path.resolve(path.dirname(file),id.endsWith('.ts')?id:id+'.ts')):require(id),ex);return ex;}
+const {generateCustomerRuntime}=load('src/lib/website-runtime/package.ts');const files=generateCustomerRuntime({brand:'FilmAtlas',brief:'Film discovery catalog with categories, year and country.',siteType:'film',audience:'Film fans',style:'Modern',pages:['Home','Films','About','Contact'],features:['film categories','year','country'],locale:'en',scope:'website_with_admin'});
+const {validateRuntimeSchema}=load('src/lib/website-runtime/schema.ts');
+const customSchema={version:1,collections:[{key:'laboratory-equipment',fields:['title','description','calibration_date','image'],private:false},{key:'internal-requests',fields:['title','customer'],private:true}]};
+assert.equal(validateRuntimeSchema(customSchema).collections.length,2);
+for(const collections of [[{key:'users',fields:['title'],private:false}],[{key:'secret',fields:['title','password'],private:false}],[{key:'safe',fields:['title']}],[{key:'same',fields:['title'],private:false},{key:'same',fields:['name'],private:true}]])assert.throws(()=>validateRuntimeSchema({version:1,collections}));
+const customFiles=generateCustomerRuntime({brand:'Lab Systems',brief:'Manage calibration equipment',siteType:'custom',audience:'Labs',style:'Clear',pages:['Home'],features:[],runtimeSchema:customSchema});
+const customSeed=JSON.parse(customFiles.find(f=>f.path==='runtime/seed.json').content);assert.deepEqual(customSeed.modules,customSchema.collections);assert(!customSeed.modules.some(m=>m.key==='films'),'Unknown sectors must not get film-specific defaults');
+const {runtimeDeliveryBlockers,RUNTIME_ACCEPTANCE_CHECKS}=load('src/lib/website-runtime/acceptance.ts');
+const report={artifactVersion:'v1',previewUrl:'https://preview.example.test',checks:Object.fromEntries(RUNTIME_ACCEPTANCE_CHECKS.map(key=>[key,{status:'passed',artifactVersion:'v1'}])),capabilities:[]};assert.deepEqual(runtimeDeliveryBlockers(report),[]);
+assert(runtimeDeliveryBlockers({...report,artifactVersion:'v2'}).length>=RUNTIME_ACCEPTANCE_CHECKS.length,'Older tests cannot approve a new revision');
+assert(runtimeDeliveryBlockers({...report,capabilities:[{name:'checkout',required:true,status:'not_implemented'}]}).includes('capability:checkout:not_implemented'));
+assert.deepEqual(runtimeDeliveryBlockers({...report,previewUrl:undefined}),[]);
+const dir=fs.mkdtempSync(path.join('C:/Users/casper/AppData/Local/Temp/opencode','customer-runtime-'));
+for(const f of files){const target=path.join(dir,f.path.replace(/^runtime\//,''));fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,f.content);}
+const run=args=>{const result=spawnSync(process.execPath,args,{cwd:dir,env:{...process.env,ELECTRON_RUN_AS_NODE:'1',INITIAL_ADMIN_EMAIL:'owner@example.test',INITIAL_ADMIN_PASSWORD:'test-password-unique-123'},encoding:'utf8'});assert.equal(result.status,0,result.stderr);};
+run(['--check','server.mjs']);run(['--check','public/admin.js']);run(['server.mjs','--create-admin']);
+let child,logs='';const port=19000+Math.floor(Math.random()*1000),base='http://127.0.0.1:'+port,env={...process.env,ELECTRON_RUN_AS_NODE:'1',PORT:String(port),PUBLIC_SITE_URL:base};
+function start(){child=spawn(process.execPath,['server.mjs'],{cwd:dir,env,stdio:['ignore','pipe','pipe']});child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);}
+async function ready(){for(let i=0;i<60;i++){try{if((await fetch(base+'/health')).ok)return;}catch{}await new Promise(r=>setTimeout(r,100));}throw new Error(logs);}
+async function stop(){if(!child||child.exitCode!==null)return;await new Promise(resolve=>{child.once('exit',resolve);child.kill();});}
+(async()=>{try{start();await ready();assert.equal((await fetch(base+'/api/documents/films')).status,401);assert.equal((await fetch(base+'/')).status,200);
+let login=await fetch(base+'/api/login',{method:'POST',headers:{origin:base,'Content-Type':'application/json'},body:JSON.stringify({email:'owner@example.test',password:'test-password-unique-123'})});assert.equal(login.status,200,logs);const cookie=login.headers.get('set-cookie').split(';')[0],{csrf}=await login.json();const headers={origin:base,cookie,'x-csrf-token':csrf,'Content-Type':'application/json'};
+const settingsRecord=(await(await fetch(base+'/api/documents/settings',{headers:{cookie}})).json()).records[0];
+const themed=await fetch(base+'/api/documents/settings',{method:'POST',headers,body:JSON.stringify({id:settingsRecord.id,version:settingsRecord.version,payload:{...settingsRecord.payload,backgroundColor:'#fffafa',textColor:'#123456',radius:'square',font:'Georgia'}})});assert.equal(themed.status,200);
+const themedHtml=await(await fetch(base+'/')).text();assert(themedHtml.includes('--site-background:#fffafa'));assert(themedHtml.includes('--site-text:#123456'));assert(themedHtml.includes('--site-radius:0px'));assert(themedHtml.includes('font-family:Georgia'));
+const input={payload:{title:'Authorized film',description:'Test entry',category:'Drama',year:'2026',country:'Turkey',published:true}};
+assert.equal((await fetch(base+'/api/documents/films',{method:'POST',headers:{...headers,'x-csrf-token':'bad'},body:JSON.stringify(input)})).status,403);
+let saved=await fetch(base+'/api/documents/films',{method:'POST',headers,body:JSON.stringify(input)});assert.equal(saved.status,200,await saved.clone().text());let record=(await saved.json()).records[0];
+assert((await(await fetch(base+'/')).text()).includes('Authorized film'),'Admin data must appear publicly');assert.equal((await(await fetch(base+'/api/public/films?year=2026')).json()).records.length,1);
+let edit=await fetch(base+'/api/documents/films',{method:'POST',headers,body:JSON.stringify({id:record.id,version:record.version,payload:{...record.payload,title:'Updated film'}})});assert.equal(edit.status,200);
+assert.equal((await fetch(base+'/api/documents/films',{method:'POST',headers,body:JSON.stringify({id:record.id,version:record.version,payload:record.payload})})).status,409);
+const historyResponse=await fetch(base+'/api/revisions?id='+record.id,{headers:{cookie}});assert.equal(historyResponse.status,200);const history=await historyResponse.json();assert.equal(history.revisions[0].payload.title,'Authorized film');
+const current=(await edit.json()).records.find(item=>item.id===record.id);
+const restored=await fetch(base+'/api/revisions?id='+record.id,{method:'POST',headers,body:JSON.stringify({revision:history.revisions[0].id,version:current.version})});assert.equal(restored.status,200);assert((await(await fetch(base+'/')).text()).includes('Authorized film'));
+const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3xkAAAAASUVORK5CYII=';
+const uploaded=await fetch(base+'/api/uploads',{method:'POST',headers,body:JSON.stringify({type:'image/png',base64:png})});assert.equal(uploaded.status,201);const media=await uploaded.json();assert.equal((await fetch(base+media.url)).headers.get('content-type'),'image/png');
+const editor=await fetch(base+'/api/users',{method:'POST',headers,body:JSON.stringify({email:'editor@example.test',password:'editor-password-long',role:'editor'})});assert.equal(editor.status,201);
+const editorLogin=await fetch(base+'/api/login',{method:'POST',headers:{origin:base,'Content-Type':'application/json'},body:JSON.stringify({email:'editor@example.test',password:'editor-password-long'})});assert.equal(editorLogin.status,200);const editorCookie=editorLogin.headers.get('set-cookie').split(';')[0];assert.equal((await fetch(base+'/api/users',{headers:{cookie:editorCookie}})).status,403);
+assert((await(await fetch(base+'/about')).text()).includes('href="'+base+'/about"'),'Inner page canonical must match its path');
+assert.equal((await fetch(base+'/api/uploads',{method:'POST',headers,body:JSON.stringify({type:'image/png',base64:Buffer.from('not an image').toString('base64')})})).status,400);
+await stop();start();await ready();assert((await(await fetch(base+'/')).text()).includes('Authorized film'),'Records must persist across restart');assert.equal((await fetch(base+'/api/documents/films',{headers:{cookie}})).status,401,'Sessions must expire on restart');console.log('website-runtime-smoke ok: emitted JS syntax, real SQLite, owner login, auth/CSRF, CRUD, version conflict, public reflection/filtering, upload validation and restart persistence');
+}finally{await stop();console.log('Temporary test project: '+dir);}})().catch(e=>{console.error(e);console.error(logs);process.exitCode=1;});

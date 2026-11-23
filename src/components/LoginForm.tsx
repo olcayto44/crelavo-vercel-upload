@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { authDestination } from "@/lib/crelavo/authDestination";
 
-const siteUrl = "https://www.crelavo.com";
 type State = "idle" | "loading" | "success" | "error";
 
 export function LoginForm() {
@@ -13,7 +13,7 @@ export function LoginForm() {
 
   async function continueWithProvider(provider: "google") {
     setState("loading"); setMessage("");
-    const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider, options: { redirectTo: `${siteUrl || window.location.origin}/dashboard/assistant-workspace` } });
+    const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider, options: { redirectTo: authDestination(window.location.origin, "/dashboard/assistant-workspace") } });
     if (error) { setState("error"); setMessage(error.message); }
   }
 
@@ -22,7 +22,7 @@ export function LoginForm() {
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (!email) { setState("error"); setMessage("Enter your email address."); return; }
-    const { error } = await supabaseBrowser().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl || window.location.origin}/dashboard?signup=1&method=email` } });
+    const { error } = await supabaseBrowser().auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: authDestination(window.location.origin, "/dashboard?signup=1&method=email") } });
     if (error) { setState("error"); setMessage(error.message); return; }
     setState("success"); setMessage("Check your email. The secure sign-in link will log you in or create your account automatically.");
   }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { StudioRouteChrome } from "@/components/StudioRouteChrome";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { AuthStickyBar } from "@/components/auth/AuthStickyBar";
@@ -128,7 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}><YandexMetrica /></Suspense>
         <Suspense fallback={null}><PreviewSupportBoxRouteGate /></Suspense>
         <PresenceBeacon />
-        <AuthProvider><MobileSiteHeader />{children}<AuthModal /><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></AuthProvider>
+        <AuthProvider><StudioRouteChrome><MobileSiteHeader /></StudioRouteChrome>{children}<AuthModal /><StudioRouteChrome><AuthStickyBar /><RouteAwareFooter><SiteFooter /></RouteAwareFooter></StudioRouteChrome></AuthProvider>
       </body>
     </html>
   );

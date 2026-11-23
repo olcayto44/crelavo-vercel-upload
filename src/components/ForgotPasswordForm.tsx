@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { authDestination } from "@/lib/crelavo/authDestination";
 
-const siteUrl = "https://www.crelavo.com";
 
 type State = "idle" | "loading" | "success" | "error";
 
@@ -20,7 +20,7 @@ export function ForgotPasswordForm() {
     const email = String(form.get("email") ?? "").trim().toLowerCase();
 
     const { error } = await supabaseBrowser().auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl || window.location.origin}/auth/reset-password`
+      redirectTo: authDestination(window.location.origin, "/auth/reset-password")
     });
 
     if (error) {

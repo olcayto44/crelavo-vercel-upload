@@ -14,7 +14,7 @@ export const LOCAL_CATEGORIES = [
 
 export type LocalCategory = (typeof LOCAL_CATEGORIES)[number];
 export type LocalEngineFile = { path: string; content: string; mime: string };
-export type LocalEngineInput = { prompt?: string; type?: string; category?: string; scene?: string | number; action?: string };
+export type LocalEngineInput = { userId: string; prompt?: string; type?: string; category?: string; scene?: string | number; action?: string };
 export type LocalEngineResult = { ok: boolean; spend: boolean; engine: "local"; category: string; code?: string; message?: string; title: string; body: string; files: LocalEngineFile[]; media: null };
 const LOCAL_SET = new Set<string>(LOCAL_CATEGORIES);
 
@@ -85,6 +85,7 @@ function showcasePack(prompt:string):LocalEngineResult{return ok("community_show
 function virtualModelPack(prompt:string):LocalEngineResult{return ok("virtual_model_studio","Virtual model studio pack","Model brief, shot list and usage notes are ready.",[file("MODEL-BRIEF.md",`# Virtual model brief\n\n${prompt}\n\nSubject: consistent virtual presenter\nFormat: 16:9 and 9:16 safe framing\n`,"text/markdown"),file("SHOT-LIST.md",`# Shot list\n\n1. Intro portrait\n2. Product / message presentation\n3. Closing call to action\n`,"text/markdown"),file("USAGE-NOTES.md",`# Usage notes\n\nUse only authorized likeness, voice and brand materials.\n`,"text/markdown")],true);}
 function colorRevise(category:string,prompt:string):LocalEngineResult{return ok(category,"Updated",prompt.trim(),[],false);}
 export async function runLocalEngine(input:LocalEngineInput):Promise<LocalEngineResult>{
+  if (!input.userId) throw new Error("engine_user_required");
   const category=normalizeCategory(input.category)||normalizeCategory(input.type); const prompt=String(input.prompt||"").trim(); const scene=sceneIndex(input.scene);
   if(!LOCAL_SET.has(category))return{ok:false,spend:false,engine:"local",category,code:"not_local",message:"Not a local file/copy category.",title:"",body:"",files:[],media:null};
   if(!prompt)return{ok:false,spend:false,engine:"local",category,code:"empty_prompt",message:"Write what to produce first.",title:"",body:"",files:[],media:null};

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(20);
   if (error) return NextResponse.json({ ok: false, code: "project_read_failed", message: error.message }, { status: 500 });
-  const row = (data || []).find((item: any) => item?.metadata?.source === STATE_MARKER);
+  const category = req.nextUrl.searchParams.get("category");
+  const row = (data || []).find((item: any) => item?.metadata?.source === STATE_MARKER && (!category || item.metadata.state?.category === category));
   return NextResponse.json({ ok: true, state: row?.metadata?.state ?? null, updatedAt: row?.created_at ?? null });
 }
 

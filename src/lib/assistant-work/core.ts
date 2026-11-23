@@ -99,6 +99,7 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
   const action = String(body.action || "");
   if (!userId) return { status: 401, payload: { ok: false, code: "sign_in", message: "Sign in to start production." } };
 
+  if (["produce","revise","resume"].includes(action)) return {status:409,payload:{ok:false,code:"server_plan_required",message:"Use the production manager plan, explicit approval and final render. Legacy actions cannot charge credits."}};
   let balance: number;
   try {
     balance = await ledgerRead(userId);

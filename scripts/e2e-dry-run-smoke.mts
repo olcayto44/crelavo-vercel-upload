@@ -184,8 +184,18 @@ for (const term of ["reserved_credits: 0", "finalizedReservedCredits", "completi
 }
 
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
-for (const term of ["status: \"queued\"", "generation_status: \"automation_queued\"", "reserved_credits: estimatedCredits", "type: \"reserve\"", "nextStatusForWorkflow", "nextAutomationStatusForWorkflow", "nextDeliveryLinkForWorkflow"]) {
-  assertIncludes(productionsRoute, term, `production reserve creation ${term}`);
+// Static source contract only: does not execute POST or assert database effects.
+for (const term of [
+  'const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits',
+  'generation_status: dedicatedProviderBlocked ? "waiting_provider_config" : "automation_queued"',
+  'reserved_credits: reserveCredits',
+  'if (reserveCredits > 0)',
+  'type: "reserve", amount: reserveCredits',
+  'nextStatusForWorkflow',
+  'nextAutomationStatusForWorkflow',
+  'nextDeliveryLinkForWorkflow'
+]) {
+  assertIncludes(productionsRoute, term, `production route static contract ${term}`);
 }
 
 const adminProductions = readFileSync("src/components/AdminProductionsTable.tsx", "utf8");
