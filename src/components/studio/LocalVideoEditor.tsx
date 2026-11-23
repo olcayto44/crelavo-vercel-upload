@@ -160,7 +160,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
-  const [framing,setFraming] = useState<"cover"|"contain">("cover");
+  const [framing,setFraming] = useState<"cover"|"contain">("contain");
   const [resolution, setResolution] = useState(720);
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
@@ -224,7 +224,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
-      setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="contain"?"contain":"cover");
+      setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="cover"?"cover":"contain");
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -252,7 +252,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);
-      setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing);cleanupOutput();
+      setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
     finally{setProjectSaving(false)}
@@ -515,7 +515,18 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
         </div>
-        <p className="studio-video-framing-note">{ratio==="9:16"?"Shorts / Reels · 9:16 portrait":ratio==="1:1"?"Square · 1:1":"Landscape · 16:9"} preview · {framing==="cover"?"Fill frame (center crop)":"Fit whole video (may show black bars)"}</p>
+        <div className="studio-video-preview-controls" role="group" aria-label="Preview fit controls">
+          <span>{ratio==="9:16"?"9:16 Shorts / Reels":ratio==="1:1"?"1:1 Square":"16:9 Landscape"}</span>
+          <button type="button" disabled={busy} aria-pressed={framing==="contain"}
+            className={framing==="contain"?"is-active":""}
+            onClick={()=>{setFraming("contain");cleanupOutput();}}>Show full video</button>
+          <button type="button" disabled={busy} aria-pressed={framing==="cover"}
+            className={framing==="cover"?"is-active":""}
+            onClick={()=>{setFraming("cover");cleanupOutput();}}>Fill screen · crop edges</button>
+        </div>
+        <p className="studio-video-framing-note" role="status">{framing==="cover"
+          ?"Crop mode: side or top/bottom content can be removed. Switch to Show full video to keep all edges."
+          :"Full video preserved. Borders may appear when the source and output ratios differ."}</p>
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
         <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
@@ -560,7 +571,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </label>
         <label className="studio-setting-field">Framing
           <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain");cleanupOutput()}}>
-            <option value="cover">Fill frame (crop)</option><option value="contain">Fit full clip (bars)</option>
+            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option>
           </select>
         </label>
         <label className="studio-setting-field">Height
