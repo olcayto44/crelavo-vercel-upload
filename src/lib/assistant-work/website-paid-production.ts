@@ -14,6 +14,16 @@ export function websitePaidProductionEnabled(env: NodeJS.ProcessEnv = process.en
     Boolean(env.SUPABASE_SERVICE_ROLE_KEY && env.NEXT_PUBLIC_SUPABASE_URL);
 }
 
+// First Production release is canary-only. No configured users = no paid generation.
+export function websitePaidCanaryAllowed(userId: string, env: NodeJS.ProcessEnv = process.env) {
+  if (!z.string().uuid().safeParse(userId).success) return false;
+  const raw = String(env.CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS || "").trim();
+  if (!raw || raw.length > 5000) return false;
+  const entries = raw.split(",").map(id => id.trim().toLowerCase());
+  if (entries.length > 25 || entries.some(id => !z.string().uuid().safeParse(id).success)) return false;
+  return entries.includes(userId.toLowerCase());
+}
+
 const inputSchema = z.strictObject({
   productionId: z.string().uuid(),
   planHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -29,6 +39,8 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   }
   const parsed = inputSchema.safeParse(raw);
   if (!parsed.success) return reply({ ok: false, code: "website_render_invalid_request" }, 400);
+  if (!websitePaidCanaryAllowed(user.id))
+    return reply({ ok: false, code: "website_paid_canary_account_not_enabled" }, 403);
   const { productionId, planHash } = parsed.data;
   const db = supabaseAdmin();
   const { data: row, error } = await db.from("production_requests")
