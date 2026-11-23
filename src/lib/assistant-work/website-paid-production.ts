@@ -3,6 +3,7 @@ import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
 import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope } from "./website-brief";
 import { createWebsiteCreditLedger } from "./website-credit-ledger";
+import { websiteCreditDeliveryProof } from "./website-paid-delivery";
 import { runIsolatedWebsiteGeneration } from "./website-atomic-runner";
 
 // Explicitly disabled until a reviewed Vercel Production release enables the switch.
@@ -44,15 +45,22 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   const { productionId, planHash } = parsed.data;
   const db = supabaseAdmin();
   const { data: row, error } = await db.from("production_requests")
-    .select("id,user_id,production_type,status,estimated_credits,output_json")
+    .select("id,user_id,production_type,status,reserved_credits,estimated_credits,output_json")
     .eq("id", productionId).eq("user_id", user.id)
     .eq("production_type", "website").maybeSingle();
   if (error) return reply({ ok: false, code: "website_production_database_unavailable" }, 503);
   if (!row) return reply({ ok: false, code: "website_project_not_found" }, 404);
   const state = row.output_json?.websiteAssistant;
-  // Legacy finished records are never converted or charged retroactively.
-  if (row.status === "ready" && row.output_json?.websiteBillingMode === "atomic_v1")
+  // A ready flag alone is not payment proof; repeated calls cannot claim success
+  // without a matching, durably settled reservation.
+  if (row.status === "ready" && row.output_json?.websiteBillingMode === "atomic_v1") {
+    const { data: settlement, error: settlementError } = await db
+      .from("website_credit_reservations").select("state,credits")
+      .eq("production_id", productionId).eq("user_id", user.id).maybeSingle();
+    if (settlementError || !websiteCreditDeliveryProof(row, settlement))
+      return reply({ ok: false, code: "website_generation_reconciliation_required" }, 409);
     return reply({ ok: true, state: "already_ready", productionId, charged: 0 }, 200);
+  }
   if (state?.phase !== "approved" || state?.planHash !== planHash || state?.approvedHash !== planHash)
     return reply({ ok: false, code: "website_current_approval_required" }, 409);
   const pack = getCategory("website")?.packs.find(p => p.id === state.packId);
