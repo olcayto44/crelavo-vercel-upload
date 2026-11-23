@@ -160,4 +160,7 @@ assert.match(workspace,/const edit=make\('button','✂ Open clip editor'\)/,'sav
 assert.match(client,/className='studio-elements-controls'/,'Assets panel must use a responsive native form');
 assert.match(client,/grid-template-columns:repeat\(auto-fit,minmax\(min\(100%,220px\),1fr\)\)/,'Assets should remain readable in narrow Canvas');
 assert.match(client,/image\.src=localUrl/,'saved image references need local thumbnails');
+assert.match(workspace,/crelavo-studio-video-metadata/,'video player metadata should feed production facts');
+assert.match(workspace,/video\.videoWidth/,'video aspect ratio must come from real media');
+assert.match(client,/activeVideoSelection=\{\.\.\.activeVideoSelection,specs\}/,'assistant should display measured media information');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
