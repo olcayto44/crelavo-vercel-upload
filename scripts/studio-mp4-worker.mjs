@@ -59,6 +59,13 @@ async function downloadObject(db,objectPath,localPath,maxBytes) {
 }
 async function processJob(db,job) {
   let folder=null;
+  // Long renders must renew their exclusive lease while encoding.
+  const heartbeat=setInterval(()=>{
+    void db.from("studio_render_jobs").update({
+      lease_expires_at:new Date(Date.now()+leaseMinutes*60_000).toISOString(),
+      updated_at:new Date().toISOString()
+    }).eq("id",job.id).eq("status","processing").eq("worker_id",workerId).then(()=>{}).catch(()=>{});
+  },60_000);
   try {
     const {data:row,error}=await db.from("studio_timeline_versions")
       .select("timeline").eq("id",job.timeline_version_id)
@@ -116,6 +123,7 @@ async function processJob(db,job) {
     }).eq("id",job.id).eq("status","processing").eq("worker_id",workerId);
     process.stderr.write("Studio MP4 job failed: "+job.id+" ("+code+")\n");
   } finally {
+    clearInterval(heartbeat);
     if(folder)await rm(folder,{recursive:true,force:true}).catch(()=>{});
   }
 }
