@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { saveCloudTimeline, loadCloudTimeline } from "@/lib/studio-cloud-timeline";
 
 type Clip = { id: string; file: File; name: string; url: string; duration: number; start: number; end: number };
 const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
@@ -177,6 +178,33 @@ export default function LocalVideoEditor() {
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
+    finally{setProjectSaving(false)}
+  }
+  async function saveTimelineCloud(){
+    if(!projectOwner||!clips.length||busy||projectSaving)return;
+    setProjectSaving(true);setState("Uploading source clips to your private cloud…");
+    try{
+      const version=await saveCloudTimeline(clips,{
+       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips
+      });
+      setState("Cloud timeline version "+version+" saved with its source files. You can reopen it on another device.");
+    }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
+    finally{setProjectSaving(false)}
+  }
+  async function reopenTimelineCloud(){
+    if(!projectOwner||busy||projectSaving)return;
+    setProjectSaving(true);setState("Downloading your latest cloud timeline…");
+    try{
+      const saved=await loadCloudTimeline();
+      const restored: Clip[]=saved.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
+      files.current.forEach(old=>URL.revokeObjectURL(old.url));
+      files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
+      setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
+      setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
+      setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);
+      setFadeBetweenClips(saved.fadeBetweenClips);cleanupOutput();
+      setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
+    }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
     finally{setProjectSaving(false)}
   }
   const chosen = clips.find(c => c.id === active);
@@ -388,6 +416,8 @@ export default function LocalVideoEditor() {
       <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
        <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save local timeline</button>
        <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen timeline</button>
+       <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
+       <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
       <label style={{ background: "#7036b5", padding: "10px 15px", borderRadius: 9, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
       </div>
     </header>
@@ -456,6 +486,6 @@ export default function LocalVideoEditor() {
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  No cloud storage, cross-device project sync, advanced crossfades or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  Private cloud timeline source-file backup/reopen supports up to 90 MB total; larger local timelines still stay on this device. Cloud browser tests pending. Advanced crossfades and MP4 export are not available yet.</p>
   </section>;
 }
