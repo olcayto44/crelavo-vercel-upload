@@ -66,6 +66,14 @@ GROUP BY status, production_type
 ORDER BY held DESC;
 ```
 
+## Follow-up event-to-production match (read-only, same date)
+- 1,283 historic `credit_events` entries were found for this wallet.
+- Only **72** events have a UUID-looking project identifier in `note`; **68** of these match an existing production owned by the wallet. This does not guarantee the event and hold are part of a complete lifecycle.
+- Breakdown of matched events: 2 `reserve` (1,500 total), 32 `spend` (113,838 total), and 34 `refund` (115,337 total). Four UUID-tagged `spend` events could not be matched to the current owner's production records.
+- Of 162 production rows holding credits, 72 terminal-status rows account for 338,235 credits; 90 queued/in-production rows account for 625,620 credits. Neither group should be automatically settled, deleted or refunded.
+- Many historical `reserve` event notes do not contain a project UUID, so a full one-to-one match **cannot** be derived from `credit_events` alone. Audit historical billing procedures or backups before modifying customer funds.
+- Reusable identity-free diagnostic: `scripts/website-credit-reconciliation-readonly.sql`.
+
 ## Blocking checklist
 1. Map `credit_events` reserve/spend/refund/adjustment entries to project IDs and associated timestamps and final provider outcomes; investigate why some terminal statuses retain holds.
 2. Reconcile `credit_balances.reserved` with outstanding holds by identifying paid/settled vs genuinely in-flight projects and possible non-project holds; review historical credit functions and edge cases.
