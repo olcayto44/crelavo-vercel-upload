@@ -23,6 +23,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   const [contentBusy, setContentBusy] = useState(false);
   const [revisionInstruction, setRevisionInstruction] = useState("");
   const [history, setHistory] = useState<Array<{ revision: number; createdAt: string; source?: string }>>([]);
+  const [focusVersionHistory, setFocusVersionHistory] = useState(false);
   const [outputs, setOutputs] = useState<Outputs | null>(null);
   const [content, setContent] = useState<WebsiteContent>({ heroTitle: "", heroBody: "", primaryCta: "" });
   const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
@@ -50,6 +51,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
         event.source !== window.parent || event.data?.type !== "crelavo-studio-website-open") return;
       const id = event.data.productionId;
       if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return;
+      setFocusVersionHistory(event.data.panel === "history");
       void openProject(id);
     };
     window.addEventListener("message", openSaved);
@@ -86,6 +88,17 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
     return () => window.removeEventListener("message", receiveBrief);
   }, [editorOnly, initialProjectId]);
 
+  useEffect(() => {
+    if (!focusVersionHistory || !projectId) return;
+    const frame = requestAnimationFrame(() => {
+      const heading = document.getElementById("website-version-history");
+      if (heading) {
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+        setFocusVersionHistory(false);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusVersionHistory, projectId, history]);
   async function listProjects() {
     setContentBusy(true);
     try { const { user, token } = await session(); const response = await fetch(`/api/websites?user_id=${encodeURIComponent(user.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Project list failed.'); setSavedProjects(data.websites || []); setStatusVariables({ count: data.websites?.length ?? 0 }); setStatus("{count} saved websites found."); }
@@ -233,7 +246,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <p><a href="https://formspree.io/forms" target="_blank" rel="noreferrer">{t("Formspree forms")}</a> · <a href="https://vercel.com/new" target="_blank" rel="noreferrer">{t("Create a hosting project")}</a></p>
             <button className="btn" type="submit" disabled={contentBusy}>{contentBusy ? t("Saving...") : t("Save content")}</button>
           </form>
-          {history.length > 0 ? <div className="mini-card" style={{ marginTop: "1rem" }}><h2>{t("Version history")}</h2>{history.slice().reverse().map((item) => <div key={`${item.revision}-${item.createdAt}`} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: ".5rem" }}><span>{t("Version")}{item.revision} - {item.source || "manual"}</span><button className="btn secondary" type="button" disabled={contentBusy} onClick={() => rollback(item.revision)}>{t("Restore")}</button></div>)}</div> : null}
+          {history.length > 0 ? <div id="website-version-history" className="mini-card" style={{ marginTop: "1rem" }}><h2>{t("Version history")}</h2>{history.slice().reverse().map((item) => <div key={`${item.revision}-${item.createdAt}`} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: ".5rem" }}><span>{t("Version")}{item.revision} - {item.source || "manual"}</span><button className="btn secondary" type="button" disabled={contentBusy} onClick={() => rollback(item.revision)}>{t("Restore")}</button></div>)}</div> : null}
         </>
       ) : null}
     </section>
