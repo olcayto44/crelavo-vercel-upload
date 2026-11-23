@@ -58,7 +58,7 @@ export function validateTimeline(timeline, userId, projectId) {
   const musicPath=typeof timeline.musicPath==="string"?timeline.musicPath:null;
   if(musicPath&&(!musicPath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg)$/i.test(musicPath)))
     throw new Error("MUSIC_PATH_INVALID");
-  return {clips,musicPath,width,height,includeAudio:timeline.includeAudio!==false,
+  return {clips,musicPath,width,height,framing:timeline.framing==="contain"?"contain":"cover",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
@@ -70,8 +70,11 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const c=timeline.clips[index],input=sourceFiles[index];
     const hasAudio=timeline.includeAudio&&await mediaHasAudio(ffprobe,input);
     const segment=path.join(dir,"segment-"+index+".mp4");
-    const vf=["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=decrease",
-      "pad="+timeline.width+":"+timeline.height+":(ow-iw)/2:(oh-ih)/2","setsar=1","fps=30"];
+    const vf=(timeline.framing==="contain"
+      ?["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=decrease",
+        "pad="+timeline.width+":"+timeline.height+":(ow-iw)/2:(oh-ih)/2"]
+      :["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=increase",
+        "crop="+timeline.width+":"+timeline.height]).concat(["setsar=1","fps=30"]);
     const fadeSeconds=Math.min(0.2,c.seconds/4);
     if(timeline.fadeBetweenClips&&c.seconds>0.8){
       vf.push("fade=t=in:st=0:d="+fadeSeconds);
