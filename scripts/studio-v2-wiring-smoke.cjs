@@ -56,4 +56,7 @@ assert.match(view,/id="studio-ui-language"/,'Studio must have built-in language 
 for(const code of ['en','tr','de','es','fr','ar'])assert.match(view,new RegExp('value="'+code+'"'),'missing site language '+code);
 assert.match(client,/localStorage\.setItem\('clipora_language'/,'Studio language must persist with site language settings');
 assert.match(client,/language='en'/,'Studio must default to English');
+assert.match(client,/const createControl=\$\('\[data-global="create"\]'\)/,'Website uses original Create toolbar rather than a patched Canvas button');
+assert.match(client,/createControl\.onclick=current\.id==='website'\?openFunctionalWebsiteBuilder:null/,'create must be functional for website only');
+assert.ok(!client.includes("$('.empty-actions').appendChild(button)"),'do not paste extra button over original Canvas');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
