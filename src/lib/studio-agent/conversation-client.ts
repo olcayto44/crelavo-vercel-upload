@@ -5,7 +5,7 @@ let liveProductionBalance=null;
 let previewDraftMessages=[];
 const previewDraftEnabled=()=>!session&&Boolean(window.__studioB2?.previewOnly);
 function previewDraftKey(){return 'crelavo-studio-preview-brief-v1:'+current.id;}
-function loadPreviewDraft(){try{const saved=JSON.parse(sessionStorage.getItem(previewDraftKey())||'[]');previewDraftMessages=Array.isArray(saved)?saved.filter(x=>x&&x.role==='user'&&typeof x.content==='string').slice(-30):[]}catch(_error){previewDraftMessages=[];}}
+function loadPreviewDraft(){try{const saved=JSON.parse(sessionStorage.getItem(previewDraftKey())||'[]');previewDraftMessages=Array.isArray(saved)?saved.filter(x=>x&&(x.role==='user'||x.role==='assistant')&&typeof x.content==='string').slice(-30):[]}catch(_error){previewDraftMessages=[];}}
 function savePreviewDraft(){try{sessionStorage.setItem(previewDraftKey(),JSON.stringify(previewDraftMessages.slice(-30)))}catch(_error){}}
 
 let activeVideoSelection=null;
@@ -85,12 +85,12 @@ function remember(data){project=data.project;serverPlanning=data.planning&&proje
 function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPlanning.categoryId===current.id&&serverPlanning.briefRevision===project.snapshot.revision)return {revision:serverPlanning.briefRevision,missing:serverPlanning.missingFields.map(fieldId=>({fieldId})),state:serverPlanning.state,advanced:serverPlanning.advanced};const fields=project?.snapshot.fields||{},missing=(window.__studioB2?.requirements?.[current.id]||[]).filter(f=>f.required&&!Object.prototype.hasOwnProperty.call(fields,f.id));return {revision:project?.snapshot.revision||0,missing,state:missing.length?"collecting":"draft_ready"};} function draw(wallets){
  if(wallets)walletCache=wallets;if($('#advanced-open-plan'))$('#advanced-open-plan').disabled=busy||!project;
  const messages=$('#messages');messages.replaceChildren();(previewDraftEnabled()?previewDraftMessages:(project?.messages||[])).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
- if(!project?.messages.length&&!previewDraftMessages.length)messages.appendChild(node('div',previewDraftEnabled()?(language==='tr'?'Önizleme modu: buraya proje briefinizi yazabilirsiniz. Mesajlar yalnızca bu tarayıcı sekmesinde saklanır; gerçek AI yanıtı ve üretim için giriş yapın.':'Preview mode: write your project brief here. Messages are saved only in this browser tab; sign in for real AI replies and production.'):session?t(16):t(5),'message'));
+ if(!project?.messages.length&&!previewDraftMessages.length)messages.appendChild(node('div',previewDraftEnabled()?(language==='tr'?'Crelavo geliştirici asistanı hazır. Sorunu veya üretim fikrini yaz. Bu önizleme gerçek AI yanıtı verir; kod çalıştırmaz veya üretim başlatmaz.':'Crelavo expert developer assistant is ready. Ask about building, debugging or producing. This preview gives real AI replies; it does not execute code or render media.'):session?t(16):t(5),'message'));
  if(previewDraftEnabled()){
-   const notice=node('div',language==='tr'?'Yerel brief taslağı · AI yanıtı üretilmez · kredi kullanılmaz':'Local brief draft · no AI reply or credit charge','message');
+   const notice=node('div',language==='tr'?'Gerçek AI sohbeti · önizleme · medya üretimi veya Crelavo kredisi harcaması yok':'Real AI chat · preview · no media render or Crelavo credit charge','message');
    notice.style.cssText='opacity:.75;font-size:11px';
    messages.appendChild(notice);
-   const login=node('button',language==='tr'?'Gerçek AI için giriş yap':'Sign in for real AI');
+   const login=node('button',language==='tr'?'Bulut projeleri için giriş yap':'Sign in for cloud projects');
    login.type='button';login.onclick=()=>parent.postMessage({type:'crelavo-studio-request-login'},parent.location.origin);
    messages.appendChild(login);
  }
@@ -351,7 +351,7 @@ function showAux(view){activeView=view;window.studioWorkspace?.setView(view);doc
       item.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border:1px solid #443052;border-radius:8px';
       root.appendChild(item);
     }
-    const disclaimer=node('small',language==='tr'?'Bu yalnızca tarayıcı taslağıdır: model, maliyet, onay veya üretim sonucu değildir.':'Browser draft only: not an AI model response, price, approval or production result.');
+    const disclaimer=node('small',language==='tr'?'Bu önizlemede AI planları bir öneridir; hiçbir kod uygulanmaz veya medya üretilmez.':'AI plans in this preview are suggestions; no code changes or media production are executed.');
     root.appendChild(disclaimer);
   }
   if(current.id!=='website'&&!status?.realEnabled&&mode==='real'&&project?.messages?.length){
@@ -554,10 +554,25 @@ function saveLocalCategoryChat(){
 async function sendMessage(defaults=[]){
  const message=$('#prompt').value.trim();if(!message||busy)return;
  if(previewDraftEnabled()){
+  const categoryAtSend=current.id, seq=epoch;
+  const history=previewDraftMessages.slice(-12);
   previewDraftMessages=[...previewDraftMessages,{role:'user',content:message.slice(0,4000)}].slice(-30);
-  savePreviewDraft();
-  $('#prompt').value='';
-  draw();
+  savePreviewDraft();$('#prompt').value='';busy=true;uiError='';draw();
+  try {
+   const response=await fetch('/api/studio/developer-chat',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    credentials:'same-origin',redirect:'error',cache:'no-store',
+    body:JSON.stringify({category:categoryAtSend,language,prompt:message.slice(0,4000),messages:history})
+   });
+   const data=await response.json();
+   if(!response.ok||data.ok!==true||typeof data.reply!=='string'||!data.reply.trim())
+    throw Error('Developer AI service unavailable ('+(data.error||response.status)+'). No credit was used.');
+   if(epoch!==seq||current.id!==categoryAtSend)return;
+   previewDraftMessages=[...previewDraftMessages,{role:'assistant',content:data.reply.slice(0,9000)}].slice(-30);
+   savePreviewDraft();
+  }catch(error){
+   if(epoch===seq&&current.id===categoryAtSend)uiError=error instanceof Error?error.message:'AI chat request failed. Please retry.';
+  }finally{if(epoch===seq&&current.id===categoryAtSend){busy=false;draw();}}
   return;
  }
  if(!session)return;
