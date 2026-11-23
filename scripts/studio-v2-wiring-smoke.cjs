@@ -251,3 +251,12 @@ assert.ok(client.includes("for(const name of ['edit','export'])"),'Edit and Expo
 assert.ok(client.includes("$('#b2-defaults').disabled=busy||(!session&&!previewDraftEnabled())"),'preview defaults button must accept brief text');
 assert.ok(imageEditor.includes('className="image-transform-buttons"'),'image transform three-button row must be aligned');
 assert.ok(sharedToolsCss.includes('.image-transform-buttons button'),'image transform row must have fixed-size action controls');
+
+const developerChatRoute=read('src/app/api/studio/developer-chat/route.ts');
+assert.match(developerChatRoute,/VERCEL_ENV !== "preview"/,'anonymous expert API must be preview-only');
+assert.match(developerChatRoute,/same_origin_required/,'preview API must reject cross-origin browser calls');
+assert.match(developerChatRoute,/OPENAI_API_KEY/,'expert preview must actually call an AI provider');
+assert.match(developerChatRoute,/limit: 8/,'anonymous preview must have strict rate limits');
+assert.match(developerChatRoute,/spend:false/,'preview API must never spend Crelavo credits');
+assert.match(client,/fetch\('\/api\/studio\/developer-chat'/,'preview composer must call the real developer assistant endpoint');
+assert.match(client,/role:'assistant',content:data.reply/,'assistant replies must appear in the chat history');
