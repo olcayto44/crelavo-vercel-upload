@@ -27,7 +27,7 @@ function updateStudioLanguage(){
  document.documentElement.lang=language;
  document.documentElement.dir=language==='ar'?'rtl':'ltr';
  const selector=$('#studio-ui-language');if(selector)selector.value=language;
- const label=$('#studio-language-label');if(label)label.textContent=({en:'Language',tr:'Dil',de:'Sprache',es:'Idioma',fr:'Langue',ar:'اللغة'})[language]||'Language';
+ const label=$('#studio-language-label');if(label){const nextLabel=({en:'Language',tr:'Dil',de:'Sprache',es:'Idioma',fr:'Langue',ar:'اللغة'})[language]||'Language';if(label.textContent!==nextLabel)label.textContent=nextLabel;}
  const scan=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
  let item;
  while((item=scan.nextNode())){
