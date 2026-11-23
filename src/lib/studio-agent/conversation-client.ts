@@ -328,6 +328,18 @@ function showAux(view){activeView=view;window.studioWorkspace?.setView(view);doc
  if(view==='assets'){void showStudioElements();return;}if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
  if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));
+  if(previewDraftEnabled()){
+    const heading=node('h3',language==='tr'?'Yerel proje briefi':'Local project brief');
+    root.appendChild(heading);
+    if(!previewDraftMessages.length)root.appendChild(node('p',language==='tr'?'Henüz brief notu yazılmadı. Sağdaki sohbet alanına yazıp Gönder düğmesine basın.':'No brief notes yet. Type in the assistant panel and press Send.'));
+    for(const note of previewDraftMessages){
+      const item=node('p',note.content);
+      item.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border:1px solid #443052;border-radius:8px';
+      root.appendChild(item);
+    }
+    const disclaimer=node('small',language==='tr'?'Bu yalnızca tarayıcı taslağıdır: model, maliyet, onay veya üretim sonucu değildir.':'Browser draft only: not an AI model response, price, approval or production result.');
+    root.appendChild(disclaimer);
+  }
   if(current.id!=='website'&&!status?.realEnabled&&mode==='real'&&project?.messages?.length){
    const title=node('h3','Kategori planı · sohbet taslağı');root.appendChild(title);
    const latest=[...project.messages].reverse().find(item=>item.role==='assistant');
