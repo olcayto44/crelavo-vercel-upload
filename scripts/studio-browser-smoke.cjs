@@ -15,7 +15,8 @@ const { getCategoryContract }=load('src/lib/studio-agent/requirements.ts');
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}});
-  const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const errors=[];let apiRequests=0;page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>{if(request.url().includes('/api/studio/'))apiRequests++});
   await page.goto('about:blank');
   await page.setContent('<iframe title="studio-test" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style="width:100%;height:900px;border:0"></iframe>');
   await page.locator('iframe').evaluate((frame,srcdoc)=>{frame.srcdoc=srcdoc},html);
@@ -29,12 +30,19 @@ const { getCategoryContract }=load('src/lib/studio-agent/requirements.ts');
   await studio.locator('.category[data-category="'+other.id+'"]').click();
   assert.equal(await studio.locator('.studio').getAttribute('data-category'),other.id);
   assert.equal(await studio.locator('.category.active').count(),1);
+  // A message from the child frame itself is not a trusted parent auth event.
+  await studio.locator('#prompt').fill('draft must survive spoofed auth event');
+  await studio.locator('#prompt').evaluate(input=>window.postMessage({type:'crelavo-studio-session',accessToken:'forged',userId:'forged'},'*'));
+  await studio.locator('#prompt').evaluate(()=>new Promise(resolve=>setTimeout(resolve,50)));
+  assert.equal(await studio.locator('#prompt').inputValue(),'draft must survive spoofed auth event');
+  await studio.locator('#send').click();
+  assert.equal(apiRequests,0,'unauthenticated UI must never call Studio API');
   await page.setViewportSize({width:390,height:844});
   await studio.locator('.mobile button[data-panel="assistant"]').click();
   assert.equal(await studio.locator('.studio').getAttribute('data-panel'),'assistant');
   await studio.locator('.mobile button[data-panel="categories"]').click();
   assert.equal(await studio.locator('.studio').getAttribute('data-panel'),'categories');
   assert.deepEqual(errors,[],'browser JS must not crash');
-  console.log('STUDIO BROWSER SMOKE PASS: 37 categories, three panes, category navigation, mobile tabs, no JS errors (offline, no auth/provider/db).');
+  console.log('STUDIO BROWSER SMOKE PASS: 37 categories, three panes, category navigation, mobile tabs, forged child auth rejected, anonymous sends blocked, no JS errors (offline, no provider/db).');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
