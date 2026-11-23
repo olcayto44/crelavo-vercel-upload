@@ -220,7 +220,8 @@ async function showStudioElements(){
  root.append(heading,help);
  if(!session?.userId){root.append(node('p','Sign in to access your library.'));return;}
  const kinds=['character','product','location','wardrobe','voice','style','reference'];
- const controls=node('div');controls.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;align-items:center';
+ const controls=node('div');controls.className='studio-elements-controls';
+ controls.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;margin:18px 0;align-items:end;padding:16px;border-radius:13px;background:#21172f;border:1px solid #49345a;max-width:100%;box-sizing:border-box';
  const category=node('select');kinds.forEach(k=>{const option=node('option',k);option.value=k;category.append(option)});
  const name=node('input');name.placeholder=language==='tr'?'Referans adı':'Reference name';name.maxLength=100;
  const description=node('input');description.placeholder=language==='tr'?'Görünüm ve tutarlılık notları':'Appearance and consistency notes';description.maxLength=500;
@@ -228,8 +229,20 @@ async function showStudioElements(){
  const consentWrap=node('label');const consent=node('input');consent.type='checkbox';consentWrap.append(consent,node('span',language==='tr'?'Yüz veya ses için kullanım iznim var':'I have permission to use this face or voice'));
  const save=node('button',language==='tr'?'Referansı kaydet':'Save reference');save.type='button';
  const note=node('p','');note.style.color='#bca7d2';
- controls.append(category,name,description,file,consentWrap,save);
- const listing=node('div');listing.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px';
+ const field=(title,input)=>{
+  const label=node('label');label.style.cssText='display:flex;flex-direction:column;gap:7px;font-size:12px;color:#d5c9e6;min-width:0';
+  label.append(node('span',title),input);
+  input.style.cssText='display:block;min-width:0;max-width:100%;width:100%;box-sizing:border-box;background:#130e21;color:#f4edff;border:1px solid #614675;border-radius:8px;padding:10px;min-height:38px;font:inherit';
+  return label;
+ };
+ file.style.height='auto';file.style.padding='8px';
+ consentWrap.style.cssText='display:flex;gap:9px;align-items:center;min-height:38px;font-size:12px;color:#cbb9dc';
+ save.style.cssText='background:#7433bd;border:1px solid #9555d5;color:white;padding:11px 14px;border-radius:9px;font-weight:700;min-height:40px;cursor:pointer';
+ controls.append(field(language==='tr'?'Tür':'Reference type',category),
+ field(language==='tr'?'Referans adı':'Reference name',name),
+ field(language==='tr'?'Açıklama ve tutarlılık notları':'Description / consistency notes',description),
+ field(language==='tr'?'Resim, video veya ses dosyası':'Image, video or audio file',file),consentWrap,save);
+ const listing=node('div');listing.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:12px;min-width:0';
  root.append(controls,note,listing);
  const feedback=message=>note.textContent=message;
  const render=async()=>{
@@ -241,7 +254,15 @@ async function showStudioElements(){
    if(!items.length){listing.append(node('p',language==='tr'?'Henüz kayıtlı referans yok':'No references saved yet'));return;}
    for(const item of items){
     const card=node('div');card.style.cssText='padding:11px;border:1px solid #503363;border-radius:10px;background:#1b1528;min-width:0';
-    const label=node('strong',String(item.name||'Reference').slice(0,100));label.style.cssText='display:block;overflow-wrap:anywhere';
+    const label=node('strong',String(item.name||'Reference').slice(0,100));label.style.cssText='display:block;overflow-wrap:anywhere;margin:8px 0 3px';
+    if(typeof item.mime==='string'&&item.mime.startsWith('image/')&&item.blob instanceof Blob){
+      const image=node('img');image.alt=String(item.name||'Reference').slice(0,80);
+      image.style.cssText='display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#100c18;border-radius:8px';
+      const localUrl=URL.createObjectURL(item.blob);image.src=localUrl;
+      image.addEventListener('load',()=>URL.revokeObjectURL(localUrl),{once:true});
+      image.addEventListener('error',()=>URL.revokeObjectURL(localUrl),{once:true});
+      card.append(image);
+    }
     card.append(label,node('small',String(item.kind||'reference')));
     const use=node('button',language==='tr'?'Brief\'te kullan':'Use in brief');use.type='button';
     use.onclick=()=>{
@@ -256,7 +277,9 @@ async function showStudioElements(){
      if(!confirm(language==='tr'?'Bu referans silinsin mi?':'Delete this reference?'))return;
      try{await studioElementsOperation('delete',null,item.key);await render()}catch(_error){feedback('Could not remove this reference.')}
     };
-    card.append(use,remove);listing.append(card);
+    const controls=node('div');controls.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:10px';
+    for(const button of [use,remove])button.style.cssText='font-size:11px;padding:8px;border:1px solid #67477d;border-radius:7px;background:#30233e;color:#fff;cursor:pointer';
+    controls.append(use,remove);card.append(controls);listing.append(card);
    }
   }catch(_error){feedback(language==='tr'?'Yerel kütüphane kullanılamıyor. Tarayıcı depolamasını kontrol edin.':'Local storage unavailable. Check your browser storage settings.')}
  };
