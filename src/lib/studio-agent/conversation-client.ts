@@ -506,7 +506,7 @@ const originalSelect=selectCategory;selectCategory=function(...args){epoch++;act
 addEventListener('message',event=>{
  const builder=$('#studio-website-builder-frame');
  if(event.origin!==parent.location.origin||!builder||event.source!==builder.contentWindow||
-    event.data?.type!=='crelavo-studio-website-created')return;
+    !['crelavo-studio-website-created','crelavo-studio-website-updated'].includes(event.data?.type))return;
  const id=String(event.data.productionId||'');
  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))return;
  if(current.id!=='website'||!session)return;
