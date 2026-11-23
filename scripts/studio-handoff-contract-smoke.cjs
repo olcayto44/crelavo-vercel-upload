@@ -92,4 +92,8 @@ const studioClientSource=read('src/lib/studio-agent/conversation-client.ts');
 assert(studioPageSource.includes('websitePaidReady:') && studioPageSource.includes("CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED"),'Website UI must receive fail-closed paid deployment state');
 assert(studioClientSource.includes('window.__studioB2?.websitePaidReady===true'),'Website production action must remain hidden until release');
 assert(studioClientSource.includes('Ücretli Website üretimi henüz yayına açık değil.'),'Website preview must accurately describe disabled production');
+const deliveryRouteSource=read('src/app/api/productions/[id]/delivery/route.ts');
+assert(deliveryRouteSource.includes('websiteCreditDeliveryProof(data, ledger)'), 'website delivery must inspect settled ledger');
+assert(deliveryRouteSource.includes('website_atomic_delivery_not_settled'), 'website ZIP and preview must reject unsettled atomic charges');
+assert(deliveryRouteSource.indexOf('website_atomic_delivery_not_settled')<deliveryRouteSource.indexOf('if (file === "zip")'), 'ledger guard must precede ZIP download');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
