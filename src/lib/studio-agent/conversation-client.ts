@@ -111,7 +111,7 @@ async function downloadWebsiteZip(id){
  const seq=epoch;busy=true;uiError='';draw();
  try{
   const response=await fetch('/api/productions/'+encodeURIComponent(id)+'/delivery?file=zip',{method:'GET',headers:{Authorization:'Bearer '+session.accessToken},credentials:'include',redirect:'error',cache:'no-store'});
-  if(!response.ok||!/^application\\/zip(?:;|$)/i.test(response.headers.get('content-type')||''))throw Error('ZIP paketi henüz teslimata hazır değil ('+response.status+').');
+  if(!response.ok||!/^application\/zip(?:;|$)/i.test(response.headers.get('content-type')||''))throw Error('ZIP paketi henüz teslimata hazır değil ('+response.status+').');
   const file=await response.blob();if(seq!==epoch)return;
   if(file.size===0||file.size>25000000)throw Error('ZIP paket boyutu beklenen aralıkta değil.');
   const url=URL.createObjectURL(file),a=document.createElement('a');a.href=url;a.download='crelavo-website-'+id+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
