@@ -589,6 +589,19 @@ addEventListener('message',event=>{
  composer.focus();
  showAux('canvas');
 });
+function openStudioImageEditor(){
+ if(!session||!['image','character','brand'].includes(window.studioWorkspace?.getKind?.()||(
+ current.kind==='image'?'image':current.kind==='character'?'character':current.kind==='brand'?'brand':'')))return;
+ activeView='image-editor';
+ const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
+ root.style.padding='0';root.style.overflow='hidden';
+ const frame=node('iframe');frame.id='studio-image-editor-frame';
+ frame.title='Crelavo local image editor';frame.src='/dashboard/studio-image-editor';
+ frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1b';
+ root.append(frame);
+}
+addEventListener('crelavo-studio-open-image-editor',openStudioImageEditor);
 function openStudioVideoEditor(){
  if(!session||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
  activeView='video-editor';
