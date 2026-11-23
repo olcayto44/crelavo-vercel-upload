@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         const outcome = await executePaidWebsiteProduction({
           productionId: body.productionId, planHash: body.planHash,
         }, { id: user.id });
-        if (outcome.status !== 200 || outcome.payload.ok !== true)
+        if (outcome.status !== 200)
           return NextResponse.json(outcome.payload, {
             status: outcome.status, headers: { "Cache-Control": "no-store" },
           });
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           spend: async () => ({ ok: false, error: "website_legacy_debit_blocked" }),
         });
         return NextResponse.json({
-          ...reopened.payload, charged: outcome.payload.charged,
+          ...reopened.payload, charged: (outcome.payload as Record<string, unknown>).charged,
         }, { status: reopened.status, headers: { "Cache-Control": "no-store" } });
       }
 
