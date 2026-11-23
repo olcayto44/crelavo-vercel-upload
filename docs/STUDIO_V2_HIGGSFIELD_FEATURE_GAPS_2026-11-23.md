@@ -1,5 +1,5 @@
 # Crelavo Studio V2 — Higgsfield Capability Gap Matrix
-Date: 2026-11-23 · Status: implementation backlog. Do not confuse UI presence with a functioning AI provider.
+Date: 2026-11-23 · Status: staged implementation; not all 15 areas are production-ready. Do not confuse UI presence with a functioning AI provider.
 
 ## Non-negotiable design and delivery
 - Retain approved Nov 22 Studio V2 shell: left categories/projects, center Canvas and timeline, right assistant and plan.
@@ -10,7 +10,7 @@ Date: 2026-11-23 · Status: implementation backlog. Do not confuse UI presence w
 
 ## A. Video Editor / Timeline / Clip Join — P0
 Crelavo categories: video, video_clipping, video_tools, cinematic_video, studio, documentary, music_video.
-Now: Studio has real ready-video playback/seek and *local* Add/Remove/Reorder/Trim/Split/Merge with browser MediaRecorder downloadable WebM. It is local-only and not saved across sessions.
+Now: Studio has real ready-video playback/seek and *local* Add/Remove/Reorder/Trim/Split/Merge with browser MediaRecorder downloadable WebM. Signed-in users may save and reopen one local timeline per account in the same browser. User-supplied SRT captions, title overlays, background music mixing, gain/fade and optional fade-to-black between clips are implemented, with a real SRT parser smoke test. The editor is not cloud-rendered and is not claimed browser-E2E verified.
 Missing: cloud-import saved productions without CORS leakage; multi-track audio, fades/transitions, overlays, keyframes, captions, templates, export MP4/H.264, server-side FFmpeg worker, background job cancellation and job persistence, clip-level edit histories, clip splitting into persistent source files, multi-person timeline collaboration.
 Acceptance: merge three 10-second clips into one downloaded MP4 with audio, trim second clip, transition 1↔2, save/reopen project, compare expected total duration and audio continuity.
 
@@ -48,7 +48,8 @@ Acceptance: source Turkish dialogue to reviewed English speech with synchronized
 
 ## H. Music / Sound Design / Audio Tracks — P2
 Categories: music_video, voice_clone, video, studio.
-Missing: original song/instrumental composer with license rights, BPM/key, stems, mixing, noise reduction, effects library, ducking, waveform editing, fades, beat-sync video cuts.
+Implemented partially: browser-local mixing of one user-provided licensed background soundtrack, adjustable level, audio fade and source-audio mute toggle into WebM video.
+Missing: original song/instrumental composer with license rights, BPM/key, stems, multi-track audio workstation, noise reduction, effects library, ducking, waveform editing, beat-sync video cuts and independent WAV/MP3/stems export.
 Acceptance: recorded voice + original rights-cleared music mixed into output with intelligible narration and exportable stem licenses.
 
 ## I. Product Ads / UGC / Marketing Studio / AI AD STUDIO — P1
@@ -73,7 +74,8 @@ Acceptance: brief → storyboard → assets → provider → montage → preview
 
 ## M. Project Persistence / Collaboration / Version History — P0
 Categories: all 37.
-Missing: server-persisted Studio timeline and media projects, full versions/rollback, cross-device sync, source object storage, project access control, collaboration and audit logs. Website Builder has an existing content revision/rollback path but not a common Studio project system.
+Partially implemented: browser-local account-keyed IndexedDB saved video timeline (including source video Files, optional soundtrack, captions and title), and a separate local Elements reference library. Website Builder has existing content revision/rollback.
+Missing: server-persisted Studio timeline and media projects, cloud assets, cross-device sync, cross-user collaboration, full Studio version/rollback, asset lineage, audit logs and shared production-workflow permissions.
 Acceptance: close browser, reopen on a new device and edit the same timeline with the same assets without duplicated costs.
 
 ## N. Production Credits / Provider QA / Delivery — P0
