@@ -37,6 +37,19 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   }
 
   useEffect(() => { if (initialProjectId) void openProject(initialProjectId); }, [initialProjectId]);
+  useEffect(() => {
+    if (initialProjectId) return;
+    const openSaved = (event: MessageEvent) => {
+      if (window.parent === window || event.origin !== window.location.origin ||
+        event.source !== window.parent || event.data?.type !== "crelavo-studio-website-open") return;
+      const id = event.data.productionId;
+      if (typeof id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return;
+      void openProject(id);
+    };
+    window.addEventListener("message", openSaved);
+    return () => window.removeEventListener("message", openSaved);
+  }, [initialProjectId]);
+
   // Studio V2 owns the source brief. Transfer it over same-origin postMessage
   // instead of embedding customer text in a URL, history entry or server logs.
   useEffect(() => {
