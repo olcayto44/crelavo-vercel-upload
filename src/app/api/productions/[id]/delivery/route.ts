@@ -139,11 +139,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   // Atomically charged Website deliverables are prepaid by Production Credits.
   // Subscription-trial download restrictions must not block a separately paid ZIP.
-  const websitePaidByCredits = data.production_type === "website" && data.status === "ready" &&
+  const creditsMarkedPaid = data.production_type === "website" && data.status === "ready" &&
     data.output_json?.websiteBillingMode === "atomic_v1" &&
     data.output_json?.websiteBillingPending === false &&
     Number.isSafeInteger(data.output_json?.charged) && data.output_json.charged > 0 &&
     data.reserved_credits === 0;
+  // Settlement evidence comes from the service-role-only atomic ledger, not
+  // editable or legacy website output_json values alone.
+  let websitePaidByCredits = false;
+  if (creditsMarkedPaid) {
+    const ledger = await supabaseAdmin().from("website_credit_reservations")
+      .select("state,credits").eq("production_id", id).eq("user_id", String(data.user_id)).maybeSingle();
+    websitePaidByCredits = !ledger.error && ledger.data?.state === "settled" &&
+      ledger.data.credits === data.output_json.charged;
+  }
   if (!websitePaidByCredits && (trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
     return Response.json({ error: "Downloads are locked during the 24-hour preview. You can view the result, but downloads open only after the $9.99 subscription payment is confirmed. Cancel before 24 hours to stop the subscription." }, { status: 403 });
   }
