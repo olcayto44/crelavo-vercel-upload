@@ -7,8 +7,8 @@ export async function studioRPC(db: DB, name: string, args: Record<string,unknow
   const {data,error} = await db.rpc(name,args);
   if (error) {
     const message = String(error.message);
-    const code = ["insufficient_assistant_credits","request_payload_conflict","project_changed_reload","project_request_pending","project_not_found"].find(code => message.includes(code));
-    throw new ConversationError(code || "studio_storage_unavailable",code==="insufficient_assistant_credits"?402:code==="project_not_found"?404:code?409:503);
+    const code = ["budget_exhausted","rate_limit","budget_policy_mismatch","insufficient_assistant_credits","request_payload_conflict","project_changed_reload","project_request_pending","project_not_found"].find(code => message.includes(code));
+    throw new ConversationError(code || "studio_storage_unavailable",code==="rate_limit"?429:code==="budget_exhausted"?402:code==="insufficient_assistant_credits"?402:code==="project_not_found"?404:code?409:503);
   }
   return data;
 }
@@ -55,11 +55,11 @@ export function createDatabaseConversationStore(db: DB): ConversationStore & {cr
       if (error) throw new ConversationError("studio_storage_unavailable"); return data;
     },
     async wallets(userId) { return await studioRPC(db,"studio_agent_wallets",{p_user:userId}) as Wallets; },
-    async reserve(input) { return await studioRPC(db,"studio_agent_reserve",{p_user:input.userId,p_project:input.project.id,p_category:input.project.categoryId,p_request:input.requestId,p_hash:input.payloadHash,p_units:input.reserveCredits,p_tariff:input.tariffVersion,p_message:input.message,p_revision:input.project.snapshot.revision}) as Reservation; },
-    async claim(userId,requestId) { return Boolean(await studioRPC(db,"studio_agent_claim",{p_user:userId,p_request:requestId})); },
-    async record(userId,requestId,result) { await studioRPC(db,"studio_agent_record",{p_user:userId,p_request:requestId,p_result:result,p_usage:result.usage,p_units:result.chargedCredits}); },
-    async settle(userId,requestId,mode) { return await studioRPC(db,"studio_agent_settle",{p_user:userId,p_request:requestId,p_mode:mode}) as TurnResponse; },
-    async release(userId,requestId) { await studioRPC(db,"studio_agent_release",{p_user:userId,p_request:requestId}); },
+    async reserve(input) { return await studioRPC(db,"studio_agent_budget_reserve",{p_user:input.userId,p_project:input.project.id,p_category:input.project.categoryId,p_request:input.requestId,p_hash:input.payloadHash,p_units:input.reserveCredits,p_tariff:input.tariffVersion,p_message:input.message,p_revision:input.project.snapshot.revision,p_policy:input.cost?.policy,p_input:input.cost?.inputBound,p_output:input.cost?.outputBound}) as Reservation; },
+    async claim(userId,requestId) { return Boolean(await studioRPC(db,"studio_agent_budget_claim",{p_user:userId,p_request:requestId})); },
+    async record(userId,requestId,result) { await studioRPC(db,"studio_agent_budget_record",{p_user:userId,p_request:requestId,p_result:result,p_usage:result.usage,p_units:result.chargedCredits,p_receipt:result.receipt}); },
+    async settle(userId,requestId,mode) { return await studioRPC(db,"studio_agent_budget_settle",{p_user:userId,p_request:requestId,p_mode:mode}) as TurnResponse; },
+    async release(userId,requestId) { await studioRPC(db,"studio_agent_budget_release",{p_user:userId,p_request:requestId}); },
     async uncertain(userId,requestId) { await studioRPC(db,"studio_agent_uncertain",{p_user:userId,p_request:requestId}); },
   };
 }

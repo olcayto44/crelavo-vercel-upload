@@ -1,4 +1,5 @@
 import { executeWebsiteRequest } from "@/lib/assistant-work/website-request";
+import { executePaidWebsiteProduction } from "@/lib/assistant-work/website-paid-production";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 export const runtime = "nodejs";
@@ -20,6 +21,14 @@ export async function POST(request: Request) {
   if (!safe.ok) return Response.json({ error: safe.message }, { status: 400 });
   const action = String(body.action || "revise");
   if (!["revise", "website_open", "website_approve", "render", "website_retry"].includes(action)) return Response.json({ error: "unsupported_action" }, { status: 400 });
+  // Production rendering can only use the server-owned atomic credit ledger;
+  // the coordinator is explicitly release-gated and disabled by default.
+  if (action === "render") {
+    const result = await executePaidWebsiteProduction({
+      productionId: body.productionId, planHash: body.planHash,
+    }, { id: data.user.id });
+    return Response.json(result.payload, { status: result.status, headers: { "Cache-Control": "no-store" } });
+  }
   // No separate/free generation or implicit approval is permitted here.
   const result = await executeWebsiteRequest(request, { ...body, category: "website", type: "Website", action, render: action === "render", prompt: String(body.prompt ?? body.brief ?? ""), ...(action === "revise" ? { uiAction: true, websiteBrief: body.websiteBrief ?? { brand: body.brand, brief: body.brief, audience: body.audience, siteType: body.site_type, style: body.style, pages: body.pages, features: body.features, locale: body.locale } } : {}) }, { id: data.user.id, email: data.user.email });
   return Response.json(result.payload, { status: result.status, headers: { "Cache-Control": "no-store" } });

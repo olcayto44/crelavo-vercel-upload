@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AdvancedStateSchema } from "./advanced-contract";
 import { CategoryIdSchema, BriefSnapshotSchema, createBriefFieldsSchema } from "./requirements";
 import { IntentSchema } from "./intent";
 import { ToolActionSchema } from "./tool-registry";
@@ -8,8 +9,8 @@ export const MessageSchema = z.strictObject({ role: z.enum(["user", "assistant"]
 export const ProjectSchema = z.strictObject({
   id: z.string().uuid(), userId: z.string().uuid(), categoryId: CategoryIdSchema,
   title: z.string().min(1).max(160), productionId: z.string().uuid().nullable(),
-  snapshot: BriefSnapshotSchema, messages: z.array(MessageSchema).max(50),
-}).refine(project => project.categoryId === project.snapshot.categoryId, "project_category_mismatch");
+  snapshot: BriefSnapshotSchema, messages: z.array(MessageSchema).max(50), advanced: AdvancedStateSchema.optional(),
+}).refine(project => project.categoryId === project.snapshot.categoryId && (!project.advanced || (project.advanced.userId === project.userId && project.advanced.projectId === project.id && project.advanced.categoryId === project.categoryId)), "project_category_mismatch");
 export type ConversationProject = z.infer<typeof ProjectSchema>;
 const common = { mode: z.enum(["real", "mock"]), categoryId: CategoryIdSchema, uiLanguage: UILanguageSchema.default("tr") };
 export const ConversationRequestSchema = z.discriminatedUnion("action", [
@@ -17,6 +18,8 @@ export const ConversationRequestSchema = z.discriminatedUnion("action", [
   z.strictObject({ ...common, action: z.literal("load"), projectId: z.string().uuid(), mockState: z.string().max(400000).optional() }),
   z.strictObject({ ...common, action: z.literal("message"), projectId: z.string().uuid(), requestId: z.string().uuid(),
     message: z.string().trim().min(1).max(6000), acceptedDefaults: z.array(z.string().max(80)).max(10).default([]), mockState: z.string().max(400000).optional() }),
+  z.strictObject({ ...common, action: z.literal("plan"), projectId:z.string().uuid(),requestId:z.string().uuid(),mockState:z.string().max(400000).optional(),operation:z.enum(["create","rebuild","revise","approve","revoke"]),expectedPlanVersion:z.number().int().nonnegative(),expectedPlanHash:z.string().length(64).nullable(),note:z.string().trim().min(1).max(1000).optional() }),
+  z.strictObject({ ...common, action: z.literal("bind_website"), projectId: z.string().uuid(), productionId: z.string().uuid() }),
   z.strictObject({ ...common, action: z.literal("projects") }),
 ]);
 export function completionSchema(categoryId: string) {
@@ -28,18 +31,18 @@ export function completionSchema(categoryId: string) {
   });
 }
 export const ProviderUsageSchema = z.strictObject({ inputTokens: z.number().int().min(0).max(1000000), outputTokens: z.number().int().min(0).max(1200) });
-export type ProviderCompletion = { output: unknown; usage: z.infer<typeof ProviderUsageSchema> };
+export type ProviderCompletion = { output: unknown; usage: z.infer<typeof ProviderUsageSchema>; receipt?: {providerRequestId:string;model:string;policyVersion:string;finishReason:string;cachedInputTokens:number;reasoningTokens:number} };
 export type ProviderInput = { project: ConversationProject; message: string; uiLanguage: z.infer<typeof UILanguageSchema>; acceptedDefaults: string[] };
 export interface ConversationProvider { preflight(): void; prepare(input: ProviderInput): { inputUpperBound: number; call(): Promise<ProviderCompletion> }; }
 export type Wallets = { assistant: { balance: number; reserved: number; available: number }; production: { balance: number; reserved: number; available: number } };
 export type TurnResponse = { ok: true; mode: "real" | "mock"; project: ConversationProject; reply: string; requestId: string;
   chargedCredits: number; chargedAccount: "assistant"; wallets: Wallets; blockedTools: string[]; executionReady: false; nextQuestion: {fieldId:string;question:string} | null; };
-export type Reservation = { state: "fresh" | "pending" | "result_ready" | "settled" | "released"; response?: TurnResponse };
+export type Reservation = { state: "fresh" | "pending" | "result_ready" | "settled" | "released" | "refunded"; response?: TurnResponse };
 export interface ConversationStore {
   load(userId: string, projectId: string, categoryId: string): Promise<ConversationProject>;
-  reserve(input: {userId:string;project:ConversationProject;requestId:string;payloadHash:string;reserveCredits:number;tariffVersion:string;message:string}): Promise<Reservation>;
+  reserve(input: {userId:string;project:ConversationProject;requestId:string;payloadHash:string;reserveCredits:number;tariffVersion:string;message:string;cost?:{policy:import("./cost-policy").CostPolicy;inputBound:number;outputBound:number}}): Promise<Reservation>;
   claim(userId: string, requestId: string): Promise<boolean>;
-  record(userId: string, requestId: string, result: {project:ConversationProject;reply:string;chargedCredits:number;usage:unknown;blockedTools:string[];nextQuestion:TurnResponse["nextQuestion"]}): Promise<void>;
+  record(userId: string, requestId: string, result: {project:ConversationProject;reply:string;chargedCredits:number;usage:unknown;receipt?:import("./conversation-contract").ProviderCompletion["receipt"];blockedTools:string[];nextQuestion:TurnResponse["nextQuestion"]}): Promise<void>;
   settle(userId: string, requestId: string, mode: "real" | "mock"): Promise<TurnResponse>;
   release(userId: string, requestId: string): Promise<void>;
   uncertain(userId: string, requestId: string): Promise<void>;

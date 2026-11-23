@@ -1,3 +1,4 @@
+import { websiteCreditDeliveryProof } from "@/lib/assistant-work/website-paid-delivery";
 import { runtimePreviewDocument } from "@/lib/website-runtime/preview";
 import { runtimeArtifactDelivery } from "@/lib/website-runtime/delivery";
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
@@ -137,7 +138,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const previewAccess = previewAccessForDelivery(data);
   const downloadFiles = new Set(["readme", "source", "zip", "video", "mp4", "image", "png", "jpg", "jpeg", "audio", "subtitles", "score-json", "score-markdown"]);
 
-  if ((trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
+  // Atomically charged Website deliverables are prepaid by Production Credits.
+  // Subscription-trial download restrictions must not block a separately paid ZIP.
+  const ledger = await (async () => {
+    if (data.production_type !== "website" || data.status !== "ready" ||
+        data.output_json?.websiteBillingMode !== "atomic_v1") return null;
+    const result = await supabaseAdmin().from("website_credit_reservations")
+      .select("state,credits").eq("production_id", id)
+      .eq("user_id", String(data.user_id)).maybeSingle();
+    return result.error ? null : result.data;
+  })();
+  const websitePaidByCredits = websiteCreditDeliveryProof(data, ledger);
+  // For an atomically billed Website, *all* delivery paths require a verified
+  // settled ledger entry, even when the owner has an active subscription.
+  if (data.production_type === "website" &&
+      data.output_json?.websiteBillingMode === "atomic_v1" && !websitePaidByCredits) {
+    return Response.json({ error: "website_atomic_delivery_not_settled" },
+      { status: 409, headers: { "Cache-Control": "no-store" } });
+  }
+  if (!websitePaidByCredits && (trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
     return Response.json({ error: "Downloads are locked during the 24-hour preview. You can view the result, but downloads open only after the $9.99 subscription payment is confirmed. Cancel before 24 hours to stop the subscription." }, { status: 403 });
   }
 

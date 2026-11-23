@@ -49,13 +49,18 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     }
     let output = json(row!.output_json); let state = json(output.websiteAssistant);
     if (body.action === 'website_open') return { status: 200, payload: payload() };
+    // Atomically billed projects can be edited through the content editor;
+    // a newly priced production requires a fresh project and explicit approval.
+    if (output.websiteBillingMode === 'atomic_v1' && body.action !== 'website_open') return fail(409, 'website_paid_revision_requires_new_production');
+    // Reservation is an immutable production hold; retries and edits must not alter it.
+    if (state.phase === 'reserved' && body.action !== 'website_open') return fail(409, 'website_reservation_active');
     if (body.action === "website_retry") {
       if (state.phase !== "generating" || Date.now() - Date.parse(String(state.generationStartedAt || row!.updated_at)) < 180000) return fail(409, "website_generation_not_stale_refresh_project");
       await save({ status: "failed", generation_status: "failed", output_json: { ...output, websiteAssistant: { ...state, phase: "generation_failed", error: "interrupted_generation_recovered" } } }, "generating");
       return { status: 200, payload: payload() };
     }
     if (body.render !== true && body.action !== 'website_approve') {
-      if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
+      if (['reserved', 'generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
       const message = String(body.prompt ?? '').trim(); if (!message || message.length > 6000) return fail(400, 'website_message_required_max_6000');
       const replyLanguage = resolveReplyLanguage(body.uiAction === true ? "" : message, state.messages ?? []);
       const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, { ...json(body.extras), reply_language: replyLanguage, form_submission: body.uiAction === true });
@@ -76,7 +81,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     const pack = deps.pack(String(state.packId)); if (!pack || (!isRuntime && /admin|commerce|checkout/i.test(pack.label))) return fail(422, 'website_select_static_package');
     if (body.action === 'website_approve') {
       if (state.credits !== pack.credits) return fail(409, 'website_package_price_changed_review_again');
-      if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
+      if (['reserved', 'generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');
       await save({ estimated_credits: pack.credits, output_json: { ...output, websiteAssistant: { ...state, approvedHash: hash, ...(isRuntime ? { approvedRuntimeArtifactVersion: output.runtimeArtifact.artifactVersion } : {}), credits: pack.credits, phase: 'approved', approvedAt: new Date().toISOString() } } });
       return { status: 200, payload: { ...payload(), spend: false } };
     }

@@ -22,6 +22,10 @@ export function websiteView(record:Record<string,any>,requestedPage='index.html'
  const files=Array.isArray(output.websiteFiles)?output.websiteFiles:[];
  if(files.length>100)return unavailable(title,'invalid_sources');
  const valid=files.filter((f:any)=>f&&typeof f.path==='string'&&typeof f.content==='string'&&f.content.length<=2000000);
+ // Reject malformed artifacts rather than silently previewing a partial source bundle.
+ if(valid.length!==files.length)return unavailable(title,'invalid_sources');
+ // Fail closed on duplicate paths: a preview must never display an ambiguous artifact.
+ if(new Set(valid.map((f:any)=>f.path)).size!==valid.length)return unavailable(title,'duplicate_source_paths');
  const pages=valid.filter((f:any)=>/^[a-z0-9][a-z0-9-]{0,79}\.html$/.test(f.path)&&/<(?:!doctype\s+html|html)(?:\s|>)/i.test(f.content)).map((f:any)=>({path:f.path,label:f.path==='index.html'?'Ana sayfa':f.path.replace(/\.html$/,'').replace(/-/g,' ')}));
  if(!pages.some((p:any)=>p.path==='index.html'))return unavailable(title,'website_source_missing');
  const page=valid.find((f:any)=>f.path===requestedPage&&pages.some((p:any)=>p.path===f.path));

@@ -1,3 +1,5 @@
+import { advanceMockConversation } from "./assistant-core";
+import {readCostPolicy,maximumMicroUSD} from "./cost-policy";
 import { createHash } from "node:crypto";
 import { assertCreditAccount } from "./billing-policy";
 import { applyModelProposal } from "./intent";
@@ -75,12 +77,14 @@ export async function runConversation(input: {
   const providerInput: ProviderInput = {project,message:input.message,uiLanguage:input.uiLanguage,acceptedDefaults:input.acceptedDefaults};
   const prepared = deps.provider.prepare(providerInput);
   if (prepared.inputUpperBound > 96000 || !Number.isSafeInteger(prepared.inputUpperBound) || prepared.inputUpperBound < 1) throw new ConversationError("conversation_context_too_large",413);
-  const reserved = creditUnits(prepared.inputUpperBound,1200,deps.tariff);
+  const cost=deps.mode==="real"?readCostPolicy():null;
+   if(cost)maximumMicroUSD(prepared.inputUpperBound,cost.outputLimit,cost);
+   const reserved = creditUnits(prepared.inputUpperBound,cost?.outputLimit||1200,deps.tariff);
   const reservation = await deps.store.reserve({userId:input.userId,project,requestId:input.requestId,
-    payloadHash:conversationPayloadHash(input),reserveCredits:reserved,tariffVersion:deps.tariff.version,message:input.message});
+    payloadHash:conversationPayloadHash(input),reserveCredits:reserved,tariffVersion:deps.tariff.version,message:input.message,cost:cost?{policy:cost,inputBound:prepared.inputUpperBound,outputBound:cost.outputLimit}:undefined});
   if (reservation.state === "settled" && reservation.response) return reservation.response;
   if (reservation.state === "result_ready") return deps.store.settle(input.userId,input.requestId,deps.mode);
-  if (reservation.state === "released") throw new ConversationError("request_already_rejected",409);
+  if (reservation.state === "refunded") throw new ConversationError("request_already_refunded",409); if (reservation.state === "released") throw new ConversationError("request_already_rejected",409);
   if (reservation.state !== "fresh") throw new ConversationError("request_pending_reconciliation",409,"uncertain");
   // Persist dispatch ownership BEFORE the one provider invocation. Lost RPC response must not trigger a provider retry.
   let claimed = false;
@@ -101,8 +105,9 @@ export async function runConversation(input: {
     await deps.store.uncertain(input.userId,input.requestId).catch(() => {});
     throw new ConversationError("provider_usage_unverifiable",503,"uncertain");
   }
-  let applied;
-  try { applied = applyCompletion(providerInput,completed.output); }
+  if(cost&&(!completed.receipt||completed.receipt.model!==cost.model||completed.receipt.policyVersion!==cost.version)){await deps.store.uncertain(input.userId,input.requestId).catch(()=>{});throw new ConversationError("provider_receipt_unverifiable",503,"uncertain");}
+   let applied;
+  try { if(completed.receipt&&completed.receipt.finishReason!=="stop")throw new Error("incomplete_response");applied = applyCompletion(providerInput,completed.output); if(deps.mode==="mock")applied=advanceMockConversation(providerInput,applied); }
   catch {
     // Known provider usage still incurs Assistant cost; reject unsafe output without changing the brief or executing tools.
     const reply = invalidReply[input.uiLanguage];
@@ -110,7 +115,7 @@ export async function runConversation(input: {
   }
   const chargedCredits = creditUnits(usage.data.inputTokens,usage.data.outputTokens,deps.tariff);
   try {
-    await deps.store.record(input.userId,input.requestId,{...applied,chargedCredits,usage:usage.data});
+    await deps.store.record(input.userId,input.requestId,{...applied,chargedCredits,usage:usage.data,receipt:completed.receipt});
     return await deps.store.settle(input.userId,input.requestId,deps.mode);
   } catch {
     // A cached result_ready can be settled by the same request without invoking the provider again.

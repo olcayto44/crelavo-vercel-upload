@@ -1,3 +1,5 @@
+import {readCostPolicy} from "./cost-policy";
+import {isolatedDatabaseTarget} from "./environment-policy";
 import { ConversationError, ProviderUsageSchema, type ConversationProvider, type ProviderInput } from "./conversation-contract";
 import { getCategoryContract } from "./requirements";
 
@@ -5,10 +7,11 @@ import { getCategoryContract } from "./requirements";
 export function createExistingProviderAdapter(): ConversationProvider {
   return {
     preflight() {
-      if (process.env.STUDIO_AGENT_REAL_AI_ENABLED !== "true") throw new ConversationError("real_ai_not_enabled");
-      if (!process.env.OPENAI_API_KEY?.trim()) throw new ConversationError("assistant_provider_not_configured");
+      if (process.env.STUDIO_AGENT_REAL_AI_APPROVED !== "true") throw new ConversationError("real_ai_not_approved"); if (process.env.STUDIO_AGENT_REAL_AI_ENABLED !== "true") throw new ConversationError("real_ai_not_enabled");
+      if (!isolatedDatabaseTarget() || !process.env.STUDIO_AGENT_TEST_PROVIDER_KEY?.trim()) throw new ConversationError("assistant_provider_not_configured"); readCostPolicy();
     },
     prepare(input: ProviderInput) {
+      const policy=readCostPolicy();
       const contract = getCategoryContract(input.project.categoryId);
       const system = [
         "Crelavo Studio V2 konuşma asistanısın. Yanıt dili: " + input.uiLanguage + ". İçerik dili bundan bağımsızdır.",
@@ -26,24 +29,29 @@ export function createExistingProviderAdapter(): ConversationProvider {
         "Kullanıcının açıkça seçtiği varsayılan alanlar: " + JSON.stringify(input.acceptedDefaults),
       ].join("\n");
       const messages = [{role:"system",content:system},...input.project.messages.slice(-12),{role:"user",content:input.message}];
-      const body = JSON.stringify({model:process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini",temperature:0.2,
-        max_completion_tokens:1200,response_format:{type:"json_object"},messages});
+      const body = JSON.stringify({model:policy.model,reasoning_effort:"none",service_tier:"default",
+        max_completion_tokens:policy.outputLimit,response_format:{type:"json_object"},messages});
       const inputUpperBound = Buffer.byteLength(JSON.stringify(messages),"utf8") + 1024;
       return {inputUpperBound,async call() {
-        let response: Response;
+        if(!isolatedDatabaseTarget()||process.env.STUDIO_AGENT_REAL_AI_APPROVED!=="true"||process.env.STUDIO_AGENT_REAL_AI_ENABLED!=="true"||process.env.STUDIO_AGENT_TEST_OFFLINE==="true")throw new ConversationError("provider_dispatch_disabled",503,"rejected"); let response: Response;
         try { response = await fetch("https://api.openai.com/v1/chat/completions",{
           method:"POST",redirect:"error",signal:AbortSignal.timeout(25000),
-          headers:{Authorization:"Bearer "+process.env.OPENAI_API_KEY,"Content-Type":"application/json"},body,
+          headers:{Authorization:"Bearer "+process.env.STUDIO_AGENT_TEST_PROVIDER_KEY,"Content-Type":"application/json"},body,
         }); } catch { throw new ConversationError("provider_network_uncertain",503,"uncertain"); }
         if (!response.ok) throw new ConversationError("assistant_provider_rejected",response.status===429?429:502,response.status<500?"rejected":"uncertain");
-        const data = await response.json().catch(() => null);
+        const raw=await readBoundedProviderBody(response,100000);let data:any;try{data=JSON.parse(raw);}catch{throw new ConversationError("provider_response_unverifiable",503,"uncertain");}
+         if(data?.model!==policy.model||typeof data?.id!=="string"||!/^chatcmpl-[a-zA-Z0-9_-]{1,180}$/.test(data.id))throw new ConversationError("provider_receipt_unverifiable",503,"uncertain");
         const usage = ProviderUsageSchema.safeParse({inputTokens:data?.usage?.prompt_tokens,outputTokens:data?.usage?.completion_tokens});
         if (!usage.success) throw new ConversationError("provider_usage_unverifiable",503,"uncertain");
-        let output: unknown;
+        const cached=Number(data?.usage?.prompt_tokens_details?.cached_tokens||0),reasoning=Number(data?.usage?.completion_tokens_details?.reasoning_tokens||0);
+         if(!Number.isSafeInteger(cached)||!Number.isSafeInteger(reasoning)||cached<0||reasoning<0||cached>usage.data.inputTokens||reasoning>usage.data.outputTokens)throw new ConversationError("provider_usage_unverifiable",503,"uncertain");
+         let output: unknown;
         try { output = JSON.parse(String(data?.choices?.[0]?.message?.content || "")); }
         catch { output = null; }
-        return {output,usage:usage.data};
+        return {output,usage:usage.data,receipt:{providerRequestId:data.id,model:data.model,policyVersion:policy.version,finishReason:String(data?.choices?.[0]?.finish_reason||""),cachedInputTokens:Number(data?.usage?.prompt_tokens_details?.cached_tokens||0),reasoningTokens:Number(data?.usage?.completion_tokens_details?.reasoning_tokens||0)}};
       }};
     },
   };
 }
+
+async function readBoundedProviderBody(response:Response,limit:number){const reader=response.body?.getReader();if(!reader)throw new ConversationError("provider_response_unverifiable",503,"uncertain");const decoder=new TextDecoder();let bytes=0,result="";try{while(true){const{done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>limit)throw new ConversationError("provider_response_too_large",503,"uncertain");result+=decoder.decode(value,{stream:true});}return result+decoder.decode();}finally{await reader.cancel().catch(()=>{});}}

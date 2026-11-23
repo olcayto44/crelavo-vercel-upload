@@ -1,0 +1,137 @@
+name: Studio V2 handoff checks
+on:
+  push:
+    branches:
+      - 'review/studio-v2-handoff-*'
+    paths:
+      - 'src/lib/studio-agent/**'
+      - 'src/components/StudioConversationFrame.tsx'
+      - 'src/app/dashboard/studio-v2/**'
+      - 'src/app/api/studio/website-atomic/**'
+      - 'src/lib/assistant-work/website-atomic-*.ts'
+      - 'src/lib/assistant-work/website-credit-ledger.ts'
+      - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-pg-concurrency.cjs'
+      - 'scripts/website-atomic-flow-smoke.cjs'
+      - 'scripts/website-paid-production-gate-smoke.cjs'
+      - 'scripts/website-paid-delivery-proof-smoke.cjs'
+      - 'src/lib/assistant-work/website-paid-delivery.ts'
+      - 'src/app/api/productions/**'
+      - 'supabase/migration_website_atomic_credits_isolated.sql'
+      - 'scripts/studio-advanced-mock-smoke.cjs'
+      - 'scripts/studio-agent-test-loader.cjs'
+      - 'scripts/studio-offline-preload.cjs'
+      - 'scripts/studio-browser-smoke.cjs'
+      - 'scripts/studio-authenticated-browser-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - '.github/workflows/studio-v2-handoff-checks.yml'
+  pull_request:
+    branches:
+      - preview/studio-v2-reference-ui
+    paths:
+      - 'src/lib/studio-agent/**'
+      - 'src/components/StudioConversationFrame.tsx'
+      - 'src/app/dashboard/studio-v2/**'
+      - 'src/app/api/studio/website-atomic/**'
+      - 'src/lib/assistant-work/website-atomic-*.ts'
+      - 'src/lib/assistant-work/website-credit-ledger.ts'
+      - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-pg-concurrency.cjs'
+      - 'scripts/website-atomic-flow-smoke.cjs'
+      - 'scripts/website-paid-production-gate-smoke.cjs'
+      - 'scripts/website-paid-delivery-proof-smoke.cjs'
+      - 'src/lib/assistant-work/website-paid-delivery.ts'
+      - 'src/app/api/productions/**'
+      - 'supabase/migration_website_atomic_credits_isolated.sql'
+      - 'scripts/studio-advanced-mock-smoke.cjs'
+      - 'scripts/studio-agent-test-loader.cjs'
+      - 'scripts/studio-offline-preload.cjs'
+      - 'scripts/studio-browser-smoke.cjs'
+      - 'scripts/studio-authenticated-browser-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - '.github/workflows/studio-v2-handoff-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  studio-static-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      STUDIO_AGENT_PREVIEW_MOCK: 'true'
+      VERCEL_ENV: preview
+    steps:
+      - name: Checkout pull request code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Studio shell and conversation static contracts
+        run: node scripts/studio-handoff-contract-smoke.cjs
+      - name: Offline Website atomic credit migration regression
+        run: node scripts/website-atomic-db-regression.cjs
+      - name: Isolated Website production and delivery end-to-end regression
+        run: node scripts/website-atomic-flow-smoke.cjs
+      - name: Existing Website Builder preview, revision and ZIP integration smoke
+        run: npm run smoke:website-assistant && npm run smoke:automatic-delivery-builder
+      - name: Paid Website delivery settlement proof smoke
+        run: node scripts/website-paid-delivery-proof-smoke.cjs
+      - name: Production Website paywall gate smoke
+        run: node scripts/website-paid-production-gate-smoke.cjs
+      - name: Production route dry-run static contracts
+        run: npm run smoke:e2e-dry-run
+      - name: Advanced Studio mock integration (network blocked)
+        run: node scripts/studio-advanced-mock-smoke.cjs
+      - name: Install Chromium for isolated UI smoke
+        run: npx playwright install --with-deps chromium
+      - name: Offline browser smoke (37 categories and mobile navigation)
+        run: node scripts/studio-browser-smoke.cjs
+      - name: Authenticated isolated Mock browser conversation
+        run: node scripts/studio-authenticated-browser-smoke.cjs
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+      - name: Next.js build with no Production credentials
+        run: npm run build
+
+  website-postgres-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: website_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: website_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U website_test -d website_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      WEBSITE_TEST_PG_URL: postgresql://website_test:isolated_test_only@127.0.0.1:5432/website_test
+    steps:
+      - name: Checkout test source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Real PostgreSQL multi-session Website credit races
+        run: node scripts/website-pg-concurrency.cjs
