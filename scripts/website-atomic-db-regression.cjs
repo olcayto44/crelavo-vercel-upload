@@ -19,7 +19,7 @@ const { PGlite } = require('@electric-sql/pglite');
   const production=fs.readFileSync('supabase/migration_production_requests.sql','utf8');
   await db.exec(production.slice(0,production.indexOf('create table if not exists legal_acceptances')));
   await db.exec(fs.readFileSync('supabase/migration_credit_rollover_policy.sql','utf8'));
-  await db.exec(fs.readFileSync('supabase/migration_website_atomic_credits_draft.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migration_website_atomic_credits_isolated.sql','utf8'));
   for(const id of [owner,stranger]){await db.query('insert into auth.users(id) values($1)',[id]);await db.query('insert into profiles(id,email) values($1,$2)',[id,id+'@offline.test']);}
   await db.query('insert into credit_balances(user_id,balance,rolled_over_credits,current_subscription_credits,bonus_credits,topup_credits) values ($1,100,10,20,30,40)',[owner]);
   const call=async(name,args)=>(await db.query('select public.'+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') as value',args)).rows[0].value;
