@@ -49,6 +49,9 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     }
     let output = json(row!.output_json); let state = json(output.websiteAssistant);
     if (body.action === 'website_open') return { status: 200, payload: payload() };
+    // Atomically billed projects can be edited through the content editor;
+    // a newly priced production requires a fresh project and explicit approval.
+    if (output.websiteBillingMode === 'atomic_v1' && body.action !== 'website_open') return fail(409, 'website_paid_revision_requires_new_production');
     // Reservation is an immutable production hold; retries and edits must not alter it.
     if (state.phase === 'reserved' && body.action !== 'website_open') return fail(409, 'website_reservation_active');
     if (body.action === "website_retry") {
