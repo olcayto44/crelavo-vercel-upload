@@ -79,4 +79,14 @@ assert.match(source,/Choose video orientation before uploading/,'format preset m
 assert.match(source,/Move clip left/,'keyboard-friendly alternative to drag-drop must remain');
 assert.match(css,/studio-timeline-thumb img/,'real thumbnail needs fit-safe styling');
 assert.match(css,/studio-timeline-clip\.is-drop-target/,'drag target must show visual feedback');
+const cloudTimelineSource=fs.readFileSync('src/lib/studio-cloud-timeline.ts','utf8');
+const ffmpegComposeSource=fs.readFileSync('scripts/studio-ffmpeg-compose.mjs','utf8');
+assert.match(source,/useState<"cover"\|"contain">\("contain"\)/,'new video projects must preserve full picture instead of cropping by default');
+assert.match(source,/Show full video/,'preview needs a clear full-picture option');
+assert.match(source,/Fill screen · crop edges/,'preview must explicitly warn about cropping');
+assert.match(source,/aria-pressed=\{framing==="contain"\}/,'safe-fit control must be visible and accessible');
+assert.match(source,/objectFit:framing/,'actual preview must use selected fit mode');
+assert.match(source,/framing === "cover" \? Math.max/,'export must apply the same selected fit or crop mode');
+assert.match(cloudTimelineSource,/t.framing==="cover"\?"cover":"contain"/,'legacy cloud projects default to non-cropping display');
+assert.match(ffmpegComposeSource,/timeline.framing==="cover"\?"cover":"contain"/,'staged MP4 worker must default to non-crop too');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
