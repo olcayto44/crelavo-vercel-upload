@@ -76,7 +76,7 @@ async function previewWebsite(id,page='index.html'){const seq=epoch,load=++previ
 // Explicit handoff to the existing Website Builder draft API. This does not approve,
 // render, spend credits, or silently create a production from a chat message.
 async function reviewWebsiteDraft(){
- if(window.__studioB2?.websitePaidReady!==true||busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
+ if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
   const result=await request('/api/websites/generate',{action:'website_open',productionId:project.productionId});
@@ -118,7 +118,7 @@ async function downloadWebsiteZip(id){
  }catch(error){if(seq===epoch)showError(error);}finally{if(seq===epoch){busy=false;draw();}}
 }
 async function renderApprovedWebsite(){
- if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
+ if(window.__studioB2?.websitePaidReady!==true||busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
  const w=websiteData?.website;
  if(websiteData?.productionId!==project.productionId||w?.approvedHash!==w?.planHash||!w?.planHash||!Number.isSafeInteger(w.credits)||w.credits<=0){uiError='Güncel plan onayı gerekli.';draw();return;}
  const pack=(window.__studioB2?.websitePacks||[]).find(p=>p.id===w.packId&&p.credits===w.credits&&!/admin|commerce|checkout/i.test(p.label));
