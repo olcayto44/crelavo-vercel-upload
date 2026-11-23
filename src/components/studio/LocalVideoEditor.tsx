@@ -123,7 +123,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [state, setState] = useState("Add local clips to start. Videos remain on your device.");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("16:9");
+  const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
+  const [framing,setFraming] = useState<"cover"|"contain">("cover");
   const [resolution, setResolution] = useState(720);
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
@@ -376,8 +377,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             const vw = video.videoWidth, vh = video.videoHeight;
             if (vw && vh && video.readyState >= 2) {
               ctx.fillStyle = "#000"; ctx.fillRect(0, 0, width, height);
-              const scale = Math.min(width / vw, height / vh);
-              ctx.drawImage(video, (width - vw * scale) / 2, (height - vh * scale) / 2, vw * scale, vh * scale);
+              // Preview and export share the same center framing; cover crops wide sources for Shorts.
+              const scale = framing === "cover" ? Math.max(width / vw, height / vh) : Math.min(width / vw, height / vh);
+              const renderedWidth=vw*scale, renderedHeight=vh*scale;
+              ctx.drawImage(video,(width-renderedWidth)/2,(height-renderedHeight)/2,renderedWidth,renderedHeight);
               const at=elapsed+Math.min(segment,Math.max(0,video.currentTime-clip.start));
               paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
@@ -439,9 +442,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
     <div className="editor-main-grid">
       <div style={{ minWidth: 0 }}>
-        <div style={{ border: "1px solid #422b54", borderRadius: 12, padding: 9, background: "#090711" }}>
-          {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls preload="metadata" style={{ width: "100%", maxHeight: 240, objectFit: "contain", display: "block" }} onLoadedMetadata={e => { e.currentTarget.currentTime = chosen.start; }} /> : <div style={{ height: 164, display: "grid", placeItems: "center", color: "#a999bb", fontSize: 13 }}>Add video files to begin editing · no clips selected</div>}
+        <div className="studio-video-preview-stage">
+          <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
+               style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
+            {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
+              style={{width:"100%",height:"100%",objectFit:framing,display:"block"}}
+              onLoadedMetadata={e => { e.currentTarget.currentTime=chosen.start; }} />
+              : <div className="studio-video-no-clips">Add video files to begin editing</div>}
+          </div>
         </div>
+        <p className="studio-video-framing-note">{ratio==="9:16"?"Shorts / Reels · 9:16 portrait":ratio==="1:1"?"Square · 1:1":"Landscape · 16:9"} preview · {framing==="cover"?"Fill frame (center crop)":"Fit whole video (may show black bars)"}</p>
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 8 }}>Clip timeline · {sec(duration)} total</h2>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
@@ -472,6 +482,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <label className="studio-setting-field">Ratio
           <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}>
             <option>16:9</option><option>9:16</option><option>1:1</option>
+          </select>
+        </label>
+        <label className="studio-setting-field">Framing
+          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain");cleanupOutput()}}>
+            <option value="cover">Fill frame (crop)</option><option value="contain">Fit full clip (bars)</option>
           </select>
         </label>
         <label className="studio-setting-field">Height
