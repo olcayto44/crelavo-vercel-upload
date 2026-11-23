@@ -131,4 +131,12 @@ assert.match(localEditor,/async function reopenTimeline/,'Saved video timeline m
 assert.match(localEditor,/indexedDB\.open\(VIDEO_PROJECT_DB,1\)/,'Browser timeline project must persist');
 assert.match(localEditor,/owner:projectOwner/,'Timeline must be scoped to authenticated account');
 assert.match(localEditor,/150_000_000/,'Browser-local large file storage must be bounded');
+const videoLibrary=read('src/app/api/studio/video-library/route.ts');
+assert.match(videoLibrary,/function videoSpecs/,'saved video metadata must be interpreted from production output');
+assert.match(videoLibrary,/genericVideoPlan/,'video model and aspect should use real persisted planning data');
+assert.match(workspace,/specs:item\.specs\|\|null/,'selected video metadata must reach assistant');
+assert.match(client,/specs\.provider/,'assistant must use persisted provider');
+assert.match(client,/specs\.durationSeconds/,'assistant must use persisted video duration');
+assert.match(workspace,/const video=make\('video'\);video\.src=item\.videoUrl/,'variant cards must offer real media preview instead of title buttons');
+assert.match(view,/textContent=current\.label+' workspace';document\.querySelector\('#project-title'\)\.textContent=current\.label/,'initial video project title must not flicker between brief and project');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
