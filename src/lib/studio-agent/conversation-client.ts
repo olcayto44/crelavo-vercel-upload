@@ -2,6 +2,12 @@ export const studioConversationClientScript=String.raw`(()=>{
 const $=selector=>document.querySelector(selector);
 let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'mock':'real',epoch=0,busy=false,pending=null,status=null,walletCache=null,uiError='';
 let liveProductionBalance=null;
+let previewDraftMessages=[];
+const previewDraftEnabled=()=>!session&&Boolean(window.__studioB2?.previewOnly);
+function previewDraftKey(){return 'crelavo-studio-preview-brief-v1:'+current.id;}
+function loadPreviewDraft(){try{const saved=JSON.parse(sessionStorage.getItem(previewDraftKey())||'[]');previewDraftMessages=Array.isArray(saved)?saved.filter(x=>x&&x.role==='user'&&typeof x.content==='string').slice(-30):[]}catch(_error){previewDraftMessages=[];}}
+function savePreviewDraft(){try{sessionStorage.setItem(previewDraftKey(),JSON.stringify(previewDraftMessages.slice(-30)))}catch(_error){}}
+
 let activeVideoSelection=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
 const availableStudioLanguages=['en','tr','de','es','fr','ar'];
@@ -78,8 +84,16 @@ window.studioBriefPresentation={label:fieldLabel,value:valueLabel,openPlan:()=>s
 function remember(data){project=data.project;serverPlanning=data.planning&&project?{...data.planning,projectId:project.id,categoryId:project.categoryId}:null;mockState=data.mockState||'';if(project&&session){try{sessionStorage.setItem(key(),JSON.stringify({projectId:project.id,mockState}));}catch(_error){/* Storage can be unavailable in private or restricted browser contexts. */}}if(project){try{const url=new URL(parent.location.href);url.searchParams.set('chatProject',project.id);url.searchParams.set('category',current.id);parent.history.replaceState(null,'',url);}catch(_error){/* A restricted embed may deny parent navigation; keep the conversation usable. */}}draw(data.wallets);}
 function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPlanning.categoryId===current.id&&serverPlanning.briefRevision===project.snapshot.revision)return {revision:serverPlanning.briefRevision,missing:serverPlanning.missingFields.map(fieldId=>({fieldId})),state:serverPlanning.state,advanced:serverPlanning.advanced};const fields=project?.snapshot.fields||{},missing=(window.__studioB2?.requirements?.[current.id]||[]).filter(f=>f.required&&!Object.prototype.hasOwnProperty.call(fields,f.id));return {revision:project?.snapshot.revision||0,missing,state:missing.length?"collecting":"draft_ready"};} function draw(wallets){
  if(wallets)walletCache=wallets;if($('#advanced-open-plan'))$('#advanced-open-plan').disabled=busy||!project;
- const messages=$('#messages');messages.replaceChildren();(project?.messages||[]).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
- if(!project?.messages.length)messages.appendChild(node('div',session?t(16):t(5),'message'));
+ const messages=$('#messages');messages.replaceChildren();(previewDraftEnabled()?previewDraftMessages:(project?.messages||[])).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
+ if(!project?.messages.length&&!previewDraftMessages.length)messages.appendChild(node('div',previewDraftEnabled()?(language==='tr'?'Önizleme modu: buraya proje briefinizi yazabilirsiniz. Mesajlar yalnızca bu tarayıcı sekmesinde saklanır; gerçek AI yanıtı ve üretim için giriş yapın.':'Preview mode: write your project brief here. Messages are saved only in this browser tab; sign in for real AI replies and production.'):session?t(16):t(5),'message'));
+ if(previewDraftEnabled()){
+   const notice=node('div',language==='tr'?'Yerel brief taslağı · AI yanıtı üretilmez · kredi kullanılmaz':'Local brief draft · no AI reply or credit charge','message');
+   notice.style.cssText='opacity:.75;font-size:11px';
+   messages.appendChild(notice);
+   const login=node('button',language==='tr'?'Gerçek AI için giriş yap':'Sign in for real AI');
+   login.type='button';login.onclick=()=>parent.postMessage({type:'crelavo-studio-request-login'},parent.location.origin);
+   messages.appendChild(login);
+ }
  if(busy&&$('#prompt').value.trim()){const draft=node('div',$('#prompt').value.trim(),'message user');draft.dataset.b2Role='pending';draft.dataset.userContent='true';messages.append(draft,node('div',t(15),'message'));}
  if(uiError)messages.appendChild(node('div',uiError,'message error'));
  if(current.id==='website'&&mode==='real'&&session){
@@ -166,7 +180,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  :mode==='real'&&!status?.realEnabled?'Planlama sohbeti mevcut asistan API ile çalışır. Üretim ve kredi tahsilatı başlatılmaz; sohbet yalnız bu tarayıcı sekmesinde saklanır.'
  :mode==='mock'?(project?.advanced?.memory==='isolated_postgres'?(language==='tr'?'Yerel PostgreSQL hafızası · Yanıtlar ve bakiyeler Mock simülasyondur. Gerçek AI kapalı.':'Isolated local PostgreSQL memory · Replies and balances are Mock simulations. Real AI disabled.'):t(7)):t(8);
  const choices=$('#b2-choices');choices.replaceChildren();if(project){const missing=(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.required&&!Object.prototype.hasOwnProperty.call(project.snapshot.fields,f.id)&&!f.serverOnly);missing?.options.slice(0,5).forEach(value=>{const b=node('button',valueLabel(missing.id,value));b.disabled=busy;b.onclick=()=>{$('#prompt').value=valueLabel(missing.id,value);sendMessage()};choices.appendChild(b)});}
- $('#send').disabled=busy||!session||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||!session;$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||!session;$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
+ $('#send').disabled=busy||(!session&&!previewDraftEnabled())||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||(!session&&!previewDraftEnabled());$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||(!session&&!previewDraftEnabled());$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
  if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);} $('.chat').scrollTop=$('.chat').scrollHeight;
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
@@ -512,7 +526,15 @@ function saveLocalCategoryChat(){
  try{sessionStorage.setItem(localCategoryKey(),JSON.stringify(project.messages.slice(-24)));}catch(_error){}
 }
 async function sendMessage(defaults=[]){
- const message=$('#prompt').value.trim();if(!message||busy||!session)return;
+ const message=$('#prompt').value.trim();if(!message||busy)return;
+ if(previewDraftEnabled()){
+  previewDraftMessages=[...previewDraftMessages,{role:'user',content:message.slice(0,4000)}].slice(-30);
+  savePreviewDraft();
+  $('#prompt').value='';
+  draw();
+  return;
+ }
+ if(!session)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
   if(current.id==='website'&&mode==='real'&&!status?.realEnabled){
@@ -672,7 +694,7 @@ function setup(){
   }
  }else $('#website-builder-rail')?.remove();
  const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:false;modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();else if(current.id!=='website')restoreLocalCategoryChat()};
- $('#b2-new-project').onclick=()=>{epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}try{sessionStorage.removeItem(localCategoryKey());}catch(_error){}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
+ $('#b2-new-project').onclick=()=>{if(previewDraftEnabled()){previewDraftMessages=[];try{sessionStorage.removeItem(previewDraftKey())}catch(_error){}$('#prompt').value='';draw();return;}epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}try{sessionStorage.removeItem(localCategoryKey());}catch(_error){}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
  $('#b2-defaults').onclick=()=>{const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});if(!list.length)return;$('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';sendMessage(list)};
  $('#b2-projects').onfocus=()=>savedConversations().catch(showError);$('#b2-projects').onchange=async()=>{const value=$('#b2-projects').value;if(!value)return;epoch++;clearCanvas();const seq=epoch;try{const data=await api({action:'load',projectId:value});if(seq!==epoch)return;remember(data);if(current.id==='website'&&project.productionId){selectedProduction=project.productionId;await previewWebsite(selectedProduction)}}catch(error){if(seq===epoch)showError(error)}};
  $('#send').onclick=()=>sendMessage();$('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage()}};
@@ -700,7 +722,7 @@ addEventListener('crelavo-studio-video-selected',event=>{
  $('#project-title').textContent=detail.title;
  draw();
 });
-const originalSelect=selectCategory;selectCategory=function(...args){epoch++;activeVideoSelection=null;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){
+const originalSelect=selectCategory;selectCategory=function(...args){epoch++;activeVideoSelection=null;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);loadPreviewDraft();clearCanvas();showAux('canvas');setup();if(session){
  if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();
  else if(current.id!=='website')restoreLocalCategoryChat();
  void loadReadyVideoCanvas();
@@ -747,6 +769,7 @@ const localizeObserver=new MutationObserver(()=>{
 // Only new DOM content is localized. Observing each text mutation caused
 // repeated translations and visible flicker during initial loading.
 localizeObserver.observe(document.body,{subtree:true,childList:true});
+loadPreviewDraft();
 setup();
 updateStudioLanguage();
 })();`;
