@@ -85,8 +85,7 @@ begin
   if jsonb_typeof(files)<>'array' or jsonb_array_length(files)<1 or jsonb_array_length(files)>50
    or octet_length(p_result::text)>8000000
    or not exists(select 1 from jsonb_array_elements(files) item where item->>'path'='index.html' and length(coalesce(item->>'content',''))>0)
-   or exists(select 1 from jsonb_array_elements(files) item where item->>'path' !~ '^[a-zA-Z0-9._/-]{1,160}
-   then raise exception 'website_artifact_invalid'; end if;
+   or exists(select 1 from jsonb_array_elements(files) item where item->>'path' !~ '^[a-zA-Z0-9._/-]{1,160} raise exception 'website_artifact_invalid'; end if;
   update production_requests set generation_status='completed',
    output_json=(output_json||jsonb_build_object('websiteFiles',files,
     'websiteContent',coalesce(p_result->'websiteContent','{}'::jsonb),
@@ -178,12 +177,13 @@ begin
 end $$;
 revoke all on function public.website_credit_reserve(uuid,uuid,text,integer) from public,anon,authenticated;
 revoke all on function public.website_credit_claim(uuid,uuid,text) from public,anon,authenticated;
+revoke all on function public.website_credit_record(uuid,uuid,text,text,jsonb) from public,anon,authenticated;
 revoke all on function public.website_credit_finalize(uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function public.website_credit_reserve(uuid,uuid,text,integer) to service_role;
 grant execute on function public.website_credit_claim(uuid,uuid,text) to service_role;
+grant execute on function public.website_credit_record(uuid,uuid,text,text,jsonb) to service_role;
 grant execute on function public.website_credit_finalize(uuid,uuid,text,text) to service_role;
-commit;
- or item->>'path' like '%..%' or item->>'path' like '/%' or item->>'path' like './%' or item->>'path' like '%/./%' or item->>'path' like '%//' or item->>'path' like '%//%' or jsonb_typeof(item->'content')<>'string')
+commit; or item->>'path' like '%..%' or item->>'path' like '/%' or item->>'path' like './%' or item->>'path' like '%/./%' or item->>'path' like '%//%' or jsonb_typeof(item->'content')<>'string')
    or (select count(distinct item->>'path') from jsonb_array_elements(files) item)<>jsonb_array_length(files)
    then raise exception 'website_artifact_invalid'; end if;
   update production_requests set generation_status='completed',
