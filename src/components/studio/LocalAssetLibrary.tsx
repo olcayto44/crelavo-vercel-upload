@@ -71,7 +71,7 @@ export default function LocalAssetLibrary({allowAnonymousLocalSave=false}:{allow
    setOwner(data.user.id);
    const items=await dbAll(data.user.id);
    if(active){setRecords(items.map(({blob,...rest})=>rest).sort((a,b)=>b.createdAt-a.createdAt));setStatus("References are saved only in this browser, not the cloud.");}
-  }).catch(()=>{if(!active)return;if(allowAnonymousLocalSave){setOwner("preview-local");void dbAll("preview-local").then(items=>{if(active)setRecords(items.map(({blob,...rest})=>rest)}).catch(()=>{});setStatus("Preview local references only.");}else setStatus("The local library is unavailable in this browser.");});
+  }).catch(()=>{if(!active)return;if(allowAnonymousLocalSave){setOwner("preview-local");void dbAll("preview-local").then(items=>{if(active)setRecords(items.map(({blob,...rest})=>rest))}).catch(()=>{});setStatus("Preview local references only.");}else setStatus("The local library is unavailable in this browser.");});
   return ()=>{active=false};
  },[allowAnonymousLocalSave]);
  useEffect(()=>{
