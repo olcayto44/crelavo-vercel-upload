@@ -12,6 +12,7 @@ on:
       - 'src/lib/assistant-work/website-credit-ledger.ts'
       - 'scripts/studio-handoff-contract-smoke.cjs'
       - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-pg-concurrency.cjs'
       - 'scripts/website-atomic-flow-smoke.cjs'
       - 'scripts/website-paid-production-gate-smoke.cjs'
       - 'scripts/website-paid-delivery-proof-smoke.cjs'
@@ -37,6 +38,7 @@ on:
       - 'src/lib/assistant-work/website-credit-ledger.ts'
       - 'scripts/studio-handoff-contract-smoke.cjs'
       - 'scripts/website-atomic-db-regression.cjs'
+      - 'scripts/website-pg-concurrency.cjs'
       - 'scripts/website-atomic-flow-smoke.cjs'
       - 'scripts/website-paid-production-gate-smoke.cjs'
       - 'scripts/website-paid-delivery-proof-smoke.cjs'
@@ -100,3 +102,36 @@ jobs:
         run: npx tsc --noEmit
       - name: Next.js build with no Production credentials
         run: npm run build
+
+  website-postgres-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: website_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: website_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U website_test -d website_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      WEBSITE_TEST_PG_URL: postgresql://website_test:isolated_test_only@127.0.0.1:5432/website_test
+    steps:
+      - name: Checkout test source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Real PostgreSQL multi-session Website credit races
+        run: node scripts/website-pg-concurrency.cjs
