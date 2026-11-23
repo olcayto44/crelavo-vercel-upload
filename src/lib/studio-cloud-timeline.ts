@@ -10,7 +10,7 @@ export type CloudTimelineClip = { id: string; file: File; name: string; duration
 export type CloudTimelineSettings = {
  ratio: "16:9"|"9:16"|"1:1"; resolution: number; includeAudio: boolean;
  captionCues: Array<{start:number;end:number;text:string}>; titleOverlay: string;
- musicVolume: number; fadeBetweenClips: boolean; backgroundMusic: File|null;
+ musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"; backgroundMusic: File|null;
 };
 export type LoadedCloudTimeline = CloudTimelineSettings & { clips: CloudTimelineClip[]; version: number };
 type Entry = { id:string;name:string;path:string;mime:string;start:number;end:number;duration:number };
@@ -71,7 +71,7 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    clips:entries,musicPath,ratio:settings.ratio,resolution:settings.resolution,
    includeAudio:settings.includeAudio,captionCues:settings.captionCues.slice(0,500),
    titleOverlay:settings.titleOverlay.slice(0,120),
-   musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips
+   musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
   };
   const {error:saveError}=await db().from("studio_timeline_versions").insert({
    user_id:uid,project_id:pid,version_number:version,timeline
@@ -125,6 +125,6 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
   captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
   titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
   musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
-  fadeBetweenClips:Boolean(t.fadeBetweenClips),backgroundMusic
+  fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="contain"?"contain":"cover",backgroundMusic
  };
 }
