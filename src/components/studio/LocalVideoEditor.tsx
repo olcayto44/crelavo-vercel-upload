@@ -128,6 +128,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
+  const [subtitleName,setSubtitleName] = useState("");
+  const musicPicker=useRef<HTMLInputElement>(null);
+  const subtitlePicker=useRef<HTMLInputElement>(null);
   const [backgroundMusic,setBackgroundMusic] = useState<File|null>(null);
   const [musicVolume,setMusicVolume] = useState(0.3);
   const [fadeBetweenClips,setFadeBetweenClips] = useState(false);
@@ -462,42 +465,86 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </> : <small>Choose a clip from the timeline.</small>}
       </aside>
     </div>
-    <div className="editor-output-controls">
-      <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
-      <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
-      <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
-      <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} /> Fade between clips</label>
-      <label style={{fontSize:12}}>Background music (licensed audio)
-        <input aria-label="Background music file" type="file" accept="audio/*" disabled={busy}
-          onChange={e=>{const next=e.target.files?.[0]||null;e.target.value="";
-            if(next&&next.size>25_000_000){setState("Background music exceeds 25 MB.");return;}
-            setBackgroundMusic(next);cleanupOutput();
-          }} style={{display:"block",maxWidth:200}} />
-      </label>
-      {backgroundMusic&&<label style={{fontSize:12}}>Music level {Math.round(musicVolume*100)}%
-        <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
-          value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
-        <button type="button" disabled={busy} onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>
-      </label>}
-      <label style={{fontSize:12}}>Video title <input aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120} onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" style={{display:"block",maxWidth:220}} /></label>
-      <label style={{fontSize:12,cursor:"pointer"}}>Subtitles (.srt)
-        <input type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
-          onChange={e=>{
-            const file=e.target.files?.[0];e.target.value="";
-            if(!file)return;
-            if(file.size>250_000){setState("Subtitle file exceeds 250 KB.");return;}
-            void file.text().then(source=>{
-              const cues=parseSrt(source);setCaptionCues(cues);cleanupOutput();
-              setState(cues.length?cues.length+" subtitle cues loaded for burn-in export.":"No valid SRT subtitle cues found.");
-            }).catch(()=>setState("Could not read subtitles."));
-          }} style={{display:"block",maxWidth:180}} />
-      </label>
-      {captionCues.length>0&&<button type="button" disabled={busy} onClick={()=>{setCaptionCues([]);cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
-      <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }} style={{ background: "#7835c0", padding: "10px 18px", borderRadius: 9, color: "#fff", border: 0 }}>{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
-      {busy && <button type="button" onClick={() => { cancel.current = true; }}>Cancel</button>}
-      {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
-      {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
-    </div>
+    <section className="studio-export-settings" aria-label="Video export settings">
+      <h2>Video output settings</h2>
+      <div className="studio-export-basics">
+        <label className="studio-setting-field">Ratio
+          <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}>
+            <option>16:9</option><option>9:16</option><option>1:1</option>
+          </select>
+        </label>
+        <label className="studio-setting-field">Height
+          <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}>
+            <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
+          </select>
+        </label>
+        <label className="studio-setting-toggle">
+          <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} />
+          <span>Include source audio</span>
+        </label>
+        <label className="studio-setting-toggle">
+          <input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} />
+          <span>Fade between clips</span>
+        </label>
+      </div>
+      <div className="studio-export-extras">
+        <div className="studio-setting-card">
+          <strong>Background music (licensed audio)</strong>
+          <input ref={musicPicker} hidden aria-label="Background music file" type="file" accept="audio/*" disabled={busy}
+            onChange={e=>{const next=e.target.files?.[0]||null;e.target.value="";
+              if(next&&next.size>25_000_000){setState("Background music exceeds 25 MB.");return;}
+              setBackgroundMusic(next);cleanupOutput();
+            }} />
+          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>musicPicker.current?.click()}>
+            {backgroundMusic?"Change music":"Choose audio file"}
+          </button>
+          <small className="studio-setting-file-name" title={backgroundMusic?.name||"No audio selected"}>
+            {backgroundMusic?.name||"No audio selected · max 25 MB"}
+          </small>
+          {backgroundMusic&&<label className="studio-setting-volume">Music level {Math.round(musicVolume*100)}%
+            <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
+              value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
+          </label>}
+          {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>}
+        </div>
+        <div className="studio-setting-card">
+          <label className="studio-setting-field" htmlFor="studio-video-title">Video title
+            <input id="studio-video-title" aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120}
+              onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" />
+          </label>
+          <small>Leave blank to export without a title overlay.</small>
+        </div>
+        <div className="studio-setting-card">
+          <strong>Subtitles (.srt)</strong>
+          <input ref={subtitlePicker} hidden type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
+            onChange={e=>{
+              const file=e.target.files?.[0];e.target.value="";
+              if(!file)return;
+              if(file.size>250_000){setState("Subtitle file exceeds 250 KB.");return;}
+              void file.text().then(source=>{
+                const cues=parseSrt(source);setCaptionCues(cues);setSubtitleName(cues.length?file.name:"");cleanupOutput();
+                setState(cues.length?cues.length+" subtitle cues loaded for burn-in export.":"No valid SRT subtitle cues found.");
+              }).catch(()=>setState("Could not read subtitles."));
+            }} />
+          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>subtitlePicker.current?.click()}>
+            {captionCues.length?"Replace subtitles":"Choose SRT file"}
+          </button>
+          <small className="studio-setting-file-name" title={subtitleName||"No subtitle file selected"}>
+            {subtitleName||"No subtitle file selected · max 250 KB"}
+          </small>
+          {captionCues.length>0&&<button type="button" className="studio-setting-secondary" disabled={busy}
+            onClick={()=>{setCaptionCues([]);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
+        </div>
+      </div>
+      <div className="studio-export-actions">
+        <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }}
+          className="studio-export-primary">{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
+        {!clips.length&&<small>Add at least one video clip to enable export.</small>}
+        {busy&&<button type="button" onClick={() => { cancel.current = true; }}>Cancel</button>}
+        {busy&&<span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
+        {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download merged video</a>}
+      </div>
+    </section>
     <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  Private cloud timeline source-file backup/reopen supports up to 90 MB total; larger local timelines still stay on this device. Cloud browser tests pending. Advanced crossfades and MP4 export are not available yet.</p>
   </section>;
 }
