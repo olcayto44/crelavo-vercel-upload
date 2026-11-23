@@ -6,7 +6,8 @@ type Clip = { id: string; file: File; name: string; url: string; duration: numbe
 const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean };
+type CaptionCue = { start: number; end: number; text: string };
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -29,6 +30,57 @@ async function openProjectLocally(id: string) {
   result.onsuccess=()=>resolve(result.result as SavedVideoProject|undefined);
   result.onerror=()=>reject(result.error);
  });db.close();return item;
+}
+function parseSrt(source: string): CaptionCue[] {
+  // Strict bounded parsing: do not interpret markup or run HTML from subtitles.
+  const cues: CaptionCue[] = [];
+  const time = (value: string) => {
+    const match = value.trim().match(/^(\\d{2}):(\\d{2}):(\\d{2})[,.](\\d{3})$/);
+    if (!match) return NaN;
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(match[4]) / 1000;
+  };
+  for (const block of source.replace(/\\r/g, "").trim().split(/\\n\\s*\\n/)) {
+    const lines = block.split("\\n");
+    const lineIndex = lines.findIndex(line => line.includes("-->"));
+    if (lineIndex < 0) continue;
+    const parts = lines[lineIndex].split("-->");
+    const start = time(parts[0] || ""), end = time(parts[1] || "");
+    const text = lines.slice(lineIndex + 1).join(" ").replace(/<[^>]*>/g, "").trim().slice(0, 240);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end > 7200 || !text) continue;
+    cues.push({ start, end, text });
+    if (cues.length >= 500) break;
+  }
+  return cues.sort((a,b) => a.start - b.start);
+}
+function captionAt(cues: CaptionCue[], at: number) {
+  return cues.find(cue => at >= cue.start && at < cue.end)?.text || "";
+}
+function paintOverlay(ctx: CanvasRenderingContext2D, width: number, height: number, text: string, bottom: boolean) {
+  if (!text) return;
+  ctx.save();
+  const size = Math.max(15, Math.round(width / (bottom ? 28 : 25)));
+  ctx.font = `600 ${size}px system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = Math.max(3, size / 7);
+  ctx.strokeStyle = "rgba(0,0,0,.88)";
+  ctx.fillStyle = "white";
+  const words = text.split(/\\s+/);
+  const rows: string[] = [];
+  let row = "";
+  for (const word of words) {
+    const next = row ? row + " " + word : word;
+    if (row && ctx.measureText(next).width > width * .83) { rows.push(row); row = word; } else row = next;
+  }
+  if (row) rows.push(row);
+  const shown = rows.slice(0,3);
+  const offset = bottom ? height - size * (shown.length + 1) : size * 2;
+  shown.forEach((line,i) => {
+    const y = offset + i * size * 1.25;
+    ctx.strokeText(line, width / 2, y, width * .9);
+    ctx.fillText(line, width / 2, y, width * .9);
+  });
+  ctx.restore();
 }
 function supportedMime() {
   if (typeof MediaRecorder === "undefined") return "";
@@ -67,6 +119,8 @@ export default function LocalVideoEditor() {
   const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("16:9");
   const [resolution, setResolution] = useState(720);
   const [includeAudio, setIncludeAudio] = useState(true);
+  const [titleOverlay, setTitleOverlay] = useState("");
+  const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [editorLanguage, setEditorLanguage] = useState<"en" | "tr">("en");
   useEffect(() => {
@@ -95,7 +149,7 @@ export default function LocalVideoEditor() {
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120)
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -113,6 +167,7 @@ export default function LocalVideoEditor() {
       files.current=restored;
       setClips(restored);setActive(restored[0]?.id||null);
       setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
+      setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -236,6 +291,9 @@ export default function LocalVideoEditor() {
               ctx.fillStyle = "#000"; ctx.fillRect(0, 0, width, height);
               const scale = Math.min(width / vw, height / vh);
               ctx.drawImage(video, (width - vw * scale) / 2, (height - vh * scale) / 2, vw * scale, vh * scale);
+              const at=elapsed+Math.min(segment,Math.max(0,video.currentTime-clip.start));
+              paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
+              paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
             }
             setProgress(Math.min(99, Math.round(100 * (elapsed + Math.min(segment, Math.max(0, video.currentTime - clip.start))) / duration)));
             if (video.currentTime >= clip.end - .04 || video.ended || performance.now() - begin > (segment + 6) * 1000) { resolve(); return; }
@@ -307,11 +365,25 @@ export default function LocalVideoEditor() {
       <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
       <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
+      <label style={{fontSize:12}}>Video title <input aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120} onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" style={{display:"block",maxWidth:220}} /></label>
+      <label style={{fontSize:12,cursor:"pointer"}}>Subtitles (.srt)
+        <input type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
+          onChange={e=>{
+            const file=e.target.files?.[0];e.target.value="";
+            if(!file)return;
+            if(file.size>250_000){setState("Subtitle file exceeds 250 KB.");return;}
+            void file.text().then(source=>{
+              const cues=parseSrt(source);setCaptionCues(cues);cleanupOutput();
+              setState(cues.length?cues.length+" subtitle cues loaded for burn-in export.":"No valid SRT subtitle cues found.");
+            }).catch(()=>setState("Could not read subtitles."));
+          }} style={{display:"block",maxWidth:180}} />
+      </label>
+      {captionCues.length>0&&<button type="button" disabled={busy} onClick={()=>{setCaptionCues([]);cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
       <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }} style={{ background: "#7835c0", padding: "10px 18px", borderRadius: 9, color: "#fff", border: 0 }}>{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
       {busy && <button type="button" onClick={() => { cancel.current = true; }}>Cancel</button>}
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in and a title overlay are available. No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
   </section>;
 }
