@@ -1,6 +1,15 @@
 # Crelavo Studio V2 — Higgsfield Capability Gap Matrix
 Date: 2026-11-23 · Status: staged implementation; not all 15 areas are production-ready. Do not confuse UI presence with a functioning AI provider.
 
+## 2026-11-23 22:15 screen-recording regression findings
+Source: user's original 113-second Studio V2 MP4; verified frame samples, no authenticated browser E2E.
+- Seen: intermittent gray broken-file Canvas when switching video tabs; can be aggravated by async saved-video hydration forcing the auxiliary panel closed. Code now only closes aux when the active view is Canvas. **Browser retest pending.**
+- Seen: Elements controls crowded on one line; changed to labeled responsive grid with local image thumbnails. **Browser retest pending.**
+- Seen: saved video Timeline uses navigation/seek points and cannot edit the source stream. Added explicit separation and local editor button; **cloud-origin imports still unavailable**.
+- Seen: provider was listed for selected saved video while duration and ratio were absent. Ready-video player now publishes factual duration and dimensions to right sidebar on loadedmetadata; **model/quality are not invented if missing from production record**.
+- Seen: many categories have only brief/workspace placeholders. This is not a completed AI feature.
+- Production-safe rule: paid AI provider invocations remain gated until authorized cost, provider, render, billing and final delivery are verified with owner-scoped E2E.
+
 ## Non-negotiable design and delivery
 - Retain approved Nov 22 Studio V2 shell: left categories/projects, center Canvas and timeline, right assistant and plan.
 - English default with explicit EN/TR/DE/ES/FR/AR interface selector, distinct from content/dubbing language.
