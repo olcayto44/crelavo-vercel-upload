@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       state.credits !== pack.credits || row.estimated_credits !== pack.credits) {
     return respond({ ok: false, code: "approved_current_plan_required" }, 409);
   }
-  const ledger = createWebsiteCreditLedger((name, args) => auth.db.rpc(name, args));
+  const ledger = createWebsiteCreditLedger(async (name, args) => { const { data, error } = await auth.db.rpc(name, args); return { data, error }; });
   const loadReserved = async (id: string, userId: string) => {
     const result = await auth.db.from("production_requests")
       .select("id,user_id,output_json").eq("id", id).eq("user_id", userId)
