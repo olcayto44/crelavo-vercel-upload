@@ -158,6 +158,11 @@ function showView(view){
   if(view==='timeline'){
    const selected=activeVideo;const clips=selected?.scenes||[];
    root.append(make('p',selected?.title||'Saved video'));
+   const notice=make('p','These are saved scene navigation points, not editable source clips. For real trim, split, reorder, sound and export, open the local editor and upload authorized source files.');
+   notice.style.cssText='color:#c9b8dc;font-size:12px;line-height:1.5';
+   const edit=make('button','✂ Open clip editor');edit.type='button';
+   edit.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
+   root.append(notice,edit);
    (clips.length?clips:[{title:'Final video',url:selected?.videoUrl}]).forEach((clip,index)=>{
     const button=make('button',clip.title||'Scene '+(index+1));button.onclick=()=>{showVideoProject(selected);const items=q('.studio-video-strip');items?.querySelectorAll('button')[index]?.click();window.studioWorkspace?.setView('canvas')};root.append(button);
    });return;
