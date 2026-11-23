@@ -187,7 +187,8 @@ export default function LocalVideoEditor() {
       const url = URL.createObjectURL(blob); output.current = url; setDownloadUrl(url);
       setProgress(100); setState("Merged video ready (" + (blob.size / 1048576).toFixed(1) + " MB). Download the WebM file.");
     } catch (error) {
-      if (recorder?.state === "recording") recorder.stop();
+      const activeRecorder = recorder as MediaRecorder | null;
+      if (activeRecorder && activeRecorder.state === "recording") activeRecorder.stop();
       setState(error instanceof Error ? error.message : "Could not export the video.");
     } finally {
       cancelAnimationFrame(raf);
