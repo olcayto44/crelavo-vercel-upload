@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node scripts/website-minimal-release-smoke.cjs
+      - run: node scripts/website-paid-production-gate-smoke.cjs
+      - run: node scripts/website-atomic-flow-smoke.cjs
       - run: npx tsc --noEmit
       - run: npm run build
         env:
