@@ -32,6 +32,42 @@ async function openProjectLocally(id: string) {
   result.onerror=()=>reject(result.error);
  });db.close();return item;
 }
+/** Actual video-frame thumbnails; no fake placeholder imagery. */
+function ClipThumbnail({url,start,name}:{url:string;start:number;name:string}) {
+  const [frame,setFrame]=useState<string|null>(null);
+  useEffect(()=>{
+    let live=true;
+    const video=document.createElement("video");
+    video.preload="auto";video.muted=true;video.playsInline=true;
+    const draw=()=>{
+      if(!live||!video.videoWidth||!video.videoHeight)return;
+      try{
+        const canvas=document.createElement("canvas");
+        canvas.width=176;canvas.height=100;
+        const ctx=canvas.getContext("2d");
+        if(!ctx)return;
+        ctx.fillStyle="#0c0913";ctx.fillRect(0,0,canvas.width,canvas.height);
+        const scale=Math.min(canvas.width/video.videoWidth,canvas.height/video.videoHeight);
+        const w=video.videoWidth*scale,h=video.videoHeight*scale;
+        ctx.drawImage(video,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+        setFrame(canvas.toDataURL("image/jpeg",.72));
+      }catch{/* Browser codec or canvas may be unsupported; keep fallback. */}
+    };
+    video.onloadedmetadata=()=>{
+      const at=Math.min(Math.max(0,start+.15),Math.max(0,(video.duration||1)-.05));
+      if(Math.abs(video.currentTime-at)<.03)draw();
+      else try{video.currentTime=at;}catch{draw();}
+    };
+    video.onseeked=draw;
+    video.onloadeddata=draw;
+    video.src=url;
+    video.load();
+    return()=>{live=false;video.pause();video.removeAttribute("src");video.load();};
+  },[url,start]);
+  return <div className="studio-timeline-thumb" aria-label={"Thumbnail for "+name}>
+    {frame?<img src={frame} alt={"Frame from "+name} draggable={false}/>:<span aria-hidden="true">▶</span>}
+  </div>;
+}
 function parseSrt(source: string): CaptionCue[] {
   // Strict bounded parsing: do not interpret markup or run HTML from subtitles.
   const cues: CaptionCue[] = [];
@@ -145,6 +181,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const output = useRef<string | null>(null);
   const cancel = useRef(false);
   const preview = useRef<HTMLVideoElement>(null);
+  const draggingClipId=useRef<string|null>(null);
+  const [dragTargetId,setDragTargetId]=useState<string|null>(null);
   useEffect(()=>{
     let live=true;
     void supabaseBrowser().auth.getUser().then(({data,error})=>{
@@ -252,6 +290,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   function move(id: string, delta: number) {
     if (busy) return; cleanupOutput();
     setClips(existing => { const next = [...existing]; const i = next.findIndex(c => c.id === id); const j = i + delta; if (i < 0 || j < 0 || j >= next.length) return existing; [next[i], next[j]] = [next[j], next[i]]; return next; });
+  }
+  function reorderByDrop(targetId:string){
+    const sourceId=draggingClipId.current;draggingClipId.current=null;setDragTargetId(null);
+    if(busy||!sourceId||sourceId===targetId)return;
+    const sourceIndex=clips.findIndex(c=>c.id===sourceId),targetIndex=clips.findIndex(c=>c.id===targetId);
+    if(sourceIndex<0||targetIndex<0)return;
+    cleanupOutput();
+    setClips(existing=>{
+      const from=existing.findIndex(c=>c.id===sourceId),to=existing.findIndex(c=>c.id===targetId);
+      if(from<0||to<0||from===to)return existing;
+      const next=[...existing];const [item]=next.splice(from,1);next.splice(to,0,item);
+      return next;
+    });
+    setState("Timeline reordered. Export uses the new clip order.");
   }
   function remove(id: string) {
     if (busy) return; cleanupOutput();
@@ -435,6 +487,18 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
        <button type="button" disabled={!signedIn||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
        <button type="button" disabled={!signedIn||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
        </div></details>
+      <div className="studio-format-preset" role="group" aria-label="Choose video orientation before uploading">
+        <span className="studio-format-label">{t("Video format", "Video biçimi")}</span>
+        {([
+          ["9:16",t("↕ Vertical · Shorts","↕ Dikey · Shorts")],
+          ["16:9",t("↔ Horizontal","↔ Yatay")],
+          ["1:1",t("□ Square","□ Kare")]
+        ] as const).map(([value,label])=>
+          <button type="button" key={value} aria-pressed={ratio===value} disabled={busy}
+            className={"studio-format-button"+(ratio===value?" is-active":"")}
+            onClick={()=>{setRatio(value);cleanupOutput();}}>{label}</button>
+        )}
+      </div>
       <label style={{ background: "#7036b5", padding: "7px 12px", borderRadius: 8, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
       </div>
     </header>
@@ -453,9 +517,19 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </div>
         <p className="studio-video-framing-note">{ratio==="9:16"?"Shorts / Reels · 9:16 portrait":ratio==="1:1"?"Square · 1:1":"Landscape · 16:9"} preview · {framing==="cover"?"Fill frame (center crop)":"Fit whole video (may show black bars)"}</p>
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
-        <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 8 }}>Clip timeline · {sec(duration)} total</h2>
+        <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
+        <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
-          {clips.map((clip, index) => <div key={clip.id} className={"studio-timeline-clip"+(active===clip.id?" is-active":"")} style={{ flex: "0 0 145px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
+          {clips.map((clip, index) => <div key={clip.id}
+            draggable={!busy}
+            onDragStart={e=>{if(busy){e.preventDefault();return;} draggingClipId.current=clip.id;e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",clip.id);}}
+            onDragOver={e=>{if(busy)return;e.preventDefault();e.dataTransfer.dropEffect="move";setDragTargetId(clip.id);}}
+            onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node))setDragTargetId(null);}}
+            onDrop={e=>{e.preventDefault();reorderByDrop(clip.id);}}
+            onDragEnd={()=>{draggingClipId.current=null;setDragTargetId(null);}}
+            className={"studio-timeline-clip"+(active===clip.id?" is-active":"")+(dragTargetId===clip.id?" is-drop-target":"")}
+            style={{ flex: "0 0 155px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
+            <ClipThumbnail url={clip.url} start={clip.start} name={clip.name}/>
             <button type="button" disabled={busy} onClick={() => setActive(clip.id)} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, overflowWrap: "anywhere", color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
             <small style={{ color: "#c2b4d5" }}>{sec(clip.end - clip.start)}</small>
             <div className="studio-timeline-actions" style={{ display: "flex", gap: 5, marginTop: 10 }}>
