@@ -56,5 +56,10 @@ function load(path){
  assert.ok(contentApi.includes('websiteCreditDeliveryProof(record, data)'), 'content API must verify independently settled credits');
  assert.equal(contentApi.split('const billingBlock = await atomicWebsiteContentAccess(data)').length-1,2,'GET and edit paths must both be guarded');
  assert.ok(contentApi.includes('website_atomic_delivery_not_settled'));
+ // Guard the gap between reservation creation and the atomic_v1 output marker.
+ assert.ok(delivery.includes('const hasAtomicClaim = Boolean(proof.data)'), 'delivery must inspect pre-marker reservations');
+ assert.ok(delivery.includes('website_credit_proof_unavailable'), 'delivery must fail closed on ledger outage');
+ assert.ok(contentApi.includes('const hasAtomicClaim = Boolean(data)'), 'content/revision must inspect pre-marker reservations');
+ assert.ok(contentApi.includes('website_credit_proof_unavailable'), 'content/revision must fail closed on ledger outage');
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
