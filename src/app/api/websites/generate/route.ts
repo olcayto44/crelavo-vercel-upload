@@ -19,6 +19,15 @@ function cleanList(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  // A paid Website launch must never leave the historical zero-credit generator
+  // as an alternate public path. The route remains unchanged until that launch.
+  if (process.env.VERCEL_ENV === "production" &&
+      process.env.CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED === "true") {
+    return Response.json({
+      error: "website_paid_studio_required",
+      message: "Use the Website Builder assistant to review and approve a credit-backed website plan.",
+    }, { status: 409, headers: { "Cache-Control": "no-store" } });
+  }
   const limit = rateLimit({ key: `website-generate:${clientIpFromRequest(request)}`, limit: 5, windowMs: 15 * 60 * 1000 });
   if (!limit.allowed) return rateLimitResponse(limit.resetAt);
   try {
