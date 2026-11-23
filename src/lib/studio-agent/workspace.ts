@@ -72,6 +72,9 @@ function showVideoProject(item){
  }
  lower.append(heading,track);
  const actions=make('div',undefined,'studio-video-clip-actions');
+ const edit=make('button','✂ Edit & merge clips');edit.type='button';edit.dataset.studioClipEditor='true';
+ edit.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
+ actions.append(edit);
  const info=make('span','Saved video output · playback only. Editing or new renders require a separate confirmed production.','studio-video-meta');
  actions.append(info);lower.append(actions);
  video.addEventListener('error',()=>{
@@ -89,7 +92,10 @@ function showVideoLibrary(items){
   q('#playback').hidden=true;
   q('#canvas-caption').textContent='16:9 preview · No completed video yet';
   q('#view-status').textContent='No ready video';
-  const lower=q('#workspace-lower');lower.replaceChildren(make('h3','Scenes / Timeline'),make('div','No completed video was found in your account. Nothing has been generated or charged by this view.','media-empty'));
+  const lower=q('#workspace-lower');
+  const editor=make('button','✂ Edit & merge clips');editor.type='button';
+  editor.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
+  lower.replaceChildren(make('h3','Scenes / Timeline'),make('div','No completed video was found in your account. You can still upload local clips to the editor.','media-empty'),editor);
   return;
  }
  showVideoProject(readyVideos[0]);
