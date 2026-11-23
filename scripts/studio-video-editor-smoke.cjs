@@ -57,4 +57,13 @@ assert.match(source,/studio-timeline-clip/,'clip selection must be visually dist
 assert.match(source,/studio-timeline-actions/,'reorder/remove controls must use consistent buttons');
 assert.ok(css.includes('color:#faf4ff!important'),'file choose buttons must have readable light text');
 assert.match(css,/studio-timeline-actions button/,'timeline actions must meet consistent minimum height');
+assert.match(source,/useState<"16:9" \| "9:16" \| "1:1">\("9:16"\)/,'new clip editor defaults to vertical Shorts output');
+assert.match(source,/studio-video-preview-frame/,'preview must use an aspect-aware centered frame');
+assert.match(source,/objectFit:framing/,'preview must display selected crop or fit mode');
+assert.match(source,/framing === "cover" \? Math.max/,'export must actually center-crop wide video for vertical frame');
+assert.match(source,/setFraming\(project.framing/,'saved local projects must restore framing');
+assert.match(source,/setFraming\(saved.framing\)/,'saved cloud projects must restore framing');
+assert.match(source,/aria-label="Video framing mode"/,'user must be able to switch crop or letterbox');
+assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must be narrow, not full-width');
+assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
