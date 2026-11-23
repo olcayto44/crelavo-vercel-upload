@@ -40,6 +40,8 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal((await call('website_credit_reserve',[owner,first,hash,60])).fresh,true);
   assert.equal((await call('website_credit_reserve',[owner,first,hash,60])).fresh,false);
   assert.equal((await wallet()).reserved,60);
+  assert.equal((await db.query('select output_json->\'websiteAssistant\'->>\'phase\' as phase from production_requests where id=$1',[first])).rows[0].phase,'reserved');
+
   await assert.rejects(call('website_credit_reserve',[owner,first,hash,61]),/website_reservation_conflict/);
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'ready']),/website_delivery_and_approval_required/);
   await generated(first,false);
