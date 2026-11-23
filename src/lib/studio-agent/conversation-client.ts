@@ -590,8 +590,7 @@ addEventListener('message',event=>{
  showAux('canvas');
 });
 function openStudioImageEditor(){
- if(!session||!['image','character','brand'].includes(window.studioWorkspace?.getKind?.()||(
- current.kind==='image'?'image':current.kind==='character'?'character':current.kind==='brand'?'brand':'')))return;
+ if(!session||!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
  activeView='image-editor';
  const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
  root.style.padding='0';root.style.overflow='hidden';
