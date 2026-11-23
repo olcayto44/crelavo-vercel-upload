@@ -235,7 +235,11 @@ async function showStudioElements(){
  if(!session?.userId){
   root.append(node('p','You are viewing Studio without an account session. Your cloud library is private; local editor tools can still be inspected.'));
   if(window.__studioB2?.previewOnly){
-   root.append(node('p','To test local file uploads and cloud sync, use the standalone Elements route while signed in. This preview contains no private assets.'));
+   root.append(node('p','Try the local Elements library without signing in. Cloud sync requires an account.'));
+   const open=node('button','Open local Elements library');
+   open.type='button';
+   open.onclick=()=>openStudioTool('elements');
+   root.append(open);
   }
   return;
  }
