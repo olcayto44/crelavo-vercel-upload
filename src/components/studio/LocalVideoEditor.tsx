@@ -7,7 +7,7 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string };
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -121,6 +121,8 @@ export default function LocalVideoEditor() {
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
+  const [backgroundMusic,setBackgroundMusic] = useState<File|null>(null);
+  const [musicVolume,setMusicVolume] = useState(0.3);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [editorLanguage, setEditorLanguage] = useState<"en" | "tr">("en");
   useEffect(() => {
@@ -142,14 +144,14 @@ export default function LocalVideoEditor() {
   useEffect(() => () => { files.current.forEach(c => URL.revokeObjectURL(c.url)); if (output.current) URL.revokeObjectURL(output.current); }, []);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
-    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0);
+    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0);
     if(size>150_000_000){setState("Local project save supports up to 150 MB of source clips. Export or reduce source size.");return;}
     setProjectSaving(true);
     try{
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120)
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -168,6 +170,8 @@ export default function LocalVideoEditor() {
       setClips(restored);setActive(restored[0]?.id||null);
       setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
+      setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
+      setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -237,13 +241,14 @@ export default function LocalVideoEditor() {
     const stream = canvas.captureStream(30);
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
+    let musicSource: AudioBufferSourceNode | null = null;
     let recorder: MediaRecorder | null = null;
     let currentVideo: HTMLVideoElement | null = null;
     let raf = 0;
     const chunks: BlobPart[] = [];
     let recordDone: Promise<void> | undefined;
     try {
-      if (includeAudio) {
+      if (includeAudio || backgroundMusic) {
         audio = new AudioContextConstructor();
         await audio.resume();
         const destination = audio.createMediaStreamDestination();
@@ -251,6 +256,25 @@ export default function LocalVideoEditor() {
         // The same destination is used for every clip. Its gain is connected
         // to the captured stream only, avoiding unexpected speaker playback.
         (canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination = destination;
+        if(backgroundMusic){
+          if(backgroundMusic.size>25_000_000 || !backgroundMusic.type.startsWith('audio/'))
+            throw new Error('Background music must be an audio file smaller than 25 MB.');
+          const musicBuffer=await audio.decodeAudioData(await backgroundMusic.arrayBuffer());
+          if(musicBuffer.duration<0.1 || musicBuffer.duration>7200)throw new Error('Background track duration is invalid.');
+          const source=audio.createBufferSource();source.buffer=musicBuffer;source.loop=true;
+          const volume=audio.createGain();
+          const gain=Math.max(0,Math.min(1,musicVolume));
+          const now=audio.currentTime;
+          volume.gain.setValueAtTime(0,now);
+          volume.gain.linearRampToValueAtTime(gain,now+Math.min(.6,duration/4));
+          if(duration>1.5){
+            const fadeStart=Math.max(now+.6,now+duration-.7);
+            volume.gain.setValueAtTime(gain,fadeStart);
+            volume.gain.linearRampToValueAtTime(0,now+duration);
+          }
+          source.connect(volume);volume.connect(destination);
+          musicSource=source;
+        }
       }
       // Register all intended tracks before constructing MediaRecorder:
       // a recorder created with a video-only stream may omit later audio.
@@ -262,6 +286,7 @@ export default function LocalVideoEditor() {
         configuredRecorder.onstop = () => resolve();
       });
       recorder.start(750);
+      musicSource?.start();
       let elapsed = 0;
       for (const clip of clips) {
         if (cancel.current) throw new Error("Export cancelled.");
@@ -322,6 +347,7 @@ export default function LocalVideoEditor() {
       cancelAnimationFrame(raf);
       currentVideo?.pause();
       stream.getTracks().forEach(track => track.stop());
+      if(musicSource){try{musicSource.stop()}catch{}}
       if (audio) await audio.close().catch(() => {});
       setBusy(false);
     }
@@ -368,6 +394,18 @@ export default function LocalVideoEditor() {
       <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
       <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
+      <label style={{fontSize:12}}>Background music (licensed audio)
+        <input aria-label="Background music file" type="file" accept="audio/*" disabled={busy}
+          onChange={e=>{const next=e.target.files?.[0]||null;e.target.value="";
+            if(next&&next.size>25_000_000){setState("Background music exceeds 25 MB.");return;}
+            setBackgroundMusic(next);cleanupOutput();
+          }} style={{display:"block",maxWidth:200}} />
+      </label>
+      {backgroundMusic&&<label style={{fontSize:12}}>Music level {Math.round(musicVolume*100)}%
+        <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
+          value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
+        <button type="button" disabled={busy} onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>
+      </label>}
       <label style={{fontSize:12}}>Video title <input aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120} onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" style={{display:"block",maxWidth:220}} /></label>
       <label style={{fontSize:12,cursor:"pointer"}}>Subtitles (.srt)
         <input type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
@@ -387,6 +425,6 @@ export default function LocalVideoEditor() {
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in and a title overlay are available. No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  No cloud storage, cross-device project sync, transitions or MP4 export in this editor yet. Browser-local timeline Save/Reopen is available when signed in.</p>
   </section>;
 }
