@@ -45,4 +45,10 @@ assert(client.includes("packId:chosen.id"),'website handoff must pass an explici
 assert(client.includes("if(!chosen)throw Error("),'website handoff must reject missing package');
 assert(client.includes("option.setAttribute('aria-pressed'"),'website package selection must be visible');
 assert(client.includes("if(/admin|commerce|checkout/i.test(chosen.label))"),'static website handoff must reject unsupported packages');
+const approval=client.slice(client.indexOf('async function approveWebsitePlan()'),client.indexOf("let websiteSelectedPackId=''"));
+assert(approval.includes("window.confirm("),'website approval requires explicit confirmation');
+assert(approval.includes("action:'website_approve'"),'website approval must use existing server approval action');
+assert(approval.includes("planHash"),'website approval must bind the reviewed plan hash');
+assert(!approval.includes("render:true")&&!approval.includes("action:'render'")&&!approval.includes("spend("),'website approval must not trigger generation or spend');
+assert(client.includes("w.approvedHash===w.planHash"),'approved website plan must be shown as approved');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
