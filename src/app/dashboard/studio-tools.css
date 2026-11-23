@@ -286,3 +286,58 @@
 .studio-tool-page .studio-compact-video-editor .studio-timeline-actions button:disabled {
  color:#a99ab7!important;opacity:.48;
 }
+
+/* Compact video preview: exact export aspect ratio, no giant dark letterbox.
+   Shorts uses a centered portrait phone-sized stage, landscape stays bounded. */
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage {
+ display:flex;align-items:center;justify-content:center;
+ min-height:0;max-width:100%;padding:12px;
+ border:1px solid #422b54;border-radius:12px;background:#090711;
+ overflow:hidden;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame {
+ position:relative;display:grid;place-items:center;overflow:hidden;
+ width:min(100%,650px);max-height:390px;
+ border-radius:8px;background:#000;border:1px solid #30223d;
+ box-shadow:0 8px 24px #0006;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait {
+ width:min(100%,215px);max-height:390px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square {
+ width:min(100%,360px);max-height:360px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape {
+ width:min(100%,590px);max-height:333px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame video {
+ width:100%!important;height:100%!important;min-height:0;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-no-clips {
+ text-align:center;font-size:12px;color:#baa8cf;padding:18px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-video-framing-note {
+ text-align:center;font-size:11px;line-height:1.45;
+ color:#c8b7dc;margin:7px 0 0;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-basics {
+ grid-template-columns:repeat(3,minmax(130px,1fr)) repeat(2,minmax(155px,1fr));
+}
+@media(max-width:1080px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+ }
+}
+@media(max-width:650px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ .studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait {
+  width:min(100%,190px);
+ }
+}
+@media(max-width:420px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics {
+  grid-template-columns:minmax(0,1fr);
+ }
+}
