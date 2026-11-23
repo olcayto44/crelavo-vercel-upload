@@ -19,4 +19,14 @@ assert(frame.includes('authEventReceived=true'), 'auth state events must take pr
 assert(frame.includes('if(!authEventReceived)assign(data.session)'), 'stale initial session must not overwrite auth event');
 assert(client.includes('A restricted embed may deny parent navigation'), 'parent history must be optional in restricted embeds');
 assert(page.includes('configuration.categories.map'), 'category contracts must come from configuration');
+// The real Website Builder handoff must be an explicit, non-rendering draft action.
+for (const token of ['async function handoffWebsiteDraft()', "mode!=='real'", "current.id!=='website'", "status?.isolatedPreview", "fields.business_name", "fields.brief", "request('/api/websites/generate',{action:'revise'", "handoff.onclick=()=>handoffWebsiteDraft()"]) {
+  assert(client.includes(token), 'website handoff missing safety contract: '+token);
+}
+const handoff=client.slice(client.indexOf('async function handoffWebsiteDraft()'),client.indexOf('async function createProject(productionId)'));
+assert(!/action:\\s*['\"](?:render|website_approve)['\"]/.test(handoff),'website handoff must not render or approve');
+assert(!handoff.includes('/api/credits/spend'),'website handoff must not directly spend credits');
+const websiteRoute=read('src/app/api/websites/generate/route.ts');
+assert(websiteRoute.includes('executeWebsiteRequest('),'website draft must use the existing authenticated production API');
+assert(websiteRoute.includes('if (!token)'),'website production API must reject unauthenticated calls');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
