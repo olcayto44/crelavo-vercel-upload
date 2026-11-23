@@ -68,4 +68,10 @@ assert(!atomicAdapter.includes('creditsSpend')&&!atomicAdapter.includes('fetch('
 assert(atomicAdapter.includes('z.enum(["ready", "failed"])'), 'Website finalization must accept explicit terminal outcomes only');
 const websiteFlow=read('src/lib/assistant-work/website.ts');
 assert(websiteFlow.includes("state.phase === 'reserved' && body.action !== 'website_open'"), 'reserved plan must remain immutable through Website API');
+const atomicRunner=read('src/lib/assistant-work/website-atomic-runner.ts');
+for(const action of ['deps.ledger.reserve(', 'deps.ledger.claim(', 'deps.ledger.record(', 'deps.ledger.finalize(']) assert(atomicRunner.includes(action), 'atomic Website runner missing '+action);
+assert(atomicRunner.indexOf('deps.ledger.reserve(')<atomicRunner.indexOf('deps.ledger.claim('), 'Website reserve must precede claim');
+assert(atomicRunner.indexOf('deps.ledger.claim(')<atomicRunner.indexOf('generateWebsiteArtifact'), 'Website claim must precede generation');
+assert(atomicRunner.includes('state: "already_reserved_or_finished"'), 'repeat requests must not generate twice');
+assert(!atomicRunner.includes('creditsSpend')&&!atomicRunner.includes('/api/credits/spend'), 'atomic runner must never call legacy spending');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
