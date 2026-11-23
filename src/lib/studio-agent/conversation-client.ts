@@ -241,7 +241,12 @@ function applyWebsiteChat(result){
  }else{
   // A revised brief is not a published website. Never leave a previous
   // production's preview visible against a new draft.
-  if(canvasState==='ready')clearCanvas();
+  if(canvasState==='ready'){
+   $('#site-wrapper').replaceChildren();
+   $('#website-pages').replaceChildren(node('option','Sayfa yok'));
+   $('#website-pages').disabled=true;
+   showCanvas('unavailable','output_not_ready');
+  }
  }
  draw();
 }
