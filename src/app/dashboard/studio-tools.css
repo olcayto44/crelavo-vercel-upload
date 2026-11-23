@@ -153,3 +153,98 @@
 }
 .studio-tool-page .studio-compact-image-editor .image-editor-empty p {margin:0;color:#c9b6df}
 .studio-tool-page .studio-compact-image-editor .image-editor-empty small {font-size:11px;color:#a995bc}
+
+/* Video Editor: distinct, balanced export groups instead of nine controls
+   squeezed into a single grid row. All controls remain inside their cards. */
+.studio-tool-page .studio-compact-video-editor .studio-export-settings {
+ margin-top:14px;border-top:1px solid #352841;padding-top:14px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-settings h2 {
+ margin:0 0 12px;font-size:14px;font-weight:700;letter-spacing:-.01em;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-basics {
+ display:grid;grid-template-columns:repeat(2,minmax(145px,1fr)) repeat(2,minmax(175px,1fr));
+ gap:10px;align-items:end;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-field {
+ display:flex;flex-direction:column;min-width:0;gap:7px;font-size:12px;
+ font-weight:650;line-height:1.35;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-field :is(input,select) {
+ display:block;width:100%;min-width:0;height:36px;min-height:36px;
+ margin:0;font-size:12px;padding:7px 9px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-toggle {
+ display:flex!important;flex-direction:row!important;align-items:center!important;
+ gap:8px;min-height:36px;min-width:0;font-size:12px;line-height:1.3;
+ padding:7px 10px;border:1px solid #443352;border-radius:8px;background:#1e1729;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-toggle input[type=checkbox]{
+ appearance:auto!important;width:15px!important;height:15px!important;
+ min-width:15px!important;flex:0 0 15px!important;margin:0!important;padding:0!important;
+ accent-color:#a35ce7;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-toggle span{
+ min-width:0;white-space:normal;overflow-wrap:break-word;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-extras {
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
+ align-items:stretch;margin-top:14px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-card{
+ min-width:0;padding:14px;border:1px solid #443253;border-radius:10px;
+ background:#1a1324;display:flex;flex-direction:column;align-items:stretch;gap:9px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-card strong {
+ display:block;min-width:0;font-size:12px;line-height:1.4;overflow-wrap:break-word;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-card small{
+ display:block;font-size:11px;color:#b8a6c8;line-height:1.45;overflow-wrap:anywhere;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-file-button {
+ display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:36px;
+ padding:8px 10px;border:1px solid #74558f;border-radius:8px;background:#342348;
+ font-size:12px;font-weight:600;white-space:normal;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-file-name {
+ min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;
+ white-space:nowrap;display:block!important;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-volume {
+ display:flex;flex-direction:column;gap:7px;font-size:12px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-volume input[type=range]{
+ display:block;width:100%;min-width:0;accent-color:#ba73fc;cursor:ew-resize;
+}
+.studio-tool-page .studio-compact-video-editor .studio-setting-secondary {
+ background:#271c34;border:1px solid #533e66;padding:7px 10px;align-self:flex-start;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-actions{
+ display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;
+ padding-top:13px;border-top:1px solid #3b2b49;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-primary {
+ min-height:39px;padding:9px 16px;border-radius:8px;
+ background:#7835c0;color:#fff;border:1px solid #9754db;font-weight:650;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-actions small {
+ color:#b9a5cd;font-size:11px;
+}
+.studio-tool-page .studio-compact-video-editor .studio-export-actions a {
+ color:#e1a8ff;font-weight:700;
+}
+@media(max-width:1050px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ .studio-tool-page .studio-compact-video-editor .studio-export-extras{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+}
+@media(max-width:650px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-extras{grid-template-columns:minmax(0,1fr)}
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:400px){
+ .studio-tool-page .studio-compact-video-editor .studio-export-basics{grid-template-columns:minmax(0,1fr)}
+}
