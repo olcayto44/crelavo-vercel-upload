@@ -430,7 +430,7 @@ function studioWebsiteBrief(){
   features:entries(stored.features||fields.features_and_integrations)
  };
 }
-function openFunctionalWebsiteBuilder(){
+function openFunctionalWebsiteBuilder(panel='builder'){
  if(current.id!=='website')return;
  activeView='builder';
  document.querySelectorAll('[data-view]').forEach(button=>button.classList.remove('active'));
@@ -449,13 +449,13 @@ function openFunctionalWebsiteBuilder(){
   if(!frame.isConnected||!frame.contentWindow)return;
   frame.contentWindow.postMessage({type:'crelavo-studio-website-brief',brief:studioWebsiteBrief()},parent.location.origin);
   if(selectedProduction&&canvasState==='ready')
-   frame.contentWindow.postMessage({type:'crelavo-studio-website-open',productionId:selectedProduction},parent.location.origin);
+   frame.contentWindow.postMessage({type:'crelavo-studio-website-open',productionId:selectedProduction,panel:typeof panel==='string'?panel:'builder'},parent.location.origin);
  });
  root.appendChild(frame);
 }
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
- if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder();return;}
+ if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
  if(action==='zip'&&selectedProduction&&canvasState==='ready'){
   void downloadWebsiteZip(selectedProduction);return;
  }
