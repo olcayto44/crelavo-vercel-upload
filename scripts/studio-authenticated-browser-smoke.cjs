@@ -21,7 +21,7 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
  let apiCalls=0,dbCalls=0,providerCalls=0;
  const db=new Proxy({},{get(){dbCalls++;throw Error('database forbidden in isolated browser smoke')}});
  const server=http.createServer(async(req,res)=>{
-  if(req.url==='/'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body style="margin:0"><iframe id="studio" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style="width:100%;height:900px;border:0"></iframe></body></html>');return;}
+  if(req.url?.split('?')[0]==='/'){res.writeHead(200,{'content-type':'text/html; charset=utf-8'});res.end('<!doctype html><html><body style="margin:0"><iframe id="studio" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style="width:100%;height:900px;border:0"></iframe></body></html>');return;}
   if(req.url?.startsWith('/api/studio/conversation')){
    apiCalls++;
    const parts=[];for await(const part of req)parts.push(part);
