@@ -46,6 +46,8 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal(await call('website_credit_claim',[owner,first,hash]),false,'generation claim is single-use');
   await assert.rejects(call('website_credit_claim',[stranger,first,hash]),/website_project_not_found/);
   await assert.rejects(generated(first,false),/website_artifact_invalid/);
+  await assert.rejects(call('website_credit_record',[owner,first,hash,'ready',JSON.stringify({files:[{path:'index.html',content:'<html>ok</html>'},{path:'index.html',content:'duplicate'}]})]),/website_artifact_invalid/);
+  await assert.rejects(call('website_credit_record',[owner,first,hash,'ready',JSON.stringify({files:[{path:'index.html',content:'<html>ok</html>'},{path:'/private.txt',content:'bad'}]})]),/website_artifact_invalid/);
   await assert.rejects(call('website_credit_finalize',[owner,first,hash,'ready']),/website_delivery_and_approval_required/);
   await generated(first,true);
   const before=await wallet();
