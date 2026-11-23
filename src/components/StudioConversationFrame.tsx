@@ -36,7 +36,9 @@ export function StudioConversationFrame({document}:{document:string}) {
         elements:"/dashboard/studio-elements"
       };
       if(typeof tool!=="string"||!Object.prototype.hasOwnProperty.call(paths,tool))return;
-      window.location.assign(paths[tool]);
+      const incomingCategory=new URLSearchParams(window.location.search).get("category")||"video";
+      const category=/^[a-z0-9_]{1,40}$/.test(incomingCategory)?incomingCategory:"video";
+      window.location.assign(paths[tool]+"?studioCategory="+encodeURIComponent(category));
     };
     window.addEventListener("message",onMessage);
     return()=>window.removeEventListener("message",onMessage);
