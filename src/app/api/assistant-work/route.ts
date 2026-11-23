@@ -3,6 +3,7 @@ import { translateWorkspaceText } from "@/lib/assistant-work/workspace-i18n";
 import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
 import { converseWorkspacePlan } from "@/lib/assistant-work/conversation";
 import { handleWebsiteAssistant } from "@/lib/assistant-work/website";
+import { executePaidWebsiteProduction } from "@/lib/assistant-work/website-paid-production";
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { handleAssistantWork, quote } from "@/lib/assistant-work/core";
@@ -64,6 +65,34 @@ export async function POST(req: NextRequest) {
     const action = String(body.action || "revise");
     const extras = body.extras && typeof body.extras === "object" ? body.extras as Record<string,string> : {};
     if (category === "website") {
+      // Studio's existing plan approval stays intact; paid rendering goes ONLY
+      // through the independent, fail-closed atomic credit coordinator.
+      if (action === "render" || body.render === true) {
+        const outcome = await executePaidWebsiteProduction({
+          productionId: body.productionId, planHash: body.planHash,
+        }, { id: user.id });
+        if (outcome.status !== 200 || outcome.payload.ok !== true)
+          return NextResponse.json(outcome.payload, {
+            status: outcome.status, headers: { "Cache-Control": "no-store" },
+          });
+        // Keep the existing Studio controller contract by re-opening the same
+        // owner-scoped saved Website project; no second render and no legacy debit.
+        const pack = (id: string) => {
+          const entry = getCatalogCategory("website")?.packs.find(item => item.id === id);
+          return entry && typeof entry.credits === "number" ? { credits: entry.credits, label: entry.label } : undefined;
+        };
+        const reopened = await handleWebsiteAssistant({
+          action: "website_open", productionId: body.productionId,
+        }, { id: user.id, email: user.email }, {
+          db: supabase, pack,
+          balance: async () => 0,
+          spend: async () => ({ ok: false, error: "website_legacy_debit_blocked" }),
+        });
+        return NextResponse.json({
+          ...reopened.payload, charged: outcome.payload.charged,
+        }, { status: reopened.status, headers: { "Cache-Control": "no-store" } });
+      }
+
       const limit = rateLimit({ key: `website-assistant:${user.id}:${clientIpFromRequest(req)}`, limit: 30, windowMs: 15 * 60 * 1000 }); if (!limit.allowed) return rateLimitResponse(limit.resetAt);
       if (JSON.stringify(body).length > 50000) return NextResponse.json({ ok: false, error: "website_request_too_large" }, { status: 413 });
       const safe = rejectSuspiciousText([String(body.prompt ?? ""), JSON.stringify(body.websiteBrief ?? {})]); if (!safe.ok) return NextResponse.json({ ok: false, error: safe.message }, { status: 400 });
