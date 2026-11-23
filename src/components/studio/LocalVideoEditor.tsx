@@ -301,7 +301,7 @@ export default function LocalVideoEditor() {
         });
         await seek(video, clip.start);
         let source: MediaElementAudioSourceNode | null = null;
-        if (audio) {
+        if (audio && includeAudio) {
           source = audio.createMediaElementSource(video);
           source.connect((canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination!);
         } else video.muted = true;
