@@ -176,7 +176,14 @@ function showCanvas(state,reason){
  $('#start-conversation').hidden=state==='loading';
  $('#open-projects').hidden=state==='loading'||current.id!=='website';
 }
-function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
+function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;
+ if(view==='assets'){
+  const root=$('#aux-panel');root.replaceChildren();root.style.padding='0';root.style.overflow='hidden';
+  const frame=node('iframe');frame.title='Crelavo Elements and reference library';
+  frame.src='/dashboard/studio-elements';frame.setAttribute('loading','eager');
+  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1d';
+  root.append(frame);return;
+ }if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
  if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));
   if(current.id!=='website'&&!status?.realEnabled&&mode==='real'&&project?.messages?.length){
