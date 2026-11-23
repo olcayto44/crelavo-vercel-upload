@@ -74,4 +74,7 @@ assert(atomicRunner.indexOf('deps.ledger.reserve(')<atomicRunner.indexOf('deps.l
 assert(atomicRunner.indexOf('deps.ledger.claim(')<atomicRunner.indexOf('await (deps.generate ?? generateWebsiteArtifact)('), 'Website claim must precede generation');
 assert(atomicRunner.includes('state: "already_reserved_or_finished"'), 'repeat requests must not generate twice');
 assert(!atomicRunner.includes('creditsSpend')&&!atomicRunner.includes('/api/credits/spend'), 'atomic runner must never call legacy spending');
+assert(atomicRunner.includes('deps.loadReserved(input.productionId, input.userId)'), 'Website generation must reload the owner scoped reserved production');
+assert(atomicRunner.includes('websitePlanHash(brief, stored.packId)'), 'Website generation must verify exact approved brief hash');
+assert(!atomicRunner.includes('input.brief'), 'Website generation must never trust browser supplied brief');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
