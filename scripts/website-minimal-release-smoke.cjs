@@ -44,5 +44,10 @@ function load(path){
  assert.match(studio,/action:\s*"website_open"/);
  assert.match(studio,/website_legacy_debit_blocked/);
  assert.ok(studio.indexOf('if (action === "render" || body.render === true)') < studio.indexOf('spend: async (amount, session)'), 'new render path must bypass legacy credit spending');
+ // Idempotent success must depend on the settled reservation, not just a ready flag.
+ assert.match(paid,/websiteCreditDeliveryProof\(row,\s*settlement\)/);
+ assert.match(paid,/website_generation_reconciliation_required/);
+ assert.match(studio,/website_render_request_too_large/);
+ assert.match(studio,/website-paid-render:/);
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
