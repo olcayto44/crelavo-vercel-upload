@@ -181,7 +181,20 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  :mode==='mock'?(project?.advanced?.memory==='isolated_postgres'?(language==='tr'?'Yerel PostgreSQL hafızası · Yanıtlar ve bakiyeler Mock simülasyondur. Gerçek AI kapalı.':'Isolated local PostgreSQL memory · Replies and balances are Mock simulations. Real AI disabled.'):t(7)):t(8);
  const choices=$('#b2-choices');choices.replaceChildren();if(project){const missing=(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.required&&!Object.prototype.hasOwnProperty.call(project.snapshot.fields,f.id)&&!f.serverOnly);missing?.options.slice(0,5).forEach(value=>{const b=node('button',valueLabel(missing.id,value));b.disabled=busy;b.onclick=()=>{$('#prompt').value=valueLabel(missing.id,value);sendMessage()};choices.appendChild(b)});}
  $('#send').disabled=busy||(!session&&!previewDraftEnabled())||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||(!session&&!previewDraftEnabled());$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||(!session&&!previewDraftEnabled());$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
- if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);} $('.chat').scrollTop=$('.chat').scrollHeight;
+ if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);}
+ // Keep production/brief cards ABOVE the conversation bubbles, never below
+ // the latest message. Otherwise scrolling to the bottom hides a user's text
+ // behind the fixed header/credit strip and looks as if Send did nothing.
+ const chat=$('.chat');
+ const bubbles=[...messages.querySelectorAll('.message')];
+ for(const bubble of bubbles)messages.appendChild(bubble);
+ if(chat){
+  chat.scrollTop=chat.scrollHeight;
+  requestAnimationFrame(()=>{
+   const last=messages.querySelector('.message:last-child');
+   if(last){const bottom=last.offsetTop+last.offsetHeight;chat.scrollTop=Math.max(0,bottom-chat.clientHeight+16)}
+  });
+ }
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
 function clearCanvas(){previewEpoch++;selectedProduction=null;websiteData=null;canvasState='empty';$('#site-wrapper').replaceChildren();$('#website-pages').replaceChildren(node('option','Sayfa yok'));$('#website-pages').disabled=true;$('#preview-scale').textContent='';showCanvas('empty');}
@@ -696,9 +709,24 @@ function setup(){
  // pasted over the reference Canvas artwork.
  const createControl=$('[data-global="create"]');
  if(createControl){
-  createControl.disabled=current.id!=='website';
-  createControl.title=current.id==='website'?'Open Website Builder':'Production not enabled for this category';
-  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:null;
+  createControl.disabled=false;
+  createControl.title=current.id==='website'?'Open Website Builder':'Write a new production brief (AI rendering not available in preview)';
+  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:()=>{
+    showAux('brief');$('#prompt').focus();
+  };
+ }
+
+ const globalActions={
+  edit:()=>{if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind))openStudioTool('video');
+          else if(['image','character','brand'].includes($('.studio')?.dataset?.kind||''))openStudioTool('image');
+          else showAux('brief');},
+  export:()=>{if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind))openStudioTool('video');
+            else if(['image','character','brand'].includes($('.studio')?.dataset?.kind||''))openStudioTool('image');
+            else showAux('assets');}
+ };
+ for(const name of ['edit','export']){
+  const button=$('[data-global="'+name+'"]');
+  if(button){button.disabled=false;button.title=name==='edit'?'Open the available local editor':'Open the editor or your saved assets for export';button.onclick=globalActions[name]}
  }
  $('#website-builder-open')?.remove();
  if(current.id==='website'){
