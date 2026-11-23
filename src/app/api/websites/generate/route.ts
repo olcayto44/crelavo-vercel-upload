@@ -3,7 +3,7 @@ import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile,
 
 
 import { hasProviderEnv } from "@/lib/providers/env";
-import { uploadProviderAsset } from "@/lib/providers/storage";
+
 import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
 import { validateProductionSafety } from "@/lib/content-safety";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
@@ -74,10 +74,10 @@ export async function POST(request: Request) {
     try {
       const generated = await generateWebsiteArtifact({ brief, siteType, scope, brand, audience, pages, features, style, locale: String(body.locale ?? "en") }, String(production.id));
       const plan = generated.plan;
-      const storedFiles = await Promise.all(generated.files.map(async (file) => ({
-        ...file,
-        url: await uploadProviderAsset(`${production.id}/website/${file.path}`, file.content, file.contentType)
-      })));
+      // Website source files are private production outputs. They are embedded
+      // in the owner-scoped production record and served through authenticated
+      // preview / ZIP routes; never upload them to a public asset bucket.
+      const storedFiles = generated.files;
       const websiteContent = { ...generated.websiteContent, pages };
       const outputJson = { plan, pageManifest: generated.pageManifest, websiteContent, websiteContentUpdatedAt: new Date().toISOString(), provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerModel: hasProviderEnv("openai") ? (process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini") : null, providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
       const { data: completed, error: updateError } = await supabase.from("production_requests").update({ status: "ready", generation_status: "completed", preview_url: `/api/productions/${production.id}/delivery?file=preview`, delivery_link: `/api/productions/${production.id}/delivery?file=zip`, delivery_zip_url: `/api/productions/${production.id}/delivery?file=zip`, source_files_url: `/api/productions/${production.id}/delivery?file=source`, readme_url: `/api/productions/${production.id}/delivery?file=readme`, output_json: outputJson, updated_at: new Date().toISOString() }).eq("id", production.id).select("*").single();
