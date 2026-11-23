@@ -71,7 +71,9 @@ const extractRaw=(source,startMarker)=>{
  return source.slice(codeStart,codeEnd);
 };
 new vm.Script(extractRaw(workspace,'export const studioWorkspaceScript=String.raw`'),{filename:'studio-workspace.js'});
-new vm.Script(extractRaw(view,'export const studioViewController=String.raw`'),{filename:'studio-view-controller.js'});
+const controllerSource=extractRaw(view,'export const studioViewController=String.raw`')
+ .replace('${studioWorkspaceScript}',extractRaw(workspace,'export const studioWorkspaceScript=String.raw`'));
+new vm.Script(controllerSource,{filename:'studio-view-controller.js'});
 assert.match(view,/grid-template-columns:220px minmax\(0,1fr\) 415px/,'reference-sized Studio panels expected');
 assert.match(workspace,/showVideoLibrary/,'Video Canvas must consume saved real videos');
 assert.match(workspace,/\.controls=true/,'native video playback must have working controls');
