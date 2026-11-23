@@ -8,6 +8,9 @@ on:
       - 'src/components/StudioConversationFrame.tsx'
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/studio-advanced-mock-smoke.cjs'
+      - 'scripts/studio-agent-test-loader.cjs'
+      - 'scripts/studio-offline-preload.cjs'
       - 'scripts/e2e-dry-run-smoke.mts'
       - '.github/workflows/studio-v2-handoff-checks.yml'
   pull_request:
@@ -18,6 +21,9 @@ on:
       - 'src/components/StudioConversationFrame.tsx'
       - 'src/app/dashboard/studio-v2/**'
       - 'scripts/studio-handoff-contract-smoke.cjs'
+      - 'scripts/studio-advanced-mock-smoke.cjs'
+      - 'scripts/studio-agent-test-loader.cjs'
+      - 'scripts/studio-offline-preload.cjs'
       - 'scripts/e2e-dry-run-smoke.mts'
       - '.github/workflows/studio-v2-handoff-checks.yml'
   workflow_dispatch:
@@ -52,3 +58,5 @@ jobs:
         run: node scripts/studio-advanced-mock-smoke.cjs
       - name: TypeScript typecheck
         run: npx tsc --noEmit
+      - name: Next.js build with no Production credentials
+        run: npm run build
