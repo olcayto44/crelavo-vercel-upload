@@ -1,3 +1,4 @@
+import { websiteCreditDeliveryProof } from '../src/lib/assistant-work/website-paid-delivery.ts';
 import { stripTypeScriptTypes } from "node:module";
 import { sanitizeWebsiteContent, validateWebsiteSettings, websiteContentFromSource, websiteVersionHistory } from "../src/lib/website-content.ts";
 import { readFileSync } from 'node:fs';
@@ -41,8 +42,8 @@ let row = env.rows.get(id); const paths = row.output_json.websiteFiles.map((f: a
 for (const page of ['index.html', 'about.html', 'services.html', 'contact.html']) assert(paths.includes(page), 'missing real page: ' + page);
 assert(buildPreviewHtml(row, 'contact.html').includes('id="contact"'), 'per-page preview failed');
 const routeSource = readFileSync('src/app/api/website-content/[id]/route.ts', 'utf8').replace(/^import .*;\r?\n/gm, '').replace(/export async function /g, 'async function ');
-const contentFactory = new Function('requireVerifiedRequestUser', 'supabaseAdmin', 'rejectSuspiciousText', 'clientIpFromRequest', 'rateLimit', 'rateLimitResponse', 'sanitizeWebsiteContent', 'validateWebsiteSettings', 'websiteContentFromSource', 'websiteVersionHistory', stripTypeScriptTypes(routeSource) + '; return { GET, PUT, POST };');
-const editor = contentFactory(async () => ({ ok: true }), () => env.db, () => ({ ok: true }), () => 'local', () => ({ allowed: true }), () => Response.json({}, { status: 429 }), sanitizeWebsiteContent, validateWebsiteSettings, websiteContentFromSource, websiteVersionHistory);
+const contentFactory = new Function('requireVerifiedRequestUser', 'supabaseAdmin', 'rejectSuspiciousText', 'clientIpFromRequest', 'rateLimit', 'rateLimitResponse', 'sanitizeWebsiteContent', 'validateWebsiteSettings', 'websiteContentFromSource', 'websiteVersionHistory', 'websiteCreditDeliveryProof', stripTypeScriptTypes(routeSource) + '; return { GET, PUT, POST };');
+const editor = contentFactory(async () => ({ ok: true }), () => env.db, () => ({ ok: true }), () => 'local', () => ({ allowed: true }), () => Response.json({}, { status: 429 }), sanitizeWebsiteContent, validateWebsiteSettings, websiteContentFromSource, websiteVersionHistory, websiteCreditDeliveryProof);
 const params = { params: Promise.resolve({ id }) };
 const contentRequest = (body: unknown) => new Request('https://local.test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 assert((await editor.POST(contentRequest({ user_id: 'owner', action: 'revision', instruction: 'Hakkımızda başlığını Birleşik hakkında olarak değiştir.' }), params)).status === 200, 'assistant project must use the actual revision API');
@@ -88,8 +89,8 @@ assert((await paused.call({ action: 'website_retry', productionId: interrupted.i
 const workRoute = readFileSync('src/app/api/assistant-work/route.ts', 'utf8');
 assert(workRoute.indexOf('handleWebsiteAssistant(body') < workRoute.indexOf('if (body.render !== true)'), 'website must be dispatched before generic plan echo/local engine');
 const deliverySource = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8").replace(/^import .*;\r?\n/gm, "").replace(/export async function /g, "async function ");
-const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", stripTypeScriptTypes(deliverySource) + "; return GET;");
-const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, () => env.db, async () => ({ status: "active" }));
+const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", "websiteCreditDeliveryProof", stripTypeScriptTypes(deliverySource) + "; return GET;");
+const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, ( ) => env.db, async () => ({ status: "active" }), websiteCreditDeliveryProof);
 const deliveryRequest = (query: string, token = "owner") => new Request("https://local.test/api/productions/" + id + "/delivery?" + query, { headers: { Authorization: "Bearer " + token } });
 const contactResponse = await deliveryGet(deliveryRequest("file=preview&page=contact.html"), params);
 assert(contactResponse.status === 200 && (await contactResponse.text()).includes("id=\"contact\""), "actual delivery API must select the requested page");

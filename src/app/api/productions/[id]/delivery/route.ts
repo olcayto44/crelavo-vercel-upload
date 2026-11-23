@@ -1,3 +1,4 @@
+import { websiteCreditDeliveryProof } from "@/lib/assistant-work/website-paid-delivery";
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
 import { isAdminRequest } from "@/lib/admin-guard";
 import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
@@ -128,7 +129,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const previewAccess = previewAccessForDelivery(data);
   const downloadFiles = new Set(["readme", "source", "zip", "video", "mp4", "image", "png", "jpg", "jpeg", "audio", "subtitles", "score-json", "score-markdown"]);
 
-  if ((trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
+  // A reservation exists before the final atomic_v1 marker is written.
+  // Check the owner-scoped ledger even during generation/settlement to prevent
+  // early preview, ZIP or source disclosure.
+  let websitePaidByCredits = false;
+  if (data.production_type === "website") {
+    const proof = await supabaseAdmin().from("website_credit_reservations")
+      .select("state,credits").eq("production_id", id)
+      .eq("user_id", String(data.user_id)).maybeSingle();
+    if (proof.error) return Response.json({ error: "website_credit_proof_unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } });
+    const hasAtomicClaim = Boolean(proof.data) ||
+      data.output_json?.websiteBillingMode === "atomic_v1" ||
+      data.output_json?.websiteBillingPending === true;
+    if (hasAtomicClaim) {
+      websitePaidByCredits = websiteCreditDeliveryProof(data, proof.data);
+      if (!websitePaidByCredits)
+        return Response.json({ error: "website_atomic_delivery_not_settled" },
+          { status: 409, headers: { "Cache-Control": "no-store" } });
+    }
+  }
+  if (!websitePaidByCredits && (trialing || previewAccess.previewOnly) && (trialing || billingStatus !== "active") && downloadFiles.has(file)) {
     return Response.json({ error: "Downloads are locked during the 24-hour preview. You can view the result, but downloads open only after the $9.99 subscription payment is confirmed. Cancel before 24 hours to stop the subscription." }, { status: 403 });
   }
 

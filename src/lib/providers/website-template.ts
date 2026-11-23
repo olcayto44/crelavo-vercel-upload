@@ -20,28 +20,26 @@ export function escapeHtml(value: unknown) {
 }
 
 function briefCopy(input: WebsiteGenerationInput): WebsiteCopy {
-  const title = clean(input.brand, "Your next product");
-  const audience = clean(input.audience, "ambitious teams", 120);
-  const brief = clean(input.brief, `A focused digital experience for ${audience}.`, 360);
-  const requestedFeatures = input.features.map((feature) => clean(feature, "Product workflow", 90)).filter(Boolean).slice(0, 3);
-  const featureTitles = [...requestedFeatures, "Clear product direction", "Responsive by default", "A focused path to action"].slice(0, 3);
+  // Build a fallback from user-supplied facts, never fabricated customer reviews.
+  const title = clean(input.brand, "Your business");
+  const audience = clean(input.audience, "your audience", 120);
+  const brief = clean(input.brief, "Learn about " + title + " and what it offers.", 360);
+  const siteType = clean(input.siteType, "Business website", 100);
+  const requestedFeatures = (Array.isArray(input.features) ? input.features : []).map(item => clean(item, "", 90)).filter(Boolean).slice(0, 3);
+  const featureTitles = [...requestedFeatures, "About " + title, "What we offer", "Get in touch"].slice(0, 3);
+  const focus = [...requestedFeatures, siteType, audience, "Contact and next steps"].slice(0, 3);
   return {
-    title,
-    eyebrow: clean(input.siteType, "Digital product experience", 100),
-    headline: `${title} makes the next step feel simple.`,
+    title, eyebrow: siteType,
+    headline: title + " — " + siteType.toLowerCase() + " for " + audience + ".",
     intro: brief,
     features: featureTitles.map((feature, index) => ({
-      title: feature,
-      body: index === 0 ? `A focused way for ${audience} to understand the offer and move forward with confidence.` : index === 1 ? "A polished foundation that keeps the experience useful across screens, teams and moments." : "A clear structure for explaining value, showing the workflow and inviting a meaningful conversation."
+      title: feature, body: index === 0 ? brief : index === 1 ? "Learn how " + title + " serves " + audience + "." : "Explore " + feature.toLowerCase() + " and contact " + title + " for details."
     })),
-    testimonials: [
-      { quote: "The structure makes our offer easier to understand without adding noise.", name: "Customer voice", role: "Product team" },
-      { quote: "A calm, focused experience gives every important message room to work.", name: "Customer voice", role: "Growth team" }
-    ],
+    testimonials: focus.map(item => ({ quote: "Explore " + item + " with " + title + ".", name: "Project focus", role: siteType })),
     faq: [
-      { question: "What is included in this experience?", answer: `A premium static website structure shaped around ${title}, its audience and the supplied brief.` },
-      { question: "Can the content be refined later?", answer: "Yes. The delivered source keeps the content in readable static files so verified brand copy can be reviewed before publishing." },
-      { question: "How do I start a project conversation?", answer: "Use the contact form or choose a plan to send the brief to the next step." }
+      { question: "What does " + title + " offer?", answer: brief },
+      { question: "Who is " + title + " for?", answer: "The intended audience is " + audience + "." },
+      { question: "How can I contact " + title + "?", answer: "Use the contact section. Connect a secure form endpoint before publishing." }
     ]
   };
 }
@@ -91,7 +89,7 @@ function html(input: WebsiteCopy) {
 <section id="features" class="section-shell"><div class="section-heading"><p class="eyebrow">Capabilities</p><h2>Everything the first impression needs.</h2><p>A considered structure for explaining value without making the visitor work for it.</p></div><div class="feature-grid">${featureMarkup}</div></section>
 <section id="workflow" class="section-shell workflow-section"><div class="section-heading"><p class="eyebrow">The workflow</p><h2>From first brief to confident launch.</h2></div><div class="workflow-timeline"><article class="workflow-step"><span>01</span><h3>Clarify</h3><p>Turn the brief into a clear promise and audience-led direction.</p></article><article class="workflow-step"><span>02</span><h3>Shape</h3><p>Organize the story into useful sections, proof and next steps.</p></article><article class="workflow-step"><span>03</span><h3>Review</h3><p>Refine the words and details before anything is published.</p></article><article class="workflow-step"><span>04</span><h3>Launch</h3><p>Receive a responsive source package ready for the next handoff.</p></article></div></section>
 <section id="pricing" class="section-shell"><div class="section-heading"><p class="eyebrow">Plans</p><h2>Choose the pace that fits your next move.</h2><p>Start with the level of support that matches the shape of your brief.</p></div><div class="pricing-grid"><article class="pricing-card glass-card"><span class="plan-label">Foundation</span><h3>Starter</h3><p>For a focused first launch and a clear digital home.</p><ul><li>Core page structure</li><li>Responsive layout</li><li>Review-ready source</li></ul><button class="plan-button" type="button" data-plan="starter">Choose Plan</button></article><article class="pricing-card glass-card featured-plan"><span class="plan-label">Most complete</span><h3>Growth</h3><p>For teams turning a strong offer into a repeatable experience.</p><ul><li>Expanded capability story</li><li>Conversion-led sections</li><li>Refinement conversation</li></ul><button class="plan-button" type="button" data-plan="growth">Choose Plan</button></article><article class="pricing-card glass-card"><span class="plan-label">Tailored</span><h3>Scale</h3><p>For a broader launch that needs a considered production path.</p><ul><li>Custom project direction</li><li>Admin-ready handoff option</li><li>Launch planning support</li></ul><button class="plan-button" type="button" data-plan="scale">Choose Plan</button></article></div></section>
-<section id="testimonials" class="section-shell"><div class="section-heading"><p class="eyebrow">Customer perspective</p><h2>Clarity compounds.</h2></div><div class="testimonial-grid">${testimonialMarkup}</div></section>
+<section id="testimonials" class="section-shell"><div class="section-heading"><p class="eyebrow">From your brief</p><h2>Project priorities.</h2></div><div class="testimonial-grid">${testimonialMarkup}</div></section>
 <section id="faq" class="section-shell faq-section"><div class="section-heading"><p class="eyebrow">Questions</p><h2>Good work starts with clear answers.</h2></div><div class="faq-list">${faqMarkup}</div></section>
 <section id="contact" class="section-shell contact-section"><div><p class="eyebrow">Start here</p><h2>Ready to make the next step clearer?</h2><p>Share a little context and the team can take it from there.</p></div><form class="contact-form" action="#contact" method="post"><label for="name">Name</label><input id="name" name="name" autocomplete="name" required><label for="email">Work email</label><input id="email" name="email" type="email" autocomplete="email" required><label for="message">What are you building?</label><textarea id="message" name="message" rows="4" required></textarea><button class="cta primary-cta" type="submit">Send inquiry</button><p class="form-note">Your message stays in this demo until a secure form endpoint is connected.</p></form></section>
 </main><footer class="site-footer section-shell"><span>${escapeHtml(input.title)}</span><a href="#hero">Back to top ↑</a></footer><div id="plan-modal" class="plan-modal" hidden role="dialog" aria-modal="true" aria-labelledby="plan-modal-title"><div class="modal-card glass-card"><button class="modal-close" type="button" aria-label="Close">×</button><p class="eyebrow">Plan selected</p><h2 id="plan-modal-title">Let’s shape the right next step.</h2><p id="plan-modal-copy">Tell us what you need and we’ll continue from your brief.</p><a class="cta primary-cta" href="#contact">Continue to contact</a></div></div><script src="./script.js"></script>
