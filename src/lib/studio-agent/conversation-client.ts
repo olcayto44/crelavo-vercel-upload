@@ -118,9 +118,11 @@ async function renderApprovedWebsite(){
   const result=await request('/api/websites/generate',{action:'render',productionId,planHash});
   if(seq!==epoch)return;
   if(result.state!=='ready'||result.productionId!==productionId)throw Error('Website teslimatı henüz doğrulanmadı. Tekrar üretim başlatmayın; proje durumunu kontrol edin.');
-  websiteData=null;
-  await reviewWebsiteDraft();
-  if(seq===epoch){uiError='Web sitesi hazır. Kaydedilmiş projeden önizleme ve ZIP teslimatını açabilirsiniz.';}
+  const fresh=await request('/api/websites/generate',{action:'website_open',productionId});
+  if(seq!==epoch)return;
+  if(fresh.productionId!==productionId)throw Error('Website proje bağlantısı doğrulanamadı.');
+  websiteData=fresh;
+  uiError='Web sitesi hazır. Kaydedilmiş projeden önizleme ve ZIP teslimatını açabilirsiniz.';
  }catch(error){if(seq===epoch){websiteData=null;showError(error);}}
  finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
 }
