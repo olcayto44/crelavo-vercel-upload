@@ -38,4 +38,18 @@ assert.match(source,/source\.connect\(inputGain\)/,'source audio gain needs trac
 assert.match(source,/paintOverlay\(ctx,width,height,captionAt\(captionCues,at\),true\)/);
 assert.match(source,/musicSource\.start\(\)/);
 assert.match(source,/URL\.createObjectURL\(blob\)/);
+
+const css = fs.readFileSync('src/app/dashboard/studio-tools.css','utf8');
+assert.match(source,/className="studio-export-settings"/,'export fields must be grouped below the timeline');
+assert.match(source,/className="studio-export-basics"/,'ratio height and audio toggles must have separate layout');
+assert.match(source,/className="studio-export-extras"/,'music title and subtitles must use independent cards');
+assert.match(source,/className="studio-setting-card"/,'each export field needs a balanced card');
+assert.match(source,/musicPicker\.current\?\.click\(\)/,'music button must activate hidden file input');
+assert.match(source,/subtitlePicker\.current\?\.click\(\)/,'SRT button must activate hidden file input');
+assert.match(source,/backgroundMusic\?\.name/,'selected music filename must be shown');
+assert.match(source,/subtitleName/,'selected subtitle filename must be shown');
+assert.match(source,/onClick=\{\(\) => \{ void exportVideo\(\); \}\}/,'WebM export must stay actionable');
+assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three export cards must line up evenly');
+assert.match(css,/@media\(max-width:650px\)/,'export controls must stack on narrow screens');
+
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
