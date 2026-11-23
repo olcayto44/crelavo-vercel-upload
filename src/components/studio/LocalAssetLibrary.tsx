@@ -118,10 +118,10 @@ export default function LocalAssetLibrary() {
   catch{setStatus("Could not delete the reference.");}finally{setBusy(false)}
  }
  const visible=records.filter(r=>filter==="all"||r.kind===filter);
- return <main style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",padding:"18px",fontFamily:"Inter,system-ui,sans-serif"}}>
-   <header style={{marginBottom:16}}><h1 style={{fontSize:19,margin:0}}>Elements & Reference Library</h1><p style={{color:"#b5a6c5",fontSize:12}}>Create a reusable collection of characters, objects, locations, outfits, visual styles, and authorized voice references.</p></header>
+ return <main className="studio-compact-elements" style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",maxWidth:1250,margin:"0 auto",padding:"12px 16px",fontFamily:"Inter,system-ui,sans-serif"}}>\n  <style>{`.studio-compact-elements *{box-sizing:border-box}.studio-compact-elements .elements-grid{display:grid;grid-template-columns:minmax(220px,350px) minmax(0,1fr);gap:12px}@media(max-width:740px){.studio-compact-elements .elements-grid{grid-template-columns:1fr}}`}</style>
+   <header style={{marginBottom:10}}><a href="/dashboard/studio-v2?category=visual_clone&uiLang=en" style={{display:"inline-block",color:"#dec8f5",fontSize:12,marginBottom:6}}>← Back to Studio V2</a><h1 style={{fontSize:18,margin:0}}>Elements & Reference Library</h1><p style={{color:"#b5a6c5",fontSize:12}}>Create a reusable collection of characters, objects, locations, outfits, visual styles, and authorized voice references.</p></header>
    <p role="status" aria-live="polite" style={{color:"#d5c2e8",fontSize:12}}>{status}</p>
-   <div style={{display:"grid",gridTemplateColumns:"minmax(205px,1fr) minmax(205px,1.5fr)",gap:14}}>
+   <div className="elements-grid">
     <section style={{border:"1px solid #4b345b",borderRadius:12,padding:12,background:"#20172b",alignSelf:"start"}}>
      <h2 style={{fontSize:14,margin:"0 0 12px"}}>Save a reference</h2>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Reference type
@@ -131,7 +131,7 @@ export default function LocalAssetLibrary() {
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Main Character" maxLength={100} style={{display:"block",width:"100%",marginTop:5}} />
      </label>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Description and consistency notes
-      <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Face, freckles, outfit, scene, material, lighting…" rows={4} maxLength={500} style={{display:"block",width:"100%",marginTop:5}} />
+      <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Face, freckles, outfit, scene, material, lighting…" rows={3} maxLength={500} style={{display:"block",width:"100%",marginTop:5}} />
      </label>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Media file (max 25 MB)
       <input id="studio-ref-input" type="file" accept="image/*,video/*,audio/*" onChange={e=>setFile(e.target.files?.[0]||null)} style={{display:"block",maxWidth:"100%",marginTop:5}} />
