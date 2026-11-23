@@ -131,7 +131,19 @@ function showView(view){
   if(!readyVideos.length){root.append(make('p','No completed video available for this account. Video production and editing are not enabled in this view.'));return;}
   if(view==='variants'){
    const list=make('div',undefined,'studio-video-browser');
-   readyVideos.forEach(item=>{const button=make('button',item.title);button.type='button';button.onclick=()=>{showVideoProject(item);window.studioWorkspace?.setView('canvas')};list.append(button)});
+   list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px';
+   readyVideos.forEach(item=>{
+    const card=make('article');card.style.cssText='min-width:0;border:1px solid #453156;border-radius:12px;background:#21192d;padding:9px;display:grid;gap:7px';
+    const video=make('video');video.src=item.videoUrl;video.preload='none';video.muted=true;video.playsInline=true;
+    video.controls=true;video.style.cssText='width:100%;aspect-ratio:16/9;object-fit:contain;background:#090810;border-radius:7px';
+    const title=make('strong',item.title);title.style.cssText='font-size:12px;overflow-wrap:anywhere';
+    const specs=item.specs||{};
+    const meta=make('small',[specs.provider,specs.durationSeconds?specs.durationSeconds+'s':null,specs.aspectRatio].filter(Boolean).join(' · ')||'Saved video');
+    meta.style.color='#bfaed1';
+    const open=make('button','Open in Canvas');open.type='button';
+    open.onclick=()=>{showVideoProject(item);window.studioWorkspace?.setView('canvas')};
+    card.append(video,title,meta,open);list.append(card);
+   });
    root.append(list);return;
   }
   if(view==='timeline'){
