@@ -42,6 +42,7 @@ export async function handlePersistentMock(request:Request,deps:{authenticate:()
   let raw:unknown;try{raw=JSON.parse(text);}catch{throw new ConversationError("invalid_json",400);}
   const body=ConversationRequestSchema.parse(raw);if(body.mode!=="mock")throw new ConversationError("real_ai_dispatch_closed",403);
   if("mockState"in body&&body.mockState)throw new ConversationError("local_state_server_owned",400);
+  if(body.action==="bind_website")throw new ConversationError("isolated_preview_no_production_access",403);
   if(body.action==="projects")return json({ok:true,projects:await deps.store.list(user,body.categoryId),mode:"mock",memory:"isolated_postgres",executionReady:false});
   if(body.action==="create"){
    if(body.productionId)throw new ConversationError("isolated_preview_no_production_access",403);
