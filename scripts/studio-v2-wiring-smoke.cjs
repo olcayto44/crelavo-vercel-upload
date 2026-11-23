@@ -170,3 +170,9 @@ assert.match(workspace,/const previewHint=make\('small','Loading preview…'\)/,
 assert.match(workspace,/observer\.observe\(video\)/,'variant previews should lazy load');
 assert.match(workspace,/video\.currentTime=Math\.min\(0\.3,video\.duration\/4\)/,'variant previews should seek to a real image frame');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
+
+const authReturn=read('src/lib/crelavo/redirects.ts');
+const authGate=read('src/components/auth/RequireFreeAccount.tsx');
+assert.match(authReturn,/STUDIO_AUTH_RETURN_PATHS/,'Studio return paths must be explicitly recognized');
+assert.match(authReturn,/if \(safe && STUDIO_AUTH_RETURN_PATHS\.has/,'Studio return should precede default new-user destination');
+assert.match(authGate,/isAssistantWorkspace \|\| isStudioEditor/,'Studio editors must use login modal, not the paid join route');
