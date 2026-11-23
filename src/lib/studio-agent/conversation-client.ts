@@ -132,10 +132,13 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   const row=(label,value)=>{const line=node('div');line.style.cssText='display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #382944;padding:5px 0;font-size:12px';
    const head=node('span',label);head.style.color='#ad9dbf';line.append(head,node('strong',value));panel.append(line);};
   const unset=language==='tr'?'Belirtilmedi':'Not specified';
-  row(language==='tr'?'Video modeli':'Video model',model?.[1]||unset);
-  row(language==='tr'?'Süre':'Duration',duration?duration[1]+'s':unset);
-  row(language==='tr'?'Oran':'Aspect ratio',ratio?.[1]||unset);
-  row(language==='tr'?'Kalite':'Quality',quality?.[1]||unset);
+  const specs=activeVideoSelection?.specs||{};
+  const seconds=Number(specs.durationSeconds);
+  row(language==='tr'?'Video modeli':'Video model',specs.model||model?.[1]||unset);
+  if(specs.provider)row(language==='tr'?'Sağlayıcı':'Provider',specs.provider);
+  row(language==='tr'?'Süre':'Duration',Number.isFinite(seconds)&&seconds>0?seconds+'s':duration?duration[1]+'s':unset);
+  row(language==='tr'?'Oran':'Aspect ratio',specs.aspectRatio||ratio?.[1]||unset);
+  row(language==='tr'?'Kalite':'Quality',specs.quality||quality?.[1]||unset);
   if(activeVideoSelection){
    row(language==='tr'?'Kayıtlı çıktı':'Saved output',activeVideoSelection.title);
    row(language==='tr'?'Sahne / klip':'Scenes / clips',String(activeVideoSelection.scenes));
@@ -650,7 +653,8 @@ addEventListener('crelavo-studio-video-selected',event=>{
  if(!current||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
  const detail=event.detail||{};
  if(typeof detail.id!=='string'||typeof detail.title!=='string')return;
- activeVideoSelection={id:detail.id,title:detail.title,scenes:Number(detail.scenes)||1};
+ activeVideoSelection={id:detail.id,title:detail.title,scenes:Number(detail.scenes)||1,
+  specs:detail.specs&&typeof detail.specs==='object'?detail.specs:{}};
  $('#project-title').textContent=detail.title;
  draw();
 });
