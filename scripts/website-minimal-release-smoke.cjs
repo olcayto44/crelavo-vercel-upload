@@ -1,0 +1,33 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const ts=require('typescript');
+function load(path){
+ const module={exports:{}};
+ const compiled=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+ new Function('require','module','exports',compiled)(require,module,module.exports);
+ return module.exports;
+}
+(async()=>{
+ const {createWebsiteCreditLedger}=load('src/lib/assistant-work/website-credit-ledger.ts');
+ const {websiteCreditDeliveryProof}=load('src/lib/assistant-work/website-paid-delivery.ts');
+ const uid='11111111-1111-4111-8111-111111111111';
+ const pid='22222222-2222-4222-8222-222222222222';
+ const hash='a'.repeat(64);
+ const events=[];
+ const ledger=createWebsiteCreditLedger(async(name,args)=>{
+   events.push({name,args});
+   if(name==='website_credit_claim'||name==='website_credit_record')return {data:true,error:null};
+   return {data:{fresh:true,state:'reserved'},error:null};
+ });
+ await ledger.reserve({userId:uid,productionId:pid,planHash:hash,credits:30});
+ assert.equal(await ledger.claim({userId:uid,productionId:pid,planHash:hash}),true);
+ assert.equal(await ledger.record({userId:uid,productionId:pid,planHash:hash,outcome:'ready',result:{files:[]}}),true);
+ await ledger.finalize({userId:uid,productionId:pid,planHash:hash,outcome:'ready'});
+ assert.deepEqual(events.map(x=>x.name),['website_credit_reserve','website_credit_claim','website_credit_record','website_credit_finalize']);
+ const record={production_type:'website',status:'ready',reserved_credits:0,output_json:{websiteBillingMode:'atomic_v1',websiteBillingPending:false,charged:30}};
+ assert.equal(websiteCreditDeliveryProof(record,{state:'settled',credits:30}),true);
+ for(const proof of [null,{state:'reserved',credits:30},{state:'settled',credits:31}]) assert.equal(websiteCreditDeliveryProof(record,proof),false);
+ await assert.rejects(()=>ledger.reserve({userId:uid,productionId:pid,planHash:hash,credits:-1}));
+ console.log('minimal website atomic release contracts passed');
+})().catch(e=>{console.error(e);process.exitCode=1});
