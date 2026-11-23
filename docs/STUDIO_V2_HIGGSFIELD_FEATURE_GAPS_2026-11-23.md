@@ -10,6 +10,18 @@ Source: user's original 113-second Studio V2 MP4; verified frame samples, no aut
 - Seen: many categories have only brief/workspace placeholders. This is not a completed AI feature.
 - Production-safe rule: paid AI provider invocations remain gated until authorized cost, provider, render, billing and final delivery are verified with owner-scoped E2E.
 
+## 22:32:59 recording: verified UI gaps and changes
+- Video recording duration: 119.43 seconds. Screen samples show Visual Clone/Style Clone, Brief & Plan, Variations, native Elements and AI Video Canvas/Variants/Timeline.
+- Actual output: Visual Clone still has no completed character generation flow. Its Canvas displays an honest empty state; this is a provider/production feature gap, not evidence of generated identity.
+- Elements: native reference form and category-based local storage are visible. File attachment to a generation model and cloud sync remain unimplemented.
+- AI Video: a saved fragrance video becomes playable after a blank loading interval. Added explicit loading/failure status to the current Canvas player.
+- Variants: some remote media cards appear dark/blank until loaded. Lazy metadata/visible-frame preload and preview-unavailable feedback added; still needs real browser playback testing and provider URL expiry checks.
+- Timeline: final-output seek points are not independently editable rendered clips; local edit/merge remains a separate source-video import workflow.
+- Navigation: opening a saved variant/scene now uses the actual Canvas tab click, synchronizing active view and assistant.
+- Localization: English interface and Turkish user chat can coexist. The user message language is independent from the interface locale; future production language/dubbing setting must remain explicit.
+- Critical P0/P1 AI engines remain incomplete; no paid provider execution has been enabled by these fixes.
+- Vercel smoke and build success do not constitute authenticated screenshot or real video export E2E proof.
+
 ## Non-negotiable design and delivery
 - Retain approved Nov 22 Studio V2 shell: left categories/projects, center Canvas and timeline, right assistant and plan.
 - English default with explicit EN/TR/DE/ES/FR/AR interface selector, distinct from content/dubbing language.
