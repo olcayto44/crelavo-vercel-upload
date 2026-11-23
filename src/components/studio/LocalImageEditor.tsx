@@ -98,7 +98,7 @@ export default function LocalImageEditor(){
     <label style={{fontSize:12}}>Aspect ratio <select disabled={!ready} value={ratio} onChange={e=>setRatio(e.target.value as ImageRatio)} style={{width:"100%"}}>
       <option value="original">Original</option><option value="1:1">1:1</option><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="4:5">4:5</option>
     </select></label>
-    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+    <div className="image-transform-buttons">
      <button type="button" disabled={!ready} onClick={()=>setRotation(v=>(v+270)%360)}>↶ Rotate</button>
      <button type="button" disabled={!ready} onClick={()=>setRotation(v=>(v+90)%360)}>↷ Rotate</button>
      <button type="button" disabled={!ready} onClick={()=>setFlipped(v=>!v)}>↔ Flip</button>
