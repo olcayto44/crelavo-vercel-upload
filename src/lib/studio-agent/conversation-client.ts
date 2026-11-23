@@ -174,10 +174,44 @@ async function sendMessage(defaults=[]){const message=$('#prompt').value.trim();
 async function savedConversations(){if(mode==='mock'){await restore();return;}const seq=epoch,data=await api({action:'projects'});if(seq!==epoch)return;const select=$('#b2-projects');select.replaceChildren(node('option',t(17)));for(const p of data.projects||[]){const o=node('option',p.title);o.value=p.id;select.appendChild(o);}}
 async function savedWebsites(){if(status?.isolatedPreview){uiError='İzole Preview: Production projelerine erişim kapalı; yalnızca demo brief ve plan gösterilir.';draw();return;} if(current.id!=='website'){await savedConversations();return;}const seq=epoch;const root=$('#saved-websites');root.hidden=false;root.replaceChildren(node('span','Projeler yükleniyor…'));const data=await request('/api/websites?user_id='+encodeURIComponent(session.userId));if(seq!==epoch)return;root.replaceChildren();if(!data.websites?.length)root.appendChild(node('span','Henüz kayıtlı Website yok.'));for(const item of data.websites||[]){const button=node('button',item.title||'Website projesi');button.dataset.productionId=item.id;button.onclick=()=>openWebsite(item.id).catch(showError);root.appendChild(button);}}
 function tools(){const root=$('#category-tools');root.replaceChildren(node('strong',current.panel.title));current.panel.tools.forEach(name=>{const button=node('button',name);const free=['Responsive preview','Device preview','Platform preview','Review evidence','Review language','Review tasks','Review script'].includes(name);button.disabled=!free;button.dataset.tool=name;button.dataset.requiresProduction=String(!free);button.title=free?'Ücretsiz çalışma alanı görünümü':'Bu araç bu aşamada bağlı değil; üretim veya kredi işlemi yapılmaz.';if(free)button.onclick=()=>showAux(name.includes('preview')?'canvas':name.includes('evidence')?'assets':'brief');root.appendChild(button);});}
+function openFunctionalWebsiteBuilder(){
+ if(current.id!=='website')return;
+ activeView='builder';
+ document.querySelectorAll('[data-view]').forEach(button=>button.classList.remove('active'));
+ const root=$('#aux-panel');
+ root.hidden=false;
+ root.replaceChildren();
+ root.style.padding='0';
+ root.style.overflow='hidden';
+ const frame=document.createElement('iframe');
+ frame.title='Crelavo Website Builder: gerçek üretim, önizleme, revizyon ve ZIP';
+ frame.src='/dashboard/website-builder';
+ frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#0c0914';
+ root.appendChild(frame);
+}
 function setup(){
  window.studioWorkspace?.configure(current,project,websiteData,referenceFile);
   if(!$('#advanced-open-plan')){const b=node('button','≡');b.id='advanced-open-plan';b.type='button';b.title='Brief & Plan';b.setAttribute('aria-label','Brief & Plan');b.onclick=()=>showAux('brief');$('.canvas-rail').appendChild(b);}
  const lang=$('#b2-language');lang.replaceChildren();['tr','en','de','es','fr','ar'].forEach(code=>{const o=node('option',code.toUpperCase());o.value=code;lang.appendChild(o)});lang.value=language;lang.onchange=()=>{language=lang.value;draw()};
+ if(current.id==='website'){
+   if(!$('#website-builder-open')){
+    const button=node('button','✦ Website oluştur');
+    button.id='website-builder-open';button.type='button';
+    button.title='Website oluşturma, önizleme, revizyon ve ZIP';
+    button.onclick=openFunctionalWebsiteBuilder;
+    $('.empty-actions').appendChild(button);
+   }
+   if(!$('#website-builder-rail')){
+    const button=node('button','▣');
+    button.id='website-builder-rail';button.type='button';button.title='Website Builder';
+    button.onclick=openFunctionalWebsiteBuilder;
+    $('.canvas-rail').appendChild(button);
+   }
+ }else{
+   $('#website-builder-open')?.remove();
+   $('#website-builder-rail')?.remove();
+ }
  const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:!status?.realEnabled;modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();restore()};
  $('#b2-new-project').onclick=()=>{epoch++;project=null;mockState='';pending=null;uiError='';clearCanvas();draw();createProject().catch(showError)};
  $('#b2-defaults').onclick=()=>{const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});if(!list.length)return;$('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';sendMessage(list)};
@@ -186,8 +220,19 @@ function setup(){
  $('#file').accept=current.panel.accept||'image/*,audio/*,video/*,.pdf,.txt';$('#file').onchange=()=>{referenceFile=$('#file').files?.[0]||null;$('#b2-attachment').textContent=referenceFile?referenceFile.name+' — '+t(9):'';window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(activeView==='assets')showAux('assets')};$('#b2-file-button').onclick=()=>$('#file').click();$('#add-reference').onclick=()=>$('#file').click();
  $('#b2-saved-sites').onclick=()=>savedWebsites().catch(showError);$('#open-projects').onclick=()=>{if(innerWidth<=900)setPanel('categories');savedWebsites().catch(showError)};$('#start-conversation').onclick=()=>{if(innerWidth<=900)setPanel('assistant');$('#prompt').focus()};$('#studio-home').onclick=()=>setPanel('canvas');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showAux(b.dataset.view));document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>setDevice(b.dataset.device));$('#website-pages').onchange=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value)};$('#refresh-preview').onclick=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value||'index.html');else showCanvas('empty')};tools();showCanvas(canvasState);draw();
 }
-const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session)restore()};send=()=>sendMessage();
+const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session&&status?.realEnabled)restore()};send=()=>sendMessage();
 addEventListener('resize',resizePreview);new ResizeObserver(resizePreview).observe($('.canvas'));
-addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');setup();await restore();}catch(error){showError(error)}});
+addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');setup();
+ if(status.realEnabled||status.mockAllowed){
+  await restore();
+ }else{
+  uiError=language==='tr'
+    ?'Studio AI sohbeti henüz Production ortamında etkin değil. Website üretimini Canvas üzerindeki “Website oluştur” düğmesinden kullanabilirsiniz. Bu işlem AI sohbet veya kredi tahsilatı başlatmaz.'
+    :'Studio AI chat is not enabled in Production yet. Use the “Website oluştur” button in Canvas for the working website builder.';
+  $('#prompt').disabled=true;
+  $('#b2-new-project').disabled=true;
+  $('#b2-defaults').disabled=true;
+  draw();
+ }}catch(error){showError(error)}});
 setup();
 })();`;
