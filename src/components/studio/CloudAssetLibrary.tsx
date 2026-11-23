@@ -47,13 +47,14 @@ export default function CloudAssetLibrary() {
     const {data:existing,error:lookupError}=await db.from("studio_projects").select("id")
      .eq("user_id",user.id).eq("category","elements").order("created_at",{ascending:true}).limit(1);
     if(lookupError)throw lookupError;
-    let pid=existing?.[0]?.id as string|undefined;
+    const projectRows=existing as unknown as Array<{id:string}> | null;
+    let pid=projectRows?.[0]?.id;
     if(!pid){
      const {data:created,error:createError}=await db.from("studio_projects")
       .insert({user_id:user.id,category:"elements",title:"Elements Library"})
       .select("id").single();
      if(createError)throw createError;
-     pid=created.id as string;
+     pid=(created as unknown as {id:string}).id;
     }
     if(!mounted)return;
     setOwner(user.id);setProjectId(pid);
