@@ -105,6 +105,7 @@ async function approveWebsitePlan(){
   uiError='Website planı onaylandı. Gerçek üretim ve kredi tahsilatı henüz başlatılmadı.';
  }catch(error){if(seq===epoch){websiteData=null;showError(error);}}finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
 }
+let websiteSelectedPackId='';
 async function renderApprovedWebsite(){
  if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project.productionId)return;
  const w=websiteData?.website;
@@ -126,7 +127,7 @@ async function renderApprovedWebsite(){
  }catch(error){if(seq===epoch){websiteData=null;showError(error);}}
  finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
 }
-let websiteSelectedPackId='';
+
 async function handoffWebsiteDraft(){
  if(busy||!session||!project||mode!=='real'||current.id!=='website'||status?.isolatedPreview)return;
  const fields=project.snapshot?.fields||{};
