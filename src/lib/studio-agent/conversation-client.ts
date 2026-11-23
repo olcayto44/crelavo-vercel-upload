@@ -28,6 +28,34 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  if(!project?.messages.length)messages.appendChild(node('div',session?t(16):t(5),'message'));
  if(busy&&$('#prompt').value.trim()){const draft=node('div',$('#prompt').value.trim(),'message user');draft.dataset.b2Role='pending';draft.dataset.userContent='true';messages.append(draft,node('div',t(15),'message'));}
  if(uiError)messages.appendChild(node('div',uiError,'message error'));
+ if(current.id==='website'&&mode==='real'&&session){
+  const progress=node('section',null,'studio-website-progress');
+  progress.setAttribute('aria-label','Website proje durumu');
+  progress.style.cssText='margin:10px 0;padding:12px;border:1px solid #594071;border-radius:10px;background:#24162f;display:grid;gap:7px';
+  const w=websiteData?.website;
+  const fields=project?.snapshot?.fields||{};
+  progress.appendChild(node('strong','Website üretim planı'));
+  const hasBrief=Boolean(fields.brief&&fields.business_name);
+  const planLine=w?.approvedHash&&w.approvedHash===w.planHash?'Plan onaylandı':
+    w?.review?.ready?'Brief hazır · plan kontrolü bekleniyor':
+    hasBrief?'Brief hazırlanıyor · eksik bilgileri tamamlayın':
+    'İşletme adını ve istediğin web sitesini anlat';
+  progress.appendChild(node('div',planLine));
+  if(w?.packId&&Number.isSafeInteger(w.credits)&&w.credits>0)
+    progress.appendChild(node('small','Paket: '+w.packId+' · '+w.credits+' Production Credits'));
+  if(Array.isArray(w?.missing)&&w.missing.length)
+    progress.appendChild(node('small','Eksik bilgiler: '+w.missing.slice(0,5).join(', ')));
+  const actions=node('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
+  const brief=node('button','Brief & Plan');brief.type='button';brief.disabled=busy;brief.onclick=()=>showAux('brief');actions.appendChild(brief);
+  const builder=node('button','Website oluştur');builder.type='button';builder.disabled=busy;builder.onclick=openFunctionalWebsiteBuilder;actions.appendChild(builder);
+  if(websiteData?.productionId&&websiteData.status==='ready'){
+   const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(websiteData.productionId);actions.appendChild(preview);
+   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(websiteData.productionId);actions.appendChild(zip);
+  }
+  progress.appendChild(actions);
+  messages.appendChild(progress);
+ }
+
  const fields=Object.entries(project?.snapshot.fields||{});$('#b2-context').textContent=project?project.title+'\n'+fields.map(([k,v])=>fieldLabel(k)+': '+valueLabel(k,v)).join('\n'):current.label;$('#b2-context').dataset.userContent='true';
  const title=project?.title&&project.title!=='Studio projesi'?project.title:current.label+' projesi';$('#project-title').textContent=websiteData?.title||title;
  for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:(account==='production'&&Number.isFinite(liveProductionBalance)?liveProductionBalance:'—'))+(mode==='mock'?' (mock)':'');
@@ -208,6 +236,13 @@ function applyWebsiteChat(result){
  websiteData=result;
  selectedProduction=result.productionId;
  websiteSelectedPackId=result.website.packId||websiteSelectedPackId;
+ if(result.status==='ready'){
+  void previewWebsite(result.productionId);
+ }else{
+  // A revised brief is not a published website. Never leave a previous
+  // production's preview visible against a new draft.
+  if(canvasState==='ready')clearCanvas();
+ }
  draw();
 }
 function websiteAssistantRequest(payload){
