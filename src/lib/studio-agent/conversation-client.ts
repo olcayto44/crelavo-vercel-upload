@@ -147,6 +147,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   messages.append(panel);
  }
 
+ $('#category-title').textContent=current.label+({en:' workspace',tr:' çalışma alanı',de:' Arbeitsbereich',es:' espacio de trabajo',fr:' espace de travail',ar:' مساحة العمل'}[language]||' workspace');
  const fields=Object.entries(project?.snapshot.fields||{});$('#b2-context').textContent=project?project.title+'\n'+fields.map(([k,v])=>fieldLabel(k)+': '+valueLabel(k,v)).join('\n'):current.label;$('#b2-context').dataset.userContent='true';
  const title=project?.title&&project.title!=='Studio projesi'?project.title:current.label+' projesi';$('#project-title').textContent=websiteData?.title||title;
  for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:(account==='production'&&Number.isFinite(liveProductionBalance)?liveProductionBalance:'—'))+(mode==='mock'?' (mock)':'');
@@ -160,10 +161,20 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
 function clearCanvas(){previewEpoch++;selectedProduction=null;websiteData=null;canvasState='empty';$('#site-wrapper').replaceChildren();$('#website-pages').replaceChildren(node('option','Sayfa yok'));$('#website-pages').disabled=true;$('#preview-scale').textContent='';showCanvas('empty');}
-function showCanvas(state,reason){canvasState=state;$('.canvas').dataset.state=state;$('#empty').hidden=state==='ready';$('#site-stage').hidden=state!=='ready';$('#canvas-source').hidden=state!=='ready';$('#website-controls').hidden=current.id!=='website';$('#view-status').textContent=state==='ready'?'Mevcut site · salt okunur':state==='loading'?'Yükleniyor…':'Henüz çıktı yok';
- $('#empty-title').textContent=state==='loading'?'Proje yükleniyor…':state==='unavailable'?'Bu projede görüntülenebilir Website çıktısı yok':current.id==='website'?'Website projen için boş bir Canvas':current.label+' için boş bir Canvas';
- $('#empty-description').textContent=state==='loading'?'Kayıtlı proje ve mevcut site kaynağı kontrol ediliyor.':state==='unavailable'?(reason==='output_not_ready'?'Proje henüz önizlemeye hazır değil.':'Doğrulanmış site kaynağı bulunamadı veya bu çıktıya erişilemiyor.')+' Örnek site gösterilmez; yeniden üretim veya kredi tahsilatı yapılmadı.':current.id==='website'?'İstediğin siteyi sağdaki asistanla konuşarak hazırlayabilir veya kayıtlı bir Website projesini açabilirsin.':'İstediğin '+current.label+' çalışmasını asistanla konuşarak hazırla. Henüz üretilmiş bir çıktı yok.';
- $('#start-conversation').hidden=state==='loading';$('#open-projects').hidden=state==='loading'||current.id!=='website';
+function showCanvas(state,reason){
+ canvasState=state;$('.canvas').dataset.state=state;
+ $('#empty').hidden=state==='ready';$('#site-stage').hidden=state!=='ready';
+ $('#canvas-source').hidden=state!=='ready';$('#website-controls').hidden=current.id!=='website';
+ const locales={
+  en:{ready:'Existing site · read-only',loading:'Loading…',none:'No output yet',project:'Loading saved project…',noPreview:'No website output to preview',noSource:'No verified website source is available. No additional production or charge was made.',notReady:'This project is not ready for preview.',site:'Your website Canvas is empty',other:' Canvas is empty',siteHint:'Describe your website to the assistant or open a saved project.',otherHint:'Describe the work you want to create to the assistant. No generated output is available yet.'},
+  tr:{ready:'Mevcut site · salt okunur',loading:'Yükleniyor…',none:'Henüz çıktı yok',project:'Kayıtlı proje yükleniyor…',noPreview:'Bu projede görüntülenebilir Website çıktısı yok',noSource:'Doğrulanmış site kaynağı bulunamadı. Yeni üretim veya kredi tahsilatı yapılmadı.',notReady:'Proje henüz önizlemeye hazır değil.',site:'Website projen için boş bir Canvas',other:' için boş bir Canvas',siteHint:'İstediğin siteyi sağdaki asistanla konuşarak hazırlayabilir veya kayıtlı bir Website projesini açabilirsin.',otherHint:'İstediğin üretimi asistanla planlayabilirsin. Henüz bir çıktı oluşturulmadı.'}
+ };
+ const local=locales[language]||locales.en;
+ $('#view-status').textContent=state==='ready'?local.ready:state==='loading'?local.loading:local.none;
+ $('#empty-title').textContent=state==='loading'?local.project:state==='unavailable'?local.noPreview:current.id==='website'?local.site:current.label+local.other;
+ $('#empty-description').textContent=state==='loading'?local.project:state==='unavailable'?(reason==='output_not_ready'?local.notReady:local.noSource):current.id==='website'?local.siteHint:local.otherHint;
+ $('#start-conversation').hidden=state==='loading';
+ $('#open-projects').hidden=state==='loading'||current.id!=='website';
 }
 function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
