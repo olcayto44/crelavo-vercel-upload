@@ -212,3 +212,15 @@ assert.match(localEditor,/studio-compact-video-editor/,'the local video editor m
 assert.match(localEditor,/Back to Studio V2/,'top level clip editor must navigate back to Studio');
 assert.match(localEditor,/preview-local/,'preview must allow local clips without opening real account cloud');
 assert.match(elements,/studio-compact-elements/,'Elements library must have compact responsive layout');
+
+const {execFileSync}=require('node:child_process');
+for(const file of ['scripts/studio-ffmpeg-compose.mjs','scripts/studio-mp4-worker.mjs'])
+  execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
+const compose=read('scripts/studio-ffmpeg-compose.mjs');
+const worker=read('scripts/studio-mp4-worker.mjs');
+assert.match(compose,/libx264/,'MP4 must be encoded with H264');
+assert.match(compose,/aac/,'MP4 must include normalized AAC');
+assert.match(compose,/validateTimeline/,'MP4 jobs must validate source paths and trim values');
+assert.match(worker,/CLIP_REFERENCE_NOT_OWNED/,'worker must revalidate clip ownership');
+assert.match(worker,/eq\("worker_id",workerId\)/,'worker must use exclusive lease checks');
+assert.match(worker,/processJob/,'worker must process queued render jobs');
