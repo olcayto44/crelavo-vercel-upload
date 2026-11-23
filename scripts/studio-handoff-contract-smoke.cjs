@@ -58,4 +58,6 @@ const websiteAdapter=read('src/lib/assistant-work/website-request.ts');
 assert(websiteAdapter.includes('body.action === "render" || body.render === true'), 'every website adapter caller must reject rendering');
 assert(websiteAdapter.includes('website_atomic_billing_required'), 'website adapter must fail closed with explicit billing error');
 assert(websiteAdapter.indexOf('website_atomic_billing_required') < websiteAdapter.indexOf('handleWebsiteAssistant(body'), 'billing safety gate must precede website generation handler');
+assert(!websiteAdapter.includes('creditsSpend') && !websiteAdapter.includes('POST as creditsSpend'), 'website adapter must not import legacy credit spending');
+assert(websiteAdapter.includes('spend: async () => ({ ok: false, charged: 0'), 'website adapter must fail closed if legacy handler reaches spending');
 console.log('studio-handoff-contract-smoke ok (static source checks only)');
