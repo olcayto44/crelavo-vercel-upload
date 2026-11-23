@@ -62,7 +62,7 @@ assert.match(source,/studio-video-preview-frame/,'preview must use an aspect-awa
 assert.match(source,/objectFit:framing/,'preview must display selected crop or fit mode');
 assert.match(source,/framing === "cover" \? Math.max/,'export must actually center-crop wide video for vertical frame');
 assert.match(source,/setFraming\(project.framing/,'saved local projects must restore framing');
-assert.match(source,/setFraming\(saved.framing\)/,'saved cloud projects must restore framing');
+assert.match(source,/setFraming\(saved.framing===\"cover\"\?\"cover\":\"contain\"\)/,'saved cloud projects must safely restore framing');
 assert.match(source,/aria-label="Video framing mode"/,'user must be able to switch crop or letterbox');
 assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must be narrow, not full-width');
 assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
