@@ -37,6 +37,36 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   }
 
   useEffect(() => { if (initialProjectId) void openProject(initialProjectId); }, [initialProjectId]);
+  // Studio V2 owns the source brief. Transfer it over same-origin postMessage
+  // instead of embedding customer text in a URL, history entry or server logs.
+  useEffect(() => {
+    if (editorOnly || initialProjectId) return;
+    const receiveBrief = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent ||
+          event.data?.type !== "crelavo-studio-website-brief") return;
+      const item = event.data.brief;
+      if (!item || typeof item !== "object" || Array.isArray(item)) return;
+      const bounded = (value: unknown, limit: number) =>
+        typeof value === "string" ? value.trim().slice(0, limit) : "";
+      const entries = (value: unknown) => Array.isArray(value)
+        ? value.filter((part): part is string => typeof part === "string").slice(0, 12).map(part => part.trim().slice(0, 80)).filter(Boolean).join(", ")
+        : bounded(value, 600);
+      setFields(current => ({
+        ...current,
+        brief: bounded(item.brief, 6000) || current.brief,
+        brand: bounded(item.brand, 160) || current.brand,
+        audience: bounded(item.audience, 400) || current.audience,
+        siteType: bounded(item.siteType, 120) || current.siteType,
+        style: bounded(item.style, 240) || current.style,
+        pages: entries(item.pages) || current.pages,
+        features: entries(item.features) || current.features
+      }));
+      setStatus("Studio V2 brief loaded. Review the fields before generating your website.");
+    };
+    window.addEventListener("message", receiveBrief);
+    return () => window.removeEventListener("message", receiveBrief);
+  }, [editorOnly, initialProjectId]);
+
   async function listProjects() {
     setContentBusy(true);
     try { const { user, token } = await session(); const response = await fetch(`/api/websites?user_id=${encodeURIComponent(user.id)}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Project list failed.'); setSavedProjects(data.websites || []); setStatusVariables({ count: data.websites?.length ?? 0 }); setStatus("{count} saved websites found."); }
@@ -75,6 +105,10 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       if (!response.ok) { const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : ""; throw new Error(`${data.message || data.error || "Website generation failed."}${missing}`); }
       const initialContent = { ...data.production?.output_json?.websiteContent, ...data.outputs?.content, heroTitle: data.production?.output_json?.websiteContent?.heroTitle || data.outputs?.content?.heroTitle || data.plan?.brief?.businessName || "", heroBody: data.production?.output_json?.websiteContent?.heroBody || data.outputs?.content?.heroBody || data.plan?.brief?.businessDescription || "", primaryCta: data.production?.output_json?.websiteContent?.primaryCta || data.outputs?.content?.primaryCta || "Get started" };
       setContent(initialContent); setPreviewPages(data.production?.output_json?.pageManifest || []); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
+      const completedId = data.plan?.projectId || data.production?.id;
+      if (window.parent !== window && typeof completedId === "string" &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(completedId))
+        window.parent.postMessage({ type: "crelavo-studio-website-created", productionId: completedId }, window.location.origin);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website generation failed."); } finally { setBusy(false); }
   }
 
