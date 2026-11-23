@@ -26,6 +26,20 @@ function finalUrl(row: Record<string, unknown>): string | null {
   }
   return null;
 }
+function videoSpecs(row: Record<string, unknown>) {
+ const output=obj(row.output_json);
+ const plan=obj(output.genericVideoPlan);
+ const visual=obj(output.visualJob);
+ const text=(value:unknown,max=80)=>typeof value==="string"&&value.trim()?value.trim().slice(0,max):null;
+ const duration=Number(plan.durationSeconds??output.requestedDurationSeconds);
+ return {
+  model:text(visual.model??output.model??plan.model),
+  provider:text(plan.provider??visual.provider??output.provider),
+  durationSeconds:Number.isFinite(duration)&&duration>0&&duration<=7200?duration:null,
+  aspectRatio:text(plan.aspectRatio??output.aspectRatio,12),
+  quality:text(output.quality??visual.quality??output.resolution,30)
+ };
+}
 function scenes(row: Record<string, unknown>, primary: string) {
   const output = obj(row.output_json);
   const entries = [output.scenes, output.videoScenes, output.clips, output.timelineClips]
@@ -66,7 +80,7 @@ export async function GET(request: Request) {
       if (!videoUrl) return [];
       return [{
         id: item.id, title: String(item.title ?? "Video project").slice(0, 140),
-        videoUrl, scenes: scenes(item, videoUrl),
+        videoUrl, scenes: scenes(item, videoUrl), specs: videoSpecs(item),
         createdAt: item.created_at
       }];
     }).slice(0, 30);
