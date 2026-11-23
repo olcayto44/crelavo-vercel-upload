@@ -1,6 +1,7 @@
 export const studioConversationClientScript=String.raw`(()=>{
 const $=selector=>document.querySelector(selector);
 let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'mock':'real',epoch=0,busy=false,pending=null,status=null,walletCache=null,uiError='';
+let liveProductionBalance=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
 let language=new URLSearchParams(parent.location.search).get('uiLang')||'tr';
 const words={
@@ -29,7 +30,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  if(uiError)messages.appendChild(node('div',uiError,'message error'));
  const fields=Object.entries(project?.snapshot.fields||{});$('#b2-context').textContent=project?project.title+'\n'+fields.map(([k,v])=>fieldLabel(k)+': '+valueLabel(k,v)).join('\n'):current.label;$('#b2-context').dataset.userContent='true';
  const title=project?.title&&project.title!=='Studio projesi'?project.title:current.label+' projesi';$('#project-title').textContent=websiteData?.title||title;
- for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:'—')+(mode==='mock'?' (mock)':'');
+ for(const account of ['assistant','production'])$('#b2-'+account+'-balance').textContent=(account==='assistant'?'Assistant':'Production')+' Credits: '+(walletCache?walletCache[account].available:(account==='production'&&Number.isFinite(liveProductionBalance)?liveProductionBalance:'—'))+(mode==='mock'?' (mock)':'');
  $('#mode-badge').textContent=mode==='mock'?'Demo · simülasyon':'Gerçek sohbet';$('#b2-mode-note').textContent=mode==='mock'?(project?.advanced?.memory==='isolated_postgres'?(language==='tr'?'Yerel PostgreSQL hafızası · Yanıtlar ve bakiyeler Mock simülasyondur. Gerçek AI kapalı.':'Isolated local PostgreSQL memory · Replies and balances are Mock simulations. Real AI disabled.'):t(7)):t(8);
  const choices=$('#b2-choices');choices.replaceChildren();if(project){const missing=(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.required&&!Object.prototype.hasOwnProperty.call(project.snapshot.fields,f.id)&&!f.serverOnly);missing?.options.slice(0,5).forEach(value=>{const b=node('button',valueLabel(missing.id,value));b.disabled=busy;b.onclick=()=>{$('#prompt').value=valueLabel(missing.id,value);sendMessage()};choices.appendChild(b)});}
  $('#send').disabled=busy||!session||!(mode==='mock'?status?.mockAllowed:status?.realEnabled);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||!session;$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||!session;$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
@@ -222,7 +223,12 @@ function setup(){
 }
 const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session&&status?.realEnabled)restore()};send=()=>sendMessage();
 addEventListener('resize',resizePreview);new ResizeObserver(resizePreview).observe($('.canvas'));
-addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');setup();
+addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;liveProductionBalance=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');
+ try{
+  const credits=await request('/api/credits/balance?user_id='+encodeURIComponent(session.userId));
+  liveProductionBalance=Number.isFinite(credits.available)?credits.available:null;
+ }catch(_error){liveProductionBalance=null;}
+ setup();
  if(status.realEnabled||status.mockAllowed){
   await restore();
  }else{
