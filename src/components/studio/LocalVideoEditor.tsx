@@ -410,26 +410,26 @@ export default function LocalVideoEditor() {
       setBusy(false);
     }
   }
-  return <section style={{ color: "#f4f0ff", background: "#110e1b", padding: 18, minHeight: "100%", fontFamily: "Inter,system-ui,sans-serif" }}>
+  return <section className="studio-compact-video-editor" style={{ color: "#f4f0ff", background: "#110e1b", padding: "12px 16px 22px", minHeight: "100%", maxWidth: 1320, margin: "0 auto", fontFamily: "Inter,system-ui,sans-serif" }}>\n    <style>{`\n      .studio-compact-video-editor * { box-sizing: border-box; }\n      .studio-compact-video-editor button, .studio-compact-video-editor select, .studio-compact-video-editor input { font: inherit; }\n      .studio-compact-video-editor header { padding: 5px 0 9px; border-bottom: 1px solid #33243d; margin-bottom: 10px; }\n      .studio-compact-video-editor .editor-main-grid { display: grid; grid-template-columns: minmax(0,1fr) 220px; gap: 10px; }\n      .studio-compact-video-editor .editor-output-controls { display:flex; gap: 10px; margin-top: 12px; align-items: center; flex-wrap: wrap; border-top: 1px solid #35253f; padding-top: 12px; }\n      .studio-compact-video-editor .editor-output-controls > label { font-size: 11px; }\n      .studio-compact-video-editor .editor-output-controls input[type=file] { max-width: 165px !important; }\n      .studio-compact-video-editor .editor-output-controls select { min-width: 80px; }\n      .studio-compact-video-editor .editor-back { color: #d9c5ed; border: 1px solid #614275; padding: 6px 10px; border-radius: 8px; font-size: 12px; text-decoration:none; white-space: nowrap; }\n      @media(max-width:800px){.studio-compact-video-editor .editor-main-grid{grid-template-columns:minmax(0,1fr)}.studio-compact-video-editor{padding:10px!important}}\n    `}</style>
     <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-      <div><h1 style={{ fontSize: 18, margin: 0 }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "6px 0 14px", fontSize: 12 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
+      <div><a className="editor-back" href="/dashboard/studio-v2?category=video&uiLang=en">← Back to Studio V2</a><h1 style={{ fontSize: 17, margin: "12px 0 0" }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "3px 0 4px", fontSize: 11 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
       <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
-       <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save local timeline</button>
+       <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"6px 9px",borderRadius:8}}>Save local timeline</button>
        <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen timeline</button>
        <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
        <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
-      <label style={{ background: "#7036b5", padding: "10px 15px", borderRadius: 9, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
+      <label style={{ background: "#7036b5", padding: "7px 12px", borderRadius: 8, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
       </div>
     </header>
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
-    <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(190px,260px)", gap: 12 }}>
+    <div className="editor-main-grid">
       <div style={{ minWidth: 0 }}>
         <div style={{ border: "1px solid #422b54", borderRadius: 12, padding: 9, background: "#090711" }}>
-          {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls preload="metadata" style={{ width: "100%", maxHeight: 290, objectFit: "contain", display: "block" }} onLoadedMetadata={e => { e.currentTarget.currentTime = chosen.start; }} /> : <div style={{ aspectRatio: "16/9", display: "grid", placeItems: "center", color: "#a999bb" }}>No clips selected</div>}
+          {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls preload="metadata" style={{ width: "100%", maxHeight: 240, objectFit: "contain", display: "block" }} onLoadedMetadata={e => { e.currentTarget.currentTime = chosen.start; }} /> : <div style={{ height: 164, display: "grid", placeItems: "center", color: "#a999bb", fontSize: 13 }}>Add video files to begin editing · no clips selected</div>}
         </div>
-        <h2 style={{ fontSize: 14, marginTop: 15 }}>Clip timeline · {sec(duration)} total</h2>
+        <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 8 }}>Clip timeline · {sec(duration)} total</h2>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
-          {clips.map((clip, index) => <div key={clip.id} style={{ flex: "0 0 170px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
+          {clips.map((clip, index) => <div key={clip.id} style={{ flex: "0 0 145px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
             <button type="button" disabled={busy} onClick={() => setActive(clip.id)} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, overflowWrap: "anywhere", color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
             <small style={{ color: "#c2b4d5" }}>{sec(clip.end - clip.start)}</small>
             <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
@@ -450,7 +450,7 @@ export default function LocalVideoEditor() {
         </> : <small>Choose a clip from the timeline.</small>}
       </aside>
     </div>
-    <div style={{ display: "flex", gap: 12, marginTop: 16, alignItems: "center", flexWrap: "wrap", borderTop: "1px solid #35253f", paddingTop: 15 }}>
+    <div className="editor-output-controls">
       <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
       <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
