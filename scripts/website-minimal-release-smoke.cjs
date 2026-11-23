@@ -61,5 +61,8 @@ function load(path){
  assert.ok(delivery.includes('website_credit_proof_unavailable'), 'delivery must fail closed on ledger outage');
  assert.ok(contentApi.includes('const hasAtomicClaim = Boolean(data)'), 'content/revision must inspect pre-marker reservations');
  assert.ok(contentApi.includes('website_credit_proof_unavailable'), 'content/revision must fail closed on ledger outage');
+ const directGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
+ assert.ok(directGenerator.includes('const storedFiles = generated.files;'), 'direct builder must deliver stored private HTML source');
+ assert.ok(!directGenerator.includes('uploadProviderAsset'), 'private website HTML must not be uploaded to public provider assets bucket');
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
