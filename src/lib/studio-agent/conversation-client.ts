@@ -221,9 +221,7 @@ async function showStudioElements(){
  if(!session?.userId){
   root.append(node('p','You are viewing Studio without an account session. Your cloud library is private; local editor tools can still be inspected.'));
   if(window.__studioB2?.previewOnly){
-   const open=node('button','Open local Elements tool (preview)');
-   open.type='button';open.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-elements'));
-   root.append(open);
+   root.append(node('p','To test local file uploads and cloud sync, use the standalone Elements route while signed in. This preview contains no private assets.'));
   }
   return;
  }
@@ -649,16 +647,8 @@ function openStudioVideoEditor(){
  root.append(frame);
 }
 addEventListener('crelavo-studio-open-video-editor',openStudioVideoEditor);
-addEventListener('crelavo-studio-open-elements',()=>{
- if(!session&&!window.__studioB2?.previewOnly)return;
- activeView='assets';
- const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
- root.style.padding='0';root.style.overflow='hidden';
- const frame=node('iframe');frame.title='Crelavo Elements Library';
- frame.src='/dashboard/studio-elements';frame.setAttribute('loading','eager');
- frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1b';
- root.append(frame);
-});
+addEventListener('crelavo-studio-open-elements',()=>showAux('assets'));
+
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
  if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
