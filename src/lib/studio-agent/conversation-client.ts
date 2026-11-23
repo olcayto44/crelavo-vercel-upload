@@ -48,9 +48,10 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   const actions=node('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
   const brief=node('button','Brief & Plan');brief.type='button';brief.disabled=busy;brief.onclick=()=>showAux('brief');actions.appendChild(brief);
   const builder=node('button','Website oluştur');builder.type='button';builder.disabled=busy;builder.onclick=openFunctionalWebsiteBuilder;actions.appendChild(builder);
-  if(websiteData?.productionId&&websiteData.status==='ready'){
-   const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(websiteData.productionId);actions.appendChild(preview);
-   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(websiteData.productionId);actions.appendChild(zip);
+  if(selectedProduction&&canvasState==='ready'){
+   const readyId=selectedProduction;
+   const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(readyId);actions.appendChild(preview);
+   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(readyId);actions.appendChild(zip);
   }
   progress.appendChild(actions);
   messages.appendChild(progress);
@@ -154,7 +155,7 @@ async function approveWebsitePlan(){
 }
 let websiteSelectedPackId='';
 async function downloadWebsiteZip(id){
- if(busy||!session?.accessToken||mode!=='real'||current.id!=='website'||status?.isolatedPreview||!project||id!==project.productionId)return;
+ if(busy||!session?.accessToken||mode!=='real'||current.id!=='website'||status?.isolatedPreview||id!==selectedProduction)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
   const response=await fetch('/api/productions/'+encodeURIComponent(id)+'/delivery?file=zip',{method:'GET',headers:{Authorization:'Bearer '+session.accessToken},credentials:'include',redirect:'error',cache:'no-store'});
@@ -318,6 +319,20 @@ async function sendMessage(defaults=[]){
 async function savedConversations(){if(!status?.realEnabled&&mode==='real'&&current.id!=='website'){uiError='Bu kategoride sohbet, mevcut tarayıcı sekmesinde saklanır. Sunucuya kayıtlı sohbet listesi henüz bağlı değil.';draw();return;}if(current.id==='website'&&!status?.realEnabled){await savedWebsites();return;}if(mode==='mock'){await restore();return;}const seq=epoch,data=await api({action:'projects'});if(seq!==epoch)return;const select=$('#b2-projects');select.replaceChildren(node('option',t(17)));for(const p of data.projects||[]){const o=node('option',p.title);o.value=p.id;select.appendChild(o);}}
 async function savedWebsites(){if(status?.isolatedPreview){uiError='İzole Preview: Production projelerine erişim kapalı; yalnızca demo brief ve plan gösterilir.';draw();return;} if(current.id!=='website'){await savedConversations();return;}const seq=epoch;const root=$('#saved-websites');root.hidden=false;root.replaceChildren(node('span','Projeler yükleniyor…'));const data=await request('/api/websites?user_id='+encodeURIComponent(session.userId));if(seq!==epoch)return;root.replaceChildren();if(!data.websites?.length)root.appendChild(node('span','Henüz kayıtlı Website yok.'));for(const item of data.websites||[]){const button=node('button',item.title||'Website projesi');button.dataset.productionId=item.id;button.onclick=()=>openWebsite(item.id).catch(showError);root.appendChild(button);}}
 function tools(){const root=$('#category-tools');root.replaceChildren(node('strong',current.panel.title));current.panel.tools.forEach(name=>{const button=node('button',name);const free=['Responsive preview','Device preview','Platform preview','Review evidence','Review language','Review tasks','Review script'].includes(name);button.disabled=!free;button.dataset.tool=name;button.dataset.requiresProduction=String(!free);button.title=free?'Ücretsiz çalışma alanı görünümü':'Bu araç bu aşamada bağlı değil; üretim veya kredi işlemi yapılmaz.';if(free)button.onclick=()=>showAux(name.includes('preview')?'canvas':name.includes('evidence')?'assets':'brief');root.appendChild(button);});}
+function studioWebsiteBrief(){
+ const stored=websiteData?.website?.brief||{};
+ const fields=project?.snapshot?.fields||{};
+ const entries=value=>Array.isArray(value)?value:String(value||'').split(',').map(item=>item.trim()).filter(Boolean);
+ return {
+  brand:stored.brand||fields.business_name||'',
+  brief:stored.brief||fields.brief||'',
+  audience:stored.audience||fields.audience||'',
+  siteType:stored.siteType||fields.site_type||'',
+  style:stored.style||fields.design_style||'',
+  pages:entries(stored.pages||fields.pages),
+  features:entries(stored.features||fields.features_and_integrations)
+ };
+}
 function openFunctionalWebsiteBuilder(){
  if(current.id!=='website')return;
  activeView='builder';
@@ -328,10 +343,15 @@ function openFunctionalWebsiteBuilder(){
  root.style.padding='0';
  root.style.overflow='hidden';
  const frame=document.createElement('iframe');
+ frame.id='studio-website-builder-frame';
  frame.title='Crelavo Website Builder: gerçek üretim, önizleme, revizyon ve ZIP';
  frame.src='/dashboard/website-builder';
  frame.setAttribute('loading','eager');
  frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#0c0914';
+ frame.addEventListener('load',()=>{
+  if(frame.isConnected&&frame.contentWindow)
+   frame.contentWindow.postMessage({type:'crelavo-studio-website-brief',brief:studioWebsiteBrief()},parent.location.origin);
+ });
  root.appendChild(frame);
 }
 function setup(){
@@ -365,6 +385,20 @@ function setup(){
  $('#b2-saved-sites').onclick=()=>savedWebsites().catch(showError);$('#open-projects').onclick=()=>{if(innerWidth<=900)setPanel('categories');savedWebsites().catch(showError)};$('#start-conversation').onclick=()=>{if(innerWidth<=900)setPanel('assistant');$('#prompt').focus()};$('#studio-home').onclick=()=>setPanel('canvas');document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>showAux(b.dataset.view));document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>setDevice(b.dataset.device));$('#website-pages').onchange=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value)};$('#refresh-preview').onclick=()=>{if(selectedProduction)previewWebsite(selectedProduction,$('#website-pages').value||'index.html');else showCanvas('empty')};tools();showCanvas(canvasState);draw();
 }
 const originalSelect=selectCategory;selectCategory=function(...args){epoch++;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();else if(current.id!=='website')restoreLocalCategoryChat();}};send=()=>sendMessage();
+// Only accept a finished production ID from the currently mounted, same-origin
+// Website Builder frame. The preview endpoint independently verifies ownership.
+addEventListener('message',event=>{
+ const builder=$('#studio-website-builder-frame');
+ if(event.origin!==parent.location.origin||!builder||event.source!==builder.contentWindow||
+    event.data?.type!=='crelavo-studio-website-created')return;
+ const id=String(event.data.productionId||'');
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))return;
+ if(current.id!=='website'||!session)return;
+ selectedProduction=id;
+ websiteData=null;
+ showAux('canvas');
+ void previewWebsite(id);
+});
 addEventListener('resize',resizePreview);new ResizeObserver(resizePreview).observe($('.canvas'));
 addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;liveProductionBalance=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');
  try{
