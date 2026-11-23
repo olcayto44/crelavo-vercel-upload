@@ -1,0 +1,78 @@
+/* One visual system for standalone Studio V2 media tools.
+   Deliberately scoped so legacy Dashboard and Studio Canvas stay untouched. */
+.studio-tool-page { min-height:100dvh; background:#100b19; color:#f4effc; width:100%; }
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) {
+ width:min(100%,1320px); max-width:1320px!important; margin:0 auto!important;
+ min-height:100dvh; padding:18px clamp(12px,2.2vw,28px) 32px!important;
+ background:#100b19!important; color:#f4effc!important;
+ font-family:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) * {box-sizing:border-box}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) header {
+ margin:0 0 14px!important; padding:0 0 13px!important; border-bottom:1px solid #352841!important;
+ gap:12px; align-items:center;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) header h1 {
+ font-size:20px!important;line-height:1.25;letter-spacing:-.025em;margin:7px 0 3px!important;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) header p {
+ font-size:12px!important;line-height:1.45;margin:4px 0 0!important;max-width:720px;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) a[href*="/dashboard/studio-v2"] {
+ display:inline-flex!important;align-items:center;gap:6px;background:#1b1427;
+ border:1px solid #453255;border-radius:8px;padding:7px 10px;
+ color:#e3d6f1!important;text-decoration:none!important;font-size:12px!important;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) :is(input,textarea,select) {
+ background:#21182f; color:#f5eefc; border:1px solid #4b3a5c; border-radius:8px;
+ font-size:12px; max-width:100%;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) :is(input:not([type]),input[type=text],input[type=number],textarea,select) {padding:8px 10px;min-height:34px}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) input[type=checkbox] {
+ appearance:auto!important; width:15px!important; height:15px!important; min-width:15px!important;
+ min-height:15px!important; margin:0!important; padding:0!important; accent-color:#a55eea;
+ flex:0 0 15px!important; vertical-align:middle; box-shadow:none!important;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) input[type=file] {
+ max-width:100%;font-size:11px;padding:5px;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) input[type=file]::file-selector-button {
+ background:#3c2752;color:#f5eafa;border:1px solid #654780;border-radius:6px;
+ font:inherit;padding:6px 9px;margin-right:8px;cursor:pointer;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) :is(button,summary) {
+ font-size:12px;line-height:1.3;cursor:pointer;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) button:disabled {
+ cursor:not-allowed;opacity:.48;
+}
+.studio-tool-page :is(.studio-compact-video-editor,.studio-compact-image-editor,.studio-compact-elements) :focus-visible {
+ outline:2px solid #d1a0ff;outline-offset:2px;
+}
+.studio-compact-video-editor .editor-main-grid {display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:12px;align-items:start}
+.studio-compact-video-editor .editor-main-grid > div:first-child {min-width:0}
+.studio-compact-video-editor .editor-output-controls {
+ display:grid!important;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+ gap:12px!important;align-items:start!important;border-top:1px solid #352841;
+ padding-top:14px!important;margin-top:12px!important;
+}
+.studio-compact-video-editor .editor-output-controls > label {min-width:0;font-size:12px!important;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.studio-compact-video-editor .editor-output-controls > label:has(input[type=checkbox]) {flex-direction:row!important;align-items:center!important;gap:8px}
+.studio-compact-video-editor .editor-output-controls > button {align-self:end}
+.studio-compact-video-editor .editor-output-controls select {min-width:110px!important}
+.studio-compact-video-editor .editor-output-controls input[type=file] {max-width:190px!important}
+.studio-compact-video-editor .editor-main-grid aside {position:sticky;top:12px}
+.studio-compact-image-editor .image-editor-main {display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;align-items:start}
+.studio-compact-image-editor .image-editor-main canvas {max-height:55vh!important}
+.studio-compact-elements .elements-grid {display:grid;grid-template-columns:minmax(240px,345px) minmax(0,1fr);gap:14px;align-items:start}
+.studio-compact-elements .elements-grid > section:first-child {position:sticky;top:12px}
+.studio-compact-elements textarea {width:100%;resize:vertical}
+.studio-compact-elements details.cloud-details {margin-top:16px;border:1px solid #3d2c4f;border-radius:12px;background:#1b1426;overflow:hidden}
+.studio-compact-elements details.cloud-details > summary {padding:12px 16px;font-weight:650;color:#d9c7eb}
+.studio-compact-elements details.cloud-details > section {border:0!important;margin-top:0!important;background:#1b1426!important}
+@media(max-width:800px){
+ .studio-compact-video-editor .editor-main-grid,.studio-compact-image-editor .image-editor-main,
+ .studio-compact-elements .elements-grid {grid-template-columns:minmax(0,1fr)!important}
+ .studio-compact-video-editor .editor-main-grid aside,.studio-compact-elements .elements-grid>section:first-child {position:static}
+ .studio-compact-video-editor .editor-output-controls {grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}
+}
