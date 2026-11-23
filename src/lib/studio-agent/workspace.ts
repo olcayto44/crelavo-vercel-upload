@@ -21,7 +21,7 @@ function showVideoProject(item){
  if(!category||profile(category).kind!=='video'||!isReadyVideo(item))return;
  activeVideo=item;
  window.dispatchEvent(new CustomEvent('crelavo-studio-video-selected',{
-  detail:{id:item.id,title:item.title,scenes:Array.isArray(item.scenes)?item.scenes.length:1}
+  detail:{id:item.id,title:item.title,scenes:Array.isArray(item.scenes)?item.scenes.length:1,specs:item.specs||null}
  }));
  const clips=Array.isArray(item.scenes)?item.scenes.filter(part=>part&&typeof part.url==='string'&&/^https:\/\//i.test(part.url)).slice(0,20):[];
  const playList=clips.length?clips:[{id:'final',title:'Final video',url:item.videoUrl,durationSeconds:null}];
