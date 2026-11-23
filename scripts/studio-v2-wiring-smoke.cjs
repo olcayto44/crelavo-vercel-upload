@@ -38,4 +38,13 @@ assert.match(client,/if\(!status\?\.realEnabled&&mode==='real'&&current\.id!=='w
 assert.match(client,/Kategori planı · sohbet taslağı/,'non-Website plan must be inspectable in Canvas');
 assert.match(client,/Planı Canvas/,'non-Website chat must expose a visible plan control');
 assert.match(client,/restoreLocalCategoryChat/,'plan conversation should restore active tab history');
+const builderForm=read('src/components/WebsiteBuilderForm.tsx');
+assert.match(client,/crelavo-studio-website-brief/,'Studio must transfer Website brief to Builder');
+assert.match(client,/studioWebsiteBrief\(\)/,'Studio must use current customer brief');
+assert.match(client,/crelavo-studio-website-created/,'Studio must accept completed site identity');
+assert.match(client,/event\.source!==builder\.contentWindow/,'Canvas must only accept its own Builder frame');
+assert.match(builderForm,/event\.origin !== window\.location\.origin/,'Builder must verify brief sender origin');
+assert.match(builderForm,/event\.source !== window\.parent/,'Builder must verify parent sender');
+assert.match(builderForm,/crelavo-studio-website-created/,'Builder must notify Canvas on successful production');
+assert.match(client,/id!==selectedProduction/,'ZIP must target the verified current Canvas production');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
