@@ -64,7 +64,8 @@ Acceptance: export a two-scene episode with maintained character/location and ed
 
 ## K. Images / Layers / Inpaint / Effects — P2
 Categories: image, brand_kit, virtual_model_studio.
-Missing: selection/mask brush, inpainting/outpainting, object cleanup, layer editor, image references attached to model, model-specific resolution, color-hex style, product shots, background removal and batch variants.
+Partially implemented: a local Canvas image editor reachable inside original Studio V2 for image/character categories; supports user-uploaded source, centered aspect crop (original, 1:1, 16:9, 9:16, 4:5), rotate, horizontal flip, brightness, contrast, saturation, before/after hold and real PNG export. No AI charges or cloud upload.
+Missing: selection/mask brush, inpainting/outpainting, object cleanup, layers, image references attached to model, provider-specific resolution, color-hex styles, product shots, background removal, batch AI variants and owner-scoped cloud asset persistence.
 Acceptance: changing a selected object preserves unmasked image areas and produces downloadable outputs.
 
 ## L. Workflow Canvas / Automation / Model Router — P0/P2
