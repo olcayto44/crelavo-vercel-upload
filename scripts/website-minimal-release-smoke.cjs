@@ -52,5 +52,9 @@ function load(path){
  const legacyGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
  assert.ok(legacyGenerator.includes('CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED'), 'legacy free generation must be gated when paid');
  assert.ok(legacyGenerator.includes('website_paid_studio_required'), 'legacy generator must not bypass paid Studio flow');
+ const contentApi=fs.readFileSync('src/app/api/website-content/[id]/route.ts','utf8');
+ assert.ok(contentApi.includes('websiteCreditDeliveryProof(record, data)'), 'content API must verify independently settled credits');
+ assert.equal(contentApi.split('const billingBlock = await atomicWebsiteContentAccess(data)').length-1,2,'GET and edit paths must both be guarded');
+ assert.ok(contentApi.includes('website_atomic_delivery_not_settled'));
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
