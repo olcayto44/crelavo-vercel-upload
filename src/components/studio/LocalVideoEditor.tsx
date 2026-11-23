@@ -8,7 +8,7 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean };
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -165,7 +165,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -186,7 +186,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
-      setFadeBetweenClips(Boolean(project.fadeBetweenClips));
+      setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="contain"?"contain":"cover");
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -197,7 +197,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
-       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips
+       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing
       });
       setState("Cloud timeline version "+version+" saved with its source files. You can reopen it on another device.");
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -214,7 +214,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);
-      setFadeBetweenClips(saved.fadeBetweenClips);cleanupOutput();
+      setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing);cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
     finally{setProjectSaving(false)}
