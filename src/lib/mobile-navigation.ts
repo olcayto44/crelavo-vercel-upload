@@ -8,5 +8,5 @@ export const mobileNavigationLinks = [
 // Embedded and full-screen production surfaces retain their own dedicated chrome.
 export function showMobileSiteHeader(pathname: string | null) {
   if (!pathname) return false;
-  return !["/admin", "/api", "/embed", "/dashboard/assistant-workspace", "/dashboard/studio-v2", "/dashboard/website-builder", "/ai-mobile-app-builder", "/ai-ecommerce-builder", "/ai-video-agent", "/ai-video-generator"].some(prefix => pathname === prefix || pathname.startsWith(prefix + "/"));
+  return !["/admin", "/api", "/embed", "/dashboard/assistant-workspace", "/dashboard/studio-v2", "/dashboard/website-builder", "/dashboard/studio-video-editor", "/dashboard/studio-elements", "/ai-mobile-app-builder", "/ai-ecommerce-builder", "/ai-video-agent", "/ai-video-generator"].some(prefix => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
