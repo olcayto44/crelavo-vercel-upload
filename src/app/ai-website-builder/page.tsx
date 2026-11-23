@@ -1,21 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { StudioWebsiteV2 } from "@/components/StudioWebsiteV2";
-import { Suspense } from "react";
-
-import { getConfiguredServicePage } from "@/lib/service-pages-loader";
-
-const slug = "ai-website-builder";
-
-export async function generateMetadata(): Promise<Metadata> {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") return {};
-  const noindex = page.status === "noindex" || page.includeInSitemap === false;
-  return { title: `${page.title} — ${page.keyword} Service`, description: page.summary, alternates: { canonical: `/${slug}` }, openGraph: { title: page.title, description: page.summary, url: `/${slug}`, type: "website" }, robots: noindex ? { index: false, follow: true } : { index: true, follow: true } };
-}
-
-export default async function Page() {
-  const page = await getConfiguredServicePage(slug);
-  if (!page || page.status === "draft") notFound();
-  return <Suspense fallback={null}><StudioWebsiteV2 /></Suspense>;
+import { redirect } from "next/navigation";
+export const metadata: Metadata = {
+  title: "Crelavo AI Website Builder",
+  description: "Design and build a website in Crelavo Studio V2.",
+  alternates: { canonical: "/ai-website-builder" }
+};
+export default function Page() {
+  redirect("/dashboard/studio-v2?category=website");
 }
