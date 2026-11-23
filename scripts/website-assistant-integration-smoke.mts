@@ -6,6 +6,7 @@ import { generateWebsiteArtifact } from '../src/lib/website-engine.ts';
 import { buildDeliveryEntries, buildDeliveryZip, buildPreviewHtml } from '../src/lib/automatic-delivery-builder.ts';
 import { normalizeAssistantWebsiteBrief, converseWebsiteBrief, explicitWebsiteBriefPatch } from '../src/lib/assistant-work/website-brief.ts';
 import { websitePreviewDocument } from '../src/lib/website-preview.ts';
+import { websiteCreditDeliveryProof } from '../src/lib/assistant-work/website-paid-delivery.ts';
 delete process.env.OPENAI_API_KEY;
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 const brief = { brand: 'Ortak Marka', brief: 'Small business providing reliable team scheduling services.', audience: 'Small business teams', siteType: 'Business website', style: 'Clean and minimal', pages: ['Home', 'About', 'Services', 'Contact'], features: ['Responsive layout', 'FAQ'], locale: 'en' };
@@ -90,8 +91,8 @@ const websiteDispatch=workRoute.indexOf('executeWebsiteRequest(req'); const gene
 assert(websiteDispatch >= 0 && genericDispatch > websiteDispatch, 'website must be dispatched before generic production manager');
 assert(workRoute.slice(websiteDispatch,genericDispatch).includes('return NextResponse.json'), 'website dispatch must return without falling through');
 const deliverySource = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8").replace(/^import .*;\r?\n/gm, "").replace(/export async function /g, "async function ");
-const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", stripTypeScriptTypes(deliverySource) + "; return GET;");
-const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, () => env.db, async () => ({ status: "active" }));
+const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", "websiteCreditDeliveryProof", stripTypeScriptTypes(deliverySource) + "; return GET;");
+const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, () => env.db, async () => ({ status: "active" }), websiteCreditDeliveryProof);
 const deliveryRequest = (query: string, token = "owner") => new Request("https://local.test/api/productions/" + id + "/delivery?" + query, { headers: { Authorization: "Bearer " + token } });
 const contactResponse = await deliveryGet(deliveryRequest("file=preview&page=contact.html"), params);
 assert(contactResponse.status === 200 && (await contactResponse.text()).includes("id=\"contact\""), "actual delivery API must select the requested page");
