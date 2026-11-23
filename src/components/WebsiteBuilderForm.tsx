@@ -26,6 +26,12 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   const [outputs, setOutputs] = useState<Outputs | null>(null);
   const [content, setContent] = useState<WebsiteContent>({ heroTitle: "", heroBody: "", primaryCta: "" });
   const update = (key: keyof typeof fields, value: string) => setFields((current) => ({ ...current, [key]: value }));
+  function notifyStudioUpdated(id: string | undefined) {
+    if (window.parent === window || !id ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return;
+    window.parent.postMessage({ type: "crelavo-studio-website-updated", productionId: id }, window.location.origin);
+  }
+
   const scopeLabel = fields.scope === "website_with_admin" ? t("Public website + admin starter") : t("Public static website");
   const list = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
@@ -134,7 +140,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, action: "revision", instruction: revisionInstruction }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Revision failed.");
-      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setRevisionInstruction(""); setStatus("Natural-language revision saved."); onContentChange?.();
+      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setRevisionInstruction(""); setStatus("Natural-language revision saved."); onContentChange?.(); notifyStudioUpdated(outputs?.plan?.projectId);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Revision failed."); } finally { setContentBusy(false); }
   }
 
@@ -146,7 +152,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       const response = await fetch(`/api/website-content/${outputs.plan.projectId}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, action: "rollback", revision }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Rollback failed.");
-      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setStatusVariables({ version: revision }); setStatus("Version {version} restored."); onContentChange?.();
+      setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []); setStatusVariables({ version: revision }); setStatus("Version {version} restored."); onContentChange?.(); notifyStudioUpdated(outputs?.plan?.projectId);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Rollback failed."); } finally { setContentBusy(false); }
   }
   async function saveContent(event: FormEvent) {
@@ -159,7 +165,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || data.error || "Website content update failed.");
       setContent({ heroTitle: "", heroBody: "", primaryCta: "", ...(data.content || content) }); setHistory(data.history || []);
-      setStatus("Website content saved. Preview and downloadable source files now use the latest copy."); onContentChange?.();
+      setStatus("Website content saved. Preview and downloadable source files now use the latest copy."); onContentChange?.(); notifyStudioUpdated(outputs?.plan?.projectId);
     } catch (error) { setStatus(error instanceof Error ? error.message : "Website content update failed."); } finally { setContentBusy(false); }
   }
 
