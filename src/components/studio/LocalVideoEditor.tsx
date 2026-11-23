@@ -109,8 +109,9 @@ async function seek(video: HTMLVideoElement, at: number) {
     video.currentTime = at;
   });
 }
-export default function LocalVideoEditor() {
+export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowAnonymousLocalSave?:boolean}={}) {
   const [projectOwner,setProjectOwner] = useState("");
+  const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
   const [active, setActive] = useState<string | null>(null);
@@ -138,10 +139,12 @@ export default function LocalVideoEditor() {
   useEffect(()=>{
     let live=true;
     void supabaseBrowser().auth.getUser().then(({data,error})=>{
-      if(live&&!error&&data.user)setProjectOwner(data.user.id);
-    }).catch(()=>{});
+      if(!live)return;
+      if(!error&&data.user){setProjectOwner(data.user.id);setSignedIn(true)}
+      else if(allowAnonymousLocalSave){setProjectOwner("preview-local");setSignedIn(false)}
+    }).catch(()=>{if(live&&allowAnonymousLocalSave){setProjectOwner("preview-local");setSignedIn(false)}});
     return()=>{live=false};
-  },[]);
+  },[allowAnonymousLocalSave]);
   useEffect(() => { files.current = clips; }, [clips]);
   useEffect(() => () => { files.current.forEach(c => URL.revokeObjectURL(c.url)); if (output.current) URL.revokeObjectURL(output.current); }, []);
   async function saveTimeline(){
@@ -181,7 +184,7 @@ export default function LocalVideoEditor() {
     finally{setProjectSaving(false)}
   }
   async function saveTimelineCloud(){
-    if(!projectOwner||!clips.length||busy||projectSaving)return;
+    if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
@@ -192,7 +195,7 @@ export default function LocalVideoEditor() {
     finally{setProjectSaving(false)}
   }
   async function reopenTimelineCloud(){
-    if(!projectOwner||busy||projectSaving)return;
+    if(!projectOwner||!signedIn||busy||projectSaving)return;
     setProjectSaving(true);setState("Downloading your latest cloud timeline…");
     try{
       const saved=await loadCloudTimeline();
@@ -416,11 +419,12 @@ export default function LocalVideoEditor() {
       <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center"}}>
        <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"6px 9px",borderRadius:8}}>Save local timeline</button>
        <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen timeline</button>
-       <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
-       <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
+       <button type="button" disabled={!signedIn||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
+       <button type="button" disabled={!signedIn||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
       <label style={{ background: "#7036b5", padding: "7px 12px", borderRadius: 8, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
       </div>
     </header>
+    {!signedIn&&allowAnonymousLocalSave&&<p style={{fontSize:11,color:"#d7c2ed",margin:"3px 0 8px"}}>Preview mode: local timeline saves stay in this browser. Sign in for private cloud backup.</p>}
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
     <div className="editor-main-grid">
       <div style={{ minWidth: 0 }}>
