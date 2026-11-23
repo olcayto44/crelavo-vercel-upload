@@ -260,3 +260,8 @@ assert.match(developerChatRoute,/limit: 8/,'anonymous preview must have strict r
 assert.match(developerChatRoute,/spend:false/,'preview API must never spend Crelavo credits');
 assert.match(client,/fetch\('\/api\/studio\/developer-chat'/,'preview composer must call the real developer assistant endpoint');
 assert.match(client,/role:'assistant',content:data.reply/,'assistant replies must appear in the chat history');
+
+const previewAssistant=read('src/app/api/studio/developer-chat/route.ts');
+assert.ok(client.includes("const panel=node('details',undefined,'studio-video-plan')"),'video plan must not overwhelm the chat transcript');
+assert.ok(client.includes("localEditor.onclick=()=>openStudioTool('video')"),'AI Video plan must link to an actual local editor');
+assert.ok(previewAssistant.includes("Do not end at a generic refusal"),'developer assistant must lead to actionable next steps');
