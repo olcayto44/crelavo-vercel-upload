@@ -82,7 +82,11 @@ function showVideoProject(item){
  });
  const tabs=q('.tabs');const variants=tabs.querySelector('[data-view="variants"]');
  if(variants)variants.textContent='Variants ('+readyVideos.length+')';
- q('#aux-panel').hidden=true;adjust();
+ // Loading or selecting a saved video must not forcibly close Assets,
+ // Variants or Timeline. The user may be inspecting those tabs while the
+ // asynchronous library request finishes.
+ if(active==='canvas')q('#aux-panel').hidden=true;
+ adjust();
 }
 function showVideoLibrary(items){
  readyVideos=(Array.isArray(items)?items:[]).filter(isReadyVideo).slice(0,30);
