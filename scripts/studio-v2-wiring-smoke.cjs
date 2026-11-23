@@ -112,7 +112,12 @@ assert.match(elements,/\.auth\.getUser\(\)/,'assets must be scoped to signed in 
 assert.match(elements,/store\.createIndex\("owner","owner"/,'asset storage must separate account views');
 assert.match(elements,/permission/,'identity references need consent');
 assert.match(elementsRoute,/LocalAssetLibrary/);
-assert.match(client,/\/dashboard\/studio-elements/,'Assets tab must open asset library');
+assert.match(client,/async function showStudioElements\(\)/,'Assets tab must render native Elements panel');
+assert.match(client,/indexedDB\.open\('crelavo-studio-local-elements-v1',1\)/,'native Assets must share existing local Elements records');
+assert.match(client,/if\(view==='assets'\)\{void showStudioElements\(\);return;\}/,'Assets must avoid nested dashboard iframe');
+assert.ok(!client.includes("frame.src='/dashboard/studio-elements'"),'nested dashboard iframe previously rendered broken file must be absent');
+assert.match(client,/const requestedStudioLanguage=new URLSearchParams/,'explicit interface locale should override saved preference');
+assert.match(client,/project\?\.title&&!\/ \(brief\|projesi\|project\)\$\/i/,'generic chat project label must not replace category heading');
 assert.match(footer,/\/dashboard\/studio-video-editor/,'video editor must exclude shared footer');
 assert.match(footer,/\/dashboard\/studio-elements/,'Elements library must exclude shared footer');
 assert.match(client,/localizeObserver\.observe\(document\.body,\{subtree:true,childList:true\}\)/,'translation observer must not loop on individual text mutations');
