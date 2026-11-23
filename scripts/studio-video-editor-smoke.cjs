@@ -52,4 +52,9 @@ assert.match(source,/onClick=\{\(\) => \{ void exportVideo\(\); \}\}/,'WebM expo
 assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three export cards must line up evenly');
 assert.match(css,/@media\(max-width:650px\)/,'export controls must stack on narrow screens');
 
+assert.match(source,/Preview: selected clip only/,'selected preview must explain why it differs from total timeline duration');
+assert.match(source,/studio-timeline-clip/,'clip selection must be visually distinguishable');
+assert.match(source,/studio-timeline-actions/,'reorder/remove controls must use consistent buttons');
+assert.match(css,/studio-setting-file-button[^\\{]*\\{[\\s\\S]*?color:#faf4ff!important/,'file choose buttons must have readable light text');
+assert.match(css,/studio-timeline-actions button/,'timeline actions must meet consistent minimum height');
 console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
