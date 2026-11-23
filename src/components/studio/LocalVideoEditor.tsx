@@ -35,12 +35,12 @@ function parseSrt(source: string): CaptionCue[] {
   // Strict bounded parsing: do not interpret markup or run HTML from subtitles.
   const cues: CaptionCue[] = [];
   const time = (value: string) => {
-    const match = value.trim().match(/^(\\d{2}):(\\d{2}):(\\d{2})[,.](\\d{3})$/);
+    const match = value.trim().match(/^(\d{2}):(\d{2}):(\d{2})[,.](\d{3})$/);
     if (!match) return NaN;
     return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(match[4]) / 1000;
   };
-  for (const block of source.replace(/\\r/g, "").trim().split(/\\n\\s*\\n/)) {
-    const lines = block.split("\\n");
+  for (const block of source.replace(/\r/g, "").trim().split(/\n\s*\n/)) {
+    const lines = block.split("\n");
     const lineIndex = lines.findIndex(line => line.includes("-->"));
     if (lineIndex < 0) continue;
     const parts = lines[lineIndex].split("-->");
@@ -65,7 +65,7 @@ function paintOverlay(ctx: CanvasRenderingContext2D, width: number, height: numb
   ctx.lineWidth = Math.max(3, size / 7);
   ctx.strokeStyle = "rgba(0,0,0,.88)";
   ctx.fillStyle = "white";
-  const words = text.split(/\\s+/);
+  const words = text.split(/\s+/);
   const rows: string[] = [];
   let row = "";
   for (const word of words) {
