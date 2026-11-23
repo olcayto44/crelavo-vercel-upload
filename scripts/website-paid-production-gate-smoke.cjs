@@ -2,7 +2,7 @@
 const assert=require('node:assert/strict');
 const {load}=require('./studio-agent-test-loader.cjs');
 let databaseReads=0;
-const {websitePaidProductionEnabled,executePaidWebsiteProduction}=load('src/lib/assistant-work/website-paid-production.ts',{
+const {websitePaidProductionEnabled,websitePaidCanaryAllowed,executePaidWebsiteProduction}=load('src/lib/assistant-work/website-paid-production.ts',{
  '@/lib/supabase':{supabaseAdmin:()=>{databaseReads++;throw Error('database_must_not_be_called_when_disabled');}},
  '@/lib/crelavo/categoryCatalog':{getCategory:()=>({packs:[]})},
  './website-credit-ledger':{createWebsiteCreditLedger:()=>{throw Error('ledger_must_not_be_created_when_disabled');}},
@@ -12,6 +12,13 @@ const {websitePaidProductionEnabled,executePaidWebsiteProduction}=load('src/lib/
 const base={VERCEL_ENV:'production',CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED:'true',
  SUPABASE_SERVICE_ROLE_KEY:'test-server-secret',NEXT_PUBLIC_SUPABASE_URL:'https://example.supabase.co'};
 assert.equal(websitePaidProductionEnabled(base),true);
+const user='11111111-1111-4111-8111-111111111111';
+assert.equal(websitePaidCanaryAllowed(user,base),false,'no canary list must fail closed');
+assert.equal(websitePaidCanaryAllowed(user,{...base,CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS:user}),true);
+assert.equal(websitePaidCanaryAllowed(user,{...base,CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS:'22222222-2222-4222-8222-222222222222'}),false);
+assert.equal(websitePaidCanaryAllowed('invalid',{...base,CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS:user}),false);
+assert.equal(websitePaidCanaryAllowed(user,{...base,CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS:'*'}),false);
+
 for(const env of [
  {...base,VERCEL_ENV:'preview'},
  {...base,VERCEL_ENV:'development'},
