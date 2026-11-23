@@ -40,6 +40,11 @@ export default function LocalVideoEditor() {
   const [resolution, setResolution] = useState(720);
   const [includeAudio, setIncludeAudio] = useState(true);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [editorLanguage, setEditorLanguage] = useState<"en" | "tr">("en");
+  useEffect(() => {
+    try { setEditorLanguage(localStorage.getItem("clipora_language") === "tr" ? "tr" : "en"); } catch {}
+  }, []);
+  const t = (english: string, turkish: string) => editorLanguage === "tr" ? turkish : english;
   const files = useRef<Clip[]>([]);
   const output = useRef<string | null>(null);
   const cancel = useRef(false);
@@ -82,7 +87,8 @@ export default function LocalVideoEditor() {
   }
   function remove(id: string) {
     if (busy) return; cleanupOutput();
-    setClips(existing => { const item = existing.find(c => c.id === id); if (item) URL.revokeObjectURL(item.url); const next = existing.filter(c => c.id !== id); setActive(current => current === id ? (next[0]?.id || null) : current); return next; });
+    setClips(existing => { const item = existing.find(c => c.id === id); const next = existing.filter(c => c.id !== id);
+      if (item && !next.some(c => c.url === item.url)) URL.revokeObjectURL(item.url); setActive(current => current === id ? (next[0]?.id || null) : current); return next; });
   }
   function split(id: string) {
     const item = clips.find(c => c.id === id);
@@ -193,8 +199,8 @@ export default function LocalVideoEditor() {
   }
   return <section style={{ color: "#f4f0ff", background: "#110e1b", padding: 18, minHeight: "100%", fontFamily: "Inter,system-ui,sans-serif" }}>
     <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-      <div><h1 style={{ fontSize: 18, margin: 0 }}>Video Editor & Merge</h1><p style={{ color: "#b8a8c9", margin: "6px 0 14px", fontSize: 12 }}>Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.</p></div>
-      <label style={{ background: "#7036b5", padding: "10px 15px", borderRadius: 9, cursor: busy ? "not-allowed" : "pointer" }}>+ Add videos<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
+      <div><h1 style={{ fontSize: 18, margin: 0 }}>{t("Video Editor & Merge", "Video Düzenleme ve Birleştirme")}</h1><p style={{ color: "#b8a8c9", margin: "6px 0 14px", fontSize: 12 }}>{t("Add, remove, split, trim, reorder, and merge local videos. No AI credits or server upload.", "Yerel videoları ekle, çıkar, kes, böl, sırala ve birleştir. AI kredisi veya sunucu yüklemesi yok.")}</p></div>
+      <label style={{ background: "#7036b5", padding: "10px 15px", borderRadius: 9, cursor: busy ? "not-allowed" : "pointer" }}>{t("+ Add videos", "+ Video ekle")}<input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
     </header>
     <div role="status" aria-live="polite" style={{ color: "#c7bad7", marginBottom: 12 }}>{state}</div>
     <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(190px,260px)", gap: 12 }}>
@@ -229,7 +235,7 @@ export default function LocalVideoEditor() {
       <label>Ratio <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}><option>16:9</option><option>9:16</option><option>1:1</option></select></label>
       <label>Height <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 5 }}><input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} /> Include source audio</label>
-      <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }} style={{ background: "#7835c0", padding: "10px 18px", borderRadius: 9, color: "#fff", border: 0 }}>Merge & Export WebM</button>
+      <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }} style={{ background: "#7835c0", padding: "10px 18px", borderRadius: 9, color: "#fff", border: 0 }}>{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
       {busy && <button type="button" onClick={() => { cancel.current = true; }}>Cancel</button>}
       {busy && <span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
       {downloadUrl && <a href={downloadUrl} download="crelavo-studio-merged.webm" style={{ color: "#e1a8ff", fontWeight: 700 }}>↓ Download merged video</a>}
