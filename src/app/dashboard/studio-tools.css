@@ -93,3 +93,63 @@
 .studio-tool-page .studio-compact-image-editor .image-transform-buttons button:disabled{
  opacity:.42;background:#261e30;
 }
+
+/* Image editor's sliders are controls, not text inputs. Reset the dashboard
+   input appearance, then draw a real cross-browser range track and thumb. */
+.studio-tool-page .studio-compact-image-editor .image-editor-slider {
+ display:grid;gap:7px;min-width:0;line-height:1.4;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider > span {
+ display:flex;justify-content:space-between;gap:8px;align-items:center;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider output {
+ font-variant-numeric:tabular-nums;font-weight:700;color:#dbc2fa;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range] {
+ appearance:none!important;-webkit-appearance:none!important;
+ display:block;width:100%!important;min-width:0;height:25px!important;
+ min-height:25px!important;margin:0!important;padding:0!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ opacity:1;cursor:ew-resize;touch-action:pan-y;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range]::-webkit-slider-runnable-track {
+ height:6px;background:#634b7c;border-radius:999px;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range]::-moz-range-track {
+ height:6px;background:#634b7c;border-radius:999px;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range]::-webkit-slider-thumb {
+ appearance:none;-webkit-appearance:none;width:17px;height:17px;
+ border-radius:50%;background:#dbafff;border:2px solid #331346;
+ margin-top:-5.5px;box-shadow:0 0 0 2px #b35bfb44;cursor:grab;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range]::-moz-range-thumb {
+ width:15px;height:15px;border-radius:50%;background:#dbafff;
+ border:2px solid #331346;box-shadow:0 0 0 2px #b35bfb44;cursor:grab;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-slider input[type=range]:disabled {
+ cursor:not-allowed;opacity:.45!important;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-controls-prompt {
+ padding:12px;border:1px dashed #7d5b9c;border-radius:9px;
+ background:#281a39;display:grid;gap:9px;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-controls-prompt p {
+ margin:0;font-size:12px;line-height:1.55;color:#e3d4f5;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-controls-prompt button,
+.studio-tool-page .studio-compact-image-editor .image-editor-empty button {
+ background:#7035b5;color:#fff;border:1px solid #9950dc;
+ padding:9px 11px;border-radius:8px;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-active-note {
+ margin:0;font-size:11px;color:#d0b9eb;line-height:1.45;overflow-wrap:anywhere;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-dropzone.dragging {
+ border-color:#c082ff!important;background:#251531!important;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-empty {
+ display:grid;gap:9px;text-align:center;justify-items:center;padding:24px 12px;
+}
+.studio-tool-page .studio-compact-image-editor .image-editor-empty p {margin:0;color:#c9b6df}
+.studio-tool-page .studio-compact-image-editor .image-editor-empty small {font-size:11px;color:#a995bc}
