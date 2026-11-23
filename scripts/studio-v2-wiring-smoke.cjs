@@ -121,4 +121,9 @@ assert.match(client,/studioUiLookup=new Map/,'translations must have stable look
 assert.match(client,/Loading saved video projects/,'video library hydration must show explicit loading state');
 assert.match(view,/Header is one coherent Studio toolbar/,'reference header must remain integrated');
 assert.match(view,/\.studio-header \.global-modes button\{white-space:nowrap;overflow:visible/,'top toolbar captions must not truncate');
+assert.match(localEditor,/async function saveTimeline/,'Video timeline must be saveable');
+assert.match(localEditor,/async function reopenTimeline/,'Saved video timeline must be restorable');
+assert.match(localEditor,/indexedDB\.open\(VIDEO_PROJECT_DB,1\)/,'Browser timeline project must persist');
+assert.match(localEditor,/owner:projectOwner/,'Timeline must be scoped to authenticated account');
+assert.match(localEditor,/150_000_000/,'Browser-local large file storage must be bounded');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
