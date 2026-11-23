@@ -54,6 +54,7 @@ process.env.STUDIO_AGENT_MOCK_SIGNING_SECRET='isolated-browser-mock-secret';
   assert.equal(await frame.locator('#prompt').inputValue(),'','successful message must clear composer');
   assert(apiCalls>=3,'authenticated session should fetch readiness, create project and send message');
   // Complete the category brief using explicit Mock defaults, then exercise the visible plan controls.
+  await frame.locator('.assistant-details summary').click();
   await frame.locator('#b2-defaults').click();
   await frame.locator('#send').evaluate(async button=>{const start=Date.now();while(button.getAttribute('aria-busy')==='true'&&Date.now()-start<15000)await new Promise(r=>setTimeout(r,50));});
   await frame.locator('[data-view="brief"]').first().click();
