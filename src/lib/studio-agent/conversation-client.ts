@@ -4,12 +4,12 @@ let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'
 let liveProductionBalance=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
 const availableStudioLanguages=['en','tr','de','es','fr','ar'];
-let storedStudioLanguage='en';
-try{storedStudioLanguage=localStorage.getItem('clipora_language')||'en'}catch(_error){}
-// The site's saved choice takes precedence over old Studio links that
-// previously hardcoded uiLang=tr. First-time visits may use the URL locale.
-let language=(storedStudioLanguage!=='en' ? storedStudioLanguage :
-  (new URLSearchParams(parent.location.search).get('uiLang')||storedStudioLanguage));
+let storedStudioLanguage='en',siteLanguageExplicit=false;
+try{const saved=localStorage.getItem('clipora_language');siteLanguageExplicit=Boolean(saved);storedStudioLanguage=saved||'en'}catch(_error){}
+// A previously saved site-language choice wins over old Studio links.
+// First-time visitors may still deliberately select a URL locale.
+let language=siteLanguageExplicit?storedStudioLanguage:
+  (new URLSearchParams(parent.location.search).get('uiLang')||'en');
 if(!availableStudioLanguages.includes(language))language='en';
 const words={
 tr:['Konuşma','Yeni sohbet projesi','Mesaj gönder','Dosya seç','Proje bağlamı','Önce oturum açın.','Bir mesaj yazın…','Mock demo: Yanıtlar ve bakiyeler simülasyondur. Hafıza tarayıcıda imzalı demo kaydıdır; gerçek AI/DB değildir.','Gerçek AI yalnızca atomik muhasebe ve sunucu tarifesi etkinse çalışır.','Dosya yalnızca seçildi; yükleme ve modele aktarım henüz bağlı değil.','Üretim ve revizyon araçları henüz bağlı değil.','Varsayılanları kullan','Kayıtlı Website projeleri','Salt okunur önizleme','İşlem tamamlanamadı. Otomatik tekrar yapılmadı.','Gönderiliyor…','Bu kategori için projenizi konuşarak hazırlayalım.','Kayıtlı sohbetler'],
