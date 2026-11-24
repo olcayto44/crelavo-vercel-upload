@@ -9,8 +9,9 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type ImageLayer={id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
-type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right";
+type ImageKeyframe={at:number;x:number;y:number;size:number;opacity:number};
+type ImageLayer={keyframes?:ImageKeyframe[];id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
+type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve";
 type SavedVideoProject = { audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
@@ -102,7 +103,15 @@ function paintTransition(ctx:CanvasRenderingContext2D,w:number,h:number,style:Tr
   const amount=entering?1-Math.max(0,local)/fade:exiting?1-Math.max(0,length-local)/fade:0;
   if(amount<=0)return;
   ctx.save();
-  if(style==="wipe-left"||style==="wipe-right"){
+  if(style==="zoom"||style==="slide"){
+    const frame=document.createElement("canvas");frame.width=w;frame.height=h;frame.getContext("2d")?.drawImage(ctx.canvas,0,0);
+    ctx.fillStyle="#000";ctx.fillRect(0,0,w,h);
+    if(style==="zoom"){const scale=1+amount*.2;ctx.globalAlpha=1-amount;ctx.drawImage(frame,(w-w*scale)/2,(h-h*scale)/2,w*scale,h*scale);}
+    else ctx.drawImage(frame,(entering?1:-1)*w*amount,0);
+  }else if(style==="dissolve"){
+    ctx.fillStyle="#000";const cell=Math.max(4,Math.round(w/48));
+    for(let y=0;y<h;y+=cell)for(let x=0;x<w;x+=cell){const hash=((Math.imul(x+17,73856093)^Math.imul(y+29,19349663))>>>0)/4294967296;if(hash<amount)ctx.fillRect(x,y,cell,cell);}
+  }else if(style==="wipe-left"||style==="wipe-right"){
     ctx.fillStyle="#000";const revealFromLeft=style==="wipe-left"?entering:!entering;
     ctx.fillRect(revealFromLeft?w*(1-amount):0,0,w*amount,h);
   }else{ctx.globalAlpha=Math.min(1,amount);ctx.fillStyle=style==="white"?"#fff":"#000";ctx.fillRect(0,0,w,h);}
@@ -111,8 +120,13 @@ function paintTransition(ctx:CanvasRenderingContext2D,w:number,h:number,style:Tr
 function paintImageLayers(ctx:CanvasRenderingContext2D,w:number,h:number,at:number,layers:ImageLayer[],images:Map<string,ImageBitmap>){
   for(const layer of layers){
     const image=images.get(layer.id);if(!image||at<layer.start||at>=layer.end)continue;
-    const width=Math.min(w*layer.size,h*layer.size*image.width/image.height),height=width*image.height/image.width;
-    ctx.save();ctx.globalAlpha=layer.opacity;ctx.drawImage(image,w*layer.x-width/2,h*layer.y-height/2,width,height);ctx.restore();
+    const keys=[{at:0,x:layer.x,y:layer.y,size:layer.size,opacity:layer.opacity},...(layer.keyframes||[])].sort((a,b)=>a.at-b.at);
+    const local=at-layer.start;
+    const next=keys.findIndex(k=>k.at>local),a=next<0?keys[keys.length-1]:keys[Math.max(0,next-1)],b=next<0?a:keys[next];
+    const t=b.at>a.at?Math.max(0,Math.min(1,(local-a.at)/(b.at-a.at))):0;
+    const lerp=(p:number,q:number)=>p+(q-p)*t;
+    const size=lerp(a.size,b.size),width=Math.min(w*size,h*size*image.width/image.height),height=width*image.height/image.width;
+    ctx.save();ctx.globalAlpha=lerp(a.opacity,b.opacity);ctx.drawImage(image,w*lerp(a.x,b.x)-width/2,h*lerp(a.y,b.y)-height/2,width,height);ctx.restore();
   }
 }
 function paintOverlay(ctx: CanvasRenderingContext2D, width: number, height: number, text: string, bottom: boolean) {
@@ -207,6 +221,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [autoSave,setAutoSave]=useState(false);
   const [autoSaveStatus,setAutoSaveStatus]=useState("");
   const [clips, setClips] = useState<Clip[]>([]);
+  const [sourceWaves,setSourceWaves]=useState<Record<string,number[]>>({});
+  const [waveStatus,setWaveStatus]=useState("");
+  async function decodeSourceWave(clip:Clip){
+    if(clip.file.size>50_000_000){setWaveStatus("Waveform decoding limit: 50 MB per source.");return;}
+    setWaveStatus("Decoding source audio…");let audio:AudioContext|null=null;
+    try{audio=new AudioContext();const buffer=await audio.decodeAudioData(await clip.file.arrayBuffer());const data=buffer.getChannelData(0);
+      const peaks=Array.from({length:96},(_,i)=>{const a=Math.floor(i*data.length/96),b=Math.floor((i+1)*data.length/96);let p=0;for(let j=a;j<b;j+=Math.max(1,Math.floor((b-a)/1024)))p=Math.max(p,Math.abs(data[j]));return p;});
+      setSourceWaves(old=>({...old,[clip.id]:peaks}));setWaveStatus("Source waveform decoded.");
+    }catch{setWaveStatus("This browser cannot decode the audio in this video container.");}finally{if(audio)void audio.close().catch(()=>{});}
+  }
   const [history,setHistory]=useState<{past:Clip[][];future:Clip[][]}>({past:[],future:[]});
   const historyRef=useRef(history);
   const retainedUrls=useRef(new Set<string>());
@@ -825,7 +849,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Playhead</span><input aria-label="Timeline playhead" type="range" min={0} max={duration} step={.01} value={Math.min(playhead,duration)} disabled={busy} onChange={e=>seekTimeline(Number(e.target.value))} style={{width:"100%"}}/>
               <span>Time</span><div style={{display:"flex",justifyContent:"space-between",color:"#b8a8c9"}}>{Array.from({length:5},(_,i)=><span key={i}>{sec(duration*i/4)}</span>)}</div>
               <span>Video</span><div style={{display:"flex",height:34,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={clip.name+" · "+sec(length)} onClick={()=>seekTimeline(start)} aria-pressed={active===clip.id} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}>{index+1}. {clip.name}</button>)}</div>
-              <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{includeAudio?Math.round((clip.gain??1)*100)+"%":"Muted"}</button>)}</div>
+              <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{!includeAudio?"Muted":sourceWaves[clip.id]?<svg viewBox="0 0 96 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded source audio waveform">{sourceWaves[clip.id].slice(Math.floor(clip.start/clip.duration*96),Math.max(1,Math.ceil(clip.end/clip.duration*96))).map((p,i,arr)=><line key={i} x1={(i+.5)*96/arr.length} x2={(i+.5)*96/arr.length} y1={10-p*9} y2={10+p*9} stroke="#b9e8ce" strokeWidth=".8"/>)}</svg>:Math.round((clip.gain??1)*100)+"%"}</button>)}</div>
               <span>Music</span><div style={{height:24,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?(musicPeaks.length?<svg viewBox="0 0 128 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded music waveform"><title>{backgroundMusic.name+" · "+sec(musicLength)}</title>{musicPeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={10-p*9} y2={10+p*9} stroke="#b9dcff" strokeWidth=".8"/>)}</svg>:backgroundMusic.name+" · loop"):"No soundtrack"}</div>
               <span>Voiceover</span><div style={{position:"relative",height:28,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onPointerDown={e=>beginLayerDrag(e,voiceStart,Math.min(voiceLength,duration),start=>{setVoiceStart(start);cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>seekTimeline(voiceStart))} title={voiceover.name+" · Drag to move"} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0,touchAction:"none",cursor:"grab"}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
               <span>Images</span><div style={{height:Math.max(24,imageLayers.length*22),position:"relative",background:"#241a32",overflow:"hidden"}}>{imageLayers.filter(l=>l.start<duration).map((l,i)=><button type="button" key={l.id} disabled={busy} onPointerDown={e=>beginLayerDrag(e,l.start,l.end-l.start,start=>{setSelectedImage(l.id);setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start,end:start+(l.end-l.start)}:a));cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setSelectedImage(l.id);seekTimeline(l.start)})} title="Drag image layer to move" style={{touchAction:"none",cursor:"grab",position:"absolute",left:(l.start/duration*100)+"%",width:((Math.min(l.end,duration)-l.start)/duration*100)+"%",top:i*22,height:21,background:selectedImage===l.id?"#a66b40":"#644436",color:"#fff",overflow:"hidden"}}>{l.file.name}</button>)}</div>
@@ -883,6 +907,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             {(["cropLeft","cropRight","cropTop","cropBottom"] as const).map(edge=><label key={edge}>{edge.replace("crop","Crop ")} · {Math.round((chosen[edge]||0)*100)}%<input aria-label={edge} type="range" min={0} max={.4} step={.01} disabled={busy} value={chosen[edge]||0} onChange={e=>update(chosen.id,{[edge]:Number(e.target.value)})}/></label>)}
             {(["panX","panY"] as const).map(axis=><label key={axis}>{axis==="panX"?"Horizontal position":"Vertical position"} · {Math.round((chosen[axis]||0)*100)}%<input aria-label={axis} type="range" min={-1} max={1} step={.02} disabled={busy} value={chosen[axis]||0} onChange={e=>update(chosen.id,{[axis]:Number(e.target.value)})}/></label>)}
             </fieldset>
+            <button type="button" disabled={busy} onClick={()=>void decodeSourceWave(chosen)}>Decode source audio waveform</button>{waveStatus&&<small role="status">{waveStatus}</small>}
             <label>Speed<select disabled={busy} value={chosen.speed||1} onChange={e=>update(chosen.id,{speed:Number(e.target.value)})}>{[.5,.75,1,1.25,1.5,2].map(v=><option key={v} value={v}>{v}×</option>)}</select></label>
             <label>Source volume · {Math.round((chosen.gain??1)*100)}%<input type="range" min={0} max={1} step={.05} disabled={busy} value={chosen.gain??1} onChange={e=>update(chosen.id,{gain:Number(e.target.value)})}/></label>
             <button type="button" disabled={busy} onClick={()=>update(chosen.id,{rotation:0,flipX:false,flipY:false,zoom:1,speed:1,gain:1,cropLeft:0,cropRight:0,cropTop:0,cropBottom:0,panX:0,panY:0})}>Reset clip adjustments</button>
@@ -926,7 +951,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} />
           <span>Fade between clips</span>
-        </label>{fadeBetweenClips&&<div style={{display:"grid",gap:6}}><label>Transition style<select disabled={busy} value={transitionStyle} onChange={e=>{setTransitionStyle(e.target.value as TransitionStyle);cleanupOutput()}}><option value="black">Fade through black</option><option value="white">Fade through white</option><option value="wipe-left">Black wipe left</option><option value="wipe-right">Black wipe right</option></select></label><label>Transition duration {transitionDuration.toFixed(1)}s<input type="range" min={.1} max={2} step={.1} disabled={busy} value={transitionDuration} onChange={e=>{setTransitionDuration(Number(e.target.value));cleanupOutput()}}/></label><small>Local/WebM; transitions pass through a solid color, not overlapping crossfades.</small></div>}
+        </label>{fadeBetweenClips&&<div style={{display:"grid",gap:6}}><label>Transition style<select disabled={busy} value={transitionStyle} onChange={e=>{setTransitionStyle(e.target.value as TransitionStyle);cleanupOutput()}}><option value="black">Fade through black</option><option value="white">Fade through white</option><option value="wipe-left">Black wipe left</option><option value="wipe-right">Black wipe right</option><option value="zoom">Zoom through black</option><option value="slide">Slide through black</option><option value="dissolve">Dissolve through black</option></select></label><label>Transition duration {transitionDuration.toFixed(1)}s<input type="range" min={.1} max={2} step={.1} disabled={busy} value={transitionDuration} onChange={e=>{setTransitionDuration(Number(e.target.value));cleanupOutput()}}/></label><small>Local/WebM; these transitions pass through a solid color, not overlapping crossfades.</small></div>}
       </div>
       <div className="studio-export-extras">
         <div className="studio-setting-card">
@@ -963,6 +988,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <label>Start (s)<input type="number" min={0} max={l.end-.01} step={.1} value={l.start} onChange={e=>{const n=Number(e.target.value);if(n>=0&&n<l.end){setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start:n}:a));cleanupOutput();}}}/></label>
           <label>End (s)<input type="number" min={l.start+.01} max={duration} step={.1} value={l.end} onChange={e=>{const n=Number(e.target.value);if(n>l.start&&n<=duration){setImageLayers(old=>old.map(a=>a.id===l.id?{...a,end:n}:a));cleanupOutput();}}}/></label>
           {(["x","y","size","opacity"] as const).map(k=><label key={k}>{k} {Math.round(l[k]*100)}%<input type="range" min={k==="size"?.05:0} max={1} step={.01} value={l[k]} onChange={e=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,[k]:Number(e.target.value)}:a));cleanupOutput();}}/></label>)}
+          <button type="button" onClick={()=>{const at=Math.max(0,Math.min(l.end-l.start,playhead-l.start));const key={at,x:l.x,y:l.y,size:l.size,opacity:l.opacity};setImageLayers(old=>old.map(a=>a.id===l.id?{...a,keyframes:[...(a.keyframes||[]).filter(k=>Math.abs(k.at-at)>.01),key].sort((a,b)=>a.at-b.at).slice(0,32)}:a));cleanupOutput();}}>Add/update keyframe at playhead</button>
+          {(l.keyframes||[]).map((k,i)=><div key={i} style={{display:"grid",gap:4,border:"1px solid #4c355d",padding:5}}><button type="button" onClick={()=>seekTimeline(l.start+k.at)}>Keyframe {i+1} · {sec(k.at)}</button>{(["x","y","size","opacity"] as const).map(axis=><label key={axis}>{axis} {Math.round(k[axis]*100)}%<input type="range" min={axis==="size"?.05:0} max={1} step={.01} value={k[axis]} onChange={e=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,keyframes:(a.keyframes||[]).map((f,j)=>j===i?{...f,[axis]:Number(e.target.value)}:f)}:a));cleanupOutput();}}/></label>)}<button type="button" onClick={()=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,keyframes:(a.keyframes||[]).filter((_,j)=>j!==i)}:a));cleanupOutput();}}>Delete keyframe</button></div>)}
           <button type="button" onClick={()=>{setImageLayers(old=>old.filter(a=>a.id!==l.id));setSelectedImage(null);cleanupOutput();}}>Remove image layer</button></fieldset>)}
         </div><div className="studio-setting-card">
           <strong>Voiceover (local / WebM)</strong>
