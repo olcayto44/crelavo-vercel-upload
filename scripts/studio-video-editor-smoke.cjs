@@ -59,10 +59,10 @@ assert.ok(css.includes('color:#faf4ff!important'),'file choose buttons must have
 assert.match(css,/studio-timeline-actions button/,'timeline actions must meet consistent minimum height');
 assert.match(source,/useState<"16:9" \| "9:16" \| "1:1">\("9:16"\)/,'new clip editor defaults to vertical Shorts output');
 assert.match(source,/studio-video-preview-frame/,'preview must use an aspect-aware centered frame');
-assert.match(source,/objectFit:framing/,'preview must display selected crop or fit mode');
+assert.match(source,/objectFit:framing==="blur"\?"contain":framing/,'preview must display selected crop or fit mode');
 assert.match(source,/framing === "cover" \? Math.max/,'export must actually center-crop wide video for vertical frame');
 assert.match(source,/setFraming\(project.framing/,'saved local projects must restore framing');
-assert.match(source,/setFraming\(saved.framing===\"cover\"\?\"cover\":\"contain\"\)/,'saved cloud projects must safely restore framing');
+assert.match(source,/setFraming\(saved.framing==="blur"\?"blur":saved.framing==="cover"\?"cover":"contain"\)/,"saved cloud projects must restore all framing modes");
 assert.match(source,/aria-label="Video framing mode"/,'user must be able to switch crop or letterbox');
 assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must be narrow, not full-width');
 assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
@@ -81,17 +81,20 @@ assert.match(css,/studio-timeline-thumb img/,'real thumbnail needs fit-safe styl
 assert.match(css,/studio-timeline-clip\.is-drop-target/,'drag target must show visual feedback');
 const cloudTimelineSource=fs.readFileSync('src/lib/studio-cloud-timeline.ts','utf8');
 const ffmpegComposeSource=fs.readFileSync('scripts/studio-ffmpeg-compose.mjs','utf8');
-assert.match(source,/useState<"cover"\|"contain">\("contain"\)/,'new video projects must preserve full picture instead of cropping by default');
+assert.match(source,/useState<"cover"\|"contain"\|"blur">\("contain"\)/,'new video projects must preserve full picture instead of cropping by default');
 assert.match(source,/Show full video/,'preview needs a clear full-picture option');
 assert.match(source,/Fill screen · crop edges/,'preview must explicitly warn about cropping');
 assert.match(source,/aria-pressed=\{framing==="contain"\}/,'safe-fit control must be visible and accessible');
-assert.match(source,/objectFit:framing/,'actual preview must use selected fit mode');
+assert.match(source,/objectFit:framing==="blur"\?"contain":framing/,'actual preview must use selected fit mode');
 assert.match(source,/framing === "cover" \? Math.max/,'export must apply the same selected fit or crop mode');
-assert.match(cloudTimelineSource,/t.framing==="cover"\?"cover":"contain"/,'legacy cloud projects default to non-cropping display');
-assert.match(ffmpegComposeSource,/timeline.framing==="cover"\?"cover":"contain"/,'staged MP4 worker must default to non-crop too');
+assert.match(cloudTimelineSource,/t.framing==="blur"\?"blur":t.framing==="cover"\?"cover":"contain"/,"cloud timelines retain blur and default to contain");
+assert.match(ffmpegComposeSource,/timeline.framing==="blur"\?"blur":timeline.framing==="cover"\?"cover":"contain"/,"MP4 worker retains blur and defaults to contain");
 assert.match(source,/new clip\(s\) added · /,'upload status must distinguish newly imported clips from existing timeline total');
 assert.match(source,/addMediaRecorderWebmDuration\(rawBlob,recordedMs\)/,'merged WebM must receive duration metadata repair before download');
 assert.match(source,/performance\.now\(\)-recordingStartedAt/,'repair must use actual recorded duration');
+assert.match(source,/paintBlurBackground\(ctx,video,width,height\)/,"WebM export must paint blurred background");
+assert.match(source,/ref=\{blurCanvas\}/,"preview must render a background canvas");
+assert.match(ffmpegComposeSource,/boxblur=.*overlay=/,"MP4 worker must composite blurred background and foreground");
 const durationSource=fs.readFileSync('src/lib/studio-webm-duration.ts','utf8');
 const fixedJs=ts.transpileModule(durationSource,{
  compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}
