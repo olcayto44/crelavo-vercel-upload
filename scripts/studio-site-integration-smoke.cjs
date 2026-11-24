@@ -13,7 +13,11 @@ for(const s of studioSurfaces){
  assert(fs.existsSync("src/app"+s.workspace+"/page.tsx"));
  assert(s.description && s.limit && s.steps.length===3);
 }
-assert(read("src/components/CategoryGroupBrowser.tsx").includes("/dashboard/studio-v2?category="));
+const categoryBrowser = read("src/components/CategoryGroupBrowser.tsx");
+assert(categoryBrowser.includes("/dashboard/studio-v2?category="));
+const listed = [...categoryBrowser.matchAll(/typeIds: (\[[^\]]+\])/g)].flatMap(match => JSON.parse(match[1]));
+assert.equal(listed.length,37);
+assert.deepEqual([...listed].sort(), CATEGORIES.map(c=>c.id).sort(), "All 37 canonical categories must be visible exactly once");
 assert(read("src/app/dashboard/create/page.tsx").includes("category.id"));
 assert(read("src/app/dashboard/create/page.tsx").includes("/dashboard/assistant-workspace?"));
 for(const p of ["src/app/page.tsx","src/app/categories/page.tsx","src/app/tools/page.tsx","src/app/dashboard/page.tsx"])assert(read(p).includes("<StudioDiscovery"));

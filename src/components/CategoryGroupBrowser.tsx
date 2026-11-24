@@ -109,13 +109,13 @@ const categoryGroups = [
     id: "avatars-voice",
     title: "Avatars & Voice",
     description: "Create avatars, lip-sync productions, cloned voices and reference-based visual variations.",
-    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone"]
+    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone", "virtual_model_studio"]
   },
   {
     id: "brand-files",
     title: "Brand & Files",
     description: "Create images, brand kits, pitch decks, PDFs and reusable source packages.",
-    typeIds: ["image", "brand_kit", "document_pack"]
+    typeIds: ["image", "brand_kit", "document_pack", "crelavo_academy", "community_showcase"]
   },
   {
     id: "special-video",
