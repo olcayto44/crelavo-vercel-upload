@@ -16,7 +16,7 @@ type CaptionCue = { start: number; end: number; text: string };
 type ImageKeyframe={at:number;x:number;y:number;size:number;opacity:number};
 type ImageLayer={keyframes?:ImageKeyframe[];id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
 type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve"|"crossfade";
-type SavedVideoProject = { aiDenoise?:boolean; noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type SavedVideoProject = { aiDenoise?:boolean; noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; fps?:number; quality?:string; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -423,12 +423,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,webmFps,webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
   async function signInForMp4(){
     if(busy||projectSaving||mp4Busy)return;
     // Keep the current editor mounted during the account modal. Save a separate guest recovery copy before any redirect.
@@ -436,7 +436,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
       if(size>150_000_000){setMp4Message(t("Project exceeds local recovery limit (150 MB). Export WebM or reduce media before signing in.","Proje yerel kurtarma sınırını (150 MB) aşıyor. Girişten önce WebM üretin veya dosyaları küçültün."));return;}
       setProjectSaving(true);
-      try{await saveProjectLocally({id:"preview-local:mp4-handoff",owner:"preview-local",savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise});sessionStorage.setItem("crelavo-mp4-handoff","1");}
+      try{await saveProjectLocally({id:"preview-local:mp4-handoff",owner:"preview-local",savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise});sessionStorage.setItem("crelavo-mp4-handoff","1");}
       catch{setMp4Message(t("Could not save recovery copy. Sign-in cancelled to protect your project.","Kurtarma kopyası kaydedilemedi. Projenizi korumak için giriş iptal edildi."));return;}
       finally{setProjectSaving(false);}
     }
@@ -452,7 +452,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
+        ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -469,7 +469,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       changeHistory({past:[],future:[]});
       files.current=restored;
       setClips(restored);setActive(restored[0]?.id||null);
-      setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
+      setRatio(project.ratio);setResolution(project.resolution);setWebmFps(project.fps??30);setWebmQuality(project.quality??"standard");setIncludeAudio(project.includeAudio);
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
@@ -489,7 +489,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const savedVersion=await saveCloudTimeline(clips,{
-       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
+       ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       });
       setState("Cloud timeline version "+savedVersion.version+" saved with its source files. You can reopen it on another device.");return savedVersion;
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -497,7 +497,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function submitMp4(){
     if(mp4Busy||projectSaving||busy||!signedIn||!clips.length)return;
-    if(titleOverlay.trim()||captionCues.length){setMp4Message("MP4 text/subtitles are not supported yet. Use WebM or remove these layers.");return;}
+
     if(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)){setMp4Message("This transition currently supports WebM only.");return;}
     setMp4Busy(true);setMp4Message("Saving an exact cloud snapshot for MP4...");
     try{
@@ -517,7 +517,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const restored: Clip[]=saved.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
       changeHistory({past:[],future:[]});
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
-      setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
+      setRatio(saved.ratio);setResolution(saved.resolution);setWebmFps(saved.fps??30);setWebmQuality(saved.quality??"standard");setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setImageLayers(saved.imageLayers||[]);setSelectedImage(null);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(saved.voiceover||null);setVoiceStart(saved.voiceStart??0);setVoiceLength(saved.voiceLength??0);setVoiceVolume(saved.voiceVolume??1);
@@ -566,8 +566,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     };draw();return()=>cancelAnimationFrame(frame);
   },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
   const shortEdge=resolution,longEdge=Math.round(resolution*16/9/2)*2;
-  const outputWidth=ratio==="1:1"?shortEdge:ratio==="9:16"?(exportFormat==="webm"?shortEdge:Math.round(resolution*9/16/2)*2):longEdge;
-  const outputHeight=ratio==="9:16"&&exportFormat==="webm"?longEdge:shortEdge;
+  const outputWidth=ratio==="1:1"?shortEdge:ratio==="9:16"?shortEdge:longEdge;
+  const outputHeight=ratio==="9:16"?longEdge:shortEdge;
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));preview.current.muted=!includeAudio;}},[chosen,includeAudio]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -1214,7 +1214,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
           </select>
         </label>
-        {exportFormat==="webm"&&<><label className="studio-setting-field">Frame rate<select disabled={busy} value={webmFps} onChange={e=>{setWebmFps(Number(e.target.value));cleanupOutput()}}>{[24,25,30,60].map(n=><option key={n} value={n}>{n} FPS</option>)}</select></label><label className="studio-setting-field">Quality<select disabled={busy} value={webmQuality} onChange={e=>{setWebmQuality(e.target.value);cleanupOutput()}}><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label><label className="studio-setting-field">File name<input disabled={busy} value={exportName} maxLength={100} onChange={e=>setExportName(e.target.value)}/></label></>}
+        {<><label className="studio-setting-field">Frame rate<select disabled={busy} value={webmFps} onChange={e=>{setWebmFps(Number(e.target.value));cleanupOutput()}}>{[24,25,30,60].map(n=><option key={n} value={n}>{n} FPS</option>)}</select></label><label className="studio-setting-field">Quality<select disabled={busy} value={webmQuality} onChange={e=>{setWebmQuality(e.target.value);cleanupOutput()}}><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label><label className="studio-setting-field">File name<input disabled={busy} value={exportName} maxLength={100} onChange={e=>setExportName(e.target.value)}/></label></>}
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e=>{setIncludeAudio(e.target.checked);cleanupOutput()}} />
           <span>Include source audio</span>
@@ -1222,11 +1222,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
 </div>
       <div className="studio-export-actions">
         {exportFormat==="mp4"&&!signedIn&&<div><small role="status">{t("Sign in for private MP4 rendering. Your current project will be preserved in this browser.","Özel MP4 üretimi için giriş yapın. Mevcut projeniz bu tarayıcıda korunur.")}</small><button type="button" disabled={projectSaving||busy} onClick={()=>void signInForMp4()}>{t("Sign in & continue","Giriş yap ve devam et")}</button></div>}
-        {exportFormat==="mp4"&&(titleOverlay.trim()||captionCues.length>0)&&<small role="status">MP4 does not yet support title or subtitle layers. Remove them or choose WebM.</small>}
+
         {exportFormat==="mp4"&&fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)&&<small role="status">Choose fade through black or true crossfade for MP4, or use WebM.</small>}
         {exportFormat==="webm"&&((fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction)&&<small role="status">Selected effects require MP4. Choose MP4 or turn off these effects.</small>}
         <button type="button" className="studio-export-primary"
-          disabled={!clips.length||busy||projectSaving||mp4Busy||(exportFormat==="mp4"?(!signedIn||!!titleOverlay.trim()||captionCues.length>0||(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle))):(!supportedMime()||(fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction))}
+          disabled={!clips.length||busy||projectSaving||mp4Busy||(exportFormat==="mp4"?(!signedIn||(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle))):(!supportedMime()||(fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction))}
           onClick={()=>{if(exportFormat==="mp4")void submitMp4();else void exportVideo();}}>
           {mp4Busy?"Preparing MP4…":busy?"Rendering WebM…":exportFormat==="mp4"?t("Export MP4","MP4 dışa aktar"):t("Export WebM","WebM dışa aktar")}
         </button>
@@ -1235,7 +1235,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         {busy&&<div className="studio-render-progress" role="status"><strong>{exportPhase} · {progress}%</strong><progress max={100} value={progress}/><small>{exportEta!==null?`Estimated remaining: ${timecode(exportEta)}`:"Preparing or finalizing media…"}</small></div>}
         {downloadUrl&&<div className="studio-render-result"><strong role="status">{exportResult}</strong><video controls playsInline preload="metadata" src={downloadUrl}/><a href={downloadUrl} download={fileBase+".webm"}>↓ Download WebM</a></div>}
         {mp4Message&&<small role="status">{mp4Message}</small>}
-        <details className="studio-export-help"><summary>Format & storage limits</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles require WebM; AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
+        <details className="studio-export-help"><summary>Format & storage limits</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles are burned into the output. AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
         {signedIn&&(exportFormat==="mp4"||mp4Jobs.length>0)&&<div className="studio-mp4-jobs">
           <div className="studio-mp4-jobs-heading"><strong>MP4 export history</strong><button type="button" disabled={mp4Busy} onClick={()=>void refreshMp4Jobs()}>Refresh</button></div>
           {!mp4Jobs.length&&<small>No cloud exports yet.</small>}
