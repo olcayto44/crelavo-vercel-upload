@@ -9,7 +9,7 @@ export default async function StudioCapabilitiesPage(){
  const session=(await cookies()).get(ADMIN_SESSION_COOKIE)?.value??"";
  if(!verifyAdminSessionToken(session))return <AdminLoginPanel/>;
  const categories=listProductionCapabilities();
- const evidenceLabels={catalog_only:"Katalog / doğrulanmadı",existing_api_unbound:"Mevcut API / merkezi bağlantı yok",local_editor_implemented:"Yerel editör kodu mevcut",planned:"Planlanan"};
+ const evidenceLabels={catalog_only:"Katalog / doğrulanmadı",existing_api_unbound:"Mevcut API / merkezi bağlantı yok",local_editor_implemented:"Yerel editör kodu mevcut",provider_adapter_coded:"Sağlayıcı adaptörü kodlandı / canlı test bekliyor",planned:"Planlanan"};
  return <AdminShell title="Studio Production Engine" description="37 kategorinin kaynak sözleşmeleri, yerel araçları ve merkezi üretim engelleri.">
   <section className="card admin-wide-card">
    <div className="admin-info-grid"><div><span>Kategori kapsamı</span><strong>{categories.length}/37</strong></div><div><span>Merkezi üretim hazır</span><strong>0/37</strong></div><div><span>Mod</span><strong>Salt okunur</strong></div></div>
