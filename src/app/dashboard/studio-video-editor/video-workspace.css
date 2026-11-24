@@ -221,3 +221,47 @@
 .studio-tool-page .studio-compact-video-editor .studio-media-cards{gap:4px}
 .studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:3px}
 .studio-tool-page .studio-compact-video-editor .studio-track-actions{padding:3px 0;margin-top:4px}
+
+/* Compact workstation: desktop viewport budget and independently scrolling panes. */
+.studio-tool-page .studio-compact-video-editor .studio-status-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px;position:relative;z-index:6}
+.studio-tool-page .studio-compact-video-editor .studio-status-bar .studio-workspace-status{flex:1;min-width:0;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info{flex:none;position:relative;font-size:11px;color:var(--muted)}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info summary{cursor:pointer;white-space:nowrap;padding:2px 5px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info-body{position:absolute;right:0;top:100%;width:min(340px,80vw);padding:10px;background:#20212c;border:1px solid var(--border);border-radius:7px;box-shadow:0 8px 24px #0008}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info-body p{white-space:normal;overflow:visible;margin:4px 0;line-height:1.5}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop{min-height:48px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;padding:5px!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop small{font-size:9px;flex-basis:100%}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop strong{padding:3px 7px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-thumb{height:48px;margin-bottom:2px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-clip{padding:3px!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-actions{gap:2px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-actions button{min-height:22px;font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector{padding:7px;box-sizing:border-box}
+.studio-tool-page .studio-compact-video-editor .studio-inspector-tabs{padding:2px 0 5px;gap:3px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-group{margin-bottom:5px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-group summary{padding:7px 8px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body{gap:6px;padding:0 8px 8px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-setting-card{gap:6px;padding:8px}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{box-sizing:border-box;padding:0 7px 5px;display:flex;flex-direction:column;gap:3px;overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-resizer{flex:none;height:7px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading{flex:none;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar{flex:none;gap:3px;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar button{min-height:22px;padding:2px 6px}
+.studio-tool-page .studio-compact-video-editor .studio-track-section{display:flex;flex-direction:column;gap:3px;flex:1;min-height:0;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-track-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:10px;flex:none;margin:0!important}
+.studio-tool-page .studio-compact-video-editor .studio-track-toolbar button,.studio-tool-page .studio-compact-video-editor .studio-track-actions button{min-height:21px;padding:2px 5px;font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-track-actions{flex:none;margin:0;padding:2px 0;border:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{min-height:0;flex:1;overflow:auto;padding-bottom:2px}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:2px}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor{height:calc(100dvh - 54px);min-height:0!important;display:flex;flex-direction:column;overflow:hidden;padding-bottom:5px!important}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-header,.studio-tool-page .studio-compact-video-editor .studio-status-bar{flex:none}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{flex:1;min-height:0!important;height:0!important;overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{min-height:0;height:100%}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{min-height:0}
+.studio-tool-page .studio-compact-video-editor .studio-inspector{height:100%;min-height:0!important;max-height:100%!important}
+}
+@media(max-width:820px){
+.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{min-height:330px!important}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{max-height:330px}
+}
