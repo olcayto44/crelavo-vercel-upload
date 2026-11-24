@@ -308,3 +308,11 @@
 .studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:1px}
 .studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-actions{margin:0;padding:0;gap:3px}
 }
+
+/* Direct timeline reordering and visible merge action. */
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[draggable=true]{cursor:grab}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[draggable=true]:active{cursor:grabbing}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip.is-drop-target{border:2px solid #d5baff!important;box-shadow:inset 0 0 0 2px #8556e6!important;filter:brightness(1.2)}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading .studio-merge-button{margin-left:auto;background:#7646d6;border-color:#a67af3;font-size:11px;min-height:25px;padding:4px 11px;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading{align-items:center;flex-wrap:wrap}
+.studio-tool-page .studio-compact-video-editor .studio-film-label>span{font-size:12px;color:#e7d4ff}
