@@ -9,18 +9,19 @@ export const ImagePlanSchema=z.strictObject({
  tariffVersion:z.string().regex(/^[A-Za-z0-9._-]{1,64}$/),reservedCredits:z.number().int().positive().max(100000),
  maximumProviderMicroUSD:z.number().int().positive().max(1000000),
 });
-type Plan=z.infer<typeof ImagePlanSchema>;
+export type ImageProductionPlan=z.infer<typeof ImagePlanSchema>;
+type Plan=ImageProductionPlan;
 const ApprovedSchema=z.strictObject({plan:ImagePlanSchema,planHash:hash,approvalSource:z.literal("persisted_explicit_user_approval"),reservationState:z.literal("reserved"),account:z.literal("production"),costPolicySource:z.literal("reviewed_server_tariff")});
 export function imagePlanDigest(raw:unknown){const p=ImagePlanSchema.parse(raw);return createHash("sha256").update(JSON.stringify(p)).digest("hex");}
 type Outcome={state:"not_dispatched"|"already_claimed"|"artifact_recorded_cost_pending"|"reconciliation_required";code?:string;safeToRetryAutomatically:false};
-type Store={
+export type ImageProductionStore={
  // Must atomically verify matching stored approval, reservation, tariff and claim
  // before dispatch. Implementing this in durable DB is a separate release gate.
  claim:(plan:Plan,planHash:string)=>Promise<"claimed"|"already_claimed"|"denied">;
  recordArtifact:(plan:Plan,planHash:string,bytes:Buffer,receipt:ImageReceipt)=>Promise<boolean>;
  recordUncertain:(plan:Plan,planHash:string,code:string,providerRequestId?:string)=>Promise<void>;
 };
-export async function orchestrateSingleImage(raw:unknown,actor:unknown,deps:{enabled:()=>boolean;store:Store;generate:(request:ImageRequest)=>Promise<ImageProviderResult>}):Promise<Outcome>{
+export async function orchestrateSingleImage(raw:unknown,actor:unknown,deps:{enabled:()=>boolean;store:ImageProductionStore;generate:(request:ImageRequest)=>Promise<ImageProviderResult>}):Promise<Outcome>{
  const result=(state:Outcome["state"],code?:string):Outcome=>({state,...(code?{code}:{}),safeToRetryAutomatically:false});
  if(!deps.enabled())return result("not_dispatched","image_production_disabled");
  const approved=ApprovedSchema.safeParse(raw),owner=uuid.safeParse(actor);
