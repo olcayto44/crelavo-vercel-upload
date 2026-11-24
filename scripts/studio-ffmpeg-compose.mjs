@@ -70,7 +70,10 @@ export function validateTimeline(timeline, userId, projectId) {
   const musicPath=typeof timeline.musicPath==="string"?timeline.musicPath:null;
   if(musicPath&&(!musicPath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg)$/i.test(musicPath)))
     throw new Error("MUSIC_PATH_INVALID");
-  return {clips,musicPath,width,height,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  const transitionStyle=timeline.transitionStyle??"black",transitionDuration=timeline.transitionDuration??.4;
+  if(!["black","crossfade"].includes(transitionStyle)||!Number.isFinite(transitionDuration)||transitionDuration<.1||transitionDuration>2)throw new Error("MP4_TRANSITION_NOT_SUPPORTED");
+  if(timeline.voicePath||(Array.isArray(timeline.imageLayers)&&timeline.imageLayers.length))throw new Error("MP4_EXTRA_LAYERS_NOT_SUPPORTED_YET");
+  return {clips,musicPath,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
@@ -98,7 +101,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const x="(W-w)/2+"+(panX*w/2),y="(H-h)/2+"+(panY*h/2);
     const finish=["setsar=1","fps=30"];
     const fadeSeconds=Math.min(0.2,c.seconds/4);
-    if(timeline.fadeBetweenClips&&c.seconds>0.8){
+    if(timeline.fadeBetweenClips&&timeline.transitionStyle!=="crossfade"&&c.seconds>0.8){
       if(index>0)finish.push("fade=t=in:st=0:d="+fadeSeconds);
       if(index<timeline.clips.length-1)finish.push("fade=t=out:st="+(c.seconds-fadeSeconds)+":d="+fadeSeconds);
     }
@@ -113,7 +116,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const graph="[0:v:0]"+transforms.slice(0,2).join(",")+",split=2[bg][fg];[bg]"+background+"[back];[fg]"+transforms.slice(2).concat(fit,foregroundZoom,["setsar=1"]).join(",")+"[front];[back][front]overlay=x="+x+":y="+y+":shortest=1,"+finish.join(",")+"[v]";
     args.push("-filter_complex_threads","1","-filter_complex",graph,"-map","[v]");
     args.push("-map",hasAudio?"0:a:0":"1:a:0",
-      "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
+      "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,"+(timeline.noiseReduction?"afftdn=nr=12:nf=-40,":"")+"atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
       "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
       "-r","30","-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
       "-t",String(c.seconds),"-movflags","+faststart",segment);
@@ -123,7 +126,18 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
   const concat=path.join(dir,"concat.txt");
   await writeFile(concat,segments.map(x=>"file '"+x.replaceAll("'","'\\''")+"'").join("\n")+"\n");
   const merged=path.join(dir,"merged-video.mp4");
-  await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
+  let outputDuration=timeline.clips.reduce((n,c)=>n+c.seconds,0);
+  if(timeline.fadeBetweenClips&&timeline.transitionStyle==="crossfade"&&segments.length>1){
+    let previous=segments[0],elapsed=timeline.clips[0].seconds;
+    for(let i=1;i<segments.length;i++){
+      const overlap=Math.min(timeline.transitionDuration??.4,timeline.clips[i-1].seconds/3,timeline.clips[i].seconds/3);
+      const next=i===segments.length-1?merged:path.join(dir,"crossfade-"+i+".mp4");
+      const graph="[0:v]settb=AVTB,setpts=PTS-STARTPTS[a];[1:v]settb=AVTB,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration="+overlap+":offset="+(elapsed-overlap)+"[v];[0:a][1:a]acrossfade=d="+overlap+":c1=tri:c2=tri[audio]";
+      await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",previous,"-i",segments[i],"-filter_complex_threads","1","-filter_complex",graph,"-map","[v]","-map","[audio]","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac","-movflags","+faststart",next]);
+      previous=next;elapsed+=timeline.clips[i].seconds-overlap;
+    }
+    outputDuration=elapsed;
+  }else await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
     "-f","concat","-safe","0","-i",concat,"-c","copy","-movflags","+faststart",merged]);
   if(musicFile) {
     await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
@@ -137,5 +151,5 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
   }
   const size=(await stat(output)).size;
   if(!size||size>100_000_000)throw new Error("MP4_OUTPUT_SIZE_INVALID");
-  return {bytes:size,durationSeconds:timeline.clips.reduce((n,c)=>n+c.seconds,0)};
+  return {bytes:size,durationSeconds:outputDuration};
 }
