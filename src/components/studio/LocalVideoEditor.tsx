@@ -243,7 +243,6 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
-    if(clips.some(c=>c.rotation||c.flipX||c.flipY||(c.zoom||1)!==1||(c.speed||1)!==1||(c.gain??1)!==1)){setState("Adjusted clips currently support local save and WebM export. Reset adjustments before cloud save or MP4.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
