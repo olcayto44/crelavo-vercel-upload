@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { CategoryIdSchema } from "./requirements";
+import { executeB1Tool } from "./tool-registry";
 import { hydrateProject } from "./project-memory";
 import { handleMockPlanCommand } from "./assistant-core";
 import type { supabaseAdmin } from "@/lib/supabase";
@@ -15,7 +17,16 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
   const json=(body:unknown,status=200)=>{const result=body as {project?:ConversationProject};return Response.json(result?.project?{...result,planning:studioPlanningState(result.project)}:body,{status,headers:{"Cache-Control":"no-store"}})};
   try {
     const {userId,db}=await deps.authenticate();
-    if(request.method==="GET"){const readiness=await studioReadiness(db);return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:readiness.ready,readiness,isolatedPreview:process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true",executionReady:false});}
+    if(request.method==="GET"){
+      const query=new URL(request.url).searchParams;
+      if(query.has("capabilities")){
+        if(query.getAll("capabilities").length!==1)throw new ConversationError("invalid_request",400);
+        const categoryId=CategoryIdSchema.parse(query.get("capabilities"));
+        // Context originates only from authenticated server identity; no client scopes, project IDs or approval.
+        const result=executeB1Tool({tool:"get_category_capabilities",args:{categoryId}},{source:"verified_server",userId,categoryId,projectId:null,ownerUserId:null,scopes:["read"],creditAccount:"none",currentPlanHash:null,approval:null,confirmedRestoreRevision:null,ownedMaterialIds:[]});
+        return json({ok:true,...result});
+      }
+      const readiness=await studioReadiness(db);return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:readiness.ready,readiness,isolatedPreview:process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true",executionReady:false});}
     if(request.method!=="POST")return json({ok:false,code:"method_not_allowed"},405);
     if(Number(request.headers.get("content-length")||0)>450000)throw new ConversationError("request_too_large",413);
     const raw=await request.text();if(Buffer.byteLength(raw)>450000)throw new ConversationError("request_too_large",413);

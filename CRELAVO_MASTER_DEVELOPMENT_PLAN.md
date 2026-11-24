@@ -59,7 +59,7 @@ Current priority (owner decision 2026-11-25): shared Studio V2 Production Engine
 ## Active priority: central Studio V2 Production Engine
 See docs/STUDIO_V2_PRODUCTION_ENGINE_BASELINE_2026-11-25.md for baseline and release gates.
 1. [ ] Complete per-category contract, fields, output, permissions and runtime audit (37 static IDs checked).
-2. [ ] Central read-only capability registry and operation-specific evidence; first implementation started.
+2. [ ] Central read-only capability registry: connected to read-only server tool, authenticated capability GET, model context and protected admin inspection; full operation/provider runtime evidence remains pending.
 3. [ ] Real production adapter.
 4. [ ] Secure assistant-to-tool dispatcher.
 5. [ ] Model/provider capability and cost routing.
@@ -83,3 +83,5 @@ Current implementation: browser-local import, centered aspect crop, rotation/fli
 - [ ] Assistant natural-language image editing; server plan, provider capability, owner authorization, cost and explicit approval before paid calls.
 - [ ] Browser/device and output validation, failure/credit refund, SEO/GEO landing-page accuracy and production verification.
 No provider-backed image feature is marked ready by this list.
+
+- Capability registry initial build b0dc1220 passed Vercel preview. Extended contract audit, read-only assistant and admin integration submitted for validation. No real production enabled.
