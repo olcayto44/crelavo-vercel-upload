@@ -94,8 +94,17 @@ async function processJob(db,job) {
       musicFile=path.join(folder,"music"+path.extname(timeline.musicPath).toLowerCase());
       await downloadObject(db,timeline.musicPath,musicFile,25_000_000);
     }
+    let voiceFile=null;
+    if(timeline.voicePath){
+      const {data:voiceAsset,error:voiceError}=await db.from("studio_assets").select("id")
+        .eq("user_id",job.user_id).eq("project_id",job.project_id)
+        .eq("bucket_id",bucket).eq("object_path",timeline.voicePath).eq("kind","audio").maybeSingle();
+      if(voiceError||!voiceAsset)throw new Error("VOICE_REFERENCE_NOT_OWNED");
+      voiceFile=path.join(folder,"voice"+path.extname(timeline.voicePath).toLowerCase());
+      await downloadObject(db,timeline.voicePath,voiceFile,25_000_000);
+    }
     const output=path.join(folder,"output.mp4");
-    await composeMp4({ffmpeg,ffprobe,timeline,sourceFiles,musicFile,dir:folder,output});
+    await composeMp4({ffmpeg,ffprobe,timeline,sourceFiles,musicFile,voiceFile,dir:folder,output});
     const objectPath=job.user_id+"/"+job.project_id+"/renders/"+job.id+".mp4";
     const bytes=await readFile(output);
     const {error:uploadError}=await db.storage.from(bucket).upload(objectPath,bytes,{
