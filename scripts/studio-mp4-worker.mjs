@@ -6,6 +6,7 @@ import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:http";
+import { timingSafeEqual } from "node:crypto";
 import { composeMp4, validateTimeline } from "./studio-ffmpeg-compose.mjs";
 
 const bucket="studio-private";
@@ -159,17 +160,58 @@ async function checkConnection(db) {
   const {data,error}=await db.storage.getBucket(bucket);
   if(error||!data||data.public)throw new Error("PRIVATE_BUCKET_CHECK_FAILED");
 }
+function startHealthServer(state){
+  const server=createServer((req,res)=>{
+    if(req.method!=="GET"){res.writeHead(405);res.end();return;}
+    if(req.url==="/health"){
+      res.writeHead(state.ready?200:503,{"Cache-Control":"no-store"});res.end();return;
+    }
+    if(req.url!=="/worker/ready"){res.writeHead(404);res.end();return;}
+    const expected=Buffer.from("Bearer "+(process.env.STUDIO_RENDER_WORKER_KEY||""));
+    const supplied=Buffer.from(req.headers.authorization||"");
+    if(!process.env.STUDIO_RENDER_WORKER_KEY||expected.length!==supplied.length||!timingSafeEqual(expected,supplied)){
+      res.writeHead(401);res.end();return;
+    }
+    const ready=state.ready&&state.queueEnabled&&Date.now()-state.lastCheck<30000;
+    res.writeHead(ready?200:503,{"Content-Type":"application/json","Cache-Control":"no-store"});
+    res.end(JSON.stringify({ok:ready,queueEnabled:state.queueEnabled}));
+  });
+  server.listen(Number(process.env.PORT||8080),"0.0.0.0");
+  return server;
+}
 async function runConnectionCheck(){
   const db=makeDb();
   await checkConnection(db);
   process.stdout.write("STUDIO_WORKER_PREFLIGHT_OK: FFmpeg, FFprobe, tables and private bucket verified; queue disabled.\n");
-  const server=createServer((req,res)=>{
-    if(req.method!=="GET"||req.url!=="/health"){res.writeHead(404);res.end();return;}
-    res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});
-    res.end(JSON.stringify({ok:true,mode:"preflight",queueEnabled:false}));
-  });
-  server.listen(Number(process.env.PORT||8080),"0.0.0.0");
+  const server=startHealthServer({ready:true,queueEnabled:false,lastCheck:Date.now()});
   for(const signal of ["SIGTERM","SIGINT"])process.once(signal,()=>server.close(()=>process.exit(0)));
+}
+async function runHostedWorker(){
+  if(!process.env.STUDIO_RENDER_WORKER_KEY||process.env.STUDIO_RENDER_WORKER_KEY.length<32)throw new Error("WORKER_KEY_REQUIRED");
+  const db=makeDb();
+  await checkConnection(db);
+  const state={ready:true,queueEnabled:true,lastCheck:Date.now()};
+  const server=startHealthServer(state);
+  let stopping=false;
+  for(const signal of ["SIGTERM","SIGINT"])process.once(signal,()=>{stopping=true;state.ready=false;state.queueEnabled=false;server.close();});
+  process.stdout.write("STUDIO_WORKER_QUEUE_ACTIVE\n");
+  try{
+    while(!stopping){
+      try{
+        await recoverExpired(db);
+        const job=await claimNext(db);
+        state.lastCheck=Date.now();state.ready=!stopping;
+        if(job){
+          const pulse=setInterval(async()=>{
+            try{const {error}=await db.from("studio_render_jobs").select("id",{head:true}).eq("id",job.id);
+              if(!error){state.lastCheck=Date.now();state.ready=!stopping;}else state.ready=false;
+            }catch{state.ready=false;}
+          },8000);
+          try{await processJob(db,job);}finally{clearInterval(pulse);}
+        }else if(!stopping)await wait(8000);
+      }catch{state.ready=false;process.stderr.write("STUDIO_WORKER_QUEUE_RETRY\n");await wait(8000);}
+    }
+  }finally{state.ready=false;server.close();}
 }
 export async function runWorker({once=false}={}) {
   const db=makeDb();
@@ -182,7 +224,7 @@ export async function runWorker({once=false}={}) {
   }while(!once);
 }
 if(process.argv[1] && path.resolve(process.argv[1])===new URL(import.meta.url).pathname){
-  (process.argv.includes("--preflight")?runConnectionCheck():runWorker({once:process.argv.includes("--once")})).catch(error=>{
+  (process.argv.includes("--preflight")?runConnectionCheck():process.argv.includes("--hosted")?runHostedWorker():runWorker({once:process.argv.includes("--once")})).catch(error=>{
     process.stderr.write("Worker cannot start: "+(error instanceof Error?error.message:"unknown")+"\n");
     process.exitCode=1;
   });
