@@ -76,7 +76,7 @@ def record(request,args):
 
 schema=Path("supabase/schema.sql").read_text()
 tables="".join(re.search(r"create table "+name+r" \([\s\S]*?\n\);",schema).group(0) for name in ("profiles","credit_balances","credit_events"))
-sql("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create type credit_event_type as enum ('purchase','reserve','spend','refund','adjustment');"+tables+"create table production_requests(id uuid primary key,user_id uuid references profiles(id),production_type text);grant select on profiles,production_requests to service_role;grant select,update on credit_balances to service_role;grant insert on credit_events to service_role;")
+sql("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create type credit_event_type as enum ('purchase','reserve','spend','refund','adjustment');"+tables+"create table production_requests(id uuid primary key,user_id uuid references profiles(id),production_type text);grant select on profiles,production_requests to service_role;grant select,insert,update on credit_balances to service_role;grant select,insert on credit_events to service_role;")
 sql(Path("docs/studio-image-production-ledger-isolated.sql").read_text())
 sql("insert into studio_image_tariffs values('ci',70,10000,true);")
 
@@ -115,3 +115,59 @@ sql("update credit_balances set last_rollover_at=now() where user_id="+literal(o
 assert one(call("finalize",args,", 'settle'")+";",True)=="reconcile_required"
 assert wallet(owner)=="100:70" and events(owner,"spend")==0
 print("PASS changed billing period: no debit, reservation held",flush=True)
+
+# Active Whop payment path: synthetic verified payment inputs, no network calls.
+sql(Path("docs/studio-whop-credit-commit-isolated.sql").read_text())
+
+def snapshot(owner):
+    return one("select to_jsonb(w)::text from credit_balances w where user_id="+literal(owner)+";")
+
+def whop(owner,payment,expected,update,credits=50):
+    return "select public.studio_whop_commit_credits("+",".join([
+        literal(owner),literal(payment),str(credits),
+        "null" if expected is None else literal(expected)+"::jsonb",
+        literal(json.dumps(update))+"::jsonb",literal("whop:payment:"+payment+" | package=fixture")
+    ])+")"
+
+owner=user()
+payment="ci_whop_duplicate"
+expected=snapshot(owner)
+update=dict(balance=150,reserved=0,topup_credits=50)
+stmt=whop(owner,payment,expected,update)
+assert sorted(race(stmt,stmt))==["already_processed","credited"]
+assert wallet(owner)=="150:0" and events(owner,"purchase")==1
+other=user()
+assert one(whop(other,payment,snapshot(other),update)+";",True)=="payment_conflict"
+assert wallet(other)=="100:0"
+print("PASS Whop webhook vs checkout: one payment, one purchase, cross-owner conflict blocked",flush=True)
+
+owner=user()
+expected=snapshot(owner)
+_,args=plan(owner)
+assert one(call("reserve",args)+";",True)=="reserved"
+assert one(whop(owner,"ci_whop_stale",expected,update)+";",True)=="wallet_changed"
+assert wallet(owner)=="100:70" and events(owner,"purchase")==0
+# Existing top-up policy changes expiry, so an active reservation requires review.
+period_update=dict(balance=150,reserved=70,topup_credits=50,topup_expires_at="2030-01-01T00:00:00Z")
+assert one(whop(owner,"ci_whop_stale",snapshot(owner),period_update)+";",True)=="reconcile_required"
+assert wallet(owner)=="100:70" and events(owner,"purchase")==0
+assert one(call("finalize",args,", 'release_unclaimed'")+";",True)=="released"
+period_update["reserved"]=0
+assert one(whop(owner,"ci_whop_stale",snapshot(owner),period_update)+";",True)=="credited"
+assert wallet(owner)=="150:0" and events(owner,"purchase")==1
+print("PASS Whop stale snapshot and expiry change cannot overwrite active production reservation",flush=True)
+
+owner=user()
+sql("insert into credit_events(user_id,type,amount,note) values("+literal(owner)+",'purchase',50,'whop:payment:ci_whop_legacy | package=fixture');")
+assert one(whop(owner,"ci_whop_legacy",snapshot(owner),update)+";",True)=="already_processed"
+assert wallet(owner)=="100:0" and events(owner,"purchase")==1
+# Different key with same prefix is not a duplicate.
+assert one(whop(owner,"ci_whop_legacy_extra",snapshot(owner),update)+";",True)=="credited"
+assert wallet(owner)=="150:0"
+print("PASS exact legacy Whop payment key; prefix collision does not block a distinct purchase",flush=True)
+
+owner=str(uuid.uuid4())
+sql("insert into auth.users values("+literal(owner)+");insert into profiles(id,email) values("+literal(owner)+",'fresh@example.test');")
+assert one(whop(owner,"ci_whop_fresh",None,dict(balance=50,reserved=0,topup_credits=50))+";",True)=="credited"
+assert wallet(owner)=="50:0" and events(owner,"purchase")==1
+print("PASS initial wallet creation and payment credit in one transaction",flush=True)
