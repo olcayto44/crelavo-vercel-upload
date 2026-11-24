@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import sharp from "sharp";
+// Node-only native image decoder; use the same CommonJS entry in Next and offline tests.
+const sharp: typeof import("sharp") = require("sharp");
 
 // MiniMax text-to-image, a single paid call. No client-controlled endpoint, URL
 // download, implicit retry, fallback, provider key in output or settlement claim.

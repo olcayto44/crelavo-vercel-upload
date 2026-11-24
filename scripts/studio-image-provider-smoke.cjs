@@ -1,7 +1,7 @@
 const assert=require("node:assert/strict");
 const {load}=require("./studio-agent-test-loader.cjs");
 const sharp=require("sharp");
-const {generateSingleMinimaxImage}=load("src/lib/studio-agent/image-provider.ts",{sharp:{default:sharp}});
+const {generateSingleMinimaxImage}=load("src/lib/studio-agent/image-provider.ts");
 const {imagePlanDigest,orchestrateSingleImage}=load("src/lib/studio-agent/image-production-orchestrator.ts");
 (async()=>{
  const png=await sharp({create:{width:1024,height:1024,channels:3,background:"#8060a0"}}).png().toBuffer();
@@ -13,7 +13,7 @@ const {imagePlanDigest,orchestrateSingleImage}=load("src/lib/studio-agent/image-
   assert.deepEqual(JSON.parse(opts.body),{model:"image-01",prompt:request.prompt,aspect_ratio:"1:1",response_format:"base64",n:1,prompt_optimizer:false});
   return Response.json(good);
  });
- const valid=await generate();assert.equal(valid.state,"artifact_validated");assert.equal(valid.receipt.width,1024);assert.equal(valid.receipt.costState,"pending_reconciliation");assert.equal(calls,1);
+ const valid=await generate();assert.equal(valid.state,"artifact_validated",JSON.stringify(valid));assert.equal(valid.receipt.width,1024);assert.equal(valid.receipt.costState,"pending_reconciliation");assert.equal(calls,1);
  for(const response of [
  {...good,id:""}, {...good,metadata:{success_count:"2",failed_count:"0"}}, {...good,base_resp:{status_code:1002}},
  {...good,data:{image_base64:["aW52YWxpZA=="]}}, {...good,data:{image_urls:["https://example.test/fake.png"]}},
