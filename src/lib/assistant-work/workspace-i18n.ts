@@ -1,4 +1,44 @@
 const rows = `
+Back to Studio V2|Studio V2’ye dön|Zurück zu Studio V2|Volver a Studio V2|Retour à Studio V2|العودة إلى Studio V2
+Main navigation|Ana gezinme|Hauptnavigation|Navegación principal|Navigation principale|التنقل الرئيسي
+↕ Vertical · Shorts|↕ Dikey · Shorts|↕ Hochformat · Shorts|↕ Vertical · Shorts|↕ Vertical · Shorts|↕ عمودي · Shorts
+↔ Horizontal|↔ Yatay|↔ Querformat|↔ Horizontal|↔ Horizontal|↔ أفقي
+□ Square|□ Kare|□ Quadrat|□ Cuadrado|□ Carré|□ مربع
+Drop video files here · local max 2 GB/file|Videoları buraya bırakın · dosya başına 2 GB|Videos hier ablegen · max. 2 GB pro Datei|Suelta vídeos aquí · máximo 2 GB por archivo|Déposez les vidéos ici · max. 2 Go par fichier|أفلت الفيديوهات هنا · 2 غيغابايت لكل ملف
+Add video files to begin editing|Düzenlemeye başlamak için video ekleyin|Videos zum Bearbeiten hinzufügen|Añade vídeos para empezar a editar|Ajoutez des vidéos pour commencer|أضف فيديوهات لبدء التحرير
+Restart clip|Klibi yeniden başlat|Clip neu starten|Reiniciar clip|Redémarrer le clip|إعادة تشغيل المقطع
+Trim tools & reset|Kırpma araçları ve sıfırlama|Zuschnittwerkzeuge und Zurücksetzen|Herramientas de recorte y reinicio|Outils de découpage et réinitialisation|أدوات القص وإعادة الضبط
+Choose a clip from the timeline.|Zaman çizelgesinden klip seçin.|Wählen Sie einen Clip aus der Timeline.|Elige un clip de la línea de tiempo.|Choisissez un clip dans la timeline.|اختر مقطعًا من المخطط الزمني.
+Remove music|Müziği kaldır|Musik entfernen|Eliminar música|Supprimer la musique|إزالة الموسيقى
+Image & logo layers · MP4 / WebM|Görsel ve logo katmanları · MP4 / WebM|Bild- und Logoebenen · MP4 / WebM|Capas de imágenes y logotipos · MP4 / WebM|Calques d’images et logos · MP4 / WebM|طبقات الصور والشعارات · MP4 / WebM
+Select layer|Katman seç|Ebene auswählen|Seleccionar capa|Sélectionner un calque|اختيار طبقة
+Selected image — locked|Seçili görsel — kilitli|Ausgewähltes Bild — gesperrt|Imagen seleccionada — bloqueada|Image sélectionnée — verrouillée|الصورة المحددة — مقفلة
+Selected image|Seçili görsel|Ausgewähltes Bild|Imagen seleccionada|Image sélectionnée|الصورة المحددة
+Add/update keyframe at playhead|Oynatma konumunda anahtar kare ekle/güncelle|Keyframe an Abspielposition hinzufügen/aktualisieren|Añadir/actualizar fotograma clave en el cabezal|Ajouter/actualiser une image clé à la tête de lecture|إضافة أو تحديث إطار مفتاحي عند مؤشر التشغيل
+Remove image layer|Görsel katmanını sil|Bildebene entfernen|Eliminar capa de imagen|Supprimer le calque d’image|إزالة طبقة الصورة
+Remove voiceover|Seslendirmeyi kaldır|Sprachaufnahme entfernen|Eliminar voz en off|Supprimer la voix off|إزالة التعليق الصوتي
+Choose subtitle|Altyazı seç|Untertitel auswählen|Elegir subtítulo|Choisir un sous-titre|اختيار الترجمة
+Delete selected subtitle|Seçili altyazıyı sil|Ausgewählten Untertitel löschen|Eliminar subtítulo seleccionado|Supprimer le sous-titre sélectionné|حذف الترجمة المحددة
+Review timeline preview|Zaman çizelgesi önizlemesini kontrol et|Timeline-Vorschau prüfen|Revisar vista previa de la línea de tiempo|Vérifier l’aperçu de la timeline|مراجعة معاينة المخطط الزمني
+Show full video (no cropping)|Videonun tamamını göster (kırpma yok)|Ganzes Video anzeigen (kein Zuschnitt)|Mostrar vídeo completo (sin recorte)|Afficher la vidéo entière (sans recadrage)|عرض الفيديو بالكامل دون قص
+Fill screen (crop edges)|Ekranı doldur (kenarları kırp)|Bildschirm füllen (Ränder zuschneiden)|Llenar pantalla (recortar bordes)|Remplir l’écran (recadrer les bords)|ملء الشاشة مع قص الحواف
+Blur background|Bulanık arka plan|Unscharfer Hintergrund|Fondo desenfocado|Arrière-plan flou|خلفية ضبابية
+Include source audio|Kaynak sesi dahil et|Originalton einschließen|Incluir audio original|Inclure l’audio source|تضمين الصوت الأصلي
+Sign in & continue|Giriş yap ve devam et|Anmelden und fortfahren|Iniciar sesión y continuar|Se connecter et continuer|تسجيل الدخول والمتابعة
+Preparing MP4…|MP4 hazırlanıyor…|MP4 wird vorbereitet…|Preparando MP4…|Préparation du MP4…|جارٍ تحضير MP4…
+Rendering WebM…|WebM üretiliyor…|WebM wird gerendert…|Renderizando WebM…|Rendu WebM…|جارٍ إنتاج WebM…
+Export MP4|MP4 dışa aktar|MP4 exportieren|Exportar MP4|Exporter MP4|تصدير MP4
+Export WebM|WebM dışa aktar|WebM exportieren|Exportar WebM|Exporter WebM|تصدير WebM
+Compact preview|Küçük önizleme|Kompakte Vorschau|Vista previa compacta|Aperçu compact|معاينة مصغرة
+Larger preview|Büyük önizleme|Größere Vorschau|Vista previa ampliada|Aperçu agrandi|معاينة أكبر
+MP4 output preview|MP4 çıktı önizlemesi|MP4-Ausgabevorschau|Vista previa de salida MP4|Aperçu du résultat MP4|معاينة مخرجات MP4
+Format & storage limits|Format ve depolama sınırları|Format- und Speichergrenzen|Límites de formato y almacenamiento|Limites de format et de stockage|حدود التنسيق والتخزين
+MP4 export history|MP4 çıktı geçmişi|MP4-Exportverlauf|Historial de exportación MP4|Historique des exports MP4|سجل تصدير MP4
+No cloud exports yet.|Henüz bulut çıktısı yok.|Noch keine Cloud-Exporte.|Todavía no hay exportaciones en la nube.|Aucun export cloud pour le moment.|لا توجد صادرات سحابية بعد.
+Rendering…|Üretiliyor…|Wird gerendert…|Renderizando…|Rendu en cours…|جارٍ الإنتاج…
+Canvas unavailable.|Video tuvali kullanılamıyor.|Canvas nicht verfügbar.|Lienzo no disponible.|Canvas indisponible.|لوحة الرسم غير متاحة.
+Could not export the video.|Video dışa aktarılamadı.|Video konnte nicht exportiert werden.|No se pudo exportar el vídeo.|Impossible d’exporter la vidéo.|تعذر تصدير الفيديو.
+Add at least one video clip to enable export.|Dışa aktarmak için en az bir video ekleyin.|Mindestens einen Videoclip zum Export hinzufügen.|Añade al menos un clip para exportar.|Ajoutez au moins un clip pour exporter.|أضف مقطع فيديو واحدًا على الأقل للتصدير.
 Media|Medya|Medien|Medios|Médias|الوسائط
 Text|Metin|Text|Texto|Texte|النص
 Images|Görseller|Bilder|Imágenes|Images|الصور
