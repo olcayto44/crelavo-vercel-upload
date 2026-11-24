@@ -86,14 +86,24 @@ export function validateTimeline(timeline, userId, projectId) {
     if(!Array.isArray(keys)||keys.length>32||keys.some(k=>!validGeometry(k)||!Number.isFinite(k.at)||k.at<0||k.at>l.end-l.start+.05))throw new Error("IMAGE_KEYFRAMES_INVALID_"+i);
     return {...l,keyframes:keys};
   });
-  if(timeline.audioDucking||timeline.audioCompressor||timeline.lowCut)throw new Error("MP4_ADVANCED_AUDIO_NOT_SUPPORTED_YET");
-  return {clips,musicPath,voicePath,voiceStart,voiceVolume,images,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  const duckLevel=timeline.duckLevel??.25;
+  if(!Number.isFinite(duckLevel)||duckLevel<0||duckLevel>1)throw new Error("DUCK_LEVEL_INVALID");
+  const aiDenoise=timeline.aiDenoise===true;
+  return {clips,musicPath,voicePath,voiceStart,voiceVolume,images,width,height,aiDenoise,audioDucking:timeline.audioDucking===true,duckLevel,audioCompressor:timeline.audioCompressor===true,lowCut:timeline.lowCut===true,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
 /** sourceFiles must have the same order as validated clips and be worker-owned temp files. */
 export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sourceFiles,musicFile=null,voiceFile=null,imageFiles=[],dir,output}) {
   if(sourceFiles.length!==timeline.clips.length||Boolean(timeline.voicePath)!==Boolean(voiceFile))throw new Error("INPUT_COUNT_MISMATCH");
+  let neuralFilter="";
+  if(timeline.aiDenoise){
+    const model=process.env.STUDIO_RNNOISE_MODEL;
+    if(!model||!/^\/[a-zA-Z0-9_./-]+$/.test(model))throw new Error("AI_DENOISE_MODEL_NOT_CONFIGURED");
+    try{const info=await stat(model);if(!info.isFile()||info.size===0)throw Error("invalid");}catch{throw new Error("AI_DENOISE_MODEL_NOT_CONFIGURED");}
+    neuralFilter="aresample=48000,arnndn=m="+model+",";
+  }
+  const cleanAudio=(timeline.lowCut?"highpass=f=80,":"")+(neuralFilter||(timeline.noiseReduction?"afftdn=nr=12:nf=-40,":""))+(timeline.audioCompressor?"acompressor=threshold=0.1:ratio=4:attack=5:release=200,":"");
   const segments=[];
   for(let index=0;index<timeline.clips.length;index++){
     const c=timeline.clips[index],input=sourceFiles[index];
@@ -130,7 +140,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const graph="[0:v:0]"+transforms.slice(0,2).join(",")+",split=2[bg][fg];[bg]"+background+"[back];[fg]"+transforms.slice(2).concat(fit,foregroundZoom,["setsar=1"]).join(",")+"[front];[back][front]overlay=x="+x+":y="+y+":shortest=1,"+finish.join(",")+"[v]";
     args.push("-filter_complex_threads","1","-filter_complex",graph,"-map","[v]");
     args.push("-map",hasAudio?"0:a:0":"1:a:0",
-      "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,"+(timeline.noiseReduction?"afftdn=nr=12:nf=-40,":"")+"atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
+      "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,"+cleanAudio+"atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
       "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
       "-r","30","-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
       "-t",String(c.seconds),"-movflags","+faststart",segment);
@@ -163,16 +173,17 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",visual];
     const graph=["[0:a]aresample=48000,aformat=channel_layouts=stereo[base]"];
     const streams=["[base]"];let index=1;
+    const duck=timeline.audioDucking&&musicFile&&voiceFile&&timeline.voiceVolume>0;
     if(musicFile){
       args.push("-stream_loop","-1","-i",musicFile);
       graph.push("["+(index++)+":a]aresample=48000,aformat=channel_layouts=stereo,volume="+timeline.musicVolume+"[music]");
-      streams.push("[music]");
+      if(!duck)streams.push("[music]");
     }
     if(voiceFile){
       args.push("-i",voiceFile);
       const delay=Math.round(timeline.voiceStart*1000);
-      graph.push("["+(index++)+":a]aresample=48000,aformat=channel_layouts=stereo,volume="+timeline.voiceVolume+",adelay="+delay+":all=1[voice]");
-      streams.push("[voice]");
+      graph.push("["+(index++)+":a]aresample=48000,aformat=channel_layouts=stereo,"+cleanAudio+"volume="+timeline.voiceVolume+",adelay="+delay+":all=1,apad[voice]");
+      if(duck){graph.push("[voice]asplit=2[side][spoken]");graph.push("[music][side]sidechaincompress=threshold=0.025:ratio="+(1+19*(1-timeline.duckLevel))+":attack=20:release=250[ducked]");streams.push("[ducked]","[spoken]");}else streams.push("[voice]");
     }
     graph.push(streams.join("")+"amix=inputs="+streams.length+":duration=first:dropout_transition=0:normalize=0,alimiter=limit=0.95[a]");
     args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map","0:v:0","-map","[a]","-c:v","copy","-c:a","aac","-b:a","160k","-t",String(outputDuration),"-movflags","+faststart",output);
