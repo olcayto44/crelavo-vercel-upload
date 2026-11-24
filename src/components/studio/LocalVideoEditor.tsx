@@ -10,7 +10,8 @@ const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
 type ImageLayer={id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
-type SavedVideoProject = { imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right";
+type SavedVideoProject = { transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -93,6 +94,19 @@ function parseSrt(source: string): CaptionCue[] {
 }
 function captionAt(cues: CaptionCue[], at: number) {
   return cues.find(cue => at >= cue.start && at < cue.end)?.text || "";
+}
+function paintTransition(ctx:CanvasRenderingContext2D,w:number,h:number,style:TransitionStyle,seconds:number,local:number,length:number,index:number,count:number){
+  const fade=Math.min(seconds,length/3);if(fade<=0)return;
+  const entering=index>0&&local<fade;
+  const exiting=index<count-1&&length-local<fade;
+  const amount=entering?1-Math.max(0,local)/fade:exiting?1-Math.max(0,length-local)/fade:0;
+  if(amount<=0)return;
+  ctx.save();
+  if(style==="wipe-left"||style==="wipe-right"){
+    ctx.fillStyle="#000";const revealFromLeft=style==="wipe-left"?entering:!entering;
+    ctx.fillRect(revealFromLeft?w*(1-amount):0,0,w*amount,h);
+  }else{ctx.globalAlpha=Math.min(1,amount);ctx.fillStyle=style==="white"?"#fff":"#000";ctx.fillRect(0,0,w,h);}
+  ctx.restore();
 }
 function paintImageLayers(ctx:CanvasRenderingContext2D,w:number,h:number,at:number,layers:ImageLayer[],images:Map<string,ImageBitmap>){
   for(const layer of layers){
@@ -264,6 +278,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   },[voiceover]);
   const [musicVolume,setMusicVolume] = useState(0.3);
   const [fadeBetweenClips,setFadeBetweenClips] = useState(false);
+  const [transitionStyle,setTransitionStyle]=useState<TransitionStyle>("black");
+  const [transitionDuration,setTransitionDuration]=useState(.4);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [editorLanguage, setEditorLanguage] = useState<"en" | "tr">("en");
   useEffect(() => {
@@ -300,12 +316,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
@@ -315,7 +331,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -338,6 +354,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
       setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
+      setTransitionStyle(project.transitionStyle??"black");setTransitionDuration(project.transitionDuration??.4);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
@@ -346,6 +363,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
+    if(fadeBetweenClips&&(transitionStyle!=="black"||transitionDuration!==.4)){setState("Custom transitions currently support local projects and WebM export. Select default black fade (0.4s) before cloud save.");return;}
     if(imageLayers.length){setState("Image layers currently support local save and WebM export. Remove image layers before cloud save.");return;}
     if(voiceover){setState("Voiceover currently supports local project save and WebM export. Remove voiceover before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
@@ -369,6 +387,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setImageLayers([]);setSelectedImage(null);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(null);setVoiceStart(0);setVoiceLength(0);setVoiceVolume(1);
+      setTransitionStyle("black");setTransitionDuration(.4);
       setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -396,10 +415,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
         paintImageLayers(ctx,w,h,at,imageLayers,imageBitmaps.current);
         paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
+        if(fadeBetweenClips)paintTransition(ctx,w,h,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-chosen.start)/(chosen.speed||1)),(chosen.end-chosen.start)/(chosen.speed||1),clips.findIndex(c=>c.id===chosen.id),clips.length);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
-  },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers]);
+  },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -601,7 +621,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           if(fadeBetweenClips&&clips.length>1){
             const now=audio.currentTime;
             const segmentLength=(clip.end-clip.start)/speed;
-            const fade=Math.min(.4,segmentLength/3);
+            const fade=Math.min(transitionDuration,segmentLength/3);
             inputGain.gain.setValueAtTime(clipIndex===0?gain:0,now);
             if(clipIndex>0)inputGain.gain.linearRampToValueAtTime(gain,now+fade);
             if(clipIndex<clips.length-1){
@@ -637,15 +657,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               paintImageLayers(ctx,width,height,at,imageLayers,exportImages);
               paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
-              if(fadeBetweenClips&&clips.length>1){
-                const fade=Math.min(.4,segment/3);
-                const local=Math.max(0,(video.currentTime-clip.start)/speed);
-                let opacity=0;
-                if(clipIndex>0&&local<fade)opacity=1-local/fade;
-                if(clipIndex<clips.length-1&&segment-local<fade)
-                  opacity=Math.max(opacity,1-Math.max(0,segment-local)/fade);
-                if(opacity>0){ctx.fillStyle='rgba(0,0,0,'+Math.min(1,opacity)+')';ctx.fillRect(0,0,width,height);}
-              }
+              if(fadeBetweenClips)paintTransition(ctx,width,height,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-clip.start)/speed),segment,clipIndex,clips.length);
             }
             setProgress(Math.min(99, Math.round(100 * (elapsed + Math.min(segment, Math.max(0, (video.currentTime - clip.start)/speed))) / duration)));
             if (video.currentTime >= clip.end - .04 || video.ended || performance.now() - begin > (segment + 6) * 1000) { resolve(); return; }
@@ -857,7 +869,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} />
           <span>Fade between clips</span>
-        </label>
+        </label>{fadeBetweenClips&&<div style={{display:"grid",gap:6}}><label>Transition style<select disabled={busy} value={transitionStyle} onChange={e=>{setTransitionStyle(e.target.value as TransitionStyle);cleanupOutput()}}><option value="black">Fade through black</option><option value="white">Fade through white</option><option value="wipe-left">Black wipe left</option><option value="wipe-right">Black wipe right</option></select></label><label>Transition duration {transitionDuration.toFixed(1)}s<input type="range" min={.1} max={2} step={.1} disabled={busy} value={transitionDuration} onChange={e=>{setTransitionDuration(Number(e.target.value));cleanupOutput()}}/></label><small>Local/WebM; transitions pass through a solid color, not overlapping crossfades.</small></div>}
       </div>
       <div className="studio-export-extras">
         <div className="studio-setting-card">
