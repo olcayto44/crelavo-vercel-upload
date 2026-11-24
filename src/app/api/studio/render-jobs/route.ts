@@ -49,6 +49,20 @@ export async function GET(request: Request) {
   }
 }
 
+async function workerReady(): Promise<boolean> {
+  try {
+    const url = new URL(process.env.STUDIO_RENDER_WORKER_URL ?? "");
+    if (url.protocol !== "https:" || url.username || url.password) return false;
+    const response = await fetch(new URL("/worker/ready", url), {
+      headers: { Authorization: "Bearer " + process.env.STUDIO_RENDER_WORKER_KEY },
+      cache: "no-store", redirect: "error", signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data?.ok === true && data?.queueEnabled === true;
+  } catch { return false; }
+}
+
 /** Worker-gated, non-billable queue reservation. Never claim MP4 generation before a worker is deployed. */
 export async function POST(request: Request) {
   try {
@@ -72,6 +86,7 @@ export async function POST(request: Request) {
     const { data: existing } = await db.from("studio_render_jobs")
       .select("id,status,created_at").eq("user_id", user.id).eq("request_id", body.requestId).maybeSingle();
     if (existing) return NextResponse.json({ ok: true, reused: true, job: existing, creditsReserved: false }, { headers: noCache });
+    if (!(await workerReady())) return error("MP4 render worker is not ready. No job or credit charge was created.", 503);
     const { count, error: countError } = await db.from("studio_render_jobs")
       .select("id", { count: "exact", head: true }).eq("user_id", user.id).in("status", ["queued","processing"]);
     if (countError) return error("Render queue is unavailable.", 503);
