@@ -11,8 +11,8 @@ const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
 type ImageKeyframe={at:number;x:number;y:number;size:number;opacity:number};
 type ImageLayer={keyframes?:ImageKeyframe[];id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
-type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve";
-type SavedVideoProject = { noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve"|"crossfade";
+type SavedVideoProject = { aiDenoise?:boolean; noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -306,6 +306,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [audioCompressor,setAudioCompressor]=useState(false);
   const [lowCut,setLowCut]=useState(false);
   const [noiseReduction,setNoiseReduction]=useState(false);
+  const [aiDenoise,setAiDenoise]=useState(false);
   const [musicPeaks,setMusicPeaks]=useState<number[]>([]);
   const [musicLength,setMusicLength]=useState(0);
   useEffect(()=>{
@@ -361,12 +362,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
@@ -376,7 +377,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -399,7 +400,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
       setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
-      setNoiseReduction(Boolean(project.noiseReduction));setAudioDucking(Boolean(project.audioDucking));setDuckLevel(project.duckLevel??.25);setAudioCompressor(Boolean(project.audioCompressor));setLowCut(Boolean(project.lowCut));
+      setAiDenoise(!!project.aiDenoise);setNoiseReduction(Boolean(project.noiseReduction));setAudioDucking(Boolean(project.audioDucking));setDuckLevel(project.duckLevel??.25);setAudioCompressor(Boolean(project.audioCompressor));setLowCut(Boolean(project.lowCut));
       setTransitionStyle(project.transitionStyle??"black");setTransitionDuration(project.transitionDuration??.4);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
@@ -412,7 +413,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
-       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction
+       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       });
       setState("Cloud timeline version "+version+" saved with its source files. You can reopen it on another device.");
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -430,8 +431,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setImageLayers(saved.imageLayers||[]);setSelectedImage(null);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(saved.voiceover||null);setVoiceStart(saved.voiceStart??0);setVoiceLength(saved.voiceLength??0);setVoiceVolume(saved.voiceVolume??1);
-      setAudioDucking(!!saved.audioDucking);setDuckLevel(saved.duckLevel??.25);setAudioCompressor(!!saved.audioCompressor);setLowCut(!!saved.lowCut);setNoiseReduction(!!saved.noiseReduction);
-      setTransitionStyle((["black","white","wipe-left","wipe-right","zoom","slide","dissolve"].includes(saved.transitionStyle||"")?saved.transitionStyle:"black") as TransitionStyle);setTransitionDuration(saved.transitionDuration??.4);
+      setAudioDucking(!!saved.audioDucking);setDuckLevel(saved.duckLevel??.25);setAudioCompressor(!!saved.audioCompressor);setLowCut(!!saved.lowCut);setAiDenoise(!!saved.aiDenoise);setNoiseReduction(!!saved.noiseReduction);
+      setTransitionStyle((["black","white","wipe-left","wipe-right","zoom","slide","dissolve","crossfade"].includes(saved.transitionStyle||"")?saved.transitionStyle:"black") as TransitionStyle);setTransitionDuration(saved.transitionDuration??.4);
       setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -459,7 +460,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
         paintImageLayers(ctx,w,h,at,imageLayers,imageBitmaps.current);
         paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
-        if(fadeBetweenClips)paintTransition(ctx,w,h,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-chosen.start)/(chosen.speed||1)),(chosen.end-chosen.start)/(chosen.speed||1),clips.findIndex(c=>c.id===chosen.id),clips.length);
+        if(fadeBetweenClips&&transitionStyle!=="crossfade")paintTransition(ctx,w,h,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-chosen.start)/(chosen.speed||1)),(chosen.end-chosen.start)/(chosen.speed||1),clips.findIndex(c=>c.id===chosen.id),clips.length);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
@@ -601,6 +602,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function exportVideo() {
     if (busy || !clips.length || !duration) return;
+    if((fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction){setState("Selected effects require the separate MP4 worker. Save your cloud timeline; disable MP4-only effects for browser WebM export.");return;}
     const mime = supportedMime();
     if (!mime || typeof HTMLCanvasElement.prototype.captureStream !== "function") {
       setState("This browser cannot record the edited timeline. Use a current Chrome or Edge browser."); return;
@@ -948,7 +950,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} />
           <span>Fade between clips</span>
-        </label>{fadeBetweenClips&&<div style={{display:"grid",gap:6}}><label>Transition style<select disabled={busy} value={transitionStyle} onChange={e=>{setTransitionStyle(e.target.value as TransitionStyle);cleanupOutput()}}><option value="black">Fade through black</option><option value="white">Fade through white</option><option value="wipe-left">Black wipe left</option><option value="wipe-right">Black wipe right</option><option value="zoom">Zoom through black</option><option value="slide">Slide through black</option><option value="dissolve">Dissolve through black</option></select></label><label>Transition duration {transitionDuration.toFixed(1)}s<input type="range" min={.1} max={2} step={.1} disabled={busy} value={transitionDuration} onChange={e=>{setTransitionDuration(Number(e.target.value));cleanupOutput()}}/></label><small>Local/WebM; these transitions pass through a solid color, not overlapping crossfades.</small></div>}
+        </label>{fadeBetweenClips&&<div style={{display:"grid",gap:6}}><label>Transition style<select disabled={busy} value={transitionStyle} onChange={e=>{setTransitionStyle(e.target.value as TransitionStyle);cleanupOutput()}}><option value="black">Fade through black</option><option value="white">Fade through white</option><option value="wipe-left">Black wipe left</option><option value="wipe-right">Black wipe right</option><option value="zoom">Zoom through black</option><option value="slide">Slide through black</option><option value="dissolve">Dissolve through black</option><option value="crossfade">True crossfade (MP4 worker only)</option></select></label><label>Transition duration {transitionDuration.toFixed(1)}s<input type="range" min={.1} max={2} step={.1} disabled={busy} value={transitionDuration} onChange={e=>{setTransitionDuration(Number(e.target.value));cleanupOutput()}}/></label><small>{transitionStyle==="crossfade"?"MP4 only. Browser preview does not show overlapping clips. Estimated MP4 duration: "+sec(duration-clips.slice(1).reduce((n,c,i)=>n+Math.min(transitionDuration,(c.end-c.start)/(c.speed||1)/3,(clips[i].end-clips[i].start)/(clips[i].speed||1)/3),0)):"Local/WebM; these transitions pass through a solid color."}</small></div>}
       </div>
       <div className="studio-export-extras">
         <div className="studio-setting-card">
@@ -968,7 +970,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
               value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
           </label>}
-          <fieldset disabled={busy} style={{display:"grid",gap:6}}><legend>Audio processing</legend><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);cleanupOutput()}}/>Spectral noise reduction (saved for MP4 worker only; not applied in WebM)</label>
+          <fieldset disabled={busy} style={{display:"grid",gap:6}}><legend>Audio processing</legend><label><input type="checkbox" checked={aiDenoise} onChange={e=>{setAiDenoise(e.target.checked);if(e.target.checked)setNoiseReduction(false);cleanupOutput()}}/>AI Noise Reduction (MP4 worker; RNNoise model required)</label><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);if(e.target.checked)setAiDenoise(false);cleanupOutput()}}/>Spectral noise reduction (saved for MP4 worker only; not applied in WebM)</label>
             <label><input type="checkbox" checked={lowCut} onChange={e=>{setLowCut(e.target.checked);cleanupOutput()}}/>Source low-cut (80 Hz rumble filter)</label>
             <label><input type="checkbox" checked={audioCompressor} onChange={e=>{setAudioCompressor(e.target.checked);cleanupOutput()}}/>Source dynamics compressor</label>
             <label><input type="checkbox" checked={audioDucking} onChange={e=>{setAudioDucking(e.target.checked);cleanupOutput()}}/>Duck music during voiceover</label>
