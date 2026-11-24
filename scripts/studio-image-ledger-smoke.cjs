@@ -12,7 +12,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  const plan={requestId,userId:owner,projectId,categoryId:"image",operation:"image_generate",provider:"minimax",model:"image-01",request:{prompt:"synthetic fixture",aspect:"1:1"},tariffVersion:"offline",reservedCredits:50,maximumProviderMicroUSD:10000},hash=imagePlanDigest(plan);
  await db.query("insert into auth.users values($1),($2)",[owner,other]);
  await db.query("insert into profiles(id,email) values($1,'owner@example.test'),($2,'other@example.test')",[owner,other]);
- await db.query("insert into credit_balances(user_id,balance,current_subscription_credits) values($1,100,100)",[owner]);
+ await db.query("insert into credit_balances(user_id,balance,rolled_over_credits,current_subscription_credits,bonus_credits,topup_credits) values($1,100,10,20,15,55)",[owner]);
  await db.query("insert into production_requests values($1,$2,'image')",[projectId,owner]);
  await db.query("insert into studio_image_tariffs values('offline',50,10000,false)");
  await db.query("insert into studio_image_operations(request_id,user_id,project_id,plan_hash,plan,tariff_version,credits,max_micro_usd,approved_at) values($1,$2,$3,$4,$5,'offline',50,10000,now())",[requestId,owner,projectId,hash,JSON.stringify(plan)]);
@@ -43,6 +43,45 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  assert.equal(row.state,"artifact_cost_pending");assert.equal(row.digest,receipt.sha256);
  assert.equal((await db.query("select count(*)::int as n from credit_events where type='reserve'")).rows[0].n,1);
  assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,0);
- console.log("studio-image-ledger-smoke ok: isolated PostgreSQL owner and tariff gates, service-only reserve/claim, single artifact and held credits, no spend or paid request");
+ // Settlement needs separate reviewed cost evidence. Releasing after claim is forbidden.
+ assert.equal(await store.finalize(plan,hash,"release_unclaimed"),"denied");
+ assert.equal(await store.finalize(plan,hash,"settle"),"cost_evidence_required");
+ assert.deepEqual(await wallet(),{balance:100,reserved:50});
+ await db.exec("set role authenticated");
+ await assert.rejects(()=>db.query("select * from studio_image_cost_evidence"));
+ await assert.rejects(()=>db.query("select studio_image_finalize($1,$2,$3,$4,'settle')",[owner,requestId,hash,JSON.stringify(plan)]));
+ await db.exec("reset role");
+ await db.query("insert into studio_image_cost_evidence(request_id,provider_request_id,evidence_ref,actual_micro_usd,source) values($1,$2,'offline_invoice_1',5000,'reviewed_provider_invoice')",[requestId,receipt.providerRequestId]);
+ await db.exec("set role service_role");
+ assert.equal(await store.finalize(plan,hash,"settle"),"settled");
+ assert.equal(await store.finalize(plan,hash,"settle"),"already_settled");
+ assert.equal(await store.finalize(plan,hash,"release_unclaimed"),"denied");
+ assert.equal(await store.claim(plan,hash),"already_claimed");
+ await db.exec("reset role");
+ assert.deepEqual(await wallet(),{balance:50,reserved:0});
+ assert.deepEqual((await db.query("select rolled_over_credits,current_subscription_credits,bonus_credits,topup_credits from credit_balances where user_id=$1",[owner])).rows[0],{rolled_over_credits:0,current_subscription_credits:0,bonus_credits:0,topup_credits:50});
+ assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+ assert.equal((await db.query("select actual_micro_usd from studio_image_operations where request_id=$1",[requestId])).rows[0].actual_micro_usd,5000);
+ // New approved request on same project can be cancelled before dispatch.
+ async function nextPlan(id){const next={...plan,requestId:id};const digest=imagePlanDigest(next);await db.query("insert into studio_image_operations(request_id,user_id,project_id,plan_hash,plan,tariff_version,credits,max_micro_usd,approved_at) values($1,$2,$3,$4,$5,'offline',50,10000,now())",[id,owner,projectId,digest,JSON.stringify(next)]);return {next,digest};}
+ const cancel=await nextPlan("55555555-5555-4555-8555-555555555555");
+ assert.equal(await store.reserve(cancel.next,cancel.digest),"reserved");
+ assert.equal(await store.finalize(cancel.next,cancel.digest,"release_unclaimed"),"released");
+ assert.equal(await store.finalize(cancel.next,cancel.digest,"release_unclaimed"),"already_released");
+ assert.equal(await store.claim(cancel.next,cancel.digest),"denied");
+ assert.deepEqual(await wallet(),{balance:50,reserved:0});
+ assert.equal((await db.query("select count(*)::int as n from credit_events where type='refund'")).rows[0].n,1);
+ // Over-budget actual cost is recorded but cannot charge or silently release.
+ const over=await nextPlan("66666666-6666-4666-8666-666666666666");
+ assert.equal(await store.reserve(over.next,over.digest),"reserved");
+ assert.equal(await store.claim(over.next,over.digest),"claimed");
+ const expensive={...receipt,providerRequestId:"offline_receipt_2"};
+ assert.equal(await store.recordArtifact(over.next,over.digest,bytes,expensive),true);
+ await db.query("insert into studio_image_cost_evidence(request_id,provider_request_id,evidence_ref,actual_micro_usd,source) values($1,$2,'offline_invoice_2',10001,'reviewed_provider_usage')",[over.next.requestId,expensive.providerRequestId]);
+ assert.equal(await store.finalize(over.next,over.digest,"settle"),"reconcile_required");
+ assert.equal(await store.finalize(over.next,over.digest,"release_unclaimed"),"reconcile_required");
+ assert.deepEqual(await wallet(),{balance:50,reserved:50});
+ assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+ console.log("studio-image-ledger-smoke ok: isolated PostgreSQL reserve/claim/artifact, reviewed cost, single spend, unclaimed release, over-budget hold, restricted roles; no paid request or live DB");
  }finally{await db.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
