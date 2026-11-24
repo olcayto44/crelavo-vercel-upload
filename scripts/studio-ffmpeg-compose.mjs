@@ -57,7 +57,13 @@ export function validateTimeline(timeline, userId, projectId) {
       ||!Number.isFinite(zoom)||zoom<1||zoom>3||!Number.isFinite(gain)||gain<0||gain>1
       ||(item.flipX!==undefined&&typeof item.flipX!=="boolean")||(item.flipY!==undefined&&typeof item.flipY!=="boolean"))
       throw new Error("CLIP_ADJUSTMENTS_INVALID_"+index);
-    return {path:item.path,start,end,rotation,speed,zoom,gain,flipX:item.flipX===true,flipY:item.flipY===true,
+    const geometry={};
+    for(const key of ["cropLeft","cropRight","cropTop","cropBottom","panX","panY"]){
+      const value=item[key]??0,pan=key.startsWith("pan");
+      if(!Number.isFinite(value)||value<(pan?-1:0)||value>(pan?1:.4))throw new Error("CLIP_GEOMETRY_INVALID_"+index);
+      geometry[key]=value;
+    }
+    return {path:item.path,start,end,rotation,speed,zoom,gain,...geometry,flipX:item.flipX===true,flipY:item.flipY===true,
       seconds:Math.round((end-start)/speed*1000)/1000};
   });
   if(clips.reduce((n,c)=>n+c.seconds,0)>1200)throw new Error("TIMELINE_TOO_LONG");
@@ -78,20 +84,18 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const segment=path.join(dir,"segment-"+index+".mp4");
     const speed=c.speed??1,zoom=c.zoom??1,gain=c.gain??1;
     const transforms=["trim=duration="+(c.end-c.start),"setpts=(PTS-STARTPTS)/"+speed];
+    const left=c.cropLeft??0,right=c.cropRight??0,top=c.cropTop??0,bottom=c.cropBottom??0;
+    const panX=c.panX??0,panY=c.panY??0;
+    if(left||right||top||bottom)transforms.push("crop=w=max(2\\,trunc(iw*"+(1-left-right)+"/2)*2):h=max(2\\,trunc(ih*"+(1-top-bottom)+"/2)*2):x=trunc(iw*"+left+"/2)*2:y=trunc(ih*"+top+"/2)*2");
     if(c.flipX)transforms.push("hflip");
     if(c.flipY)transforms.push("vflip");
     if(c.rotation===90)transforms.push("transpose=clock");
     if(c.rotation===180)transforms.push("hflip","vflip");
     if(c.rotation===270)transforms.push("transpose=cclock");
-    const vf=(timeline.framing!=="cover"
-      ?["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=decrease",
-        "pad="+timeline.width+":"+timeline.height+":(ow-iw)/2:(oh-ih)/2"]
-      :["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=increase",
-        "crop="+timeline.width+":"+timeline.height]).concat(["setsar=1","fps=30"]);
-    // Zoom after fitting the foreground; crop only the zoomed central region.
-    const foregroundZoom=zoom===1?[]:["scale=trunc(iw*"+zoom+"/2)*2:trunc(ih*"+zoom+"/2)*2",
-      "crop=min(iw\\,"+timeline.width+"):min(ih\\,"+timeline.height+")"];
-    const fit=timeline.framing==="cover"?vf.slice(0,2):vf.slice(0,1);
+    const w=timeline.width,h=timeline.height;
+    const fit=["scale="+w+":"+h+":force_original_aspect_ratio="+(timeline.framing==="cover"?"increase":"decrease")+":force_divisible_by=2"];
+    const foregroundZoom=zoom===1?[]:["scale=max(2\\,trunc(iw*"+zoom+"/2)*2):max(2\\,trunc(ih*"+zoom+"/2)*2)"];
+    const x="(W-w)/2+"+(panX*w/2),y="(H-h)/2+"+(panY*h/2);
     const finish=["setsar=1","fps=30"];
     const fadeSeconds=Math.min(0.2,c.seconds/4);
     if(timeline.fadeBetweenClips&&c.seconds>0.8){
@@ -101,14 +105,13 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const args=["-hide_banner","-loglevel","error","-nostdin","-y",
       "-ss",String(c.start),"-i",input];
     if(!hasAudio)args.push("-f","lavfi","-i","anullsrc=r=48000:cl=stereo");
-    if(timeline.framing==="blur"){
-      const w=timeline.width,h=timeline.height;
-      const graph="[0:v:0]"+transforms.slice(0,2).join(",")+",split=2[bg][fg];[bg]scale="+w+":"+h+":force_original_aspect_ratio=increase,crop="+w+":"+h+",boxblur=luma_radius=12:luma_power=2,setsar=1[back];[fg]"+transforms.slice(2).concat(["scale="+w+":"+h+":force_original_aspect_ratio=decrease:force_divisible_by=2"],foregroundZoom,["setsar=1"]).join(",")+"[front];[back][front]overlay=(W-w)/2:(H-h)/2:shortest=1,"+finish.join(",")+"[v]";
-      args.push("-filter_complex",graph,"-map","[v]");
-    }else{
-      const filters=transforms.concat(fit,foregroundZoom,timeline.framing==="cover"?[]:[vf[1]],finish);
-      args.push("-map","0:v:0","-vf",filters.join(","));
-    }
+    // Both background and foreground derive from the trimmed stream, so
+    // positioning can expose background without changing the output dimensions.
+    const background=timeline.framing==="blur"
+      ?"scale="+w+":"+h+":force_original_aspect_ratio=increase,crop="+w+":"+h+",boxblur=luma_radius=12:luma_power=2,setsar=1"
+      :"scale="+w+":"+h+",setsar=1,drawbox=x=0:y=0:w=iw:h=ih:color=black:t=fill";
+    const graph="[0:v:0]"+transforms.slice(0,2).join(",")+",split=2[bg][fg];[bg]"+background+"[back];[fg]"+transforms.slice(2).concat(fit,foregroundZoom,["setsar=1"]).join(",")+"[front];[back][front]overlay=x="+x+":y="+y+":shortest=1,"+finish.join(",")+"[v]";
+    args.push("-filter_complex_threads","1","-filter_complex",graph,"-map","[v]");
     args.push("-map",hasAudio?"0:a:0":"1:a:0",
       "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
       "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
