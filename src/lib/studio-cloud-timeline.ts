@@ -10,7 +10,7 @@ export type CloudTimelineClip = { id: string; file: File; name: string; duration
 export type CloudTimelineSettings = {
  ratio: "16:9"|"9:16"|"1:1"; resolution: number; includeAudio: boolean;
  captionCues: Array<{start:number;end:number;text:string}>; titleOverlay: string;
- musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"; backgroundMusic: File|null;
+ musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"|"blur"; backgroundMusic: File|null;
 };
 export type LoadedCloudTimeline = CloudTimelineSettings & { clips: CloudTimelineClip[]; version: number };
 type Entry = { id:string;name:string;path:string;mime:string;start:number;end:number;duration:number };
@@ -125,6 +125,6 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
   captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
   titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
   musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
-  fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="cover"?"cover":"contain",backgroundMusic
+  fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="blur"?"blur":t.framing==="cover"?"cover":"contain",backgroundMusic
  };
 }
