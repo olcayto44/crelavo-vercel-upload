@@ -230,7 +230,16 @@ const imageEditor=read('src/components/studio/LocalImageEditor.tsx');
 const toolPages=['src/app/dashboard/studio-video-editor/page.tsx','src/app/dashboard/studio-image-editor/page.tsx','src/app/dashboard/studio-elements/page.tsx'];
 for(const path of toolPages){
  const file=read(path);
- assert.ok(file.includes('import "../studio-tools.css"'),'all standalone editor routes must use the same visual system');
+ if(path.includes('/studio-video-editor/')){
+  assert.ok(file.includes('import "./video-workspace.css"'),'video route must use its isolated workstation styles');
+  assert.ok(!file.includes('import "../studio-tools.css"'),'video route must not import legacy shared layout');
+  const videoCss=read('src/app/dashboard/studio-video-editor/video-workspace.css');
+  assert.ok(videoCss.includes('.studio-compact-video-editor .studio-track-grid'),'video styles must include track layout');
+  assert.ok(videoCss.includes('.studio-timeline-resizer'),'timeline resize control must be styled');
+  assert.ok(videoCss.includes('@media(max-width:600px)'),'video workspace must adapt to narrow screens');
+ }else{
+  assert.ok(file.includes('import "../studio-tools.css"'),'image and elements routes retain shared visual system');
+ }
  assert.ok(file.includes('className="studio-tool-page"'),'standalone editors require a consistent full-page background');
 }
 for(const [name,source] of [['video editor',localEditor],['image editor',imageEditor],['Elements library',elements]]){
