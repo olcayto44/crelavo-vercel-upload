@@ -103,8 +103,19 @@ async function processJob(db,job) {
       voiceFile=path.join(folder,"voice"+path.extname(timeline.voicePath).toLowerCase());
       await downloadObject(db,timeline.voicePath,voiceFile,25_000_000);
     }
+    const imageFiles=[];
+    for(let i=0;i<timeline.images.length;i++){
+      const layer=timeline.images[i];
+      const {data:asset,error:assetError}=await db.from("studio_assets").select("id")
+        .eq("user_id",job.user_id).eq("project_id",job.project_id)
+        .eq("bucket_id",bucket).eq("object_path",layer.path).eq("kind","image").maybeSingle();
+      if(assetError||!asset)throw new Error("IMAGE_REFERENCE_NOT_OWNED");
+      const filename=path.join(folder,"image-"+i+path.extname(layer.path).toLowerCase());
+      await downloadObject(db,layer.path,filename,10_000_000);
+      imageFiles.push(filename);
+    }
     const output=path.join(folder,"output.mp4");
-    await composeMp4({ffmpeg,ffprobe,timeline,sourceFiles,musicFile,voiceFile,dir:folder,output});
+    await composeMp4({ffmpeg,ffprobe,timeline,sourceFiles,musicFile,voiceFile,imageFiles,dir:folder,output});
     const objectPath=job.user_id+"/"+job.project_id+"/renders/"+job.id+".mp4";
     const bytes=await readFile(output);
     const {error:uploadError}=await db.storage.from(bucket).upload(objectPath,bytes,{
