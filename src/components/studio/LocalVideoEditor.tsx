@@ -12,7 +12,7 @@ type CaptionCue = { start: number; end: number; text: string };
 type ImageKeyframe={at:number;x:number;y:number;size:number;opacity:number};
 type ImageLayer={keyframes?:ImageKeyframe[];id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
 type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve";
-type SavedVideoProject = { audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type SavedVideoProject = { noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -305,6 +305,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [duckLevel,setDuckLevel]=useState(.25);
   const [audioCompressor,setAudioCompressor]=useState(false);
   const [lowCut,setLowCut]=useState(false);
+  const [noiseReduction,setNoiseReduction]=useState(false);
   const [musicPeaks,setMusicPeaks]=useState<number[]>([]);
   const [musicLength,setMusicLength]=useState(0);
   useEffect(()=>{
@@ -360,12 +361,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
@@ -375,7 +376,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -398,7 +399,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
       setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
-      setAudioDucking(Boolean(project.audioDucking));setDuckLevel(project.duckLevel??.25);setAudioCompressor(Boolean(project.audioCompressor));setLowCut(Boolean(project.lowCut));
+      setNoiseReduction(Boolean(project.noiseReduction));setAudioDucking(Boolean(project.audioDucking));setDuckLevel(project.duckLevel??.25);setAudioCompressor(Boolean(project.audioCompressor));setLowCut(Boolean(project.lowCut));
       setTransitionStyle(project.transitionStyle??"black");setTransitionDuration(project.transitionDuration??.4);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
@@ -408,14 +409,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
-    if(audioDucking||audioCompressor||lowCut){setState("Advanced audio processing currently supports local projects and WebM. Disable these options before cloud save.");return;}
-    if(fadeBetweenClips&&(transitionStyle!=="black"||transitionDuration!==.4)){setState("Custom transitions currently support local projects and WebM export. Select default black fade (0.4s) before cloud save.");return;}
-    if(imageLayers.length){setState("Image layers currently support local save and WebM export. Remove image layers before cloud save.");return;}
-    if(voiceover){setState("Voiceover currently supports local project save and WebM export. Remove voiceover before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
-       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing
+       ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction
       });
       setState("Cloud timeline version "+version+" saved with its source files. You can reopen it on another device.");
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -431,10 +428,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
-      setImageLayers([]);setSelectedImage(null);
-      setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(null);setVoiceStart(0);setVoiceLength(0);setVoiceVolume(1);
-      setAudioDucking(false);setDuckLevel(.25);setAudioCompressor(false);setLowCut(false);
-      setTransitionStyle("black");setTransitionDuration(.4);
+      setImageLayers(saved.imageLayers||[]);setSelectedImage(null);
+      setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(saved.voiceover||null);setVoiceStart(saved.voiceStart??0);setVoiceLength(saved.voiceLength??0);setVoiceVolume(saved.voiceVolume??1);
+      setAudioDucking(!!saved.audioDucking);setDuckLevel(saved.duckLevel??.25);setAudioCompressor(!!saved.audioCompressor);setLowCut(!!saved.lowCut);setNoiseReduction(!!saved.noiseReduction);
+      setTransitionStyle((["black","white","wipe-left","wipe-right","zoom","slide","dissolve"].includes(saved.transitionStyle||"")?saved.transitionStyle:"black") as TransitionStyle);setTransitionDuration(saved.transitionDuration??.4);
       setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -971,7 +968,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
               value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
           </label>}
-          <fieldset disabled={busy} style={{display:"grid",gap:6}}><legend>Audio processing (local / WebM)</legend>
+          <fieldset disabled={busy} style={{display:"grid",gap:6}}><legend>Audio processing</legend><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);cleanupOutput()}}/>Spectral noise reduction (saved for MP4 worker only; not applied in WebM)</label>
             <label><input type="checkbox" checked={lowCut} onChange={e=>{setLowCut(e.target.checked);cleanupOutput()}}/>Source low-cut (80 Hz rumble filter)</label>
             <label><input type="checkbox" checked={audioCompressor} onChange={e=>{setAudioCompressor(e.target.checked);cleanupOutput()}}/>Source dynamics compressor</label>
             <label><input type="checkbox" checked={audioDucking} onChange={e=>{setAudioDucking(e.target.checked);cleanupOutput()}}/>Duck music during voiceover</label>
@@ -1034,6 +1031,6 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download merged video</a>}
       </div>
     </section>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  Private cloud timeline source-file backup/reopen supports up to 90 MB total; larger local timelines still stay on this device. Cloud browser tests pending. Advanced crossfades and MP4 export are not available yet.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  Private cloud timeline source-file backup/reopen supports up to 90 MB total; larger local timelines still stay on this device. Cloud backup includes voiceover, images and animation settings. Cloud browser tests pending. Advanced crossfades and MP4 export are not available in this browser editor yet.</p>
   </section>;
 }
