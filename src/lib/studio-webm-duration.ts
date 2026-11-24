@@ -22,9 +22,9 @@ function vint(view:DataView, at:number, limit:number, id:boolean) {
   while(width<=8 && !(first&mask)){mask>>=1;width++;}
   if(width>8||at+width>limit||(id&&width>4))return null;
   let result=BigInt(id?first:(first&(~mask)));
-  for(let i=1;i<width;i++)result=(result<<8n)|BigInt(view.getUint8(at+i));
+  for(let i=1;i<width;i++)result=(result<<BigInt(8))|BigInt(view.getUint8(at+i));
   if(result>BigInt(Number.MAX_SAFE_INTEGER)&&id)return null;
-  const max=(1n<<BigInt(7*width))-1n;
+  const max=(BigInt(1)<<BigInt(7*width))-BigInt(1);
   return {value:result,width,unknown:!id&&result===max};
 }
 function element(view:DataView, at:number,limit:number):Element|null {
@@ -42,10 +42,10 @@ function element(view:DataView, at:number,limit:number):Element|null {
 }
 function encodedSize(size:number,width:number) {
   if(!Number.isSafeInteger(size)||size<0)return null;
-  const limit=(1n<<BigInt(7*width))-1n;
+  const limit=(BigInt(1)<<BigInt(7*width))-BigInt(1);
   if(BigInt(size)>=limit)return null;
-  const result=new Uint8Array(width);let bits=BigInt(size)|(1n<<BigInt(7*width));
-  for(let i=width-1;i>=0;i--){result[i]=Number(bits&255n);bits>>=8n;}
+  const result=new Uint8Array(width);let bits=BigInt(size)|(BigInt(1)<<BigInt(7*width));
+  for(let i=width-1;i>=0;i--){result[i]=Number(bits&BigInt(255));bits>>=BigInt(8);}
   return result;
 }
 function durationElement(ms:number) {
