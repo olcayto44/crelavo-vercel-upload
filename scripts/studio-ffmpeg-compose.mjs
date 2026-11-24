@@ -58,7 +58,7 @@ export function validateTimeline(timeline, userId, projectId) {
   const musicPath=typeof timeline.musicPath==="string"?timeline.musicPath:null;
   if(musicPath&&(!musicPath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg)$/i.test(musicPath)))
     throw new Error("MUSIC_PATH_INVALID");
-  return {clips,musicPath,width,height,framing:timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  return {clips,musicPath,width,height,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
@@ -70,7 +70,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const c=timeline.clips[index],input=sourceFiles[index];
     const hasAudio=timeline.includeAudio&&await mediaHasAudio(ffprobe,input);
     const segment=path.join(dir,"segment-"+index+".mp4");
-    const vf=(timeline.framing==="contain"
+    const vf=(timeline.framing!=="cover"
       ?["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=decrease",
         "pad="+timeline.width+":"+timeline.height+":(ow-iw)/2:(oh-ih)/2"]
       :["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=increase",
@@ -83,7 +83,12 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const args=["-hide_banner","-loglevel","error","-nostdin","-y",
       "-ss",String(c.start),"-i",input];
     if(!hasAudio)args.push("-f","lavfi","-i","anullsrc=r=48000:cl=stereo");
-    args.push("-map","0:v:0","-map",hasAudio?"0:a:0":"1:a:0","-vf",vf.join(","),
+    if(timeline.framing==="blur"){
+      const w=timeline.width,h=timeline.height;
+      const graph="[0:v:0]split=2[bg][fg];[bg]scale="+w+":"+h+":force_original_aspect_ratio=increase,crop="+w+":"+h+",boxblur=luma_radius=12:luma_power=2,setsar=1[back];[fg]scale="+w+":"+h+":force_original_aspect_ratio=decrease,setsar=1[front];[back][front]overlay=(W-w)/2:(H-h)/2,"+vf.slice(2).join(",")+"[v]";
+      args.push("-filter_complex",graph,"-map","[v]");
+    }else args.push("-map","0:v:0","-vf",vf.join(","));
+    args.push("-map",hasAudio?"0:a:0":"1:a:0",
       "-af","aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
       "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
       "-r","30","-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
