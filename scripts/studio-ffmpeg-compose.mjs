@@ -52,7 +52,13 @@ export function validateTimeline(timeline, userId, projectId) {
     if(!Number.isFinite(start)||!Number.isFinite(end)||!Number.isFinite(duration)
       ||start<0||end<=start||duration<=0||end>duration+0.05||end-start>600)
       throw new Error("CLIP_TRIM_INVALID_"+index);
-    return {path:item.path,start,end,seconds:Math.round((end-start)*1000)/1000};
+    const rotation=item.rotation??0, speed=item.speed??1, zoom=item.zoom??1, gain=item.gain??1;
+    if(![0,90,180,270].includes(rotation)||![.5,.75,1,1.25,1.5,2].includes(speed)
+      ||!Number.isFinite(zoom)||zoom<1||zoom>3||!Number.isFinite(gain)||gain<0||gain>1
+      ||(item.flipX!==undefined&&typeof item.flipX!=="boolean")||(item.flipY!==undefined&&typeof item.flipY!=="boolean"))
+      throw new Error("CLIP_ADJUSTMENTS_INVALID_"+index);
+    return {path:item.path,start,end,rotation,speed,zoom,gain,flipX:item.flipX===true,flipY:item.flipY===true,
+      seconds:Math.round((end-start)/speed*1000)/1000};
   });
   if(clips.reduce((n,c)=>n+c.seconds,0)>1200)throw new Error("TIMELINE_TOO_LONG");
   const musicPath=typeof timeline.musicPath==="string"?timeline.musicPath:null;
@@ -70,26 +76,41 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const c=timeline.clips[index],input=sourceFiles[index];
     const hasAudio=timeline.includeAudio&&await mediaHasAudio(ffprobe,input);
     const segment=path.join(dir,"segment-"+index+".mp4");
+    const speed=c.speed??1,zoom=c.zoom??1,gain=c.gain??1;
+    const transforms=["trim=duration="+(c.end-c.start),"setpts=(PTS-STARTPTS)/"+speed];
+    if(c.flipX)transforms.push("hflip");
+    if(c.flipY)transforms.push("vflip");
+    if(c.rotation===90)transforms.push("transpose=clock");
+    if(c.rotation===180)transforms.push("hflip","vflip");
+    if(c.rotation===270)transforms.push("transpose=cclock");
     const vf=(timeline.framing!=="cover"
       ?["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=decrease",
         "pad="+timeline.width+":"+timeline.height+":(ow-iw)/2:(oh-ih)/2"]
       :["scale="+timeline.width+":"+timeline.height+":force_original_aspect_ratio=increase",
         "crop="+timeline.width+":"+timeline.height]).concat(["setsar=1","fps=30"]);
+    // Zoom after fitting the foreground; crop only the zoomed central region.
+    const foregroundZoom=zoom===1?[]:["scale=trunc(iw*"+zoom+"/2)*2:trunc(ih*"+zoom+"/2)*2",
+      "crop=min(iw\\,"+timeline.width+"):min(ih\\,"+timeline.height+")"];
+    const fit=timeline.framing==="cover"?vf.slice(0,2):vf.slice(0,1);
+    const finish=["setsar=1","fps=30"];
     const fadeSeconds=Math.min(0.2,c.seconds/4);
     if(timeline.fadeBetweenClips&&c.seconds>0.8){
-      vf.push("fade=t=in:st=0:d="+fadeSeconds);
-      vf.push("fade=t=out:st="+(c.seconds-fadeSeconds)+":d="+fadeSeconds);
+      if(index>0)finish.push("fade=t=in:st=0:d="+fadeSeconds);
+      if(index<timeline.clips.length-1)finish.push("fade=t=out:st="+(c.seconds-fadeSeconds)+":d="+fadeSeconds);
     }
     const args=["-hide_banner","-loglevel","error","-nostdin","-y",
       "-ss",String(c.start),"-i",input];
     if(!hasAudio)args.push("-f","lavfi","-i","anullsrc=r=48000:cl=stereo");
     if(timeline.framing==="blur"){
       const w=timeline.width,h=timeline.height;
-      const graph="[0:v:0]split=2[bg][fg];[bg]scale="+w+":"+h+":force_original_aspect_ratio=increase,crop="+w+":"+h+",boxblur=luma_radius=12:luma_power=2,setsar=1[back];[fg]scale="+w+":"+h+":force_original_aspect_ratio=decrease,setsar=1[front];[back][front]overlay=(W-w)/2:(H-h)/2,"+vf.slice(2).join(",")+"[v]";
+      const graph="[0:v:0]"+transforms.slice(0,2).join(",")+",split=2[bg][fg];[bg]scale="+w+":"+h+":force_original_aspect_ratio=increase,crop="+w+":"+h+",boxblur=luma_radius=12:luma_power=2,setsar=1[back];[fg]"+transforms.slice(2).concat(["scale="+w+":"+h+":force_original_aspect_ratio=decrease:force_divisible_by=2"],foregroundZoom,["setsar=1"]).join(",")+"[front];[back][front]overlay=(W-w)/2:(H-h)/2:shortest=1,"+finish.join(",")+"[v]";
       args.push("-filter_complex",graph,"-map","[v]");
-    }else args.push("-map","0:v:0","-vf",vf.join(","));
+    }else{
+      const filters=transforms.concat(fit,foregroundZoom,timeline.framing==="cover"?[]:[vf[1]],finish);
+      args.push("-map","0:v:0","-vf",filters.join(","));
+    }
     args.push("-map",hasAudio?"0:a:0":"1:a:0",
-      "-af","aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
+      "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
       "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
       "-r","30","-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
       "-t",String(c.seconds),"-movflags","+faststart",segment);
