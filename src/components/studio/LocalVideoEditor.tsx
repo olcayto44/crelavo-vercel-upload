@@ -551,11 +551,26 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(!video||!canvas)return;
     const ctx=canvas.getContext("2d");if(!ctx)return;
     let frame=0;
+    // Match the actual displayed canvas, rather than enlarging a fixed 360px raster.
+    // Keep the selected aspect ratio and cap preview work at 4K long-edge.
+    const aspect=ratio==="9:16"?9/16:ratio==="1:1"?1:16/9;
+    let w=2,h=2,dirty=true;
+    const resize=()=>{
+      const rect=canvas.getBoundingClientRect();
+      const dpr=Math.max(1,window.devicePixelRatio||1);
+      const cssHeight=Math.min(rect.height,rect.width/aspect);
+      const targetHeight=Math.min(3840/Math.max(1,aspect),Math.max(360,cssHeight*dpr));
+      h=Math.max(2,Math.round(targetHeight/2)*2);w=Math.max(2,Math.round(h*aspect/2)*2);
+      dirty=true;
+    };
+    const observer=new ResizeObserver(resize);observer.observe(canvas);
+    document.addEventListener("fullscreenchange",resize);window.addEventListener("resize",resize);resize();
+    let lastTime=-1;
     const draw=()=>{
-      if(video.readyState>=2&&video.videoWidth&&video.videoHeight){
-        const aspect=ratio==="9:16"?9/16:ratio==="1:1"?1:16/9;
-        const w=Math.round(360*aspect),h=360;
+      if(video.readyState>=2&&video.videoWidth&&video.videoHeight&&(dirty||video.currentTime!==lastTime||imageLayers.length>0)){
         if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+        ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
+        dirty=false;lastTime=video.currentTime;
         paintClip(ctx,video,chosen,w,h,framing);
         const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
         paintImageLayers(ctx,w,h,at,imageLayers,imageBitmaps.current);
@@ -563,7 +578,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         if(fadeBetweenClips&&transitionStyle!=="crossfade")paintTransition(ctx,w,h,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-chosen.start)/(chosen.speed||1)),(chosen.end-chosen.start)/(chosen.speed||1),clips.findIndex(c=>c.id===chosen.id),clips.length);
       }
       frame=requestAnimationFrame(draw);
-    };draw();return()=>cancelAnimationFrame(frame);
+    };draw();return()=>{cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener("fullscreenchange",resize);window.removeEventListener("resize",resize);};
   },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
   const shortEdge=resolution,longEdge=Math.round(resolution*16/9/2)*2;
   const outputWidth=ratio==="1:1"?shortEdge:ratio==="9:16"?shortEdge:longEdge;
