@@ -88,10 +88,10 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    }
   }
   const timeline={
-   clips:entries,musicPath,voicePath,imageLayers:imageEntries,voiceStart:settings.voiceStart??0,voiceVolume:settings.voiceVolume??1,voiceLength:settings.voiceLength??0,transitionStyle:settings.transitionStyle??"black",transitionDuration:settings.transitionDuration??.4,audioDucking:!!settings.audioDucking,duckLevel:settings.duckLevel??.25,audioCompressor:!!settings.audioCompressor,lowCut:!!settings.lowCut,noiseReduction:!!settings.noiseReduction,aiDenoise:!!settings.aiDenoise,ratio:settings.ratio,resolution:settings.resolution,fps:settings.fps??30,quality:settings.quality??"standard",
-   includeAudio:settings.includeAudio,captionCues:settings.captionCues.slice(0,500),
-   titleOverlay:settings.titleOverlay.slice(0,120),
-   musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
+   clips:entries,musicPath,voicePath,imageLayers:imageEntries,voiceStart:settings.voiceStart??0,originalVoiceVolume:settings.voiceVolume??1,voiceVolume:settings.layerFlags?.voice?.hidden?0:settings.voiceVolume??1,voiceLength:settings.voiceLength??0,transitionStyle:settings.transitionStyle??"black",transitionDuration:settings.transitionDuration??.4,originalAudioDucking:!!settings.audioDucking,audioDucking:!!settings.audioDucking&&!settings.layerFlags?.voice?.hidden,duckLevel:settings.duckLevel??.25,audioCompressor:!!settings.audioCompressor,lowCut:!!settings.lowCut,noiseReduction:!!settings.noiseReduction,aiDenoise:!!settings.aiDenoise,ratio:settings.ratio,resolution:settings.resolution,fps:settings.fps??30,quality:settings.quality??"standard",
+   includeAudio:settings.includeAudio,layerFlags:settings.layerFlags||{},originalCaptionCues:settings.captionCues.slice(0,500),captionCues:settings.layerFlags?.captions?.hidden?[]:settings.captionCues.slice(0,500),
+   originalTitleOverlay:settings.titleOverlay.slice(0,120),titleOverlay:settings.layerFlags?.title?.hidden?"":settings.titleOverlay.slice(0,120),
+   originalMusicVolume:settings.musicVolume,musicVolume:settings.layerFlags?.music?.hidden?0:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
   };
   const {data:createdVersion,error:saveError}=await db().from("studio_timeline_versions").insert({
    user_id:uid,project_id:pid,version_number:version,timeline
@@ -145,10 +145,10 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
  for(const entry of (Array.isArray(t.imageLayers)?t.imageLayers.slice(0,8):[]) as Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>){const blob=await download(entry.path);const {path:_,name,mime,...layer}=entry;const original=entry as typeof entry&{originalOpacity?:number;originalKeyframes?:CloudImageLayer['keyframes']};imageLayers.push({...layer,...(layer.hidden?{opacity:original.originalOpacity??1,keyframes:original.originalKeyframes??[]}:{}),file:new File([blob],name,{type:mime||blob.type})});}
  const ratio=t.ratio==="9:16"||t.ratio==="1:1"?t.ratio:"16:9";
  return {
-  clips,version,voiceover,imageLayers,voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!t.audioDucking,duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,aiDenoise:!!t.aiDenoise,ratio,resolution:Number(t.resolution)||720,fps:[24,25,30,60].includes(Number(t.fps))?Number(t.fps):30,quality:["low","standard","high"].includes(String(t.quality))?String(t.quality):"standard",includeAudio:t.includeAudio!==false,
-  captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
-  titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
-  musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
+  clips,version,voiceover,imageLayers,layerFlags:(t.layerFlags||{}) as CloudTimelineSettings["layerFlags"],voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.originalVoiceVolume??t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!(t.originalAudioDucking??t.audioDucking),duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,aiDenoise:!!t.aiDenoise,ratio,resolution:Number(t.resolution)||720,fps:[24,25,30,60].includes(Number(t.fps))?Number(t.fps):30,quality:["low","standard","high"].includes(String(t.quality))?String(t.quality):"standard",includeAudio:t.includeAudio!==false,
+  captionCues:Array.isArray(t.originalCaptionCues??t.captionCues)?((t.originalCaptionCues??t.captionCues) as CloudTimelineSettings["captionCues"]).slice(0,500) as CloudTimelineSettings["captionCues"]:[],
+  titleOverlay:typeof (t.originalTitleOverlay??t.titleOverlay)==="string"?String(t.originalTitleOverlay??t.titleOverlay).slice(0,120):"",
+  musicVolume:bounded(t.originalMusicVolume??t.musicVolume,0,1,.3),
   fadeBetweenClips:Boolean(t.fadeBetweenClips),framing:t.framing==="blur"?"blur":t.framing==="cover"?"cover":"contain",backgroundMusic
  };
 }
