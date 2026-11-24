@@ -218,6 +218,32 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [projectOwner,setProjectOwner] = useState("");
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
+  const [mp4Busy,setMp4Busy]=useState(false);
+  const [mp4Jobs,setMp4Jobs]=useState<Array<{id:string;status:string;error_code?:string;created_at?:string}>>([]);
+  const [mp4Message,setMp4Message]=useState("");
+  async function mp4Request(query="",body?:object){
+    const {data}=await supabaseBrowser().auth.getSession();
+    if(!data.session?.access_token)throw Error("Sign in to use MP4 rendering.");
+    const res=await fetch("/api/studio/render-jobs"+query,{method:body?"POST":"GET",headers:{Authorization:"Bearer "+data.session.access_token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:"no-store"});
+    const result=await res.json();
+    if(!res.ok||!result.ok)throw Error(result.error||"MP4 request failed.");
+    return result;
+  }
+  async function refreshMp4Jobs(){
+    try{const result=await mp4Request();setMp4Jobs(Array.isArray(result.jobs)?result.jobs:[]);}
+    catch(e){setMp4Message(e instanceof Error?e.message:"Could not load render jobs.");}
+  }
+  useEffect(()=>{
+    if(!signedIn){setMp4Jobs([]);return;}
+    let live=true;
+    const refresh=async()=>{try{const result=await mp4Request();if(live)setMp4Jobs(Array.isArray(result.jobs)?result.jobs:[]);}catch(e){if(live)setMp4Message(e instanceof Error?e.message:"Render status unavailable.");}};
+    void refresh();const timer=window.setInterval(()=>void refresh(),8000);
+    return()=>{live=false;window.clearInterval(timer);};
+  },[signedIn]);
+  async function downloadMp4(id:string){
+    try{const result=await mp4Request("?job="+encodeURIComponent(id)+"&download=1");if(typeof result.downloadUrl!=="string")throw Error("Download not available.");const a=document.createElement("a");a.href=result.downloadUrl;a.rel="noopener noreferrer";a.click();}
+    catch(e){setMp4Message(e instanceof Error?e.message:"Download failed.");}
+  }
   const [autoSave,setAutoSave]=useState(false);
   const [autoSaveStatus,setAutoSaveStatus]=useState("");
   const [clips, setClips] = useState<Clip[]>([]);
@@ -412,12 +438,26 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
-      const version=await saveCloudTimeline(clips,{
+      const savedVersion=await saveCloudTimeline(clips,{
        ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       });
-      setState("Cloud timeline version "+version+" saved with its source files. You can reopen it on another device.");
+      setState("Cloud timeline version "+savedVersion.version+" saved with its source files. You can reopen it on another device.");return savedVersion;
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
     finally{setProjectSaving(false)}
+  }
+  async function submitMp4(){
+    if(mp4Busy||projectSaving||busy||!signedIn||!clips.length)return;
+    if(titleOverlay.trim()||captionCues.length){setMp4Message("MP4 text/subtitles are not supported yet. Use WebM or remove these layers.");return;}
+    if(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)){setMp4Message("This transition currently supports WebM only.");return;}
+    setMp4Busy(true);setMp4Message("Saving an exact cloud snapshot for MP4...");
+    try{
+      const saved=await saveTimelineCloud();
+      if(!saved)throw Error("Cloud snapshot could not be saved; no render was requested.");
+      const result=await mp4Request("",{projectId:saved.projectId,timelineVersionId:saved.timelineVersionId,requestId:crypto.randomUUID()});
+      setMp4Message("MP4 job accepted: "+result.job.status+". Rendering is not complete yet.");
+      await refreshMp4Jobs();
+    }catch(e){setMp4Message(e instanceof Error?e.message:"MP4 request failed.");}
+    finally{setMp4Busy(false);}
   }
   async function reopenTimelineCloud(){
     if(!projectOwner||!signedIn||busy||projectSaving)return;
@@ -1025,6 +1065,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </div>
       </div>
       <div className="studio-export-actions">
+        <div style={{display:"grid",gap:8,margin:"8px 0"}}>
+          <button type="button" disabled={!signedIn||!clips.length||busy||projectSaving||mp4Busy} onClick={()=>void submitMp4()}>{mp4Busy?"Submitting MP4…":"Request cloud MP4 (worker required)"}</button>
+          <small>Cloud MP4 requires an active render worker. A queued job is not a completed export.</small>
+          {mp4Message&&<small role="status">{mp4Message}</small>}
+          {signedIn&&<button type="button" onClick={()=>void refreshMp4Jobs()}>Refresh MP4 jobs</button>}
+          {mp4Jobs.map(job=><div key={job.id} style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}><span>{job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>Download MP4</button>}</div>)}
+        </div>
         <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }}
           className="studio-export-primary">{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
         {!clips.length&&<small>Add at least one video clip to enable export.</small>}
