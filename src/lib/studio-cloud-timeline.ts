@@ -12,7 +12,11 @@ function adjustments(c: ClipAdjustments): ClipAdjustments {
  return {rotation:[0,90,180,270].includes(c.rotation??0)?c.rotation??0:0,flipX:c.flipX===true,flipY:c.flipY===true,zoom:typeof c.zoom==="number"&&Number.isFinite(c.zoom)?Math.min(3,Math.max(1,c.zoom)):1,gain:typeof c.gain==="number"&&Number.isFinite(c.gain)?Math.min(1,Math.max(0,c.gain)):1,speed:[.5,.75,1,1.25,1.5,2].includes(c.speed??1)?c.speed??1:1,cropLeft:bounded(c.cropLeft,0,.4),cropRight:bounded(c.cropRight,0,.4),cropTop:bounded(c.cropTop,0,.4),cropBottom:bounded(c.cropBottom,0,.4),panX:bounded(c.panX,-1,1),panY:bounded(c.panY,-1,1)};
 }
 export type CloudTimelineClip = ClipAdjustments & { id: string; file: File; name: string; duration: number; start: number; end: number };
+export type CloudImageLayer={id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number;keyframes?:Array<{at:number;x:number;y:number;size:number;opacity:number}>};
 export type CloudTimelineSettings = {
+ voiceover?:File|null;voiceStart?:number;voiceVolume?:number;voiceLength?:number;
+ imageLayers?:CloudImageLayer[];transitionStyle?:string;transitionDuration?:number;
+ audioDucking?:boolean;duckLevel?:number;audioCompressor?:boolean;lowCut?:boolean;noiseReduction?:boolean;
  ratio: "16:9"|"9:16"|"1:1"; resolution: number; includeAudio: boolean;
  captionCues: Array<{start:number;end:number;text:string}>; titleOverlay: string;
  musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"|"blur"; backgroundMusic: File|null;
@@ -39,11 +43,14 @@ async function lookupProject(uid:string) {
 export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:CloudTimelineSettings):Promise<number>{
  if(!clips.length)throw new Error("Add video clips before saving.");
  if(clips.length>30)throw new Error("Cloud timeline supports up to 30 clips.");
- const files=[...clips.map(c=>c.file),...(settings.backgroundMusic?[settings.backgroundMusic]:[])];
+ const layers=settings.imageLayers||[];
+ if(layers.length>8)throw new Error("Cloud timeline supports up to 8 image layers.");
+ const assets=[...clips.map(c=>({file:c.file,kind:"video" as const})),...(settings.backgroundMusic?[{file:settings.backgroundMusic,kind:"music" as const}]:[]),...(settings.voiceover?[{file:settings.voiceover,kind:"voice" as const}]:[]),...layers.map(layer=>({file:layer.file,kind:"image" as const}))];
+ const files=assets.map(a=>a.file);
  const size=files.reduce((n,f)=>n+f.size,0);
  if(size>MAX_TOTAL || files.some(f=>f.size===0||f.size>MAX_FILE))
   throw new Error("Cloud timeline upload is limited to 90 MB total. Local saves support larger projects.");
- if(files.some(f=>!(/^(video\/(mp4|webm|quicktime|x-m4v)|audio\/(mpeg|mp4|wav|ogg|webm))$/i.test(f.type))))
+ if(assets.some(a=>a.kind==="image"?!/^image\/(png|jpeg|webp)$/i.test(a.file.type):a.kind==="video"?!/^video\/(mp4|webm|quicktime|x-m4v)$/i.test(a.file.type):!/^audio\/(mpeg|mp4|wav|ogg|webm|x-wav)$/i.test(a.file.type)))
   throw new Error("Unsupported video or soundtrack type for cloud sync.");
  const uid=await user();
  const pid=await lookupProject(uid);
@@ -54,26 +61,33 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
  const version=Number(previous?.[0]?.version_number||0)+1;
  const uploaded:string[]=[];
  const entries:Entry[]=[];
- let musicPath:string|null=null;
+ let musicPath:string|null=null,voicePath:string|null=null;
+ const imageEntries:Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>=[];
+ let imageIndex=0;
  try{
   for(let i=0;i<files.length;i++){
-   const file=files[i]; const extension=file.name.match(/\.(mp4|webm|mov|m4v|mp3|m4a|wav|ogg)$/i)?.[0]?.toLowerCase()||"";
+   const file=files[i]; const extension=file.name.match(/\.(mp4|webm|mov|m4v|mp3|m4a|wav|ogg|png|jpe?g|webp)$/i)?.[0]?.toLowerCase()||({"image/png":".png","image/jpeg":".jpg","image/webp":".webp","audio/mpeg":".mp3","audio/mp4":".m4a","audio/wav":".wav","audio/x-wav":".wav","audio/ogg":".ogg","audio/webm":".webm"} as Record<string,string>)[file.type]||"";
    const path=`${uid}/${pid}/${crypto.randomUUID()}${extension}`;
    const {error:storageError}=await db().storage.from(BUCKET).upload(path,file,{contentType:file.type,upsert:false});
    if(storageError)throw storageError;
    uploaded.push(path);
    const {error:assetError}=await db().from("studio_assets").insert({
-    user_id:uid,project_id:pid,kind:i<clips.length?"video":"audio",label:file.name.slice(0,130),
+    user_id:uid,project_id:pid,kind:assets[i].kind==="video"?"video":assets[i].kind==="image"?"image":"audio",label:file.name.slice(0,130),
     bucket_id:BUCKET,object_path:path,content_type:file.type,byte_size:file.size,
     metadata:{source:"timeline",version}
    });
    if(assetError)throw assetError;
    if(i<clips.length) {
     const c=clips[i];entries.push({id:c.id,name:c.name,path,mime:file.type,start:c.start,end:c.end,duration:c.duration,...adjustments(c)});
-   }else musicPath=path;
+   }else if(assets[i].kind==="music")musicPath=path;
+   else if(assets[i].kind==="voice")voicePath=path;
+   else {
+     const {file:_,...layer}=layers[imageIndex++];
+     imageEntries.push({...layer,keyframes:(layer.keyframes||[]).slice(0,32),path,name:file.name,mime:file.type});
+   }
   }
   const timeline={
-   clips:entries,musicPath,ratio:settings.ratio,resolution:settings.resolution,
+   clips:entries,musicPath,voicePath,imageLayers:imageEntries,voiceStart:settings.voiceStart??0,voiceVolume:settings.voiceVolume??1,voiceLength:settings.voiceLength??0,transitionStyle:settings.transitionStyle??"black",transitionDuration:settings.transitionDuration??.4,audioDucking:!!settings.audioDucking,duckLevel:settings.duckLevel??.25,audioCompressor:!!settings.audioCompressor,lowCut:!!settings.lowCut,noiseReduction:!!settings.noiseReduction,ratio:settings.ratio,resolution:settings.resolution,
    includeAudio:settings.includeAudio,captionCues:settings.captionCues.slice(0,500),
    titleOverlay:settings.titleOverlay.slice(0,120),
    musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
@@ -124,9 +138,13 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
   const blob=await download(t.musicPath);
   backgroundMusic=new File([blob],"Cloud soundtrack",{type:blob.type||"audio/mpeg"});
  }
+ let voiceover:File|null=null;
+ if(typeof t.voicePath==="string"){const blob=await download(t.voicePath);voiceover=new File([blob],"Cloud voiceover",{type:blob.type||"audio/mpeg"});}
+ const imageLayers:CloudImageLayer[]=[];
+ for(const entry of (Array.isArray(t.imageLayers)?t.imageLayers.slice(0,8):[]) as Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>){const blob=await download(entry.path);const {path:_,name,mime,...layer}=entry;imageLayers.push({...layer,file:new File([blob],name,{type:mime||blob.type})});}
  const ratio=t.ratio==="9:16"||t.ratio==="1:1"?t.ratio:"16:9";
  return {
-  clips,version,ratio,resolution:Number(t.resolution)||720,includeAudio:t.includeAudio!==false,
+  clips,version,voiceover,imageLayers,voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!t.audioDucking,duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,ratio,resolution:Number(t.resolution)||720,includeAudio:t.includeAudio!==false,
   captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
   titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
   musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
