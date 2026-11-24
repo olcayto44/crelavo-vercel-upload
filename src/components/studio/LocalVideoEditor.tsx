@@ -517,6 +517,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const pendingSeek=useRef<{id:string;time:number;play?:boolean}|null>(null);
   const timelinePlaying=useRef(false);
   const advancingClip=useRef(false);
+  const playRequest=useRef(0);
+  const resumeReady=useRef<{id:string;url:string;time:number}|null>(null);
   useEffect(()=>{
     if(!chosen)return;
     const video=preview.current, canvas=blurCanvas.current;
@@ -573,14 +575,14 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const sourceTime=Math.min(segment.clip.end,segment.clip.start+(time-segment.start)*(segment.clip.speed||1));
     setPlayhead(time);
     if(active===segment.clip.id&&preview.current){preview.current.currentTime=sourceTime;}
-    else{pendingSeek.current={id:segment.clip.id,time:sourceTime,play:timelinePlaying.current};setActive(segment.clip.id);}
+    else{playRequest.current++;resumeReady.current=null;advancingClip.current=timelinePlaying.current;pendingSeek.current={id:segment.clip.id,time:sourceTime,play:timelinePlaying.current};setActive(segment.clip.id);}
   }
   function advancePreview(video:HTMLVideoElement){
     if(!timelinePlaying.current||advancingClip.current||video!==preview.current)return;
     const index=segments.findIndex(s=>s.clip.id===active);if(index<0)return;
     const next=segments[index+1];
     if(!next){timelinePlaying.current=false;video.pause();setPreviewPlaying(false);setPlayhead(duration);return;}
-    advancingClip.current=true;
+    advancingClip.current=true;playRequest.current++;resumeReady.current=null;
     pendingSeek.current={id:next.clip.id,time:next.clip.start,play:true};
     setPlayhead(next.start);setActive(next.clip.id);
   }
@@ -591,13 +593,27 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       if(timelinePlaying.current&&video.currentTime>=segment.clip.end-.025)advancePreview(video);
     }
   }
-  function stopPreview(){timelinePlaying.current=false;advancingClip.current=false;if(pendingSeek.current)pendingSeek.current.play=false;preview.current?.pause();setPreviewPlaying(false);}
+  function stopPreview(){playRequest.current++;resumeReady.current=null;timelinePlaying.current=false;advancingClip.current=false;if(pendingSeek.current)pendingSeek.current.play=false;preview.current?.pause();setPreviewPlaying(false);}
+  function requestPreviewPlay(video:HTMLVideoElement){
+    const request=++playRequest.current;
+    void video.play().then(()=>{if(request===playRequest.current&&timelinePlaying.current)setState("Playing timeline.");}).catch(error=>{
+      if(request!==playRequest.current||!timelinePlaying.current||video!==preview.current)return;
+      if(error instanceof DOMException&&error.name==="AbortError"){stopPreview();setState("Playback interrupted. Press Play to resume.");return;}
+      stopPreview();setState(error instanceof DOMException&&error.name==="NotAllowedError"?"Browser blocked autoplay. Press Play to continue.":"Playback failed: "+(error instanceof Error?error.name+" — "+error.message:"Unknown media error"));
+    });
+  }
+  useEffect(()=>{const v=preview.current,p=pendingSeek.current;if(!chosen||!v||!p||p.id!==chosen.id||v.currentSrc!==chosen.url||v.readyState<1)return;pendingSeek.current=null;if(p.play&&timelinePlaying.current)resumeReady.current={id:chosen.id,url:chosen.url,time:p.time};else advancingClip.current=false;v.currentTime=p.time;resumePreviewWhenReady(v);},[chosen?.id]);
+  function resumePreviewWhenReady(video:HTMLVideoElement){
+    const target=resumeReady.current;
+    if(!target||!timelinePlaying.current||video!==preview.current||target.id!==chosen?.id||video.currentSrc!==target.url||video.seeking||video.readyState<2||Math.abs(video.currentTime-target.time)>.15)return;
+    resumeReady.current=null;advancingClip.current=false;requestPreviewPlay(video);
+  }
   function toggleTimelinePlayback(){
     const video=preview.current;if(!video||!chosen)return;
     if(timelinePlaying.current){stopPreview();return;}
     timelinePlaying.current=true;
     if(video.currentTime<chosen.start||video.currentTime>=chosen.end-.025)video.currentTime=chosen.start;
-    void video.play().catch(()=>{stopPreview();setState("Could not play timeline.")});
+    requestPreviewPlay(video);
   }
   useEffect(()=>{
     const key=(event:KeyboardEvent)=>{
@@ -948,9 +964,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")} data-preview-zoom={previewZoom}> 
           <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
-            {chosen ? <>{<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}/>}<video key={chosen.id} ref={preview} src={chosen.url} playsInline preload="metadata"
+            {chosen ? <>{<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}/>}<video ref={preview} src={chosen.url} playsInline preload="auto"
               style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",opacity:0,position:"relative",transform:`rotate(${chosen.rotation||0}deg) scale(${(chosen.flipX?-1:1)*(chosen.zoom||1)},${(chosen.flipY?-1:1)*(chosen.zoom||1)})`,...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
-              onLoadedMetadata={e=>{const v=e.currentTarget;const pending=pendingSeek.current?.id===chosen.id?pendingSeek.current:null;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=pending?.time??chosen.start;pendingSeek.current=null;advancingClip.current=false;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1));v.muted=!includeAudio;if(pending?.play&&timelinePlaying.current)void v.play().catch(()=>{stopPreview();setState("Could not play next clip.")});else{timelinePlaying.current=false;setPreviewPlaying(false)}}} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} onPlay={()=>setPreviewPlaying(true)} onPause={()=>{if(!advancingClip.current)setPreviewPlaying(false)}} onEnded={e=>advancePreview(e.currentTarget)} />
+              onLoadedMetadata={e=>{const v=e.currentTarget;if(v.currentSrc!==chosen.url)return;const pending=pendingSeek.current?.id===chosen.id?pendingSeek.current:null;const at=pending?.time??chosen.start;setSourceAspect(v.videoWidth/v.videoHeight);pendingSeek.current=null;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1));v.muted=!includeAudio;if(pending?.play&&timelinePlaying.current){resumeReady.current={id:chosen.id,url:chosen.url,time:at};setState("Loading next clip…");}else{advancingClip.current=false;timelinePlaying.current=false;setPreviewPlaying(false)}if(Math.abs(v.currentTime-at)>.01)v.currentTime=at;resumePreviewWhenReady(v);}} onCanPlay={e=>resumePreviewWhenReady(e.currentTarget)} onSeeked={e=>resumePreviewWhenReady(e.currentTarget)} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} onPlay={()=>setPreviewPlaying(true)} onPause={()=>{if(!advancingClip.current)setPreviewPlaying(false)}} onEnded={e=>advancePreview(e.currentTarget)} onError={e=>{const v=e.currentTarget;if(v.currentSrc!==chosen.url)return;stopPreview();setState("Media could not be loaded (code "+(v.error?.code??"unknown")+"). Check the source file or codec.");}} />
               </>
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
