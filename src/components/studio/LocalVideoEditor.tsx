@@ -308,6 +308,15 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
   const [framing,setFraming] = useState<"cover"|"contain"|"blur">("contain");
   const [resolution, setResolution] = useState(720);
+  const [webmFps,setWebmFps]=useState(30);
+  const [webmQuality,setWebmQuality]=useState("standard");
+  const [exportName,setExportName]=useState("crelavo-studio-merged");
+  const [exportPhase,setExportPhase]=useState("");
+  const [exportEta,setExportEta]=useState<number|null>(null);
+  const [exportResult,setExportResult]=useState("");
+  const videoBitrate=Math.round((resolution<=480?2:resolution<=720?4:8)*1_000_000*(webmQuality==="low"?.6:webmQuality==="high"?1.6:1));
+  const fileBase=exportName.trim().replace(/[^\p{L}\p{N} _.-]/gu,"_").replace(/\.+$/,"").slice(0,100)||"crelavo-studio-merged";
+
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
@@ -539,6 +548,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
   },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
+  const shortEdge=resolution,longEdge=Math.round(resolution*16/9/2)*2;
+  const outputWidth=ratio==="1:1"?shortEdge:ratio==="9:16"?(exportFormat==="webm"?shortEdge:Math.round(resolution*9/16/2)*2):longEdge;
+  const outputHeight=ratio==="9:16"&&exportFormat==="webm"?longEdge:shortEdge;
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));preview.current.muted=!includeAudio;}},[chosen,includeAudio]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -638,6 +650,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setCaptionCues(old=>[...old,{start,end:Math.min(duration,start+2),text:"New subtitle"}]);setSelectedCue(captionCues.length);cleanupOutput();
   }
   function cleanupOutput() {
+    setExportResult("");
     if (output.current) URL.revokeObjectURL(output.current);
     output.current = null;
     setDownloadUrl(null);
@@ -728,13 +741,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if (!mime || typeof HTMLCanvasElement.prototype.captureStream !== "function") {
       setState("This browser cannot record the edited timeline. Use a current Chrome or Edge browser."); return;
     }
-    setBusy(true); cancel.current = false; setProgress(0); cleanupOutput();
-    const width = ratio === "9:16" ? Math.round(resolution * 9 / 16 / 2) * 2 : ratio === "1:1" ? resolution : Math.round(resolution * 16 / 9 / 2) * 2;
-    const height = ratio === "9:16" ? resolution : resolution;
+    setBusy(true); cancel.current = false; setProgress(0); cleanupOutput();setExportResult("");setExportEta(null);setExportPhase("Preparing media…");
+    const width = ratio==="9:16"?resolution:ratio==="1:1"?resolution:Math.round(resolution*16/9/2)*2;
+    const height = ratio==="9:16"?Math.round(resolution*16/9/2)*2:resolution;
     const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) { setBusy(false); setState("Canvas unavailable."); return; }
-    const stream = canvas.captureStream(30);
+    const stream = canvas.captureStream(webmFps);
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
     const exportImages=new Map<string,ImageBitmap>();
@@ -777,7 +790,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       }
       // Register all intended tracks before constructing MediaRecorder:
       // a recorder created with a video-only stream may omit later audio.
-      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 3_000_000 });
+      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: videoBitrate });
       const configuredRecorder = recorder;
       recordDone = new Promise<void>((resolve, reject) => {
         configuredRecorder.ondataavailable = event => { if(event.data.size)chunks.push(event.data); };
@@ -789,6 +802,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       let elapsed = 0;
       for (let clipIndex=0;clipIndex<clips.length;clipIndex++) {
         const clip=clips[clipIndex];
+        setExportPhase("Rendering clip "+(clipIndex+1)+" / "+clips.length);
         if (cancel.current) throw new Error("Export cancelled.");
         const video = document.createElement("video"); currentVideo = video;
         video.preload = "auto"; video.playsInline = true; video.src = clip.url;
@@ -860,7 +874,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
               if(fadeBetweenClips)paintTransition(ctx,width,height,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-clip.start)/speed),segment,clipIndex,clips.length);
             }
-            setProgress(Math.min(99, Math.round(100 * (elapsed + Math.min(segment, Math.max(0, (video.currentTime - clip.start)/speed))) / duration)));
+            const completed=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
+            setProgress(Math.min(99,Math.round(100*completed/duration)));
+            if(completed>1)setExportEta(Math.max(0,Math.ceil((performance.now()-recordingStartedAt)/1000*(duration-completed)/completed)));
             if (video.currentTime >= clip.end - .04 || video.ended || performance.now() - begin > (segment + 6) * 1000) { resolve(); return; }
             raf = requestAnimationFrame(render);
           }; render();
@@ -869,6 +885,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         video.removeAttribute("src"); video.load(); currentVideo = null;
         elapsed += segment;
       }
+      setExportPhase("Finalizing video…");setExportEta(null);
       recorder!.stop();
       if(!recordDone)throw new Error("Recording was not initialized.");
       await recordDone;
@@ -882,7 +899,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const recordedMs=Math.max(1,performance.now()-recordingStartedAt);
       const fixed=await addMediaRecorderWebmDuration(rawBlob,recordedMs);
       const blob=fixed.blob;
-      const url = URL.createObjectURL(blob); output.current = url; setDownloadUrl(url);
+      const url = URL.createObjectURL(blob); output.current = url; setDownloadUrl(url);setExportResult("Video ready · "+(blob.size/1048576).toFixed(1)+" MB");setExportPhase("Complete");
       setProgress(100);
       setState(fixed.fixed
         ?"Merged video ready ("+(blob.size/1048576).toFixed(1)+" MB) · duration metadata added. Download the WebM file."
@@ -1158,7 +1175,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </div>
     <dialog ref={exportDialog} className="studio-export-dialog" aria-labelledby="studio-export-dialog-title" onCancel={e=>{if(busy||mp4Busy||projectSaving)e.preventDefault()}}>
       <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">{clips.length>1?"Merge & export videos":"Export video"}</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
-      <p className="studio-format-help">All clips are combined in timeline order into one output file, using the selected format and settings.</p><div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{ratio==="9:16"?Math.round(resolution*9/16/2)*2:ratio==="1:1"?resolution:Math.round(resolution*16/9/2)*2} × {resolution}</strong></div><div><small>Estimated size</small><strong>{duration?`~${(duration*(resolution<=480?2:resolution<=720?4:8)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>Size estimate assumes {resolution<=480?2:resolution<=720?4:8} Mbps total bitrate; actual output varies by encoder, audio and content.</small>
+      <p className="studio-format-help">All clips are combined in timeline order into one output file, using the selected format and settings.</p><div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{outputWidth} × {outputHeight}</strong></div><div><small>Estimated size</small><strong>{exportFormat==="webm"&&duration?`~${(duration*(videoBitrate/1_000_000+.128)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>{exportFormat==="webm"?`Target video bitrate ${(videoBitrate/1_000_000).toFixed(1)} Mbps; actual file size varies.`:"Cloud encoder determines actual file size."}</small>
       <div className="studio-export-format" role="group" aria-label="Export format">
         <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
         <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
@@ -1175,11 +1192,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option><option value="blur">Blur background</option>
           </select>
         </label>
-        <label className="studio-setting-field">Height
+        <label className="studio-setting-field">Resolution
           <select disabled={busy} value={resolution} onChange={e=>{setResolution(Number(e.target.value));cleanupOutput()}}>
             <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
           </select>
         </label>
+        {exportFormat==="webm"&&<><label className="studio-setting-field">Frame rate<select disabled={busy} value={webmFps} onChange={e=>{setWebmFps(Number(e.target.value));cleanupOutput()}}>{[24,25,30,60].map(n=><option key={n} value={n}>{n} FPS</option>)}</select></label><label className="studio-setting-field">Quality<select disabled={busy} value={webmQuality} onChange={e=>{setWebmQuality(e.target.value);cleanupOutput()}}><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label><label className="studio-setting-field">File name<input disabled={busy} value={exportName} maxLength={100} onChange={e=>setExportName(e.target.value)}/></label></>}
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e=>{setIncludeAudio(e.target.checked);cleanupOutput()}} />
           <span>Include source audio</span>
@@ -1197,8 +1215,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </button>
         {!clips.length&&<small>Add at least one video clip to enable export.</small>}
         {busy&&<button type="button" onClick={()=>{cancel.current=true;}}>Cancel</button>}
-        {busy&&<span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
-        {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download WebM</a>}
+        {busy&&<div className="studio-render-progress" role="status"><strong>{exportPhase} · {progress}%</strong><progress max={100} value={progress}/><small>{exportEta!==null?`Estimated remaining: ${timecode(exportEta)}`:"Preparing or finalizing media…"}</small></div>}
+        {downloadUrl&&<div className="studio-render-result"><strong role="status">{exportResult}</strong><video controls playsInline preload="metadata" src={downloadUrl}/><a href={downloadUrl} download={fileBase+".webm"}>↓ Download WebM</a></div>}
         {mp4Message&&<small role="status">{mp4Message}</small>}
         <details className="studio-export-help"><summary>Format & storage limits</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles require WebM; AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
         {signedIn&&(exportFormat==="mp4"||mp4Jobs.length>0)&&<div className="studio-mp4-jobs">
