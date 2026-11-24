@@ -48,7 +48,11 @@ assert.match(source,/musicPicker\.current\?\.click\(\)/,'music button must activ
 assert.match(source,/subtitlePicker\.current\?\.click\(\)/,'SRT button must activate hidden file input');
 assert.match(source,/backgroundMusic\?\.name/,'selected music filename must be shown');
 assert.match(source,/subtitleName/,'selected subtitle filename must be shown');
-assert.match(source,/onClick=\{\(\) => \{ void exportVideo\(\); \}\}/,'WebM export must stay actionable');
+assert.match(source,/useState<"mp4"\|"webm">\("mp4"\)/,'MP4 must be the default export format');
+assert.match(source,/onClick=\{\(\)=>\{if\(exportFormat==="mp4"\)void submitMp4\(\);else void exportVideo\(\);\}\}/,'primary export must dispatch MP4 and WebM correctly');
+assert.match(source,/aria-pressed=\{exportFormat==="mp4"\}/,'MP4 format selection must be accessible');
+assert.match(source,/aria-pressed=\{exportFormat==="webm"\}/,'WebM format selection must be accessible');
+assert.match(source,/job.status==="ready"&&<button[^>]*onClick=\{\(\)=>void downloadMp4\(job.id\)\}/,'only ready MP4 jobs may be downloaded');
 assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three export cards must line up evenly');
 assert.match(css,/@media\(max-width:650px\)/,'export controls must stack on narrow screens');
 
