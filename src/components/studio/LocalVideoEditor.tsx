@@ -301,7 +301,6 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
-    if(clips.some(c=>c.cropLeft||c.cropRight||c.cropTop||c.cropBottom||c.panX||c.panY)){setState("Manual crop and positioning are currently supported in local projects and WebM. Reset these settings before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
