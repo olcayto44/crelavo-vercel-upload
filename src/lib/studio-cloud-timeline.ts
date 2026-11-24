@@ -16,7 +16,7 @@ export type CloudImageLayer={id:string;file:File;start:number;end:number;x:numbe
 export type CloudTimelineSettings = {
  voiceover?:File|null;voiceStart?:number;voiceVolume?:number;voiceLength?:number;
  imageLayers?:CloudImageLayer[];transitionStyle?:string;transitionDuration?:number;
- audioDucking?:boolean;duckLevel?:number;audioCompressor?:boolean;lowCut?:boolean;noiseReduction?:boolean;
+ audioDucking?:boolean;duckLevel?:number;audioCompressor?:boolean;lowCut?:boolean;noiseReduction?:boolean;aiDenoise?:boolean;
  ratio: "16:9"|"9:16"|"1:1"; resolution: number; includeAudio: boolean;
  captionCues: Array<{start:number;end:number;text:string}>; titleOverlay: string;
  musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"|"blur"; backgroundMusic: File|null;
@@ -87,7 +87,7 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    }
   }
   const timeline={
-   clips:entries,musicPath,voicePath,imageLayers:imageEntries,voiceStart:settings.voiceStart??0,voiceVolume:settings.voiceVolume??1,voiceLength:settings.voiceLength??0,transitionStyle:settings.transitionStyle??"black",transitionDuration:settings.transitionDuration??.4,audioDucking:!!settings.audioDucking,duckLevel:settings.duckLevel??.25,audioCompressor:!!settings.audioCompressor,lowCut:!!settings.lowCut,noiseReduction:!!settings.noiseReduction,ratio:settings.ratio,resolution:settings.resolution,
+   clips:entries,musicPath,voicePath,imageLayers:imageEntries,voiceStart:settings.voiceStart??0,voiceVolume:settings.voiceVolume??1,voiceLength:settings.voiceLength??0,transitionStyle:settings.transitionStyle??"black",transitionDuration:settings.transitionDuration??.4,audioDucking:!!settings.audioDucking,duckLevel:settings.duckLevel??.25,audioCompressor:!!settings.audioCompressor,lowCut:!!settings.lowCut,noiseReduction:!!settings.noiseReduction,aiDenoise:!!settings.aiDenoise,ratio:settings.ratio,resolution:settings.resolution,
    includeAudio:settings.includeAudio,captionCues:settings.captionCues.slice(0,500),
    titleOverlay:settings.titleOverlay.slice(0,120),
    musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
@@ -144,7 +144,7 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
  for(const entry of (Array.isArray(t.imageLayers)?t.imageLayers.slice(0,8):[]) as Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>){const blob=await download(entry.path);const {path:_,name,mime,...layer}=entry;imageLayers.push({...layer,file:new File([blob],name,{type:mime||blob.type})});}
  const ratio=t.ratio==="9:16"||t.ratio==="1:1"?t.ratio:"16:9";
  return {
-  clips,version,voiceover,imageLayers,voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!t.audioDucking,duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,ratio,resolution:Number(t.resolution)||720,includeAudio:t.includeAudio!==false,
+  clips,version,voiceover,imageLayers,voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!t.audioDucking,duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,aiDenoise:!!t.aiDenoise,ratio,resolution:Number(t.resolution)||720,includeAudio:t.includeAudio!==false,
   captionCues:Array.isArray(t.captionCues)?t.captionCues.slice(0,500) as CloudTimelineSettings["captionCues"]:[],
   titleOverlay:typeof t.titleOverlay==="string"?t.titleOverlay.slice(0,120):"",
   musicVolume:typeof t.musicVolume==="number"?Math.min(1,Math.max(0,t.musicVolume)):0.3,
