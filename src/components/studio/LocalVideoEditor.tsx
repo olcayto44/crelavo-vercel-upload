@@ -4,7 +4,7 @@ import { supabaseBrowser } from "@/lib/supabase";
 import { saveCloudTimeline, loadCloudTimeline } from "@/lib/studio-cloud-timeline";
 import { addMediaRecorderWebmDuration } from "@/lib/studio-webm-duration";
 
-type Clip = { id: string; file: File; name: string; url: string; duration: number; start: number; end: number; rotation?: number; flipX?: boolean; flipY?: boolean; zoom?: number; gain?: number; speed?: number };
+type Clip = { id: string; file: File; name: string; url: string; duration: number; start: number; end: number; rotation?: number; flipX?: boolean; flipY?: boolean; zoom?: number; gain?: number; speed?: number; cropLeft?:number; cropRight?:number; cropTop?:number; cropBottom?:number; panX?:number; panY?:number };
 const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
@@ -129,6 +129,23 @@ function paintBlurBackground(ctx: CanvasRenderingContext2D, video: HTMLVideoElem
   ctx.filter="blur("+Math.max(8,Math.round(height*.025))+"px)";
   ctx.drawImage(video,(width-vw*scale)/2,(height-vh*scale)/2,vw*scale,vh*scale);
   ctx.restore();
+}
+function cropRect(clip:Clip,w:number,h:number){
+  const left=Math.max(0,Math.min(.4,clip.cropLeft||0)),right=Math.max(0,Math.min(.4,clip.cropRight||0));
+  const top=Math.max(0,Math.min(.4,clip.cropTop||0)),bottom=Math.max(0,Math.min(.4,clip.cropBottom||0));
+  return {x:w*left,y:h*top,w:w*(1-left-right),h:h*(1-top-bottom)};
+}
+function paintClip(ctx:CanvasRenderingContext2D,video:HTMLVideoElement,clip:Clip,width:number,height:number,framing:"cover"|"contain"|"blur"){
+  const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return;
+  ctx.fillStyle="#000";ctx.fillRect(0,0,width,height);
+  if(framing==="blur")paintBlurBackground(ctx,video,width,height);
+  const crop=cropRect(clip,vw,vh),turn=(clip.rotation||0)%360,swap=Math.abs(turn)%180===90;
+  const bw=swap?crop.h:crop.w,bh=swap?crop.w:crop.h;
+  const scale = framing === "cover" ? Math.max(width / bw, height / bh) : Math.min(width / bw, height / bh);
+  const renderedWidth=crop.w*scale*(clip.zoom||1),renderedHeight=crop.h*scale*(clip.zoom||1);
+  ctx.save();ctx.translate(width/2+(clip.panX||0)*width/2,height/2+(clip.panY||0)*height/2);ctx.rotate(turn*Math.PI/180);
+  ctx.scale(clip.flipX?-1:1,clip.flipY?-1:1);
+  ctx.drawImage(video,crop.x,crop.y,crop.w,crop.h,-renderedWidth/2,-renderedHeight/2,renderedWidth,renderedHeight);ctx.restore();
 }
 function supportedMime() {
   if (typeof MediaRecorder === "undefined") return "";
@@ -284,6 +301,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
+    if(clips.some(c=>c.cropLeft||c.cropRight||c.cropTop||c.cropBottom||c.panX||c.panY)){setState("Manual crop and positioning are currently supported in local projects and WebM. Reset these settings before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
@@ -314,9 +332,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [sourceAspect,setSourceAspect]=useState(0);
   const [timelineZoom,setTimelineZoom]=useState(1);
   const [playhead,setPlayhead]=useState(0);
+  const [previewPlaying,setPreviewPlaying]=useState(false);
   const pendingSeek=useRef<{id:string;time:number}|null>(null);
   useEffect(()=>{
-    if(framing!=="blur"||!chosen)return;
+    if(!chosen)return;
     const video=preview.current, canvas=blurCanvas.current;
     if(!video||!canvas)return;
     const ctx=canvas.getContext("2d");if(!ctx)return;
@@ -326,11 +345,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         const aspect=ratio==="9:16"?9/16:ratio==="1:1"?1:16/9;
         const w=Math.round(360*aspect),h=360;
         if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-        paintBlurBackground(ctx,video,w,h);
+        paintClip(ctx,video,chosen,w,h,framing);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
-  },[framing,chosen?.id,ratio]);
+  },[framing,chosen,ratio]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -541,16 +560,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             if (video.error) { reject(new Error("Decode failed during " + clip.name)); return; }
             const vw = video.videoWidth, vh = video.videoHeight;
             if (vw && vh && video.readyState >= 2) {
-              ctx.fillStyle = "#000"; ctx.fillRect(0, 0, width, height);
-              // Preview and export share the same center framing; cover crops wide sources for Shorts.
-              if(framing==="blur")paintBlurBackground(ctx,video,width,height);
-              const turn=(clip.rotation||0)%360, swap=Math.abs(turn)%180===90;
-              const bw=swap?vh:vw,bh=swap?vw:vh;
-              const scale = framing === "cover" ? Math.max(width / bw, height / bh) : Math.min(width / bw, height / bh);
-              const renderedWidth=vw*scale*(clip.zoom||1), renderedHeight=vh*scale*(clip.zoom||1);
-              ctx.save();ctx.translate(width/2,height/2);ctx.rotate(turn*Math.PI/180);
-              ctx.scale(clip.flipX?-1:1,clip.flipY?-1:1);
-              ctx.drawImage(video,-renderedWidth/2,-renderedHeight/2,renderedWidth,renderedHeight);ctx.restore();
+              paintClip(ctx,video,clip,width,height,framing);
               const at=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
               paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
@@ -640,13 +650,14 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}> 
           <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
-            {chosen ? <>{framing==="blur"&&<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>}<video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
-              style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",position:"relative",transform:`rotate(${chosen.rotation||0}deg) scale(${(chosen.flipX?-1:1)*(chosen.zoom||1)},${(chosen.flipY?-1:1)*(chosen.zoom||1)})`,...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
-              onLoadedMetadata={e => { const v=e.currentTarget;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=pendingSeek.current?.id===chosen.id?pendingSeek.current.time:chosen.start;pendingSeek.current=null;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1)); }} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} />
+            {chosen ? <>{<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}/>}<video key={chosen.id} ref={preview} src={chosen.url} playsInline preload="metadata"
+              style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",opacity:0,position:"relative",transform:`rotate(${chosen.rotation||0}deg) scale(${(chosen.flipX?-1:1)*(chosen.zoom||1)},${(chosen.flipY?-1:1)*(chosen.zoom||1)})`,...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
+              onLoadedMetadata={e => { const v=e.currentTarget;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=pendingSeek.current?.id===chosen.id?pendingSeek.current.time:chosen.start;pendingSeek.current=null;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1)); }} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} onPlay={()=>setPreviewPlaying(true)} onPause={()=>setPreviewPlaying(false)} onEnded={()=>setPreviewPlaying(false)} />
               </>
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
         </div>
+        {chosen&&<div role="group" aria-label="Preview playback" style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}><button type="button" disabled={busy} onClick={()=>{const v=preview.current;if(v){if(v.paused)void v.play().catch(()=>setState("Could not play clip."));else v.pause();}}}>{previewPlaying?"Pause":"Play"}</button><button type="button" disabled={busy} onClick={()=>{if(preview.current){preview.current.pause();preview.current.currentTime=chosen.start;}}}>Restart clip</button><span>{sec(Math.min(playhead,duration))}</span></div>}
         <div className="studio-video-preview-controls" role="group" aria-label="Preview fit controls">
           <span>{ratio==="9:16"?"9:16 Shorts / Reels":ratio==="1:1"?"1:1 Square":"16:9 Landscape"}</span>
           <button type="button" disabled={busy} aria-pressed={framing==="contain"}
@@ -711,9 +722,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <button type="button" disabled={busy} aria-pressed={!!chosen.flipX} onClick={()=>update(chosen.id,{flipX:!chosen.flipX})}>Flip horizontal</button>
             <button type="button" disabled={busy} aria-pressed={!!chosen.flipY} onClick={()=>update(chosen.id,{flipY:!chosen.flipY})}>Flip vertical</button>
             <label>Zoom · {(chosen.zoom||1).toFixed(2)}×<input type="range" min={1} max={3} step={.05} disabled={busy} value={chosen.zoom||1} onChange={e=>update(chosen.id,{zoom:Number(e.target.value)})}/></label>
+            <fieldset style={{display:"grid",gap:6}}><legend>Manual crop & position</legend>
+            {(["cropLeft","cropRight","cropTop","cropBottom"] as const).map(edge=><label key={edge}>{edge.replace("crop","Crop ")} · {Math.round((chosen[edge]||0)*100)}%<input aria-label={edge} type="range" min={0} max={.4} step={.01} disabled={busy} value={chosen[edge]||0} onChange={e=>update(chosen.id,{[edge]:Number(e.target.value)})}/></label>)}
+            {(["panX","panY"] as const).map(axis=><label key={axis}>{axis==="panX"?"Horizontal position":"Vertical position"} · {Math.round((chosen[axis]||0)*100)}%<input aria-label={axis} type="range" min={-1} max={1} step={.02} disabled={busy} value={chosen[axis]||0} onChange={e=>update(chosen.id,{[axis]:Number(e.target.value)})}/></label>)}
+            </fieldset>
             <label>Speed<select disabled={busy} value={chosen.speed||1} onChange={e=>update(chosen.id,{speed:Number(e.target.value)})}>{[.5,.75,1,1.25,1.5,2].map(v=><option key={v} value={v}>{v}×</option>)}</select></label>
             <label>Source volume · {Math.round((chosen.gain??1)*100)}%<input type="range" min={0} max={1} step={.05} disabled={busy} value={chosen.gain??1} onChange={e=>update(chosen.id,{gain:Number(e.target.value)})}/></label>
-            <button type="button" disabled={busy} onClick={()=>update(chosen.id,{rotation:0,flipX:false,flipY:false,zoom:1,speed:1,gain:1})}>Reset clip adjustments</button>
+            <button type="button" disabled={busy} onClick={()=>update(chosen.id,{rotation:0,flipX:false,flipY:false,zoom:1,speed:1,gain:1,cropLeft:0,cropRight:0,cropTop:0,cropBottom:0,panX:0,panY:0})}>Reset clip adjustments</button>
             <label style={{fontSize:11}}>Trim start · {sec(chosen.start)}
               <input aria-label="Drag trim start" type="range" min={0} max={Math.max(0,chosen.end-.05)} step=".01" value={chosen.start} disabled={busy} onChange={e=>{const start=Number(e.target.value);if(start<chosen.end-.049){update(chosen.id,{start});if(preview.current)preview.current.currentTime=start;}}} style={{width:"100%"}}/>
             </label>
