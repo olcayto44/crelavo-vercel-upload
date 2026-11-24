@@ -102,6 +102,15 @@ assert.match(source,/onDragStart=\{e=>/,'timeline clips need drag start handler'
 assert.match(source,/onDragOver=\{e=>/,'timeline must advertise valid reorder drop target');
 assert.match(source,/onDrop=\{e=>\{e\.preventDefault\(\);reorderByDrop\(clip\.id\);\}\}/,'dropping must change timeline order');
 assert.match(source,/next\.splice\(to,0,item\)/,'drag-drop must physically reorder source timeline');
+
+assert.match(source,/className=\{"studio-video-track-clip"\+\(dragTargetId===clip\.id\?" is-drop-target":""\)\}/,'timeline clip must indicate drop target');
+assert.match(source,/draggable=\{!busy&&!projectSaving&&!mp4Busy\} onDragStart=/,'timeline video track must allow direct dragging when idle');
+assert.match(source,/move\(chosen\.id,-1\)/,'selected clip must be movable earlier');
+assert.match(source,/move\(chosen\.id,1\)/,'selected clip must be movable later');
+assert.match(source,/className="studio-merge-button"[^>]*onClick=\{\(\)=>\{stopPreview\(\);exportDialog\.current\?\.showModal\(\)\}\}>Merge videos/,'timeline merge must open existing export dialog');
+assert.match(css,/\.studio-video-track-clip\.is-drop-target\{/,'timeline drag target must have visible feedback');
+assert.match(css,/\.studio-timeline-heading \.studio-merge-button\{/,'merge action must have dedicated styling');
+
 assert.match(source,/aria-pressed=\{ratio===value\}/,'format selection must expose selected orientation');
 assert.match(source,/Choose video orientation before uploading/,'format preset must be near upload control');
 assert.match(source,/Move clip left/,'keyboard-friendly alternative to drag-drop must remain');
