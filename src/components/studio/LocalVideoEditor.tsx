@@ -9,7 +9,7 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" };
+type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -120,6 +120,16 @@ function paintOverlay(ctx: CanvasRenderingContext2D, width: number, height: numb
   });
   ctx.restore();
 }
+function paintBlurBackground(ctx: CanvasRenderingContext2D, video: HTMLVideoElement, width: number, height: number) {
+  const vw=video.videoWidth,vh=video.videoHeight;
+  if(!vw||!vh)return;
+  ctx.save();
+  ctx.fillStyle="#000";ctx.fillRect(0,0,width,height);
+  const scale=Math.max(width/vw,height/vh)*1.15;
+  ctx.filter="blur("+Math.max(8,Math.round(height*.025))+"px)";
+  ctx.drawImage(video,(width-vw*scale)/2,(height-vh*scale)/2,vw*scale,vh*scale);
+  ctx.restore();
+}
 function supportedMime() {
   if (typeof MediaRecorder === "undefined") return "";
   return ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(type => MediaRecorder.isTypeSupported(type)) || "";
@@ -161,7 +171,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [ratio, setRatio] = useState<"16:9" | "9:16" | "1:1">("9:16");
-  const [framing,setFraming] = useState<"cover"|"contain">("contain");
+  const [framing,setFraming] = useState<"cover"|"contain"|"blur">("contain");
   const [resolution, setResolution] = useState(720);
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
@@ -225,7 +235,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
-      setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="cover"?"cover":"contain");
+      setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
@@ -253,12 +263,30 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);
-      setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="cover"?"cover":"contain");cleanupOutput();
+      setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
     finally{setProjectSaving(false)}
   }
   const chosen = clips.find(c => c.id === active);
+  const blurCanvas=useRef<HTMLCanvasElement>(null);
+  const [sourceAspect,setSourceAspect]=useState(0);
+  useEffect(()=>{
+    if(framing!=="blur"||!chosen)return;
+    const video=preview.current, canvas=blurCanvas.current;
+    if(!video||!canvas)return;
+    const ctx=canvas.getContext("2d");if(!ctx)return;
+    let frame=0;
+    const draw=()=>{
+      if(video.readyState>=2&&video.videoWidth&&video.videoHeight){
+        const aspect=ratio==="9:16"?9/16:ratio==="1:1"?1:16/9;
+        const w=Math.round(360*aspect),h=360;
+        if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+        paintBlurBackground(ctx,video,w,h);
+      }
+      frame=requestAnimationFrame(draw);
+    };draw();return()=>cancelAnimationFrame(frame);
+  },[framing,chosen?.id,ratio]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start), 0);
   function cleanupOutput() {
     if (output.current) URL.revokeObjectURL(output.current);
@@ -432,6 +460,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             if (vw && vh && video.readyState >= 2) {
               ctx.fillStyle = "#000"; ctx.fillRect(0, 0, width, height);
               // Preview and export share the same center framing; cover crops wide sources for Shorts.
+              if(framing==="blur")paintBlurBackground(ctx,video,width,height);
               const scale = framing === "cover" ? Math.max(width / vw, height / vh) : Math.min(width / vw, height / vh);
               const renderedWidth=vw*scale, renderedHeight=vh*scale;
               ctx.drawImage(video,(width-renderedWidth)/2,(height-renderedHeight)/2,renderedWidth,renderedHeight);
@@ -521,9 +550,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}> 
           <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
-            {chosen ? <video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
-              style={{width:"100%",height:"100%",objectFit:framing,display:"block"}}
-              onLoadedMetadata={e => { e.currentTarget.currentTime=chosen.start; }} />
+            {chosen ? <>{framing==="blur"&&<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>}<video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
+              style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",position:"relative",...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
+              onLoadedMetadata={e => { const v=e.currentTarget;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=chosen.start; }} />
+              </>
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
         </div>
@@ -535,10 +565,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <button type="button" disabled={busy} aria-pressed={framing==="cover"}
             className={framing==="cover"?"is-active":""}
             onClick={()=>{setFraming("cover");cleanupOutput();}}>Fill screen · crop edges</button>
+          <button type="button" disabled={busy} aria-pressed={framing==="blur"} className={framing==="blur"?"is-active":""} onClick={()=>{setFraming("blur");cleanupOutput();}}>Blur background</button>
         </div>
         <p className="studio-video-framing-note" role="status">{framing==="cover"
           ?"Crop mode: side or top/bottom content can be removed. Switch to Show full video to keep all edges."
-          :"Full video preserved. Borders may appear when the source and output ratios differ."}</p>
+          :framing==="blur"?"Full video preserved with a blurred background.":"Full video preserved. Borders may appear when the source and output ratios differ."}</p>
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
         <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
@@ -582,8 +613,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           </select>
         </label>
         <label className="studio-setting-field">Framing
-          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain");cleanupOutput()}}>
-            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option>
+          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain"|"blur");cleanupOutput()}}>
+            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option><option value="blur">Blur background</option>
           </select>
         </label>
         <label className="studio-setting-field">Height
