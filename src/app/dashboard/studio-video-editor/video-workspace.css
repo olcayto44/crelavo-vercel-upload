@@ -285,3 +285,26 @@
 }
 @media(max-width:1100px){.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{flex-wrap:wrap}}
 @media(max-width:820px){.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{flex:none;min-height:240px}}
+
+/* Keep all primary controls reachable without taking space from the preview. */
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>select{width:70px!important;flex:0 0 70px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>span{flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-media-library{overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-library>.studio-media-cards{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;padding-bottom:5px;scrollbar-gutter:stable}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards>.studio-timeline-clip{align-self:start}
+.studio-tool-page .studio-compact-video-editor .studio-media-library>:not(.studio-media-cards){flex-shrink:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{overflow:auto!important;scrollbar-gutter:stable}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{padding-bottom:4px}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{grid-template-columns:minmax(240px,25%) minmax(0,1fr) minmax(250px,23%)!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed{grid-template-columns:0 minmax(0,1fr) minmax(250px,23%)!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-inspector-collapsed{grid-template-columns:minmax(240px,25%) minmax(0,1fr) 0!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed.is-inspector-collapsed{grid-template-columns:0 minmax(0,1fr) 0!important}
+}
+@media(min-width:821px) and (max-height:800px){
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-thumb{height:46px}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop small{display:none}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:1px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-actions{margin:0;padding:0;gap:3px}
+}
