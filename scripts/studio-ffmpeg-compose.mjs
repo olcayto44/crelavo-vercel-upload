@@ -35,14 +35,15 @@ export function validateTimeline(timeline, userId, projectId) {
     throw new Error("TIMELINE_CLIPS_INVALID");
   const ratio=["16:9","9:16","1:1"].includes(timeline.ratio)?timeline.ratio:"16:9";
   const resolution=[480,720,1080].includes(timeline.resolution)?timeline.resolution:720;
-  const width=ratio==="9:16"?Math.round(resolution*9/16/2)*2:
+  const width=ratio==="9:16"?resolution:
     ratio==="1:1"?resolution:Math.round(resolution*16/9/2)*2;
-  const height=ratio==="9:16"?resolution:ratio==="1:1"?resolution:resolution;
-  // The first MP4 renderer supports source audio and soundtrack, not text
-  // overlays. Explicitly reject unsupported options rather than discarding them.
-  if((Array.isArray(timeline.captionCues)&&timeline.captionCues.length)
-    ||(typeof timeline.titleOverlay==="string"&&timeline.titleOverlay.trim()))
-    throw new Error("MP4_TEXT_OVERLAYS_NOT_SUPPORTED_YET");
+  const height=ratio==="9:16"?Math.round(resolution*16/9/2)*2:resolution;
+  const fps=[24,25,30,60].includes(timeline.fps)?timeline.fps:30;
+  const quality=["low","standard","high"].includes(timeline.quality)?timeline.quality:"standard";
+  const crf={low:28,standard:23,high:18}[quality];
+  const title=typeof timeline.titleOverlay==="string"?timeline.titleOverlay.slice(0,120):"";
+  const cues=timeline.captionCues??[];
+  if(!Array.isArray(cues)||cues.length>500||cues.some(q=>!q||!Number.isFinite(q.start)||!Number.isFinite(q.end)||q.start<0||q.end<=q.start||q.end>7200||typeof q.text!=="string"||q.text.length>500))throw new Error("CAPTION_CUES_INVALID");
   const root=userId+"/"+projectId+"/";
   const clips=timeline.clips.map((item,index)=>{
     if(!item||typeof item.path!=="string"||!item.path.startsWith(root)
@@ -89,7 +90,7 @@ export function validateTimeline(timeline, userId, projectId) {
   const duckLevel=timeline.duckLevel??.25;
   if(!Number.isFinite(duckLevel)||duckLevel<0||duckLevel>1)throw new Error("DUCK_LEVEL_INVALID");
   const aiDenoise=timeline.aiDenoise===true;
-  return {clips,musicPath,voicePath,voiceStart,voiceVolume,images,width,height,aiDenoise,audioDucking:timeline.audioDucking===true,duckLevel,audioCompressor:timeline.audioCompressor===true,lowCut:timeline.lowCut===true,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  return {clips,musicPath,voicePath,voiceStart,voiceVolume,images,width,height,fps,crf,title,cues,aiDenoise,audioDucking:timeline.audioDucking===true,duckLevel,audioCompressor:timeline.audioCompressor===true,lowCut:timeline.lowCut===true,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
@@ -123,7 +124,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     const fit=["scale="+w+":"+h+":force_original_aspect_ratio="+(timeline.framing==="cover"?"increase":"decrease")+":force_divisible_by=2"];
     const foregroundZoom=zoom===1?[]:["scale=max(2\\,trunc(iw*"+zoom+"/2)*2):max(2\\,trunc(ih*"+zoom+"/2)*2)"];
     const x="(W-w)/2+"+(panX*w/2),y="(H-h)/2+"+(panY*h/2);
-    const finish=["setsar=1","fps=30"];
+    const finish=["setsar=1","fps="+(timeline.fps??30)];
     const fadeSeconds=Math.min(0.2,c.seconds/4);
     if(timeline.fadeBetweenClips&&timeline.transitionStyle!=="crossfade"&&c.seconds>0.8){
       if(index>0)finish.push("fade=t=in:st=0:d="+fadeSeconds);
@@ -141,8 +142,8 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     args.push("-filter_complex_threads","1","-filter_complex",graph,"-map","[v]");
     args.push("-map",hasAudio?"0:a:0":"1:a:0",
       "-af",(hasAudio?"atrim=duration="+(c.end-c.start)+",asetpts=PTS-STARTPTS,"+cleanAudio+"atempo="+speed+",volume="+gain+",":"")+"aresample=48000,apad,atrim=0:"+c.seconds+",asetpts=PTS-STARTPTS",
-      "-c:v","libx264","-preset","veryfast","-crf","23","-pix_fmt","yuv420p",
-      "-r","30","-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
+      "-c:v","libx264","-preset","veryfast","-crf",String(timeline.crf??23),"-pix_fmt","yuv420p",
+      "-r",String(timeline.fps??30),"-c:a","aac","-b:a","128k","-ar","48000","-ac","2",
       "-t",String(c.seconds),"-movflags","+faststart",segment);
     await runFfmpeg(ffmpeg,args);
     segments.push(segment);
@@ -157,7 +158,7 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
       const overlap=Math.min(timeline.transitionDuration??.4,timeline.clips[i-1].seconds/3,timeline.clips[i].seconds/3);
       const next=i===segments.length-1?merged:path.join(dir,"crossfade-"+i+".mp4");
       const graph="[0:v]settb=AVTB,setpts=PTS-STARTPTS[a];[1:v]settb=AVTB,setpts=PTS-STARTPTS[b];[a][b]xfade=transition=fade:duration="+overlap+":offset="+(elapsed-overlap)+"[v];[0:a][1:a]acrossfade=d="+overlap+":c1=tri:c2=tri[audio]";
-      await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",previous,"-i",segments[i],"-filter_complex_threads","1","-filter_complex",graph,"-map","[v]","-map","[audio]","-c:v","libx264","-pix_fmt","yuv420p","-c:a","aac","-movflags","+faststart",next]);
+      await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",previous,"-i",segments[i],"-filter_complex_threads","1","-filter_complex",graph,"-map","[v]","-map","[audio]","-c:v","libx264","-preset","veryfast","-crf",String(timeline.crf??23),"-pix_fmt","yuv420p","-c:a","aac","-movflags","+faststart",next]);
       previous=next;elapsed+=timeline.clips[i].seconds-overlap;
     }
     outputDuration=elapsed;
@@ -168,6 +169,23 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
   if(imageFiles.length){
     visual=path.join(dir,"layered-video.mp4");
     await renderImageLayers({ffmpeg,ffprobe,timeline,input:merged,imageFiles,output:visual,duration:outputDuration});
+  }
+  if(timeline.title?.trim()||timeline.cues?.length){
+    const filters=[];
+    const layers=[...(timeline.title?.trim()?[{text:timeline.title,start:0,end:outputDuration,title:true}]:[]),...(timeline.cues||[]).filter(q=>q.start<outputDuration&&q.text.trim())];
+    for(let i=0;i<layers.length;i++){
+      const q=layers[i],name=path.join(dir,"text-"+i+".txt");
+      await writeFile(name,q.text.replace(/\u0000/g,"").slice(0,500),"utf8");
+      if(!/^\/[a-zA-Z0-9_./-]+$/.test(name))throw new Error("TEXT_PATH_INVALID");
+      filters.push("drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile="+name+":expansion=none:fontcolor=white:fontsize="+Math.max(18,Math.round(Math.min(timeline.width,timeline.height)*(q.title?.055:.038)))+":box=1:boxcolor=black@0.65:boxborderw=8:x=(w-tw)/2:y="+(q.title?"h*0.08":"h*0.86-th")+":enable='gte(t,"+q.start+")*lt(t,"+Math.min(q.end,outputDuration)+")'");
+    }
+    if(filters.length){
+      const textOutput=path.join(dir,"text-video.mp4");
+      const filterFile=path.join(dir,"text-filters.txt");
+      await writeFile(filterFile,filters.join(","));
+      await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",visual,"-filter_script:v",filterFile,"-c:v","libx264","-preset","veryfast","-crf",String(timeline.crf??23),"-pix_fmt","yuv420p","-c:a","copy","-movflags","+faststart",textOutput]);
+      visual=textOutput;
+    }
   }
   if(musicFile||voiceFile){
     const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",visual];
@@ -212,7 +230,7 @@ function keyExpression(layer,axis,time){
 }
 async function renderImageLayers({ffmpeg,ffprobe,timeline,input,imageFiles,output,duration}){
   const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",input];
-  for(const file of imageFiles)args.push("-loop","1","-framerate","30","-i",file);
+  for(const file of imageFiles)args.push("-loop","1","-framerate",String(timeline.fps??30),"-i",file);
   const graph=[];
   let prev="[0:v]";
   for(let i=0;i<imageFiles.length;i++){
@@ -225,6 +243,6 @@ async function renderImageLayers({ffmpeg,ffprobe,timeline,input,imageFiles,outpu
     graph.push(prev+"[layer"+i+"]overlay=x='W*("+x+")-w/2':y='H*("+y+")-h/2':enable='gte(t,"+l.start+")*lt(t,"+Math.min(l.end,duration)+")':eval=frame:shortest=1[v"+i+"]");
     prev="[v"+i+"]";
   }
-  args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map",prev,"-map","0:a:0","-c:v","libx264","-preset","veryfast","-pix_fmt","yuv420p","-c:a","copy","-t",String(duration),"-movflags","+faststart",output);
+  args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map",prev,"-map","0:a:0","-c:v","libx264","-preset","veryfast","-crf",String(timeline.crf??23),"-pix_fmt","yuv420p","-c:a","copy","-t",String(duration),"-movflags","+faststart",output);
   await runFfmpeg(ffmpeg,args);
 }
