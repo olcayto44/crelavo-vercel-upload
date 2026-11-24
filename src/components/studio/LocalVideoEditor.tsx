@@ -967,7 +967,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setBusy(false);
     }
   }
-  return <section className="studio-compact-video-editor" style={{ color: "#f4f0ff", background: "#110e1b", padding: "12px 16px 22px", minHeight: "100%", maxWidth: "none", margin: "0 auto", fontFamily: "Inter,system-ui,sans-serif" }}>
+  return <section translate="no" className="studio-compact-video-editor notranslate" style={{ color: "#f4f0ff", background: "#110e1b", padding: "12px 16px 22px", minHeight: "100%", maxWidth: "none", margin: "0 auto", fontFamily: "Inter,system-ui,sans-serif" }}>
 
     <header className="studio-workspace-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
       <div className="studio-brand"><a className="editor-back" aria-label="Back to Studio V2" href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"}>‹</a><h1><span className="studio-brand-mark" aria-hidden="true">▷</span> Crelavo Studio</h1><span className="studio-project-label">Video project</span><small>{projectSaving?"Saving…":autoSaveStatus|| (autoSave?"Local auto-save enabled":"Local workspace")}</small></div>
@@ -1005,7 +1005,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
 
 
     <div className={"editor-main-grid studio-workspace-grid"+(mediaCollapsed?" is-media-collapsed":"")+(inspectorCollapsed?" is-inspector-collapsed":"")} style={{gridTemplateRows:`minmax(220px,1fr) min(${timelineHeight}px, 52%)`}}>
-      <div className="studio-left-workspace"><nav className="studio-tool-rail" aria-label="Editing tools">{([["▣","Media","clip","all"],["T","Text","layers","all"],["▧","Images","layers","image"],["◇","Transitions","effects","all"],["♫","Audio","audio","audio"],["▱","Layers","layers","all"]] as const).map(([glyph,label,tab,filter])=><button key={label} type="button" onClick={()=>{setInspectorTab(tab);setMediaFilter(filter);setMediaSearch("")}}><StudioIcon name={label}/><small>{label}</small></button>)}</nav><aside className="studio-media-library"><h2>Media library · {clips.length}</h2>      <label className="studio-media-drop" onDragOver={e=>{if(!busy&&e.dataTransfer.types.includes("Files"))e.preventDefault()}} onDrop={e=>{if(e.dataTransfer.files.length){e.preventDefault();if(!busy)void addFiles(e.dataTransfer.files)}}}><StudioIcon name="Upload"/><strong>{t("+ Add videos", "+ Video ekle")}</strong><small>Drop video files here · local max 2 GB/file</small><input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
+      <div className="studio-left-workspace"><nav className="studio-tool-rail" aria-label="Editing tools">{([["▣","Media","clip","all"],["T","Text","layers","all"],["▧","Images","layers","image"],["◇","Transitions","effects","all"],["♫","Audio","audio","audio"],["▱","Layers","layers","all"]] as const).map(([glyph,label,tab,filter])=><button key={label} type="button" onClick={()=>{setInspectorTab(tab);setMediaFilter(filter);setMediaSearch("")}}><StudioIcon name={label}/><small>{label}</small></button>)}</nav><aside className="studio-media-library"><h2><span>{t("Media library","Medya kütüphanesi")}</span><span> · {clips.length}</span></h2>      <label className="studio-media-drop" onDragOver={e=>{if(!busy&&e.dataTransfer.types.includes("Files"))e.preventDefault()}} onDrop={e=>{if(e.dataTransfer.files.length){e.preventDefault();if(!busy)void addFiles(e.dataTransfer.files)}}}><StudioIcon name="Upload"/><strong>{t("+ Add videos", "+ Video ekle")}</strong><small>Drop video files here · local max 2 GB/file</small><input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
         <div className="studio-media-imports"><button type="button" disabled={busy} onClick={()=>{setInspectorTab("audio");musicPicker.current?.click()}}>+ Music</button><button type="button" disabled={busy} onClick={()=>{setInspectorTab("audio");voicePicker.current?.click()}}>+ Voice</button><button type="button" disabled={busy||!duration||imageLayers.length>=8} onClick={()=>{setInspectorTab("layers");imagePicker.current?.click()}}>+ Image</button></div><div className="studio-media-filters">{(["all","video","audio","image"] as const).map(f=><button key={f} type="button" aria-pressed={mediaFilter===f} onClick={()=>setMediaFilter(f)}>{f==="all"?"All":f[0].toUpperCase()+f.slice(1)}</button>)}</div><input className="studio-media-search" aria-label="Search media" placeholder="Search media…" value={mediaSearch} onChange={e=>setMediaSearch(e.target.value)}/>
         <div className="studio-media-cards">
           {clips.map((clip, index) => (mediaFilter==="all"||mediaFilter==="video")&&clip.name.toLowerCase().includes(mediaSearch.toLowerCase())&&<div key={clip.id}
@@ -1018,7 +1018,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             className={"studio-timeline-clip"+(active===clip.id?" is-active":"")+(dragTargetId===clip.id?" is-drop-target":"")}
             style={{ flex: "0 0 155px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
             <ClipThumbnail url={clip.url} start={clip.start} name={clip.name}/>
-            <button type="button" disabled={busy} onClick={() => {stopPreview();setActive(clip.id);setInspectorTab("clip");}} className="studio-media-filename" title={clip.name} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
+            <button type="button" disabled={busy} onClick={() => {stopPreview();setActive(clip.id);setInspectorTab("clip");}} className="studio-media-filename" title={clip.name} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#fff", background: "transparent", border: 0 }}><span>{index + 1}. </span><span>{clip.name}</span></button>
             <small style={{ color: "#c2b4d5" }}>{sec((clip.end - clip.start)/(clip.speed||1))}</small>
             <div className="studio-timeline-actions" style={{ display: "flex", gap: 5, marginTop: 10 }}>
               <button disabled={busy || index === 0} onClick={() => move(clip.id, -1)} title="Move clip earlier" aria-label="Move clip left">←</button>
@@ -1037,7 +1037,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",opacity:0,position:"relative",transform:`rotate(${chosen.rotation||0}deg) scale(${(chosen.flipX?-1:1)*(chosen.zoom||1)},${(chosen.flipY?-1:1)*(chosen.zoom||1)})`,...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
               onLoadedMetadata={e=>{const v=e.currentTarget;if(v.currentSrc!==chosen.url)return;const pending=pendingSeek.current?.id===chosen.id?pendingSeek.current:null;const at=pending?.time??chosen.start;setSourceAspect(v.videoWidth/v.videoHeight);pendingSeek.current=null;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1));v.muted=!includeAudio;if(pending?.play&&timelinePlaying.current){resumeReady.current={id:chosen.id,url:chosen.url,time:at};setState("Loading next clip…");}else{advancingClip.current=false;timelinePlaying.current=false;setPreviewPlaying(false)}if(Math.abs(v.currentTime-at)>.01)v.currentTime=at;resumePreviewWhenReady(v);}} onCanPlay={e=>resumePreviewWhenReady(e.currentTarget)} onSeeked={e=>resumePreviewWhenReady(e.currentTarget)} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} onPlay={()=>setPreviewPlaying(true)} onPause={()=>{if(!advancingClip.current)setPreviewPlaying(false)}} onEnded={e=>advancePreview(e.currentTarget)} onError={e=>{const v=e.currentTarget;if(v.currentSrc!==chosen.url)return;stopPreview();setState("Media could not be loaded (code "+(v.error?.code??"unknown")+"). Check the source file or codec.");}} />
               </>
-              : <div className="studio-video-no-clips">Add video files to begin editing</div>}
+              : <div className="studio-video-no-clips"><span>{t("Add video files to begin editing","Düzenlemeye başlamak için video ekleyin")}</span></div>}
           </div>
         </div>
         <div className="studio-preview-transport">
@@ -1186,10 +1186,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <input id="studio-video-title" aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120}
               onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" />
           </label>
-          <small>Optional on-screen title · WebM only at present.</small>
+          <small>Optional on-screen title · MP4 / WebM.</small>
         </div>
         <div className="studio-setting-card" hidden={inspectorTab!=="layers"}>
-          <strong>Subtitles (.srt) · WebM only</strong>
+          <strong>Subtitles (.srt) · MP4 / WebM</strong>
           <input ref={subtitlePicker} hidden type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
             onChange={e=>{
               const file=e.target.files?.[0];e.target.value="";
