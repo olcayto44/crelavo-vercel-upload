@@ -1,0 +1,23 @@
+name: Studio MP4 runtime acceptance
+on:
+  push:
+    branches: [feat/studio-cloud-elements-20261123]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+          node --version
+      - name: Render real media and validate outputs
+        run: node scripts/studio-mp4-runtime-test.mjs
