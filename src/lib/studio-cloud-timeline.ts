@@ -40,7 +40,7 @@ async function lookupProject(uid:string) {
  if(createError||!created)throw createError||new Error("Could not create cloud video project.");
  return String(created.id);
 }
-export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:CloudTimelineSettings):Promise<number>{
+export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:CloudTimelineSettings):Promise<{version:number;projectId:string;timelineVersionId:string}>{
  if(!clips.length)throw new Error("Add video clips before saving.");
  if(clips.length>30)throw new Error("Cloud timeline supports up to 30 clips.");
  const layers=settings.imageLayers||[];
@@ -92,11 +92,11 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    titleOverlay:settings.titleOverlay.slice(0,120),
    musicVolume:settings.musicVolume,fadeBetweenClips:settings.fadeBetweenClips,framing:settings.framing
   };
-  const {error:saveError}=await db().from("studio_timeline_versions").insert({
+  const {data:createdVersion,error:saveError}=await db().from("studio_timeline_versions").insert({
    user_id:uid,project_id:pid,version_number:version,timeline
-  });
-  if(saveError)throw saveError;
-  return version;
+  }).select("id").single();
+  if(saveError||!createdVersion?.id)throw saveError||new Error("Timeline version ID unavailable.");
+  return {version,projectId:pid,timelineVersionId:String(createdVersion.id)};
  }catch(error){
   if(uploaded.length){
    const {error:cleanupError}=await db().storage.from(BUCKET).remove(uploaded);
