@@ -6,5 +6,5 @@ RUN npm ci --omit=dev --ignore-scripts
 COPY scripts/studio-ffmpeg-compose.mjs scripts/studio-mp4-worker.mjs scripts/studio-mp4-runtime-test.mjs ./scripts/
 RUN ffmpeg -version && ffprobe -version && ffmpeg -hide_banner -filters 2>&1 | grep arnndn
 USER node
-ENTRYPOINT ["/usr/bin/tini","--"]
+ENTRYPOINT ["/usr/bin/tini","-s","--"]
 CMD ["node","scripts/studio-mp4-runtime-test.mjs"]
