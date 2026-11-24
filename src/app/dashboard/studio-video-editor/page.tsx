@@ -1,4 +1,4 @@
-import "../studio-tools.css";
+import "./video-workspace.css";
 import { Suspense } from "react";
 import LocalVideoEditor from "@/components/studio/LocalVideoEditor";
 export const metadata = { title: "Crelavo Studio — Video Editor", robots: { index: false, follow: false } };
