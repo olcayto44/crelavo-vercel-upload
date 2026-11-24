@@ -165,6 +165,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [projectOwner,setProjectOwner] = useState("");
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
+  const [autoSave,setAutoSave]=useState(false);
+  const [autoSaveStatus,setAutoSaveStatus]=useState("");
   const [clips, setClips] = useState<Clip[]>([]);
   const [history,setHistory]=useState<{past:Clip[][];future:Clip[][]}>({past:[],future:[]});
   const historyRef=useRef(history);
@@ -230,6 +232,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     for(const url of live)retainedUrls.current.add(url);
   }, [clips,history]);
   useEffect(() => () => { for(const url of retainedUrls.current)URL.revokeObjectURL(url); if (output.current) URL.revokeObjectURL(output.current); }, []);
+  // Separate recovery record: autosave never overwrites an explicit manual save.
+  useEffect(()=>{
+    if(!autoSave||!projectOwner||busy||projectSaving||!clips.length)return;
+    const size=clips.reduce((sum,c)=>sum+c.file.size,0)+(backgroundMusic?.size||0);
+    if(size>150_000_000){setAutoSaveStatus("Recovery unavailable: project exceeds 150 MB.");return;}
+    let current=true;
+    setAutoSaveStatus("Unsaved recovery changes");
+    const timer=window.setTimeout(()=>{
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing};
+      setAutoSaveStatus("Saving recovery copy…");
+      void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
+    },2500);
+    return()=>{current=false;window.clearTimeout(timer);};
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0);
@@ -246,11 +262,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     }catch{setState("Could not save locally. Check available browser storage space.");}
     finally{setProjectSaving(false)}
   }
-  async function reopenTimeline(){
+  async function reopenTimeline(recovery=false){
     if(!projectOwner||busy||projectSaving)return;
     setProjectSaving(true);
     try{
-      const project=await openProjectLocally(projectOwner);
+      const project=await openProjectLocally(recovery?projectOwner+":recovery":projectOwner);
       if(!project||project.owner!==projectOwner){setState("No locally saved video timeline found for this account.");return;}
       const restored: Clip[]=project.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
       changeHistory({past:[],future:[]});
@@ -581,6 +597,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
        <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen timeline</button>
        <button type="button" disabled={!signedIn||!clips.length||busy||projectSaving} onClick={()=>{void saveTimelineCloud()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Save cloud timeline (≤90 MB)</button>
        <button type="button" disabled={!signedIn||busy||projectSaving} onClick={()=>{void reopenTimelineCloud()}} style={{background:"#281d36",border:"1px solid #74518b",color:"#fff",padding:"9px 12px",borderRadius:9}}>Reopen cloud timeline</button>
+       <label style={{display:"flex",gap:6,alignItems:"center",fontSize:12}}><input type="checkbox" checked={autoSave} disabled={!projectOwner||busy||projectSaving} onChange={e=>{setAutoSave(e.target.checked);if(!e.target.checked)setAutoSaveStatus("");}}/>Auto-save recovery copy (this browser)</label>
+       <button type="button" disabled={!projectOwner||busy||projectSaving} onClick={()=>{void reopenTimeline(true)}}>Recover auto-saved timeline</button>
+       {autoSaveStatus&&<small role="status">{autoSaveStatus}</small>}
        </div></details>
       <div className="studio-format-preset" role="group" aria-label="Choose video orientation before uploading">
         <span className="studio-format-label">{t("Video format", "Video biçimi")}</span>
