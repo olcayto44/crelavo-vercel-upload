@@ -20,7 +20,7 @@ const menuLabels: Record<string, string> = {
   "/admin/finance": "Finans", "/admin/email": "E-posta gönderimi", "/admin/growth": "Lead / destek",
   "/admin/hero": "Ana sayfa videoları", "/admin/showcase-videos": "Vitrin videoları", "/admin/site-content": "Site içeriği",
   "/admin/partners": "İş ortakları", "/admin/seo": "SEO / Google", "/admin/providers": "Sağlayıcı durumu",
-  "/admin/studio-capabilities": "Studio üretim yetenekleri", "/admin/production-qa": "Üretim kontrolü / QA", "/admin/security-fraud": "Güvenlik", "/admin/monitoring": "İzleme"
+  "/admin/studio-capabilities": "Studio üretim yetenekleri", "/admin/studio-reconciliation": "Studio mutabakat", "/admin/production-qa": "Üretim kontrolü / QA", "/admin/security-fraud": "Güvenlik", "/admin/monitoring": "İzleme"
 };
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   const pathname = usePathname();

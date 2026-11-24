@@ -16,6 +16,7 @@ export const adminMenu = [
   { label: "SEO / Google", href: "/admin/seo", group: "Content" },
   { label: "Provider Health", href: "/admin/providers", group: "System" },
   { label: "Studio Production Engine", href: "/admin/studio-capabilities", group: "System" },
+  { label: "Studio Reconciliation", href: "/admin/studio-reconciliation", group: "Finance" },
   { label: "Production Debug / QA", href: "/admin/production-qa", group: "System" },
   { label: "Security / Fraud", href: "/admin/security-fraud", group: "System" },
   { label: "Monitoring", href: "/admin/monitoring", group: "System" }
