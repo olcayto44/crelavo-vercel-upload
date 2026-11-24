@@ -316,3 +316,10 @@
 .studio-tool-page .studio-compact-video-editor .studio-timeline-heading .studio-merge-button{margin-left:auto;background:#7646d6;border-color:#a67af3;font-size:11px;min-height:25px;padding:4px 11px;white-space:nowrap}
 .studio-tool-page .studio-compact-video-editor .studio-timeline-heading{align-items:center;flex-wrap:wrap}
 .studio-tool-page .studio-compact-video-editor .studio-film-label>span{font-size:12px;color:#e7d4ff}
+
+/* Fit rendered output without distortion and preserve access to delivery. */
+.studio-tool-page .studio-compact-video-editor .studio-render-result{display:grid;gap:8px;min-width:0;background:#11121a;border:1px solid #414352;border-radius:10px;padding:10px}
+.studio-tool-page .studio-compact-video-editor .studio-render-result video{display:block;width:100%;height:auto;max-height:min(35dvh,320px);object-fit:contain;background:#000;border-radius:6px}
+.studio-tool-page .studio-compact-video-editor .studio-result-download{position:sticky;bottom:0;z-index:2;background:#191a23;padding:8px 0;display:flex;justify-content:stretch}
+.studio-tool-page .studio-compact-video-editor .studio-result-download :is(a,button){display:block;width:100%;text-align:center;padding:10px;background:#7646d6;color:white!important;border-radius:7px;text-decoration:none}
+.studio-tool-page .studio-compact-video-editor .studio-export-error{color:#ffb5b5;background:#351b24;padding:10px;border-radius:6px;overflow-wrap:anywhere}
