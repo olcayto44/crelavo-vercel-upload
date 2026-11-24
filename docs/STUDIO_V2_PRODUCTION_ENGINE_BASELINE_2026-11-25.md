@@ -68,3 +68,7 @@ Date: 2026-11-25. Evidence commit: `adf542941e1a3cb6b38857e2a9cb5096753a5613`. A
 
 ## Release policy
 Publish each verified group separately using a production-environment build of the exact tested SHA; verify actual domain alias and post-deployment health, keep prior rollback target. No paid production, MP4 activation, schema mutation or environment change is implied by this audit. No category may be marked end-to-end complete on the basis of static routing or build success.
+
+
+## Follow-up 2026-11-25
+Public site integration released at bb0512083ceb2ad127c93c07c75c325baacd871d. All 37 category links confirmed in live HTML. Public discovery is not production engine readiness. Master tracker now contains the Image Editor roadmap and explicitly prioritizes the central engine. Start with capability projection and audit; do not enable provider execution until the full authenticated/billing release gates are met.
