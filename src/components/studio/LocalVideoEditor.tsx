@@ -9,7 +9,7 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type SavedVideoProject = { voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -220,6 +220,27 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const musicPicker=useRef<HTMLInputElement>(null);
   const subtitlePicker=useRef<HTMLInputElement>(null);
   const [backgroundMusic,setBackgroundMusic] = useState<File|null>(null);
+  const [voiceover,setVoiceover]=useState<File|null>(null);
+  const [voiceStart,setVoiceStart]=useState(0);
+  const [voiceVolume,setVoiceVolume]=useState(1);
+  const [voiceLength,setVoiceLength]=useState(0);
+  const [voicePeaks,setVoicePeaks]=useState<number[]>([]);
+  const voicePicker=useRef<HTMLInputElement>(null);
+  useEffect(()=>{
+    if(!voiceover){setVoicePeaks([]);return;}
+    let current=true;
+    const audio=new AudioContext();
+    void voiceover.arrayBuffer().then(b=>audio.decodeAudioData(b)).then(buffer=>{
+      if(!current)return;
+      setVoiceLength(buffer.duration);
+      const samples=buffer.getChannelData(0),peaks=Array.from({length:96},(_,i)=>{
+        const start=Math.floor(i*samples.length/96),end=Math.floor((i+1)*samples.length/96);
+        let peak=0;for(let j=start;j<end;j+=Math.max(1,Math.floor((end-start)/512)))peak=Math.max(peak,Math.abs(samples[j]));
+        return peak;
+      });setVoicePeaks(peaks);
+    }).catch(()=>{if(current){setVoicePeaks([]);setState("Voiceover could not be decoded.");}}).finally(()=>{void audio.close().catch(()=>{});});
+    return()=>{current=false;};
+  },[voiceover]);
   const [musicVolume,setMusicVolume] = useState(0.3);
   const [fadeBetweenClips,setFadeBetweenClips] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -253,27 +274,27 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   // Separate recovery record: autosave never overwrites an explicit manual save.
   useEffect(()=>{
     if(!autoSave||!projectOwner||busy||projectSaving||!clips.length)return;
-    const size=clips.reduce((sum,c)=>sum+c.file.size,0)+(backgroundMusic?.size||0);
+    const size=clips.reduce((sum,c)=>sum+c.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0);
     if(size>150_000_000){setAutoSaveStatus("Recovery unavailable: project exceeds 150 MB.");return;}
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
-    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0);
+    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0);
     if(size>150_000_000){setState("Local project save supports up to 150 MB of source clips. Export or reduce source size.");return;}
     setProjectSaving(true);
     try{
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -293,6 +314,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
+      setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
@@ -302,6 +324,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
+    if(voiceover){setState("Voiceover currently supports local project save and WebM export. Remove voiceover before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const version=await saveCloudTimeline(clips,{
@@ -321,7 +344,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
-      setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);
+      setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(null);setVoiceStart(0);setVoiceLength(0);setVoiceVolume(1);
       setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
     }catch(error){setState("Cloud reopen failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -479,6 +502,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
     let musicSource: AudioBufferSourceNode | null = null;
+    let voiceSource: AudioBufferSourceNode | null=null;
     let musicGainNode: GainNode | null = null;
     let recorder: MediaRecorder | null = null;
     let currentVideo: HTMLVideoElement | null = null;
@@ -486,7 +510,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const chunks: BlobPart[] = [];
     let recordDone: Promise<void> | undefined;
     try {
-      if (includeAudio || backgroundMusic) {
+      if (includeAudio || backgroundMusic || voiceover) {
         audio = new AudioContextConstructor();
         await audio.resume();
         const destination = audio.createMediaStreamDestination();
@@ -494,6 +518,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         // The same destination is used for every clip. Its gain is connected
         // to the captured stream only, avoiding unexpected speaker playback.
         (canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination = destination;
+        if(voiceover){
+          if(voiceover.size>25_000_000||!voiceover.type.startsWith("audio/"))throw new Error("Voiceover must be audio under 25 MB.");
+          const buffer=await audio.decodeAudioData(await voiceover.arrayBuffer());
+          voiceSource=audio.createBufferSource();voiceSource.buffer=buffer;
+          const gain=audio.createGain();gain.gain.value=Math.max(0,Math.min(1,voiceVolume));voiceSource.connect(gain);gain.connect(destination);
+        }
         if(backgroundMusic){
           if(backgroundMusic.size>25_000_000 || !backgroundMusic.type.startsWith('audio/'))
             throw new Error('Background music must be an audio file smaller than 25 MB.');
@@ -556,6 +586,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         const segment = (clip.end - clip.start)/speed;
         if (segment <= .05) throw new Error("Invalid trim range for " + clip.name);
         await video.play();
+        if(clipIndex===0&&voiceSource&&audio&&voiceStart<duration){voiceSource.start(audio.currentTime+Math.max(0,voiceStart),0,Math.min(voiceSource.buffer!.duration,duration-voiceStart));}
         if(clipIndex===0&&musicSource&&audio&&musicGainNode){
           const now=audio.currentTime,level=Math.max(0,Math.min(1,musicVolume));
           musicGainNode.gain.setValueAtTime(0,now);
@@ -624,6 +655,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       currentVideo?.pause();
       stream.getTracks().forEach(track => track.stop());
       if(musicSource){try{musicSource.stop()}catch{}}
+      if(voiceSource){try{voiceSource.stop()}catch{}}
       if (audio) await audio.close().catch(() => {});
       setBusy(false);
     }
@@ -697,6 +729,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Video</span><div style={{display:"flex",height:34,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={clip.name+" · "+sec(length)} onClick={()=>seekTimeline(start)} aria-pressed={active===clip.id} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}>{index+1}. {clip.name}</button>)}</div>
               <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{includeAudio?Math.round((clip.gain??1)*100)+"%":"Muted"}</button>)}</div>
               <span>Music</span><div style={{height:24,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?backgroundMusic.name+" · loop":"No soundtrack"}</div>
+              <span>Voiceover</span><div style={{position:"relative",height:28,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onClick={()=>seekTimeline(voiceStart)} title={voiceover.name} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
               <span>Title</span><div style={{height:24,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
               <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onClick={()=>{setSelectedCue(i);seekTimeline(c.start)}} style={{position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
             </div>
@@ -817,6 +850,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>}
         </div>
         <div className="studio-setting-card">
+          <strong>Voiceover (local / WebM)</strong>
+          <input ref={voicePicker} hidden type="file" accept="audio/*" disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(!f)return;if(f.size>25_000_000||!f.type.startsWith("audio/")){setState("Choose an audio file under 25 MB.");return;}setVoiceLength(0);setVoicePeaks([]);setVoiceover(f);cleanupOutput();}}/>
+          <button type="button" disabled={busy} onClick={()=>voicePicker.current?.click()}>{voiceover?"Replace voiceover":"Choose voiceover file"}</button>
+          {voiceover&&<><small>{voiceover.name} · {sec(voiceLength)}</small><label>Start (seconds)<input type="number" min={0} max={duration} step={.1} disabled={busy} value={voiceStart} onChange={e=>{setVoiceStart(Math.max(0,Math.min(duration,Number(e.target.value)||0)));cleanupOutput();}}/></label><label>Voice volume {Math.round(voiceVolume*100)}%<input type="range" min={0} max={1} step={.05} value={voiceVolume} disabled={busy} onChange={e=>{setVoiceVolume(Number(e.target.value));cleanupOutput();}}/></label><button type="button" disabled={busy} onClick={()=>{setVoiceover(null);setVoiceLength(0);cleanupOutput()}}>Remove voiceover</button></>}
+        </div><div className="studio-setting-card">
           <label className="studio-setting-field" htmlFor="studio-video-title">Video title
             <input id="studio-video-title" aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120}
               onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" />
