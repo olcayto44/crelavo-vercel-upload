@@ -90,4 +90,39 @@ assert.match(source,/framing === "cover" \? Math.max/,'export must apply the sam
 assert.match(cloudTimelineSource,/t.framing==="cover"\?"cover":"contain"/,'legacy cloud projects default to non-cropping display');
 assert.match(ffmpegComposeSource,/timeline.framing==="cover"\?"cover":"contain"/,'staged MP4 worker must default to non-crop too');
 assert.match(source,/new clip\(s\) added · /,'upload status must distinguish newly imported clips from existing timeline total');
-console.log('studio-video-editor-smoke ok: real SRT parsing, overlay, soundtrack, audio gain and downloadable render wired');
+assert.match(source,/addMediaRecorderWebmDuration\(rawBlob,recordedMs\)/,'merged WebM must receive duration metadata repair before download');
+assert.match(source,/performance\.now\(\)-recordingStartedAt/,'repair must use actual recorded duration');
+const durationSource=fs.readFileSync('src/lib/studio-webm-duration.ts','utf8');
+const fixedJs=ts.transpileModule(durationSource,{
+ compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}
+}).outputText;
+const addDuration=vm.runInNewContext(fixedJs+'; exports.addMediaRecorderWebmDuration;',{
+ exports:{},Blob,DataView,Uint8Array,BigInt,Number,Math
+},{timeout:1000});
+const bytes=Uint8Array.from([
+ // EBML header with zero payload
+ 0x1a,0x45,0xdf,0xa3,0x80,
+ // unknown-size Segment
+ 0x18,0x53,0x80,0x67,0x01,0xff,0xff,0xff,0xff,0xff,0xff,0xff,
+ // Segment/Info with TimecodeScale=1,000,000 ns (1ms)
+ 0x15,0x49,0xa9,0x66,0x87,0x2a,0xd7,0xb1,0x83,0x0f,0x42,0x40,
+ // Cluster header
+ 0x1f,0x43,0xb6,0x75,0x80
+]);
+void (async()=>{
+ const blob=new Blob([bytes],{type:'video/webm'});
+ const repaired=await addDuration(blob,4321);
+ assert.equal(repaired.fixed,true,'valid MediaRecorder EBML duration must be inserted');
+ assert.equal(repaired.blob.size,blob.size+11,'insert exactly one EBML Duration float element');
+ const out=new Uint8Array(await repaired.blob.arrayBuffer());
+ const durationOffset=out.findIndex((b,i)=>b===0x44&&out[i+1]===0x89&&out[i+2]===0x88);
+ assert.ok(durationOffset>0,'Duration id 0x4489 must be present');
+ assert.equal(new DataView(out.buffer).getFloat64(durationOffset+3,false),4321,'timecode duration should be in ms');
+ const repairedAgain=await addDuration(repaired.blob,9999);
+ assert.equal(repairedAgain.fixed,true,'already-correct metadata is success');
+ assert.equal(repairedAgain.blob.size,repaired.blob.size,'do not duplicate duration field');
+ const invalid=await addDuration(new Blob([new Uint8Array(100)]),4321);
+ assert.equal(invalid.fixed,false,'unknown container must not be modified');
+ console.log('studio-video-editor-smoke ok: WebM duration EBML repair, overlay, soundtrack and media export wiring');
+})().catch(error=>{console.error(error);process.exitCode=1;});
+
