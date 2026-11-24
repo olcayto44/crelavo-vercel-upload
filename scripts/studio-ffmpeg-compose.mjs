@@ -76,14 +76,23 @@ export function validateTimeline(timeline, userId, projectId) {
   if(voicePath&&(!voicePath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg|webm)$/i.test(voicePath)))throw new Error("VOICE_PATH_INVALID");
   const voiceStart=timeline.voiceStart??0,voiceVolume=timeline.voiceVolume??1;
   if(!Number.isFinite(voiceStart)||voiceStart<0||voiceStart>1200||!Number.isFinite(voiceVolume)||voiceVolume<0||voiceVolume>1)throw new Error("VOICE_SETTINGS_INVALID");
-  if(Array.isArray(timeline.imageLayers)&&timeline.imageLayers.length)throw new Error("MP4_EXTRA_LAYERS_NOT_SUPPORTED_YET");
+  const imageLayers=timeline.imageLayers??[];
+  if(!Array.isArray(imageLayers)||imageLayers.length>8)throw new Error("IMAGE_LAYERS_INVALID");
+  const total=clips.reduce((n,c)=>n+c.seconds,0);
+  const validGeometry=k=>k&&["x","y","size","opacity"].every(axis=>Number.isFinite(k[axis])&&k[axis]>=(axis==="size"?.05:0)&&k[axis]<=1);
+  const images=imageLayers.map((l,i)=>{
+    if(!l||typeof l.path!=="string"||!l.path.startsWith(root)||!/^[-\w/]+\.(png|jpe?g|webp)$/i.test(l.path)||!validGeometry(l)||!Number.isFinite(l.start)||!Number.isFinite(l.end)||l.start<0||l.end<=l.start||l.end>total+.05)throw new Error("IMAGE_LAYER_INVALID_"+i);
+    const keys=l.keyframes??[];
+    if(!Array.isArray(keys)||keys.length>32||keys.some(k=>!validGeometry(k)||!Number.isFinite(k.at)||k.at<0||k.at>l.end-l.start+.05))throw new Error("IMAGE_KEYFRAMES_INVALID_"+i);
+    return {...l,keyframes:keys};
+  });
   if(timeline.audioDucking||timeline.audioCompressor||timeline.lowCut)throw new Error("MP4_ADVANCED_AUDIO_NOT_SUPPORTED_YET");
-  return {clips,musicPath,voicePath,voiceStart,voiceVolume,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  return {clips,musicPath,voicePath,voiceStart,voiceVolume,images,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
 /** sourceFiles must have the same order as validated clips and be worker-owned temp files. */
-export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sourceFiles,musicFile=null,voiceFile=null,dir,output}) {
+export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sourceFiles,musicFile=null,voiceFile=null,imageFiles=[],dir,output}) {
   if(sourceFiles.length!==timeline.clips.length||Boolean(timeline.voicePath)!==Boolean(voiceFile))throw new Error("INPUT_COUNT_MISMATCH");
   const segments=[];
   for(let index=0;index<timeline.clips.length;index++){
@@ -144,8 +153,14 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     outputDuration=elapsed;
   }else await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
     "-f","concat","-safe","0","-i",concat,"-c","copy","-movflags","+faststart",merged]);
+  if(imageFiles.length!==(timeline.images||[]).length)throw new Error("IMAGE_INPUT_COUNT_MISMATCH");
+  let visual=merged;
+  if(imageFiles.length){
+    visual=path.join(dir,"layered-video.mp4");
+    await renderImageLayers({ffmpeg,ffprobe,timeline,input:merged,imageFiles,output:visual,duration:outputDuration});
+  }
   if(musicFile||voiceFile){
-    const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",merged];
+    const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",visual];
     const graph=["[0:a]aresample=48000,aformat=channel_layouts=stereo[base]"];
     const streams=["[base]"];let index=1;
     if(musicFile){
@@ -163,10 +178,42 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map","0:v:0","-map","[a]","-c:v","copy","-c:a","aac","-b:a","160k","-t",String(outputDuration),"-movflags","+faststart",output);
     await runFfmpeg(ffmpeg,args);
   }else{
-    await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",merged,
+    await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",visual,
       "-c","copy","-movflags","+faststart",output]);
   }
   const size=(await stat(output)).size;
   if(!size||size>100_000_000)throw new Error("MP4_OUTPUT_SIZE_INVALID");
   return {bytes:size,durationSeconds:outputDuration};
+}
+
+// Overlay position and size are interpolated in output timeline seconds.
+// A full-frame transparent RGBA layer preserves the PNG alpha channel.
+function keyExpression(layer,axis,time){
+  const byTime=new Map([[0,layer[axis]]]);
+  for(const k of layer.keyframes||[])byTime.set(k.at,k[axis]);
+  const keys=[...byTime].sort((a,b)=>a[0]-b[0]);
+  let expr=String(keys.at(-1)[1]);
+  for(let i=keys.length-2;i>=0;i--){
+    const [a,p]=keys[i],[b,q]=keys[i+1];
+    expr="if(lt("+time+","+b+"),"+p+"+("+q+"-"+p+")*clip(("+time+"-"+a+")/"+(b-a)+",0,1),"+expr+")";
+  }
+  return expr;
+}
+async function renderImageLayers({ffmpeg,ffprobe,timeline,input,imageFiles,output,duration}){
+  const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",input];
+  for(const file of imageFiles)args.push("-loop","1","-framerate","30","-i",file);
+  const graph=[];
+  let prev="[0:v]";
+  for(let i=0;i<imageFiles.length;i++){
+    const l=timeline.images[i],w=timeline.width,h=timeline.height;
+    const local="(t-"+l.start+")";
+    const size=keyExpression(l,"size",local),x=keyExpression(l,"x",local),y=keyExpression(l,"y",local);
+    // geq evaluates alpha per frame using T (seconds), retaining source transparency.
+    const alpha=keyExpression(l,"opacity","(T-"+l.start+")");
+    graph.push("["+(i+1)+":v]format=rgba,scale=w='max(2,trunc(min("+w+"*("+size+"),"+h+"*("+size+")*iw/ih)/2)*2)':h=-2:eval=frame,format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='alpha(X,Y)*("+alpha+")'[layer"+i+"]");
+    graph.push(prev+"[layer"+i+"]overlay=x='W*("+x+")-w/2':y='H*("+y+")-h/2':enable='gte(t,"+l.start+")*lt(t,"+Math.min(l.end,duration)+")':eval=frame:shortest=1[v"+i+"]");
+    prev="[v"+i+"]";
+  }
+  args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map",prev,"-map","0:a:0","-c:v","libx264","-preset","veryfast","-pix_fmt","yuv420p","-c:a","copy","-t",String(duration),"-movflags","+faststart",output);
+  await runFfmpeg(ffmpeg,args);
 }
