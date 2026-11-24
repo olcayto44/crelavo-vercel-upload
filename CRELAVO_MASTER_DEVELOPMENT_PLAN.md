@@ -97,3 +97,8 @@ No provider-backed image feature is marked ready by this list.
 - Ledger 5b7380a preview READY. Extended isolated ledger with separate reviewed provider invoice/usage evidence, fixed approved-credit settlement, idempotent unclaimed cancellation, cost-over-budget hold, wallet period/bucket checks. Embedded tests use synthetic cost evidence, not verified real provider invoices; actual evidence ingestion, legacy wallet writer coordination, multi-session concurrency and live migration remain open. No live money movement or provider dispatch.
 
 - d1b7a8b preview READY after SQL evidence permission correction. Added independent PostgreSQL 16 session race checks in GitHub Actions (same request, same wallet/different projects, cancel vs claim, rollover) and documented existing wallet write-path blockers. No live billing policy changes or migration. CI results pending.
+
+## Payment provider constraint — owner confirmed 2026-11-25
+- Whop is the active payment and subscription provider. Preserve checkout, existing products/pricing, webhook verification, payment reconciliation, entitlements and credit fulfillment. Prioritize Whop in any wallet integration audit and test its existing flow before release.
+- Stripe infrastructure exists but is inactive (owner-confirmed). Keep it as legacy/optional infrastructure; do not activate, migrate checkout to it, change credentials, or treat Stripe as the live billing path.
+- Central production credits are separate from payment-provider selection. Any changes to purchase fulfillment, renewal, cancellation or refund semantics must preserve active Whop behavior. No payment code or environment changed by this documentation update.
