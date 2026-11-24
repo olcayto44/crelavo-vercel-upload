@@ -245,6 +245,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [mp4Busy,setMp4Busy]=useState(false);
   const [mp4Jobs,setMp4Jobs]=useState<Array<{id:string;status:string;error_code?:string;created_at?:string}>>([]);
   const [mp4Message,setMp4Message]=useState("");
+  const [mp4Preview,setMp4Preview]=useState<{id:string;url:string}|null>(null);
+  const [mp4PreviewBusy,setMp4PreviewBusy]=useState(false);
+  const mp4PreviewRequest=useRef(0);
+  useEffect(()=>{mp4PreviewRequest.current++;setMp4Preview(null);setMp4PreviewBusy(false);},[authUser?.id]);
+  async function previewMp4(id:string){
+    const request=++mp4PreviewRequest.current;setMp4PreviewBusy(true);setMp4Preview(null);
+    try{const result=await mp4Request("?job="+encodeURIComponent(id)+"&preview=1");if(typeof result.downloadUrl!=="string")throw Error("Preview not available.");if(request===mp4PreviewRequest.current)setMp4Preview({id,url:result.downloadUrl});}
+    catch(e){if(request===mp4PreviewRequest.current)setMp4Message(e instanceof Error?e.message:"Preview failed.");}
+    finally{if(request===mp4PreviewRequest.current)setMp4PreviewBusy(false);}
+  }
   async function mp4Request(query="",body?:object){
     const {data}=await supabaseBrowser().auth.getSession();
     if(!data.session?.access_token)throw Error("Sign in to use MP4 rendering.");
@@ -316,6 +326,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [exportPhase,setExportPhase]=useState("");
   const [exportEta,setExportEta]=useState<number|null>(null);
   const [exportResult,setExportResult]=useState("");
+  const [exportError,setExportError]=useState("");
   const videoBitrate=Math.round((resolution<=480?2:resolution<=720?4:8)*1_000_000*(webmQuality==="low"?.6:webmQuality==="high"?1.6:1));
   const fileBase=exportName.trim().replace(/[^\p{L}\p{N} _.-]/gu,"_").replace(/\.+$/,"").slice(0,100)||"crelavo-studio-merged";
 
@@ -682,7 +693,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setCaptionCues(old=>[...old,{start,end:Math.min(duration,start+2),text:"New subtitle"}]);setSelectedCue(captionCues.length);cleanupOutput();
   }
   function cleanupOutput() {
-    setExportResult("");
+    setExportResult("");setExportError("");
     if (output.current) URL.revokeObjectURL(output.current);
     output.current = null;
     setDownloadUrl(null);
@@ -778,7 +789,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const height = ratio==="9:16"?Math.round(resolution*16/9/2)*2:resolution;
     const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height;
     const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) { setBusy(false); setState("Canvas unavailable."); return; }
+    if (!ctx) { setBusy(false); setExportError(t("Canvas unavailable.","Video tuvali kullanılamıyor."));setState("Canvas unavailable."); return; }
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";
     const stream = canvas.captureStream(webmFps);
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
@@ -909,7 +921,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             const completed=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
             setProgress(Math.min(99,Math.round(100*completed/duration)));
             if(completed>1)setExportEta(Math.max(0,Math.ceil((performance.now()-recordingStartedAt)/1000*(duration-completed)/completed)));
-            if (video.currentTime >= clip.end - .04 || video.ended || performance.now() - begin > (segment + 6) * 1000) { resolve(); return; }
+            if (video.currentTime >= clip.end - .04) { resolve(); return; }
+            if (video.ended || performance.now() - begin > (segment + 6) * 1000) { reject(new Error(t("Clip ended early or timed out: ","Klip erken bitti veya zaman aşımına uğradı: ")+clip.name)); return; }
             raf = requestAnimationFrame(render);
           }; render();
         });
@@ -938,7 +951,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         :"Merged video ready ("+(blob.size/1048576).toFixed(1)+" MB), but seekable duration metadata could not be added ("+fixed.reason+"). Player timeline/scrubbing may be limited.");
     } catch (error) {
       const activeRecorder = recorder as MediaRecorder | null;
-      if (activeRecorder && activeRecorder.state === "recording") activeRecorder.stop();
+      if (activeRecorder && activeRecorder.state !== "inactive") activeRecorder.stop();
+      if(recordDone)await recordDone.catch(()=>{});
+      cleanupOutput();setProgress(0);setExportEta(null);setExportPhase("");
+      setExportError(error instanceof Error ? error.message : t("Could not export the video.","Video dışa aktarılamadı."));
       setState(error instanceof Error ? error.message : "Could not export the video.");
     } finally {
       cancelAnimationFrame(raf);
@@ -1206,33 +1222,33 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </aside>
     </div>
     <dialog ref={exportDialog} className="studio-export-dialog" aria-labelledby="studio-export-dialog-title" onCancel={e=>{if(busy||mp4Busy||projectSaving)e.preventDefault()}}>
-      <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">{clips.length>1?"Merge & export videos":"Export video"}</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
-      <p className="studio-format-help">{t("All clips are combined in timeline order into one output file.","Tüm klipler zaman çizelgesi sırasıyla tek dosyada birleştirilir.")}</p><button type="button" disabled={busy||mp4Busy||!clips.length} onClick={()=>{exportDialog.current?.close();seekTimeline(0);}}>{t("Review timeline preview","Zaman çizelgesi önizlemesini kontrol et")}</button><div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{outputWidth} × {outputHeight}</strong></div><div><small>Estimated size</small><strong>{exportFormat==="webm"&&duration?`~${(duration*(videoBitrate/1_000_000+.128)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>{exportFormat==="webm"?`Target video bitrate ${(videoBitrate/1_000_000).toFixed(1)} Mbps; actual file size varies.`:"Cloud encoder determines actual file size."}</small>
+      <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">{clips.length>1?t("Merge & export videos","Videoları birleştir ve dışa aktar"):t("Export video","Videoyu dışa aktar")}</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
+      <p className="studio-format-help">{t("All clips are combined in timeline order into one output file.","Tüm klipler zaman çizelgesi sırasıyla tek dosyada birleştirilir.")}</p><button type="button" disabled={busy||mp4Busy||!clips.length} onClick={()=>{exportDialog.current?.close();seekTimeline(0);}}>{t("Review timeline preview","Zaman çizelgesi önizlemesini kontrol et")}</button><div className="studio-export-summary"><div><small>{t("Duration","Süre")}</small><strong>{timecode(duration)}</strong></div><div><small>{t("Dimensions","Boyutlar")}</small><strong>{outputWidth} × {outputHeight}</strong></div><div><small>{t("Estimated size","Tahmini boyut")}</small><strong>{exportFormat==="webm"&&duration?`~${(duration*(videoBitrate/1_000_000+.128)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>{exportFormat==="webm"?`Target video bitrate ${(videoBitrate/1_000_000).toFixed(1)} Mbps; actual file size varies.`:"Cloud encoder determines actual file size."}</small>
       <div className="studio-export-format" role="group" aria-label="Export format">
-        <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
-        <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
+        <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>{t("H.264 + AAC · Cloud rendering","H.264 + AAC · Bulutta üretim")}</small></button>
+        <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>{t("Browser rendering · Local","Tarayıcıda yerel üretim")}</small></button>
       </div>
       <p className="studio-format-help">{exportFormat==="mp4"?"MP4 is recommended for sharing. Sign in and save up to 90 MB of source files to your private cloud project.":"WebM renders on this device. AI noise removal and true crossfade require MP4."}</p>
       <div className="studio-export-basics">
-        <label className="studio-setting-field">Ratio
-          <select disabled={busy} value={ratio} onChange={e=>{setRatio(e.target.value as typeof ratio);cleanupOutput()}}>
+        <label className="studio-setting-field">{t("Ratio","En-boy oranı")}
+          <select disabled={busy||mp4Busy||projectSaving} value={ratio} onChange={e=>{setRatio(e.target.value as typeof ratio);cleanupOutput()}}>
             <option>16:9</option><option>9:16</option><option>1:1</option>
           </select>
         </label>
-        <label className="studio-setting-field">Framing
-          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain"|"blur");cleanupOutput()}}>
-            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option><option value="blur">Blur background</option>
+        <label className="studio-setting-field">{t("Framing","Çerçeveleme")}
+          <select disabled={busy||mp4Busy||projectSaving} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain"|"blur");cleanupOutput()}}>
+            <option value="contain">{t("Show full video (no cropping)","Videonun tamamını göster (kırpma yok)")}</option><option value="cover">{t("Fill screen (crop edges)","Ekranı doldur (kenarları kırp)")}</option><option value="blur">{t("Blur background","Bulanık arka plan")}</option>
           </select>
         </label>
-        <label className="studio-setting-field">Resolution
-          <select disabled={busy} value={resolution} onChange={e=>{setResolution(Number(e.target.value));cleanupOutput()}}>
+        <label className="studio-setting-field">{t("Resolution","Çözünürlük")}
+          <select disabled={busy||mp4Busy||projectSaving} value={resolution} onChange={e=>{setResolution(Number(e.target.value));cleanupOutput()}}>
             <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
           </select>
         </label>
-        {<><label className="studio-setting-field">Frame rate<select disabled={busy} value={webmFps} onChange={e=>{setWebmFps(Number(e.target.value));cleanupOutput()}}>{[24,25,30,60].map(n=><option key={n} value={n}>{n} FPS</option>)}</select></label><label className="studio-setting-field">Quality<select disabled={busy} value={webmQuality} onChange={e=>{setWebmQuality(e.target.value);cleanupOutput()}}><option value="low">Low</option><option value="standard">Standard</option><option value="high">High</option></select></label><label className="studio-setting-field">File name<input disabled={busy} value={exportName} maxLength={100} onChange={e=>setExportName(e.target.value)}/></label></>}
+        {<><label className="studio-setting-field">{t("Frame rate","Kare hızı")}<select disabled={busy||mp4Busy||projectSaving} value={webmFps} onChange={e=>{setWebmFps(Number(e.target.value));cleanupOutput()}}>{[24,25,30,60].map(n=><option key={n} value={n}>{n} FPS</option>)}</select></label><label className="studio-setting-field">{t("Quality","Kalite")}<select disabled={busy||mp4Busy||projectSaving} value={webmQuality} onChange={e=>{setWebmQuality(e.target.value);cleanupOutput()}}><option value="low">{t("Low","Düşük")}</option><option value="standard">{t("Standard","Standart")}</option><option value="high">{t("High","Yüksek")}</option></select></label><label className="studio-setting-field">{t("File name","Dosya adı (WebM)")}<input disabled={busy||mp4Busy||projectSaving} value={exportName} maxLength={100} onChange={e=>setExportName(e.target.value)}/></label></>}
         <label className="studio-setting-toggle">
-          <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e=>{setIncludeAudio(e.target.checked);cleanupOutput()}} />
-          <span>Include source audio</span>
+          <input disabled={busy||mp4Busy||projectSaving} type="checkbox" checked={includeAudio} onChange={e=>{setIncludeAudio(e.target.checked);cleanupOutput()}} />
+          <span>{t("Include source audio","Kaynak sesi dahil et")}</span>
         </label>
 </div>
       <div className="studio-export-actions">
@@ -1243,18 +1259,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <button type="button" className="studio-export-primary"
           disabled={!clips.length||busy||projectSaving||mp4Busy||(exportFormat==="mp4"?(!signedIn||(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle))):(!supportedMime()||(fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction))}
           onClick={()=>{if(exportFormat==="mp4")void submitMp4();else void exportVideo();}}>
-          {mp4Busy?"Preparing MP4…":busy?"Rendering WebM…":exportFormat==="mp4"?t("Export MP4","MP4 dışa aktar"):t("Export WebM","WebM dışa aktar")}
+          {mp4Busy?t("Preparing MP4…","MP4 hazırlanıyor…"):busy?t("Rendering WebM…","WebM üretiliyor…"):exportFormat==="mp4"?t("Export MP4","MP4 dışa aktar"):t("Export WebM","WebM dışa aktar")}
         </button>
         {!clips.length&&<small>Add at least one video clip to enable export.</small>}
-        {busy&&<button type="button" onClick={()=>{cancel.current=true;}}>Cancel</button>}
+        {busy&&<button type="button" onClick={()=>{cancel.current=true;}}>{t("Cancel","İptal")}</button>}
         {busy&&<div className="studio-render-progress" role="status"><strong>{exportPhase} · {progress}%</strong><progress max={100} value={progress}/><small>{exportEta!==null?`Estimated remaining: ${timecode(exportEta)}`:"Preparing or finalizing media…"}</small></div>}
-        {downloadUrl&&<div className="studio-render-result"><strong role="status">{exportResult}</strong><video controls playsInline preload="metadata" src={downloadUrl}/><a href={downloadUrl} download={fileBase+".webm"}>↓ Download WebM</a></div>}
+        {exportError&&<p className="studio-export-error" role="alert">{exportError}</p>}
+        {downloadUrl&&exportFormat==="webm"&&<div className="studio-render-result"><strong role="status">{exportResult}</strong><video controls playsInline preload="metadata" src={downloadUrl}/><div className="studio-result-download"><a href={downloadUrl} download={fileBase+".webm"}>{t("Download WebM","WebM indir")}</a></div></div>}
+        {mp4Preview&&signedIn&&exportFormat==="mp4"&&<div className="studio-render-result"><strong>{t("MP4 output preview","MP4 çıktı önizlemesi")}</strong><video controls playsInline preload="metadata" src={mp4Preview.url} onError={()=>setMp4Message(t("Preview expired or unavailable. Open it again.","Önizleme süresi doldu veya kullanılamıyor. Yeniden açın."))}/><div className="studio-result-download"><button type="button" onClick={()=>void downloadMp4(mp4Preview.id)}>{t("Download MP4","MP4 indir")}</button></div></div>}
         {mp4Message&&<small role="status">{mp4Message}</small>}
-        <details className="studio-export-help"><summary>Format & storage limits</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles are burned into the output. AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
+        <details className="studio-export-help"><summary>{t("Format & storage limits","Format ve depolama sınırları")}</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles are burned into the output. AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
         {signedIn&&(exportFormat==="mp4"||mp4Jobs.length>0)&&<div className="studio-mp4-jobs">
-          <div className="studio-mp4-jobs-heading"><strong>MP4 export history</strong><button type="button" disabled={mp4Busy} onClick={()=>void refreshMp4Jobs()}>Refresh</button></div>
-          {!mp4Jobs.length&&<small>No cloud exports yet.</small>}
-          {mp4Jobs.map(job=><div key={job.id} className="studio-mp4-job"><span>{job.status==="ready"?"Ready to download":job.status==="queued"?"Queued":job.status==="processing"?"Rendering…":job.status==="failed"?"Failed":job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>Download MP4</button>}</div>)}
+          <div className="studio-mp4-jobs-heading"><strong>{t("MP4 export history","MP4 çıktı geçmişi")}</strong><button type="button" disabled={mp4Busy} onClick={()=>void refreshMp4Jobs()}>{t("Refresh","Yenile")}</button></div>
+          {!mp4Jobs.length&&<small>{t("No cloud exports yet.","Henüz bulut çıktısı yok.")}</small>}
+          {mp4Jobs.map(job=><div key={job.id} className="studio-mp4-job"><span>{job.status==="ready"?"Ready to download":job.status==="queued"?"Queued":job.status==="processing"?"Rendering…":job.status==="failed"?"Failed":job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>{t("Download MP4","MP4 indir")}</button>}{job.status==="ready"&&<button type="button" disabled={mp4PreviewBusy} onClick={()=>void previewMp4(job.id)}>{t("Preview","Önizle")}</button>}</div>)}
         </div>}
       </div>
     </dialog>
