@@ -94,7 +94,7 @@ assert.match(source,/addMediaRecorderWebmDuration\(rawBlob,recordedMs\)/,'merged
 assert.match(source,/performance\.now\(\)-recordingStartedAt/,'repair must use actual recorded duration');
 assert.match(source,/paintBlurBackground\(ctx,video,width,height\)/,"WebM export must paint blurred background");
 assert.match(source,/ref=\{blurCanvas\}/,"preview must render a background canvas");
-assert.match(ffmpegComposeSource,/boxblur=.*overlay=/,"MP4 worker must composite blurred background and foreground");
+assert.match(ffmpegComposeSource,/boxblur=[\s\S]*?\[back\][\s\S]*?overlay=x=/,"MP4 worker must composite blurred background and foreground");
 const durationSource=fs.readFileSync('src/lib/studio-webm-duration.ts','utf8');
 const fixedJs=ts.transpileModule(durationSource,{
  compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}
