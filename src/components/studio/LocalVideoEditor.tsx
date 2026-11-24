@@ -312,6 +312,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const chosen = clips.find(c => c.id === active);
   const blurCanvas=useRef<HTMLCanvasElement>(null);
   const [sourceAspect,setSourceAspect]=useState(0);
+  const [timelineZoom,setTimelineZoom]=useState(1);
+  const [playhead,setPlayhead]=useState(0);
+  const pendingSeek=useRef<{id:string;time:number}|null>(null);
   useEffect(()=>{
     if(framing!=="blur"||!chosen)return;
     const video=preview.current, canvas=blurCanvas.current;
@@ -330,6 +333,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   },[framing,chosen?.id,ratio]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
+  const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
+  function seekTimeline(at:number){
+    if(busy||!segments.length)return;
+    const time=Math.max(0,Math.min(duration,at));
+    const segment=segments.find(s=>time<s.start+s.length)||segments[segments.length-1];
+    const sourceTime=Math.min(segment.clip.end,segment.clip.start+(time-segment.start)*(segment.clip.speed||1));
+    setPlayhead(time);
+    if(active===segment.clip.id&&preview.current){preview.current.currentTime=sourceTime;}
+    else{pendingSeek.current={id:segment.clip.id,time:sourceTime};setActive(segment.clip.id);}
+  }
+  function syncPlayhead(video:HTMLVideoElement){
+    const segment=segments.find(s=>s.clip.id===active);
+    if(segment)setPlayhead(segment.start+Math.max(0,Math.min(segment.length,(video.currentTime-segment.clip.start)/(segment.clip.speed||1))));
+  }
   function cleanupOutput() {
     if (output.current) URL.revokeObjectURL(output.current);
     output.current = null;
@@ -625,7 +642,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
             {chosen ? <>{framing==="blur"&&<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>}<video key={chosen.id} ref={preview} src={chosen.url} controls playsInline preload="metadata"
               style={{width:"100%",height:"100%",objectFit:framing==="blur"?"contain":framing,display:"block",position:"relative",transform:`rotate(${chosen.rotation||0}deg) scale(${(chosen.flipX?-1:1)*(chosen.zoom||1)},${(chosen.flipY?-1:1)*(chosen.zoom||1)})`,...(framing==="blur"&&sourceAspect>0?{maxWidth:`${Math.min(1,sourceAspect/(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9))*100}%`,maxHeight:`${Math.min(1,(ratio==="9:16"?9/16:ratio==="1:1"?1:16/9)/sourceAspect)*100}%`}: {})}}
-              onLoadedMetadata={e => { const v=e.currentTarget;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=chosen.start;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1)); }} />
+              onLoadedMetadata={e => { const v=e.currentTarget;setSourceAspect(v.videoWidth/v.videoHeight);v.currentTime=pendingSeek.current?.id===chosen.id?pendingSeek.current.time:chosen.start;pendingSeek.current=null;v.playbackRate=chosen.speed||1;v.volume=Math.min(1,Math.max(0,chosen.gain??1)); }} onTimeUpdate={e=>syncPlayhead(e.currentTarget)} />
               </>
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
@@ -646,6 +663,21 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
         <div role="group" aria-label="Timeline history" style={{display:"flex",gap:8,marginBottom:8}}><button type="button" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶ Undo</button><button type="button" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷ Redo</button></div>
+        {duration>0&&<section aria-label="Time-based timeline" style={{border:"1px solid #463458",borderRadius:8,padding:8,marginBottom:10,background:"#171121"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}><strong style={{fontSize:12}}>Timeline · {sec(Math.min(playhead,duration))} / {sec(duration)}</strong><label style={{fontSize:11}}>Zoom {timelineZoom}× <input aria-label="Timeline zoom" type="range" min={1} max={4} step={1} value={timelineZoom} onChange={e=>setTimelineZoom(Number(e.target.value))}/></label></div>
+          <div style={{overflowX:"auto",paddingBottom:4}}>
+            <div style={{minWidth:Math.max(320,320*timelineZoom),display:"grid",gridTemplateColumns:"78px minmax(0,1fr)",gap:4,alignItems:"center",fontSize:10}}>
+              <span>Playhead</span><input aria-label="Timeline playhead" type="range" min={0} max={duration} step={.01} value={Math.min(playhead,duration)} disabled={busy} onChange={e=>seekTimeline(Number(e.target.value))} style={{width:"100%"}}/>
+              <span>Time</span><div style={{display:"flex",justifyContent:"space-between",color:"#b8a8c9"}}>{Array.from({length:5},(_,i)=><span key={i}>{sec(duration*i/4)}</span>)}</div>
+              <span>Video</span><div style={{display:"flex",height:34,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={clip.name+" · "+sec(length)} onClick={()=>seekTimeline(start)} aria-pressed={active===clip.id} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}>{index+1}. {clip.name}</button>)}</div>
+              <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{includeAudio?Math.round((clip.gain??1)*100)+"%":"Muted"}</button>)}</div>
+              <span>Music</span><div style={{height:24,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?backgroundMusic.name+" · loop":"No soundtrack"}</div>
+              <span>Title</span><div style={{height:24,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
+              <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.filter(c=>c.start<duration).map((c,i)=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onClick={()=>seekTimeline(c.start)} style={{position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
+            </div>
+          </div>
+          <small style={{color:"#b8a8c9"}}>Click a clip or subtitle to seek to its timeline position. Adjust clip and track settings below.</small>
+        </section>}
         <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
           {clips.map((clip, index) => <div key={clip.id}
