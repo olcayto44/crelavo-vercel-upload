@@ -506,6 +506,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const blurCanvas=useRef<HTMLCanvasElement>(null);
   const [sourceAspect,setSourceAspect]=useState(0);
   const [timelineZoom,setTimelineZoom]=useState(1);
+  const [previewZoom,setPreviewZoom]=useState<"fit"|"50"|"75"|"100">("fit");
+  const [snap,setSnap]=useState(true);
+  const [mediaCollapsed,setMediaCollapsed]=useState(false);
+  const [inspectorCollapsed,setInspectorCollapsed]=useState(false);
   const [timelineHeight,setTimelineHeight]=useState(300);
   const timelineResize=useRef<{y:number;height:number}|null>(null);
   const [playhead,setPlayhead]=useState(0);
@@ -552,7 +556,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(!drag.changed&&Math.abs(dx)<4)return;
     drag.changed=true;suppressLayerClick.current=true;
     const max=Math.max(0,duration-drag.length);
-    drag.move(Math.max(0,Math.min(max,Math.round((drag.start+dx/drag.width*duration)*100)/100)));
+    let at=Math.max(0,Math.min(max,Math.round((drag.start+dx/drag.width*duration)*100)/100));
+    if(snap){const points=[0,max,playhead,...segments.map(s=>s.start),duration];const targets=points.flatMap(p=>[p,p-drag.length]).filter(p=>p>=0&&p<=max);const nearest=targets.reduce((best,p)=>Math.abs(p-at)<Math.abs(best-at)?p:best,at+duration+1);if(Math.abs(nearest-at)<=8/drag.width*duration)at=nearest;}
+    drag.move(at);
   }
   function endLayerDrag(event:ReactPointerEvent<HTMLButtonElement>){
     if(layerDrag.current?.pointer!==event.pointerId)return;
@@ -593,6 +599,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(video.currentTime<chosen.start||video.currentTime>=chosen.end-.025)video.currentTime=chosen.start;
     void video.play().catch(()=>{stopPreview();setState("Could not play timeline.")});
   }
+  useEffect(()=>{
+    const key=(event:KeyboardEvent)=>{
+      const target=event.target;
+      if(event.defaultPrevented||event.repeat||event.ctrlKey||event.metaKey||event.altKey||busy||mp4Busy||projectSaving||exportDialog.current?.open)return;
+      if(target instanceof HTMLElement&&target.closest("input,textarea,select,button,a,summary,[contenteditable=true],[role=separator]"))return;
+      if(event.code==="Space"&&chosen){event.preventDefault();toggleTimelinePlayback();}
+      if(event.key==="Delete"&&chosen&&inspectorTab==="clip"){event.preventDefault();stopPreview();remove(chosen.id);}
+    };
+    window.addEventListener("keydown",key);return()=>window.removeEventListener("keydown",key);
+  });
   function editCue(index:number,patch:Partial<CaptionCue>){
     if(busy||projectSaving)return;
     const cue=captionCues[index];if(!cue)return;
@@ -874,6 +890,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     <header className="studio-workspace-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
       <div className="studio-brand"><a className="editor-back" aria-label="Back to Studio V2" href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"}>‹</a><h1><span className="studio-brand-mark" aria-hidden="true">▷</span> Crelavo Studio</h1><span className="studio-project-label">Video project</span><small>{projectSaving?"Saving…":autoSaveStatus|| (autoSave?"Local auto-save enabled":"Local workspace")}</small></div>
       <div className="studio-header-actions">
+       <button type="button" aria-pressed={!mediaCollapsed} onClick={()=>setMediaCollapsed(v=>!v)} title="Show or hide media library">{mediaCollapsed?"Show media":"Hide media"}</button><button type="button" aria-pressed={!inspectorCollapsed} onClick={()=>setInspectorCollapsed(v=>!v)} title="Show or hide inspector">{inspectorCollapsed?"Show inspector":"Hide inspector"}</button>
        <button type="button" aria-label="Undo" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶</button><button type="button" aria-label="Redo" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷</button>
        <details style={{position:"relative",border:"1px solid #4c355d",borderRadius:8,padding:"6px 9px"}}><summary style={{cursor:"pointer",fontSize:12}}>Save / reopen project</summary><div style={{display:"flex",flexWrap:"wrap",gap:6,maxWidth:410,marginTop:8}}>
        <button type="button" disabled={!projectOwner||!clips.length||busy||projectSaving} onClick={()=>{void saveTimeline()}} style={{background:"#38254d",border:"1px solid #74518b",color:"#fff",padding:"6px 9px",borderRadius:8}}>Save local timeline</button>
@@ -902,7 +919,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </header>
     {!signedIn&&allowAnonymousLocalSave&&<p style={{fontSize:11,color:"#d7c2ed",margin:"3px 0 8px"}}>Preview mode: local timeline saves stay in this browser. Sign in for private cloud backup.</p>}
     <div className="studio-workspace-status" role="status" aria-live="polite" title={state}>{state}</div>
-    <div className="editor-main-grid studio-workspace-grid" style={{gridTemplateRows:`minmax(365px,1fr) ${timelineHeight}px`}}>
+    <div className={"editor-main-grid studio-workspace-grid"+(mediaCollapsed?" is-media-collapsed":"")+(inspectorCollapsed?" is-inspector-collapsed":"")} style={{gridTemplateRows:`minmax(365px,1fr) ${timelineHeight}px`}}>
       <div className="studio-left-workspace"><nav className="studio-tool-rail" aria-label="Editing tools">{([["▣","Media","clip","all"],["T","Text","layers","all"],["▧","Images","layers","image"],["◇","Transitions","effects","all"],["♫","Audio","audio","audio"],["▱","Layers","layers","all"]] as const).map(([glyph,label,tab,filter])=><button key={label} type="button" onClick={()=>{setInspectorTab(tab);setMediaFilter(filter);setMediaSearch("")}}><StudioIcon name={label}/><small>{label}</small></button>)}</nav><aside className="studio-media-library"><h2>Media library · {clips.length}</h2>      <label className="studio-media-drop" onDragOver={e=>{if(!busy&&e.dataTransfer.types.includes("Files"))e.preventDefault()}} onDrop={e=>{if(e.dataTransfer.files.length){e.preventDefault();if(!busy)void addFiles(e.dataTransfer.files)}}}><StudioIcon name="Upload"/><strong>{t("+ Add videos", "+ Video ekle")}</strong><small>Drop video files here · local max 2 GB/file</small><input aria-label="Add local video clips" disabled={busy} type="file" multiple accept={accept} onChange={e => { void addFiles(e.target.files); e.currentTarget.value = ""; }} hidden /></label>
         <div className="studio-media-imports"><button type="button" disabled={busy} onClick={()=>{setInspectorTab("audio");musicPicker.current?.click()}}>+ Music</button><button type="button" disabled={busy} onClick={()=>{setInspectorTab("audio");voicePicker.current?.click()}}>+ Voice</button><button type="button" disabled={busy||!duration||imageLayers.length>=8} onClick={()=>{setInspectorTab("layers");imagePicker.current?.click()}}>+ Image</button></div><div className="studio-media-filters">{(["all","video","audio","image"] as const).map(f=><button key={f} type="button" aria-pressed={mediaFilter===f} onClick={()=>setMediaFilter(f)}>{f==="all"?"All":f[0].toUpperCase()+f.slice(1)}</button>)}</div><input className="studio-media-search" aria-label="Search media" placeholder="Search media…" value={mediaSearch} onChange={e=>setMediaSearch(e.target.value)}/><p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
         <div className="studio-media-cards">
@@ -928,7 +945,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {(mediaFilter==="all"||mediaFilter==="image")&&imageLayers.filter(l=>l.file.name.toLowerCase().includes(mediaSearch.toLowerCase())).map(l=><button type="button" key={l.id} className="studio-asset-card" onClick={()=>{setSelectedImage(l.id);setInspectorTab("layers")}}><span>▧</span>{l.file.name}</button>)}
         </div></aside></div>
       <div className="studio-preview-pane" style={{ minWidth: 0 }}>
-        <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}> 
+        <div className={"studio-video-preview-stage"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")} data-preview-zoom={previewZoom}> 
           <div className={"studio-video-preview-frame"+(ratio==="9:16"?" is-portrait":ratio==="1:1"?" is-square":" is-landscape")}
                style={{aspectRatio:ratio==="9:16"?"9 / 16":ratio==="1:1"?"1 / 1":"16 / 9"}}>
             {chosen ? <>{<canvas ref={blurCanvas} aria-hidden="true" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:1}}/>}<video key={chosen.id} ref={preview} src={chosen.url} playsInline preload="metadata"
@@ -944,7 +961,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <button type="button" aria-label="Go to timeline start" title="Go to timeline start" disabled={busy||!chosen} onClick={()=>{stopPreview();seekTimeline(0)}}><StudioIcon name="Previous"/></button>
             <button type="button" aria-label={previewPlaying?"Pause":"Play timeline"} disabled={busy||!chosen} onClick={toggleTimelinePlayback}><StudioIcon name={previewPlaying?"Pause":"Play"}/></button>
             <button type="button" aria-label="Go to timeline end" title="Go to timeline end" disabled={busy||!chosen} onClick={()=>{stopPreview();seekTimeline(duration)}}><StudioIcon name="Next"/></button>
-            <span className="studio-preview-time">{timecode(Math.min(playhead,duration))} / {timecode(duration)}</span>
+            <span className="studio-preview-time">{timecode(Math.min(playhead,duration))} / {timecode(duration)}</span><select aria-label="Preview magnification" value={previewZoom} onChange={e=>setPreviewZoom(e.target.value as typeof previewZoom)}><option value="fit">Fit</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option></select>
             <button type="button" disabled={!chosen||busy} onClick={()=>{if(preview.current&&chosen){stopPreview();preview.current.currentTime=chosen.start;}}}>Restart clip</button>
             <button type="button" className="studio-preview-fullscreen" aria-label="Fullscreen preview" title="Fullscreen preview" disabled={!chosen} onClick={()=>{const frame=preview.current?.closest(".studio-video-preview-frame");if(document.fullscreenElement)void document.exitFullscreen().catch(()=>setState("Fullscreen unavailable."));else if(frame?.requestFullscreen)void frame.requestFullscreen().catch(()=>setState("Fullscreen unavailable."));}}><StudioIcon name="Fullscreen"/></button>
           </div>
@@ -969,13 +986,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <h2 className="studio-timeline-heading">Timeline <small>{timecode(duration)} total</small></h2>
         <div className="studio-timeline-toolbar" role="group" aria-label="Timeline history"><button type="button" disabled={busy||!chosen||clips.length>=30} onClick={()=>{if(chosen)split(chosen.id)}}>✂ Split</button><button type="button" disabled={busy||!chosen} onClick={()=>{if(chosen)remove(chosen.id)}}>× Delete</button><button type="button" onClick={()=>setInspectorTab("effects")}>◇ Transitions</button><button type="button" disabled={busy||!chosen} onClick={()=>setInspectorTab("clip")}>Trim</button><button type="button" disabled={busy||!duration||captionCues.length>=500} onClick={()=>{addCue();setInspectorTab("layers")}}>+ Subtitle</button><button type="button" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶ Undo</button><button type="button" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷ Redo</button></div>
         {duration>0&&<section className="studio-track-section" aria-label="Time-based timeline">
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}><strong style={{fontSize:12}}>Timeline · {timecode(Math.min(playhead,duration))} / {timecode(duration)}</strong><label style={{fontSize:11}}>Zoom {timelineZoom}× <input aria-label="Timeline zoom" type="range" min={1} max={4} step={1} value={timelineZoom} onChange={e=>setTimelineZoom(Number(e.target.value))}/></label></div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}><strong style={{fontSize:12}}>Timeline · {timecode(Math.min(playhead,duration))} / {timecode(duration)}</strong><button type="button" onClick={()=>setTimelineZoom(1)}>Fit timeline</button><button type="button" aria-pressed={snap} onClick={()=>setSnap(v=>!v)}>Snap {snap?"on":"off"}</button><label style={{fontSize:11}}>Zoom {timelineZoom}× <input aria-label="Timeline zoom" type="range" min={1} max={4} step={1} value={timelineZoom} onChange={e=>setTimelineZoom(Number(e.target.value))}/></label></div>
           <div className="studio-track-scroll">
-            <div className="studio-track-grid" style={{minWidth:Math.max(400,400*timelineZoom)}}>
+            <div className="studio-track-grid" style={{width:`${timelineZoom*100}%`,minWidth:0}}>
               <div className="studio-playhead-overlay" aria-hidden="true"><span style={{left:(Math.min(playhead,duration)/duration*100)+"%"}}/></div>
               <span>Playhead</span><input aria-label="Timeline playhead" type="range" min={0} max={duration} step={.01} value={Math.min(playhead,duration)} disabled={busy} onChange={e=>seekTimeline(Number(e.target.value))} style={{width:"100%"}}/>
               <span>Time</span><div style={{display:"flex",justifyContent:"space-between",color:"#b8a8c9"}}>{Array.from({length:5},(_,i)=><span key={i}>{timecode(duration*i/4)}</span>)}</div>
-              <span>Video</span><div style={{display:"flex",height:54,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={clip.name+" · "+sec(length)} onClick={()=>{setInspectorTab("clip");seekTimeline(start)}} aria-pressed={active===clip.id} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}><span className="studio-timeline-film"><ClipFilmstrip clip={clip}/><span className="studio-film-label">{index+1}. {clip.name}</span></span></button>)}</div>
+              <span>Video</span><div style={{display:"flex",height:54,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={clip.name+" · "+sec(length)} onClick={()=>{setInspectorTab("clip");seekTimeline(start)}} aria-pressed={active===clip.id} className="studio-video-track-clip" style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}><span className="studio-timeline-film"><ClipFilmstrip clip={clip}/><span className="studio-film-label">{index+1}. {clip.name}</span></span></button>)}</div>
               <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{!includeAudio?"Muted":sourceWaves[clip.id]?<svg viewBox="0 0 96 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded source audio waveform">{sourceWaves[clip.id].slice(Math.floor(clip.start/clip.duration*96),Math.max(1,Math.ceil(clip.end/clip.duration*96))).map((p,i,arr)=><line key={i} x1={(i+.5)*96/arr.length} x2={(i+.5)*96/arr.length} y1={10-p*9} y2={10+p*9} stroke="#b9e8ce" strokeWidth=".8"/>)}</svg>:Math.round((clip.gain??1)*100)+"%"}</button>)}</div>
               <span>Music</span><div style={{height:backgroundMusic?24:16,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?(musicPeaks.length?<svg viewBox="0 0 128 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded music waveform"><title>{backgroundMusic.name+" · "+sec(musicLength)}</title>{musicPeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={10-p*9} y2={10+p*9} stroke="#b9dcff" strokeWidth=".8"/>)}</svg>:backgroundMusic.name+" · loop"):"No soundtrack"}</div>
               <span>Voiceover</span><div style={{position:"relative",height:voiceover?28:16,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onPointerDown={e=>beginLayerDrag(e,voiceStart,Math.min(voiceLength,duration),start=>{setVoiceStart(start);cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>seekTimeline(voiceStart))} title={voiceover.name+" · Drag to move"} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0,touchAction:"none",cursor:"grab"}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
@@ -1123,7 +1140,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </div>
     <dialog ref={exportDialog} className="studio-export-dialog" aria-labelledby="studio-export-dialog-title" onCancel={e=>{if(busy||mp4Busy||projectSaving)e.preventDefault()}}>
       <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">Export video</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
-      <p className="studio-format-help">{clips.length} clip(s) · {timecode(duration)} · {ratio}</p>
+      <div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{ratio==="9:16"?Math.round(resolution*9/16/2)*2:ratio==="1:1"?resolution:Math.round(resolution*16/9/2)*2} × {resolution}</strong></div><div><small>Estimated size</small><strong>{duration?`~${(duration*(resolution<=480?2:resolution<=720?4:8)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>Size estimate assumes {resolution<=480?2:resolution<=720?4:8} Mbps total bitrate; actual output varies by encoder, audio and content.</small>
       <div className="studio-export-format" role="group" aria-label="Export format">
         <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
         <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
