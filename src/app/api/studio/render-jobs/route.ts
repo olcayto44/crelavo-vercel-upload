@@ -32,14 +32,14 @@ export async function GET(request: Request) {
     if (queryError) return error("Render job lookup is not available.", 503);
     if (jobId && !data?.length) return error("Render job not found.", 404);
     const jobs = (data ?? []).map(({ output_bucket: _bucket, output_path: _path, ...job }) => job);
-    if (jobId && url.searchParams.get("download") === "1") {
+    if (jobId && (url.searchParams.get("download") === "1" || url.searchParams.get("preview") === "1")) {
       const job = data?.[0];
       if (!job || job.status !== "ready" || job.output_bucket !== "studio-private"
         || typeof job.output_path !== "string"
         || !job.output_path.startsWith(user.id + "/" + job.project_id + "/"))
         return error("Completed MP4 file is not available.", 409);
       const { data: signed, error: signError } = await db.storage.from("studio-private")
-        .createSignedUrl(job.output_path, 300, { download: "crelavo-studio-export.mp4" });
+        .createSignedUrl(job.output_path, 300, url.searchParams.get("download") === "1" ? { download: "crelavo-studio-export.mp4" } : undefined);
       if (signError || !signed?.signedUrl) return error("Private download could not be generated.", 503);
       return NextResponse.json({ ok: true, job: jobs[0], downloadUrl: signed.signedUrl }, { headers: noCache });
     }
