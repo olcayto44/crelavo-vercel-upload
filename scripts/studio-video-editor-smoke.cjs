@@ -62,6 +62,17 @@ assert.match(source,/video\.currentTime>=segment\.clip\.end-\.025/,'playback mus
 assert.match(source,/if\(!next\)\{timelinePlaying\.current=false;video\.pause\(\);setPreviewPlaying\(false\);setPlayhead\(duration\)/,'playback must stop at the final clip');
 assert.match(source,/onEnded=\{e=>advancePreview\(e\.currentTarget\)\}/,'natural media end must also advance');
 assert.match(source,/pending\?\.play&&timelinePlaying\.current/,'new clip must resume only when playback remains requested');
+
+assert.match(source,/<video ref=\{preview\} src=\{chosen\.url\} playsInline preload="auto"/,'preview must preserve the media element across clip changes');
+assert.match(source,/onCanPlay=\{e=>resumePreviewWhenReady\(e\.currentTarget\)\}/,'next clip must wait for playable media');
+assert.match(source,/onSeeked=\{e=>resumePreviewWhenReady\(e\.currentTarget\)\}/,'next clip must wait for trim seek');
+assert.match(source,/video\.seeking\|\|video\.readyState<2/,'resume must not race the media seek or loading');
+assert.match(source,/request!==playRequest\.current\|\|!timelinePlaying\.current\|\|video!==preview\.current/,'stale play promise errors must not interrupt a newer clip');
+assert.match(css,/\.studio-video-preview-frame:fullscreen canvas\{[^}]*width:min\(100vw,calc\(100vh \* var\(--fullscreen-ratio\)\)\)!important/,'fullscreen canvas must preserve the output aspect ratio');
+assert.match(css,/\.studio-video-preview-frame\.is-portrait:fullscreen\{--fullscreen-ratio:0\.5625\}/,'portrait fullscreen must retain 9:16');
+assert.match(css,/\.studio-video-preview-frame\.is-landscape:fullscreen\{--fullscreen-ratio:1\.7777777778\}/,'landscape fullscreen must retain 16:9');
+assert.match(css,/\.studio-video-preview-frame\.is-square:fullscreen\{--fullscreen-ratio:1\}/,'square fullscreen must retain 1:1');
+
 assert.match(source,/className="studio-export-dialog"/,'export must have a dedicated dialog');
 assert.match(source,/exportDialog\.current\?\.showModal\(\)/,'export control must open native modal');
 assert.match(css,/\.studio-export-dialog::backdrop/,'modal must have a distinct backdrop');
