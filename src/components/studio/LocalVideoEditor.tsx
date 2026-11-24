@@ -16,7 +16,9 @@ type CaptionCue = { start: number; end: number; text: string };
 type ImageKeyframe={at:number;x:number;y:number;size:number;opacity:number};
 type ImageLayer={hidden?:boolean;locked?:boolean;keyframes?:ImageKeyframe[];id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
 type TransitionStyle="black"|"white"|"wipe-left"|"wipe-right"|"zoom"|"slide"|"dissolve"|"crossfade";
-type SavedVideoProject = { aiDenoise?:boolean; noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; fps?:number; quality?:string; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type LayerKind = 'title'|'captions'|'music'|'voice';
+type LayerFlags = Partial<Record<LayerKind,{hidden?:boolean;locked?:boolean}>>;
+type SavedVideoProject = { layerFlags?:LayerFlags; aiDenoise?:boolean; noiseReduction?:boolean; audioDucking?:boolean; duckLevel?:number; audioCompressor?:boolean; lowCut?:boolean; transitionStyle?:TransitionStyle; transitionDuration?:number; imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; fps?:number; quality?:string; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -335,6 +337,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
 
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
+  const [layerFlags,setLayerFlags]=useState<LayerFlags>({});
+  const locked=(kind:LayerKind)=>!!layerFlags[kind]?.locked;
+  const hidden=(kind:LayerKind)=>!!layerFlags[kind]?.hidden;
+  function toggleLayerFlag(kind:LayerKind,flag:"hidden"|"locked"){if(busy||projectSaving||mp4Busy||(flag==="hidden"&&locked(kind)))return;setLayerFlags(old=>({...old,[kind]:{...old[kind],[flag]:!old[kind]?.[flag]}}));if(flag==="hidden")cleanupOutput();}
+
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
   const [selectedCue,setSelectedCue]=useState<number|null>(null);
   const [subtitleName,setSubtitleName] = useState("");
@@ -440,12 +447,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,layerFlags,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,webmFps,webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,webmFps,webmQuality,includeAudio,layerFlags,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
   async function signInForMp4(){
     if(busy||projectSaving||mp4Busy)return;
     // Keep the current editor mounted during the account modal. Save a separate guest recovery copy before any redirect.
@@ -453,7 +460,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
       if(size>150_000_000){setMp4Message(t("Project exceeds local recovery limit (150 MB). Export WebM or reduce media before signing in.","Proje yerel kurtarma sınırını (150 MB) aşıyor. Girişten önce WebM üretin veya dosyaları küçültün."));return;}
       setProjectSaving(true);
-      try{await saveProjectLocally({id:"preview-local:mp4-handoff",owner:"preview-local",savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise});sessionStorage.setItem("crelavo-mp4-handoff","1");}
+      try{await saveProjectLocally({id:"preview-local:mp4-handoff",owner:"preview-local",savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,layerFlags,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise});sessionStorage.setItem("crelavo-mp4-handoff","1");}
       catch{setMp4Message(t("Could not save recovery copy. Sign-in cancelled to protect your project.","Kurtarma kopyası kaydedilemedi. Projenizi korumak için giriş iptal edildi."));return;}
       finally{setProjectSaving(false);}
     }
@@ -469,7 +476,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
+        ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,layerFlags,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -487,7 +494,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       files.current=restored;
       setClips(restored);setActive(restored[0]?.id||null);
       setRatio(project.ratio);setResolution(project.resolution);setWebmFps(project.fps??30);setWebmQuality(project.quality??"standard");setIncludeAudio(project.includeAudio);
-      setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
+      setLayerFlags(project.layerFlags||{});setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
       setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
       setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
@@ -506,7 +513,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
       const savedVersion=await saveCloudTimeline(clips,{
-       ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
+       ratio,resolution,fps:webmFps,quality:webmQuality,includeAudio,layerFlags,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise
       });
       setState("Cloud timeline version "+savedVersion.version+" saved with its source files. You can reopen it on another device.");return savedVersion;
     }catch(error){setState("Cloud save failed: "+(error instanceof Error?error.message:"Unknown error"));}
@@ -535,7 +542,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       changeHistory({past:[],future:[]});
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
       setRatio(saved.ratio);setResolution(saved.resolution);setWebmFps(saved.fps??30);setWebmQuality(saved.quality??"standard");setIncludeAudio(saved.includeAudio);
-      setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
+      setLayerFlags(saved.layerFlags||{});setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
       setImageLayers(saved.imageLayers||[]);setSelectedImage(null);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(saved.voiceover||null);setVoiceStart(saved.voiceStart??0);setVoiceLength(saved.voiceLength??0);setVoiceVolume(saved.voiceVolume??1);
       setAudioDucking(!!saved.audioDucking);setDuckLevel(saved.duckLevel??.25);setAudioCompressor(!!saved.audioCompressor);setLowCut(!!saved.lowCut);setAiDenoise(!!saved.aiDenoise);setNoiseReduction(!!saved.noiseReduction);
@@ -591,12 +598,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         paintClip(ctx,video,chosen,w,h,framing);
         const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
         paintImageLayers(ctx,w,h,at,imageLayers,imageBitmaps.current);
-        paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
+        if(!hidden("title"))paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);if(!hidden("captions"))paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
         if(fadeBetweenClips&&transitionStyle!=="crossfade")paintTransition(ctx,w,h,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-chosen.start)/(chosen.speed||1)),(chosen.end-chosen.start)/(chosen.speed||1),clips.findIndex(c=>c.id===chosen.id),clips.length);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>{cancelAnimationFrame(frame);observer.disconnect();document.removeEventListener("fullscreenchange",resize);window.removeEventListener("resize",resize);};
-  },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
+  },[framing,chosen,ratio,clips,titleOverlay,captionCues,layerFlags,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
   const shortEdge=resolution,longEdge=Math.round(resolution*16/9/2)*2;
   const outputWidth=ratio==="1:1"?shortEdge:ratio==="9:16"?shortEdge:longEdge;
   const outputHeight=ratio==="9:16"?longEdge:shortEdge;
@@ -687,14 +694,14 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     window.addEventListener("keydown",key);return()=>window.removeEventListener("keydown",key);
   });
   function editCue(index:number,patch:Partial<CaptionCue>){
-    if(busy||projectSaving)return;
+    if(busy||projectSaving||locked("captions"))return;
     const cue=captionCues[index];if(!cue)return;
     const next={...cue,...patch};
     if(!Number.isFinite(next.start)||!Number.isFinite(next.end)||next.start<0||next.end<=next.start||next.end>duration+.01)return;
     setCaptionCues(old=>old.map((c,i)=>i===index?next:c));cleanupOutput();
   }
   function addCue(){
-    if(busy||projectSaving||duration<.1||captionCues.length>=500)return;
+    if(busy||projectSaving||locked("captions")||duration<.1||captionCues.length>=500)return;
     const start=Math.min(playhead,Math.max(0,duration-.1));
     setCaptionCues(old=>[...old,{start,end:Math.min(duration,start+2),text:"New subtitle"}]);setSelectedCue(captionCues.length);cleanupOutput();
   }
@@ -819,13 +826,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         // The same destination is used for every clip. Its gain is connected
         // to the captured stream only, avoiding unexpected speaker playback.
         (canvas as HTMLCanvasElement & { __audioDestination?: MediaStreamAudioDestinationNode }).__audioDestination = destination;
-        if(voiceover){
+        if(voiceover&&!hidden("voice")){
           if(voiceover.size>25_000_000||!voiceover.type.startsWith("audio/"))throw new Error("Voiceover must be audio under 25 MB.");
           const buffer=await audio.decodeAudioData(await voiceover.arrayBuffer());
           voiceSource=audio.createBufferSource();voiceSource.buffer=buffer;
           const gain=audio.createGain();gain.gain.value=Math.max(0,Math.min(1,voiceVolume));voiceSource.connect(gain);gain.connect(destination);
         }
-        if(backgroundMusic){
+        if(backgroundMusic&&!hidden("music")){
           if(backgroundMusic.size>25_000_000 || !backgroundMusic.type.startsWith('audio/'))
             throw new Error('Background music must be an audio file smaller than 25 MB.');
           const musicBuffer=await audio.decodeAudioData(await backgroundMusic.arrayBuffer());
@@ -920,8 +927,8 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               paintClip(ctx,video,clip,width,height,framing);
               const at=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
               paintImageLayers(ctx,width,height,at,imageLayers,exportImages);
-              paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
-              paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
+              if(!hidden("title"))paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
+              if(!hidden("captions"))paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
               if(fadeBetweenClips)paintTransition(ctx,width,height,transitionStyle,transitionDuration,Math.max(0,(video.currentTime-clip.start)/speed),segment,clipIndex,clips.length);
             }
             const completed=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
@@ -1079,7 +1086,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <div className="studio-track-actions">
             <button type="button" disabled={busy||projectSaving||captionCues.length>=500} onClick={()=>{addCue();setInspectorTab("text")}}>+ Subtitle</button>
             <button type="button" disabled={busy} onClick={()=>{setIncludeAudio(v=>!v);cleanupOutput()}}>{includeAudio?"Mute source track":"Unmute source track"}</button>
-            <button type="button" disabled={busy||!backgroundMusic} onClick={()=>{setMusicVolume(v=>v===0?.3:0);cleanupOutput()}}>{musicVolume===0?"Unmute music":"Mute music"}</button>
+            <button type="button" disabled={busy||locked("music")||!backgroundMusic} onClick={()=>{setMusicVolume(v=>v===0?.3:0);cleanupOutput()}}>{musicVolume===0?"Unmute music":"Mute music"}</button>
           </div>
           <div className="studio-track-scroll">
             <div className="studio-track-grid" style={{width:`${timelineZoom*100}%`,minWidth:0}}>
@@ -1089,10 +1096,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Video</span><div style={{display:"flex",height:46,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,index,length,start})=><button type="button" key={clip.id} disabled={busy} title={"Drag to reorder · "+clip.name+" · "+sec(length)} draggable={!busy&&!projectSaving&&!mp4Busy} onDragStart={e=>{if(busy||projectSaving||mp4Busy){e.preventDefault();return;}stopPreview();draggingClipId.current=clip.id;e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",clip.id);}} onDragOver={e=>{if(!draggingClipId.current||busy||projectSaving||mp4Busy)return;e.preventDefault();e.dataTransfer.dropEffect="move";setDragTargetId(clip.id);}} onDragLeave={()=>setDragTargetId(current=>current===clip.id?null:current)} onDrop={e=>{e.preventDefault();reorderByDrop(clip.id);}} onDragEnd={()=>{draggingClipId.current=null;setDragTargetId(null);}} onClick={()=>{setInspectorCollapsed(false);setInspectorTab("clip");seekTimeline(start)}} aria-pressed={active===clip.id} className={"studio-video-track-clip"+(dragTargetId===clip.id?" is-drop-target":"")} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",background:active===clip.id?"#7544b0":"#44315e",color:"#fff",border:"1px solid #9277b5",fontSize:10}}><span className="studio-timeline-film"><ClipFilmstrip clip={clip}/><span className="studio-film-label"><span aria-hidden="true">⠿ </span>{index+1}. {clip.name}</span></span></button>)}</div>
               <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{!includeAudio?"Muted":sourceWaves[clip.id]?<svg viewBox="0 0 96 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded source audio waveform">{sourceWaves[clip.id].slice(Math.floor(clip.start/clip.duration*96),Math.max(1,Math.ceil(clip.end/clip.duration*96))).map((p,i,arr)=><line key={i} x1={(i+.5)*96/arr.length} x2={(i+.5)*96/arr.length} y1={10-p*9} y2={10+p*9} stroke="#b9e8ce" strokeWidth=".8"/>)}</svg>:Math.round((clip.gain??1)*100)+"%"}</button>)}</div>
               <span>Music</span><div style={{height:backgroundMusic?24:16,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?(musicPeaks.length?<svg viewBox="0 0 128 20" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded music waveform"><title>{backgroundMusic.name+" · "+sec(musicLength)}</title>{musicPeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={10-p*9} y2={10+p*9} stroke="#b9dcff" strokeWidth=".8"/>)}</svg>:backgroundMusic.name+" · loop"):"No soundtrack"}</div>
-              <span>Voiceover</span><div style={{position:"relative",height:voiceover?28:16,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onPointerDown={e=>beginLayerDrag(e,voiceStart,Math.min(voiceLength,duration),start=>{setVoiceStart(start);cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>seekTimeline(voiceStart))} title={voiceover.name+" · Drag to move"} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0,touchAction:"none",cursor:"grab"}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
+              <span>Voiceover</span><div style={{position:"relative",height:voiceover?28:16,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onPointerDown={e=>{if(!locked("voice"))beginLayerDrag(e,voiceStart,Math.min(voiceLength,duration),start=>{setVoiceStart(start);cleanupOutput()})}} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>seekTimeline(voiceStart))} title={voiceover.name+" · Drag to move"} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0,touchAction:"none",cursor:"grab"}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
               <span>Images</span><div style={{height:Math.max(16,imageLayers.length*22),position:"relative",background:"#241a32",overflow:"hidden"}}>{imageLayers.filter(l=>l.start<duration).map((l,i)=><button type="button" key={l.id} disabled={busy} onPointerDown={e=>{if(l.locked)return;beginLayerDrag(e,l.start,l.end-l.start,start=>{setSelectedImage(l.id);setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start,end:start+(l.end-l.start)}:a));cleanupOutput()})}} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setInspectorTab("images");setSelectedImage(l.id);seekTimeline(l.start)})} title="Drag image layer to move" style={{touchAction:"none",cursor:l.locked?"not-allowed":"grab",opacity:l.hidden?.45:1,position:"absolute",left:(l.start/duration*100)+"%",width:((Math.min(l.end,duration)-l.start)/duration*100)+"%",top:i*22,height:21,background:selectedImage===l.id?"#a66b40":"#644436",color:"#fff",overflow:"hidden"}}>{l.file.name}</button>)}</div>
               <span>Title</span><div style={{height:titleOverlay?24:16,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
-              <span>Subtitles</span><div style={{height:captionCues.length?28:16,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onPointerDown={e=>beginLayerDrag(e,c.start,c.end-c.start,start=>{setSelectedCue(i);setCaptionCues(old=>old.map((cue,index)=>index===i?{...cue,start,end:start+(c.end-c.start)}:cue));cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setInspectorTab("text");setSelectedCue(i);seekTimeline(c.start)})} style={{touchAction:"none",cursor:"grab",position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
+              <span>Subtitles</span><div style={{height:captionCues.length?28:16,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onPointerDown={e=>{if(!locked("captions"))beginLayerDrag(e,c.start,c.end-c.start,start=>{setSelectedCue(i);setCaptionCues(old=>old.map((cue,index)=>index===i?{...cue,start,end:start+(c.end-c.start)}:cue));cleanupOutput()})}} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setInspectorTab("text");setSelectedCue(i);seekTimeline(c.start)})} style={{touchAction:"none",cursor:"grab",position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
             </div>
           </div>
 
@@ -1150,9 +1157,9 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <input ref={musicPicker} hidden aria-label="Background music file" type="file" accept="audio/*" disabled={busy}
             onChange={e=>{const next=e.target.files?.[0]||null;e.target.value="";
               if(next&&next.size>25_000_000){setState("Background music exceeds 25 MB.");return;}
-              setBackgroundMusic(next);cleanupOutput();
+              if(locked("music"))return;setBackgroundMusic(next);cleanupOutput();
             }} />
-          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>musicPicker.current?.click()}>
+          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>{if(!locked("music"))musicPicker.current?.click()}}>
             {backgroundMusic?"Change music":"Choose audio file"}
           </button>
           <small className="studio-setting-file-name" title={backgroundMusic?.name||"No audio selected"}>
@@ -1160,7 +1167,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           </small>
           {backgroundMusic&&<label className="studio-setting-volume">Music level {Math.round(musicVolume*100)}%
             <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
-              value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
+              value={musicVolume} onChange={e=>{if(!locked("music")){setMusicVolume(Number(e.target.value));cleanupOutput()}}} />
           </label>}
           <fieldset disabled={busy||mp4Busy||projectSaving} className="studio-audio-processing"><legend>{t("Audio processing","Ses işleme")}</legend><label><input type="checkbox" checked={aiDenoise} onChange={e=>{setAiDenoise(e.target.checked);if(e.target.checked)setNoiseReduction(false);cleanupOutput()}}/>AI Noise Reduction · MP4</label><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);if(e.target.checked)setAiDenoise(false);cleanupOutput()}}/>Spectral noise reduction · MP4</label>
             <label><input type="checkbox" checked={lowCut} onChange={e=>{setLowCut(e.target.checked);cleanupOutput()}}/>Source low-cut (80 Hz rumble filter)</label>
@@ -1168,7 +1175,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <label><input type="checkbox" checked={audioDucking} onChange={e=>{setAudioDucking(e.target.checked);cleanupOutput()}}/>Duck music during voiceover</label>
             {audioDucking&&<label>Music level during voice {Math.round(duckLevel*100)}%<input type="range" min={0} max={1} step={.05} value={duckLevel} onChange={e=>{setDuckLevel(Number(e.target.value));cleanupOutput()}}/></label>}
           </fieldset>
-          {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>{t("Remove music","Müziği kaldır")}</button>}
+          {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{if(!locked("music")){setBackgroundMusic(null);cleanupOutput()}}}>{t("Remove music","Müziği kaldır")}</button>}
         </div>
         <div className="studio-setting-card" hidden={inspectorTab!=="layers"}>
           <strong>{t("Timeline layers","Zaman çizelgesi katmanları")}</strong>
@@ -1186,10 +1193,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <button type="button" disabled={busy||l.locked} onClick={()=>{setImageLayers(old=>old.filter(a=>a.id!==l.id));if(selectedImage===l.id)setSelectedImage(null);cleanupOutput()}}>{t("Delete","Sil")}</button>
             </div>
           </div>)}
-          {titleOverlay&&<button type="button" onClick={()=>setInspectorTab("text")}>{t("Title","Başlık")}: {titleOverlay}</button>}
-          {captionCues.length>0&&<button type="button" onClick={()=>setInspectorTab("text")}>{t("Subtitles","Altyazılar")} ({captionCues.length})</button>}
-          {backgroundMusic&&<button type="button" onClick={()=>setInspectorTab("audio")}>{t("Music","Müzik")}: {backgroundMusic.name}</button>}
-          {voiceover&&<button type="button" onClick={()=>setInspectorTab("audio")}>{t("Voiceover","Seslendirme")}: {voiceover.name}</button>}
+          {([["title",titleOverlay,t("Title","Başlık"),"text"],["captions",captionCues.length,t("Subtitles","Altyazılar"),"text"],["music",backgroundMusic?.name,t("Music","Müzik"),"audio"],["voice",voiceover?.name,t("Voiceover","Seslendirme"),"audio"]] as const).filter(([,value])=>Boolean(value)).map(([kind,value,label,tab])=><div key={kind} style={{display:"grid",gap:4}}><button type="button" onClick={()=>setInspectorTab(tab)}>{label}: {value}</button><div style={{display:"flex",gap:4,flexWrap:"wrap"}}><button type="button" aria-pressed={hidden(kind)} disabled={busy||mp4Busy||projectSaving||locked(kind)} onClick={()=>toggleLayerFlag(kind,"hidden")}>{hidden(kind)?t("Show","Göster"):t("Hide","Gizle")}</button><button type="button" aria-pressed={locked(kind)} disabled={busy||mp4Busy||projectSaving} onClick={()=>toggleLayerFlag(kind,"locked")}>{locked(kind)?t("Unlock","Kilidi aç"):t("Lock","Kilitle")}</button></div></div>)}
+          
+          
+          
         </div>
         <div className="studio-setting-card" hidden={inspectorTab!=="images"}>
           <strong>{t("Image & logo layers · MP4 / WebM","Görsel ve logo katmanları · MP4 / WebM")}</strong>
@@ -1206,12 +1213,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <button type="button" onClick={()=>{setImageLayers(old=>old.filter(a=>a.id!==l.id));setSelectedImage(null);cleanupOutput();}}>{t("Remove image layer","Görsel katmanını sil")}</button></fieldset>)}
         </div><div className="studio-setting-card" hidden={inspectorTab!=="audio"}>
           <strong>Voiceover · MP4 / WebM</strong>
-          <input ref={voicePicker} hidden type="file" accept="audio/*" disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(!f)return;if(f.size>25_000_000||!f.type.startsWith("audio/")){setState("Choose an audio file under 25 MB.");return;}setVoiceLength(0);setVoicePeaks([]);setVoiceover(f);cleanupOutput();}}/>
-          <button type="button" disabled={busy} onClick={()=>voicePicker.current?.click()}>{voiceover?"Replace voiceover":"Choose voiceover file"}</button>
-          {voiceover&&<><small>{voiceover.name} · {sec(voiceLength)}</small><label>Start (seconds)<input type="number" min={0} max={duration} step={.1} disabled={busy} value={voiceStart} onChange={e=>{setVoiceStart(Math.max(0,Math.min(duration,Number(e.target.value)||0)));cleanupOutput();}}/></label><label>Voice volume {Math.round(voiceVolume*100)}%<input type="range" min={0} max={1} step={.05} value={voiceVolume} disabled={busy} onChange={e=>{setVoiceVolume(Number(e.target.value));cleanupOutput();}}/></label><button type="button" disabled={busy} onClick={()=>{setVoiceover(null);setVoiceLength(0);cleanupOutput()}}>{t("Remove voiceover","Seslendirmeyi kaldır")}</button></>}
+          <input ref={voicePicker} hidden type="file" accept="audio/*" disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(!f||locked("voice"))return;if(f.size>25_000_000||!f.type.startsWith("audio/")){setState("Choose an audio file under 25 MB.");return;}setVoiceLength(0);setVoicePeaks([]);setVoiceover(f);cleanupOutput();}}/>
+          <button type="button" disabled={busy} onClick={()=>{if(!locked("voice"))voicePicker.current?.click()}}>{voiceover?"Replace voiceover":"Choose voiceover file"}</button>
+          {voiceover&&<><small>{voiceover.name} · {sec(voiceLength)}</small><label>Start (seconds)<input type="number" min={0} max={duration} step={.1} disabled={busy} value={voiceStart} onChange={e=>{if(locked("voice"))return;setVoiceStart(Math.max(0,Math.min(duration,Number(e.target.value)||0)));cleanupOutput();}}/></label><label>Voice volume {Math.round(voiceVolume*100)}%<input type="range" min={0} max={1} step={.05} value={voiceVolume} disabled={busy} onChange={e=>{setVoiceVolume(Number(e.target.value));cleanupOutput();}}/></label><button type="button" disabled={busy} onClick={()=>{if(!locked("voice")){setVoiceover(null);setVoiceLength(0);cleanupOutput()}}}>{t("Remove voiceover","Seslendirmeyi kaldır")}</button></>}
         </div><div className="studio-setting-card" hidden={inspectorTab!=="text"}>
           <label className="studio-setting-field" htmlFor="studio-video-title">Video title
-            <input id="studio-video-title" aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120}
+            <input id="studio-video-title" aria-label="Video title overlay" disabled={busy||locked("title")} value={titleOverlay} maxLength={120}
               onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" />
           </label>
           <small>Optional on-screen title · MP4 / WebM.</small>
@@ -1221,14 +1228,14 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <input ref={subtitlePicker} hidden type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
             onChange={e=>{
               const file=e.target.files?.[0];e.target.value="";
-              if(!file)return;
+              if(!file||locked("captions"))return;
               if(file.size>250_000){setState("Subtitle file exceeds 250 KB.");return;}
               void file.text().then(source=>{
                 const cues=parseSrt(source);setSelectedCue(null);setCaptionCues(cues);setSubtitleName(cues.length?file.name:"");cleanupOutput();
                 setState(cues.length?cues.length+" subtitle cues loaded for burn-in export.":"No valid SRT subtitle cues found.");
               }).catch(()=>setState("Could not read subtitles."));
             }} />
-          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>subtitlePicker.current?.click()}>
+          <button type="button" className="studio-setting-file-button" disabled={busy} onClick={()=>{if(!locked("captions"))subtitlePicker.current?.click()}}>
             {captionCues.length?"Replace subtitles":"Choose SRT file"}
           </button>
           <small className="studio-setting-file-name" title={subtitleName||"No subtitle file selected"}>
@@ -1240,10 +1247,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <label>Text<input disabled={busy} maxLength={500} value={captionCues[selectedCue].text} onChange={e=>editCue(selectedCue,{text:e.target.value})}/></label>
             <label>Start (seconds)<input disabled={busy} type="number" min={0} max={captionCues[selectedCue].end-.01} step={.01} value={captionCues[selectedCue].start} onChange={e=>editCue(selectedCue,{start:Number(e.target.value)})}/></label>
             <label>End (seconds)<input disabled={busy} type="number" min={captionCues[selectedCue].start+.01} max={duration} step={.01} value={captionCues[selectedCue].end} onChange={e=>editCue(selectedCue,{end:Number(e.target.value)})}/></label>
-            <button type="button" disabled={busy} onClick={()=>{setCaptionCues(old=>old.filter((_,i)=>i!==selectedCue));setSelectedCue(null);cleanupOutput()}}>{t("Delete selected subtitle","Seçili altyazıyı sil")}</button>
+            <button type="button" disabled={busy} onClick={()=>{if(locked("captions"))return;setCaptionCues(old=>old.filter((_,i)=>i!==selectedCue));setSelectedCue(null);cleanupOutput()}}>{t("Delete selected subtitle","Seçili altyazıyı sil")}</button>
           </fieldset>}
           {captionCues.length>0&&<button type="button" className="studio-setting-secondary" disabled={busy}
-            onClick={()=>{setCaptionCues([]);setSelectedCue(null);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
+            onClick={()=>{if(locked("captions"))return;setCaptionCues([]);setSelectedCue(null);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
         </div>
       </div>
     </section>
