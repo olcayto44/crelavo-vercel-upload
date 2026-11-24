@@ -323,3 +323,8 @@
 .studio-tool-page .studio-compact-video-editor .studio-result-download{position:sticky;bottom:0;z-index:2;background:#191a23;padding:8px 0;display:flex;justify-content:stretch}
 .studio-tool-page .studio-compact-video-editor .studio-result-download :is(a,button){display:block;width:100%;text-align:center;padding:10px;background:#7646d6;color:white!important;border-radius:7px;text-decoration:none}
 .studio-tool-page .studio-compact-video-editor .studio-export-error{color:#ffb5b5;background:#351b24;padding:10px;border-radius:6px;overflow-wrap:anywhere}
+
+.studio-tool-page .studio-render-result.is-expanded video{max-height:65dvh!important;object-fit:contain}
+.studio-tool-page .studio-render-result:fullscreen{display:flex!important;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;background:#08090e;padding:16px;box-sizing:border-box;overflow:auto}
+.studio-tool-page .studio-render-result:fullscreen video{width:100%!important;max-height:78dvh!important;height:auto;object-fit:contain}
+.studio-result-view-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
