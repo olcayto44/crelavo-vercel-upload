@@ -215,6 +215,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [includeAudio, setIncludeAudio] = useState(true);
   const [titleOverlay, setTitleOverlay] = useState("");
   const [captionCues, setCaptionCues] = useState<CaptionCue[]>([]);
+  const [selectedCue,setSelectedCue]=useState<number|null>(null);
   const [subtitleName,setSubtitleName] = useState("");
   const musicPicker=useRef<HTMLInputElement>(null);
   const subtitlePicker=useRef<HTMLInputElement>(null);
@@ -345,10 +346,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         const w=Math.round(360*aspect),h=360;
         if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
         paintClip(ctx,video,chosen,w,h,framing);
+        const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
+        paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
-  },[framing,chosen,ratio]);
+  },[framing,chosen,ratio,clips,titleOverlay,captionCues]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -364,6 +367,18 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   function syncPlayhead(video:HTMLVideoElement){
     const segment=segments.find(s=>s.clip.id===active);
     if(segment)setPlayhead(segment.start+Math.max(0,Math.min(segment.length,(video.currentTime-segment.clip.start)/(segment.clip.speed||1))));
+  }
+  function editCue(index:number,patch:Partial<CaptionCue>){
+    if(busy||projectSaving)return;
+    const cue=captionCues[index];if(!cue)return;
+    const next={...cue,...patch};
+    if(!Number.isFinite(next.start)||!Number.isFinite(next.end)||next.start<0||next.end<=next.start||next.end>duration+.01)return;
+    setCaptionCues(old=>old.map((c,i)=>i===index?next:c));cleanupOutput();
+  }
+  function addCue(){
+    if(busy||projectSaving||duration<.1||captionCues.length>=500)return;
+    const start=Math.min(playhead,Math.max(0,duration-.1));
+    setCaptionCues(old=>[...old,{start,end:Math.min(duration,start+2),text:"New subtitle"}]);setSelectedCue(captionCues.length);cleanupOutput();
   }
   function cleanupOutput() {
     if (output.current) URL.revokeObjectURL(output.current);
@@ -683,9 +698,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{includeAudio?Math.round((clip.gain??1)*100)+"%":"Muted"}</button>)}</div>
               <span>Music</span><div style={{height:24,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?backgroundMusic.name+" · loop":"No soundtrack"}</div>
               <span>Title</span><div style={{height:24,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
-              <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.filter(c=>c.start<duration).map((c,i)=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onClick={()=>seekTimeline(c.start)} style={{position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
+              <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onClick={()=>{setSelectedCue(i);seekTimeline(c.start)}} style={{position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
             </div>
           </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
+            <button type="button" disabled={busy||projectSaving||captionCues.length>=500} onClick={addCue}>+ Add subtitle at playhead</button>
+            <button type="button" disabled={busy} onClick={()=>{setIncludeAudio(v=>!v);cleanupOutput()}}>{includeAudio?"Mute source track":"Unmute source track"}</button>
+            <button type="button" disabled={busy||!backgroundMusic} onClick={()=>{setMusicVolume(v=>v===0?.3:0);cleanupOutput()}}>{musicVolume===0?"Unmute music":"Mute music"}</button>
+          </div>
+          {selectedCue!==null&&captionCues[selectedCue]&&<fieldset style={{display:"grid",gap:6,marginTop:8}}><legend>Edit selected subtitle</legend>
+            <label>Text<input disabled={busy} maxLength={500} value={captionCues[selectedCue].text} onChange={e=>editCue(selectedCue,{text:e.target.value})}/></label>
+            <label>Start (seconds)<input disabled={busy} type="number" min={0} max={captionCues[selectedCue].end-.01} step={.01} value={captionCues[selectedCue].start} onChange={e=>editCue(selectedCue,{start:Number(e.target.value)})}/></label>
+            <label>End (seconds)<input disabled={busy} type="number" min={captionCues[selectedCue].start+.01} max={duration} step={.01} value={captionCues[selectedCue].end} onChange={e=>editCue(selectedCue,{end:Number(e.target.value)})}/></label>
+            <button type="button" disabled={busy} onClick={()=>{setCaptionCues(old=>old.filter((_,i)=>i!==selectedCue));setSelectedCue(null);cleanupOutput()}}>Delete selected subtitle</button>
+          </fieldset>}
           <small style={{color:"#b8a8c9"}}>Click a clip or subtitle to seek to its timeline position. Adjust clip and track settings below.</small>
         </section>}
         <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
@@ -805,7 +831,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               if(!file)return;
               if(file.size>250_000){setState("Subtitle file exceeds 250 KB.");return;}
               void file.text().then(source=>{
-                const cues=parseSrt(source);setCaptionCues(cues);setSubtitleName(cues.length?file.name:"");cleanupOutput();
+                const cues=parseSrt(source);setSelectedCue(null);setCaptionCues(cues);setSubtitleName(cues.length?file.name:"");cleanupOutput();
                 setState(cues.length?cues.length+" subtitle cues loaded for burn-in export.":"No valid SRT subtitle cues found.");
               }).catch(()=>setState("Could not read subtitles."));
             }} />
@@ -816,7 +842,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             {subtitleName||"No subtitle file selected · max 250 KB"}
           </small>
           {captionCues.length>0&&<button type="button" className="studio-setting-secondary" disabled={busy}
-            onClick={()=>{setCaptionCues([]);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
+            onClick={()=>{setCaptionCues([]);setSelectedCue(null);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
         </div>
       </div>
       <div className="studio-export-actions">
