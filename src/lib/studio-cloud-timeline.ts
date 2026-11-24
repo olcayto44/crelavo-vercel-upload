@@ -6,9 +6,10 @@ const BUCKET = "studio-private";
 const MAX_TOTAL = 90_000_000;
 const MAX_FILE = 90_000_000;
 const db = () => supabaseBrowser() as SupabaseClient<any>;
-type ClipAdjustments = { rotation?: number; flipX?: boolean; flipY?: boolean; zoom?: number; gain?: number; speed?: number };
+type ClipAdjustments = { rotation?: number; flipX?: boolean; flipY?: boolean; zoom?: number; gain?: number; speed?: number; cropLeft?:number; cropRight?:number; cropTop?:number; cropBottom?:number; panX?:number; panY?:number };
+function bounded(v:unknown,min:number,max:number,fallback=0){return typeof v==="number"&&Number.isFinite(v)?Math.min(max,Math.max(min,v)):fallback;}
 function adjustments(c: ClipAdjustments): ClipAdjustments {
- return {rotation:[0,90,180,270].includes(c.rotation??0)?c.rotation??0:0,flipX:c.flipX===true,flipY:c.flipY===true,zoom:typeof c.zoom==="number"&&Number.isFinite(c.zoom)?Math.min(3,Math.max(1,c.zoom)):1,gain:typeof c.gain==="number"&&Number.isFinite(c.gain)?Math.min(1,Math.max(0,c.gain)):1,speed:[.5,.75,1,1.25,1.5,2].includes(c.speed??1)?c.speed??1:1};
+ return {rotation:[0,90,180,270].includes(c.rotation??0)?c.rotation??0:0,flipX:c.flipX===true,flipY:c.flipY===true,zoom:typeof c.zoom==="number"&&Number.isFinite(c.zoom)?Math.min(3,Math.max(1,c.zoom)):1,gain:typeof c.gain==="number"&&Number.isFinite(c.gain)?Math.min(1,Math.max(0,c.gain)):1,speed:[.5,.75,1,1.25,1.5,2].includes(c.speed??1)?c.speed??1:1,cropLeft:bounded(c.cropLeft,0,.4),cropRight:bounded(c.cropRight,0,.4),cropTop:bounded(c.cropTop,0,.4),cropBottom:bounded(c.cropBottom,0,.4),panX:bounded(c.panX,-1,1),panY:bounded(c.panY,-1,1)};
 }
 export type CloudTimelineClip = ClipAdjustments & { id: string; file: File; name: string; duration: number; start: number; end: number };
 export type CloudTimelineSettings = {
