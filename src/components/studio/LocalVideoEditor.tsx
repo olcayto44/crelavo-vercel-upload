@@ -166,6 +166,26 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
+  const [history,setHistory]=useState<{past:Clip[][];future:Clip[][]}>({past:[],future:[]});
+  const historyRef=useRef(history);
+  const retainedUrls=useRef(new Set<string>());
+  function changeHistory(next:{past:Clip[][];future:Clip[][]}){
+    historyRef.current=next;setHistory(next);
+  }
+  function rememberClips(){
+    changeHistory({past:[...historyRef.current.past,clips].slice(-40),future:[]});
+  }
+  function restoreClips(direction:"undo"|"redo"){
+    if(busy||projectSaving)return;
+    const h=historyRef.current;
+    const stack=direction==="undo"?h.past:h.future;
+    if(!stack.length)return;
+    const next=stack[stack.length-1];
+    changeHistory(direction==="undo"?{past:h.past.slice(0,-1),future:[...h.future,clips].slice(-40)}:{past:[...h.past,clips].slice(-40),future:h.future.slice(0,-1)});
+    cleanupOutput();setClips(next);
+    setActive(current=>next.some(c=>c.id===current)?current:next[0]?.id||null);
+    setState(direction==="undo"?"Timeline edit undone.":"Timeline edit redone.");
+  }
   const [active, setActive] = useState<string | null>(null);
   const [state, setState] = useState("Add local clips to start. Videos remain on your device.");
   const [busy, setBusy] = useState(false);
@@ -203,8 +223,13 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     }).catch(()=>{if(live&&allowAnonymousLocalSave){setProjectOwner("preview-local");setSignedIn(false)}});
     return()=>{live=false};
   },[allowAnonymousLocalSave]);
-  useEffect(() => { files.current = clips; }, [clips]);
-  useEffect(() => () => { files.current.forEach(c => URL.revokeObjectURL(c.url)); if (output.current) URL.revokeObjectURL(output.current); }, []);
+  useEffect(() => {
+    files.current=clips;
+    const live=new Set([...clips,...history.past.flat(),...history.future.flat()].map(c=>c.url));
+    for(const url of retainedUrls.current)if(!live.has(url)){URL.revokeObjectURL(url);retainedUrls.current.delete(url);}
+    for(const url of live)retainedUrls.current.add(url);
+  }, [clips,history]);
+  useEffect(() => () => { for(const url of retainedUrls.current)URL.revokeObjectURL(url); if (output.current) URL.revokeObjectURL(output.current); }, []);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0);
@@ -228,7 +253,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       const project=await openProjectLocally(projectOwner);
       if(!project||project.owner!==projectOwner){setState("No locally saved video timeline found for this account.");return;}
       const restored: Clip[]=project.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
-      files.current.forEach(old=>URL.revokeObjectURL(old.url));
+      changeHistory({past:[],future:[]});
       files.current=restored;
       setClips(restored);setActive(restored[0]?.id||null);
       setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
@@ -258,7 +283,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     try{
       const saved=await loadCloudTimeline();
       const restored: Clip[]=saved.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
-      files.current.forEach(old=>URL.revokeObjectURL(old.url));
+      changeHistory({past:[],future:[]});
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
@@ -309,16 +334,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       } catch (error) { URL.revokeObjectURL(url); setState(error instanceof Error ? error.message : "Video unavailable."); }
     }
     if (incoming.length) {
-      cleanupOutput(); setClips(existing => [...existing, ...incoming]); setActive(current => current || incoming[0].id);
+      rememberClips(); cleanupOutput(); setClips(existing => [...existing, ...incoming]); setActive(current => current || incoming[0].id);
       setState(incoming.length + " new clip(s) added · " + (clips.length + incoming.length) + " clips in timeline. Rearrange, trim, or remove before exporting.");
     }
   }
   function update(id: string, patch: Partial<Clip>) {
-    if (busy) return; cleanupOutput();
+    if (busy||projectSaving) return; rememberClips(); cleanupOutput();
     setClips(existing => existing.map(clip => clip.id !== id ? clip : { ...clip, ...patch }));
   }
   function move(id: string, delta: number) {
-    if (busy) return; cleanupOutput();
+    if (busy||projectSaving) return; rememberClips(); cleanupOutput();
     setClips(existing => { const next = [...existing]; const i = next.findIndex(c => c.id === id); const j = i + delta; if (i < 0 || j < 0 || j >= next.length) return existing; [next[i], next[j]] = [next[j], next[i]]; return next; });
   }
   function reorderByDrop(targetId:string){
@@ -326,7 +351,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(busy||!sourceId||sourceId===targetId)return;
     const sourceIndex=clips.findIndex(c=>c.id===sourceId),targetIndex=clips.findIndex(c=>c.id===targetId);
     if(sourceIndex<0||targetIndex<0)return;
-    cleanupOutput();
+    rememberClips();cleanupOutput();
     setClips(existing=>{
       const from=existing.findIndex(c=>c.id===sourceId),to=existing.findIndex(c=>c.id===targetId);
       if(from<0||to<0||from===to)return existing;
@@ -336,16 +361,15 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setState("Timeline reordered. Export uses the new clip order.");
   }
   function remove(id: string) {
-    if (busy) return; cleanupOutput();
-    setClips(existing => { const item = existing.find(c => c.id === id); const next = existing.filter(c => c.id !== id);
-      if (item && !next.some(c => c.url === item.url)) URL.revokeObjectURL(item.url); setActive(current => current === id ? (next[0]?.id || null) : current); return next; });
+    if (busy||projectSaving) return; rememberClips();cleanupOutput();
+    const next=clips.filter(c=>c.id!==id);setClips(next);setActive(current=>current===id?(next[0]?.id||null):current);
   }
   function duplicate(id:string){
     if(busy)return;
     if(clips.length>=30){setState("Timeline supports up to 30 clips.");return;}
     const item=clips.find(c=>c.id===id);if(!item)return;
     const copy:Clip={...item,id:crypto.randomUUID(),name:(item.name+" (copy)").slice(0,130)};
-    cleanupOutput();
+    rememberClips();cleanupOutput();
     setClips(existing=>{
       if(existing.length>=30)return existing;
       const index=existing.findIndex(c=>c.id===id);if(index<0)return existing;
@@ -368,7 +392,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     if(clips.length>=30){setState("Timeline supports up to 30 clips.");return;}
     const at = preview.current.currentTime;
     if (at <= item.start + .15 || at >= item.end - .15) { setState("Play or seek inside the selected trim range before splitting."); return; }
-    cleanupOutput();
+    rememberClips();cleanupOutput();
     const second: Clip = { ...item, id: crypto.randomUUID(), name: item.name + " (part 2)", start: at };
     setClips(existing => { const i = existing.findIndex(c => c.id === id); if (i < 0) return existing; const next = [...existing]; next.splice(i, 1, { ...item, end: at }, second); return next; });
     setState("Clip split at " + sec(at) + ". Both parts reference your original local file.");
@@ -602,6 +626,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           :framing==="blur"?"Full video preserved with a blurred background.":"Full video preserved. Borders may appear when the source and output ratios differ."}</p>
         {chosen && <p className="studio-selected-clip-note">Preview: selected clip only ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
+        <div role="group" aria-label="Timeline history" style={{display:"flex",gap:8,marginBottom:8}}><button type="button" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶ Undo</button><button type="button" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷ Redo</button></div>
         <p className="studio-timeline-hint">Drag clips by their thumbnail to reorder. Arrow buttons also work for keyboard users.</p>
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>
           {clips.map((clip, index) => <div key={clip.id}
