@@ -69,7 +69,12 @@
 .studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square{width:min(100%,315px)}
 .studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape{width:min(100%,640px)}
 .studio-tool-page .studio-compact-video-editor .studio-video-preview-frame video{width:100%!important;height:100%!important;min-height:0}
-.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;background:#000!important;display:grid!important;place-items:center!important;border-radius:0!important;aspect-ratio:auto!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen canvas{position:absolute!important;inset:50% auto auto 50%!important;transform:translate(-50%,-50%);width:min(100vw,calc(100vh * var(--fullscreen-ratio)))!important;height:min(100vh,calc(100vw / var(--fullscreen-ratio)))!important;object-fit:contain!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait:fullscreen{--fullscreen-ratio:0.5625}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape:fullscreen{--fullscreen-ratio:1.7777777778}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square:fullscreen{--fullscreen-ratio:1}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen video{visibility:hidden!important}
 .studio-tool-page .studio-compact-video-editor .studio-video-no-clips{color:var(--muted);font-size:12px;text-align:center;padding:18px}
 .studio-tool-page .studio-compact-video-editor .studio-preview-transport{flex:none;display:grid;gap:4px;padding:4px 2px}
 .studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
