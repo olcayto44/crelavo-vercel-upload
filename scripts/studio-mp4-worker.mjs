@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { execFileSync } from "node:child_process";
+import { createServer } from "node:http";
 import { composeMp4, validateTimeline } from "./studio-ffmpeg-compose.mjs";
 
 const bucket="studio-private";
@@ -147,6 +149,28 @@ async function processJob(db,job) {
     if(folder)await rm(folder,{recursive:true,force:true}).catch(()=>{});
   }
 }
+async function checkConnection(db) {
+  execFileSync(ffmpeg,["-version"],{stdio:"ignore",timeout:10000});
+  execFileSync(ffprobe,["-version"],{stdio:"ignore",timeout:10000});
+  for(const table of ["studio_render_jobs","studio_timeline_versions","studio_assets"]){
+    const {error}=await db.from(table).select("id",{head:true}).limit(1);
+    if(error)throw new Error("SUPABASE_TABLE_CHECK_FAILED:"+table);
+  }
+  const {data,error}=await db.storage.getBucket(bucket);
+  if(error||!data||data.public)throw new Error("PRIVATE_BUCKET_CHECK_FAILED");
+}
+async function runConnectionCheck(){
+  const db=makeDb();
+  await checkConnection(db);
+  process.stdout.write("STUDIO_WORKER_PREFLIGHT_OK: FFmpeg, FFprobe, tables and private bucket verified; queue disabled.\n");
+  const server=createServer((req,res)=>{
+    if(req.method!=="GET"||req.url!=="/health"){res.writeHead(404);res.end();return;}
+    res.writeHead(200,{"Content-Type":"application/json","Cache-Control":"no-store"});
+    res.end(JSON.stringify({ok:true,mode:"preflight",queueEnabled:false}));
+  });
+  server.listen(Number(process.env.PORT||8080),"0.0.0.0");
+  for(const signal of ["SIGTERM","SIGINT"])process.once(signal,()=>server.close(()=>process.exit(0)));
+}
 export async function runWorker({once=false}={}) {
   const db=makeDb();
   process.stdout.write("Studio MP4 worker running; server-side jobs only.\n");
@@ -158,7 +182,7 @@ export async function runWorker({once=false}={}) {
   }while(!once);
 }
 if(process.argv[1] && path.resolve(process.argv[1])===new URL(import.meta.url).pathname){
-  runWorker({once:process.argv.includes("--once")}).catch(error=>{
+  (process.argv.includes("--preflight")?runConnectionCheck():runWorker({once:process.argv.includes("--once")})).catch(error=>{
     process.stderr.write("Worker cannot start: "+(error instanceof Error?error.message:"unknown")+"\n");
     process.exitCode=1;
   });
