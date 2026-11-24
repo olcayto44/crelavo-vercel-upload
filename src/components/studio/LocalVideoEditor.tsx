@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { supabaseBrowser } from "@/lib/supabase";
 import { saveCloudTimeline, loadCloudTimeline } from "@/lib/studio-cloud-timeline";
 import { addMediaRecorderWebmDuration } from "@/lib/studio-webm-duration";
@@ -232,6 +233,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const candidate=new URLSearchParams(window.location.search).get("studioCategory");
     if(candidate&&/^[a-z0-9_]{1,40}$/.test(candidate))setStudioReturnCategory(candidate);
   },[]);
+  const {user:authUser,openAuth}=useAuth();
   const [projectOwner,setProjectOwner] = useState("");
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
@@ -405,7 +407,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       else if(allowAnonymousLocalSave){setProjectOwner("preview-local");setSignedIn(false)}
     }).catch(()=>{if(live&&allowAnonymousLocalSave){setProjectOwner("preview-local");setSignedIn(false)}});
     return()=>{live=false};
-  },[allowAnonymousLocalSave]);
+  },[allowAnonymousLocalSave,authUser?.id]);
   useEffect(() => {
     files.current=clips;
     const live=new Set([...clips,...history.past.flat(),...history.future.flat()].map(c=>c.url));
@@ -427,6 +429,20 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
   },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise]);
+  async function signInForMp4(){
+    if(busy||projectSaving||mp4Busy)return;
+    // Keep the current editor mounted during the account modal. Save a separate guest recovery copy before any redirect.
+    if(clips.length){
+      const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
+      if(size>150_000_000){setMp4Message(t("Project exceeds local recovery limit (150 MB). Export WebM or reduce media before signing in.","Proje yerel kurtarma sınırını (150 MB) aşıyor. Girişten önce WebM üretin veya dosyaları küçültün."));return;}
+      setProjectSaving(true);
+      try{await saveProjectLocally({id:"preview-local:mp4-handoff",owner:"preview-local",savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers,transitionStyle,transitionDuration,audioDucking,duckLevel,audioCompressor,lowCut,noiseReduction,aiDenoise});sessionStorage.setItem("crelavo-mp4-handoff","1");}
+      catch{setMp4Message(t("Could not save recovery copy. Sign-in cancelled to protect your project.","Kurtarma kopyası kaydedilemedi. Projenizi korumak için giriş iptal edildi."));return;}
+      finally{setProjectSaving(false);}
+    }
+    exportDialog.current?.close();openAuth("login",{next:window.location.pathname+window.location.search});
+  }
+  useEffect(()=>{if(!signedIn||!projectOwner||sessionStorage.getItem("crelavo-mp4-handoff")!=="1")return;if(clips.length){sessionStorage.removeItem("crelavo-mp4-handoff");return;}void reopenTimeline(false,true);},[signedIn,projectOwner]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
     const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
@@ -443,12 +459,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     }catch{setState("Could not save locally. Check available browser storage space.");}
     finally{setProjectSaving(false)}
   }
-  async function reopenTimeline(recovery=false){
+  async function reopenTimeline(recovery=false,handoff=false){
     if(!projectOwner||busy||projectSaving)return;
     setProjectSaving(true);
     try{
-      const project=await openProjectLocally(recovery?projectOwner+":recovery":projectOwner);
-      if(!project||project.owner!==projectOwner){setState("No locally saved video timeline found for this account.");return;}
+      const project=await openProjectLocally(handoff?"preview-local:mp4-handoff":recovery?projectOwner+":recovery":projectOwner);
+      if(!project||project.owner!==(handoff?"preview-local":projectOwner)){setState("No locally saved video timeline found for this account.");return;}
       const restored: Clip[]=project.clips.map(clip=>({...clip,url:URL.createObjectURL(clip.file)}));
       changeHistory({past:[],future:[]});
       files.current=restored;
@@ -463,6 +479,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setTransitionStyle(project.transitionStyle??"black");setTransitionDuration(project.transitionDuration??.4);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
       cleanupOutput();
+      if(handoff){sessionStorage.removeItem("crelavo-mp4-handoff");setExportFormat("mp4");setMp4Message(t("Guest project restored. Ready for cloud export.","Misafir projesi geri yüklendi. Bulut çıktısına hazır."));exportDialog.current?.showModal();}
       setState("Local timeline reopened. You can continue editing and exporting.");
     }catch{setState("Could not reopen this timeline in the current browser.");}
     finally{setProjectSaving(false)}
@@ -1175,7 +1192,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </div>
     <dialog ref={exportDialog} className="studio-export-dialog" aria-labelledby="studio-export-dialog-title" onCancel={e=>{if(busy||mp4Busy||projectSaving)e.preventDefault()}}>
       <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">{clips.length>1?"Merge & export videos":"Export video"}</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
-      <p className="studio-format-help">All clips are combined in timeline order into one output file, using the selected format and settings.</p><div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{outputWidth} × {outputHeight}</strong></div><div><small>Estimated size</small><strong>{exportFormat==="webm"&&duration?`~${(duration*(videoBitrate/1_000_000+.128)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>{exportFormat==="webm"?`Target video bitrate ${(videoBitrate/1_000_000).toFixed(1)} Mbps; actual file size varies.`:"Cloud encoder determines actual file size."}</small>
+      <p className="studio-format-help">{t("All clips are combined in timeline order into one output file.","Tüm klipler zaman çizelgesi sırasıyla tek dosyada birleştirilir.")}</p><button type="button" disabled={busy||mp4Busy||!clips.length} onClick={()=>{exportDialog.current?.close();seekTimeline(0);}}>{t("Review timeline preview","Zaman çizelgesi önizlemesini kontrol et")}</button><div className="studio-export-summary"><div><small>Duration</small><strong>{timecode(duration)}</strong></div><div><small>Dimensions</small><strong>{outputWidth} × {outputHeight}</strong></div><div><small>Estimated size</small><strong>{exportFormat==="webm"&&duration?`~${(duration*(videoBitrate/1_000_000+.128)/8).toFixed(1)} MB`:"—"}</strong></div></div><small>{exportFormat==="webm"?`Target video bitrate ${(videoBitrate/1_000_000).toFixed(1)} Mbps; actual file size varies.`:"Cloud encoder determines actual file size."}</small>
       <div className="studio-export-format" role="group" aria-label="Export format">
         <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
         <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
@@ -1204,7 +1221,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </label>
 </div>
       <div className="studio-export-actions">
-        {exportFormat==="mp4"&&!signedIn&&<small role="status">Sign in to export MP4. WebM can be rendered locally.</small>}
+        {exportFormat==="mp4"&&!signedIn&&<div><small role="status">{t("Sign in for private MP4 rendering. Your current project will be preserved in this browser.","Özel MP4 üretimi için giriş yapın. Mevcut projeniz bu tarayıcıda korunur.")}</small><button type="button" disabled={projectSaving||busy} onClick={()=>void signInForMp4()}>{t("Sign in & continue","Giriş yap ve devam et")}</button></div>}
         {exportFormat==="mp4"&&(titleOverlay.trim()||captionCues.length>0)&&<small role="status">MP4 does not yet support title or subtitle layers. Remove them or choose WebM.</small>}
         {exportFormat==="mp4"&&fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)&&<small role="status">Choose fade through black or true crossfade for MP4, or use WebM.</small>}
         {exportFormat==="webm"&&((fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction)&&<small role="status">Selected effects require MP4. Choose MP4 or turn off these effects.</small>}
