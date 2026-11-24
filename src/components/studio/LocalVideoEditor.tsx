@@ -9,7 +9,8 @@ const accept = "video/mp4,video/webm,video/quicktime,video/x-m4v";
 const sec = (n: number) => Number.isFinite(n) ? n.toFixed(1) + "s" : "—";
 const VIDEO_PROJECT_DB = "crelavo-studio-local-video-project-v1";
 type CaptionCue = { start: number; end: number; text: string };
-type SavedVideoProject = { voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
+type ImageLayer={id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number};
+type SavedVideoProject = { imageLayers?:ImageLayer[]; voiceover?:File|null; voiceStart?:number; voiceVolume?:number; voiceLength?:number; id: string; owner: string; savedAt: number; clips: Array<Omit<Clip, "url">>; ratio: "16:9" | "9:16" | "1:1"; resolution: number; includeAudio: boolean; captionCues?: CaptionCue[]; titleOverlay?: string; backgroundMusic?: File | null; musicVolume?: number; fadeBetweenClips?: boolean; framing?: "cover" | "contain" | "blur" };
 async function projectDb() {
  return await new Promise<IDBDatabase>((resolve,reject)=>{
   const request=indexedDB.open(VIDEO_PROJECT_DB,1);
@@ -92,6 +93,13 @@ function parseSrt(source: string): CaptionCue[] {
 }
 function captionAt(cues: CaptionCue[], at: number) {
   return cues.find(cue => at >= cue.start && at < cue.end)?.text || "";
+}
+function paintImageLayers(ctx:CanvasRenderingContext2D,w:number,h:number,at:number,layers:ImageLayer[],images:Map<string,ImageBitmap>){
+  for(const layer of layers){
+    const image=images.get(layer.id);if(!image||at<layer.start||at>=layer.end)continue;
+    const width=Math.min(w*layer.size,h*layer.size*image.width/image.height),height=width*image.height/image.width;
+    ctx.save();ctx.globalAlpha=layer.opacity;ctx.drawImage(image,w*layer.x-width/2,h*layer.y-height/2,width,height);ctx.restore();
+  }
 }
 function paintOverlay(ctx: CanvasRenderingContext2D, width: number, height: number, text: string, bottom: boolean) {
   if (!text) return;
@@ -220,6 +228,19 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const musicPicker=useRef<HTMLInputElement>(null);
   const subtitlePicker=useRef<HTMLInputElement>(null);
   const [backgroundMusic,setBackgroundMusic] = useState<File|null>(null);
+  const [imageLayers,setImageLayers]=useState<ImageLayer[]>([]);
+  const [selectedImage,setSelectedImage]=useState<string|null>(null);
+  const imagePicker=useRef<HTMLInputElement>(null);
+  const imageBitmaps=useRef(new Map<string,ImageBitmap>());
+  useEffect(()=>{
+    let live=true;const ids=new Set(imageLayers.map(l=>l.id));
+    for(const [id,bitmap] of imageBitmaps.current){if(!ids.has(id)){bitmap.close();imageBitmaps.current.delete(id);}}
+    for(const layer of imageLayers){if(imageBitmaps.current.has(layer.id))continue;
+      void createImageBitmap(layer.file).then(bitmap=>{if(!live){bitmap.close();return;}imageBitmaps.current.get(layer.id)?.close();imageBitmaps.current.set(layer.id,bitmap);}).catch(()=>{if(live)setState("Image layer could not be decoded.");});
+    }
+    return()=>{live=false;};
+  },[imageLayers]);
+  useEffect(()=>()=>{for(const bitmap of imageBitmaps.current.values())bitmap.close();imageBitmaps.current.clear();},[]);
   const [voiceover,setVoiceover]=useState<File|null>(null);
   const [voiceStart,setVoiceStart]=useState(0);
   const [voiceVolume,setVoiceVolume]=useState(1);
@@ -274,27 +295,27 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   // Separate recovery record: autosave never overwrites an explicit manual save.
   useEffect(()=>{
     if(!autoSave||!projectOwner||busy||projectSaving||!clips.length)return;
-    const size=clips.reduce((sum,c)=>sum+c.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0);
+    const size=clips.reduce((sum,c)=>sum+c.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
     if(size>150_000_000){setAutoSaveStatus("Recovery unavailable: project exceeds 150 MB.");return;}
     let current=true;
     setAutoSaveStatus("Unsaved recovery changes");
     const timer=window.setTimeout(()=>{
-      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength};
+      const project:SavedVideoProject={id:projectOwner+":recovery",owner:projectOwner,savedAt:Date.now(),clips:clips.map(({url,...data})=>data),ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers};
       setAutoSaveStatus("Saving recovery copy…");
       void saveProjectLocally(project).then(()=>{if(current)setAutoSaveStatus("Recovery saved at "+new Date(project.savedAt).toLocaleTimeString());}).catch(()=>{if(current)setAutoSaveStatus("Recovery save failed. Check browser storage.");});
     },2500);
     return()=>{current=false;window.clearTimeout(timer);};
-  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength]);
+  },[autoSave,projectOwner,busy,projectSaving,clips,ratio,resolution,includeAudio,captionCues,titleOverlay,backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers]);
   async function saveTimeline(){
     if(!projectOwner||!clips.length||busy||projectSaving)return;
-    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0);
+    const size=clips.reduce((sum,clip)=>sum+clip.file.size,0)+(backgroundMusic?.size||0)+(voiceover?.size||0)+imageLayers.reduce((n,l)=>n+l.file.size,0);
     if(size>150_000_000){setState("Local project save supports up to 150 MB of source clips. Export or reduce source size.");return;}
     setProjectSaving(true);
     try{
       const project: SavedVideoProject={
         id:projectOwner,owner:projectOwner,savedAt:Date.now(),
         clips:clips.map(({url,...data})=>data),
-        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength
+        ratio,resolution,includeAudio,captionCues,titleOverlay:titleOverlay.slice(0,120),backgroundMusic,musicVolume,fadeBetweenClips,framing,voiceover,voiceStart,voiceVolume,voiceLength,imageLayers
       };
       await saveProjectLocally(project);
       setState("Timeline saved to this browser for your Crelavo account. Other devices cannot access this copy.");
@@ -314,6 +335,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       setRatio(project.ratio);setResolution(project.resolution);setIncludeAudio(project.includeAudio);
       setCaptionCues(Array.isArray(project.captionCues)?project.captionCues:[]);setTitleOverlay(project.titleOverlay||'');
       setBackgroundMusic(project.backgroundMusic instanceof File?project.backgroundMusic:null);
+      setImageLayers(Array.isArray(project.imageLayers)?project.imageLayers:[]);setSelectedImage(null);
       setVoiceover(project.voiceover instanceof File?project.voiceover:null);setVoiceStart(project.voiceStart||0);setVoiceVolume(project.voiceVolume??1);setVoiceLength(project.voiceLength||0);
       setMusicVolume(typeof project.musicVolume==='number'&&Number.isFinite(project.musicVolume)?Math.min(1,Math.max(0,project.musicVolume)):0.3);
       setFadeBetweenClips(Boolean(project.fadeBetweenClips));setFraming(project.framing==="blur"?"blur":project.framing==="cover"?"cover":"contain");
@@ -324,6 +346,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   }
   async function saveTimelineCloud(){
     if(!projectOwner||!signedIn||!clips.length||busy||projectSaving)return;
+    if(imageLayers.length){setState("Image layers currently support local save and WebM export. Remove image layers before cloud save.");return;}
     if(voiceover){setState("Voiceover currently supports local project save and WebM export. Remove voiceover before cloud save.");return;}
     setProjectSaving(true);setState("Uploading source clips to your private cloud…");
     try{
@@ -344,6 +367,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       files.current=restored;setClips(restored);setActive(restored[0]?.id||null);
       setRatio(saved.ratio);setResolution(saved.resolution);setIncludeAudio(saved.includeAudio);
       setCaptionCues(saved.captionCues);setTitleOverlay(saved.titleOverlay);
+      setImageLayers([]);setSelectedImage(null);
       setBackgroundMusic(saved.backgroundMusic);setMusicVolume(saved.musicVolume);setVoiceover(null);setVoiceStart(0);setVoiceLength(0);setVoiceVolume(1);
       setFadeBetweenClips(saved.fadeBetweenClips);setFraming(saved.framing==="blur"?"blur":saved.framing==="cover"?"cover":"contain");cleanupOutput();
       setState("Cloud timeline version "+saved.version+" reopened with playable source media.");
@@ -370,11 +394,12 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
         paintClip(ctx,video,chosen,w,h,framing);
         const at=clips.slice(0,clips.findIndex(c=>c.id===chosen.id)).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0)+Math.max(0,Math.min((chosen.end-chosen.start)/(chosen.speed||1),(video.currentTime-chosen.start)/(chosen.speed||1)));
+        paintImageLayers(ctx,w,h,at,imageLayers,imageBitmaps.current);
         paintOverlay(ctx,w,h,titleOverlay.slice(0,120),false);paintOverlay(ctx,w,h,captionAt(captionCues,at),true);
       }
       frame=requestAnimationFrame(draw);
     };draw();return()=>cancelAnimationFrame(frame);
-  },[framing,chosen,ratio,clips,titleOverlay,captionCues]);
+  },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
   useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
@@ -501,6 +526,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const stream = canvas.captureStream(30);
     const AudioContextConstructor = window.AudioContext;
     let audio: AudioContext | null = null;
+    const exportImages=new Map<string,ImageBitmap>();
     let musicSource: AudioBufferSourceNode | null = null;
     let voiceSource: AudioBufferSourceNode | null=null;
     let musicGainNode: GainNode | null = null;
@@ -510,6 +536,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     const chunks: BlobPart[] = [];
     let recordDone: Promise<void> | undefined;
     try {
+      for(const layer of imageLayers)exportImages.set(layer.id,await createImageBitmap(layer.file));
       if (includeAudio || backgroundMusic || voiceover) {
         audio = new AudioContextConstructor();
         await audio.resume();
@@ -607,6 +634,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             if (vw && vh && video.readyState >= 2) {
               paintClip(ctx,video,clip,width,height,framing);
               const at=elapsed+Math.min(segment,Math.max(0,(video.currentTime-clip.start)/speed));
+              paintImageLayers(ctx,width,height,at,imageLayers,exportImages);
               paintOverlay(ctx,width,height,titleOverlay.slice(0,120),false);
               paintOverlay(ctx,width,height,captionAt(captionCues,at),true);
               if(fadeBetweenClips&&clips.length>1){
@@ -656,6 +684,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       stream.getTracks().forEach(track => track.stop());
       if(musicSource){try{musicSource.stop()}catch{}}
       if(voiceSource){try{voiceSource.stop()}catch{}}
+      for(const bitmap of exportImages.values())bitmap.close();
       if (audio) await audio.close().catch(() => {});
       setBusy(false);
     }
@@ -730,6 +759,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Source audio</span><div style={{display:"flex",height:24,overflow:"hidden",background:"#241a32",borderRadius:4}}>{segments.map(({clip,length,start})=><button type="button" key={clip.id} disabled={busy} onClick={()=>seekTimeline(start)} title={clip.name+" source audio"} style={{flex:"0 0 "+(length/duration*100)+"%",minWidth:0,overflow:"hidden",background:includeAudio&&(clip.gain??1)>0?"#265749":"#352c42",color:"#fff",border:"1px solid #4d786d",fontSize:10}}>{includeAudio?Math.round((clip.gain??1)*100)+"%":"Muted"}</button>)}</div>
               <span>Music</span><div style={{height:24,background:backgroundMusic?"#304d75":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{backgroundMusic?backgroundMusic.name+" · loop":"No soundtrack"}</div>
               <span>Voiceover</span><div style={{position:"relative",height:28,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onClick={()=>seekTimeline(voiceStart)} title={voiceover.name} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
+              <span>Images</span><div style={{height:Math.max(24,imageLayers.length*22),position:"relative",background:"#241a32",overflow:"hidden"}}>{imageLayers.filter(l=>l.start<duration).map((l,i)=><button type="button" key={l.id} disabled={busy} onClick={()=>{setSelectedImage(l.id);seekTimeline(l.start)}} style={{position:"absolute",left:(l.start/duration*100)+"%",width:((Math.min(l.end,duration)-l.start)/duration*100)+"%",top:i*22,height:21,background:selectedImage===l.id?"#a66b40":"#644436",color:"#fff",overflow:"hidden"}}>{l.file.name}</button>)}</div>
               <span>Title</span><div style={{height:24,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
               <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onClick={()=>{setSelectedCue(i);seekTimeline(c.start)}} style={{position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
             </div>
@@ -850,6 +880,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>}
         </div>
         <div className="studio-setting-card">
+          <strong>Logo / image / object overlays (local / WebM)</strong>
+          <input ref={imagePicker} hidden type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(!file||duration<.1)return;if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>10_000_000||imageLayers.length>=8){setState("Use PNG, JPEG or WebP under 10 MB; maximum 8 layers.");return;}const id=crypto.randomUUID(),start=Math.max(0,Math.min(playhead,duration-.1));setImageLayers(old=>[...old,{id,file,start,end:duration,x:.8,y:.2,size:.25,opacity:1}]);setSelectedImage(id);cleanupOutput();}}/>
+          <button type="button" disabled={busy||!duration||imageLayers.length>=8} onClick={()=>imagePicker.current?.click()}>+ Add image / logo</button>
+          {imageLayers.length>0&&<select aria-label="Select image layer" value={selectedImage||""} disabled={busy} onChange={e=>setSelectedImage(e.target.value)}><option value="">Select layer</option>{imageLayers.map(l=><option key={l.id} value={l.id}>{l.file.name}</option>)}</select>}
+          {imageLayers.filter(l=>l.id===selectedImage).map(l=><fieldset key={l.id} disabled={busy} style={{display:"grid",gap:6}}><legend>Selected image</legend>
+          <label>Start (s)<input type="number" min={0} max={l.end-.01} step={.1} value={l.start} onChange={e=>{const n=Number(e.target.value);if(n>=0&&n<l.end){setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start:n}:a));cleanupOutput();}}}/></label>
+          <label>End (s)<input type="number" min={l.start+.01} max={duration} step={.1} value={l.end} onChange={e=>{const n=Number(e.target.value);if(n>l.start&&n<=duration){setImageLayers(old=>old.map(a=>a.id===l.id?{...a,end:n}:a));cleanupOutput();}}}/></label>
+          {(["x","y","size","opacity"] as const).map(k=><label key={k}>{k} {Math.round(l[k]*100)}%<input type="range" min={k==="size"?.05:0} max={1} step={.01} value={l[k]} onChange={e=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,[k]:Number(e.target.value)}:a));cleanupOutput();}}/></label>)}
+          <button type="button" onClick={()=>{setImageLayers(old=>old.filter(a=>a.id!==l.id));setSelectedImage(null);cleanupOutput();}}>Remove image layer</button></fieldset>)}
+        </div><div className="studio-setting-card">
           <strong>Voiceover (local / WebM)</strong>
           <input ref={voicePicker} hidden type="file" accept="audio/*" disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(!f)return;if(f.size>25_000_000||!f.type.startsWith("audio/")){setState("Choose an audio file under 25 MB.");return;}setVoiceLength(0);setVoicePeaks([]);setVoiceover(f);cleanupOutput();}}/>
           <button type="button" disabled={busy} onClick={()=>voicePicker.current?.click()}>{voiceover?"Replace voiceover":"Choose voiceover file"}</button>
