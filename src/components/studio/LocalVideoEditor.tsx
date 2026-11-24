@@ -894,7 +894,17 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               : <div className="studio-video-no-clips">Add video files to begin editing</div>}
           </div>
         </div>
-        {chosen&&<div role="group" aria-label="Preview playback" style={{display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}><button type="button" disabled={busy} onClick={()=>{const v=preview.current;if(v){if(v.paused)void v.play().catch(()=>setState("Could not play clip."));else v.pause();}}}>{previewPlaying?"Pause":"Play"}</button><button type="button" disabled={busy} onClick={()=>{if(preview.current){preview.current.pause();preview.current.currentTime=chosen.start;}}}>Restart clip</button><span>{sec(Math.min(playhead,duration))}</span></div>}
+        <div className="studio-preview-transport">
+          <input className="studio-preview-seek" aria-label="Preview timeline position" type="range" min={0} max={duration||1} step={.01} value={Math.min(playhead,duration)} disabled={busy||!chosen} onChange={e=>seekTimeline(Number(e.target.value))}/>
+          <div className="studio-preview-transport-row" role="group" aria-label="Preview playback">
+            <button type="button" aria-label="Go to timeline start" title="Go to timeline start" disabled={busy||!chosen} onClick={()=>{preview.current?.pause();seekTimeline(0)}}>⏮</button>
+            <button type="button" aria-label={previewPlaying?"Pause":"Play selected clip"} disabled={busy||!chosen} onClick={()=>{const v=preview.current;if(v){if(v.paused)void v.play().catch(()=>setState("Could not play clip."));else v.pause();}}}>{previewPlaying?"Ⅱ":"▶"}</button>
+            <button type="button" aria-label="Go to timeline end" title="Go to timeline end" disabled={busy||!chosen} onClick={()=>{preview.current?.pause();seekTimeline(duration)}}>⏭</button>
+            <span className="studio-preview-time">{sec(Math.min(playhead,duration))} / {sec(duration)}</span>
+            <button type="button" disabled={!chosen||busy} onClick={()=>{if(preview.current&&chosen){preview.current.pause();preview.current.currentTime=chosen.start;}}}>Restart clip</button>
+            <button type="button" className="studio-preview-fullscreen" aria-label="Fullscreen preview" title="Fullscreen preview" disabled={!chosen} onClick={()=>{const frame=preview.current?.closest(".studio-video-preview-frame");if(document.fullscreenElement)void document.exitFullscreen().catch(()=>setState("Fullscreen unavailable."));else if(frame?.requestFullscreen)void frame.requestFullscreen().catch(()=>setState("Fullscreen unavailable."));}}>⛶</button>
+          </div>
+        </div>
         <div className="studio-video-preview-controls" role="group" aria-label="Preview fit controls">
           <span>{ratio==="9:16"?"9:16 Shorts / Reels":ratio==="1:1"?"1:1 Square":"16:9 Landscape"}</span>
           <button type="button" disabled={busy} aria-pressed={framing==="contain"}
@@ -912,7 +922,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
       </div>
       <section className="studio-workspace-timeline">
         <h2 style={{ fontSize: 14, marginTop: 10, marginBottom: 5 }}>Clip timeline · {sec(duration)} total</h2>
-        <div className="studio-timeline-toolbar" role="group" aria-label="Timeline history"><button type="button" disabled={busy||!chosen||clips.length>=30} onClick={()=>{if(chosen)split(chosen.id)}}>✂ Split</button><button type="button" disabled={busy||!chosen} onClick={()=>{if(chosen)remove(chosen.id)}}>× Delete</button><button type="button" onClick={()=>setInspectorTab("effects")}>◇ Transitions</button><button type="button" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶ Undo</button><button type="button" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷ Redo</button></div>
+        <div className="studio-timeline-toolbar" role="group" aria-label="Timeline history"><button type="button" disabled={busy||!chosen||clips.length>=30} onClick={()=>{if(chosen)split(chosen.id)}}>✂ Split</button><button type="button" disabled={busy||!chosen} onClick={()=>{if(chosen)remove(chosen.id)}}>× Delete</button><button type="button" onClick={()=>setInspectorTab("effects")}>◇ Transitions</button><button type="button" disabled={busy||!chosen} onClick={()=>setInspectorTab("clip")}>Trim</button><button type="button" disabled={busy||!duration||captionCues.length>=500} onClick={()=>{addCue();setInspectorTab("layers")}}>+ Subtitle</button><button type="button" disabled={busy||projectSaving||!history.past.length} onClick={()=>restoreClips("undo")}>↶ Undo</button><button type="button" disabled={busy||projectSaving||!history.future.length} onClick={()=>restoreClips("redo")}>↷ Redo</button></div>
         {duration>0&&<section aria-label="Time-based timeline" style={{border:"1px solid #463458",borderRadius:8,padding:8,marginBottom:10,background:"#171121"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}><strong style={{fontSize:12}}>Timeline · {sec(Math.min(playhead,duration))} / {sec(duration)}</strong><label style={{fontSize:11}}>Zoom {timelineZoom}× <input aria-label="Timeline zoom" type="range" min={1} max={4} step={1} value={timelineZoom} onChange={e=>setTimelineZoom(Number(e.target.value))}/></label></div>
           <div style={{overflowX:"auto",paddingBottom:4}}>
