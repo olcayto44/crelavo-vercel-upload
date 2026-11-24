@@ -238,6 +238,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [inspectorTab,setInspectorTab]=useState<"clip"|"audio"|"layers"|"effects"|"export">("clip");
   const [mediaFilter,setMediaFilter]=useState<"all"|"video"|"audio"|"image">("all");
   const [mediaSearch,setMediaSearch]=useState("");
+  const exportDialog=useRef<HTMLDialogElement>(null);
   const [exportFormat,setExportFormat]=useState<"mp4"|"webm">("mp4");
   const [mp4Busy,setMp4Busy]=useState(false);
   const [mp4Jobs,setMp4Jobs]=useState<Array<{id:string;status:string;error_code?:string;created_at?:string}>>([]);
@@ -533,7 +534,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     };draw();return()=>cancelAnimationFrame(frame);
   },[framing,chosen,ratio,clips,titleOverlay,captionCues,imageLayers,fadeBetweenClips,transitionStyle,transitionDuration]);
   const duration = clips.reduce((sum, clip) => sum + Math.max(0, clip.end - clip.start)/(clip.speed||1), 0);
-  useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));}},[chosen]);
+  useEffect(()=>{if(preview.current&&chosen){preview.current.playbackRate=chosen.speed||1;preview.current.volume=Math.min(1,Math.max(0,chosen.gain??1));preview.current.muted=!includeAudio;}},[chosen,includeAudio]);
   const segments=clips.map((clip,index)=>({clip,index,start:clips.slice(0,index).reduce((n,c)=>n+(c.end-c.start)/(c.speed||1),0),length:(clip.end-clip.start)/(clip.speed||1)}));
   const layerDrag=useRef<{pointer:number;x:number;width:number;start:number;length:number;move:(start:number)=>void;changed:boolean}|null>(null);
   const suppressLayerClick=useRef(false);
@@ -896,7 +897,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         )}
       </div>
       <select aria-label="Output resolution" value={resolution} disabled={busy||mp4Busy||projectSaving} onChange={e=>{setResolution(Number(e.target.value));cleanupOutput()}}><option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option></select>
-      <button type="button" className="studio-top-export" onClick={()=>setInspectorTab("export")}>Export · {exportFormat.toUpperCase()}</button>
+      <button type="button" className="studio-top-export" onClick={()=>{stopPreview();exportDialog.current?.showModal()}}>Export · {exportFormat.toUpperCase()}</button>
       </div>
     </header>
     {!signedIn&&allowAnonymousLocalSave&&<p style={{fontSize:11,color:"#d7c2ed",margin:"3px 0 8px"}}>Preview mode: local timeline saves stay in this browser. Sign in for private cloud backup.</p>}
@@ -915,7 +916,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             className={"studio-timeline-clip"+(active===clip.id?" is-active":"")+(dragTargetId===clip.id?" is-drop-target":"")}
             style={{ flex: "0 0 155px", background: active === clip.id ? "#382049" : "#21182e", border: "1px solid #5a3670", borderRadius: 9, padding: 9 }}>
             <ClipThumbnail url={clip.url} start={clip.start} name={clip.name}/>
-            <button type="button" disabled={busy} onClick={() => {setActive(clip.id);setInspectorTab("clip");}} className="studio-media-filename" title={clip.name} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
+            <button type="button" disabled={busy} onClick={() => {stopPreview();setActive(clip.id);setInspectorTab("clip");}} className="studio-media-filename" title={clip.name} style={{ display: "block", width: "100%", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#fff", background: "transparent", border: 0 }}>{index + 1}. {clip.name}</button>
             <small style={{ color: "#c2b4d5" }}>{sec((clip.end - clip.start)/(clip.speed||1))}</small>
             <div className="studio-timeline-actions" style={{ display: "flex", gap: 5, marginTop: 10 }}>
               <button disabled={busy || index === 0} onClick={() => move(clip.id, -1)} title="Move clip earlier" aria-label="Move clip left">←</button>
@@ -961,7 +962,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         <p className="studio-video-framing-note" role="status">{framing==="cover"
           ?"Crop mode: side or top/bottom content can be removed. Switch to Show full video to keep all edges."
           :framing==="blur"?"Full video preserved with a blurred background.":"Full video preserved. Borders may appear when the source and output ratios differ."}</p>
-        {chosen && <p className="studio-selected-clip-note">Preview: sequential clips (no transition mixing) ({sec(chosen.end-chosen.start)}). Timeline export combines all {clips.length} clip(s), {sec(duration)} total.</p>}
+        {chosen && <p className="studio-selected-clip-note">Preview: selected clip only when paused; Play advances through the timeline. Transition mixing and external audio are not previewed.</p>}
       </div>
       <section className="studio-workspace-timeline">
         <div className="studio-timeline-resizer" role="separator" aria-label="Resize timeline height" aria-orientation="horizontal" aria-valuemin={300} aria-valuemax={650} aria-valuenow={timelineHeight} tabIndex={0} onKeyDown={e=>{if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();setTimelineHeight(h=>Math.max(300,Math.min(650,h+(e.key==="ArrowUp"?20:-20))))}}} onPointerDown={e=>{timelineResize.current={y:e.clientY,height:timelineHeight};e.currentTarget.setPointerCapture(e.pointerId)}} onPointerMove={e=>{const resize=timelineResize.current;if(resize)setTimelineHeight(Math.max(300,Math.min(650,resize.height+resize.y-e.clientY)))}} onPointerUp={()=>{timelineResize.current=null}} onPointerCancel={()=>{timelineResize.current=null}} onLostPointerCapture={()=>{timelineResize.current=null}}/>
@@ -994,7 +995,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
 
       </section>
       <aside className="studio-inspector">
-        <div className="studio-inspector-tabs" role="group" aria-label="Inspector panels">{([["clip","Video"],["audio","Audio"],["effects","Effects"],["layers","Layers"],["export","Export"]] as const).map(([id,label])=><button type="button" key={id} aria-pressed={inspectorTab===id} onClick={()=>setInspectorTab(id)}>{label}</button>)}</div>
+        <div className="studio-inspector-tabs" role="group" aria-label="Inspector panels">{([["clip","Video"],["audio","Audio"],["effects","Effects"],["layers","Layers"],["export","Export"]] as const).map(([id,label])=><button type="button" key={id} aria-pressed={inspectorTab===id} onClick={()=>{if(id==="export"){stopPreview();exportDialog.current?.showModal()}else setInspectorTab(id)}}>{label}</button>)}</div>
         <div hidden={inspectorTab!=="clip"} className="studio-inspector-content">
         <h2 style={{ fontSize: 14, marginTop: 0 }}>Selected clip</h2>
         {chosen ? <>
@@ -1029,32 +1030,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </> : <small>Choose a clip from the timeline.</small>}
         </div>
     <section className="studio-export-settings" aria-label="Video export settings">
-      <div hidden={inspectorTab!=="export"&&inspectorTab!=="effects"}><h2>{inspectorTab==="effects"?"Transitions":"Video output settings"}</h2><div hidden={inspectorTab!=="export"}>
-      <div className="studio-export-format" role="group" aria-label="Export format">
-        <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
-        <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
-      </div>
-      <p className="studio-format-help">{exportFormat==="mp4"?"MP4 is recommended for sharing. Sign in and save up to 90 MB of source files to your private cloud project.":"WebM renders on this device. AI noise removal and true crossfade require MP4."}</p>
-      </div><div className="studio-export-basics">
-        <label hidden={inspectorTab!=="export"} className="studio-setting-field">Ratio
-          <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}>
-            <option>16:9</option><option>9:16</option><option>1:1</option>
-          </select>
-        </label>
-        <label hidden={inspectorTab!=="export"} className="studio-setting-field">Framing
-          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain"|"blur");cleanupOutput()}}>
-            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option><option value="blur">Blur background</option>
-          </select>
-        </label>
-        <label hidden={inspectorTab!=="export"} className="studio-setting-field">Height
-          <select disabled={busy} value={resolution} onChange={e => setResolution(Number(e.target.value))}>
-            <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
-          </select>
-        </label>
-        <label hidden={inspectorTab!=="export"} className="studio-setting-toggle">
-          <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e => setIncludeAudio(e.target.checked)} />
-          <span>Include source audio</span>
-        </label>
+      <div hidden={inspectorTab!=="effects"}><h2>Transitions</h2><div className="studio-export-basics">
         <label className="studio-setting-toggle">
           <input disabled={busy} type="checkbox" checked={fadeBetweenClips} onChange={e=>{setFadeBetweenClips(e.target.checked);cleanupOutput()}} />
           <span>Fade between clips</span>
@@ -1142,7 +1118,39 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             onClick={()=>{setCaptionCues([]);setSelectedCue(null);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
         </div>
       </div>
-      <div hidden={inspectorTab!=="export"}><div className="studio-export-actions">
+    </section>
+    </aside>
+    </div>
+    <dialog ref={exportDialog} className="studio-export-dialog" aria-labelledby="studio-export-dialog-title" onCancel={e=>{if(busy||mp4Busy||projectSaving)e.preventDefault()}}>
+      <div className="studio-export-dialog-header"><h2 id="studio-export-dialog-title">Export video</h2><button type="button" aria-label="Close export" disabled={busy||mp4Busy||projectSaving} onClick={()=>exportDialog.current?.close()}>×</button></div>
+      <p className="studio-format-help">{clips.length} clip(s) · {timecode(duration)} · {ratio}</p>
+      <div className="studio-export-format" role="group" aria-label="Export format">
+        <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
+        <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
+      </div>
+      <p className="studio-format-help">{exportFormat==="mp4"?"MP4 is recommended for sharing. Sign in and save up to 90 MB of source files to your private cloud project.":"WebM renders on this device. AI noise removal and true crossfade require MP4."}</p>
+      <div className="studio-export-basics">
+        <label className="studio-setting-field">Ratio
+          <select disabled={busy} value={ratio} onChange={e=>{setRatio(e.target.value as typeof ratio);cleanupOutput()}}>
+            <option>16:9</option><option>9:16</option><option>1:1</option>
+          </select>
+        </label>
+        <label className="studio-setting-field">Framing
+          <select disabled={busy} aria-label="Video framing mode" value={framing} onChange={e=>{setFraming(e.target.value as "cover"|"contain"|"blur");cleanupOutput()}}>
+            <option value="contain">Show full video (no cropping)</option><option value="cover">Fill screen (crop edges)</option><option value="blur">Blur background</option>
+          </select>
+        </label>
+        <label className="studio-setting-field">Height
+          <select disabled={busy} value={resolution} onChange={e=>{setResolution(Number(e.target.value));cleanupOutput()}}>
+            <option value={480}>480p</option><option value={720}>720p</option><option value={1080}>1080p</option>
+          </select>
+        </label>
+        <label className="studio-setting-toggle">
+          <input disabled={busy} type="checkbox" checked={includeAudio} onChange={e=>{setIncludeAudio(e.target.checked);cleanupOutput()}} />
+          <span>Include source audio</span>
+        </label>
+</div>
+      <div className="studio-export-actions">
         {exportFormat==="mp4"&&!signedIn&&<small role="status">Sign in to export MP4. WebM can be rendered locally.</small>}
         {exportFormat==="mp4"&&(titleOverlay.trim()||captionCues.length>0)&&<small role="status">MP4 does not yet support title or subtitle layers. Remove them or choose WebM.</small>}
         {exportFormat==="mp4"&&fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)&&<small role="status">Choose fade through black or true crossfade for MP4, or use WebM.</small>}
@@ -1164,9 +1172,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {mp4Jobs.map(job=><div key={job.id} className="studio-mp4-job"><span>{job.status==="ready"?"Ready to download":job.status==="queued"?"Queued":job.status==="processing"?"Rendering…":job.status==="failed"?"Failed":job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>Download MP4</button>}</div>)}
         </div>}
       </div>
-    </div></section>
-    </aside>
-    </div>
+    </dialog>
 
   </section>;
 }
