@@ -41,3 +41,8 @@ No new modules until Video Editor stabilization. A successful Vercel build is no
 ## Evidence
 - 868a094 editor MP4-only Crossfade/AI denoise controls: Vercel READY verified. Browser crossfade not implemented. Dedicated host and model not verified.
 - Earlier worker, image, audio and cloud commits compiled but runtime acceptance is open.
+
+## Runtime evidence — 2026-11-24
+- GitHub Actions run 45377595128, commit 492f5a7: SUCCESS; Vercel READY dpl_Huad3tCmwLQacN872BKX8sVEW7R5.
+- Real synthetic 854x480 H.264/AAC render: baseline 4.021333s, 768ms; crossfade 3.61s, 1181ms; audio 3.987696s, 851ms; animation 4.005333s, 1137ms. All four passed stream/dimension/duration assertions.
+- Neural denoise skipped: model not configured. Visual pixel-level and audio signal-level correctness, browser playback, Supabase roundtrip, dedicated worker deployment and full load tests remain open. No production release.
