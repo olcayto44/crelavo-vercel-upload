@@ -100,5 +100,10 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.5",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "baseline-browser-mapping": "^2.11.0",
+    "ip-address": "^10.7.4",
+    "undici": "^7.30.1"
   }
 }
