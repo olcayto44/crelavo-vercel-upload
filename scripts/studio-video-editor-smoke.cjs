@@ -39,8 +39,8 @@ assert.match(source,/paintOverlay\(ctx,width,height,captionAt\(captionCues,at\),
 assert.match(source,/musicSource\.start\(\)/);
 assert.match(source,/URL\.createObjectURL\(blob\)/);
 
-const css = fs.readFileSync('src/app/dashboard/studio-tools.css','utf8');
-assert.match(source,/className="studio-export-settings"/,'export fields must be grouped below the timeline');
+const css = fs.readFileSync('src/app/dashboard/studio-video-editor/video-workspace.css','utf8');
+assert.match(source,/className="studio-export-settings"/,'inspector fields must retain a dedicated settings section');
 assert.match(source,/className="studio-export-basics"/,'ratio height and audio toggles must have separate layout');
 assert.match(source,/className="studio-export-extras"/,'music title and subtitles must use independent cards');
 assert.match(source,/className="studio-setting-card"/,'each export field needs a balanced card');
@@ -53,13 +53,22 @@ assert.match(source,/onClick=\{\(\)=>\{if\(exportFormat==="mp4"\)void submitMp4\
 assert.match(source,/aria-pressed=\{exportFormat==="mp4"\}/,'MP4 format selection must be accessible');
 assert.match(source,/aria-pressed=\{exportFormat==="webm"\}/,'WebM format selection must be accessible');
 assert.match(source,/job.status==="ready"&&<button[^>]*onClick=\{\(\)=>void downloadMp4\(job.id\)\}/,'only ready MP4 jobs may be downloaded');
-assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,'three export cards must line up evenly');
-assert.match(css,/@media\(max-width:650px\)/,'export controls must stack on narrow screens');
+assert.match(css,/\.studio-export-format\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/,'MP4 and WebM cards must line up evenly');
+assert.match(css,/@media\(max-width:600px\)[^\n]*\.studio-export-dialog \.studio-export-basics\{grid-template-columns:minmax\(0,1fr\)\}/,'export controls must stack on narrow screens');
 
-assert.match(source,/Preview: selected clip only/,'selected preview must explain why it differs from total timeline duration');
+assert.match(source,/function advancePreview\(/,'timeline playback must advance between clips');
+assert.match(source,/pendingSeek\.current=\{id:next\.clip\.id,time:next\.clip\.start,play:true\}/,'next clip must start at its trimmed source position');
+assert.match(source,/video\.currentTime>=segment\.clip\.end-\.025/,'playback must honor trim end');
+assert.match(source,/if\(!next\)\{timelinePlaying\.current=false;video\.pause\(\);setPreviewPlaying\(false\);setPlayhead\(duration\)/,'playback must stop at the final clip');
+assert.match(source,/onEnded=\{e=>advancePreview\(e\.currentTarget\)\}/,'natural media end must also advance');
+assert.match(source,/pending\?\.play&&timelinePlaying\.current/,'new clip must resume only when playback remains requested');
+assert.match(source,/className="studio-export-dialog"/,'export must have a dedicated dialog');
+assert.match(source,/exportDialog\.current\?\.showModal\(\)/,'export control must open native modal');
+assert.match(css,/\.studio-export-dialog::backdrop/,'modal must have a distinct backdrop');
 assert.match(source,/studio-timeline-clip/,'clip selection must be visually distinguishable');
 assert.match(source,/studio-timeline-actions/,'reorder/remove controls must use consistent buttons');
-assert.ok(css.includes('color:#faf4ff!important'),'file choose buttons must have readable light text');
+assert.match(css,/--ink:#eeeef4/,'editor must retain light foreground color');
+assert.match(css,/\.studio-compact-video-editor button\{[^}]*color:var\(--ink\)!important/,'editor buttons must use light foreground');
 assert.match(css,/studio-timeline-actions button/,'timeline actions must meet consistent minimum height');
 assert.match(source,/useState<"16:9" \| "9:16" \| "1:1">\("9:16"\)/,'new clip editor defaults to vertical Shorts output');
 assert.match(source,/studio-video-preview-frame/,'preview must use an aspect-aware centered frame');
@@ -69,10 +78,14 @@ assert.match(source,/setFraming\(project.framing/,'saved local projects must res
 assert.match(source,/setFraming\(saved.framing==="blur"\?"blur":saved.framing==="cover"\?"cover":"contain"\)/,"saved cloud projects must restore all framing modes");
 assert.match(source,/aria-label="Video framing mode"/,'user must be able to switch crop or letterbox');
 assert.match(css,/studio-video-preview-frame.is-portrait/,'Shorts preview must be narrow, not full-width');
-assert.match(css,/width:min\(100%,215px\)/,'portrait frame must have bounded width');
+assert.match(css,/\.studio-video-preview-frame\.is-portrait\{[^}]*width:min\(100cqw,calc\(100cqh \* 9 \/ 16\)\)/,'portrait preview must fit available width and height');
 assert.match(source,/studio-video-preview-stage"\+\(ratio===/,'outer video player must change size with aspect ratio');
-assert.match(css,/studio-video-preview-stage.is-portrait/,'outer portrait container must be compact');
-assert.match(source,/function ClipThumbnail\(/,'every timeline card must have real video thumbnail renderer');
+assert.match(css,/\.studio-video-preview-stage\{[^}]*container-type:size/,'preview stage must provide size query dimensions');
+assert.match(source,/function ClipThumbnail\(/,'media library needs actual thumbnail renderer');
+assert.match(source,/function ClipFilmstrip\(/,'timeline must render multiple source frames');
+assert.match(source,/<ClipFilmstrip clip=\{clip\}/,'video track must use actual filmstrip component');
+assert.match(source,/await decodeSourceWave\(clip\)/,'source waveforms must decode automatically');
+assert.match(css,/\.studio-film-frames img\{[^}]*object-fit:cover/,'filmstrip frames must remain properly sized');
 assert.match(source,/canvas\.toDataURL\("image\/jpeg"/,'thumbnails must be generated from actual clip pixels');
 assert.match(source,/onDragStart=\{e=>/,'timeline clips need drag start handler');
 assert.match(source,/onDragOver=\{e=>/,'timeline must advertise valid reorder drop target');
