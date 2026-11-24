@@ -1,4 +1,64 @@
 const rows = `
+Media|Medya|Medien|Medios|Médias|الوسائط
+Text|Metin|Text|Texto|Texte|النص
+Images|Görseller|Bilder|Imágenes|Images|الصور
+Transitions|Geçişler|Übergänge|Transiciones|Transitions|الانتقالات
+Audio|Ses|Audio|Audio|Audio|الصوت
+Layers|Katmanlar|Ebenen|Capas|Calques|الطبقات
+Save / reopen project|Projeyi kaydet / aç|Projekt speichern / öffnen|Guardar / abrir proyecto|Enregistrer / ouvrir le projet|حفظ / فتح المشروع
+Save local timeline|Yerel projeyi kaydet|Lokale Timeline speichern|Guardar línea de tiempo local|Enregistrer la timeline locale|حفظ المخطط الزمني المحلي
+Reopen timeline|Projeyi aç|Timeline öffnen|Abrir línea de tiempo|Ouvrir la timeline|فتح المخطط الزمني
+Reopen cloud timeline|Bulut projesini aç|Cloud-Timeline öffnen|Abrir proyecto en la nube|Ouvrir le projet cloud|فتح المشروع السحابي
+Recover auto-saved timeline|Otomatik kaydı geri yükle|Automatische Speicherung wiederherstellen|Recuperar guardado automático|Récupérer la sauvegarde automatique|استعادة الحفظ التلقائي
+Video format|Video biçimi|Videoformat|Formato de vídeo|Format vidéo|تنسيق الفيديو
+Export|Dışa aktar|Exportieren|Exportar|Exporter|تصدير
+Media library|Medya kütüphanesi|Medienbibliothek|Biblioteca multimedia|Bibliothèque multimédia|مكتبة الوسائط
++ Add videos|+ Video ekle|+ Videos hinzufügen|+ Añadir vídeos|+ Ajouter des vidéos|+ إضافة فيديوهات
+Selected clip|Seçili klip|Ausgewählter Clip|Clip seleccionado|Clip sélectionné|المقطع المحدد
+Trim & duration|Kırpma ve süre|Zuschnitt und Dauer|Recorte y duración|Découpage et durée|القص والمدة
+Transform|Dönüştürme|Transformieren|Transformar|Transformation|التحويل
+Crop & position|Kırpma ve konum|Ausschnitt und Position|Recorte y posición|Recadrage et position|الاقتصاص والموضع
+Speed & source audio|Hız ve kaynak ses|Geschwindigkeit und Originalton|Velocidad y audio original|Vitesse et audio source|السرعة والصوت الأصلي
+Audio processing|Ses işleme|Audioverarbeitung|Procesamiento de audio|Traitement audio|معالجة الصوت
+Timeline layers|Zaman çizelgesi katmanları|Timeline-Ebenen|Capas de la línea de tiempo|Calques de la timeline|طبقات المخطط الزمني
+No layers yet.|Henüz katman yok.|Noch keine Ebenen.|Aún no hay capas.|Aucun calque pour le moment.|لا توجد طبقات بعد.
+Video|Video|Video|Vídeo|Vidéo|فيديو
+Image|Görsel|Bild|Imagen|Image|صورة
+Show|Göster|Anzeigen|Mostrar|Afficher|إظهار
+Hide|Gizle|Ausblenden|Ocultar|Masquer|إخفاء
+Unlock|Kilidi aç|Entsperren|Desbloquear|Déverrouiller|إلغاء القفل
+Lock|Kilitle|Sperren|Bloquear|Verrouiller|قفل
+Send back|Arkaya|Nach hinten|Enviar atrás|Reculer|إرسال للخلف
+Bring forward|Öne|Nach vorne|Traer adelante|Avancer|إحضار للأمام
+Duplicate|Çoğalt|Duplizieren|Duplicar|Dupliquer|تكرار
+Delete|Sil|Löschen|Eliminar|Supprimer|حذف
+Title|Başlık|Titel|Título|Titre|العنوان
+Subtitles|Altyazılar|Untertitel|Subtítulos|Sous-titres|الترجمة
+Music|Müzik|Musik|Música|Musique|الموسيقى
+Voiceover|Seslendirme|Sprachaufnahme|Voz en off|Voix off|التعليق الصوتي
+Merge & export videos|Videoları birleştir ve dışa aktar|Videos verbinden und exportieren|Unir y exportar vídeos|Fusionner et exporter les vidéos|دمج وتصدير الفيديوهات
+Export video|Videoyu dışa aktar|Video exportieren|Exportar vídeo|Exporter la vidéo|تصدير الفيديو
+Duration|Süre|Dauer|Duración|Durée|المدة
+Dimensions|Boyutlar|Abmessungen|Dimensiones|Dimensions|الأبعاد
+Estimated size|Tahmini boyut|Geschätzte Größe|Tamaño estimado|Taille estimée|الحجم التقديري
+Ratio|En-boy oranı|Seitenverhältnis|Relación de aspecto|Format d’image|نسبة العرض إلى الارتفاع
+Framing|Çerçeveleme|Bildausschnitt|Encuadre|Cadrage|التأطير
+Resolution|Çözünürlük|Auflösung|Resolución|Résolution|الدقة
+Frame rate|Kare hızı|Bildrate|Fotogramas por segundo|Fréquence d’images|معدل الإطارات
+Quality|Kalite|Qualität|Calidad|Qualité|الجودة
+Low|Düşük|Niedrig|Baja|Faible|منخفضة
+Standard|Standart|Standard|Estándar|Standard|قياسية
+High|Yüksek|Hoch|Alta|Élevée|عالية
+File name|Dosya adı|Dateiname|Nombre de archivo|Nom du fichier|اسم الملف
+Cancel|İptal|Abbrechen|Cancelar|Annuler|إلغاء
+Fullscreen|Tam ekran|Vollbild|Pantalla completa|Plein écran|ملء الشاشة
+Download WebM|WebM indir|WebM herunterladen|Descargar WebM|Télécharger WebM|تنزيل WebM
+Download MP4|MP4 indir|MP4 herunterladen|Descargar MP4|Télécharger MP4|تنزيل MP4
+Refresh|Yenile|Aktualisieren|Actualizar|Actualiser|تحديث
+Preview|Önizle|Vorschau|Vista previa|Aperçu|معاينة
+Queued|Sırada|In Warteschlange|En cola|En attente|في قائمة الانتظار
+Failed|Başarısız|Fehlgeschlagen|Fallido|Échec|فشل
+Ready to download|İndirmeye hazır|Download bereit|Listo para descargar|Prêt à télécharger|جاهز للتنزيل
 Home|Ana sayfa|Startseite|Inicio|Accueil|الرئيسية
 Language|Dil|Sprache|Idioma|Langue|اللغة
 Setup|Ayarlar|Einrichtung|Configuración|Configuration|الإعدادات
