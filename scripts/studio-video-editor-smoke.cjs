@@ -173,3 +173,9 @@ void (async()=>{
  console.log('studio-video-editor-smoke ok: WebM duration EBML repair, overlay, soundtrack and media export wiring');
 })().catch(error=>{console.error(error);process.exitCode=1;});
 
+
+assert.match(source,/Clip ended early or timed out/,'partial WebM must be rejected');
+assert.match(source,/setExportError\(error instanceof Error/,'export errors must remain visible');
+assert.match(source,/previewMp4\(job.id\)/,'ready MP4 jobs must support preview');
+assert.match(css,/\.studio-render-result video\{[^}]*object-fit:contain/,'output preview must preserve aspect ratio');
+assert.match(source,/window.devicePixelRatio/,'fullscreen must honor display pixel density');
