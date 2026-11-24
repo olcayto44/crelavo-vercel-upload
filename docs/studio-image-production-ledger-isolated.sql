@@ -112,16 +112,8 @@ end $$;
 -- inserting this server-only evidence. There is no public ingestion endpoint.
 create table public.studio_image_cost_evidence (
  request_id uuid primary key references public.studio_image_operations(request_id),
- provider_request_id text not null unique check(provider_request_id ~ '^[A-Za-z0-9_-]{8,160}
-revoke all on function public.studio_image_reserve(uuid,uuid,text,jsonb),public.studio_image_claim(uuid,uuid,text,jsonb),public.studio_image_record(uuid,uuid,text,jsonb,jsonb,text),public.studio_image_uncertain(uuid,uuid,text,jsonb,text,text) from public,anon,authenticated;
-grant execute on function public.studio_image_reserve(uuid,uuid,text,jsonb),public.studio_image_claim(uuid,uuid,text,jsonb),public.studio_image_record(uuid,uuid,text,jsonb,jsonb,text),public.studio_image_uncertain(uuid,uuid,text,jsonb,text,text) to service_role;
-commit;
-),
- evidence_ref text not null unique check(evidence_ref ~ '^[A-Za-z0-9._:-]{8,160}
-revoke all on function public.studio_image_reserve(uuid,uuid,text,jsonb),public.studio_image_claim(uuid,uuid,text,jsonb),public.studio_image_record(uuid,uuid,text,jsonb,jsonb,text),public.studio_image_uncertain(uuid,uuid,text,jsonb,text,text) from public,anon,authenticated;
-grant execute on function public.studio_image_reserve(uuid,uuid,text,jsonb),public.studio_image_claim(uuid,uuid,text,jsonb),public.studio_image_record(uuid,uuid,text,jsonb,jsonb,text),public.studio_image_uncertain(uuid,uuid,text,jsonb,text,text) to service_role;
-commit;
-),
+ provider_request_id text not null unique check(provider_request_id ~ '^[A-Za-z0-9_-]{8,160}$'),
+ evidence_ref text not null unique check(evidence_ref ~ '^[A-Za-z0-9._:-]{8,160}$'),
  actual_micro_usd integer not null check(actual_micro_usd between 0 and 100000000),
  source text not null check(source in ('reviewed_provider_invoice','reviewed_provider_usage')),
  reviewed_at timestamptz not null default now()
@@ -134,7 +126,7 @@ grant select,insert on public.studio_image_cost_evidence to service_role;
 -- Only a still-reserved, never-claimed operation may release without provider evidence.
 -- This draft has no automated post-dispatch refund or retry.
 create function public.studio_image_finalize(p_user uuid,p_request uuid,p_hash text,p_plan jsonb,p_outcome text) returns text
-language plpgsql security invoker set search_path=pg_catalog,public as $
+language plpgsql security invoker set search_path=pg_catalog,public as $$
 declare o public.studio_image_operations%rowtype; w public.credit_balances%rowtype; e public.studio_image_cost_evidence%rowtype;
  remaining integer; rollover integer; subscription integer; bonus integer; topup integer; taken integer;
 begin
@@ -181,7 +173,7 @@ begin
  actual_micro_usd=case when p_outcome='settle' then e.actual_micro_usd else null end,finalized_at=now(),updated_at=now() where request_id=p_request;
  insert into public.credit_events(user_id,type,amount,note) values(p_user,case when p_outcome='settle' then 'spend'::public.credit_event_type else 'refund'::public.credit_event_type end,o.credits,'studio-image:'||p_request::text);
  return case when p_outcome='settle' then 'settled' else 'released' end;
-end $;
+end $$;
 revoke all on function public.studio_image_finalize(uuid,uuid,text,jsonb,text) from public,anon,authenticated;
 grant execute on function public.studio_image_finalize(uuid,uuid,text,jsonb,text) to service_role;
 revoke all on function public.studio_image_reserve(uuid,uuid,text,jsonb),public.studio_image_claim(uuid,uuid,text,jsonb),public.studio_image_record(uuid,uuid,text,jsonb,jsonb,text),public.studio_image_uncertain(uuid,uuid,text,jsonb,text,text) from public,anon,authenticated;
