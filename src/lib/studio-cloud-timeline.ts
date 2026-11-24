@@ -6,14 +6,18 @@ const BUCKET = "studio-private";
 const MAX_TOTAL = 90_000_000;
 const MAX_FILE = 90_000_000;
 const db = () => supabaseBrowser() as SupabaseClient<any>;
-export type CloudTimelineClip = { id: string; file: File; name: string; duration: number; start: number; end: number };
+type ClipAdjustments = { rotation?: number; flipX?: boolean; flipY?: boolean; zoom?: number; gain?: number; speed?: number };
+function adjustments(c: ClipAdjustments): ClipAdjustments {
+ return {rotation:[0,90,180,270].includes(c.rotation??0)?c.rotation??0:0,flipX:c.flipX===true,flipY:c.flipY===true,zoom:typeof c.zoom==="number"&&Number.isFinite(c.zoom)?Math.min(3,Math.max(1,c.zoom)):1,gain:typeof c.gain==="number"&&Number.isFinite(c.gain)?Math.min(1,Math.max(0,c.gain)):1,speed:[.5,.75,1,1.25,1.5,2].includes(c.speed??1)?c.speed??1:1};
+}
+export type CloudTimelineClip = ClipAdjustments & { id: string; file: File; name: string; duration: number; start: number; end: number };
 export type CloudTimelineSettings = {
  ratio: "16:9"|"9:16"|"1:1"; resolution: number; includeAudio: boolean;
  captionCues: Array<{start:number;end:number;text:string}>; titleOverlay: string;
  musicVolume: number; fadeBetweenClips: boolean; framing:"cover"|"contain"|"blur"; backgroundMusic: File|null;
 };
 export type LoadedCloudTimeline = CloudTimelineSettings & { clips: CloudTimelineClip[]; version: number };
-type Entry = { id:string;name:string;path:string;mime:string;start:number;end:number;duration:number };
+type Entry = ClipAdjustments & { id:string;name:string;path:string;mime:string;start:number;end:number;duration:number };
 const asError=(error:unknown)=> error instanceof Error ? error : new Error(String(error));
 async function user() {
  const {data,error}=await db().auth.getUser();
@@ -64,7 +68,7 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    });
    if(assetError)throw assetError;
    if(i<clips.length) {
-    const c=clips[i];entries.push({id:c.id,name:c.name,path,mime:file.type,start:c.start,end:c.end,duration:c.duration});
+    const c=clips[i];entries.push({id:c.id,name:c.name,path,mime:file.type,start:c.start,end:c.end,duration:c.duration,...adjustments(c)});
    }else musicPath=path;
   }
   const timeline={
@@ -112,7 +116,7 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
  for(const c of sources){
   const blob=await download(c.path);
   const file=new File([blob],String(c.name||"clip.mp4"),{type:c.mime||blob.type});
-  clips.push({id:String(c.id),file,name:String(c.name),duration:Number(c.duration),start:Number(c.start),end:Number(c.end)});
+  clips.push({id:String(c.id),file,name:String(c.name),duration:Number(c.duration),start:Number(c.start),end:Number(c.end),...adjustments(c)});
  }
  let backgroundMusic:File|null=null;
  if(typeof t.musicPath==="string"){
