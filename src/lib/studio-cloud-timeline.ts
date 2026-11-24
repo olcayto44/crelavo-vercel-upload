@@ -12,7 +12,7 @@ function adjustments(c: ClipAdjustments): ClipAdjustments {
  return {rotation:[0,90,180,270].includes(c.rotation??0)?c.rotation??0:0,flipX:c.flipX===true,flipY:c.flipY===true,zoom:typeof c.zoom==="number"&&Number.isFinite(c.zoom)?Math.min(3,Math.max(1,c.zoom)):1,gain:typeof c.gain==="number"&&Number.isFinite(c.gain)?Math.min(1,Math.max(0,c.gain)):1,speed:[.5,.75,1,1.25,1.5,2].includes(c.speed??1)?c.speed??1:1,cropLeft:bounded(c.cropLeft,0,.4),cropRight:bounded(c.cropRight,0,.4),cropTop:bounded(c.cropTop,0,.4),cropBottom:bounded(c.cropBottom,0,.4),panX:bounded(c.panX,-1,1),panY:bounded(c.panY,-1,1)};
 }
 export type CloudTimelineClip = ClipAdjustments & { id: string; file: File; name: string; duration: number; start: number; end: number };
-export type CloudImageLayer={id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number;keyframes?:Array<{at:number;x:number;y:number;size:number;opacity:number}>};
+export type CloudImageLayer={hidden?:boolean;locked?:boolean;id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number;keyframes?:Array<{at:number;x:number;y:number;size:number;opacity:number}>};
 export type CloudTimelineSettings = {
  voiceover?:File|null;voiceStart?:number;voiceVolume?:number;voiceLength?:number;
  imageLayers?:CloudImageLayer[];transitionStyle?:string;transitionDuration?:number;
@@ -83,7 +83,7 @@ export async function saveCloudTimeline(clips:CloudTimelineClip[], settings:Clou
    else if(assets[i].kind==="voice")voicePath=path;
    else {
      const {file:_,...layer}=layers[imageIndex++];
-     imageEntries.push({...layer,keyframes:(layer.keyframes||[]).slice(0,32),path,name:file.name,mime:file.type});
+     imageEntries.push({...layer,...(layer.hidden?{originalOpacity:layer.opacity,originalKeyframes:layer.keyframes||[]}:{}),opacity:layer.hidden?0:layer.opacity,keyframes:(layer.keyframes||[]).slice(0,32).map(k=>layer.hidden?{...k,opacity:0}:k),path,name:file.name,mime:file.type});
    }
   }
   const timeline={
@@ -141,7 +141,7 @@ export async function loadCloudTimeline():Promise<LoadedCloudTimeline>{
  let voiceover:File|null=null;
  if(typeof t.voicePath==="string"){const blob=await download(t.voicePath);voiceover=new File([blob],"Cloud voiceover",{type:blob.type||"audio/mpeg"});}
  const imageLayers:CloudImageLayer[]=[];
- for(const entry of (Array.isArray(t.imageLayers)?t.imageLayers.slice(0,8):[]) as Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>){const blob=await download(entry.path);const {path:_,name,mime,...layer}=entry;imageLayers.push({...layer,file:new File([blob],name,{type:mime||blob.type})});}
+ for(const entry of (Array.isArray(t.imageLayers)?t.imageLayers.slice(0,8):[]) as Array<Omit<CloudImageLayer,"file">&{path:string;name:string;mime:string}>){const blob=await download(entry.path);const {path:_,name,mime,...layer}=entry;const original=entry as typeof entry&{originalOpacity?:number;originalKeyframes?:CloudImageLayer['keyframes']};imageLayers.push({...layer,...(layer.hidden?{opacity:original.originalOpacity??1,keyframes:original.originalKeyframes??[]}:{}),file:new File([blob],name,{type:mime||blob.type})});}
  const ratio=t.ratio==="9:16"||t.ratio==="1:1"?t.ratio:"16:9";
  return {
   clips,version,voiceover,imageLayers,voiceStart:bounded(t.voiceStart,0,7200),voiceVolume:bounded(t.voiceVolume,0,1,1),voiceLength:bounded(t.voiceLength,0,7200),transitionStyle:typeof t.transitionStyle==="string"?t.transitionStyle:"black",transitionDuration:bounded(t.transitionDuration,.1,2,.4),audioDucking:!!t.audioDucking,duckLevel:bounded(t.duckLevel,0,1,.25),audioCompressor:!!t.audioCompressor,lowCut:!!t.lowCut,noiseReduction:!!t.noiseReduction,aiDenoise:!!t.aiDenoise,ratio,resolution:Number(t.resolution)||720,fps:[24,25,30,60].includes(Number(t.fps))?Number(t.fps):30,quality:["low","standard","high"].includes(String(t.quality))?String(t.quality):"standard",includeAudio:t.includeAudio!==false,
