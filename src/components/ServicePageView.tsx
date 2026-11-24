@@ -34,21 +34,23 @@ const freeToolFunnelLinks = [
 ];
 
 function normalizeProductionStartHref(href: string) {
-  return href.startsWith("/dashboard/assistant-workspace") ? href.replace("/dashboard/assistant-workspace", "/dashboard/create") : href;
+  return href; // Preserve existing brief and package links until the new engine is connected.
 }
 
 function primaryCtaHref(page: ServicePage) {
-  return page.slug === "ai-video-generator" ? "/join" : normalizeProductionStartHref(page.primaryCtaHref);
+  if (page.slug === "ai-website-builder") return "/dashboard/studio-v2?category=website";
+  if (page.slug === "ai-video-generator") return "/dashboard/studio-v2?category=video";
+  return normalizeProductionStartHref(page.primaryCtaHref);
 }
 
 function primaryCtaLabel(page: ServicePage) {
-  return page.slug === "ai-video-generator" ? "Create a free account" : page.primaryCtaLabel;
+  return page.slug === "ai-video-generator" ? "Open Video Studio" : page.slug === "ai-website-builder" ? "Open Website Studio" : page.primaryCtaLabel;
 }
 
 function secondaryCtaLabel(href: string) {
   const normalizedHref = normalizeProductionStartHref(href);
   if (normalizedHref === "/pricing") return "View pricing and delivery options";
-  if (normalizedHref.startsWith("/dashboard/create")) return "Start this production path";
+  if (normalizedHref.startsWith("/dashboard/assistant-workspace")) return "Start this production path";
   if (normalizedHref.startsWith("/dashboard")) return "Open related dashboard path";
   return "Explore related options";
 }

@@ -1,3 +1,4 @@
+import { StudioDiscovery } from "@/components/StudioDiscovery";
 import { ProductionPageCards } from "@/components/ProductionSeoPage";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -82,6 +83,7 @@ export default async function ToolsPage() {
             ))}
           </div>
         </section>
+        <StudioDiscovery />
         <ProductionPageCards section="tools" />
       </main>
     </>

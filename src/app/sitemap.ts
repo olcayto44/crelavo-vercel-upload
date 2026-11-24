@@ -1,3 +1,4 @@
+import { studioSurfaces } from "@/lib/studio-surfaces";
 import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
 export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
@@ -19,6 +20,7 @@ function canonicalSiteUrl() {
 }
 
 const publicRoutes = [
+  ...studioSurfaces.map(surface => ({ path: surface.path, priority: 0.85, changeFrequency: "monthly" as const })),
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFrequency: "weekly" as const },
   { path: "/alternatives", priority: 0.88, changeFrequency: "weekly" as const },

@@ -136,7 +136,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 
   return (
       <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`} aria-label={`Start ${type.label} production from category visual`}>
+        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={`/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`} aria-label={`Start ${type.label} production from category visual`}>
           <div className="category-visual-orb category-visual-orb-one" aria-hidden="true" />
           <div className="category-visual-orb category-visual-orb-two" aria-hidden="true" />
           <div className="category-visual-panel category-visual-panel-main">
@@ -164,9 +164,9 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
         ))}
       </div>
       <div className="clc-btn-row">
-        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
+        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
         {type.id === "ad_score_checker" ? <HardReloadLink className="btn secondary" href="/free-tools/ad-performance-score-checker">Free score tool</HardReloadLink> : null}
-        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
+        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
       </div>
     </div>
   );
