@@ -339,9 +339,32 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     setClips(existing => { const item = existing.find(c => c.id === id); const next = existing.filter(c => c.id !== id);
       if (item && !next.some(c => c.url === item.url)) URL.revokeObjectURL(item.url); setActive(current => current === id ? (next[0]?.id || null) : current); return next; });
   }
+  function duplicate(id:string){
+    if(busy)return;
+    if(clips.length>=30){setState("Timeline supports up to 30 clips.");return;}
+    const item=clips.find(c=>c.id===id);if(!item)return;
+    const copy:Clip={...item,id:crypto.randomUUID(),name:(item.name+" (copy)").slice(0,130)};
+    cleanupOutput();
+    setClips(existing=>{
+      if(existing.length>=30)return existing;
+      const index=existing.findIndex(c=>c.id===id);if(index<0)return existing;
+      const next=[...existing];next.splice(index+1,0,copy);return next;
+    });
+    setActive(copy.id);setState("Clip duplicated with its trim range.");
+  }
+  function setTrimAtPlayhead(edge:"start"|"end"){
+    const item=clips.find(c=>c.id===active), video=preview.current;
+    if(!item||!video||busy)return;
+    const at=Math.max(0,Math.min(item.duration,video.currentTime));
+    if(!Number.isFinite(at)||(edge==="start"?at>=item.end-.05:at<=item.start+.05)){
+      setState("Seek to a valid position before setting the trim boundary.");return;
+    }
+    update(item.id,edge==="start"?{start:at}:{end:at});
+  }
   function split(id: string) {
     const item = clips.find(c => c.id === id);
     if (!item || busy || !preview.current) return;
+    if(clips.length>=30){setState("Timeline supports up to 30 clips.");return;}
     const at = preview.current.currentTime;
     if (at <= item.start + .15 || at >= item.end - .15) { setState("Play or seek inside the selected trim range before splitting."); return; }
     cleanupOutput();
@@ -600,7 +623,19 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <div style={{ fontSize: 11, overflowWrap: "anywhere", marginBottom: 10 }}>{chosen.name}</div>
           <label style={{ display: "block", fontSize: 11 }}>Start (seconds)<input aria-label="Trim start" type="number" min={0} max={chosen.end - .1} step=".1" disabled={busy} value={Number(chosen.start.toFixed(1))} onChange={e => { const start = Number(e.target.value); if (Number.isFinite(start) && start >= 0 && start < chosen.end - .05) update(chosen.id, { start }); }} style={{ width: "100%" }} /></label>
           <label style={{ display: "block", fontSize: 11, marginTop: 10 }}>End (seconds)<input aria-label="Trim end" type="number" min={chosen.start + .1} max={chosen.duration} step=".1" disabled={busy} value={Number(chosen.end.toFixed(1))} onChange={e => { const end = Number(e.target.value); if (Number.isFinite(end) && end <= chosen.duration && end > chosen.start + .05) update(chosen.id, { end }); }} style={{ width: "100%" }} /></label>
-          <button type="button" disabled={busy} onClick={() => split(chosen.id)} style={{ width: "100%", marginTop: 10 }}>✂ Split at playhead</button>
+          <div style={{marginTop:12,display:"grid",gap:6}}>
+            <label style={{fontSize:11}}>Trim start · {sec(chosen.start)}
+              <input aria-label="Drag trim start" type="range" min={0} max={Math.max(0,chosen.end-.05)} step=".01" value={chosen.start} disabled={busy} onChange={e=>{const start=Number(e.target.value);if(start<chosen.end-.049){update(chosen.id,{start});if(preview.current)preview.current.currentTime=start;}}} style={{width:"100%"}}/>
+            </label>
+            <label style={{fontSize:11}}>Trim end · {sec(chosen.end)}
+              <input aria-label="Drag trim end" type="range" min={Math.min(chosen.duration,chosen.start+.05)} max={chosen.duration} step=".01" value={chosen.end} disabled={busy} onChange={e=>{const end=Number(e.target.value);if(end>chosen.start+.049){update(chosen.id,{end});if(preview.current)preview.current.currentTime=end;}}} style={{width:"100%"}}/>
+            </label>
+            <button type="button" disabled={busy} onClick={()=>setTrimAtPlayhead("start")}>Set start at playhead</button>
+            <button type="button" disabled={busy} onClick={()=>setTrimAtPlayhead("end")}>Set end at playhead</button>
+            <button type="button" disabled={busy||clips.length>=30} onClick={()=>duplicate(chosen.id)}>Duplicate clip</button>
+            <button type="button" disabled={busy} onClick={()=>{update(chosen.id,{start:0,end:chosen.duration});if(preview.current)preview.current.currentTime=0;}}>Reset trim</button>
+          </div>
+          <button type="button" disabled={busy||clips.length>=30} onClick={() => split(chosen.id)} style={{ width: "100%", marginTop: 10 }}>✂ Split at playhead</button>
         </> : <small>Choose a clip from the timeline.</small>}
       </aside>
     </div>
