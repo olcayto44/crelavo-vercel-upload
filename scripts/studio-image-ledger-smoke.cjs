@@ -17,7 +17,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  await db.query("insert into studio_image_tariffs values('offline',50,10000,false)");
  await db.query("insert into studio_image_operations(request_id,user_id,project_id,plan_hash,plan,tariff_version,credits,max_micro_usd,approved_at) values($1,$2,$3,$4,$5,'offline',50,10000,now())",[requestId,owner,projectId,hash,JSON.stringify(plan)]);
  const wallet=async()=> (await db.query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0];
- const rpc=async(name,args)=>{try{const data=(await db.query("select public."+name+"("+Object.keys(args).map((_,i)=>"$"+(i+1)).join(",")+") as value",Object.values(args).map(v=>v&&typeof v==="object"?JSON.stringify(v):v))).rows[0].value;return {data,error:null};}catch(error){return {data:null,error};}};
+ const rpc=async(name,args)=>{try{const data=(await db.query("select public."+name+"("+Object.keys(args).map((_,i)=>"$"+(i+1)).join(",")+") as value",Object.values(args).map(v=>v&&typeof v==="object"?JSON.stringify(v):v))).rows[0].value;return {data,error:null};}catch(error){console.error('isolated ledger RPC failed:',name,error.code,error.message);return {data:null,error};}};
  const store=createImageProductionStore(rpc);
  assert.equal(await store.reserve(plan,hash),"denied");
  await db.exec("update studio_image_tariffs set enabled=true");
@@ -53,6 +53,8 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  await db.exec("reset role");
  await db.query("insert into studio_image_cost_evidence(request_id,provider_request_id,evidence_ref,actual_micro_usd,source) values($1,$2,'offline_invoice_1',5000,'reviewed_provider_invoice')",[requestId,receipt.providerRequestId]);
  await db.exec("set role service_role");
+ await assert.rejects(()=>db.query("update studio_image_cost_evidence set actual_micro_usd=0 where request_id=$1",[requestId]));
+ await assert.rejects(()=>db.query("delete from studio_image_cost_evidence where request_id=$1",[requestId]));
  assert.equal(await store.finalize(plan,hash,"settle"),"settled");
  assert.equal(await store.finalize(plan,hash,"settle"),"already_settled");
  assert.equal(await store.finalize(plan,hash,"release_unclaimed"),"denied");

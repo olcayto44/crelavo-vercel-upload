@@ -141,7 +141,9 @@ begin
   if o.state<>'artifact_cost_pending' or o.artifact is null or o.receipt is null or o.provider_request_id is null
    or encode(sha256(o.artifact),'hex') is distinct from o.receipt->>'sha256'
    or o.receipt->>'providerRequestId' is distinct from o.provider_request_id then return 'denied'; end if;
-  select * into e from public.studio_image_cost_evidence where request_id=p_request for share;
+  -- Evidence is append-only to service_role; row lock would require UPDATE privilege.
+  -- The operation row is already locked, and unique immutable evidence needs only SELECT.
+  select * into e from public.studio_image_cost_evidence where request_id=p_request;
   if not found or e.provider_request_id is distinct from o.provider_request_id then return 'cost_evidence_required'; end if;
   if e.actual_micro_usd>o.max_micro_usd then
    update public.studio_image_operations set state='reconcile_required',actual_micro_usd=e.actual_micro_usd,failure_code='provider_cost_over_budget',updated_at=now() where request_id=p_request;
