@@ -179,3 +179,17 @@ assert.match(source,/setExportError\(error instanceof Error/,'export errors must
 assert.match(source,/previewMp4\(job.id\)/,'ready MP4 jobs must support preview');
 assert.match(css,/\.studio-render-result video\{[^}]*object-fit:contain/,'output preview must preserve aspect ratio');
 assert.match(source,/window.devicePixelRatio/,'fullscreen must honor display pixel density');
+
+
+ // Persistence regression checks: source wiring, not an authenticated browser integration test.
+ assert.match(source,/indexedDB\.open\(VIDEO_PROJECT_DB,1\)/,'local recovery uses IndexedDB');
+ assert.match(source,/id:projectOwner\+":recovery"[\s\S]*?includeAudio,layerFlags,captionCues,titleOverlay/,'autosave preserves layer flags and caption/title values');
+ assert.match(source,/setLayerFlags\(project\.layerFlags\|\|\{\}\)/,'local reopen restores layer flags and supports legacy projects');
+ assert.match(source,/setLayerFlags\(saved\.layerFlags\|\|\{\}\)/,'cloud reopen restores layer flags');
+ assert.match(cloudTimelineSource,/originalCaptionCues:settings\.captionCues\.slice\(0,500\)/,'hidden captions retain original cues');
+ assert.match(cloudTimelineSource,/settings\.layerFlags\?\.captions\?\.hidden\?\[\]:settings\.captionCues/,'hidden captions are excluded from render');
+ assert.match(cloudTimelineSource,/originalTitleOverlay:settings\.titleOverlay\.slice\(0,120\)/,'hidden titles retain original text');
+ assert.match(cloudTimelineSource,/t\.originalTitleOverlay\?\?t\.titleOverlay/,'reopen restores original hidden title');
+ assert.match(cloudTimelineSource,/t\.originalVoiceVolume\?\?t\.voiceVolume/,'reopen restores original voice volume');
+ assert.match(cloudTimelineSource,/t\.originalMusicVolume\?\?t\.musicVolume/,'reopen restores original music volume');
+ console.log('studio-video-editor persistence wiring checks passed');
