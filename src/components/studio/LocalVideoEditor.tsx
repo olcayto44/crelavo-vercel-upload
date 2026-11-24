@@ -939,21 +939,16 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
               <span>Voiceover</span><div style={{position:"relative",height:28,background:"#241a32",overflow:"hidden",borderRadius:4}}>{voiceover&&voiceStart<duration&&<button type="button" disabled={busy} onPointerDown={e=>beginLayerDrag(e,voiceStart,Math.min(voiceLength,duration),start=>{setVoiceStart(start);cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>seekTimeline(voiceStart))} title={voiceover.name+" · Drag to move"} style={{position:"absolute",left:(voiceStart/duration*100)+"%",width:(Math.min(voiceLength,duration-voiceStart)/duration*100)+"%",height:28,background:"#71458c",color:"#fff",overflow:"hidden",padding:0,touchAction:"none",cursor:"grab"}}>{voicePeaks.length>0?<svg viewBox="0 0 96 28" preserveAspectRatio="none" width="100%" height="100%" aria-label="Decoded voice waveform">{voicePeaks.map((p,i)=><line key={i} x1={i+.5} x2={i+.5} y1={14-p*13} y2={14+p*13} stroke="#e8d3ff" strokeWidth=".8"/>)}</svg>:voiceover.name}</button>}</div>
               <span>Images</span><div style={{height:Math.max(24,imageLayers.length*22),position:"relative",background:"#241a32",overflow:"hidden"}}>{imageLayers.filter(l=>l.start<duration).map((l,i)=><button type="button" key={l.id} disabled={busy} onPointerDown={e=>beginLayerDrag(e,l.start,l.end-l.start,start=>{setSelectedImage(l.id);setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start,end:start+(l.end-l.start)}:a));cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setInspectorTab("layers");setSelectedImage(l.id);seekTimeline(l.start)})} title="Drag image layer to move" style={{touchAction:"none",cursor:"grab",position:"absolute",left:(l.start/duration*100)+"%",width:((Math.min(l.end,duration)-l.start)/duration*100)+"%",top:i*22,height:21,background:selectedImage===l.id?"#a66b40":"#644436",color:"#fff",overflow:"hidden"}}>{l.file.name}</button>)}</div>
               <span>Title</span><div style={{height:24,background:titleOverlay?"#69482b":"#241a32",borderRadius:4,overflow:"hidden",padding:3}}>{titleOverlay||"No title overlay"}</div>
-              <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onPointerDown={e=>beginLayerDrag(e,c.start,c.end-c.start,start=>{setSelectedCue(i);setCaptionCues(old=>old.map((cue,index)=>index===i?{...cue,start,end:start+(c.end-c.start)}:cue));cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setSelectedCue(i);seekTimeline(c.start)})} style={{touchAction:"none",cursor:"grab",position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
+              <span>Subtitles</span><div style={{height:28,position:"relative",overflow:"hidden",background:"#241a32",borderRadius:4}}>{captionCues.map((c,i)=>({c,i})).filter(({c})=>c.start<duration).map(({c,i})=><button key={i} type="button" disabled={busy} title={c.text+" · "+sec(c.start)+"–"+sec(c.end)} onPointerDown={e=>beginLayerDrag(e,c.start,c.end-c.start,start=>{setSelectedCue(i);setCaptionCues(old=>old.map((cue,index)=>index===i?{...cue,start,end:start+(c.end-c.start)}:cue));cleanupOutput()})} onPointerMove={moveLayerDrag} onPointerUp={endLayerDrag} onPointerCancel={endLayerDrag} onClick={()=>layerClick(()=>{setInspectorTab("layers");setSelectedCue(i);seekTimeline(c.start)})} style={{touchAction:"none",cursor:"grab",position:"absolute",left:(c.start/duration*100)+"%",width:((Math.min(c.end,duration)-c.start)/duration*100)+"%",height:26,overflow:"hidden",whiteSpace:"nowrap",background:selectedCue===i?"#b1842f":"#795b22",border:"1px solid #bc9343",color:"#fff",fontSize:10}}>{c.text}</button>)}</div>
             </div>
           </div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
-            <button type="button" disabled={busy||projectSaving||captionCues.length>=500} onClick={addCue}>+ Add subtitle at playhead</button>
+          <div className="studio-track-actions">
+            <button type="button" disabled={busy||projectSaving||captionCues.length>=500} onClick={()=>{addCue();setInspectorTab("layers")}}>+ Subtitle</button>
             <button type="button" disabled={busy} onClick={()=>{setIncludeAudio(v=>!v);cleanupOutput()}}>{includeAudio?"Mute source track":"Unmute source track"}</button>
             <button type="button" disabled={busy||!backgroundMusic} onClick={()=>{setMusicVolume(v=>v===0?.3:0);cleanupOutput()}}>{musicVolume===0?"Unmute music":"Mute music"}</button>
           </div>
-          {selectedCue!==null&&captionCues[selectedCue]&&<fieldset style={{display:"grid",gap:6,marginTop:8}}><legend>Edit selected subtitle</legend>
-            <label>Text<input disabled={busy} maxLength={500} value={captionCues[selectedCue].text} onChange={e=>editCue(selectedCue,{text:e.target.value})}/></label>
-            <label>Start (seconds)<input disabled={busy} type="number" min={0} max={captionCues[selectedCue].end-.01} step={.01} value={captionCues[selectedCue].start} onChange={e=>editCue(selectedCue,{start:Number(e.target.value)})}/></label>
-            <label>End (seconds)<input disabled={busy} type="number" min={captionCues[selectedCue].start+.01} max={duration} step={.01} value={captionCues[selectedCue].end} onChange={e=>editCue(selectedCue,{end:Number(e.target.value)})}/></label>
-            <button type="button" disabled={busy} onClick={()=>{setCaptionCues(old=>old.filter((_,i)=>i!==selectedCue));setSelectedCue(null);cleanupOutput()}}>Delete selected subtitle</button>
-          </fieldset>}
-          <small style={{color:"#b8a8c9"}}>Click to seek, or drag voiceover, image and subtitle blocks horizontally to change their timing. Adjust clip and track settings below.</small>
+
+
         </section>}
 
       </section>
@@ -1094,6 +1089,14 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           <small className="studio-setting-file-name" title={subtitleName||"No subtitle file selected"}>
             {subtitleName||"No subtitle file selected · max 250 KB"}
           </small>
+          <button type="button" disabled={busy||!duration||captionCues.length>=500} onClick={addCue}>+ Add subtitle at playhead</button>
+          {captionCues.length>0&&<label className="studio-setting-field">Select subtitle<select value={selectedCue===null?"":selectedCue} onChange={e=>{const value=e.target.value;if(value===""){setSelectedCue(null);return;}const index=Number(value);setSelectedCue(index);seekTimeline(captionCues[index].start)}}><option value="">Choose subtitle</option>{captionCues.map((cue,index)=><option key={index} value={index}>{sec(cue.start)} · {cue.text.slice(0,55)}</option>)}</select></label>}
+          {selectedCue!==null&&captionCues[selectedCue]&&<fieldset className="studio-caption-inspector"><legend>Edit selected subtitle</legend>
+            <label>Text<input disabled={busy} maxLength={500} value={captionCues[selectedCue].text} onChange={e=>editCue(selectedCue,{text:e.target.value})}/></label>
+            <label>Start (seconds)<input disabled={busy} type="number" min={0} max={captionCues[selectedCue].end-.01} step={.01} value={captionCues[selectedCue].start} onChange={e=>editCue(selectedCue,{start:Number(e.target.value)})}/></label>
+            <label>End (seconds)<input disabled={busy} type="number" min={captionCues[selectedCue].start+.01} max={duration} step={.01} value={captionCues[selectedCue].end} onChange={e=>editCue(selectedCue,{end:Number(e.target.value)})}/></label>
+            <button type="button" disabled={busy} onClick={()=>{setCaptionCues(old=>old.filter((_,i)=>i!==selectedCue));setSelectedCue(null);cleanupOutput()}}>Delete selected subtitle</button>
+          </fieldset>}
           {captionCues.length>0&&<button type="button" className="studio-setting-secondary" disabled={busy}
             onClick={()=>{setCaptionCues([]);setSelectedCue(null);setSubtitleName("");cleanupOutput()}}>Clear {captionCues.length} subtitles</button>}
         </div>
@@ -1113,6 +1116,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         {busy&&<span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
         {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download WebM</a>}
         {mp4Message&&<small role="status">{mp4Message}</small>}
+        <details className="studio-export-help"><summary>Format & storage limits</summary><small>MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles require WebM; AI noise reduction and true crossfade require MP4. Use media you have rights to.</small></details>
         {signedIn&&(exportFormat==="mp4"||mp4Jobs.length>0)&&<div className="studio-mp4-jobs">
           <div className="studio-mp4-jobs-heading"><strong>MP4 export history</strong><button type="button" disabled={mp4Busy} onClick={()=>void refreshMp4Jobs()}>Refresh</button></div>
           {!mp4Jobs.length&&<small>No cloud exports yet.</small>}
@@ -1122,6 +1126,6 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </div></section>
     </aside>
     </div>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>MP4 uses private cloud rendering and requires an available worker. WebM renders on your device. Titles and SRT subtitle burn-in currently require WebM; AI noise reduction and true crossfade require MP4. Cloud timeline backup supports up to 90 MB total. Use only media you have rights to.</p>
+
   </section>;
 }
