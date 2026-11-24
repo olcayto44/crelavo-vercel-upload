@@ -15,7 +15,7 @@ export function StudioPublicPage({ surface }: { surface: StudioSurface }) {
  const schema = { "@context": "https://schema.org", "@graph": [{ "@type": "WebPage", "@id": url + "#webpage", url, name: title, description: surface.description, inLanguage: "en", mainEntity: { "@id": url + "#application" } }, { "@type": "WebApplication", "@id": url + "#application", name: title, url, description: surface.description, applicationCategory: "MultimediaApplication", operatingSystem: "Web browser", featureList: surface.features, provider: { "@type": "Organization", name: "Crelavo", url: origin } }, { "@type": "BreadcrumbList", itemListElement: breadcrumbs }] };
  return <><Header /><script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(schema).replace(/</g,"\\u003c")}} />
  <main className="container section public-funnel-page">
-  <nav aria-label="Breadcrumb"><Link href="/">Home</Link> / <Link href="/tools">Tools</Link> / <span aria-current="page">{title}</span></nav>
+  <nav aria-label="Breadcrumb"><Link href="/">Home</Link> / {surface.path !== "/studio" && <><Link href="/tools">Tools</Link> / </>}<span aria-current="page">{title}</span></nav>
   <section className="production-hero-card clean-feed-section" style={{marginTop:16}}>
    <span className="badge">Crelavo Studio</span><h1>{title}</h1><p className="section-lead">{surface.description}</p>
    <Link className="btn" href={surface.workspace}>Open {title}</Link> <Link className="btn secondary" href="/categories">Browse production categories</Link>

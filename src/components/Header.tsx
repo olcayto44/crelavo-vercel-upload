@@ -98,6 +98,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
           <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
             <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" languageOverride={languageOverride} />
             <div className="tools-mega-menu">
+              <div className="tools-mega-group"><strong>Studio tools</strong><Link href="/studio">Crelavo Studio</Link><Link href="/tools/video-editor">Video Editor</Link><Link href="/tools/image-editor">Image Editor</Link><Link href="/tools/media-library">Media Library</Link></div>
               {footerGroups.slice(0, 3).map((group) => (
                 <div className="tools-mega-group" key={group.title}>
                   <strong>{group.title}</strong>

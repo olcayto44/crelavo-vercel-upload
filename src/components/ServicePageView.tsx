@@ -207,6 +207,8 @@ export function ServicePageView({ page }: { page: ServicePage }) {
           <Link className="btn" href={primaryCtaHref(page)}>{primaryCtaLabel(page)}</Link>
           {page.secondaryCtaHref ? <Link className="btn secondary" href={normalizeProductionStartHref(page.secondaryCtaHref)}>{secondaryCtaLabel(page.secondaryCtaHref)}</Link> : null}
           <Link className="btn secondary" href="/tools">All tools</Link>
+          {page.slug === "ai-video-generator" && <Link className="btn secondary" href="/tools/video-editor">Edit existing videos</Link>}
+          {(page.slug === "ai-video-generator" || page.slug === "ai-website-builder") && <Link className="btn secondary" href="/dashboard/assistant-workspace">Existing production workspace</Link>}
         </div>
       </section>
 

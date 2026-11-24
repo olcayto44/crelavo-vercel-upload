@@ -28,6 +28,7 @@ export function StudioConversationFrame({document}:{document:string}) {
         openAuth("login",{next:window.location.pathname+window.location.search});
         return;
       }
+      if(event.data?.type==="crelavo-studio-go-home"){window.location.assign("/studio");return;}
       if(event.data?.type!=="crelavo-studio-open-tool")return;
       const tool=event.data.tool;
       const paths:Record<string,string>={
