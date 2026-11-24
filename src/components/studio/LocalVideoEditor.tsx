@@ -218,6 +218,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
   const [projectOwner,setProjectOwner] = useState("");
   const [signedIn,setSignedIn] = useState(false);
   const [projectSaving,setProjectSaving] = useState(false);
+  const [exportFormat,setExportFormat]=useState<"mp4"|"webm">("mp4");
   const [mp4Busy,setMp4Busy]=useState(false);
   const [mp4Jobs,setMp4Jobs]=useState<Array<{id:string;status:string;error_code?:string;created_at?:string}>>([]);
   const [mp4Message,setMp4Message]=useState("");
@@ -967,6 +968,11 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
     </div>
     <section className="studio-export-settings" aria-label="Video export settings">
       <h2>Video output settings</h2>
+      <div className="studio-export-format" role="group" aria-label="Export format">
+        <button type="button" aria-pressed={exportFormat==="mp4"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("mp4")}><strong>MP4</strong><small>H.264 + AAC · Cloud rendering</small></button>
+        <button type="button" aria-pressed={exportFormat==="webm"} disabled={busy||mp4Busy||projectSaving} onClick={()=>setExportFormat("webm")}><strong>WebM</strong><small>Browser rendering · Local</small></button>
+      </div>
+      <p className="studio-format-help">{exportFormat==="mp4"?"MP4 is recommended for sharing. Sign in and save up to 90 MB of source files to your private cloud project.":"WebM renders on this device. AI noise removal and true crossfade require MP4."}</p>
       <div className="studio-export-basics">
         <label className="studio-setting-field">Ratio
           <select disabled={busy} value={ratio} onChange={e => setRatio(e.target.value as typeof ratio)}>
@@ -1010,7 +1016,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <input aria-label="Music volume" type="range" min="0" max="1" step=".05" disabled={busy}
               value={musicVolume} onChange={e=>{setMusicVolume(Number(e.target.value));cleanupOutput()}} />
           </label>}
-          <fieldset disabled={busy} style={{display:"grid",gap:6}}><legend>Audio processing</legend><label><input type="checkbox" checked={aiDenoise} onChange={e=>{setAiDenoise(e.target.checked);if(e.target.checked)setNoiseReduction(false);cleanupOutput()}}/>AI Noise Reduction (MP4 worker; RNNoise model required)</label><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);if(e.target.checked)setAiDenoise(false);cleanupOutput()}}/>Spectral noise reduction (saved for MP4 worker only; not applied in WebM)</label>
+          <fieldset disabled={busy||mp4Busy||projectSaving} className="studio-audio-processing"><legend>Audio processing</legend><label><input type="checkbox" checked={aiDenoise} onChange={e=>{setAiDenoise(e.target.checked);if(e.target.checked)setNoiseReduction(false);cleanupOutput()}}/>AI Noise Reduction · MP4</label><label><input type="checkbox" checked={noiseReduction} onChange={e=>{setNoiseReduction(e.target.checked);if(e.target.checked)setAiDenoise(false);cleanupOutput()}}/>Spectral noise reduction · MP4</label>
             <label><input type="checkbox" checked={lowCut} onChange={e=>{setLowCut(e.target.checked);cleanupOutput()}}/>Source low-cut (80 Hz rumble filter)</label>
             <label><input type="checkbox" checked={audioCompressor} onChange={e=>{setAudioCompressor(e.target.checked);cleanupOutput()}}/>Source dynamics compressor</label>
             <label><input type="checkbox" checked={audioDucking} onChange={e=>{setAudioDucking(e.target.checked);cleanupOutput()}}/>Duck music during voiceover</label>
@@ -1019,9 +1025,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {backgroundMusic&&<button type="button" disabled={busy} className="studio-setting-secondary" onClick={()=>{setBackgroundMusic(null);cleanupOutput()}}>Remove music</button>}
         </div>
         <div className="studio-setting-card">
-          <strong>Logo / image / object overlays (local / WebM)</strong>
+          <strong>Image & logo layers · MP4 / WebM</strong>
           <input ref={imagePicker} hidden type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{const file=e.target.files?.[0];e.target.value="";if(!file||duration<.1)return;if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>10_000_000||imageLayers.length>=8){setState("Use PNG, JPEG or WebP under 10 MB; maximum 8 layers.");return;}const id=crypto.randomUUID(),start=Math.max(0,Math.min(playhead,duration-.1));setImageLayers(old=>[...old,{id,file,start,end:duration,x:.8,y:.2,size:.25,opacity:1}]);setSelectedImage(id);cleanupOutput();}}/>
-          <button type="button" disabled={busy||!duration||imageLayers.length>=8} onClick={()=>imagePicker.current?.click()}>+ Add image / logo</button>
+          <button type="button" className="studio-setting-file-button" disabled={busy||mp4Busy||projectSaving||!duration||imageLayers.length>=8} onClick={()=>imagePicker.current?.click()}>+ Add image / logo</button>
+          <small>{imageLayers.length}/8 layers · PNG, JPEG, WebP · max 10 MB each{!duration?" · Add a video first":""}</small>
           {imageLayers.length>0&&<select aria-label="Select image layer" value={selectedImage||""} disabled={busy} onChange={e=>setSelectedImage(e.target.value)}><option value="">Select layer</option>{imageLayers.map(l=><option key={l.id} value={l.id}>{l.file.name}</option>)}</select>}
           {imageLayers.filter(l=>l.id===selectedImage).map(l=><fieldset key={l.id} disabled={busy} style={{display:"grid",gap:6}}><legend>Selected image</legend>
           <label>Start (s)<input type="number" min={0} max={l.end-.01} step={.1} value={l.start} onChange={e=>{const n=Number(e.target.value);if(n>=0&&n<l.end){setImageLayers(old=>old.map(a=>a.id===l.id?{...a,start:n}:a));cleanupOutput();}}}/></label>
@@ -1031,7 +1038,7 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
           {(l.keyframes||[]).map((k,i)=><div key={i} style={{display:"grid",gap:4,border:"1px solid #4c355d",padding:5}}><button type="button" onClick={()=>seekTimeline(l.start+k.at)}>Keyframe {i+1} · {sec(k.at)}</button>{(["x","y","size","opacity"] as const).map(axis=><label key={axis}>{axis} {Math.round(k[axis]*100)}%<input type="range" min={axis==="size"?.05:0} max={1} step={.01} value={k[axis]} onChange={e=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,keyframes:(a.keyframes||[]).map((f,j)=>j===i?{...f,[axis]:Number(e.target.value)}:f)}:a));cleanupOutput();}}/></label>)}<button type="button" onClick={()=>{setImageLayers(old=>old.map(a=>a.id===l.id?{...a,keyframes:(a.keyframes||[]).filter((_,j)=>j!==i)}:a));cleanupOutput();}}>Delete keyframe</button></div>)}
           <button type="button" onClick={()=>{setImageLayers(old=>old.filter(a=>a.id!==l.id));setSelectedImage(null);cleanupOutput();}}>Remove image layer</button></fieldset>)}
         </div><div className="studio-setting-card">
-          <strong>Voiceover (local / WebM)</strong>
+          <strong>Voiceover · MP4 / WebM</strong>
           <input ref={voicePicker} hidden type="file" accept="audio/*" disabled={busy} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(!f)return;if(f.size>25_000_000||!f.type.startsWith("audio/")){setState("Choose an audio file under 25 MB.");return;}setVoiceLength(0);setVoicePeaks([]);setVoiceover(f);cleanupOutput();}}/>
           <button type="button" disabled={busy} onClick={()=>voicePicker.current?.click()}>{voiceover?"Replace voiceover":"Choose voiceover file"}</button>
           {voiceover&&<><small>{voiceover.name} · {sec(voiceLength)}</small><label>Start (seconds)<input type="number" min={0} max={duration} step={.1} disabled={busy} value={voiceStart} onChange={e=>{setVoiceStart(Math.max(0,Math.min(duration,Number(e.target.value)||0)));cleanupOutput();}}/></label><label>Voice volume {Math.round(voiceVolume*100)}%<input type="range" min={0} max={1} step={.05} value={voiceVolume} disabled={busy} onChange={e=>{setVoiceVolume(Number(e.target.value));cleanupOutput();}}/></label><button type="button" disabled={busy} onClick={()=>{setVoiceover(null);setVoiceLength(0);cleanupOutput()}}>Remove voiceover</button></>}
@@ -1040,10 +1047,10 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
             <input id="studio-video-title" aria-label="Video title overlay" disabled={busy} value={titleOverlay} maxLength={120}
               onChange={e=>{setTitleOverlay(e.target.value);cleanupOutput()}} placeholder="Optional on-screen title" />
           </label>
-          <small>Leave blank to export without a title overlay.</small>
+          <small>Optional on-screen title · WebM only at present.</small>
         </div>
         <div className="studio-setting-card">
-          <strong>Subtitles (.srt)</strong>
+          <strong>Subtitles (.srt) · WebM only</strong>
           <input ref={subtitlePicker} hidden type="file" disabled={busy} accept=".srt,text/plain" aria-label="Import SRT subtitles"
             onChange={e=>{
               const file=e.target.files?.[0];e.target.value="";
@@ -1065,21 +1072,27 @@ export default function LocalVideoEditor({allowAnonymousLocalSave=false}:{allowA
         </div>
       </div>
       <div className="studio-export-actions">
-        <div style={{display:"grid",gap:8,margin:"8px 0"}}>
-          <button type="button" disabled={!signedIn||!clips.length||busy||projectSaving||mp4Busy} onClick={()=>void submitMp4()}>{mp4Busy?"Submitting MP4…":"Request cloud MP4 (worker required)"}</button>
-          <small>Cloud MP4 requires an active render worker. A queued job is not a completed export.</small>
-          {mp4Message&&<small role="status">{mp4Message}</small>}
-          {signedIn&&<button type="button" onClick={()=>void refreshMp4Jobs()}>Refresh MP4 jobs</button>}
-          {mp4Jobs.map(job=><div key={job.id} style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}><span>{job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>Download MP4</button>}</div>)}
-        </div>
-        <button type="button" disabled={!clips.length || busy || !supportedMime()} onClick={() => { void exportVideo(); }}
-          className="studio-export-primary">{t("Merge & Export WebM", "Birleştir ve WebM indir")}</button>
+        {exportFormat==="mp4"&&!signedIn&&<small role="status">Sign in to export MP4. WebM can be rendered locally.</small>}
+        {exportFormat==="mp4"&&(titleOverlay.trim()||captionCues.length>0)&&<small role="status">MP4 does not yet support title or subtitle layers. Remove them or choose WebM.</small>}
+        {exportFormat==="mp4"&&fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle)&&<small role="status">Choose fade through black or true crossfade for MP4, or use WebM.</small>}
+        {exportFormat==="webm"&&((fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction)&&<small role="status">Selected effects require MP4. Choose MP4 or turn off these effects.</small>}
+        <button type="button" className="studio-export-primary"
+          disabled={!clips.length||busy||projectSaving||mp4Busy||(exportFormat==="mp4"?(!signedIn||!!titleOverlay.trim()||captionCues.length>0||(fadeBetweenClips&&!["black","crossfade"].includes(transitionStyle))):(!supportedMime()||(fadeBetweenClips&&transitionStyle==="crossfade")||aiDenoise||noiseReduction))}
+          onClick={()=>{if(exportFormat==="mp4")void submitMp4();else void exportVideo();}}>
+          {mp4Busy?"Preparing MP4…":busy?"Rendering WebM…":exportFormat==="mp4"?t("Export MP4","MP4 dışa aktar"):t("Export WebM","WebM dışa aktar")}
+        </button>
         {!clips.length&&<small>Add at least one video clip to enable export.</small>}
-        {busy&&<button type="button" onClick={() => { cancel.current = true; }}>Cancel</button>}
+        {busy&&<button type="button" onClick={()=>{cancel.current=true;}}>Cancel</button>}
         {busy&&<span role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>{progress}%</span>}
-        {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download merged video</a>}
+        {downloadUrl&&<a href={downloadUrl} download="crelavo-studio-merged.webm">↓ Download WebM</a>}
+        {mp4Message&&<small role="status">{mp4Message}</small>}
+        {signedIn&&(exportFormat==="mp4"||mp4Jobs.length>0)&&<div className="studio-mp4-jobs">
+          <div className="studio-mp4-jobs-heading"><strong>MP4 export history</strong><button type="button" disabled={mp4Busy} onClick={()=>void refreshMp4Jobs()}>Refresh</button></div>
+          {!mp4Jobs.length&&<small>No cloud exports yet.</small>}
+          {mp4Jobs.map(job=><div key={job.id} className="studio-mp4-job"><span>{job.status==="ready"?"Ready to download":job.status==="queued"?"Queued":job.status==="processing"?"Rendering…":job.status==="failed"?"Failed":job.status} · {job.id.slice(0,8)} {job.error_code||""}</span>{job.status==="ready"&&<button type="button" onClick={()=>void downloadMp4(job.id)}>Download MP4</button>}</div>)}
+        </div>}
       </div>
     </section>
-    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>Local, real-time browser rendering. WebM export only; quality depends on browser and hardware. SRT subtitle burn-in, title overlay and one user-provided background music track with volume/fade are available. Use only music you have rights to.  Private cloud timeline source-file backup/reopen supports up to 90 MB total; larger local timelines still stay on this device. Cloud backup includes voiceover, images and animation settings. Cloud browser tests pending. Advanced crossfades and MP4 export are not available in this browser editor yet.</p>
+    <p style={{ color: "#aa9bb7", fontSize: 11, marginTop: 12 }}>MP4 uses private cloud rendering and requires an available worker. WebM renders on your device. Titles and SRT subtitle burn-in currently require WebM; AI noise reduction and true crossfade require MP4. Cloud timeline backup supports up to 90 MB total. Use only media you have rights to.</p>
   </section>;
 }
