@@ -72,14 +72,19 @@ export function validateTimeline(timeline, userId, projectId) {
     throw new Error("MUSIC_PATH_INVALID");
   const transitionStyle=timeline.transitionStyle??"black",transitionDuration=timeline.transitionDuration??.4;
   if(!["black","crossfade"].includes(transitionStyle)||!Number.isFinite(transitionDuration)||transitionDuration<.1||transitionDuration>2)throw new Error("MP4_TRANSITION_NOT_SUPPORTED");
-  if(timeline.voicePath||(Array.isArray(timeline.imageLayers)&&timeline.imageLayers.length))throw new Error("MP4_EXTRA_LAYERS_NOT_SUPPORTED_YET");
-  return {clips,musicPath,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
+  const voicePath=typeof timeline.voicePath==="string"?timeline.voicePath:null;
+  if(voicePath&&(!voicePath.startsWith(root)||!/^[-\w/]+\.(?:mp3|m4a|wav|ogg|webm)$/i.test(voicePath)))throw new Error("VOICE_PATH_INVALID");
+  const voiceStart=timeline.voiceStart??0,voiceVolume=timeline.voiceVolume??1;
+  if(!Number.isFinite(voiceStart)||voiceStart<0||voiceStart>1200||!Number.isFinite(voiceVolume)||voiceVolume<0||voiceVolume>1)throw new Error("VOICE_SETTINGS_INVALID");
+  if(Array.isArray(timeline.imageLayers)&&timeline.imageLayers.length)throw new Error("MP4_EXTRA_LAYERS_NOT_SUPPORTED_YET");
+  if(timeline.audioDucking||timeline.audioCompressor||timeline.lowCut)throw new Error("MP4_ADVANCED_AUDIO_NOT_SUPPORTED_YET");
+  return {clips,musicPath,voicePath,voiceStart,voiceVolume,width,height,transitionStyle,transitionDuration,noiseReduction:timeline.noiseReduction===true,framing:timeline.framing==="blur"?"blur":timeline.framing==="cover"?"cover":"contain",includeAudio:timeline.includeAudio!==false,
     musicVolume:Math.max(0,Math.min(1,Number(timeline.musicVolume)||0)),
     fadeBetweenClips:Boolean(timeline.fadeBetweenClips)};
 }
 /** sourceFiles must have the same order as validated clips and be worker-owned temp files. */
-export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sourceFiles,musicFile=null,dir,output}) {
-  if(sourceFiles.length!==timeline.clips.length)throw new Error("INPUT_COUNT_MISMATCH");
+export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sourceFiles,musicFile=null,voiceFile=null,dir,output}) {
+  if(sourceFiles.length!==timeline.clips.length||Boolean(timeline.voicePath)!==Boolean(voiceFile))throw new Error("INPUT_COUNT_MISMATCH");
   const segments=[];
   for(let index=0;index<timeline.clips.length;index++){
     const c=timeline.clips[index],input=sourceFiles[index];
@@ -139,12 +144,24 @@ export async function composeMp4({ffmpeg="ffmpeg",ffprobe="ffprobe",timeline,sou
     outputDuration=elapsed;
   }else await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
     "-f","concat","-safe","0","-i",concat,"-c","copy","-movflags","+faststart",merged]);
-  if(musicFile) {
-    await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y",
-      "-i",merged,"-stream_loop","-1","-i",musicFile,
-      "-filter_complex","[1:a]volume="+timeline.musicVolume+",aresample=48000[m];[0:a][m]amix=inputs=2:duration=first:dropout_transition=0[a]",
-      "-map","0:v:0","-map","[a]","-c:v","copy","-c:a","aac","-b:a","160k",
-      "-movflags","+faststart",output]);
+  if(musicFile||voiceFile){
+    const args=["-hide_banner","-loglevel","error","-nostdin","-y","-i",merged];
+    const graph=["[0:a]aresample=48000,aformat=channel_layouts=stereo[base]"];
+    const streams=["[base]"];let index=1;
+    if(musicFile){
+      args.push("-stream_loop","-1","-i",musicFile);
+      graph.push("["+(index++)+":a]aresample=48000,aformat=channel_layouts=stereo,volume="+timeline.musicVolume+"[music]");
+      streams.push("[music]");
+    }
+    if(voiceFile){
+      args.push("-i",voiceFile);
+      const delay=Math.round(timeline.voiceStart*1000);
+      graph.push("["+(index++)+":a]aresample=48000,aformat=channel_layouts=stereo,volume="+timeline.voiceVolume+",adelay="+delay+":all=1[voice]");
+      streams.push("[voice]");
+    }
+    graph.push(streams.join("")+"amix=inputs="+streams.length+":duration=first:dropout_transition=0:normalize=0,alimiter=limit=0.95[a]");
+    args.push("-filter_complex_threads","1","-filter_complex",graph.join(";"),"-map","0:v:0","-map","[a]","-c:v","copy","-c:a","aac","-b:a","160k","-t",String(outputDuration),"-movflags","+faststart",output);
+    await runFfmpeg(ffmpeg,args);
   }else{
     await runFfmpeg(ffmpeg,["-hide_banner","-loglevel","error","-nostdin","-y","-i",merged,
       "-c","copy","-movflags","+faststart",output]);
