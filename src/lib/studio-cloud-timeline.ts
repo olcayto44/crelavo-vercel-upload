@@ -14,6 +14,7 @@ function adjustments(c: ClipAdjustments): ClipAdjustments {
 export type CloudTimelineClip = ClipAdjustments & { id: string; file: File; name: string; duration: number; start: number; end: number };
 export type CloudImageLayer={hidden?:boolean;locked?:boolean;id:string;file:File;start:number;end:number;x:number;y:number;size:number;opacity:number;keyframes?:Array<{at:number;x:number;y:number;size:number;opacity:number}>};
 export type CloudTimelineSettings = {
+ layerFlags?:Partial<Record<'title'|'captions'|'music'|'voice',{hidden?:boolean;locked?:boolean}>>;
  voiceover?:File|null;voiceStart?:number;voiceVolume?:number;voiceLength?:number;
  imageLayers?:CloudImageLayer[];transitionStyle?:string;transitionDuration?:number;
  audioDucking?:boolean;duckLevel?:number;audioCompressor?:boolean;lowCut?:boolean;noiseReduction?:boolean;aiDenoise?:boolean;
