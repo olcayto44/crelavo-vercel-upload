@@ -171,3 +171,68 @@ sql("insert into auth.users values("+literal(owner)+");insert into profiles(id,e
 assert one(whop(owner,"ci_whop_fresh",None,dict(balance=50,reserved=0,topup_credits=50))+";",True)=="credited"
 assert wallet(owner)=="50:0" and events(owner,"purchase")==1
 print("PASS initial wallet creation and payment credit in one transaction",flush=True)
+
+# Whop paid-but-pending recovery: persisted verification terms, fresh wallet snapshot,
+# no stale patch replay, no real provider request.
+sql(Path("docs/studio-whop-pending-recovery-isolated.sql").read_text())
+def terms(owner,payment,credits=50,product="fixture"):
+    return ",".join([literal(owner),literal(payment),"'plan_fixture'",literal(product),"'one_time'",str(credits)])
+def stage(owner,payment,credits=50,product="fixture"):
+    return "select public.studio_whop_stage_verified("+terms(owner,payment,credits,product)+")"
+def recover(owner,payment,expected,update,credits=50,product="fixture"):
+    return ("select public.studio_whop_recover_verified("+terms(owner,payment,credits,product)+","+
+      ("null" if expected is None else literal(expected)+"::jsonb")+","+literal(json.dumps(update))+"::jsonb)")
+def pending(payment):
+    return one("select state||':'||attempt_count from studio_whop_pending_credits where payment_id="+literal(payment)+";")
+
+owner=user(); payment="pay_ci_pending"
+expected=snapshot(owner); update=dict(balance=150,reserved=0,topup_credits=50)
+assert one(recover(owner,payment,expected,update)+";",True)=="stage_required"
+assert race(stage(owner,payment),stage(owner,payment))==["pending","pending"]
+assert pending(payment)=="pending:0" and wallet(owner)=="100:0"
+assert one(stage(owner,payment,51)+";",True)=="payment_conflict"
+assert one(recover(owner,payment,expected,update,product="wrong_product")+";",True)=="payment_conflict"
+# Simulated failed transaction after the credit operation: durable stage survives.
+sql("begin;\n"+recover(owner,payment,expected,update)+";\nrollback;",True)
+assert pending(payment)=="pending:0" and wallet(owner)=="100:0" and events(owner,"purchase")==0
+# Wallet changed after verification; retry uses freshly verified terms and fresh calculation.
+sql("update credit_balances set balance=110,current_subscription_credits=110 where user_id="+literal(owner)+";")
+assert one(recover(owner,payment,expected,update)+";",True)=="wallet_changed"
+assert pending(payment)=="pending:1" and wallet(owner)=="110:0"
+new_update=dict(balance=160,reserved=0,topup_credits=50)
+replay=recover(owner,payment,snapshot(owner),new_update)
+assert sorted(race(replay,replay))==["already_processed","credited"]
+assert pending(payment)=="fulfilled:2" and wallet(owner)=="160:0" and events(owner,"purchase")==1
+print("PASS Whop durable pending survives rollback, stale wallet retries with fresh calculation, one final credit",flush=True)
+
+owner=user(); payment="pay_ci_review"
+assert one(stage(owner,payment)+";",True)=="pending"
+assert one("select public.studio_whop_hold_pending("+literal(payment)+",'provider_dispute');",True)=="review_required"
+assert one(recover(owner,payment,snapshot(owner),update)+";",True)=="review_required"
+assert pending(payment)=="review_required:0" and wallet(owner)=="100:0" and events(owner,"purchase")==0
+assert one(stage(owner,payment)+";",True)=="review_required"
+try:
+    sql("set role authenticated;select * from studio_whop_pending_credits;")
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("browser role read pending credits")
+try:
+    sql("set role authenticated;"+stage(owner,payment)+";")
+except RuntimeError:
+    pass
+else:
+    raise AssertionError("browser role staged a payment")
+print("PASS Whop dispute holds recovery; browser role cannot read or stage payments",flush=True)
+
+owner=user();payment="pay_ci_pending_period"
+assert one(stage(owner,payment)+";",True)=="pending"
+_,args=plan(owner)
+assert one(call("reserve",args)+";",True)=="reserved"
+period_patch=dict(balance=150,reserved=70,topup_credits=50,topup_expires_at="2030-01-01T00:00:00Z")
+assert one(recover(owner,payment,snapshot(owner),period_patch)+";",True)=="reconcile_required"
+assert pending(payment)=="review_required:1" and wallet(owner)=="100:70"
+assert one(call("finalize",args,", 'release_unclaimed'")+";",True)=="released"
+assert one(recover(owner,payment,snapshot(owner),update)+";",True)=="review_required"
+assert wallet(owner)=="100:0" and events(owner,"purchase")==0
+print("PASS Whop active reservation review persists after release; no automatic charge or replay",flush=True)

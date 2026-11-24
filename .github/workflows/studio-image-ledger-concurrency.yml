@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/studio-image-production-ledger-isolated.sql'
       - 'docs/studio-whop-credit-commit-isolated.sql'
+      - 'docs/studio-whop-pending-recovery-isolated.sql'
       - 'scripts/studio-image-ledger-concurrency.py'
       - '.github/workflows/studio-image-ledger-concurrency.yml'
       - 'supabase/schema.sql'
