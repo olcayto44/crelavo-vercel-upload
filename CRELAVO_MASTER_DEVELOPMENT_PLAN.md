@@ -60,7 +60,7 @@ Current priority (owner decision 2026-11-25): shared Studio V2 Production Engine
 See docs/STUDIO_V2_PRODUCTION_ENGINE_BASELINE_2026-11-25.md for baseline and release gates.
 1. [ ] Complete per-category contract, fields, output, permissions and runtime audit (37 static IDs checked).
 2. [ ] Central read-only capability registry: connected to read-only server tool, authenticated capability GET, model context and protected admin inspection; full operation/provider runtime evidence remains pending.
-3. [ ] Real production adapter.
+3. [ ] Real production adapter: internal Website adapter and existing paid-service binding implemented behind disabled gate; no authenticated dispatcher or live execution yet. Media operations remain unbound.
 4. [ ] Secure assistant-to-tool dispatcher.
 5. [ ] Model/provider capability and cost routing.
 6. [ ] Brief, plan, explicit approval and real production orchestration.
@@ -85,3 +85,7 @@ Current implementation: browser-local import, centered aspect crop, rotation/fli
 No provider-backed image feature is marked ready by this list.
 
 - Capability registry initial build b0dc1220 passed Vercel preview. Extended contract audit, read-only assistant and admin integration submitted for validation. No real production enabled.
+
+- Live capability registry verified READY, production dpl_Er7fPhHkkrijh4c5Kej65Xp8An2C. 37 categories, 416 fields, 109 select and 19 reference contracts passed static tests.
+- Website adapter first slice: reuse existing gated atomic paid service, reject mock approval and cross-owner bindings, normalize ready/released/uncertain outcomes, prohibit fallback and retries. Corrected Website failure path to require durable released settlement before reporting refunded credits. No new DB migration, env activation or customer charge.
+- Legacy media engine automatically falls back across MiniMax/Runway/Fal; do not reuse as the central dispatcher until per-operation receipts, cost and uncertainty handling are implemented. Website artifact generator is deterministic local code, not proof of real AI-provider generation.
