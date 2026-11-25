@@ -1,0 +1,20 @@
+name: Crelavo public sitemap audit
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/studio-cloud-elements-20261123]
+    paths:
+      - scripts/public-site-audit.py
+      - .github/workflows/public-site-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Audit live public URLs
+        run: python3 scripts/public-site-audit.py
