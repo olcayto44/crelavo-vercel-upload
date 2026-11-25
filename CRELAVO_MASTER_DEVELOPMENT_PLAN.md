@@ -125,3 +125,7 @@ No provider-backed image feature is marked ready by this list.
 - Fixed legacy /ai-app-builder redirect into authenticated dashboard; reuse configured public service content and mobile_app Studio CTA. Existing user auth rules remain unchanged.
 
 - Approved Category Detail: shared dark/purple landing layout for 37 existing public routes; editorial headline, description, features, concepts, scope, FAQs, breadcrumb, metadata and relevant links. Explicit white H1/H2/H3 and light copy. Keyword volumes not verified. Existing showcase media used only on related categories; missing original photography not faked. New /dashboard/studio/[category] paths keep old route compatibility and auth. All 148 original visual assets, admin content integration, locale research, browser tests and production promotion remain open.
+
+## Central production dispatch — 2026-11-25
+- Public category release is live at main d9245165; preserve its localized copy.
+- Added explicit authenticated Website-only endpoint: verified email, per-user limit, owner-bound Studio/Website records, exact persisted approved plan, flags and paid canary. Calls existing atomic service. No provider fallback or model-triggered production. Offline boundary tests wired into build; real signed-in acceptance, Studio DB setup and real AI provider output pending. No production flags, payment or database changes.

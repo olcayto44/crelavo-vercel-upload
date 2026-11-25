@@ -107,7 +107,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "drama": {
     "slug": "yapay-zeka-kisa-film-drama",
-    "title": "Yapay Zekâ Kısa Film ve Drama",
+    "title": "Yapay Zekâ ile Kısa Film ve Drama",
     "description": "Kısa filmler ve diziler için olay örgüsünü, karakter gelişimini, diyalogları ve sahneleri planlayın.",
     "uses": [
       "Kısa film",
@@ -134,7 +134,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "video_clipping": {
     "slug": "yapay-zeka-video-kirpma",
     "title": "Yapay Zekâ Video Kırpma",
-    "description": "Uzun ve izinli videolardan kısa sosyal medya klipleri, dikkat çekici anlar ve özetler için kesim planı hazırlayın.",
+    "description": "Kullanım hakkına sahip olduğunuz uzun videolardan kısa sosyal medya klipleri, dikkat çekici anlar ve özetler için kesim planı hazırlayın.",
     "uses": [
       "Podcast klibi",
       "Kısa video",
@@ -155,7 +155,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "En boy oranı"
     ],
     "question": "Hangi dışa aktarma formatları kullanılabilir?",
-    "answer": "Mevcut editördeki desteklenen kaynak ve çıktı biçimlerini kontrol edin. Bulut üretimi ve yerel editör farklı özellikler sunabilir."
+    "answer": "Mevcut editörde desteklenen kaynak ve çıktı biçimlerini kontrol edin. Bulut üretimi ve yerel editör farklı özellikler sunabilir."
   },
   "campaign": {
     "slug": "yapay-zeka-reklam-kampanyasi",
@@ -415,7 +415,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Kamera rotası"
     ],
     "question": "Yapay drone görüntüsü gerçek havadan çekim mi?",
-    "answer": "Hayır. Gerçek izinli görüntü mü yoksa simülasyon mu istediğinizi belirtin; coğrafi ayrıntıları kontrol edin."
+    "answer": "Hayır. Kullanım izni olan gerçek görüntü mü yoksa simülasyon mu istediğinizi belirtin; coğrafi ayrıntıları kontrol edin."
   },
   "stickman_animation": {
     "slug": "cubuk-adam-animasyonu",
@@ -433,7 +433,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "studio": {
     "slug": "yapay-zeka-film-dizi-studyosu",
     "title": "Yapay Zekâ Film ve Dizi Stüdyosu",
-    "description": "Uzun film veya dizi fikirleri için senaryo, karakterler, bölüm planı, sahne listesi ve teslim kapsamını organize edin.",
+    "description": "Uzun film veya dizi fikirleri için senaryo, karakterler, bölüm planı, sahne listesi ve teslimat kapsamını düzenleyin.",
     "uses": [
       "Film konsepti",
       "Dizi bölümleri",
@@ -446,7 +446,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "crelavo_academy": {
     "slug": "crelavo-akademi",
     "title": "Crelavo Akademi",
-    "description": "Yapay zekâ ile yaratıcı üretim konusunda öğrenme hedefleri, uygulama egzersizleri ve eğitim materyalleri planlayın.",
+    "description": "Yapay zekâ ile yaratıcı üretim konusunda öğrenme hedefleri, uygulamalı alıştırmalar ve eğitim materyalleri planlayın.",
     "uses": [
       "Öğrenme planı",
       "Uygulama egzersizi",
@@ -454,7 +454,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Atölye konsepti"
     ],
     "question": "Eğitim planı nasıl hazırlanır?",
-    "answer": "Beceri düzeyini, hedefi, uygulanabilir egzersizi ve öğrenmenin nasıl değerlendirileceğini belirleyin."
+    "answer": "Beceri düzeyini, hedefi, uygulanabilir alıştırmayı ve öğrenmenin nasıl değerlendirileceğini belirleyin."
   },
   "community_showcase": {
     "slug": "topluluk-projeleri",

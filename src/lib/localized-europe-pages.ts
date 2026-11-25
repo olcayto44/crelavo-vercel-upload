@@ -33,7 +33,7 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
     secondaryCta: "Preise ansehen",
     marketNote: "Für deutsche und europäische E-Commerce-Teams, Agenturen, Shopify- und Amazon-Händler sowie Start-ups.",
     sections: [
-      { title: "Für E-Commerce gemacht", body: "Crelavo verbindet Produktlinks, Kampagnenziele und Markeninformationen zu einem organisierten Produktions-Workflow." },
+      { title: "Für E-Commerce gemacht", body: "Crelavo verbindet Produktlinks, Kampagnenziele und Markeninformationen zu einem strukturierten Produktionsablauf." },
       { title: "Mehrsprachige Kampagnen", body: "Bereiten Sie Werbemittel für verschiedene europäische Märkte vor, ohne jedes Motiv von Grund auf neu zu planen." },
       { title: "Umfang und Qualität prüfen", body: "Prüfen Sie Briefing, verfügbare Werkzeuge, Credits, Lieferumfang und notwendige Korrekturen vor der Freigabe." }
     ],
@@ -55,7 +55,7 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
     secondaryCta: "Voir les prix",
     marketNote: "Pour les marques e-commerce, agences, startups et équipes marketing en France et en Europe.",
     sections: [
-      { title: "Pensé pour l’e-commerce", body: "Crelavo organise les liens produits, les objectifs marketing et les contraintes de marque dans un workflow clair." },
+      { title: "Pensé pour l’e-commerce", body: "Crelavo organise les liens vers les produits, les objectifs marketing et les contraintes de marque dans un processus de production clair." },
       { title: "Adaptation multilingue", body: "Préparez des campagnes pour plusieurs marchés européens avec une structure de production cohérente." },
       { title: "Vérification du périmètre et de la qualité", body: "Vérifiez le brief, les outils disponibles, les crédits, les livrables et les révisions nécessaires avant validation." }
     ],
