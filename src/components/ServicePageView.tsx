@@ -1,4 +1,6 @@
 import Link from "next/link";
+import {CategoryDetailPage} from "@/components/CategoryDetailPage";
+import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 import { ServicePageStructuredData } from "@/components/ServicePageStructuredData";
 import type { ServicePage } from "@/lib/service-pages";
 import { caseStudyProofs, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
@@ -34,21 +36,23 @@ const freeToolFunnelLinks = [
 ];
 
 function normalizeProductionStartHref(href: string) {
-  return href.startsWith("/dashboard/assistant-workspace") ? href.replace("/dashboard/assistant-workspace", "/dashboard/create") : href;
+  return href; // Preserve existing brief and package links until the new engine is connected.
 }
 
 function primaryCtaHref(page: ServicePage) {
-  return page.slug === "ai-video-generator" ? "/join" : normalizeProductionStartHref(page.primaryCtaHref);
+  const id=categoryForPublicPath("/"+page.slug);
+  if(id)return categoryWorkspace(id);
+  return normalizeProductionStartHref(page.primaryCtaHref);
 }
 
 function primaryCtaLabel(page: ServicePage) {
-  return page.slug === "ai-video-generator" ? "Create a free account" : page.primaryCtaLabel;
+  return page.slug === "ai-video-generator" ? "Open Video Studio" : page.slug === "ai-website-builder" ? "Open Website Studio" : page.primaryCtaLabel;
 }
 
 function secondaryCtaLabel(href: string) {
   const normalizedHref = normalizeProductionStartHref(href);
   if (normalizedHref === "/pricing") return "View pricing and delivery options";
-  if (normalizedHref.startsWith("/dashboard/create")) return "Start this production path";
+  if (normalizedHref.startsWith("/dashboard/assistant-workspace")) return "Start this production path";
   if (normalizedHref.startsWith("/dashboard")) return "Open related dashboard path";
   return "Explore related options";
 }
@@ -186,6 +190,8 @@ function buildSeoArticle(page: ServicePage) {
 }
 
 export function ServicePageView({ page }: { page: ServicePage }) {
+  const matchedCategory=categoryForPublicPath("/"+page.slug);
+  if(matchedCategory)return <CategoryDetailPage id={matchedCategory}/>;
   const article = buildSeoArticle(page);
   const marketplaceGuide = buildMarketplaceGuide(page);
   const longTailKeywords = buildLongTailKeywords(page);
@@ -197,14 +203,17 @@ export function ServicePageView({ page }: { page: ServicePage }) {
       <ServicePageStructuredData page={page} />
       <main className="container section service-page-detail public-funnel-page">
         <section className="production-hero-card admin-overview-hero service-hero-card">
+        <nav aria-label="Breadcrumb" style={{fontSize:12,marginBottom:12}}><Link href="/">Home</Link> / <Link href="/categories">Categories</Link> / {page.title}</nav>
         <span className="badge">{page.badge}</span>
-        <h1>{page.title} for {page.bestFor}</h1>
+        <h1>{page.title}</h1>
         <p>{page.summary}</p>
-        <p className="section-lead">Explore the {page.keyword} category for long-tail searches like {longTailKeywords.slice(1, 4).join(", ")}.</p>
+        <p className="section-lead">Best for {page.bestFor}. Review the project scope before approving production.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={primaryCtaHref(page)}>{primaryCtaLabel(page)}</Link>
           {page.secondaryCtaHref ? <Link className="btn secondary" href={normalizeProductionStartHref(page.secondaryCtaHref)}>{secondaryCtaLabel(page.secondaryCtaHref)}</Link> : null}
           <Link className="btn secondary" href="/tools">All tools</Link>
+          {page.slug === "ai-video-generator" && <Link className="btn secondary" href="/tools/video-editor">Edit existing videos</Link>}
+          {(page.slug === "ai-video-generator" || page.slug === "ai-website-builder") && <Link className="btn secondary" href="/dashboard/assistant-workspace">Existing production workspace</Link>}
         </div>
       </section>
 
@@ -215,19 +224,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <div><span>Ready path</span><strong>Assistant workflow</strong><small>Continue with guided production</small></div>
       </section>
 
-      <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
-        <span className="badge">SEO keyword coverage</span>
-        <h2>{page.title} keywords, long-tail searches and category intent</h2>
-        <p>These search phrases help visitors find the right Crelavo production path from Google, Yandex, Bing, AI directories and category pages.</p>
-        <div className="admin-category-grid">
-          {longTailKeywords.slice(0, 12).map((keyword) => (
-            <div className="card admin-category-card" key={keyword}>
-              <h3>{keyword}</h3>
-              <p>Relevant for {page.bestFor.toLowerCase()} and connected to the {page.keyword} service category.</p>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       <section className="card admin-wide-card" style={{ marginTop: 18 }}>
         <span className="badge">Proof and case studies</span>

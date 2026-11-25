@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/website-minimal-release-smoke.cjs && node scripts/website-paid-production-gate-smoke.cjs && node scripts/website-atomic-flow-smoke.cjs && npm run smoke:website-assistant && npm run smoke:automatic-delivery-builder && npm run smoke:website-brief-output && npm run smoke:studio-v2-wiring && npm run smoke:studio-video-editor && npm run smoke:studio-image-editor && next build",
+    "build": "node scripts/website-minimal-release-smoke.cjs && node scripts/website-paid-production-gate-smoke.cjs && node scripts/website-atomic-flow-smoke.cjs && npm run smoke:website-assistant && npm run smoke:automatic-delivery-builder && npm run smoke:website-brief-output && npm run smoke:studio-v2-wiring && npm run smoke:studio-video-editor && npm run smoke:studio-image-editor && node scripts/category-locale-integrity-smoke.cjs && node scripts/dashboard-signin-smoke.cjs && node scripts/public-auth-resilience-smoke.cjs && node scripts/prepare-category-showcase-art.cjs && next build",
     "smoke": "npm run smoke:ai-social-agents && npm run smoke:legacy-create-link && npm run smoke:env-example && npm run smoke:seo-brand && npm run smoke:security-privacy && npm run smoke:english-ui-guard && npm run smoke:assistant-routing && npm run smoke:assistant-workspace-regression && npm run smoke:workspace-conversation && npm run smoke:workspace-language && npm run smoke:assistant-links && npm run smoke:navigation-links && npm run smoke:assistant-conversation && npm run smoke:category-option-panels && npm run smoke:admin-category-coverage && npm run smoke:growth-backlog && npm run smoke:organic-directory && npm run smoke:google-indexing && npm run smoke:showcase-video-seo && npm run smoke:analytics-tracking && npm run smoke:partner-program && npm run smoke:production-payload && npm run smoke:production-quality && npm run smoke:production-qa && npm run smoke:high-traffic && npm run smoke:mobile-real-device && npm run smoke:production-profit && npm run smoke:subscription-billing && npm run smoke:lemon-application && npm run smoke:delivery-package && npm run smoke:automatic-delivery-builder && npm run smoke:website-generation-quality && npm run smoke:website-content && npm run smoke:website-assistant && npm run smoke:automation-preflight && npm run smoke:demo-output && npm run smoke:credit-resolution && npm run smoke:api-cost-abuse && npm run smoke:api-guard-admin && npm run smoke:manual-e2e-checklist && npm run smoke:final-api-env-checklist && npm run smoke:e2e-dry-run && npm run smoke:non-payment-e2e",
     "smoke:ai-social-agents": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ai-social-agents-smoke.mts",
     "smoke:legacy-create-link": "node scripts/legacy-create-link-guard.mts",
@@ -80,19 +80,16 @@
     "ai": "^7.0.42",
     "ffmpeg-static": "^5.3.0",
     "geoip-lite": "^2.0.3",
-    "jimp": "1.6.0",
+    "jimp": "^1.7.0",
     "lucide-react": "^1.28.0",
-    "next": "^16.2.12",
+    "next": "^16.4.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.5",
     "stripe": "^22.4.0",
-    "zod": "^4.4.3"
+    "zod": "^4.6.6"
   },
-  "optionalDependencies": {
-    "@img/sharp-libvips-linux-x64": "1.3.2",
-    "@img/sharp-linux-x64": "0.35.3"
-  },
+  "optionalDependencies": {},
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.16",
     "@types/geoip-lite": "^1.4.4",
@@ -100,7 +97,12 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.2.12",
+    "eslint-config-next": "^16.4.5",
     "typescript": "6.0.3"
+  },
+  "overrides": {
+    "baseline-browser-mapping": "^2.11.0",
+    "ip-address": "^10.7.4",
+    "undici": "^7.30.1"
   }
 }

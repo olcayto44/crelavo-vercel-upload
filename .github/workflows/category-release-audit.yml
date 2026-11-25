@@ -1,0 +1,73 @@
+name: Category release acceptance
+on:
+  push:
+    branches: [release/category-public-20261125]
+    paths:
+      - 'src/app/**'
+      - 'src/components/**'
+      - 'src/lib/**'
+      - 'middleware.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'public/category-art/**'
+      - 'scripts/category-release-audit.mjs'
+      - 'scripts/prepare-category-showcase-art.cjs'
+      - 'scripts/category-locale-integrity-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - 'scripts/non-payment-e2e-smoke.mts'
+      - 'next.config.mjs'
+      - '.github/workflows/category-release-audit.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      NEXT_PUBLIC_APP_URL: https://www.crelavo.com
+      AUDIT_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Record dependency audit details
+        run: |
+          mkdir -p category-audit-results
+          npm audit --json > category-audit-results/dependencies-all.json || true
+          npm audit --omit=dev --json > category-audit-results/dependencies-runtime.json || true
+          node -e 'for(const n of ["all","runtime"]){const d=require("./category-audit-results/dependencies-"+n+".json");if(d.error||!d.metadata)throw Error("Dependency audit unavailable: "+n);console.log(n,JSON.stringify(d.metadata.vulnerabilities));for(const [name,v] of Object.entries(d.vulnerabilities||{}))console.log(name,v.severity,JSON.stringify(v.fixAvailable));}'
+      - name: Enforce clean dependency audit
+        run: |
+          npm audit --audit-level=moderate
+          git diff --exit-code -- package-lock.json
+      - run: npm run build
+      - name: Install isolated browser tooling
+        run: |
+          mkdir -p "$RUNNER_TEMP/crelavo-browser"
+          npm install --prefix "$RUNNER_TEMP/crelavo-browser" --no-save --no-audit --no-fund playwright@1.56.1
+          ln -s "$RUNNER_TEMP/crelavo-browser/node_modules/playwright" node_modules/playwright
+          "$RUNNER_TEMP/crelavo-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Start local production server
+        run: |
+          npm start > /tmp/crelavo-category-server.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:3000/sitemap.xml > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          tail -n 80 /tmp/crelavo-category-server.log
+          exit 1
+      - run: node scripts/category-release-audit.mjs
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: category-acceptance-report
+          path: category-audit-results/
+          if-no-files-found: warn
