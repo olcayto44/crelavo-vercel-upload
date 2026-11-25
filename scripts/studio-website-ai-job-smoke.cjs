@@ -70,6 +70,15 @@ const {load}=require('./studio-agent-test-loader.cjs');
   const delivered=(await db.query('select * from production_requests where id=$1',[productionId])).rows[0];const reservation=(await db.query('select state,credits from website_credit_reservations where production_id=$1',[productionId])).rows[0];
   assert.equal(load('src/lib/assistant-work/website-paid-delivery.ts').websiteCreditDeliveryProof(delivered,reservation),true);
   assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+  if(process.env.STUDIO_WEBSITE_BROWSER_FIXTURE==='true'){
+   const {buildDeliveryEntries,buildDeliveryZip,buildPreviewHtml}=load('src/lib/automatic-delivery-builder.ts');
+   fs.mkdirSync('website-acceptance-results',{recursive:true});
+   const entries=buildDeliveryEntries(delivered);
+   for(const name of ['source/index.html','source/contact.html','source/styles.css','source/script.js','source/README.md'])assert(entries.some(e=>e.name===name),'missing '+name);
+   fs.writeFileSync('website-acceptance-results/delivery.zip',buildDeliveryZip(entries));
+   fs.writeFileSync('website-acceptance-results/preview.html',buildPreviewHtml(delivered));
+   fs.writeFileSync('website-acceptance-results/expected.json',JSON.stringify({headline:copy.headline,faq:copy.faq[0].question,brand:hashBrief.brand,creditSpend:500,provider:'synthetic',deliveryProof:true},null,2));
+  }
   // An interrupted claimed job is not replayed or released.
   const next=(await db.query("insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,estimated_credits,input_json,output_json) values($1,'website',$2,'Second isolated','Offline','pending','pending',$3,'{}'::jsonb,$4::jsonb) returning id",[owner,packId,credits,JSON.stringify({websiteAssistant:{phase:'approved',approvedHash:planHash,planHash,packId,credits,brief:hashBrief},websiteAIApproval:tuple})])).rows[0].id;
   const args={...enqueueArgs,p_production:next};assert.equal((await rpc('website_ai_enqueue',args)).data,'queued');assert.equal((await rpc('website_ai_claim',args)).data,'claimed');

@@ -1,0 +1,55 @@
+name: Website isolated delivery acceptance
+on:
+  push:
+    branches: [feat/central-production-dispatch-20261125]
+    paths:
+      - 'scripts/studio-website-ai-job-smoke.cjs'
+      - 'scripts/website-isolated-browser-acceptance.mjs'
+      - 'src/lib/**'
+      - 'docs/website-ai-jobs-isolated.sql'
+      - '.github/workflows/website-isolated-delivery-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-delivery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Build settled synthetic AI website in embedded PostgreSQL
+        run: node scripts/studio-website-ai-job-smoke.cjs
+        env:
+          STUDIO_WEBSITE_BROWSER_FIXTURE: 'true'
+      - name: Validate and extract delivered archive
+        run: |
+          python3 - <<'PY'
+          from pathlib import PurePosixPath
+          from zipfile import ZipFile
+          with ZipFile('website-acceptance-results/delivery.zip') as z:
+              names=z.namelist()
+              assert len(names)==len(set(names))
+              assert all(not PurePosixPath(n).is_absolute() and '..' not in PurePosixPath(n).parts for n in names)
+              assert z.testzip() is None
+              z.extractall('website-acceptance-results/extracted')
+          print('ZIP CRC and paths verified',len(names))
+          PY
+      - name: Install isolated browser tooling
+        run: |
+          mkdir -p "$RUNNER_TEMP/crelavo-browser"
+          npm install --prefix "$RUNNER_TEMP/crelavo-browser" --no-save --no-audit --no-fund playwright@1.56.1
+          ln -s "$RUNNER_TEMP/crelavo-browser/node_modules/playwright" node_modules/playwright
+          "$RUNNER_TEMP/crelavo-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - run: node scripts/website-isolated-browser-acceptance.mjs
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: website-isolated-delivery-report
+          path: website-acceptance-results/
+          if-no-files-found: warn
