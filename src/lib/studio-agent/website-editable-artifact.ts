@@ -14,9 +14,11 @@ export function prepareEditableWebsiteBrief(input:WebsiteEngineInput){
 export function buildEditableWebsiteFromCopy(input:WebsiteEngineInput,raw:WebsiteAICopy):WebsiteDesignSpecInput{
  const base=prepareEditableWebsiteBrief(input),copy=WebsiteAICopySchema.parse(raw);
  const style=input.style.toLowerCase();
- const layout=/editorial|magazine|luxury|classic/.test(style)?"editorial":/gallery|visual|portfolio|creative/.test(style)?"gallery":"service";
- const palette=/dark|black|night/.test(style)?"ink":/green|nature|organic|forest/.test(style)?"forest":"sand";
+ const layout=copy.artDirection?.layout??(/editorial|magazine|luxury|classic/.test(style)?"editorial":/gallery|visual|portfolio|creative/.test(style)?"gallery":"service");
+ const palette=copy.artDirection?.palette??(/dark|black|night/.test(style)?"ink":/green|nature|organic|forest/.test(style)?"forest":"sand");
  const home=base.pages[0];
- const pages=base.pages.map((p,i)=>i===0?{...home,title:fit(base.brand,32)+" | "+fit(copy.headline,34),description:fit(copy.intro,160),headline:fit(copy.headline,100),lead:fit(copy.intro,320),seo:defaultWebsitePageSeo(),sections:copy.features.map(f=>({heading:fit(f.title,80),body:f.body})),faq:copy.faq.map(f=>({question:fit(f.question,120),answer:f.answer}))}:{...p,seo:defaultWebsitePageSeo()});
+ const manifest=websitePageManifest(input.pages);
+ const proposed=new Map((copy.secondaryPages??[]).map(p=>{const route=manifest.find(v=>v.slug!=="home"&&v.title===p.pageTitle);if(!route)throw Error("unapproved_secondary_page");return [route.slug,p] as const;}));
+ const pages=base.pages.map((p,i)=>i===0?{...home,title:fit(base.brand,32)+" | "+fit(copy.headline,34),description:fit(copy.intro,160),headline:fit(copy.headline,100),lead:fit(copy.intro,320),seo:defaultWebsitePageSeo(),sections:copy.features.map(f=>({heading:fit(f.title,80),body:f.body})),faq:copy.faq.map(f=>({question:fit(f.question,120),answer:f.answer}))}:proposed.has(p.slug)?{...p,...(()=>{const v=proposed.get(p.slug)!;return {title:v.title,description:v.description,headline:v.headline,lead:v.lead,sections:[v.section]};})(),seo:defaultWebsitePageSeo()}:{...p,seo:defaultWebsitePageSeo()});
  return WebsiteDesignSpec.parse({...base,layout,palette,responsive:defaultWebsiteResponsiveSettings,siteSettings:defaultWebsiteSiteSettings(),seoSettings:defaultWebsiteSeoSettings(),pages});
 }
