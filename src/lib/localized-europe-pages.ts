@@ -31,13 +31,13 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
     lead: "Planen Sie Produktvideos, Werbeclips und kreative Kurzfilme anhand eines klaren Briefings. Prüfen Sie verfügbare Produktionswerkzeuge und Lieferoptionen vor der Freigabe.",
     primaryCta: "Produktion starten",
     secondaryCta: "Preise ansehen",
-    marketNote: "Für deutsche und europäische E-Commerce Teams, Agenturen, Shopify/Amazon Seller und Startups.",
+    marketNote: "Für deutsche und europäische E-Commerce-Teams, Agenturen, Shopify- und Amazon-Händler sowie Start-ups.",
     sections: [
       { title: "Für E-Commerce gemacht", body: "Crelavo verbindet Produktlinks, Kampagnenziele und Markeninformationen zu einem organisierten Produktions-Workflow." },
-      { title: "Mehrsprachige Kampagnen", body: "Bereite Creatives für verschiedene europäische Märkte vor, ohne jedes Asset von Grund auf neu zu planen." },
+      { title: "Mehrsprachige Kampagnen", body: "Bereiten Sie Werbemittel für verschiedene europäische Märkte vor, ohne jedes Motiv von Grund auf neu zu planen." },
       { title: "Umfang und Qualität prüfen", body: "Prüfen Sie Briefing, verfügbare Werkzeuge, Credits, Lieferumfang und notwendige Korrekturen vor der Freigabe." }
     ],
-    useCases: ["Produktvideo für Shopify", "Amazon Produktanzeige", "Social Video Creative", "Kreativer Kurzfilm", "Kampagnenpaket für EU-Märkte"],
+    useCases: ["Produktvideo für Shopify", "Amazon-Produktanzeige", "Werbevideo für soziale Medien", "Kreativer Kurzfilm", "Kampagnenpaket für EU-Märkte"],
     keywords: ["KI Video Generator", "KI Produktvideo", "E-Commerce Video Deutschland", "AI Video Ads Europe"]
   },
   {
@@ -59,7 +59,7 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
       { title: "Adaptation multilingue", body: "Préparez des campagnes pour plusieurs marchés européens avec une structure de production cohérente." },
       { title: "Vérification du périmètre et de la qualité", body: "Vérifiez le brief, les outils disponibles, les crédits, les livrables et les révisions nécessaires avant validation." }
     ],
-    useCases: ["Vidéo produit Shopify", "Publicité Amazon", "Creative social video", "Court-métrage créatif", "Campagne e-commerce européenne"],
+    useCases: ["Vidéo produit Shopify", "Publicité Amazon", "Vidéo publicitaire pour les réseaux sociaux", "Court-métrage créatif", "Campagne e-commerce européenne"],
     keywords: ["générateur vidéo IA", "vidéo produit IA", "publicité e-commerce France", "AI video ads Europe"]
   },
   {
@@ -68,20 +68,20 @@ export const localizedEuropePages: LocalizedEuropePage[] = [
     languageName: "Türkçe",
     slug: "yapay-zeka-video-uretici",
     path: "/tr/yapay-zeka-video-uretici",
-    title: "Yapay Zekâ Video Üretici: Ürün Videoları ve Kreatif Projeler | Crelavo",
+    title: "Yapay Zekâ Video Üreticisi: Ürün Videoları ve Yaratıcı Projeler | Crelavo",
     description: "Ürün videosu, sosyal medya reklamı ve kısa film projesini hedef kitle, format, izinli referanslar ve teslim kapsamına göre planlayın.",
-    eyebrow: "Avrupa odaklı AI üretim",
-    h1: "Yapay zekâ video üretici ile ürün ve kreatif video projeleri",
-    lead: "Ürün linki, fikir veya pazarlama briefiyle video projenizi planlayın. Üretim araçlarını, kredi gereksinimini ve teslim koşullarını onaydan önce inceleyin.",
+    eyebrow: "Avrupa odaklı yapay zekâ üretimi",
+    h1: "Yapay zekâ ile ürün videoları ve yaratıcı video projeleri",
+    lead: "Ürün bağlantısı, fikir veya pazarlama taslağıyla video projenizi planlayın. Üretim araçlarını, kredi gereksinimini ve teslim koşullarını onaydan önce inceleyin.",
     primaryCta: "Üretim başlat",
     secondaryCta: "Fiyatları gör",
-    marketNote: "Türkiye, Avrupa e-ticaret markaları, ajanslar, Shopify/Amazon satıcıları ve startup ekipleri için.",
+    marketNote: "Türkiye ve Avrupa’daki e-ticaret markaları, ajanslar, Shopify ve Amazon satıcıları ile girişim ekipleri için.",
     sections: [
-      { title: "E-ticaret için net üretim akışı", body: "Crelavo ürün linki, hedef pazar, kampanya fikri ve marka bilgisini tek üretim akışında toplar." },
-      { title: "Avrupa pazarlarına uyum", body: "Farklı ülke ve diller için kampanya fikri, görsel yön, video briefi ve teslim formatı planlanabilir." },
+      { title: "E-ticaret için net üretim akışı", body: "Crelavo ürün bağlantısını, hedef pazarı, kampanya fikrini ve marka bilgilerini tek bir üretim akışında toplar." },
+      { title: "Avrupa pazarlarına uyum", body: "Farklı ülke ve diller için kampanya fikri, görsel yön, video taslağı ve teslim formatı planlanabilir." },
       { title: "Kapsam ve kalite kontrolü", body: "Onaydan önce proje taslağını, kullanılabilir araçları, kredileri, teslimatı ve gereken düzenlemeleri inceleyin." }
     ],
-    useCases: ["Shopify ürün videosu", "Amazon ürün reklamı", "Sosyal medya kreatifi", "Kreatif kısa film", "Avrupa kampanya paketi"],
+    useCases: ["Shopify ürün videosu", "Amazon ürün reklamı", "Sosyal medya reklam videosu", "Yaratıcı kısa film", "Avrupa kampanya paketi"],
     keywords: ["yapay zeka video üretici", "AI ürün videosu", "e-ticaret video reklam", "Avrupa e-ticaret kampanyası"]
   },
 {

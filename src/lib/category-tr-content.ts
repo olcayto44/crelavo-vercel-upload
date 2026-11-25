@@ -3,7 +3,7 @@ export type TurkishCategoryProfile={slug:string;title:string;description:string;
 export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "website": {
     "slug": "yapay-zeka-web-sitesi-olusturucu",
-    "title": "Yapay Zeka Web Sitesi Oluşturucu",
+    "title": "Yapay Zekâ Web Sitesi Oluşturucu",
     "description": "İşletme sitesi, açılış sayfası, e-ticaret mağazası veya portfolyo için sayfa yapısını, markayı ve mobil uyum gereksinimlerini belirleyin.",
     "uses": [
       "Açılış sayfası",
@@ -16,7 +16,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "saas": {
     "slug": "yapay-zeka-saas-olusturucu",
-    "title": "Yapay Zeka SaaS Oluşturucu",
+    "title": "Yapay Zekâ SaaS Oluşturucu",
     "description": "Yazılım fikrinizi kullanıcı rolleri, abonelik akışları, veri yapısı ve yönetim ekranlarıyla bir MVP planına dönüştürün.",
     "uses": [
       "Abonelik paneli",
@@ -29,7 +29,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "mobile_app": {
     "slug": "yapay-zeka-mobil-uygulama-olusturucu",
-    "title": "Yapay Zeka Mobil Uygulama Oluşturucu",
+    "title": "Yapay Zekâ Mobil Uygulama Oluşturucu",
     "description": "iOS ve Android uygulama fikirleri için ekranları, gezinmeyi, kullanıcı yolculuğunu ve prototip gereksinimlerini planlayın.",
     "uses": [
       "iOS tasarımı",
@@ -42,7 +42,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "admin_project": {
     "slug": "yapay-zeka-yonetim-paneli",
-    "title": "Yapay Zeka Yönetim Paneli Oluşturucu",
+    "title": "Yapay Zekâ Yönetim Paneli Oluşturucu",
     "description": "İş süreçleriniz için yönetim ekranları, kullanıcı yetkileri, kayıt yönetimi ve raporlama ihtiyaçlarını tanımlayın.",
     "uses": [
       "Yönetim ekranları",
@@ -55,7 +55,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "talking_video": {
     "slug": "yapay-zeka-konusan-video",
-    "title": "Yapay Zeka Konuşan Video",
+    "title": "Yapay Zekâ Konuşan Video Oluşturucu",
     "description": "Sunucu videoları, röportajlar ve çok kişili diyaloglar için karakter, senaryo ve ses gereksinimlerini hazırlayın.",
     "uses": [
       "Dijital sunucu",
@@ -68,7 +68,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "documentary": {
     "slug": "yapay-zeka-belgesel-hazirlama",
-    "title": "Yapay Zeka Belgesel Hazırlama",
+    "title": "Yapay Zekâ Belgesel Hazırlama",
     "description": "Belgesel konusunu araştırma soruları, kaynaklar, anlatım metni ve görsel sahne planıyla yapılandırın.",
     "uses": [
       "Belgesel senaryosu",
@@ -81,7 +81,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "animation": {
     "slug": "yapay-zeka-animasyon-olusturucu",
-    "title": "Yapay Zeka Animasyon Oluşturucu",
+    "title": "Yapay Zekâ Animasyon Oluşturucu",
     "description": "2D, 3D ve karakter animasyonu için hikâye, özgün karakterler, sahneler ve hareket tarzını belirleyin.",
     "uses": [
       "2D animasyon",
@@ -94,8 +94,8 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "music_video": {
     "slug": "yapay-zeka-muzik-klibi",
-    "title": "Yapay Zeka Müzik Klibi Hazırlama",
-    "description": "Kullanım hakkına sahip olduğunuz müzik için klip, şarkı sözü videosu ve görselleştirici konseptleri oluşturun.",
+    "title": "Yapay Zekâ Müzik Klibi Hazırlama",
+    "description": "Kullanım hakkına sahip olduğunuz müzik için klip, şarkı sözü videosu ve müzik görselleştirme konseptleri oluşturun.",
     "uses": [
       "Müzik klibi",
       "Şarkı sözü videosu",
@@ -107,8 +107,8 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "drama": {
     "slug": "yapay-zeka-kisa-film-drama",
-    "title": "Yapay Zeka Kısa Film ve Drama",
-    "description": "Kısa film ve bölüm dizileri için olay örgüsünü, karakter gelişimini, diyalogları ve sahneleri planlayın.",
+    "title": "Yapay Zekâ Kısa Film ve Drama",
+    "description": "Kısa filmler ve diziler için olay örgüsünü, karakter gelişimini, diyalogları ve sahneleri planlayın.",
     "uses": [
       "Kısa film",
       "Drama bölümü",
@@ -120,7 +120,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "cinematic_video": {
     "slug": "yapay-zeka-sinematik-video",
-    "title": "Yapay Zeka Sinematik Video",
+    "title": "Yapay Zekâ Sinematik Video",
     "description": "Film estetiğine sahip sahneler ve fragmanlar için kamera hareketi, ışık, kadraj ve anlatım yönünü planlayın.",
     "uses": [
       "Sinematik sahne",
@@ -133,7 +133,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "video_clipping": {
     "slug": "yapay-zeka-video-kirpma",
-    "title": "Yapay Zeka Video Kırpma",
+    "title": "Yapay Zekâ Video Kırpma",
     "description": "Uzun ve izinli videolardan kısa sosyal medya klipleri, dikkat çekici anlar ve özetler için kesim planı hazırlayın.",
     "uses": [
       "Podcast klibi",
@@ -146,7 +146,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "video_tools": {
     "slug": "online-video-duzenleme-araclari",
-    "title": "Online Video Düzenleme Araçları",
+    "title": "Çevrimiçi Video Düzenleme Araçları",
     "description": "Video kesme, birleştirme, ses ve katman düzenleme ihtiyaçlarını belirleyin; desteklenen editör seçeneklerini inceleyin.",
     "uses": [
       "Kesme ve birleştirme",
@@ -159,8 +159,8 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "campaign": {
     "slug": "yapay-zeka-reklam-kampanyasi",
-    "title": "Yapay Zeka Reklam ve Kampanya Oluşturucu",
-    "description": "Ürün bilgisi, hedef kitle ve teklif üzerinden e-ticaret reklamları için kancalar, metinler ve görsel konseptler planlayın.",
+    "title": "Yapay Zekâ Reklam ve Kampanya Oluşturucu",
+    "description": "Ürün bilgisi, hedef kitle ve teklif üzerinden e-ticaret reklamları için dikkat çekici açılışlar, reklam metinleri ve görsel konseptler planlayın.",
     "uses": [
       "Ürün reklamı",
       "Sosyal medya kampanyası",
@@ -168,12 +168,12 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Reklam metni"
     ],
     "question": "Bir reklamın farklı versiyonları nasıl hazırlanır?",
-    "answer": "Ürün iddialarını değiştirmeden dikkat çekici açılışı, hedef kitleye uygun mesajı, görsel yaklaşımı ve harekete geçirici çağrıyı çeşitlendirin."
+    "answer": "Ürün iddialarını değiştirmeden dikkat çekici açılışı, hedef kitleye uygun mesajı, görsel yaklaşımı ve eylem çağrısıyı çeşitlendirin."
   },
   "ad_score_checker": {
     "slug": "yapay-zeka-reklam-analizi",
-    "title": "Yapay Zeka Reklam Analizi",
-    "description": "Reklam fikrini üretimden önce açılışın dikkat çekiciliği, teklifin açıklığı, görsel yaklaşım ve harekete geçirici çağrı açısından değerlendirin.",
+    "title": "Yapay Zekâ Reklam Analizi",
+    "description": "Reklam fikrini üretimden önce açılışın dikkat çekiciliği, teklifin açıklığı, görsel yaklaşım ve eylem çağrısı açısından değerlendirin.",
     "uses": [
       "Kanca analizi",
       "Teklif değerlendirme",
@@ -185,7 +185,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "campaign_calendar": {
     "slug": "yapay-zeka-kampanya-takvimi",
-    "title": "Yapay Zeka Kampanya Takvimi",
+    "title": "Yapay Zekâ Kampanya Takvimi",
     "description": "Ürün lansmanları, sezonluk teklifler ve sosyal medya içerikleri için yayın tarihlerini, içerik materyallerini ve onay adımlarını düzenleyin.",
     "uses": [
       "İçerik takvimi",
@@ -198,7 +198,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "ai_agent": {
     "slug": "yapay-zeka-ajan-olusturucu",
-    "title": "Yapay Zeka Ajan Oluşturucu",
+    "title": "Yapay Zekâ Ajanı Oluşturucu",
     "description": "İşletmenizin tekrarlanan işleri için ajan rolü, bilgi kaynakları, izinler ve insan onayı gereksinimlerini tanımlayın.",
     "uses": [
       "İş akışı ajanı",
@@ -211,7 +211,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "localization": {
     "slug": "yapay-zeka-icerik-yerellestirme",
-    "title": "Yapay Zeka İçerik Yerelleştirme",
+    "title": "Yapay Zekâ İçerik Yerelleştirme",
     "description": "Videolar ve marka mesajları için hedef dil, altyazı, seslendirme ve terminoloji gereksinimlerini hazırlayın.",
     "uses": [
       "Video çevirisi",
@@ -237,7 +237,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "live_sales_agent": {
     "slug": "yapay-zeka-canli-satis-asistani",
-    "title": "Yapay Zeka Canlı Satış Asistanı",
+    "title": "Yapay Zekâ Canlı Satış Asistanı",
     "description": "Canlı ürün tanıtımı ve alışveriş için sunucu senaryosu, doğrulanmış ürün bilgisi ve müşteri etkileşim gereksinimlerini planlayın.",
     "uses": [
       "Canlı satış konsepti",
@@ -250,7 +250,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "avatar": {
     "slug": "yapay-zeka-avatar-olusturucu",
-    "title": "Yapay Zeka Avatar Oluşturucu",
+    "title": "Yapay Zekâ Avatar Oluşturucu",
     "description": "Özgün veya izinli dijital karakterler için görünüm, kişilik, konuşma tarzı ve video kullanım alanını tanımlayın.",
     "uses": [
       "Dijital sunucu",
@@ -263,7 +263,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "lip_sync": {
     "slug": "yapay-zeka-dudak-senkronizasyonu",
-    "title": "Yapay Zeka Dudak Senkronizasyonu",
+    "title": "Yapay Zekâ Dudak Senkronizasyonu",
     "description": "İzinli ses ve videolar için dublaj, konuşma zamanlaması ve dudak hareketi uyumunu planlayın.",
     "uses": [
       "Dublaj",
@@ -276,7 +276,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "voice_clone": {
     "slug": "yapay-zeka-ses-klonlama",
-    "title": "Yapay Zeka Ses Klonlama",
+    "title": "Yapay Zekâ Ses Klonlama",
     "description": "Kendi sesiniz veya açık izinli kayıtlarla anlatım, seslendirme ve çok dilli ses projeleri planlayın.",
     "uses": [
       "Anlatıcı sesi",
@@ -289,7 +289,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "visual_clone": {
     "slug": "yapay-zeka-gorsel-stil-aktarimi",
-    "title": "Yapay Zeka Görsel Stil Aktarımı",
+    "title": "Yapay Zekâ Görsel Stil Aktarımı",
     "description": "İzinli görsel referanslardan renk, kompozisyon ve stil yönünü tanımlayarak özgün görsel varyasyonlar planlayın.",
     "uses": [
       "Stil referansı",
@@ -302,7 +302,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "virtual_model_studio": {
     "slug": "yapay-zeka-sanal-moda-modeli",
-    "title": "Yapay Zeka Sanal Moda Modeli",
+    "title": "Yapay Zekâ Sanal Moda Modeli",
     "description": "Giyim ve aksesuar katalogları için sanal model görünümü, ürün referansları, poz ve arka plan konseptleri hazırlayın.",
     "uses": [
       "Moda kataloğu",
@@ -315,8 +315,8 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "image": {
     "slug": "yapay-zeka-gorsel-olusturucu",
-    "title": "Yapay Zeka Görsel Oluşturucu",
-    "description": "Ürün görselleri, afişler, banner ve sosyal medya tasarımları için özgün görsel fikirleri ve format gereksinimlerini hazırlayın.",
+    "title": "Yapay Zekâ Görsel Oluşturucu",
+    "description": "Ürün görselleri, afişler, banner görselleri ve sosyal medya tasarımları için özgün görsel fikirleri ve format gereksinimlerini hazırlayın.",
     "uses": [
       "Ürün görseli",
       "Afiş",
@@ -328,7 +328,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "brand_kit": {
     "slug": "yapay-zeka-marka-kimligi",
-    "title": "Yapay Zeka Marka Kimliği Oluşturucu",
+    "title": "Yapay Zekâ Marka Kimliği Oluşturucu",
     "description": "Logo yönü, renk paleti, tipografi ve marka kullanım kuralları için görsel kimlik planı hazırlayın.",
     "uses": [
       "Logo konsepti",
@@ -341,7 +341,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "document_pack": {
     "slug": "yapay-zeka-belge-olusturucu",
-    "title": "Yapay Zeka Belge Oluşturucu",
+    "title": "Yapay Zekâ Belge Oluşturucu",
     "description": "İş teklifleri, sunumlar ve ürün katalogları için hedef okuyucu, içerik düzeni ve dosya gereksinimlerini belirleyin.",
     "uses": [
       "İş teklifi",
@@ -354,7 +354,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "anime_short_film": {
     "slug": "yapay-zeka-anime-kisa-film",
-    "title": "Yapay Zeka Anime Kısa Film",
+    "title": "Yapay Zekâ Anime Kısa Film",
     "description": "Özgün anime tarzı kısa filmler için karakter, dünya, diyalog, sahne sırası ve animasyon yönünü planlayın.",
     "uses": [
       "Anime karakteri",
@@ -367,7 +367,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "animal_video": {
     "slug": "yapay-zeka-hayvan-videosu",
-    "title": "Yapay Zeka Hayvan Videosu",
+    "title": "Yapay Zekâ Hayvan Videosu",
     "description": "Hayvan temalı eğlence, eğitim veya ürün anlatımı için karakter, ortam, hareket ve hikâye konsepti hazırlayın.",
     "uses": [
       "Evcil hayvan videosu",
@@ -380,7 +380,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "nature_video": {
     "slug": "yapay-zeka-doga-videosu",
-    "title": "Yapay Zeka Doğa Videosu",
+    "title": "Yapay Zekâ Doğa Videosu",
     "description": "Manzara, yaban hayatı ve doğa belgeselleri için sahneler, atmosfer, anlatım ve çevre sesi ihtiyaçlarını planlayın.",
     "uses": [
       "Manzara videosu",
@@ -393,7 +393,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "planet_space_video": {
     "slug": "yapay-zeka-uzay-videosu",
-    "title": "Yapay Zeka Uzay Videosu",
+    "title": "Yapay Zekâ Uzay Videosu",
     "description": "Gezegen anlatımları, galaksi sahneleri ve kozmik görseller için bilimsel veya kurgusal bağlamı belirleyin.",
     "uses": [
       "Gezegen anlatımı",
@@ -406,7 +406,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "drone_video": {
     "slug": "yapay-zeka-drone-tarzi-video",
-    "title": "Yapay Zeka Drone Tarzı Video",
+    "title": "Yapay Zekâ Drone Tarzı Video",
     "description": "Manzaralar ve mülkler için havadan çekim benzeri kamera yolu, görüş açısı ve görsel konseptleri planlayın.",
     "uses": [
       "Havadan görünüm",
@@ -419,7 +419,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "stickman_animation": {
     "slug": "cubuk-adam-animasyonu",
-    "title": "Çubuk Adam Animasyonu Oluşturucu",
+    "title": "Çöp Adam Animasyonu Oluşturucu",
     "description": "Basit karakterlerle eğitici anlatımlar, kısa komedi ve açıklayıcı hikâyeler için sahne ve diyalog planı oluşturun.",
     "uses": [
       "Eğitici animasyon",
@@ -432,7 +432,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   },
   "studio": {
     "slug": "yapay-zeka-film-dizi-studyosu",
-    "title": "Yapay Zeka Film ve Dizi Stüdyosu",
+    "title": "Yapay Zekâ Film ve Dizi Stüdyosu",
     "description": "Uzun film veya dizi fikirleri için senaryo, karakterler, bölüm planı, sahne listesi ve teslim kapsamını organize edin.",
     "uses": [
       "Film konsepti",
@@ -446,7 +446,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "crelavo_academy": {
     "slug": "crelavo-akademi",
     "title": "Crelavo Akademi",
-    "description": "Yapay zeka ile yaratıcı üretim konusunda öğrenme hedefleri, uygulama egzersizleri ve eğitim materyalleri planlayın.",
+    "description": "Yapay zekâ ile yaratıcı üretim konusunda öğrenme hedefleri, uygulama egzersizleri ve eğitim materyalleri planlayın.",
     "uses": [
       "Öğrenme planı",
       "Uygulama egzersizi",

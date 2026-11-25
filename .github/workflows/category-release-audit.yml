@@ -11,6 +11,8 @@ on:
       - 'package-lock.json'
       - 'public/category-art/**'
       - 'scripts/category-release-audit.mjs'
+      - 'scripts/prepare-category-showcase-art.cjs'
+      - 'scripts/category-locale-integrity-smoke.cjs'
       - '.github/workflows/category-release-audit.yml'
   pull_request:
     branches: [feat/studio-cloud-elements-20261123]
@@ -44,6 +46,10 @@ jobs:
           npm audit --audit-level=moderate
           git diff --exit-code -- package-lock.json
       - run: npm run build
+      - name: Verify isolated credit and delivery flows (no payment or provider spend)
+        run: |
+          npm run smoke:non-payment-e2e
+          npm run smoke:e2e-dry-run
       - name: Install isolated browser tooling
         run: |
           mkdir -p "$RUNNER_TEMP/crelavo-browser"
