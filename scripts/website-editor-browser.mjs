@@ -27,6 +27,12 @@ try{
   const bytes=await archive.createReadStream();const chunks=[];for await(const part of bytes)chunks.push(part);const zip=Buffer.concat(chunks);assert.equal(zip.readUInt32LE(0),0x04034b50);for(const term of ["source/index.html","source/contact.html","source/styles.css","source/robots.txt","source/design-manifest.json","noindex,nofollow","README.txt"])assert(zip.includes(Buffer.from(term)),term);
   const fit=await page.locator("iframe[title$='website preview']").evaluate(el=>({inner:el.getBoundingClientRect().width,outer:el.parentElement.parentElement.clientWidth,raw:el.offsetWidth}));
   assert(fit.inner<=fit.outer+1);assert.equal(fit.raw,1440);
+  // The sandbox document is the only vertical scroller; manual zoom may scroll sideways.
+  await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.getBoundingClientRect().height<=v.clientHeight+1&&v.scrollHeight<=v.clientHeight+1;});
+  await page.getByLabel("Zoom",{exact:true}).selectOption("100");
+  await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.offsetWidth===1440&&v.scrollHeight<=v.clientHeight+1;});
+  await page.getByLabel("Zoom",{exact:true}).selectOption("fit");
+  await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.getBoundingClientRect().width<=v.clientWidth+1&&v.scrollHeight<=v.clientHeight+1;});
   await page.getByRole("button",{name:"mobile · 390px",exact:true}).click();
   await page.waitForFunction(()=>document.querySelector("iframe[title='mobile website preview']")?.offsetWidth===390);
   await page.getByRole("button",{name:"Site settings",exact:true}).click();
@@ -104,6 +110,8 @@ try{
   await page.getByLabel("Sector / Sektör",{exact:true}).selectOption("retail");
   await page.getByRole("button",{name:"Create sector page draft (replace current draft)",exact:true}).click();
   await frame.getByRole("heading",{name:"Retail store website concept",exact:true}).waitFor({timeout:30000});
+  await frame.getByRole("heading",{name:"Explore the collection",exact:true}).waitFor();
+  assert.equal(await frame.getByText("Planned visitor experience:",{exact:false}).count(),0);
   assert(await page.getByLabel("Page",{exact:true}).locator("option",{hasText:"Checkout"}).count()===1);
   await page.getByLabel("Sector / Sektör",{exact:true}).selectOption("fitness");
   await page.getByRole("button",{name:"Site settings",exact:true}).click();
