@@ -4,9 +4,9 @@ import {categoryLanguagePaths} from "@/lib/category-global-content";
 type ConceptArt = {src:string;alt:string;width:number;height:number};
 // Register only image files that have actually been uploaded to public/category-art.
 const categoryConceptArt:Record<string,Record<string,ConceptArt>>=process.env.CRELAVO_WEBSITE_ART_READY==="1"?{website:{
- "Business website":{src:"/category-art/website/business-website-concept.webp",alt:"Illustrative business website with an architectural office building displayed on a laptop",width:302,height:179},
- "Online store":{src:"/category-art/website/online-store-concept.webp",alt:"Illustrative online fashion accessories store with a handbag product on a laptop screen",width:298,height:179},
- "Portfolio":{src:"/category-art/website/creative-portfolio-concept.webp",alt:"Illustrative creative portfolio website featuring a mountain landscape on a laptop screen",width:302,height:179}
+ "Business website":{src:"/category-art/website/business-website-concept.webp",alt:"Illustrative corporate website with a curved glass office building",width:294,height:169},
+ "Online store":{src:"/category-art/website/online-store-concept.webp",alt:"Illustrative online accessories store featuring a beige tote bag and sunglasses",width:294,height:169},
+ "Portfolio":{src:"/category-art/website/creative-portfolio-concept.webp",alt:"Illustrative creative portfolio website with a blue and pink editorial portrait",width:295,height:169}
 }}:{};
 const categoryUseCases:Record<string,readonly [string,string]>={
   "website": [
