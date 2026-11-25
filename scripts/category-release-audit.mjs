@@ -18,6 +18,8 @@ const tag = p=>language(p)==="en"?"en-US":language(p);
 const browser = await chromium.launch({headless:true});
 const context = await browser.newContext({viewport:{width:1440,height:900}});
 const page = await context.newPage();
+await context.addInitScript(()=>{window.__categoryPerf={lcp:null,cls:0};try{new PerformanceObserver(list=>{for(const entry of list.getEntries())window.__categoryPerf.lcp=entry.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(list=>{for(const entry of list.getEntries())if(!entry.hadRecentInput)window.__categoryPerf.cls+=entry.value}).observe({type:"layout-shift",buffered:true})}catch{}});
+const screenshotDir=out+"/screenshots";await mkdir(screenshotDir,{recursive:true});
 const results=[], linkPaths=new Set(), byPath=new Map();
 try {
 for(const path of paths){
@@ -32,6 +34,7 @@ for(const path of paths){
   const raw=await res.text();
   const serverLang=raw.match(/<html[^>]*\blang="([^"]+)"/i)?.[1];
   if(serverLang!==language(path))issues.push("SSR lang: "+serverLang);
+  await page.locator('link[rel="canonical"]').waitFor({state:"attached",timeout:10000});
   const dom=await page.evaluate(()=>{
    const main=document.querySelector("main");
    const alt=Object.fromEntries([...document.querySelectorAll('link[rel="alternate"][hreflang]')].map(a=>[a.hreflang,a.href]));
@@ -56,15 +59,20 @@ for(const path of paths){
   if(!dom.schemas.length||dom.schemas.some(s=>!s))issues.push("Invalid or missing JSON-LD");
   const entities=dom.schemas.flatMap(s=>s?.["@graph"]||[s]).filter(Boolean);
   if(!entities.some(e=>e["@type"]==="WebPage"||e["@type"]==="SoftwareApplication"||e["@type"]==="Service"))issues.push("Missing page entity");
+  for(const entity of entities){if(entity["@type"]==="WebPage"&&entity.url&&entity.url!==canonicalOrigin+path)issues.push("Schema URL mismatch");if(entity["@type"]==="BreadcrumbList"&&(!Array.isArray(entity.itemListElement)||entity.itemListElement.some((e,i)=>e.position!==i+1||!e.name||!e.item)))issues.push("Invalid breadcrumb positions or items");}
   if(dom.images.some(i=>i.alt===null))issues.push("Missing image alt");
   for(const l of dom.links){const u=new URL(l,base);if(u.origin===base.origin||u.origin===canonicalOrigin){if(!u.pathname.startsWith("/api/")&&!u.pathname.startsWith("/admin"))linkPaths.add(u.pathname+u.search);}}
   byPath.set(path,dom.alt);
+  await page.waitForLoadState("load",{timeout:15000});
+  await page.evaluate(()=>document.fonts.ready);
+  item.labMetrics=await page.evaluate(()=>{const nav=performance.getEntriesByType("navigation")[0];return {ttfbMs:nav?Math.round(nav.responseStart):null,lcpMs:window.__categoryPerf?.lcp??null,cls:window.__categoryPerf?.cls??null,transferBytes:performance.getEntriesByType("resource").reduce((n,r)=>n+r.transferSize,0)}});
   item.viewport=[];
   for(const width of [1440,768,390]){
     await page.setViewportSize({width,height:900});
     const size=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth,main:document.querySelector("main")?.getBoundingClientRect().width||0}));
     item.viewport.push({width,...size});
     if(size.scroll>size.width+2)issues.push("Horizontal overflow "+width);
+    if(path==="/ai-website-builder"||path==="/tr/yapay-zeka-web-sitesi-olusturucu"||path==="/de/ki-website-builder"||path==="/fr/createur-site-web-ia"||path==="/zh/ai-website-builder"||issues.length)await page.screenshot({path:screenshotDir+"/"+path.replace(/[^a-z0-9-]/g,"_")+"-"+width+".png",animations:"disabled",timeout:10000});
   }
  }catch(e){issues.push(String(e));}
  results.push(item);
@@ -79,7 +87,7 @@ for(const path of [...linkPaths].filter(p=>!expected.has(p)&&!p.startsWith("/das
  try{const r=await context.request.get(new URL(path,base).href,{timeout:15000,maxRedirects:5});linkResults.push({path,status:r.status()});}catch(e){linkResults.push({path,error:String(e)});}
 }
 const duplicates=(key)=>Object.entries(results.reduce((acc,x)=>{const v=JSON.stringify(x[key]);(acc[v]??=[]).push(x.path);return acc;},{})).filter(([v,p])=>v!=="undefined"&&p.length>1).map(([value,paths])=>({value,paths}));
-const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,results,limitations:"Navigation timing is not Lighthouse/Core Web Vitals; authenticated Studio workflows, translation quality and keyword volume require separate verification."};
+const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
 await writeFile(out+"/report.json",JSON.stringify(report,null,2));
 console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles.length,duplicateDescriptions:report.duplicateDescriptions.length}));
 if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||studioResults.some(s=>s.error||s.status>=400))process.exitCode=1;
