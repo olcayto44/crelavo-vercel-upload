@@ -1,6 +1,6 @@
 import type { WebsiteGeneratedFile, WebsiteGenerationInput, WebsiteGenerationResult, WebsiteScope } from "./openai";
 
-type WebsiteCopy = {
+export type WebsiteCopy = {
   title: string;
   eyebrow: string;
   headline: string;
@@ -115,14 +115,14 @@ function adminFiles(title: string): WebsiteGeneratedFile[] {
   ];
 }
 
-export async function generateDeterministicWebsiteSource(input: WebsiteGenerationInput): Promise<WebsiteGenerationResult> {
+export async function generateDeterministicWebsiteSource(input: WebsiteGenerationInput, options: { mode: "local" } | { mode: "validated_copy"; copy: Pick<WebsiteCopy,"headline"|"intro"|"eyebrow"|"features"|"faq"> } | { mode: "legacy" } = {mode:"legacy"}): Promise<WebsiteGenerationResult> {
   const fallback = briefCopy(input);
-  const copy = await aiCopy(input, fallback);
+  const copy = options.mode === "local" ? fallback : options.mode === "validated_copy" ? {...fallback,...options.copy,title:fallback.title,testimonials:fallback.testimonials} : await aiCopy(input, fallback);
   const files: WebsiteGeneratedFile[] = [
     { path: "index.html", content: html(copy), contentType: "text/html" },
     { path: "styles.css", content: styles, contentType: "text/css" },
     { path: "script.js", content: script, contentType: "application/javascript" },
-    { path: "README.md", content: `# ${copy.title}\n\nThis package is a deterministic premium static website generated from the supplied brief. Review copy, connect a secure contact endpoint and replace verified brand details before publishing.`, contentType: "text/markdown" }
+    { path: "README.md", content: `# ${copy.title}\n\nThis package is a static website generated from the supplied brief. Review copy, connect a secure contact endpoint and replace verified brand details before publishing.`, contentType: "text/markdown" }
   ];
   if ((input.scope ?? "marketing_website") === "website_with_admin") files.push(...adminFiles(copy.title));
   return { siteTitle: copy.title, framework: "static-html", files };

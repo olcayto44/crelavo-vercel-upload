@@ -67,7 +67,7 @@ export async function runIsolatedWebsiteGeneration(
   }
   let artifact: WebsiteArtifact;
   try {
-    artifact = await (deps.generate ?? generateWebsiteArtifact)(
+    artifact = await (deps.generate ?? ((brief,projectId)=>generateWebsiteArtifact(brief,projectId,{mode:"local"})))(
       websiteEngineInput(brief), input.productionId,
     );
   } catch {
