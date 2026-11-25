@@ -1,5 +1,6 @@
 import { CATEGORIES, getCategory } from "@/lib/crelavo/categoryCatalog";
 import { getCategoryContract } from "./requirements";
+import {studioAssistantWorkflow} from "./shared-assistant-workflow";
 import { getCategorySpecialist } from "./category-specialists";
 
 // Read-only foundation. Catalog descriptions are not evidence of executable tools.
@@ -25,7 +26,7 @@ export function getProductionCapability(categoryId: string) {
  return structuredClone({
   id: category.id, label: category.label, group: category.group, billing:category.billing,
   features: category.features, fields:contract.fields, defaults:contract.defaults, packs:contract.packs, proposedOutputs:specialist.outputs, qualityChecks:specialist.quality, planRequired:contract.planRequired, approval:contract.approval,
-  requiresReferencePermission:contract.requiresReferencePermission, specialistAdapterStatus:specialist.adapterStatus,
+  assistantWorkflow:studioAssistantWorkflow(category.id),requiresReferencePermission:contract.requiresReferencePermission, specialistAdapterStatus:specialist.adapterStatus,
   executionReady:false as const, execution:contract.execution, operations,
   releaseGates:["verified_provider_capability","authenticated_owner_scope","server_approved_plan","server_tariff_and_credit_reservation","validated_real_output","idempotency_and_reconciliation","end_to_end_acceptance"],
  });
@@ -38,5 +39,5 @@ export function listProductionCapabilities() {
 // executable actions. No database reads or credentials needed.
 export function productionCapabilitySummary(categoryId:string) {
  const c=getProductionCapability(categoryId);
- return {category:c.label, executionReady:c.executionReady, separateLocalOperations:c.operations.filter(o=>o.evidence==="local_editor_implemented").map(o=>o.id), existingWebsiteBridge:c.execution==="existing_website_api_unbound", statement:"Catalog features and proposed outputs are requirements, not delivered artifacts. The central engine cannot execute production yet."};
+ return {category:c.label, executionReady:c.executionReady, separateLocalOperations:c.operations.filter(o=>o.evidence==="local_editor_implemented").map(o=>o.id), existingWebsiteBridge:c.execution==="existing_website_api_unbound",assistantWorkflow:c.assistantWorkflow, statement:"Catalog features and proposed outputs are requirements, not delivered artifacts. The central engine cannot execute production yet."};
 }
