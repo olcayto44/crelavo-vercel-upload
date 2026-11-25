@@ -1,0 +1,1 @@
+export function websiteDesignPilotEnabled(){const e=process.env,origin="https://bwzxdxqgrgbsvndinmrv.supabase.co";return e.VERCEL_ENV==="preview"&&e.VERCEL_GIT_COMMIT_REF==="feat/central-production-dispatch-20261125"&&e.STUDIO_WEBSITE_TEST_CONNECTION_ENABLED==="true"&&e.STUDIO_AGENT_TEST_DATABASE_URL===origin&&e.STUDIO_AGENT_TEST_DATABASE_ORIGIN===origin;}
