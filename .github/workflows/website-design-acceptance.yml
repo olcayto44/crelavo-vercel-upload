@@ -2,7 +2,7 @@ name: Website design candidate acceptance
 on:
   push:
     branches: [feat/central-production-dispatch-20261125]
-    paths: ['src/lib/website-design-candidate.ts','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
+    paths: ['src/lib/website-design-candidate.ts','src/lib/website-industry-scope.ts','src/app/website-design-test/**','src/app/website-cms-test/**','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
   workflow_dispatch:
 permissions:
   contents: read
