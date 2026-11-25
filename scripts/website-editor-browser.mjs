@@ -130,6 +130,15 @@ try{
   await page.screenshot({path:"website-design-results/editor-"+width+".png",fullPage:true});
   results.push({width,passed:true,checks:["fit","device viewport","page creation","slug","sections","FAQ","undo","fullscreen","page deletion","sector scaffold"]});await page.close();
  }
+ const demo=await browser.newPage({viewport:{width:1280,height:900},acceptDownloads:true});
+ const demoErrors=[];demo.on("pageerror",e=>demoErrors.push(e.message));await demo.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
+ await demo.goto(origin+"/website-cms-test/demo",{waitUntil:"domcontentloaded"});await demo.getByRole("heading",{name:"Müşteri yönetim paneli",exact:true}).waitFor({timeout:60000});
+ await demo.getByRole("button",{name:"Ürünler ve stok",exact:true}).click();await demo.getByRole("button",{name:"Düzenle",exact:true}).first().click();
+ await demo.getByLabel("Stok",{exact:true}).fill("17");await demo.getByRole("button",{name:"Ürünü kaydet",exact:true}).click();await demo.getByText("LUM-01 · ₺890,00 · 17 adet · Görünür",{exact:false}).waitFor({timeout:10000}).catch(async()=>{assert((await demo.locator("main").innerText()).includes("17 adet"));});
+ await demo.getByRole("button",{name:"Blog ve haberler",exact:true}).click();await demo.getByRole("button",{name:"Düzenle",exact:true}).first().click();await demo.getByLabel("Başlık",{exact:true}).fill("Örnek güncellenmiş yazı");await demo.getByRole("button",{name:"Yazıyı kaydet",exact:true}).click();await demo.getByText("Örnek güncellenmiş yazı",{exact:true}).waitFor();
+ await demo.getByRole("button",{name:"Dosya teslimatı",exact:true}).click();const demoDownload=demo.waitForEvent("download",{timeout:60000});await demo.getByRole("button",{name:"Örnek bağımsız site ZIP indir",exact:true}).click();const file=await demoDownload;assert.equal(file.suggestedFilename(),"crelavo-demo-independent-website.zip");const stream=await file.createReadStream();const parts=[];for await(const part of stream)parts.push(part);const archive=Buffer.concat(parts);assert.equal(archive.readUInt32LE(0),0x04034b50);for(const term of ["server.cjs","business.cjs","editorial.cjs","maintenance.cjs","Örnek güncellenmiş yazı"])assert(archive.includes(Buffer.from(term)),term);
+ await demo.getByRole("button",{name:"Genel bakış",exact:true}).click();await demo.screenshot({path:"website-design-results/cms-demo.png",fullPage:true});assert.deepEqual(demoErrors,[]);await demo.close();
+ console.log("CMS demo browser: no login, local product and editorial edits, real independent ZIP download");
  writeFileSync("website-design-results/editor-report.json",JSON.stringify(results,null,2));
  console.log("Website editor browser checks passed",results.length);
 }finally{if(browser)await browser.close();server.kill("SIGTERM");}
