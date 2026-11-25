@@ -12,7 +12,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     },
     "fr": {
       "slug": "createur-site-web-ia",
-      "title": "Créateur de site web IA",
+      "title": "Créateur de sites web IA",
       "description": "Planifiez un site professionnel, une page d'atterrissage, une boutique ou un portfolio avec sa structure et son identité visuelle."
     },
     "zh": {
@@ -92,7 +92,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
   "documentary": {
     "de": {
       "slug": "ki-dokumentation",
-      "title": "KI-Dokumentationsplaner",
+      "title": "KI-Planer für Dokumentarfilme",
       "description": "Strukturieren Sie Dokumentationen mit überprüfbaren Quellen, Sprechertext, Interviews und gekennzeichneten Rekonstruktionen."
     },
     "fr": {
@@ -160,7 +160,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
   "cinematic_video": {
     "de": {
       "slug": "ki-kinovideo",
-      "title": "Kinematisches KI-Video",
+      "title": "Filmreife KI-Videos",
       "description": "Definieren Sie filmische Szenen, Trailer, Kamerabewegung, Licht und Bildkomposition."
     },
     "fr": {
@@ -556,7 +556,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     },
     "fr": {
       "slug": "animation-bonhomme-batons",
-      "title": "Animation de personnages bâtons",
+      "title": "Animation de bonshommes bâtons",
       "description": "Préparez vidéos explicatives et sketchs avec personnages simples, actions claires et dialogues courts."
     },
     "zh": {
