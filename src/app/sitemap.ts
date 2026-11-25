@@ -13,6 +13,8 @@ import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
+import {categoryPublicPaths} from "@/lib/category-public-routes";
+import {publicOrigin} from "@/lib/category-detail-meta";
 const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admin"];
 
 function canonicalSiteUrl() {
@@ -52,7 +54,7 @@ const publicRoutes = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = canonicalSiteUrl();
+  const baseUrl = publicOrigin;
   const now = new Date();
 
   if (publicRoutes.some((route) => privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))) {
@@ -122,7 +124,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productionRoutes = productionSeoPages.map(page => ({ path: productionPagePath(page), priority: 0.8, changeFrequency: "monthly" as const }));
 
   const managedBlogRoutes = (await getPublishedBlogPosts()).map(post => ({ path: "/blog/" + post.slug, priority: 0.78, changeFrequency: "monthly" as const, lastModified: post.updatedAt || post.publishedAt! }));
-  const routes = [...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
+  const configuredPaths = new Set(configuredServicePages.map(page=>`/${page.slug}`));
+  const infoPaths = new Set(infoRoutes.map(route=>route.path));
+  const categoryRoutes=Object.values(categoryPublicPaths).filter(path=>!path.startsWith("/products/")?(!configuredPaths.has(path)||!excludedServicePaths.has(path)):infoPaths.has(path)).map(path=>({path,priority:0.85,changeFrequency:"monthly" as const}));
+  const routes = [...categoryRoutes, ...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
 
   return routes
     .filter((route, index, all) => !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)
