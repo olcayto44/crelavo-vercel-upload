@@ -1,0 +1,59 @@
+import {chromium} from "playwright";
+import {spawn} from "node:child_process";
+import assert from "node:assert/strict";
+import {mkdirSync,writeFileSync} from "node:fs";
+const origin="http://127.0.0.1:3127";
+const isolated="https://bwzxdxqgrgbsvndinmrv.supabase.co";
+// No customer data, provider keys, database access or paid calls. Browser network is restricted to loopback.
+const server=spawn(process.execPath,["node_modules/next/dist/bin/next","dev","--hostname","127.0.0.1","--port","3127"],{env:{PATH:process.env.PATH,HOME:process.env.HOME,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",VERCEL_GIT_COMMIT_REF:"feat/central-production-dispatch-20261125",STUDIO_WEBSITE_TEST_CONNECTION_ENABLED:"true",STUDIO_AGENT_TEST_DATABASE_URL:isolated,STUDIO_AGENT_TEST_DATABASE_ORIGIN:isolated},stdio:"inherit"});
+let browser;
+async function waitServer(){for(let i=0;i<120;i++){if(server.exitCode!==null)throw Error("Next dev exited");try{const r=await fetch(origin+"/website-design-test",{signal:AbortSignal.timeout(5000)});if(r.ok)return;}catch{}await new Promise(r=>setTimeout(r,1000));}throw Error("Editor local server did not become ready");}
+try{
+ await waitServer();browser=await chromium.launch();const results=[];
+ for(const width of [390,1440]){
+  const page=await browser.newPage({viewport:{width,height:900}});const errors=[];
+  page.on("pageerror",e=>errors.push(e.message));
+  await page.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
+  await page.goto(origin+"/website-design-test",{waitUntil:"domcontentloaded"});
+  await page.getByRole("heading",{name:"Website design studio · responsive pilot"}).waitFor();
+  await page.getByText("Preview updated. Not published.",{exact:true}).waitFor({timeout:60000});
+  const frame=page.frameLocator("iframe[title$='website preview']");
+  await frame.getByRole("heading",{name:"A clearer identity for your business",exact:true}).waitFor();
+  const fit=await page.locator("iframe[title$='website preview']").evaluate(el=>({inner:el.getBoundingClientRect().width,outer:el.parentElement.parentElement.clientWidth,raw:el.offsetWidth}));
+  assert(fit.inner<=fit.outer+1);assert.equal(fit.raw,1440);
+  await page.getByRole("button",{name:"mobile · 390px",exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector("iframe[title='mobile website preview']")?.offsetWidth===390);
+  await page.getByRole("button",{name:"Add page",exact:true}).click();
+  await page.getByLabel("Navigation label",{exact:true}).fill("Test service");
+  await page.getByLabel("URL slug",{exact:true}).fill("test-service");
+  await page.getByLabel("H1 heading",{exact:true}).fill("A test service");
+  await frame.getByRole("heading",{name:"A test service",exact:true}).waitFor({timeout:30000});
+  await page.getByRole("button",{name:"Add section",exact:true}).click();
+  assert.equal(await page.getByLabel("Section heading",{exact:true}).count(),2);
+  await page.getByRole("button",{name:"Add FAQ",exact:true}).click();
+  await page.getByLabel("Question",{exact:true}).fill("Is this a test?");
+  await page.getByLabel("Answer",{exact:true}).fill("Yes, this is a test.");
+  await frame.getByText("Is this a test?",{exact:true}).waitFor({timeout:30000});
+  await page.getByRole("button",{name:"Remove FAQ",exact:true}).click();
+  await page.getByRole("button",{name:"Undo",exact:true}).click();
+  assert.equal(await page.getByLabel("Question",{exact:true}).inputValue(),"Is this a test?");
+  await page.getByRole("button",{name:"Full workspace",exact:true}).click();
+  await page.getByRole("button",{name:"Exit full workspace",exact:true}).waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button",{name:"Full workspace",exact:true}).waitFor();
+  await page.getByRole("button",{name:"Remove page",exact:true}).click();
+  assert.equal(await page.getByLabel("Page",{exact:true}).locator("option").count(),2);
+  assert.equal(await page.getByRole("button",{name:"Remove page",exact:true}).isDisabled(),true);
+  await page.getByLabel("Sector / Sektör",{exact:true}).selectOption("retail");
+  await page.getByRole("button",{name:"Create sector page draft (replace current draft)",exact:true}).click();
+  await frame.getByRole("heading",{name:"Retail store website concept",exact:true}).waitFor({timeout:30000});
+  assert(await page.getByLabel("Page",{exact:true}).locator("option",{hasText:"Checkout"}).count()===1);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
+  assert.deepEqual(errors,[]);
+  mkdirSync("website-design-results",{recursive:true});
+  await page.screenshot({path:"website-design-results/editor-"+width+".png",fullPage:true});
+  results.push({width,passed:true,checks:["fit","device viewport","page creation","slug","sections","FAQ","undo","fullscreen","page deletion","sector scaffold"]});await page.close();
+ }
+ writeFileSync("website-design-results/editor-report.json",JSON.stringify(results,null,2));
+ console.log("Website editor browser checks passed",results.length);
+}finally{if(browser)await browser.close();server.kill("SIGTERM");}
