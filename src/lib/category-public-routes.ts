@@ -39,4 +39,4 @@ export const categoryPublicPaths:Record<string,string>={
   "virtual_model_studio": "/ai-virtual-model-studio"
 };
 export function categoryForPublicPath(path:string){return Object.keys(categoryPublicPaths).find(id=>categoryPublicPaths[id]===path)}
-export function categoryWorkspace(id:string){return "/dashboard/studio-v2?category="+encodeURIComponent(id)}
+export function categoryWorkspace(id:string){return "/dashboard/studio/"+encodeURIComponent(id.replace(/_/g,"-"))}

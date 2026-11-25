@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
+import {studioPathCategory} from "@/lib/studio-public-path";
 export function StudioConversationFrame({document}:{document:string}) {
   const frame=useRef<HTMLIFrameElement>(null);
   const { openAuth } = useAuth();
@@ -37,7 +38,7 @@ export function StudioConversationFrame({document}:{document:string}) {
         elements:"/dashboard/studio-elements"
       };
       if(typeof tool!=="string"||!Object.prototype.hasOwnProperty.call(paths,tool))return;
-      const incomingCategory=new URLSearchParams(window.location.search).get("category")||"video";
+      const incomingCategory=studioPathCategory(window.location.pathname)||new URLSearchParams(window.location.search).get("category")||"video";
       const category=/^[a-z0-9_]{1,40}$/.test(incomingCategory)?incomingCategory:"video";
       window.location.assign(paths[tool]+"?studioCategory="+encodeURIComponent(category));
     };
@@ -46,5 +47,5 @@ export function StudioConversationFrame({document}:{document:string}) {
   },[openAuth]);
   const deliver=()=>frame.current?.contentWindow?.postMessage({type:"crelavo-studio-session",accessToken:session?.accessToken??null,userId:session?.userId??null},window.location.origin);
   useEffect(deliver,[session]);
-  return <iframe ref={frame} title="Crelavo Studio V2 conversation" allowFullScreen srcDoc={document} onLoad={deliver} sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style={{display:"block",width:"100%",height:"100dvh",border:0}}/>;
+  return <iframe ref={frame} title="Crelavo Studio conversation" allowFullScreen srcDoc={document} onLoad={deliver} sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style={{display:"block",width:"100%",height:"100dvh",border:0}}/>;
 }

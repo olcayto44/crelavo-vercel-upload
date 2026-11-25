@@ -1,4 +1,5 @@
 import { AFTER_SIGNIN_PATH, JOIN_PATH, PRO_PATH } from "./authConfig";
+import {isStudioConversationPath} from "../studio-public-path";
 
 const BLOCKED = new Set(["/", "/pricing", JOIN_PATH, "/ai-video-generator", "/dashboard/credits", "/dashboard/billing"]);
 
@@ -21,7 +22,7 @@ export function postAuthPath(opts: { isNew: boolean; returnTo?: string | null })
   // A Studio login or new-account flow must return to the selected Studio
   // preview, including its category and language. Never send it to the
   // legacy assistant workspace simply because a first-time login is new.
-  if (safe && STUDIO_AUTH_RETURN_PATHS.has(safe.split("?")[0].split("#")[0])) return safe;
+  if (safe && (STUDIO_AUTH_RETURN_PATHS.has(safe.split("?")[0].split("#")[0])||isStudioConversationPath(safe.split("?")[0].split("#")[0]))) return safe;
   if (opts.isNew) return "/dashboard/assistant-workspace";
   return safe ?? AFTER_SIGNIN_PATH;
 }
