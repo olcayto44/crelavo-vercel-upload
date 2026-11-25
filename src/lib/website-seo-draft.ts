@@ -1,7 +1,7 @@
-import {defaultWebsitePageSeo,defaultWebsiteSeoSettings,type WebsiteDesignSpecInput} from "./website-design-schema";
+import {defaultWebsitePageSeo,defaultWebsiteSeoSettings,WebsiteSeoSettings,type WebsiteDesignSpecInput} from "./website-design-schema";
 const xml=(s:string)=>s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]??c));
 export function buildWebsiteSeoDraft(spec:WebsiteDesignSpecInput){
- const settings=spec.seoSettings??defaultWebsiteSeoSettings(),origin=settings.proposedOrigin.replace(/\/$/,"");
+ const settings=spec.seoSettings??defaultWebsiteSeoSettings(),origin=WebsiteSeoSettings.safeParse(settings).success?settings.proposedOrigin.replace(/\/$/,""):"";
  const pages=spec.pages.map(p=>{
  const seo=p.seo??defaultWebsitePageSeo(),path=p.slug==="home"?"/index.html":"/"+p.slug+".html",url=origin?origin+path:"",canonical=seo.canonicalUrl||url;
  const index=settings.defaultIndex&&seo.index,follow=seo.follow;
