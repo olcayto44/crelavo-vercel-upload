@@ -49,6 +49,9 @@ for(const path of paths){
   const studioLinks=dom.links.filter(href=>/^\/dashboard\/studio\/[a-z0-9-]+(?:\?|$)/.test(href));
   if(!studioLinks.length)issues.push("Missing clean Studio CTA");
   item.studioLinks=studioLinks;
+  const languageLinks=await page.locator("main a[hreflang]").evaluateAll(nodes=>nodes.map(a=>({tag:a.hreflang,href:a.getAttribute("href")})));
+  for(const l of ["en-US","tr-TR","de-DE","fr-FR","zh-Hans"]){if(l===tag(path))continue;const target=dom.alt[l];if(target&&!languageLinks.some(a=>a.tag===l&&new URL(a.href,base).pathname===new URL(target).pathname))issues.push("Missing visible language link "+l);}
+  item.languageLinks=languageLinks;
   if(dom.canonical!==canonicalOrigin+path)issues.push("Wrong canonical");
   if(/noindex/i.test(dom.robots))issues.push("Unexpected noindex");
   for(const l of ["en-US","tr-TR","de-DE","fr-FR","zh-Hans","x-default"]) {
