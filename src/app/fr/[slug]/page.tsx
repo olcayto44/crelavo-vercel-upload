@@ -72,7 +72,7 @@ export default async function LocalizedEuropePage({ params }: LocalizedPageProps
     <>
       <LocalizedStructuredData page={page} />
       <Header navLinks={localizedSeoNavLinks} languageOverride={page.locale} /><InnerMobileNav />
-      <main className="public-funnel-page localized-europe-page">
+      <main lang={page.hreflang} className="public-funnel-page localized-europe-page">
         <section className="container section clean-feed-section localized-hero">
           <div className="localized-language-switcher" aria-label="Language versions">
             <Link href="/ai-video-generator">English</Link>
