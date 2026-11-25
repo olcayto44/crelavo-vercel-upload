@@ -21,6 +21,10 @@ try{
   await page.getByText("Preview updated. Not published.",{exact:true}).waitFor({timeout:60000});
   const frame=page.frameLocator("iframe[title$='website preview']");
   await frame.getByRole("heading",{name:"A clearer identity for your business",exact:true}).waitFor();
+  const archivePromise=page.waitForEvent("download");
+  await page.getByRole("button",{name:"Download source ZIP",exact:true}).click();
+  const archive=await archivePromise;assert.equal(archive.suggestedFilename(),"crelavo-private-design-draft.zip");
+  const bytes=await archive.createReadStream();const chunks=[];for await(const part of bytes)chunks.push(part);const zip=Buffer.concat(chunks);assert.equal(zip.readUInt32LE(0),0x04034b50);for(const term of ["source/index.html","source/contact.html","source/styles.css","source/robots.txt","source/design-manifest.json","noindex,nofollow","README.txt"])assert(zip.includes(Buffer.from(term)),term);
   const fit=await page.locator("iframe[title$='website preview']").evaluate(el=>({inner:el.getBoundingClientRect().width,outer:el.parentElement.parentElement.clientWidth,raw:el.offsetWidth}));
   assert(fit.inner<=fit.outer+1);assert.equal(fit.raw,1440);
   await page.getByRole("button",{name:"mobile · 390px",exact:true}).click();
