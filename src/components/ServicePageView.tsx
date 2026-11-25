@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {CategoryDetailPage} from "@/components/CategoryDetailPage";
 import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 import { ServicePageStructuredData } from "@/components/ServicePageStructuredData";
 import type { ServicePage } from "@/lib/service-pages";
@@ -189,6 +190,8 @@ function buildSeoArticle(page: ServicePage) {
 }
 
 export function ServicePageView({ page }: { page: ServicePage }) {
+  const matchedCategory=categoryForPublicPath("/"+page.slug);
+  if(matchedCategory)return <CategoryDetailPage id={matchedCategory}/>;
   const article = buildSeoArticle(page);
   const marketplaceGuide = buildMarketplaceGuide(page);
   const longTailKeywords = buildLongTailKeywords(page);

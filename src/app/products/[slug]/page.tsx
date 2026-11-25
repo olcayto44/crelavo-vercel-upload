@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {CategoryDetailPage} from "@/components/CategoryDetailPage";
+import {categoryDetailMeta} from "@/lib/category-detail-meta";
 import { notFound } from "next/navigation";
 import { footerInfoPageMap, footerInfoPages } from "@/lib/footer-info-pages";
 import { CampaignWorkspaceBody } from "@/components/CampaignWorkspaceBody";
@@ -15,6 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const page = footerInfoPageMap.get(slug);
   if (!page) return {};
   const canonical = `/products/${page.slug}`;
+  const categoryId=categoryForPublicPath(canonical);if(categoryId)return categoryDetailMeta(categoryId);
   return {
     title: `${page.title} | Crelavo`,
     description: page.summary,
@@ -40,6 +43,7 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
   if (!page) notFound();
 
   const categoryId=categoryForPublicPath("/products/"+slug);
+  if(categoryId)return <CategoryDetailPage id={categoryId}/>;
   if (slug === "text-to-campaign") return <><InnerMobileNav /><CampaignWorkspaceBody /></>;
 
   return (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {CategoryDetailPage} from "@/components/CategoryDetailPage";
 import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 import { AdPerformanceScoreChecker } from "@/components/AdPerformanceScoreChecker";
 import { Header } from "@/components/Header";
@@ -9,6 +10,7 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeaturePage }) {
   const siteContent = await getConfiguredSiteContentConfig();
   const categoryId=categoryForPublicPath("/"+page.slug);
+  if(categoryId)return <CategoryDetailPage id={categoryId}>{page.slug==="ai-ad-performance-score-checker"?<AdPerformanceScoreChecker/>:undefined}</CategoryDetailPage>;
 
   return (
     <>
