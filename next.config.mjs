@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 /** @type {import('next').NextConfig} */
 const isDevelopment = process.env.NODE_ENV === "development";
 const securityHeaders = [
@@ -15,7 +17,12 @@ const privateRouteHeaders = [
   { key: "Cache-Control", value: "no-store" }
 ];
 
+// Build-time availability: only expose the gallery once all four approved files exist.
+const websiteArtFiles = ["website-builder-hero.webp", "business-website-concept.webp", "online-store-concept.webp", "creative-portfolio-concept.webp"];
+const websiteArtReady = websiteArtFiles.every(file => existsSync(join(process.cwd(), "public", "category-art", "website", file)));
+
 const nextConfig = {
+  env: { CRELAVO_WEBSITE_ART_READY: websiteArtReady ? "1" : "0" },
   serverExternalPackages: ["ffmpeg-static", "geoip-lite"],
   outputFileTracingIncludes: {
     "/api/**/*": ["./node_modules/ffmpeg-static/**/*", "./node_modules/geoip-lite/data/**/*"]
