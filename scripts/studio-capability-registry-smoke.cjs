@@ -65,3 +65,20 @@ for(const c of all){
  assert.equal(productionCapabilitySummary(c.id).executionReady,false);
 }
 console.log("studio-capability-contract-audit ok: "+all.length+" categories, "+fieldCount+" fields, "+selectCount+" select contracts, "+referenceCount+" reference contracts; category/scope/credit/source isolation");
+
+const {prepareStudioBriefRevision,studioAssistantWorkflow}=load("src/lib/studio-agent/shared-assistant-workflow.ts");
+for(const c of all){
+ const current={categoryId:c.id,revision:3,fields:{brief:"Original request"}};
+ const p=prepareStudioBriefRevision(current,{categoryId:c.id,expectedRevision:3,patch:{brief:"Revised request"}});
+ assert.equal(p.snapshot.revision,4);assert.equal(p.snapshot.fields.brief,"Revised request");assert.equal(current.fields.brief,"Original request");assert.equal(p.invalidatePreviousPlan,true);assert.equal(p.executionReady,false);
+ assert.throws(()=>prepareStudioBriefRevision(current,{categoryId:c.id,expectedRevision:2,patch:{brief:"Stale"}}));
+ assert.throws(()=>prepareStudioBriefRevision(current,{categoryId:c.id,expectedRevision:3,patch:{unknown_field:"bad"}}));
+ assert.throws(()=>prepareStudioBriefRevision(current,{categoryId:c.id==="website"?"image":"website",expectedRevision:3,patch:{brief:"Other category"}}));
+ assert.deepEqual(c.assistantWorkflow,studioAssistantWorkflow(c.id));
+}
+const {parseWebsiteDemoRequest,applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
+const demo={version:2,brand:"Revision fixture",language:"tr",layout:"service",palette:"sand",pages:[{slug:"home",nav:"Ana sayfa",title:"Revision fixture",description:"Örnek site açıklaması.",headline:"İlk başlık",lead:"İlk açıklama",sections:[{heading:"İlk bölüm",body:"Örnek içerik."}],faq:[]}]};
+const command=parseWebsiteDemoRequest("renk: koyu\nbaşlık: Yeni başlık\nbölüm: Hizmetler | Örnek hizmetler",1);
+const revised=applyWebsiteRevision(demo,1,command);assert.equal(revised.revision,2);assert.equal(revised.design.palette,"ink");assert.equal(revised.design.pages[0].headline,"Yeni başlık");assert.equal(revised.design.pages[0].sections.length,2);assert.equal(demo.palette,"sand");assert.equal(demo.pages[0].headline,"İlk başlık");
+assert.throws(()=>applyWebsiteRevision(demo,2,command));assert.throws(()=>applyWebsiteRevision(demo,1,parseWebsiteDemoRequest("başlık: <script>bad</script>",1)));assert.throws(()=>parseWebsiteDemoRequest("unknown request",1));assert.throws(()=>applyWebsiteRevision(demo,1,parseWebsiteDemoRequest("başlık: Yeni başlık",1,"missing")));
+console.log("shared assistant workflow: 37 category revision contracts, stale/unknown field rejection, Website local command proposal and validated editor revision");
