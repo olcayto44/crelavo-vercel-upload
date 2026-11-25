@@ -1,0 +1,34 @@
+name: Website design candidate acceptance
+on:
+  push:
+    branches: [feat/central-production-dispatch-20261125]
+    paths: ['src/lib/website-design-candidate.ts','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - run: node scripts/website-design-candidate-smoke.cjs
+        env:
+          WEBSITE_DESIGN_FIXTURE: 'true'
+      - run: |
+          mkdir -p "$RUNNER_TEMP/crelavo-browser"
+          npm install --prefix "$RUNNER_TEMP/crelavo-browser" --no-save --no-audit --no-fund playwright@1.56.1
+          ln -s "$RUNNER_TEMP/crelavo-browser/node_modules/playwright" node_modules/playwright
+          "$RUNNER_TEMP/crelavo-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - run: node scripts/website-design-browser.mjs
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: website-design-candidate
+          path: website-design-results/
