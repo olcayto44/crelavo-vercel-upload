@@ -1,8 +1,8 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path"),net=require("node:net"),{spawn}=require("node:child_process"),{once}=require("node:events"),{load}=require("./studio-agent-test-loader.cjs");
 (async()=>{
  const {buildWebsiteSelfHostedBundle}=load("src/lib/website-selfhost-bundle.ts");
- const design={version:2,brand:"Independent fixture",language:"tr",layout:"service",palette:"sand",pages:[{slug:"home",nav:"Ana sayfa",title:"Independent fixture",description:"A private runtime test.",headline:"Original heading",lead:"Original intro",sections:[{heading:"Section",body:"Fixture content"}],faq:[]}]};
- const bundle=buildWebsiteSelfHostedBundle({design,revision:1,catalog:[]});
+ const design={version:2,brand:"Independent fixture",language:"tr",layout:"service",palette:"sand",industryScope:{sector:"retail",extraModules:["booking"]},pages:[{slug:"home",nav:"Ana sayfa",title:"Independent fixture",description:"A private runtime test.",headline:"Original heading",lead:"Original intro",sections:[{heading:"Section",body:"Fixture content"}],faq:[]}]};
+ const bundle=buildWebsiteSelfHostedBundle({design,revision:1,catalog:[{sku:"TEST-1",name:"Fixture product",description:"Test stock",price_minor:15000,currency:"TRY",stock:3,visible:true},{sku:"HIDDEN",name:"Hidden seed",description:"Private",price_minor:100,currency:"TRY",stock:1,visible:false}]});
  assert.equal(bundle.report.hostingProvidedByCrelavo,false);assert.equal(bundle.report.requiresCrelavoAccountAtRuntime,false);assert.equal(bundle.report.releaseReady,false);
  const zip=Buffer.from(bundle.zip),dir=fs.mkdtempSync(path.join(os.tmpdir(),"crelavo-selfhost-"));
  let offset=0,extracted=0,child;
@@ -27,8 +27,22 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  const edit={csrf,path:"index.html",version:"0",title:"Updated SEO title",description:"Updated description",headline:"Updated <heading>",lead:"Updated intro"};
  assert.equal((await post("/admin/content",edit)).status,403);assert.equal((await post("/admin/content",{...edit,csrf:"bad"},cookie)).status,403);
  assert.equal((await post("/admin/content",edit,cookie)).status,303);assert.equal((await post("/admin/content",edit,cookie)).status,409);html=await (await get("/")).text();assert(html.includes("Updated &lt;heading&gt;"));assert(html.includes("Updated SEO title"));assert(html.includes("Updated intro"));
+ const shop=()=>get("/shop").then(r=>r.text()),parseField=(html,n)=>html.match(new RegExp('name="'+n+'" value="([^"]+)"'))[1];
+ let shopHtml=await shop();assert(shopHtml.includes("Fixture product"));assert(!shopHtml.includes("Hidden seed"));assert(shopHtml.includes("Stok: 3"));const order={request_key:parseField(shopHtml,"request_key"),sku:"TEST-1",version:parseField(shopHtml,"version"),name:"Test buyer",email:"buyer@example.test",quantity:"2"};
+ assert.equal((await post("/shop/request",{...order,quantity:"4"})).status,409);
+ assert.equal((await post("/shop/request",order)).status,303);assert.equal((await post("/shop/request",order)).status,303);assert.equal((await post("/shop/request",{...order,quantity:"1"})).status,409);assert((await shop()).includes("Stok: 1"));
+ assert.equal((await post("/shop/request",{...order,request_key:"a".repeat(64),quantity:"1"})).status,409);
+ assert.equal((await post("/admin/order-cancel",{csrf,id:order.request_key})).status,403);
+ assert.equal((await post("/admin/order-cancel",{csrf,id:order.request_key},cookie)).status,303);assert.equal((await post("/admin/order-cancel",{csrf,id:order.request_key},cookie)).status,303);assert((await shop()).includes("Stok: 3"));
+ const product={csrf,sku:"NEW",version:"0",name:"New fixture product",description:"",price_minor:"500",currency:"TRY",stock:"2",visible:"1"};assert.equal((await post("/admin/product",product,cookie)).status,303);assert.equal((await post("/admin/product",product,cookie)).status,409);assert((await shop()).includes("New fixture product"));
+ const start=new Date(Date.now()+86400000).toISOString(),end=new Date(Date.now()+90000000).toISOString(),slot={csrf,resource:"room-1",service:"Fixture appointment",start,end,capacity:"2"};
+ assert.equal((await post("/admin/slot",slot,cookie)).status,303);assert.equal((await post("/admin/slot",slot,cookie)).status,409);
+ const bookingHtml=await (await get("/appointments")).text(),booking={request_key:parseField(bookingHtml,"request_key"),slot:parseField(bookingHtml,"slot"),name:"Test visitor",email:"visit@example.test",quantity:"2"};
+ assert.equal((await post("/appointments/request",booking)).status,303);assert.equal((await post("/appointments/request",booking)).status,303);assert.equal((await post("/appointments/request",{...booking,request_key:"b".repeat(64),quantity:"1"})).status,409);assert.equal((await post("/admin/booking-cancel",{csrf,id:booking.request_key},cookie)).status,303);assert.equal((await post("/appointments/request",{...booking,request_key:"b".repeat(64),quantity:"2"})).status,303);
+ assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));assert(!(await (await get("/admin")).text()).includes("Test buyer"));
+ console.log("independent business acceptance: visible seed, live stock, idempotent unpaid requests, cancellation, owner product edit, slot overlap and capacity");
  assert.equal((await post("/admin/logout",{csrf},cookie)).status,303);assert(!(await (await get("/admin",cookie)).text()).includes("Persistent contact"));
- await stop();await start(false);assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));cookie=await login();assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));
+ await stop();await start(false);assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));cookie=await login();assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));assert((await shop()).includes("New fixture product"));assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));
  console.log("self-hosted ZIP runtime acceptance: extracted source, independent startup, contact persistence, owner session, CSRF, escaped content, optimistic editing and restart");
  }finally{if(child&&child.exitCode===null){child.kill("SIGTERM");await once(child,"exit");}fs.rmSync(dir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
