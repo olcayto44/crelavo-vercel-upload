@@ -1,0 +1,2 @@
+# Independent-session acceptance
+Disposable PostgreSQL 16 CI, no live database or provider. Test duplicate enqueue/claim/finalize, competing projects, rollover, cross-owner and browser privileges, stale job no replay. Provider receipt and cost evidence are synthetic. This is not a real provider or live user acceptance. Legacy production writers and real budget/rate caps still require integration before launch.

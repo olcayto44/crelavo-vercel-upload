@@ -1,0 +1,49 @@
+name: Website AI ledger concurrency
+on:
+  push:
+    branches:
+      - feat/central-production-dispatch-20261125
+    paths:
+      - 'docs/website-ai-jobs-isolated.sql'
+      - 'supabase/migration_website_atomic_credits_isolated.sql'
+      - 'supabase/migration_production_requests.sql'
+      - 'supabase/migration_credit_rollover_policy.sql'
+      - 'supabase/schema.sql'
+      - 'scripts/website-ai-ledger-concurrency.py'
+      - '.github/workflows/website-ai-ledger-concurrency.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: studio_test
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: studio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U studio_test -d studio_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Independent-session race tests
+        run: python3 scripts/website-ai-ledger-concurrency.py
+        env:
+          STUDIO_LEDGER_DISPOSABLE_CI: 'true'
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: studio_test
+          PGPASSWORD: disposable-ci-only
+          PGDATABASE: studio_test
