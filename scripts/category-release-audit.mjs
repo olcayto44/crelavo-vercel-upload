@@ -78,6 +78,21 @@ for(const path of paths){
   byPath.set(path,dom.alt);
   await page.waitForLoadState("load",{timeout:15000});
   await page.evaluate(()=>document.fonts.ready);
+  // Website Builder now has four approved, committed assets. Require all four
+  // in each locale, and decode the actual browser images (including lazy cards).
+  if(dom.category==="website"||["/ai-website-builder","/tr/yapay-zeka-web-sitesi-olusturucu","/de/ki-website-builder","/fr/createur-site-web-ia","/zh/ai-website-builder"].includes(path)){
+    const required=["website-builder-hero.webp","business-website-concept.webp","online-store-concept.webp","creative-portfolio-concept.webp"];
+    const artwork=await page.locator('main img').evaluateAll(async imgs=>{
+      const selected=imgs.filter(i=>decodeURIComponent(i.getAttribute("src")||"").includes("/category-art/website/"));
+      return Promise.all(selected.map(async i=>{i.loading="eager";let decoded=false;try{await Promise.race([i.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error("Image decode timeout")),10000))]);decoded=true;}catch{}return {src:decodeURIComponent(i.getAttribute("src")||""),alt:i.alt,width:i.naturalWidth,height:i.naturalHeight,decoded};}));
+    });
+    item.websiteArtwork=artwork;
+    for(const file of required){const matches=artwork.filter(i=>i.src.includes("/category-art/website/"+file));if(matches.length!==1||!matches[0].decoded||!matches[0].width||!matches[0].height||!matches[0].alt.trim())issues.push("Missing or undecodable Website Builder artwork "+file);}
+    const og=await page.locator('meta[property="og:image"]').getAttribute("content");
+    if(og!==canonicalOrigin+"/category-art/website/website-builder-hero.webp")issues.push("Missing Website Builder Open Graph artwork");
+    if(!entities.some(e=>e["@type"]==="ImageObject"&&(e.contentUrl===canonicalOrigin+"/category-art/website/website-builder-hero.webp"||e.url===canonicalOrigin+"/category-art/website/website-builder-hero.webp")))issues.push("Missing Website Builder ImageObject");
+  }
+
   item.labMetrics=await page.evaluate(()=>{const nav=performance.getEntriesByType("navigation")[0];return {ttfbMs:nav?Math.round(nav.responseStart):null,lcpMs:window.__categoryPerf?.lcp??null,cls:window.__categoryPerf?.cls??null,transferBytes:performance.getEntriesByType("resource").reduce((n,r)=>n+r.transferSize,0)}});
   item.viewport=[];
   for(const width of [1440,768,390]){
