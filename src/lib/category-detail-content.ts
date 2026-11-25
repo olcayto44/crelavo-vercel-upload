@@ -3,7 +3,7 @@ export type DetailCopy=readonly [string,string,string[],string[],string[]];
 export const categoryDetailCopy:Record<string,DetailCopy>={
   "website": [
     "Build your website with AI",
-    "Plan a website around your business, audience, content and responsive design requirements.",
+    "Plan a responsive business website, landing page, online store or portfolio with AI. Define your pages, branding, content and technical requirements.",
     [
       "Landing pages",
       "Business websites",
@@ -24,7 +24,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "saas": [
     "Plan your SaaS product with AI",
-    "Define your software idea, account flows and dashboard requirements before development.",
+    "Plan a SaaS MVP with AI. Define subscription dashboards, customer account flows, user roles, integrations and billing requirements before development.",
     [
       "SaaS dashboards",
       "Account workflows",
@@ -45,7 +45,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "mobile_app": [
     "Design your mobile app with AI",
-    "Translate an app idea into screens, navigation and a clear mobile project brief.",
+    "Plan an iOS or Android mobile app with AI. Define app screens, navigation, user flows, prototype requirements and target platforms.",
     [
       "iOS app concepts",
       "Android app concepts",
@@ -66,7 +66,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "admin_project": [
     "Plan a professional admin panel",
-    "Define management screens, permissions and business processes for a custom administration project.",
+    "Plan a custom admin panel with management dashboards, inventory or order workflows, role-based permissions and reporting requirements.",
     [
       "Management dashboards",
       "CRUD workflows",
@@ -87,7 +87,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "video": [
     "Create your AI video project",
-    "Plan a video from an idea, product link, voice or image reference. Define the style, format and creative direction before generation.",
+    "Plan an AI video from text, a product link, voice or image references. Set the story, scene style, aspect ratio and production requirements.",
     [
       "Text-to-video",
       "Product video",
@@ -108,7 +108,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "talking_video": [
     "Plan talking videos with AI",
-    "Design presenter scenes, interviews and multi-person dialogue with clear voice and character requirements.",
+    "Plan AI talking videos for presenters, interviews and multi-person dialogue. Define characters, voice references, scripts and scene requirements.",
     [
       "Presenter scenes",
       "Avatar references",
@@ -129,7 +129,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "documentary": [
     "Develop your documentary with AI",
-    "Organize a documentary topic into research questions, narration and visual storytelling.",
+    "Plan a documentary with AI, from research questions and source material to a narration script, storyboard, interview outline and visual direction.",
     [
       "Research outline",
       "Narration",
@@ -150,7 +150,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "animation": [
     "Plan AI animation projects",
-    "Define the animation style, characters and scenes for a coherent animated story.",
+    "Plan 2D, 3D and character animation with AI. Define the story, character appearance, animation style, scenes and requested delivery format.",
     [
       "2D animation",
       "2.5D animation",
@@ -171,7 +171,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "music_video": [
     "Create a music video concept with AI",
-    "Plan visuals around your authorized music, lyrics, mood and performance direction.",
+    "Plan a music video, lyric video or visualizer around music you own or have permission to use. Define mood, scenes, lyrics and visual rhythm.",
     [
       "Lyric videos",
       "Visualizers",
@@ -192,7 +192,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "drama": [
     "Develop short films and drama series",
-    "Shape a story idea into episodes, character arcs and dialogue for a short-form film project.",
+    "Develop a short film or drama series brief with AI. Organize your premise, character arcs, dialogue, episodes and scene-by-scene story direction.",
     [
       "Short films",
       "Episode arcs",
@@ -213,7 +213,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "cinematic_video": [
     "Plan cinematic AI videos",
-    "Develop film-inspired creative direction, camera movement and lighting for cinematic scenes.",
+    "Plan cinematic AI videos, trailers and film-inspired scenes. Define shot composition, camera movement, lighting, visual tone and story direction.",
     [
       "Cinematic ads",
       "Trailer concepts",
@@ -234,7 +234,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "video_clipping": [
     "Turn long videos into short clip plans",
-    "Identify the moments, hooks and formats you want to extract from authorized footage.",
+    "Plan short-form video highlights from footage you are authorized to use. Identify hooks, key moments, platform formats and clipping requirements.",
     [
       "Shorts concepts",
       "Highlight selection",
@@ -255,7 +255,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "video_tools": [
     "Explore video editing tools",
-    "Plan editing requirements or open the separate Crelavo editor for supported local workflows.",
+    "Explore video editing workflows for cutting, motion, audio and video extension. Review available editing tools and define your project requirements.",
     [
       "Timeline editing",
       "Motion direction",
@@ -276,7 +276,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "campaign": [
     "Plan AI ads and marketing campaigns",
-    "Turn your product or offer into a campaign brief with hooks, copy and creative direction.",
+    "Plan e-commerce ads and marketing campaigns with AI. Develop product hooks, ad copy, creative angles and visual requirements for your target audience.",
     [
       "Product-link campaigns",
       "Social ads",
@@ -297,7 +297,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "ad_score_checker": [
     "Review your ad creative with AI",
-    "Review the hook, offer, CTA and creative direction before committing to campaign production.",
+    "Review ad creative before production. Assess the hook, offer, call to action and creative direction without treating feedback as a performance guarantee.",
     [
       "Hook review",
       "CTA clarity",
@@ -318,7 +318,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "campaign_calendar": [
     "Plan your marketing content calendar",
-    "Organize launches, seasonal messaging and campaign assets into a structured calendar brief.",
+    "Plan a marketing content calendar with launch dates, seasonal campaign ideas, publishing schedules and creative asset requirements.",
     [
       "Launch calendars",
       "Seasonal campaigns",
@@ -339,7 +339,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "ai_agent": [
     "Define your AI agent project",
-    "Specify the agent's role, personality, allowed actions and human approval requirements.",
+    "Define an AI agent for your business. Plan its role, tasks, knowledge sources, allowed actions, integrations and human approval requirements.",
     [
       "Brand agents",
       "Social workflows",
@@ -360,7 +360,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "localization": [
     "Plan multilingual content localization",
-    "Adapt creative requirements for another language, including messaging, subtitles and voice direction.",
+    "Plan multilingual content localization for international audiences. Define translated messaging, subtitle requirements, voice direction and target markets.",
     [
       "Language adaptation",
       "Subtitle planning",
@@ -381,7 +381,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "cultural_localization": [
     "Adapt campaigns for local audiences",
-    "Plan culturally relevant messaging around a product's audience, market and intended language.",
+    "Adapt campaign hooks, scripts and product messaging for a specific language and cultural context. Define audience needs and local review requirements.",
     [
       "Localized hooks",
       "Local messaging",
@@ -402,7 +402,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "live_sales_agent": [
     "Plan an AI live sales experience",
-    "Define a live shopping concept, presenter, product information and customer interaction requirements.",
+    "Plan an AI live sales experience for product demonstrations and live shopping. Define presenter scripts, product information and interaction requirements.",
     [
       "Live shopping briefs",
       "Presenter persona",
@@ -423,7 +423,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "avatar": [
     "Design an AI avatar project",
-    "Define an original or authorized avatar's appearance, personality and intended video use.",
+    "Design an original or authorized AI avatar for presenter videos and creative content. Define appearance, persona, voice and intended use.",
     [
       "Avatar design",
       "Brand personas",
@@ -444,7 +444,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "lip_sync": [
     "Plan AI lip sync videos",
-    "Specify authorized video and audio references for speech synchronization and dubbing requirements.",
+    "Plan AI lip sync and video dubbing using authorized audio and video. Define speech synchronization, target language and delivery requirements.",
     [
       "Audio-to-video sync",
       "Dialogue sync",
@@ -465,7 +465,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "voice_clone": [
     "Plan consent-based AI voice cloning",
-    "Define a voice reference project using recordings you own or have permission to use.",
+    "Plan consent-based AI voice cloning for narration or voiceover. Define authorized recording references, language, tone and intended use.",
     [
       "Voice references",
       "Narration plans",
@@ -486,7 +486,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "visual_clone": [
     "Create visual style variation plans",
-    "Use authorized references to define a visual direction and new creative variations.",
+    "Plan new visual variations using authorized reference images. Define style, composition, colors and creative direction without copying protected work.",
     [
       "Style references",
       "Product look",
@@ -507,7 +507,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "virtual_model_studio": [
     "Plan realistic fashion model visuals",
-    "Define model appearance, clothing, poses and catalog direction for a virtual fashion project.",
+    "Plan realistic virtual fashion model visuals for product catalogs and campaigns. Define clothing references, poses, settings and model appearance.",
     [
       "Fashion catalog concepts",
       "Model poses",
@@ -528,7 +528,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "image": [
     "Create your AI image project",
-    "Plan original visual assets from a brief, authorized references, brand direction and target format.",
+    "Plan AI images for product visuals, banners, posters and social media. Define original creative direction, brand requirements, references and image format.",
     [
       "Hero images",
       "Product mockups",
@@ -549,7 +549,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "brand_kit": [
     "Design your brand identity with AI",
-    "Define a brand's visual identity, typography and creative direction before production.",
+    "Plan a brand identity kit with AI. Define logo concepts, color palettes, typography, brand guidelines and the visual assets your business needs.",
     [
       "Logo concepts",
       "Color palettes",
@@ -570,7 +570,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "document_pack": [
     "Plan professional documents with AI",
-    "Turn a document brief into a structured proposal, presentation or catalog project.",
+    "Plan professional documents with AI, including proposals, pitch decks and product catalogs. Define the audience, content structure and file requirements.",
     [
       "Pitch decks",
       "Proposals",
@@ -591,7 +591,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "anime_short_film": [
     "Develop AI anime short films",
-    "Plan characters, dialogue and scenes for an original anime-inspired film.",
+    "Develop an original anime-inspired short film with AI. Define characters, dialogue, storyboards, scene styles and animation requirements.",
     [
       "Anime concepts",
       "Character design",
@@ -612,7 +612,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "animal_video": [
     "Plan creative animal videos",
-    "Design a funny, cinematic or animated animal scene with a clear story and visual brief.",
+    "Plan animal-themed videos for entertainment or product storytelling. Define pet or animal references, narration, scenes and video format.",
     [
       "Funny animal concepts",
       "Animated scenes",
@@ -633,7 +633,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "nature_video": [
     "Plan cinematic nature videos",
-    "Develop landscape and wildlife stories, narration and atmosphere for nature-focused content.",
+    "Plan nature videos and documentary concepts with AI. Define landscapes, wildlife stories, narration, atmospheric sound and cinematic direction.",
     [
       "Landscape scenes",
       "Wildlife stories",
@@ -654,7 +654,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "planet_space_video": [
     "Create space video concepts",
-    "Plan planet explainers, galaxy scenes and cosmic visuals with clear scientific or fictional context.",
+    "Plan space videos, planet explainers and galaxy scenes. Define scientific sources or fictional context, narration and cosmic visual concepts.",
     [
       "Planet explainers",
       "Galaxy scenes",
@@ -675,7 +675,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "drone_video": [
     "Plan drone-style aerial videos",
-    "Define aerial-style shots and location concepts. Distinguish simulated imagery from real drone footage.",
+    "Plan drone-style aerial video concepts for landscapes or properties. Define viewpoints, camera paths and whether imagery is simulated or real.",
     [
       "Aerial-style scenes",
       "Location briefs",
@@ -696,7 +696,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "stickman_animation": [
     "Plan stickman animation stories",
-    "Turn a simple story or lesson into a stickman animation brief with scene and dialogue direction.",
+    "Plan stickman animation for explainers, educational videos and comedy. Define the message, characters, scene order, dialogue and pacing.",
     [
       "Explainers",
       "Comedy sketches",
@@ -717,7 +717,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "studio": [
     "Develop your film or series project",
-    "Organize scripts, characters, scenes and creative direction for a longer film or series brief.",
+    "Develop a film or series project with AI. Define scripts, episodes, character breakdowns, shot lists, production scope and delivery requirements.",
     [
       "Script development",
       "Scene planning",
@@ -738,7 +738,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "crelavo_academy": [
     "Plan your creative learning project",
-    "Explore structured learning briefs, exercises and teaching materials for creative production.",
+    "Explore creative learning project briefs for AI video and visual production. Plan lesson goals, exercises, examples and teaching materials.",
     [
       "Lesson plans",
       "Exercises",
@@ -759,7 +759,7 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
   ],
   "community_showcase": [
     "Explore creative showcase projects",
-    "Browse creative examples or plan a submission with clear ownership and publication permissions.",
+    "Explore creative project examples and plan a showcase submission. Prepare an original project, description, ownership details and publication consent.",
     [
       "Showcase submissions",
       "Project descriptions",
