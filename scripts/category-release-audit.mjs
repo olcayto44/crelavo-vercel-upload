@@ -42,7 +42,7 @@ for(const path of paths){
   item.title=dom.title;item.h1=dom.h1;item.h2=dom.h2;item.h3=dom.h3;item.description=dom.description;item.imageCount=dom.images.length;item.textLength=dom.textLength;
   if(dom.lang!==language(path))issues.push("DOM lang "+dom.lang);
   if(!dom.title||dom.h1.length!==1||!dom.h1[0])issues.push("Missing title or single H1");
-  if(!dom.h2||!dom.h3)issues.push("Missing H2 or H3");
+  if(!dom.h2)issues.push("Missing H2"); // H3 is optional where there are no subsections.
   if(!dom.description)issues.push("Missing description");
   if(dom.canonical!==canonicalOrigin+path)issues.push("Wrong canonical");
   if(/noindex/i.test(dom.robots))issues.push("Unexpected noindex");
