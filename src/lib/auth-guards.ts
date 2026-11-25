@@ -5,6 +5,7 @@ export function isEmailVerified(user: { email_confirmed_at?: string | null; conf
 }
 
 export async function requireVerifiedBrowserUser() {
+  try {
   const supabase = supabaseBrowser();
   const [{ data, error }, sessionResult] = await Promise.all([
     supabase.auth.getUser(),
@@ -22,6 +23,7 @@ export async function requireVerifiedBrowserUser() {
 
   const accessToken = sessionResult.data.session?.access_token ?? "";
   return { ok: true as const, user, accessToken };
+  } catch { return { ok: false as const, message: "Sign-in is unavailable. Please try again.", redirect: "/auth/login" }; }
 }
 
 export function authHeaders(accessToken: string, contentType = "application/json") {
