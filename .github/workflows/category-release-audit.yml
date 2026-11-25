@@ -9,6 +9,9 @@ on:
       - 'middleware.ts'
       - 'scripts/category-release-audit.mjs'
       - '.github/workflows/category-release-audit.yml'
+  pull_request:
+    branches: [feat/studio-cloud-elements-20261123]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 permissions:
   contents: read
