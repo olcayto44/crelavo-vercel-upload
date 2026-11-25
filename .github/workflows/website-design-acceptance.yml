@@ -2,14 +2,14 @@ name: Website design candidate acceptance
 on:
   push:
     branches: [feat/central-production-dispatch-20261125]
-    paths: ['src/lib/website-design-candidate.ts','src/lib/website-industry-scope.ts','src/app/website-design-test/**','src/app/website-cms-test/**','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
+    paths: ['src/lib/website-design-candidate.ts','src/lib/website-design-schema.ts','src/lib/website-sector-draft.ts','scripts/website-editor-browser.mjs','src/lib/website-industry-scope.ts','src/app/website-design-test/**','src/app/website-cms-test/**','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   candidate-browser:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -27,6 +27,7 @@ jobs:
           ln -s "$RUNNER_TEMP/crelavo-browser/node_modules/playwright" node_modules/playwright
           "$RUNNER_TEMP/crelavo-browser/node_modules/.bin/playwright" install --with-deps chromium
       - run: node scripts/website-design-browser.mjs
+      - run: node scripts/website-editor-browser.mjs
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
