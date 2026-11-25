@@ -1,3 +1,4 @@
+import {localizedCategoryArt} from "@/lib/category-localized-art";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: LocalizedPageProps): Promise<
   const locale = "fr";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) return { title: "Localized Crelavo page" };
+  const art=localizedCategoryArt("video",locale);
 
   return {
     title: {absolute:page.title},
@@ -36,8 +38,10 @@ export async function generateMetadata({ params }: LocalizedPageProps): Promise<
       title: page.title,
       description: page.description,
       url: page.path,
-      type: "website"
+      type: "website",
+      ...(art?{images:[{url:"https://www.crelavo.com"+art.src,alt:art.alt}]}:{})
     },
+    twitter:{card:art?"summary_large_image":"summary",title:page.title,description:page.description,...(art?{images:["https://www.crelavo.com"+art.src]}:{})},
     robots: { index: true, follow: true }
   };
 }

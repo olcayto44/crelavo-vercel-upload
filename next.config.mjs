@@ -21,8 +21,10 @@ const privateRouteHeaders = [
 const websiteArtFiles = ["website-builder-hero.webp", "business-website-concept.webp", "online-store-concept.webp", "creative-portfolio-concept.webp"];
 const websiteArtReady = websiteArtFiles.every(file => existsSync(join(process.cwd(), "public", "category-art", "website", file)));
 
+const categoryArtIds = ["saas","mobile_app","video","talking_video","documentary","animation","music_video","drama","cinematic_video","video_clipping","video_tools","campaign","ad_score_checker","campaign_calendar","ai_agent","localization","cultural_localization","live_sales_agent","avatar","lip_sync","voice_clone","visual_clone","virtual_model_studio","image","brand_kit","document_pack","anime_short_film","animal_video","nature_video","planet_space_video","drone_video","stickman_animation","crelavo_academy","community_showcase"];
+const availableCategoryArt = categoryArtIds.filter(id => existsSync(join(process.cwd(),"public","category-art",id.replaceAll("_","-")+"-hero.webp")));
 const nextConfig = {
-  env: { CRELAVO_WEBSITE_ART_READY: websiteArtReady ? "1" : "0" },
+  env: { CRELAVO_WEBSITE_ART_READY: websiteArtReady ? "1" : "0", CRELAVO_CATEGORY_ART_IDS: availableCategoryArt.join(",") },
   serverExternalPackages: ["ffmpeg-static", "geoip-lite"],
   outputFileTracingIncludes: {
     "/api/**/*": ["./node_modules/ffmpeg-static/**/*", "./node_modules/geoip-lite/data/**/*"]

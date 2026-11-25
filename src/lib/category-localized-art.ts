@@ -1,3 +1,4 @@
+import {categoryArtworkCatalog} from "./category-art-catalog";
 // Only verified HTTP 200 assets; never substitute a different category's illustration.
 type ImageLocale="en"|"tr"|"de"|"fr"|"zh";
 const images:Record<string,{src:string;alt:Record<ImageLocale,string>}>={
@@ -5,7 +6,8 @@ const images:Record<string,{src:string;alt:Record<ImageLocale,string>}>={
  admin_project:{src:"/showcase/production-dashboard.png",alt:{en:"Illustrative manufacturing dashboard with production metrics on a monitor in a factory",tr:"Fabrikadaki bir monitörde üretim ölçümlerini gösteren örnek yönetim paneli",de:"Illustratives Fertigungsdashboard mit Produktionskennzahlen auf einem Monitor in einer Fabrik",fr:"Tableau de bord industriel illustratif affichant des indicateurs de production sur un écran en usine",zh:"工厂显示器上呈现生产指标的管理仪表板示意图"}},
  studio:{src:"/showcase/ai-production-studio.webp",alt:{en:"Concept illustration of a cinematic production studio with a video editing workstation",tr:"Video düzenleme çalışma istasyonu bulunan sinematik yapım stüdyosu konsepti",de:"Konzeptillustration eines Filmproduktionsstudios mit Videoschnitt-Arbeitsplatz",fr:"Illustration conceptuelle d’un studio de production cinématographique avec poste de montage vidéo",zh:"配有视频剪辑工作站的影视制作工作室概念图"}}
 };
-export function localizedCategoryArt(id:string,locale:ImageLocale){const image=images[id];return image?{src:image.src,alt:image.alt[locale]}:undefined}
+const enabledArtwork = new Set((process.env.CRELAVO_CATEGORY_ART_IDS||"").split(",").filter(Boolean));
+export function localizedCategoryArt(id:string,locale:ImageLocale){const image=images[id];if(image)return {src:image.src,alt:image.alt[locale]};const candidate=categoryArtworkCatalog.find(x=>x.id===id);return candidate&&enabledArtwork.has(id)?{src:"/category-art/"+candidate.file,alt:candidate.alt[locale]}:undefined;}
 
 const websiteConcepts = [
  {file:"business-website-concept.webp",width:294,height:169,title:{en:"Business website",tr:"Kurumsal web sitesi",de:"Unternehmenswebsite",fr:"Site d'entreprise",zh:"企业网站"},alt:{en:"Illustrative corporate website with a curved glass office building",tr:"Kavisli cam cepheli ofis binası içeren kurumsal web sitesi tasarımı",de:"Beispiel einer Unternehmenswebsite mit geschwungenem Bürogebäude aus Glas",fr:"Exemple de site d'entreprise avec un immeuble de bureaux vitré aux lignes courbes",zh:"以曲面玻璃办公楼为主题的企业网站设计示例"}},
