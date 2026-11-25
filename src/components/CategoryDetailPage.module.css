@@ -5,3 +5,8 @@
 .page:lang(zh-Hans) h1,.page:lang(zh-Hans) h2,.page:lang(zh-Hans) h3{letter-spacing:normal;line-height:1.3;word-break:normal;overflow-wrap:anywhere}.page:lang(de) .hero h1,.page:lang(fr) .hero h1,.page:lang(tr) .hero h1{hyphens:auto;overflow-wrap:anywhere}.page .related a,.page .primary,.page .secondary{min-height:44px}.page .faq summary{min-height:44px;align-content:center}.page .hero>*,.page .three>*,.page .four>*,.page .two>*{min-width:0}@media(max-width:480px){.page .actions>a,.page .final>a{width:100%}.page .related a{max-width:100%;white-space:normal}.page .briefPanel{padding:18px}.page .hero h1{line-height:1.2}}
 
 .page .briefPanel h2{font-size:clamp(20px,2.5vw,24px);line-height:1.35;margin:0 0 14px;letter-spacing:normal}.page .related a[aria-current="page"]{border-color:#b49cf8;background:#322650;color:#fff!important}.page .related a[aria-current="page"]:focus-visible{outline-offset:4px}
+
+/* Keep the hero within its grid track; at tablet widths use a stacked layout. */
+.page .heroMedia{width:100%;max-width:100%;min-width:0;min-height:0;aspect-ratio:16/10}
+@media(max-width:960px){.page .hero{grid-template-columns:minmax(0,1fr);padding:12px 0 26px;gap:24px}.page .hero h1{max-width:100%;font-size:clamp(32px,5.8vw,54px)}.page .heroMedia{max-width:100%}.page .three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.page .three{grid-template-columns:minmax(0,1fr)}}
