@@ -15,7 +15,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (!VERSIONED_PATHS.has(pathname)) {
-    return NextResponse.next();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-crelavo-page-path", pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   if (searchParams.get("v") === PAGE_VERSION && pathname !== "/live-sales-credits-v2") {
@@ -33,5 +35,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/studio-v2", "/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*", "/assistant-workstation-production/:path*"]
+  matcher: ["/tr/:path*", "/de/:path*", "/fr/:path*", "/zh/:path*", "/dashboard/studio-v2", "/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*", "/assistant-workstation-production/:path*"]
 };
