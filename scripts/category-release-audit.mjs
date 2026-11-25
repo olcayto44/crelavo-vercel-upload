@@ -74,7 +74,7 @@ for(const path of paths){
   item.viewport=[];
   for(const width of [1440,768,390]){
     await page.setViewportSize({width,height:900});
-    const size=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,width:document.documentElement.clientWidth,main:document.querySelector("main")?.getBoundingClientRect().width||0}));
+    const size=await page.evaluate(()=>{const width=document.documentElement.clientWidth,scroll=document.documentElement.scrollWidth;const offenders=scroll>width+2?[...document.querySelectorAll("body *")].filter(e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&r.right>width+2&&getComputedStyle(e).position!=="fixed"}).slice(0,12).map(e=>({tag:e.tagName,cls:String(e.className).slice(0,160),right:Math.round(e.getBoundingClientRect().right)})):[];return {scroll,width,main:document.querySelector("main")?.getBoundingClientRect().width||0,offenders};});
     item.viewport.push({width,...size});
     if(size.scroll>size.width+2)issues.push("Horizontal overflow "+width);
     if(path==="/ai-website-builder"||path==="/tr/yapay-zeka-web-sitesi-olusturucu"||path==="/de/ki-website-builder"||path==="/fr/createur-site-web-ia"||path==="/zh/ai-website-builder"||issues.length)await page.screenshot({path:screenshotDir+"/"+path.replace(/[^a-z0-9-]/g,"_")+"-"+width+".png",animations:"disabled",timeout:10000});
@@ -106,6 +106,6 @@ const dashboardResult = await (async()=>{
 const failedStudioRoutes=studioResults.filter(s=>s.error||s.status!==200);
 const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,failedStudioRoutes,dashboardResult,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
 await writeFile(out+"/report.json",JSON.stringify(report,null,2));
-console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles.length,duplicateDescriptions:report.duplicateDescriptions.length}));
+console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles,duplicateDescriptions:report.duplicateDescriptions,failedStudioRoutes:report.failedStudioRoutes,dashboardResult:report.dashboardResult}));
 if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||failedStudioRoutes.length||!dashboardResult.ok)process.exitCode=1;
 }finally{await browser.close();}
