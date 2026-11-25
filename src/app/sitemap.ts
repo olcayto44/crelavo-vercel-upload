@@ -66,6 +66,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const configuredServicePages = await getConfiguredServicePages();
+  // Apply editorial visibility to all route sources, not just serviceRoutes.
+  const excludedServicePaths = new Set(configuredServicePages
+    .filter(page => (page.status ?? "published") !== "published" || page.includeInSitemap === false)
+    .map(page => `/${page.slug}`));
   const serviceRoutes = configuredServicePages
     .filter((page) => (page.status ?? "published") === "published" && page.includeInSitemap !== false)
     .map((page) => ({
@@ -121,7 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes = [...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
 
   return routes
-    .filter((route, index, all) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)
+    .filter((route, index, all) => !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)
     .map((route) => ({
       url: `${baseUrl}${route.path}`,
       ...(route.lastModified?{lastModified:route.lastModified}:{}),
