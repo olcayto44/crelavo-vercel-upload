@@ -1,7 +1,11 @@
 import Link from "next/link";import Image from "next/image";import {ArrowRight,ArrowUpRight,Check,Layers,Sparkles,MonitorSmartphone,Clapperboard,FileText,Play} from "lucide-react";import {CATEGORIES,getCategory} from "@/lib/crelavo/categoryCatalog";import {categoryPublicPaths,categoryWorkspace} from "@/lib/category-public-routes";import {categoryDiscoveryCopy} from "@/lib/category-discovery-copy";import {categoryDetailCopy,categorySampleIds,categoryHeroArt} from "@/lib/category-detail-content";import {publicOrigin} from "@/lib/category-detail-meta";import {getConfiguredShowcaseVideos} from "@/lib/showcase-video-config";import {Header} from "@/components/Header";import {getConfiguredSiteContentConfig} from "@/lib/site-content-loader";import styles from "./CategoryDetailPage.module.css";
 type ConceptArt = {src:string;alt:string;width:number;height:number};
 // Register only image files that have actually been uploaded to public/category-art.
-const categoryConceptArt:Record<string,Record<string,ConceptArt>>={};
+const categoryConceptArt:Record<string,Record<string,ConceptArt>>=process.env.CRELAVO_WEBSITE_ART_READY==="1"?{website:{
+ "Business website":{src:"/category-art/website/business-website-concept.webp",alt:"Illustrative business website with an architectural office building displayed on a laptop",width:302,height:179},
+ "Online store":{src:"/category-art/website/online-store-concept.webp",alt:"Illustrative online fashion accessories store with a handbag product on a laptop screen",width:298,height:179},
+ "Portfolio":{src:"/category-art/website/creative-portfolio-concept.webp",alt:"Illustrative creative portfolio website featuring a mountain landscape on a laptop screen",width:302,height:179}
+}}:{};
 const categoryUseCases:Record<string,readonly [string,string]>={
   "website": [
     "Small businesses, online retailers and independent professionals",
