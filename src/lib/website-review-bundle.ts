@@ -1,17 +1,18 @@
 import {z} from "zod";
 import {renderWebsiteDesignCandidate} from "./website-design-candidate";
+import {WebsiteHeroMediaList} from "./website-hero-media";
 import {WebsiteDesignSpec} from "./website-design-schema";
 import {resolveWebsiteIndustryScope} from "./website-industry-scope";
 import {escapeHtml as esc} from "./providers/website-template";
 import {buildDeliveryZip} from "./automatic-delivery-builder";
 const Product=z.object({sku:z.string().regex(/^[A-Za-z0-9_-]{1,48}$/),name:z.string().trim().min(1).max(120),description:z.string().max(2000),price_minor:z.number().int().min(0).max(100000000),currency:z.enum(["TRY","USD","EUR","GBP"]),stock:z.number().int().min(0).max(1000000),visible:z.boolean()});
 const Article=z.strictObject({slug:z.string().regex(/^[a-z][a-z0-9-]{0,48}$/),title:z.string().trim().min(1).max(70),description:z.string().trim().min(1).max(160),body:z.string().trim().min(1).max(12000),state:z.enum(["draft","reviewed","archived"])});
-const ReviewInput=z.strictObject({design:WebsiteDesignSpec,revision:z.number().int().positive(),catalog:z.array(Product).max(200),articles:z.array(Article).max(100).default([])});
+const ReviewInput=z.strictObject({design:WebsiteDesignSpec,revision:z.number().int().positive(),catalog:z.array(Product).max(200),articles:z.array(Article).max(100).default([]),heroMedia:WebsiteHeroMediaList.default([])});
 const labels={en:["Catalog preview","Available","Out of stock","Private review — checkout is not available","Back to home"],tr:["Katalog önizlemesi","Mevcut","Stokta yok","Özel inceleme — ödeme kapalı","Ana sayfa"],de:["Katalogvorschau","Verfügbar","Nicht vorrätig","Private Vorschau — keine Zahlung","Startseite"],fr:["Aperçu du catalogue","Disponible","Rupture de stock","Aperçu privé — paiement indisponible","Accueil"],"zh-Hans":["目录预览","有货","缺货","私人预览 — 暂不支持付款","首页"]} as const;
 // Snapshot inputs are untrusted. This archive is a review artifact, not a verified
 // deployment, payment receipt, ownership proof or a complete database backup.
 export function buildWebsiteReviewBundle(raw:unknown){
- const v=ReviewInput.parse(raw),design=v.design,result=renderWebsiteDesignCandidate(design);
+ const v=ReviewInput.parse(raw),design=v.design,result=renderWebsiteDesignCandidate(design,v.heroMedia);
  if(new Set(v.catalog.map(p=>p.sku)).size!==v.catalog.length)throw Error("duplicate_sku");
  const modules=design.industryScope?resolveWebsiteIndustryScope(design.industryScope.sector,design.industryScope.extraModules).modules.map(m=>m.id):[];
  const catalog=modules.includes("catalog")?v.catalog.filter(p=>p.visible):[];
@@ -39,8 +40,8 @@ export function buildWebsiteReviewBundle(raw:unknown){
   articles.forEach((a,i)=>files.push(page(paths[i],a.title,a.description,'<article><h1>'+esc(a.title)+'</h1><p>'+esc(a.description)+'</p><div style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.body)+'</div></article><p><a href="./'+articleIndex+'">'+esc(aLabels[2])+'</a></p>')));
   const home=files.find(f=>f.path==="index.html")!;home.content=home.content.replace("</main>",()=>'<p><a href="./'+articleIndex+'">'+esc(aLabels[0])+'</a></p></main>');
  }
- const review={format:"crelavo-private-site-review-v1",designRevision:v.revision,designHash:result.manifest.designHash,publicationReady:false,domainVerified:false,publicSitemap:false,previewRobots:"noindex,nofollow",catalogRecords:catalog.length,reviewedArticles:articles.length,requestedModules:modules,requires:["Real AI design and media approval","Customer-facing functionality","Verified translations","Email and analytics integration","Domain and SSL verification","Security and recovery tests","Verified billing and commercial acceptance"]};
+ const review={format:"crelavo-private-site-review-v1",designRevision:v.revision,designHash:result.manifest.designHash,publicationReady:false,domainVerified:false,publicSitemap:false,previewRobots:"noindex,nofollow",catalogRecords:catalog.length,reviewedArticles:articles.length,uploadedHeroMedia:result.manifest.media.length,requestedModules:modules,requires:["Real AI design and media approval","Customer-facing functionality","Verified translations","Email and analytics integration","Domain and SSL verification","Security and recovery tests","Verified billing and commercial acceptance"]};
  const entries=files.map(f=>({name:"source/"+f.path,content:f.content}));
- entries.push({name:"review-report.json",content:JSON.stringify(review,null,2)},{name:"README.txt",content:"PRIVATE WEBSITE REVIEW\nOpen source/index.html after extracting. The catalog contains only selected visible records at snapshot time, not live stock or a checkout. Only reviewed articles are included. All pages remain noindex. This archive is not a publication, paid delivery, or complete backup.\n"});
+ entries.push({name:"review-report.json",content:JSON.stringify(review,null,2)},{name:"README.txt",content:"PRIVATE WEBSITE REVIEW\nOpen source/index.html after extracting. The catalog contains only selected visible records at snapshot time, not live stock or a checkout. Only reviewed articles and page-matched private uploaded images are included. All pages remain noindex. This archive is not a publication, paid delivery, or complete backup.\n"});
  return {review,entries,zip:buildDeliveryZip(entries)};
 }
