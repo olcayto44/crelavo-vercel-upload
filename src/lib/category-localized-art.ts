@@ -6,3 +6,12 @@ const images:Record<string,{src:string;alt:Record<ImageLocale,string>}>={
  studio:{src:"/showcase/ai-production-studio.webp",alt:{en:"Concept illustration of a cinematic production studio with a video editing workstation",tr:"Video düzenleme çalışma istasyonu bulunan sinematik yapım stüdyosu konsepti",de:"Konzeptillustration eines Filmproduktionsstudios mit Videoschnitt-Arbeitsplatz",fr:"Illustration conceptuelle d’un studio de production cinématographique avec poste de montage vidéo",zh:"配有视频剪辑工作站的影视制作工作室概念图"}}
 };
 export function localizedCategoryArt(id:string,locale:ImageLocale){const image=images[id];return image?{src:image.src,alt:image.alt[locale]}:undefined}
+
+const websiteConcepts = [
+ {file:"business-website-concept.webp",width:294,height:169,title:{en:"Business website",tr:"Kurumsal web sitesi",de:"Unternehmenswebsite",fr:"Site d'entreprise",zh:"企业网站"},alt:{en:"Illustrative corporate website with a curved glass office building",tr:"Kavisli cam cepheli ofis binası içeren kurumsal web sitesi tasarımı",de:"Beispiel einer Unternehmenswebsite mit geschwungenem Bürogebäude aus Glas",fr:"Exemple de site d'entreprise avec un immeuble de bureaux vitré aux lignes courbes",zh:"以曲面玻璃办公楼为主题的企业网站设计示例"}},
+ {file:"online-store-concept.webp",width:294,height:169,title:{en:"Online store",tr:"Online mağaza",de:"Onlineshop",fr:"Boutique en ligne",zh:"网上商店"},alt:{en:"Illustrative online accessories store with a beige tote bag and sunglasses",tr:"Bej çanta ve güneş gözlüğü sergileyen online aksesuar mağazası tasarımı",de:"Beispiel eines Accessoire-Onlineshops mit beiger Tragetasche und Sonnenbrille",fr:"Exemple de boutique d'accessoires avec un sac beige et des lunettes de soleil",zh:"展示米色手提包与太阳镜的线上配饰商店设计示例"}},
+ {file:"creative-portfolio-concept.webp",width:295,height:169,title:{en:"Portfolio",tr:"Portfolyo",de:"Portfolio",fr:"Portfolio",zh:"作品集"},alt:{en:"Illustrative creative portfolio website with a blue and pink editorial portrait",tr:"Mavi ve pembe ışıklarla çekilmiş portre içeren yaratıcı portfolyo tasarımı",de:"Beispiel einer kreativen Portfolio-Website mit blau und rosa beleuchtetem Porträt",fr:"Exemple de portfolio créatif avec un portrait éclairé en bleu et rose",zh:"含蓝粉色灯光人像的创意作品集网站设计示例"}}
+] as const;
+export function localizedWebsiteConcepts(locale:ImageLocale){
+ return process.env.CRELAVO_WEBSITE_ART_READY==="1"?websiteConcepts.map(c=>({src:"/category-art/website/"+c.file,width:c.width,height:c.height,title:c.title[locale],alt:c.alt[locale]})):[];
+}
