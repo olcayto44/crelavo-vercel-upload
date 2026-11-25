@@ -1,74 +1,18 @@
-import type { Metadata } from "next";
+import type {Metadata} from "next";
 import Link from "next/link";
-import { CategoryGroupBrowser } from "@/components/CategoryGroupBrowser";
-import { Header } from "@/components/Header";
-import { InnerMobileNav } from "@/components/InnerMobileNav";
-import { PageThumbnailStructuredData, defaultSearchThumbnail } from "@/components/PageThumbnailStructuredData";
-import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
-
-export const metadata: Metadata = {
-  title: "AI Production Categories for Video, Website, App and Ecommerce | Crelavo",
-  description: "Choose Crelavo AI production categories for video, websites, apps, ecommerce campaigns, product ads, brand kits and social media assets.",
-  alternates: { canonical: "/categories" },
-  openGraph: {
-    title: "AI Production Categories | Crelavo",
-    description: "Choose the Crelavo production path for video, websites, apps, ecommerce campaigns and brand assets.",
-    url: "/categories",
-    type: "website",
-    images: [{ url: defaultSearchThumbnail.path, width: defaultSearchThumbnail.width, height: defaultSearchThumbnail.height, alt: "Crelavo AI production categories dashboard preview" }]
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "AI Production Categories | Crelavo",
-    description: "Choose the Crelavo production path for video, websites, apps, ecommerce campaigns and brand assets.",
-    images: [defaultSearchThumbnail.path]
-  }
-};
-
-export default async function CategoriesPage() {
-  const siteContent = await getConfiguredSiteContentConfig();
-
-  return (
-    <>
-      <PageThumbnailStructuredData
-        pagePath="/categories"
-        pageTitle="AI Production Categories | Crelavo"
-        pageDescription="Choose Crelavo AI production categories for video, websites, apps, ecommerce campaigns and brand assets."
-        imageAlt="Crelavo AI production categories dashboard preview"
-        pageType="CollectionPage"
-      />
-      <Header navLinks={siteContent.navLinks} />
-      <InnerMobileNav />
-      <main id="clc" className="container section public-funnel-page categories-funnel-page">
-        <style>{`.public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important}.page-with-rails{padding-left:0!important;padding-right:0!important}html{scroll-behavior:smooth}#clc a.category-tab-card{text-decoration:none;color:inherit}#clc .clc-btn-row{display:flex;gap:10px;flex-wrap:wrap}#clc .clc-btn-row .btn{flex:1 1 auto}`}</style>
-        <section className="promo-top-layout">
-          <div>
-            <span className="badge">Production categories</span>
-            <h1>Choose what you want Crelavo to produce</h1>
-            <p className="section-lead">
-              Pick the production path first: video, product-link ads, UGC-style ads, creative angles, lower-cost ad planning, websites, apps, brand kits, images, voice and campaign assets.
-            </p>
-          </div>
-          <div className="production-hero-card clean-feed-section">
-            <span className="badge">Simple flow</span>
-            <h2>Category → brief → production</h2>
-            <p>Choose a category, describe what you need, and continue inside the Crelavo workspace.</p>
-            <Link className="btn" href="/join">Open Work</Link>
-          </div>
-        </section>
-
-        <CategoryGroupBrowser />
-
-        <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }}>
-          <span className="badge">Ready to create?</span>
-          <h2>Use one of the categories above or open Work directly</h2>
-          <p>The category page stays focused on choosing the production type. Credit packages and checkout stay on the credits page.</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-            <Link className="btn" href="/join">Open Work</Link>
-            <Link className="btn secondary" href="/dashboard/credits">Open credits</Link>
-          </div>
-        </section>
-      </main>
-    </>
-  );
+import {CategoryGroupBrowser} from "@/components/CategoryGroupBrowser";
+import {Header} from "@/components/Header";
+import {getConfiguredSiteContentConfig} from "@/lib/site-content-loader";
+import {CATEGORIES} from "@/lib/crelavo/categoryCatalog";
+import {categoryPublicPaths} from "@/lib/category-public-routes";
+import {categoryDiscoveryCopy} from "@/lib/category-discovery-copy";
+import {StudioDiscovery} from "@/components/StudioDiscovery";
+import styles from "./catalog.module.css";
+const title="AI Creative Tools & Production Categories | Crelavo";
+const description="Explore 37 Crelavo production categories for AI video, website and app projects, images, avatars, voice, marketing and brand content.";
+export const metadata:Metadata={title,description,alternates:{canonical:"https://www.crelavo.com/categories"},openGraph:{title,description,url:"https://www.crelavo.com/categories",type:"website"}};
+export default async function CategoriesPage(){
+ const site=await getConfiguredSiteContentConfig();
+ const structured={"@context":"https://schema.org","@type":"CollectionPage",name:title,description,url:"https://www.crelavo.com/categories",mainEntity:{"@type":"ItemList",numberOfItems:CATEGORIES.length,itemListElement:CATEGORIES.map((c,i)=>({"@type":"ListItem",position:i+1,name:categoryDiscoveryCopy[c.id][0],url:"https://www.crelavo.com"+categoryPublicPaths[c.id]}))}};
+ return <><Header navLinks={site.navLinks}/><main className={styles.page} id="clc"><style>{`.public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important}.page-with-rails{padding-left:0!important;padding-right:0!important}`}</style><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structured).replace(/</g,"\\u003c")}}/><div className={styles.wrap}><nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">Home</Link><span>/</span><span>Production categories</span></nav><header className={styles.hero}><div><p className={styles.eyebrow}>CRELAVO / CREATIVE CATALOG</p><h1>What would you<br/>like to create?</h1><p className={styles.lead}>Explore 37 production categories across video, websites, apps, images, avatars and marketing. Choose a project type, review its details, then start your guided brief.</p><p className={styles.note}>Browse all categories without signing in.</p></div><div className={styles.heroAside}><span>01</span><strong>Explore a category</strong><small>Learn what the project involves.</small><span>02</span><strong>Define your brief</strong><small>Open the matching Studio assistant.</small><span>03</span><strong>Review your plan</strong><small>Confirm scope and available options.</small></div></header><CategoryGroupBrowser/><section className={styles.tools}><div><p className={styles.eyebrow}>STUDIO TOOLS</p><h2>Already have media to edit?</h2><p>Use the separate video and image editors or browse the media library.</p></div><div><Link href="/tools/video-editor">Video editor</Link><Link href="/tools/image-editor">Image editor</Link><Link href="/tools/media-library">Media library</Link></div></section><div style={{display:"none"}} aria-hidden="true">{/* StudioDiscovery retained on home and tools, no duplicate card block here. */}</div></div></main></>
 }

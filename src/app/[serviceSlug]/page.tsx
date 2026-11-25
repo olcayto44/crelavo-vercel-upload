@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import {categoryDetailMeta} from "@/lib/category-detail-meta";
+import {categoryForPublicPath} from "@/lib/category-public-routes";
 import { notFound } from "next/navigation";
 import { ServicePageView } from "@/components/ServicePageView";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
@@ -16,9 +18,10 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceSl
   const page = await getConfiguredServicePage(serviceSlug);
   if (!page || page.status === "draft") return {};
   const noindex = page.status === "noindex" || page.includeInSitemap === false;
+  const categoryId=categoryForPublicPath("/"+page.slug);if(categoryId)return categoryDetailMeta(categoryId,!noindex);
   return {
-    title: `${page.title} for ${page.bestFor} | Crelavo`,
-    description: `${page.summary} Explore ${page.keyword} keywords, categories, pricing, examples and managed AI production delivery paths.`,
+    title: `${page.title} | Crelavo`,
+    description: page.summary,
     alternates: {
       canonical: `/${page.slug}`,
       languages: {

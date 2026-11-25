@@ -24,10 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [intent, setIntent] = useState<AuthIntent>("login");
   const [nextPath, setNextPath] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => { setUser(await fetchSession()); setLoading(false); }, []);
+  const refresh = useCallback(async () => { try { setUser(await fetchSession()); } catch { setUser(null); } finally { setLoading(false); } }, []);
   useEffect(() => { setQuery(window.location.search); }, []);
   useEffect(() => { void refresh(); void probeGoogleAuth().then(setGoogleReady); }, [refresh]);
   useEffect(() => {
+    try {
     const { data: { subscription } } = supabaseBrowser().auth.onAuthStateChange((_event, session) => {
       const authUser = session?.user;
       setUser(authUser?.email ? {
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
     return () => subscription.unsubscribe();
+    } catch { setUser(null); setLoading(false); }
   }, []);
   useEffect(() => {
     const signup = searchParams.get("signup");

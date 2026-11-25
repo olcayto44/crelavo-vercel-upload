@@ -1,4 +1,6 @@
 import Link from "next/link";
+import {CategoryDetailPage} from "@/components/CategoryDetailPage";
+import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 import { AdPerformanceScoreChecker } from "@/components/AdPerformanceScoreChecker";
 import { Header } from "@/components/Header";
 import { communityShowcaseAdminChecklist, communityShowcaseApprovalFlow, communityShowcaseProofLoop, communityShowcaseSubmissionRules, communityShowcaseTemplates } from "@/lib/community-showcase";
@@ -7,12 +9,15 @@ import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 
 export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeaturePage }) {
   const siteContent = await getConfiguredSiteContentConfig();
+  const categoryId=categoryForPublicPath("/"+page.slug);
+  if(categoryId)return <CategoryDetailPage id={categoryId}>{page.slug==="ai-ad-performance-score-checker"?<AdPerformanceScoreChecker/>:undefined}</CategoryDetailPage>;
 
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
       <main className="container section service-page-detail">
         <section className="production-hero-card admin-overview-hero service-hero-card">
+          <nav aria-label="Breadcrumb" style={{fontSize:12,marginBottom:12}}><Link href="/">Home</Link> / <Link href="/categories">Categories</Link> / {page.title}</nav>
           <span className="badge">{page.badge} · Crelavo category</span>
           <h1>{page.h1}</h1>
           <p className="section-lead">{page.summary}</p>
@@ -23,10 +28,11 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             {page.slug === "ai-ad-performance-score-checker" ? (
               <>
                 <Link className="btn" href="/free-tools/ad-performance-score-checker">Run the free ad score now</Link>
-                <Link className="btn secondary" href="/dashboard/assistant-workspace?mode=commerce&category=campaign&idea=Score%20my%20ad%20and%20turn%20it%20into%20a%20stronger%20campaign">Turn score into campaign</Link>
+                <Link className="btn secondary" href={categoryWorkspace("ad_score_checker")}>Start ad analysis project</Link>
               </>
-            ) : <Link className="btn" href={page.slug === "community-showcase" ? "/join" : "/dashboard/create"}>Start a request</Link>}
+            ) : <Link className="btn" href={categoryId?categoryWorkspace(categoryId):"/dashboard/create"}>Start a request</Link>}
             <Link className="btn secondary" href="/categories">Open categories</Link>
+            {categoryId&&<p>Plan your project first. Confirm available tools, scope and credits before production.</p>}
             <Link className="btn secondary" href="/tools">Open tools</Link>
           </div>
         </section>
@@ -128,7 +134,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
               <Link className="btn" href="/dashboard/assistant-workspace?mode=commerce&category=cultural_localization&idea=Localize%20my%20product%20campaign">Prepare localization brief</Link>
               <Link className="btn secondary" href="/blog/shopify-amazon-trendyol-ai-campaign-checklist">Open ecommerce checklist</Link>
-              <Link className="btn secondary" href="/categories/campaign">Open campaign category</Link>
+              <Link className="btn secondary" href="/ai-ecommerce-campaign-generator">Open campaign category</Link>
             </div>
           </section>
         ) : null}
@@ -206,18 +212,7 @@ export async function PhaseOneFeaturePageView({ page }: { page: PhaseOneFeatureP
           </section>
         ) : null}
 
-        <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
-          <span className="badge">Niche keyword cluster</span>
-          <h2>{page.primaryKeyword} keywords and long-tail SEO paths</h2>
-          <div className="admin-category-grid">
-            {[page.primaryKeyword, ...page.keywords].map((keyword) => (
-              <div className="card admin-category-card" key={keyword}>
-                <h3>{keyword}</h3>
-                <p>Connected to Crelavo category pages, credit pricing, dashboard requests and managed delivery paths.</p>
-              </div>
-            ))}
-          </div>
-        </section>
+
 
         <section className="card admin-wide-card service-seo-article" style={{ marginTop: 18 }}>
           <span className="badge">Use cases</span>

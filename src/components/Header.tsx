@@ -59,7 +59,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
     .sort((a, b) => a.order - b.order)
     .map((item) => {
       const label = normalizeNavLabel(item.label);
-      if (label === "Assistant") return { ...item, label, href: "/dashboard/create" };
+      if (label === "Assistant") return { ...item, label, href: "/dashboard/studio" };
       if (label === "Dashboard") return { ...item, label, href: "/dashboard" };
       if (label === "Credits") return { ...item, label: "Pricing", href: "/pricing" };
       if (label === "Live Sales Plans") return { ...item, label: "Live Sales Avatar", href: "/live-sales-credits" };
@@ -83,7 +83,11 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
               </div>
             ))}
             <div className="tools-mega-group">
-              <strong>Start</strong>
+              <strong>Studio & editors</strong>
+              <Link href="/studio">Crelavo Studio</Link>
+              <Link href="/tools/video-editor">Video Editor</Link>
+              <Link href="/tools/image-editor">Image Editor</Link>
+              <Link href="/tools/media-library">Media Library</Link>
               <Link href="/categories">All production categories</Link>
               <Link href="/join">New Production</Link>
               <Link href="/dashboard/productions">My Productions</Link>
@@ -94,6 +98,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
           <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
             <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" languageOverride={languageOverride} />
             <div className="tools-mega-menu">
+              <div className="tools-mega-group"><strong>Studio tools</strong><Link href="/studio">Crelavo Studio</Link><Link href="/tools/video-editor">Video Editor</Link><Link href="/tools/image-editor">Image Editor</Link><Link href="/tools/media-library">Media Library</Link></div>
               {footerGroups.slice(0, 3).map((group) => (
                 <div className="tools-mega-group" key={group.title}>
                   <strong>{group.title}</strong>

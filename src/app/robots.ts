@@ -6,6 +6,9 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       { userAgent: "*", allow: "/", disallow: [...privateDisallow, "/wp-admin"] },
+      { userAgent: "OAI-SearchBot", allow: "/", disallow: [...privateDisallow, "/wp-admin"] },
+      { userAgent: "Claude-SearchBot", allow: "/", disallow: [...privateDisallow, "/wp-admin"] },
+      { userAgent: "Claude-User", allow: "/", disallow: [...privateDisallow, "/wp-admin"] },
       { userAgent: "GPTBot", allow: "/", disallow: privateDisallow },
       { userAgent: "ChatGPT-User", allow: "/", disallow: privateDisallow },
       { userAgent: "ClaudeBot", allow: "/", disallow: privateDisallow },

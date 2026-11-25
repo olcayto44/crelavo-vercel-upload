@@ -5,6 +5,10 @@ export const footerSeoGroups: FooterSeoGroup[] = [
   {
     "title": "AI Tools",
     "links": [
+      {"label":"Crelavo Studio","href":"/studio"},
+      {"label":"Online Video Editor","href":"/tools/video-editor"},
+      {"label":"Online Image Editor","href":"/tools/image-editor"},
+      {"label":"Studio Media Library","href":"/tools/media-library"},
       {
         "label": "AI Video Generator for E-Commerce",
         "href": "/tools/ai-video-generator-for-ecommerce"

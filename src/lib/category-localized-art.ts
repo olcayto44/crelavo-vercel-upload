@@ -1,0 +1,19 @@
+import {categoryArtworkCatalog} from "./category-art-catalog";
+// Only verified HTTP 200 assets; never substitute a different category's illustration.
+type ImageLocale="en"|"tr"|"de"|"fr"|"zh";
+const images:Record<string,{src:string;alt:Record<ImageLocale,string>}>={
+ ...(process.env.CRELAVO_WEBSITE_ART_READY==="1"?{website:{src:"/category-art/website/website-builder-hero.webp",alt:{en:"Illustrative architecture studio website on a laptop with a website planning panel",tr:"Dizüstü bilgisayarda mimarlık stüdyosu web sitesi tasarımı ve sayfa planlama paneli",de:"Beispiel einer Architektur-Website auf einem Laptop mit Seitenplanungsübersicht",fr:"Exemple de site d'architecture sur un ordinateur portable avec un panneau de planification des pages",zh:"笔记本电脑上的建筑工作室网站设计示例与页面规划面板"}}}:{}),
+ admin_project:{src:"/showcase/production-dashboard.png",alt:{en:"Illustrative manufacturing dashboard with production metrics on a monitor in a factory",tr:"Fabrikadaki bir monitörde üretim ölçümlerini gösteren örnek yönetim paneli",de:"Illustratives Fertigungsdashboard mit Produktionskennzahlen auf einem Monitor in einer Fabrik",fr:"Tableau de bord industriel illustratif affichant des indicateurs de production sur un écran en usine",zh:"工厂显示器上呈现生产指标的管理仪表板示意图"}},
+ studio:{src:"/showcase/ai-production-studio.webp",alt:{en:"Concept illustration of a cinematic production studio with a video editing workstation",tr:"Video düzenleme çalışma istasyonu bulunan sinematik yapım stüdyosu konsepti",de:"Konzeptillustration eines Filmproduktionsstudios mit Videoschnitt-Arbeitsplatz",fr:"Illustration conceptuelle d’un studio de production cinématographique avec poste de montage vidéo",zh:"配有视频剪辑工作站的影视制作工作室概念图"}}
+};
+const enabledArtwork = new Set((process.env.CRELAVO_CATEGORY_ART_IDS||"").split(",").filter(Boolean));
+export function localizedCategoryArt(id:string,locale:ImageLocale){const image=images[id];if(image)return {src:image.src,alt:image.alt[locale]};const candidate=categoryArtworkCatalog.find(x=>x.id===id);return candidate&&enabledArtwork.has(id)?{src:"/category-art/"+candidate.file,alt:candidate.alt[locale]}:undefined;}
+
+const websiteConcepts = [
+ {file:"business-website-concept.webp",width:294,height:169,title:{en:"Business website",tr:"Kurumsal web sitesi",de:"Unternehmenswebsite",fr:"Site d'entreprise",zh:"企业网站"},alt:{en:"Illustrative corporate website with a curved glass office building",tr:"Kavisli cam cepheli ofis binası içeren kurumsal web sitesi tasarımı",de:"Beispiel einer Unternehmenswebsite mit geschwungenem Bürogebäude aus Glas",fr:"Exemple de site d'entreprise avec un immeuble de bureaux vitré aux lignes courbes",zh:"以曲面玻璃办公楼为主题的企业网站设计示例"}},
+ {file:"online-store-concept.webp",width:294,height:169,title:{en:"Online store",tr:"Online mağaza",de:"Onlineshop",fr:"Boutique en ligne",zh:"网上商店"},alt:{en:"Illustrative online accessories store with a beige tote bag and sunglasses",tr:"Bej çanta ve güneş gözlüğü sergileyen online aksesuar mağazası tasarımı",de:"Beispiel eines Accessoire-Onlineshops mit beiger Tragetasche und Sonnenbrille",fr:"Exemple de boutique d'accessoires avec un sac beige et des lunettes de soleil",zh:"展示米色手提包与太阳镜的线上配饰商店设计示例"}},
+ {file:"creative-portfolio-concept.webp",width:295,height:169,title:{en:"Portfolio",tr:"Portfolyo",de:"Portfolio",fr:"Portfolio",zh:"作品集"},alt:{en:"Illustrative creative portfolio website with a blue and pink editorial portrait",tr:"Mavi ve pembe ışıklarla çekilmiş portre içeren yaratıcı portfolyo tasarımı",de:"Beispiel einer kreativen Portfolio-Website mit blau und rosa beleuchtetem Porträt",fr:"Exemple de portfolio créatif avec un portrait éclairé en bleu et rose",zh:"含蓝粉色灯光人像的创意作品集网站设计示例"}}
+] as const;
+export function localizedWebsiteConcepts(locale:ImageLocale){
+ return process.env.CRELAVO_WEBSITE_ART_READY==="1"?websiteConcepts.map(c=>({src:"/category-art/website/"+c.file,width:c.width,height:c.height,title:c.title[locale],alt:c.alt[locale]})):[];
+}
