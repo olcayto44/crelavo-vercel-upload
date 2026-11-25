@@ -43,6 +43,9 @@ for(const path of paths){
   if(!dom.title||dom.h1.length!==1||!dom.h1[0])issues.push("Missing title or single H1");
   if(!dom.h2)issues.push("Missing H2"); // H3 is optional where there are no subsections.
   if(!dom.description)issues.push("Missing description");
+  const studioLinks=dom.links.filter(href=>/^\/dashboard\/studio\/[a-z0-9-]+(?:\?|$)/.test(href));
+  if(!studioLinks.length)issues.push("Missing clean Studio CTA");
+  item.studioLinks=studioLinks;
   if(dom.canonical!==canonicalOrigin+path)issues.push("Wrong canonical");
   if(/noindex/i.test(dom.robots))issues.push("Unexpected noindex");
   for(const l of ["en-US","tr-TR","de-DE","fr-FR","zh-Hans","x-default"]) {
@@ -68,13 +71,16 @@ for(const path of paths){
  console.log(path,issues.length?"FAIL "+issues.join("; "):"PASS");
 }
 for(const item of results){const links=byPath.get(item.path)||{};for(const [key,value] of Object.entries(links)){if(key==="x-default")continue;const target=byPath.get(new URL(value).pathname);if(!target||target[tag(item.path)]!==canonicalOrigin+item.path)item.issues.push("Nonreciprocal "+key);}}
-const linkResults=[];
+const linkResults=[]; const studioResults=[];
+for(const path of [...linkPaths].filter(p=>p.startsWith("/dashboard/studio/"))){
+ try{const r=await context.request.get(new URL(path,base).href,{timeout:15000,maxRedirects:0});studioResults.push({path,status:r.status(),location:r.headers().location||null});}catch(e){studioResults.push({path,error:String(e)});}
+}
 for(const path of [...linkPaths].filter(p=>!expected.has(p)&&!p.startsWith("/dashboard/"))){
  try{const r=await context.request.get(new URL(path,base).href,{timeout:15000,maxRedirects:5});linkResults.push({path,status:r.status()});}catch(e){linkResults.push({path,error:String(e)});}
 }
 const duplicates=(key)=>Object.entries(results.reduce((acc,x)=>{const v=JSON.stringify(x[key]);(acc[v]??=[]).push(x.path);return acc;},{})).filter(([v,p])=>v!=="undefined"&&p.length>1).map(([value,paths])=>({value,paths}));
-const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,results,limitations:"Navigation timing is not Lighthouse/Core Web Vitals; authenticated Studio workflows, translation quality and keyword volume require separate verification."};
+const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,results,limitations:"Navigation timing is not Lighthouse/Core Web Vitals; authenticated Studio workflows, translation quality and keyword volume require separate verification."};
 await writeFile(out+"/report.json",JSON.stringify(report,null,2));
 console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles.length,duplicateDescriptions:report.duplicateDescriptions.length}));
-if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length)process.exitCode=1;
+if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||studioResults.some(s=>s.error||s.status>=400))process.exitCode=1;
 }finally{await browser.close();}

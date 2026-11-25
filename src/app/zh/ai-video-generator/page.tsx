@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/Header";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
-import { assistantWorkspaceHref } from "@/lib/assistant-links";
+import { categoryWorkspace } from "@/lib/category-public-routes";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { productionSiteUrl, serializeProductionJsonLd } from "@/lib/production-seo";
@@ -44,7 +44,7 @@ export default function ChineseVideoGeneratorPage() {
         </nav>
         <span className="badge">{page.eyebrow}</span><h1 style={{ lineHeight: 1.25, letterSpacing: "normal" }}>{page.h1}</h1>
         <p className="section-lead">{page.lead}</p><p className="localized-market-note">{page.marketNote}</p>
-        <div className="sample-detail-actions"><Link className="btn" href={assistantWorkspaceHref("为产品制作视频广告", "social", "campaign")}>{page.primaryCta}</Link><Link className="btn secondary" href="/pricing">{page.secondaryCta}</Link></div>
+        <div className="sample-detail-actions"><Link className="btn" href={categoryWorkspace("video")}>{page.primaryCta}</Link><Link className="btn secondary" href="/pricing">{page.secondaryCta}</Link></div>
         <p>{previewTerms}</p>
       </section>
       <section className="container section home-section-tight clean-feed-section"><div className="admin-category-grid">{page.sections.map(section => <article className="card admin-category-card" key={section.title}><h2>{section.title}</h2><p>{section.body}</p></article>)}</div></section>
