@@ -168,7 +168,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Reklam metni"
     ],
     "question": "Bir reklamın farklı versiyonları nasıl hazırlanır?",
-    "answer": "Ürün iddialarını değiştirmeden dikkat çekici açılışı, hedef kitleye uygun mesajı, görsel yaklaşımı ve eylem çağrısıyı çeşitlendirin."
+    "answer": "Ürün iddialarını değiştirmeden dikkat çekici açılışı, hedef kitleye uygun mesajı, görsel yaklaşımı ve eylem çağrısını çeşitlendirin."
   },
   "ad_score_checker": {
     "slug": "yapay-zeka-reklam-analizi",
