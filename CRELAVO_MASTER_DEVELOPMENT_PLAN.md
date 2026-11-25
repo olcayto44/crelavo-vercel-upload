@@ -121,3 +121,5 @@ No provider-backed image feature is marked ready by this list.
 - Public site audit: bounded read-only Python crawler, exact public sitemap, fixed HTTPS host, max 600 URLs, four workers, no credentials or external redirects. Checks HTTP, canonical, H1, duplicate title/description, robots noindex, alt and JSON-LD validity; results are baseline live site, not Search Console, CWV or ranking proof. CI run must be verified.
 
 - Catalog V4 redesign after owner feedback: public anchors only, 37 editorial cards, six group filters, live text search, responsive grid, collection schema, no unaudited credit prices. Category detail pages retain existing public routes and Studio CTA; remove payment sticky bar on discovery pages. Preview-only admin design page with static samples, no real data or mutations. No changes to Whop checkout terms. Verify browser and all public links before production.
+
+- Fixed legacy /ai-app-builder redirect into authenticated dashboard; reuse configured public service content and mobile_app Studio CTA. Existing user auth rules remain unchanged.
