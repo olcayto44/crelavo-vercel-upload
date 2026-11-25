@@ -23,8 +23,8 @@ export function PresenceBeacon() {
     let active = true;
     const send = async () => {
       if (!active) return;
-      const { data } = await supabaseBrowser().auth.getSession();
-      const token = data.session?.access_token;
+      let token: string | undefined;
+      try { const { data } = await supabaseBrowser().auth.getSession(); token = data.session?.access_token; } catch { return; }
       await fetch("/api/presence", {
         method: "POST",
         credentials: "include",

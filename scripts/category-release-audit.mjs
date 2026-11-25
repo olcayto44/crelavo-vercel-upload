@@ -18,12 +18,13 @@ const tag = p=>language(p)==="en"?"en-US":language(p);
 const browser = await chromium.launch({headless:true});
 const context = await browser.newContext({viewport:{width:1440,height:900}});
 const page = await context.newPage();
+let pageErrors=[];page.on("pageerror",e=>pageErrors.push(String(e.message).slice(0,300)));
 await context.addInitScript(()=>{window.__categoryPerf={lcp:null,cls:0};try{new PerformanceObserver(list=>{for(const entry of list.getEntries())window.__categoryPerf.lcp=entry.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(list=>{for(const entry of list.getEntries())if(!entry.hadRecentInput)window.__categoryPerf.cls+=entry.value}).observe({type:"layout-shift",buffered:true})}catch{}});
 const screenshotDir=out+"/screenshots";await mkdir(screenshotDir,{recursive:true});
 const results=[], linkPaths=new Set(), byPath=new Map();
 try {
 for(const path of paths){
- const issues=[]; let item={path,issues};
+ const issues=[]; pageErrors=[]; let item={path,issues};
  try{
   const start=performance.now();
   await page.setViewportSize({width:1440,height:900});
@@ -36,12 +37,13 @@ for(const path of paths){
   if(serverLang!==language(path))issues.push("SSR lang: "+serverLang);
   await page.locator('link[rel="canonical"]').waitFor({state:"attached",timeout:10000});
   const dom=await page.evaluate(()=>{
-   const main=document.querySelector("main");
+   const main=document.querySelector("main[data-category-detail]")||document.querySelector("main");
    const alt=Object.fromEntries([...document.querySelectorAll('link[rel="alternate"][hreflang]')].map(a=>[a.hreflang,a.href]));
    const schemas=[...document.querySelectorAll('script[type="application/ld+json"]')].map(s=>{try{return JSON.parse(s.textContent)}catch{return null}});
-   return {lang:document.documentElement.lang,title:document.title,h1:[...(main?.querySelectorAll("h1")||[])].map(e=>e.textContent.trim()),h2:main?.querySelectorAll("h2").length||0,h3:main?.querySelectorAll("h3").length||0,description:document.querySelector('meta[name="description"]')?.content||"",canonical:document.querySelector('link[rel="canonical"]')?.href||"",robots:document.querySelector('meta[name="robots"]')?.content||"",alt,schemas,links:[...(main?.querySelectorAll("a[href]")||[])].map(a=>a.getAttribute("href")),images:[...(main?.querySelectorAll("img")||[])].map(i=>({src:i.getAttribute("src"),alt:i.getAttribute("alt")})),textLength:main?.innerText.length||0};
+   return {recovery:document.body.innerText.includes("This page needs to reload"),category:main?.getAttribute("data-category-detail"),lang:document.documentElement.lang,title:document.title,h1:[...(main?.querySelectorAll("h1")||[])].map(e=>e.textContent.trim()),h2:main?.querySelectorAll("h2").length||0,h3:main?.querySelectorAll("h3").length||0,description:document.querySelector('meta[name="description"]')?.content||"",canonical:document.querySelector('link[rel="canonical"]')?.href||"",robots:document.querySelector('meta[name="robots"]')?.content||"",alt,schemas,links:[...(main?.querySelectorAll("a[href]")||[])].map(a=>a.getAttribute("href")),images:[...(main?.querySelectorAll("img")||[])].map(i=>({src:i.getAttribute("src"),alt:i.getAttribute("alt")})),textLength:main?.innerText.length||0};
   });
   item.title=dom.title;item.h1=dom.h1;item.h2=dom.h2;item.h3=dom.h3;item.description=dom.description;item.imageCount=dom.images.length;item.textLength=dom.textLength;
+  if(dom.recovery||!dom.category)issues.push("Missing category shell or global recovery screen");
   if(dom.lang!==language(path))issues.push("DOM lang "+dom.lang);
   if(!dom.title||dom.h1.length!==1||!dom.h1[0])issues.push("Missing title or single H1");
   if(!dom.h2)issues.push("Missing H2"); // H3 is optional where there are no subsections.
@@ -78,6 +80,7 @@ for(const path of paths){
     if(path==="/ai-website-builder"||path==="/tr/yapay-zeka-web-sitesi-olusturucu"||path==="/de/ki-website-builder"||path==="/fr/createur-site-web-ia"||path==="/zh/ai-website-builder"||issues.length)await page.screenshot({path:screenshotDir+"/"+path.replace(/[^a-z0-9-]/g,"_")+"-"+width+".png",animations:"disabled",timeout:10000});
   }
  }catch(e){issues.push(String(e));}
+ item.pageErrors=[...pageErrors];if(pageErrors.length)issues.push("Client exception: "+pageErrors[0]);
  results.push(item);
  console.log(path,issues.length?"FAIL "+issues.join("; "):"PASS");
 }

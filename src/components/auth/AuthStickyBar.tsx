@@ -12,13 +12,14 @@ export function AuthStickyBar() {
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
 
   useEffect(() => {
-    const supabase = supabaseBrowser();
     let mounted = true;
+    try {
+    const supabase = supabaseBrowser();
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setHasSupabaseSession(Boolean(data.session?.user));
       setSessionChecked(true);
-    });
+    }).catch(() => { if (mounted) { setHasSupabaseSession(false); setSessionChecked(true); } });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return;
       setHasSupabaseSession(Boolean(session?.user));
@@ -28,6 +29,7 @@ export function AuthStickyBar() {
       mounted = false;
       subscription.unsubscribe();
     };
+    } catch { setSessionChecked(true); setHasSupabaseSession(false); }
   }, []);
 
   if(pathname==="/categories"||categoryForPublicPath(pathname)||(pathname==="/dashboard/studio"||pathname.startsWith("/dashboard/studio/")||pathname==="/dashboard/studio-v2")||pathname.startsWith("/admin")||pathname==="/design-preview/admin")return null;
