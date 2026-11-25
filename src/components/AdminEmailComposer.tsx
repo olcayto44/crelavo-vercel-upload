@@ -50,7 +50,6 @@ export function AdminEmailComposer({
 
   useEffect(() => { if (needsRecipient) { setRecipientPreview({ count: recipientEmail.trim() ? 1 : 0, sample: recipientEmail.trim() ? [recipientEmail.trim()] : [], loading: false }); return; } let cancelled = false; setRecipientPreview((current) => ({ ...current, loading: true, error: undefined })); fetch(`/api/admin/email?target_type=${encodeURIComponent(targetType)}`, { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((data) => { if (!cancelled) setRecipientPreview({ count: Number(data.count ?? 0), sample: Array.isArray(data.sample) ? data.sample : [], loading: false, error: data.error }); }).catch(() => { if (!cancelled) setRecipientPreview({ count: 0, sample: [], loading: false, error: "Alıcılar yüklenemedi." }); }); return () => { cancelled = true; }; }, [targetType, recipientEmail, needsRecipient]);
 
-  useEffect(() => { if (needsRecipient) { setRecipientPreview({ count: recipientEmail.trim() ? 1 : 0, sample: recipientEmail.trim() ? [recipientEmail.trim()] : [], loading: false }); return; } let cancelled = false; setRecipientPreview((current) => ({ ...current, loading: true, error: undefined })); fetch(`/api/admin/email?target_type=${encodeURIComponent(targetType)}`, { credentials: "include", cache: "no-store" }).then((response) => response.json()).then((data) => { if (!cancelled) setRecipientPreview({ count: Number(data.count ?? 0), sample: Array.isArray(data.sample) ? data.sample : [], loading: false, error: data.error }); }).catch(() => { if (!cancelled) setRecipientPreview({ count: 0, sample: [], loading: false, error: "Alıcılar yüklenemedi." }); }); return () => { cancelled = true; }; }, [targetType, recipientEmail, needsRecipient]);
 
   async function sendEmail() {
     setSending(true);
@@ -95,7 +94,6 @@ export function AdminEmailComposer({
           <input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Email subject" />
         </div>
       </div>
-<div className="card" style={{ marginTop: 12, background: "rgba(14,165,233,.08)" }}><strong>{recipientPreview.loading ? "Alıcılar kontrol ediliyor..." : `${recipientPreview.count} alıcıya gönderilecek`}</strong>{recipientPreview.error ? <p>{recipientPreview.error}</p> : null}{recipientPreview.sample.length ? <small style={{ display: "block", marginTop: 6 }}>Örnek: {recipientPreview.sample.join(", ")}{recipientPreview.count > recipientPreview.sample.length ? " ..." : ""}</small> : null}</div>
 <div className="card" style={{ marginTop: 12, background: "rgba(14,165,233,.08)" }}><strong>{recipientPreview.loading ? "Alıcılar kontrol ediliyor..." : `${recipientPreview.count} alıcıya gönderilecek`}</strong>{recipientPreview.error ? <p>{recipientPreview.error}</p> : null}{recipientPreview.sample.length ? <small style={{ display: "block", marginTop: 6 }}>Örnek: {recipientPreview.sample.join(", ")}{recipientPreview.count > recipientPreview.sample.length ? " ..." : ""}</small> : null}</div>
       <div className="field" style={{ marginTop: 12 }}>
         <label>E-posta içeriği</label>

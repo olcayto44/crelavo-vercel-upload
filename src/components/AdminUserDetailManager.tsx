@@ -24,6 +24,10 @@ type UserDetail = {
   bonus_credits: number;
   credit_value_usd: number;
   purchased_credits: number;
+  subscription_status?:string|null;
+  subscription_package?:string|null;
+  subscription_billing?:string|null;
+  subscription_cycle_end?:string|null;
   spent_credits: number;
   purchased_packages: string[];
   balance_updated_at?: string | null;
@@ -157,7 +161,8 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
           <div><span>E-posta</span><strong>{user.email}</strong><small>{user.email_confirmed ? "Onaylı" : "Onay bekliyor"}</small></div>
           <div><span>Ülke / şehir</span><strong>{user.country}</strong><small>{user.city}</small></div>
           <div><span>Kayıt tarihi</span><strong>{formatDate(user.created_at)}</strong><small>Son giriş: {formatDate(user.last_sign_in_at)}</small></div>
-          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Yüklenen kredi: {user.purchased_credits.toLocaleString()}</small></div>
+          <div><span>Abonelik (cüzdan kaydı)</span><strong>{user.subscription_package??"Doğrulanmadı"}</strong><small>{user.subscription_status??"—"} · {user.subscription_billing??"—"} · Dönem bitişi: {formatDate(user.subscription_cycle_end)}</small><small>Kesintisiz ücretli abonelik süresi: Whop geçmişi gerekli.</small></div>
+          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Son en fazla 80 kredi olayı içindeki satın alma: {user.purchased_credits.toLocaleString()}</small></div>
           <div><span>Kullanılan kredi</span><strong>{user.spent_credits.toLocaleString()}</strong><small>Üretim harcaması</small></div>
           <div><span>Kalan kredi</span><strong>{user.available.toLocaleString()}</strong><small>Toplam {user.credits.toLocaleString()} · Reserved {user.reserved.toLocaleString()}</small></div>
           <div><span>Hesap durumu</span><strong>{user.banned_until ? "Askıda" : "Aktif"}</strong><small>{user.banned_until ? `Şu tarihe kadar: ${formatDate(user.banned_until)}` : "Aktif engel yok"}</small></div>

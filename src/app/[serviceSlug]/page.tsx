@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ serviceSl
   if (!page || page.status === "draft") return {};
   const noindex = page.status === "noindex" || page.includeInSitemap === false;
   return {
-    title: `${page.title} for ${page.bestFor} | Crelavo`,
-    description: `${page.summary} Explore ${page.keyword} keywords, categories, pricing, examples and managed AI production delivery paths.`,
+    title: `${page.title} | Crelavo`,
+    description: page.summary,
     alternates: {
       canonical: `/${page.slug}`,
       languages: {

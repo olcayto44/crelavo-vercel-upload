@@ -1,4 +1,5 @@
 import { studioSurfaces } from "@/lib/studio-surfaces";
+import {publicVideoMetadata} from "@/lib/video-public-metadata";
 import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
 export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
@@ -104,6 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const configuredShowcaseVideos = await getConfiguredShowcaseVideos();
+  const videoEntries=new Map(configuredShowcaseVideos.filter(v=>v.publishStatus==="published").map(v=>["/showcase/videos/"+v.id,publicVideoMetadata(v,baseUrl)]));
   const showcaseVideoRoutes = configuredShowcaseVideos
     .filter((video) => video.publishStatus === "published")
     .map((video) => ({
@@ -122,8 +124,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .filter((route, index, all) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)
     .map((route) => ({
       url: `${baseUrl}${route.path}`,
-      lastModified: route.lastModified ?? now,
+      ...(route.lastModified?{lastModified:route.lastModified}:{}),
       changeFrequency: route.changeFrequency,
-      priority: route.priority
+      priority: route.priority,
+      ...(videoEntries.get(route.path)?{videos:[{title:videoEntries.get(route.path)!.name,description:videoEntries.get(route.path)!.description,thumbnail_loc:videoEntries.get(route.path)!.thumbnailUrl,content_loc:videoEntries.get(route.path)!.contentUrl,publication_date:videoEntries.get(route.path)!.uploadDate}]}:{})
     }));
 }
