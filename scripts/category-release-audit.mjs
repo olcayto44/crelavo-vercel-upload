@@ -13,6 +13,7 @@ if(groups.length !== 185) throw new Error("Expected 185 localized category sitem
 const paths = groups.map(g=>new URL(g.match(/<loc>(.*?)<\/loc>/s)[1]).pathname);
 if(new Set(paths).size!==185) throw new Error("Duplicate category URLs");
 const expected = new Set(paths);
+const sitemapImages=new Map(groups.map(g=>[new URL(g.match(/<loc>(.*?)<\/loc>/s)[1]).pathname,[...g.matchAll(/<image:loc>(.*?)<\/image:loc>/gs)].map(m=>m[1])]));
 const language = p=>({"tr":"tr-TR","de":"de-DE","fr":"fr-FR","zh":"zh-Hans"}[p.split("/")[1]]||"en");
 const tag = p=>language(p)==="en"?"en-US":language(p);
 const browser = await chromium.launch({headless:true});
@@ -71,6 +72,19 @@ for(const path of paths){
   const collectArt=(value)=>{if(typeof value!=="string"||!value)return;try{let u=new URL(value,base);if(u.origin===base.origin&&u.pathname==="/_next/image"){const original=u.searchParams.get("url");if(!original)return;u=new URL(original,base);}if((u.origin===base.origin||u.origin===canonicalOrigin)&&/^\/(category-art|showcase)\/.*\.(webp|png|jpe?g|avif)$/i.test(u.pathname))localArt.add(u.pathname);}catch{}};
   for(const i of dom.images)collectArt(i.src);
   for(const entity of entities)if(entity["@type"]==="ImageObject"){collectArt(entity.contentUrl);collectArt(entity.url);}
+  // Require sitemap image URLs to be canonical, present on the corresponding
+  // page, and matched to a meaningful alt description; reject phantom entries.
+  const advertisedImages=sitemapImages.get(path)||[];
+  const schemaImages=entities.filter(e=>e["@type"]==="ImageObject").map(e=>e.contentUrl||e.url).filter(Boolean);
+  item.sitemapImages=advertisedImages;
+  for(const url of advertisedImages){
+    const u=new URL(url);
+    if(u.origin!==canonicalOrigin||!localArt.has(u.pathname))issues.push("Sitemap artwork not present on page "+url);
+    const matchingImage=dom.images.find(i=>{try{const source=new URL(i.src||"",base);return (source.pathname==="/_next/image"?new URL(source.searchParams.get("url")||"",base).pathname:source.pathname)===u.pathname}catch{return false}});
+    if(!matchingImage?.alt?.trim())issues.push("Sitemap artwork lacks visible descriptive ALT "+url);
+  }
+  for(const url of schemaImages){try{const u=new URL(url);if(u.origin===canonicalOrigin&&localArt.has(u.pathname)&&!advertisedImages.includes(url))issues.push("Page artwork missing from image sitemap "+url)}catch{}}
+  if(dom.category==="website"&&advertisedImages.length!==4)issues.push("Expected four Website Builder image sitemap entries");
   item.localArtwork=[];
   for(const src of localArt){if(!imageChecks.has(src)){try{const r=await context.request.get(new URL(src,base).href,{timeout:15000,maxRedirects:0});imageChecks.set(src,{status:r.status(),type:r.headers()["content-type"]||""});}catch(e){imageChecks.set(src,{error:String(e)});}}const check=imageChecks.get(src);item.localArtwork.push({src,...check});if(check.status!==200||!check.type?.startsWith("image/"))issues.push("Invalid category artwork "+src);}
 

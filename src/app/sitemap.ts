@@ -1,3 +1,4 @@
+import {localizedCategoryArt,localizedWebsiteConcepts} from "@/lib/category-localized-art";
 import { studioSurfaces } from "@/lib/studio-surfaces";
 import {publicVideoMetadata} from "@/lib/video-public-metadata";
 import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
@@ -136,6 +137,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const eligible = routes.filter((route, index, all) => !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index);
   const eligiblePaths = new Set(eligible.map(route => route.path));
   const languageAlternates = new Map<string, Record<string, string>>();
+  // Publish only existing first-party artwork on eligible canonical category pages.
+  const categoryImages = new Map<string,string[]>();
+  const imageLocales = {"en-US":"en","tr-TR":"tr","de-DE":"de","fr-FR":"fr","zh-Hans":"zh"} as const;
+  for (const id of Object.keys(categoryPublicPaths)) {
+    const paths = categoryLanguagePaths(id);
+    for (const [tag, locale] of Object.entries(imageLocales)) {
+      const path = paths[tag];
+      if (!path || !eligiblePaths.has(path)) continue;
+      const hero = localizedCategoryArt(id,locale);
+      const gallery = id==="website" ? localizedWebsiteConcepts(locale) : [];
+      const images = [...new Set([...(hero?[hero.src]:[]),...gallery.map(x=>x.src)])];
+      if (images.length) categoryImages.set(path,images.map(src=>baseUrl+src));
+    }
+  }
   for (const id of Object.keys(categoryPublicPaths)) {
     const paths = categoryLanguagePaths(id);
     if (!Object.values(paths).every(path => eligiblePaths.has(path))) continue;
@@ -147,6 +162,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...(route.lastModified?{lastModified:route.lastModified}:{}),
       changeFrequency: route.changeFrequency,
       priority: route.priority,
+      ...(categoryImages.has(route.path)?{images:categoryImages.get(route.path)!}:{}),
       ...(languageAlternates.has(route.path) ? {alternates: {languages: languageAlternates.get(route.path)!}} : {}),
       ...(videoEntries.get(route.path)?{videos:[{title:videoEntries.get(route.path)!.name,description:videoEntries.get(route.path)!.description,thumbnail_loc:videoEntries.get(route.path)!.thumbnailUrl,content_loc:videoEntries.get(route.path)!.contentUrl,publication_date:videoEntries.get(route.path)!.uploadDate}]}:{})
     }));
