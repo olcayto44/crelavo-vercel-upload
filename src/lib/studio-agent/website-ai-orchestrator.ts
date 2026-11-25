@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 import {normalizeAssistantWebsiteBrief,websitePlanHash,websiteEngineInput,missingWebsiteBrief,unsupportedWebsiteScope} from "../assistant-work/website-brief";
 import {getCategory} from "@/lib/crelavo/categoryCatalog";
 import {generateWebsiteArtifact} from "../website-engine";
-import {generateWebsiteAICopy,WebsiteAICopySchema} from "./website-ai-copy";
+import {generateWebsiteAICopy,WebsiteAICopySchema,prepareWebsiteAICopy} from "./website-ai-copy";
 import type {readCostPolicy} from "./cost-policy";
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
 const Approval=z.strictObject({userId:z.string().uuid(),productionId:z.string().uuid(),planHash:hash,packId:z.enum(["landing_page","business_website"]),credits:z.number().int().positive(),policyVersion:z.string(),policyHash:hash,maximumMicroUSD:z.number().int().min(1).max(50000),source:z.literal("persisted_explicit_user_approval"),brief:z.record(z.string(),z.unknown())});
@@ -19,6 +19,7 @@ export async function runIsolatedWebsiteAI(raw:unknown,actor:string,d:D){
  const parsed=Approval.safeParse(raw);if(!parsed.success)return result("not_dispatched");
  const a=parsed.data,p=d.policy,brief=normalizeAssistantWebsiteBrief(a.brief);
  if(a.userId!==actor||a.policyHash!==websiteAIPolicyDigest(p)||a.policyVersion!==p.version||a.maximumMicroUSD!==p.requestMicroUSD||brief.locale!=="en"||websitePlanHash(brief,a.packId)!==a.planHash||missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||getCategory("website")?.packs.find(x=>x.id===a.packId)?.credits!==a.credits)return result("not_dispatched");
+ try{prepareWebsiteAICopy(websiteEngineInput(brief),p);}catch{return result("not_dispatched");}
  const identity={p_user:a.userId,p_production:a.productionId,p_hash:a.planHash};
  const call=async(name:string,args:Record<string,unknown>)=>{const r=await d.rpc(name,args);if(r.error)throw Error("storage_unconfirmed");return r.data;};
  try{

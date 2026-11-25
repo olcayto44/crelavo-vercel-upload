@@ -71,7 +71,8 @@
     "smoke:studio-image-editor": "node scripts/studio-image-editor-smoke.cjs",
     "audit:runtime": "npm audit --omit=dev --audit-level=high",
     "smoke:category-search": "node scripts/category-search-coverage-smoke.cjs",
-    "smoke:studio-production-dispatch": "node scripts/studio-production-dispatch-smoke.cjs"
+    "smoke:studio-production-dispatch": "node scripts/studio-production-dispatch-smoke.cjs",
+    "worker:website-ai:isolated": "node scripts/studio-website-ai-worker.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.24",

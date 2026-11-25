@@ -37,7 +37,7 @@ end $$;
 -- Queue claim is a separate transaction. No retry after any provider claim.
 create index website_ai_jobs_queue on public.website_ai_jobs(updated_at,production_id) where state='queued';
 create function public.website_ai_claim(p_user uuid,p_production uuid,p_hash text,p_policy_version text,p_policy_hash text,p_credits integer,p_maximum integer) returns text
-language plpgsql security definer set search_path=public,pg_temp as $
+language plpgsql security definer set search_path=public,pg_temp as $$
 declare p production_requests%rowtype; j website_ai_jobs%rowtype;
 begin
  select * into p from production_requests where id=p_production and user_id=p_user and production_type='website' for update;
@@ -50,18 +50,18 @@ begin
  if not website_credit_claim(p_user,p_production,p_hash) then raise exception 'ai_claim_conflict'; end if;
  update website_ai_jobs set state='claimed',updated_at=now() where production_id=p_production;
  return 'claimed';
-end $;
+end $$;
 -- A claimed call may already have reached its provider. Expiry means review,
 -- never requeue. The owner and reservation stay intact.
 create function public.website_ai_mark_stale(p_before timestamptz) returns integer
-language plpgsql security definer set search_path=public,pg_temp as $
+language plpgsql security definer set search_path=public,pg_temp as $$
 declare n integer;
 begin
  if p_before is null or p_before>now()-interval '5 minutes' then raise exception 'invalid_stale_cutoff'; end if;
  update website_ai_jobs set state='reconcile_required',updated_at=now() where state='claimed' and updated_at<p_before;
  get diagnostics n=row_count;
  return n;
-end $;
+end $$;
 create function public.website_ai_record(p_user uuid,p_production uuid,p_hash text,p_receipt jsonb,p_artifact jsonb) returns boolean
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare p production_requests%rowtype; j website_ai_jobs%rowtype;
