@@ -5,8 +5,7 @@ const base = new URL(process.env.AUDIT_BASE_URL || "http://127.0.0.1:3000");
 const canonicalOrigin = "https://www.crelavo.com";
 const out = "category-audit-results";
 await mkdir(out, { recursive: true });
-const headers = process.env.VERCEL_AUTOMATION_BYPASS_SECRET ? {"x-vercel-protection-bypass":process.env.VERCEL_AUTOMATION_BYPASS_SECRET} : {};
-const xmlRes = await fetch(new URL("/sitemap.xml", base), {headers, redirect:"manual"});
+const xmlRes = await fetch(new URL("/sitemap.xml", base), {redirect:"manual"});
 if (!xmlRes.ok) throw new Error("Sitemap HTTP "+xmlRes.status);
 const xml = await xmlRes.text();
 const groups = [...xml.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(m=>m[1]).filter(x=>x.includes('hreflang="x-default"'));
@@ -17,7 +16,7 @@ const expected = new Set(paths);
 const language = p=>({"tr":"tr-TR","de":"de-DE","fr":"fr-FR","zh":"zh-Hans"}[p.split("/")[1]]||"en");
 const tag = p=>language(p)==="en"?"en-US":language(p);
 const browser = await chromium.launch({headless:true});
-const context = await browser.newContext({viewport:{width:1440,height:900},extraHTTPHeaders:headers});
+const context = await browser.newContext({viewport:{width:1440,height:900}});
 const page = await context.newPage();
 const results=[], linkPaths=new Set(), byPath=new Map();
 try {
