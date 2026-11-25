@@ -585,7 +585,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
   "crelavo_academy": {
     "de": {
       "slug": "crelavo-akademie",
-      "title": "Crelavo Academy",
+      "title": "Crelavo Akademie – KI-Kurse und Lernprojekte",
       "description": "Planen Sie Lernziele, praktische Übungen und Unterrichtsmaterial für kreative KI-Produktion."
     },
     "fr": {
