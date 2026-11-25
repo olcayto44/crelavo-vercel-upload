@@ -93,8 +93,19 @@ for(const path of [...linkPaths].filter(p=>!expected.has(p)&&!p.startsWith("/das
  try{const r=await context.request.get(new URL(path,base).href,{timeout:15000,maxRedirects:5});linkResults.push({path,status:r.status()});}catch(e){linkResults.push({path,error:String(e)});}
 }
 const duplicates=(key)=>Object.entries(results.reduce((acc,x)=>{const v=JSON.stringify(x[key]);(acc[v]??=[]).push(x.path);return acc;},{})).filter(([v,p])=>v!=="undefined"&&p.length>1).map(([value,paths])=>({value,paths}));
-const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
+// Public Studio preview routes should not redirect guests into checkout.
+const dashboardResult = await (async()=>{
+ try {
+  const res=await page.goto(new URL("/dashboard",base).href,{waitUntil:"domcontentloaded",timeout:30000});
+  const final=new URL(page.url());
+  const allowed=final.origin===base.origin&&(final.pathname==="/dashboard"||final.pathname==="/auth/login");
+  const login=await page.getByRole("dialog",{name:"Sign in to Crelavo"}).isVisible().catch(()=>false);
+  return {status:res?.status(),path:final.pathname,sameOrigin:final.origin===base.origin,loginDialogVisible:login,ok:allowed&&res?.status()===200};
+ }catch(e){return {ok:false,error:String(e)};}
+})();
+const failedStudioRoutes=studioResults.filter(s=>s.error||s.status!==200);
+const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,failedStudioRoutes,dashboardResult,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
 await writeFile(out+"/report.json",JSON.stringify(report,null,2));
 console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles.length,duplicateDescriptions:report.duplicateDescriptions.length}));
-if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||studioResults.some(s=>s.error||s.status>=400))process.exitCode=1;
+if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||failedStudioRoutes.length||!dashboardResult.ok)process.exitCode=1;
 }finally{await browser.close();}
