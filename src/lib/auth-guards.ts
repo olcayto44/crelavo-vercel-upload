@@ -21,7 +21,10 @@ export async function requireVerifiedBrowserUser() {
     return { ok: false as const, message: "You must confirm your email address before using the assistant or starting production. Please open the confirmation link sent to your inbox.", redirect: "/auth/login" };
   }
 
-  const accessToken = sessionResult.data.session?.access_token ?? "";
+  const accessToken = sessionResult.data.session?.access_token;
+  if (sessionResult.error || !accessToken?.trim()) {
+    return { ok: false as const, message: "Your session has expired. Please sign in again.", redirect: "/auth/login" };
+  }
   return { ok: true as const, user, accessToken };
   } catch { return { ok: false as const, message: "Sign-in is unavailable. Please try again.", redirect: "/auth/login" }; }
 }
