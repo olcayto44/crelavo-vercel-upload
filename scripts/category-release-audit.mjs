@@ -21,7 +21,7 @@ const page = await context.newPage();
 let pageErrors=[];page.on("pageerror",e=>pageErrors.push(String(e.message).slice(0,300)));
 await context.addInitScript(()=>{window.__categoryPerf={lcp:null,cls:0};try{new PerformanceObserver(list=>{for(const entry of list.getEntries())window.__categoryPerf.lcp=entry.startTime}).observe({type:"largest-contentful-paint",buffered:true});new PerformanceObserver(list=>{for(const entry of list.getEntries())if(!entry.hadRecentInput)window.__categoryPerf.cls+=entry.value}).observe({type:"layout-shift",buffered:true})}catch{}});
 const screenshotDir=out+"/screenshots";await mkdir(screenshotDir,{recursive:true});
-const results=[], linkPaths=new Set(), byPath=new Map();
+const results=[], linkPaths=new Set(), byPath=new Map(), imageChecks=new Map();
 try {
 for(const path of paths){
  const issues=[]; pageErrors=[]; let item={path,issues};
@@ -66,6 +66,14 @@ for(const path of paths){
   if(!entities.some(e=>e["@type"]==="WebPage"||e["@type"]==="SoftwareApplication"||e["@type"]==="Service"))issues.push("Missing page entity");
   for(const entity of entities){if(entity["@type"]==="WebPage"&&entity.url&&entity.url!==canonicalOrigin+path)issues.push("Schema URL mismatch");if(entity["@type"]==="BreadcrumbList"&&(!Array.isArray(entity.itemListElement)||entity.itemListElement.some((e,i)=>e.position!==i+1||!e.name||!e.item)))issues.push("Invalid breadcrumb positions or items");}
   if(dom.images.some(i=>i.alt===null))issues.push("Missing image alt");
+  // Validate first-party category artwork without relying on third-party showcase CDN availability.
+  const localArt=new Set();
+  const collectArt=(value)=>{if(typeof value!=="string"||!value)return;try{let u=new URL(value,base);if(u.origin===base.origin&&u.pathname==="/_next/image"){const original=u.searchParams.get("url");if(!original)return;u=new URL(original,base);}if((u.origin===base.origin||u.origin===canonicalOrigin)&&/^\/(category-art|showcase)\/.*\.(webp|png|jpe?g|avif)$/i.test(u.pathname))localArt.add(u.pathname);}catch{}};
+  for(const i of dom.images)collectArt(i.src);
+  for(const entity of entities)if(entity["@type"]==="ImageObject"){collectArt(entity.contentUrl);collectArt(entity.url);}
+  item.localArtwork=[];
+  for(const src of localArt){if(!imageChecks.has(src)){try{const r=await context.request.get(new URL(src,base).href,{timeout:15000,maxRedirects:0});imageChecks.set(src,{status:r.status(),type:r.headers()["content-type"]||""});}catch(e){imageChecks.set(src,{error:String(e)});}}const check=imageChecks.get(src);item.localArtwork.push({src,...check});if(check.status!==200||!check.type?.startsWith("image/"))issues.push("Invalid category artwork "+src);}
+
   for(const l of dom.links){const u=new URL(l,base);if(u.origin===base.origin||u.origin===canonicalOrigin){if(!u.pathname.startsWith("/api/")&&!u.pathname.startsWith("/admin"))linkPaths.add(u.pathname+u.search);}}
   byPath.set(path,dom.alt);
   await page.waitForLoadState("load",{timeout:15000});
