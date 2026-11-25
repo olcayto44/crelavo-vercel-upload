@@ -2,7 +2,7 @@ name: Website design candidate acceptance
 on:
   push:
     branches: [feat/central-production-dispatch-20261125]
-    paths: ['src/lib/website-design-candidate.ts','src/lib/website-design-schema.ts','src/lib/website-seo-draft.ts','src/lib/website-technical-seo-plan.ts','src/lib/website-review-bundle.ts','src/lib/studio-agent/website-editable-artifact.ts','src/lib/studio-agent/website-ai-orchestrator.ts','src/app/api/studio/website-review-test/**','docs/website-cms-settled-design-import-isolated.sql','docs/website-cms-test-orders-isolated.sql','scripts/studio-website-ai-job-smoke.cjs','docs/website-cms-catalog-inbox-isolated.sql','scripts/website-cms-operations-local-smoke.cjs','src/lib/website-sector-draft.ts','scripts/website-editor-browser.mjs','src/lib/website-industry-scope.ts','src/app/website-design-test/**','src/app/website-cms-test/**','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
+    paths: ['src/lib/website-design-candidate.ts','src/lib/website-design-schema.ts','src/lib/website-seo-draft.ts','src/lib/website-technical-seo-plan.ts','src/lib/website-review-bundle.ts','src/lib/website-hero-media.ts','src/lib/website-hero-media-verify.ts','src/app/api/studio/website-design-test/**','docs/website-cms-editorial-bookings-isolated.sql','docs/website-cms-editorial-export-isolated.sql','docs/website-cms-hero-media-isolated.sql','docs/website-cms-hero-media-export-isolated.sql','scripts/website-hero-media-smoke.cjs','src/lib/studio-agent/website-editable-artifact.ts','src/lib/studio-agent/website-ai-orchestrator.ts','src/app/api/studio/website-review-test/**','docs/website-cms-settled-design-import-isolated.sql','docs/website-cms-test-orders-isolated.sql','scripts/studio-website-ai-job-smoke.cjs','docs/website-cms-catalog-inbox-isolated.sql','scripts/website-cms-operations-local-smoke.cjs','src/lib/website-sector-draft.ts','scripts/website-editor-browser.mjs','src/lib/website-industry-scope.ts','src/app/website-design-test/**','src/app/website-cms-test/**','scripts/website-design-candidate-smoke.cjs','scripts/website-design-browser.mjs','.github/workflows/website-design-acceptance.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,6 +19,7 @@ jobs:
           node-version: '24'
       - run: npm ci
       - run: node scripts/website-cms-operations-local-smoke.cjs
+      - run: node scripts/website-hero-media-smoke.cjs
       - run: node scripts/studio-website-ai-job-smoke.cjs
       - run: node scripts/website-design-candidate-smoke.cjs
         env:
