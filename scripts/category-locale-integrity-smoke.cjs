@@ -5,3 +5,7 @@ for(const id of ids){const langs=categoryLanguagePaths(id);assert.deepEqual(Obje
 assert.equal(seen.size,185);assert.equal(localizedEuropePages.length,4);for(const p of localizedEuropePages){assert.equal(categoryLanguagePaths("video")[p.hreflang],p.path);assert.ok(p.h1&&p.lead&&p.sections.length&&p.useCases.length);}
 for(const route of ["de/[slug]","fr/[slug]","tr/[slug]","zh/ai-video-generator"])assert.ok(fs.readFileSync("src/app/"+route+"/page.tsx","utf8").includes("<LocalizedVideoCategoryPage"));
 console.log("category-locale-integrity-smoke ok: 37 categories, 185 unique paths, reciprocal locale groups, valid related IDs, consistent localized video template");
+
+const {localizedCategoryArt}=load("src/lib/category-localized-art.ts");
+for(const id of ids){for(const locale of ["en","tr","de","fr","zh"]){const art=localizedCategoryArt(id,locale);if(art){assert.ok(art.alt.trim(),id+" "+locale+" alt");assert.ok(art.src.startsWith("/")&&!art.src.includes(".."),art.src);assert.ok(fs.existsSync(path.join("public",art.src)), "Missing registered artwork: "+art.src);}}}
+if(process.env.CRELAVO_WEBSITE_ART_READY==="1"){for(const name of ["website-builder-hero.webp","business-website-concept.webp","online-store-concept.webp","creative-portfolio-concept.webp"]){const asset=path.join("public","category-art","website",name);assert.ok(fs.existsSync(asset)&&fs.statSync(asset).size>0,"Missing required Website Builder art: "+asset);}}
