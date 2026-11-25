@@ -4,7 +4,7 @@ const uuid=z.string().uuid(),hash=z.string().regex(/^[a-f0-9]{64}$/);
 const binding=z.object({id:uuid,user_id:uuid,category_id:z.literal("website"),production_id:uuid});
 const row=z.object({id:uuid,user_id:uuid,production_type:z.literal("website"),status:z.string(),generation_status:z.string(),reserved_credits:z.number().int().nonnegative(),estimated_credits:z.number().int().positive(),updated_at:z.string(),output_json:z.object({websiteAssistant:z.object({phase:z.string(),planHash:hash,approvedHash:hash.nullable().optional()}),websiteBillingMode:z.unknown().optional(),websiteBillingPending:z.unknown().optional(),charged:z.unknown().optional(),websiteFiles:z.unknown().optional()})});
 const hold=z.object({production_id:uuid,user_id:uuid,plan_hash:hash,credits:z.number().int().positive(),state:z.enum(["reserved","settled","released","reconcile_required"])});
-type Deps={authenticate:()=>Promise<string|null>;loadBinding:(user:string,project:string)=>Promise<unknown>;loadProduction:(user:string,id:string)=>Promise<unknown>;loadReservation:(user:string,id:string)=>Promise<unknown>;now?:()=>number};
+type Deps={authenticate:()=>Promise<string|null>;loadBinding:(user:string,project:string)=>Promise<unknown>;loadProduction:(user:string,id:string)=>Promise<unknown>;loadReservation:(user:string,id:string)=>Promise<unknown>;loadAIJob?:(user:string,id:string)=>Promise<unknown>;now?:()=>number};
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{"Cache-Control":"no-store"}});
 const fail=(status:number,code:string)=>json({ok:false,code,safeToRetryAutomatically:false},status);
 export async function handleProductionStatus(request:Request,d:Deps){
@@ -24,6 +24,10 @@ export async function handleProductionStatus(request:Request,d:Deps){
  let stage="reconciliation_required",creditState="unconfirmed",deliveryAvailable=false;
  const valid=h.success&&h.data.production_id===r.id&&h.data.user_id===user&&h.data.plan_hash===a.planHash&&h.data.credits===r.estimated_credits;
  const approved=a.approvedHash===a.planHash;
+ const jobRaw=d.loadAIJob?await d.loadAIJob(user,r.id):null;
+ const jobSchema=z.object({production_id:uuid,user_id:uuid,plan_hash:hash,state:z.enum(["queued","claimed","artifact_cost_pending","reconcile_required","settled"])});
+ const job=jobSchema.safeParse(jobRaw);
+ const jobValid=job.success&&job.data.production_id===r.id&&job.data.user_id===user&&job.data.plan_hash===a.planHash;
  const stale=!Number.isFinite(Date.parse(r.updated_at))||(d.now??Date.now)()-Date.parse(r.updated_at)>5*60*1000;
  if(raw===null&&r.reserved_credits===0&&r.status==="pending"&&a.phase==="approved"&&approved){stage="approved";creditState="not_reserved";}
  else if(valid&&h.data.state==="reserved"&&r.reserved_credits===h.data.credits&&approved&&!stale){
@@ -36,8 +40,14 @@ export async function handleProductionStatus(request:Request,d:Deps){
    if(Array.isArray(files)&&files.some(f=>f&&f.path==="index.html"&&typeof f.content==="string"&&f.content.trim())){stage="ready";creditState="settled";deliveryAvailable=true;}
  }
  else if(valid&&approved&&h.data.state==="released"&&r.reserved_credits===0&&r.status==="failed"&&a.phase==="generation_failed"&&r.generation_status==="failed"){stage="failed_released";creditState="released";}
+ if(jobRaw!==null){
+  if(!jobValid){stage="reconciliation_required";creditState="unconfirmed";deliveryAvailable=false;}
+  else if(valid&&approved&&h.data.state==="reserved"&&r.reserved_credits===h.data.credits&&job.data.state==="queued"&&a.phase==="reserved"){stage="queued";creditState="reserved";deliveryAvailable=false;}
+  else if(valid&&approved&&h.data.state==="reserved"&&r.reserved_credits===h.data.credits&&job.data.state==="artifact_cost_pending"&&a.phase==="generating"){stage="provider_cost_pending";creditState="reserved";deliveryAvailable=false;}
+  else if(job.data.state==="reconcile_required"||(job.data.state==="claimed"&&stale)||job.data.state!=="settled"&&deliveryAvailable){stage="reconciliation_required";creditState="unconfirmed";deliveryAvailable=false;}
+ }
  // The existing execution is synchronous. These are observed milestones, never
  // percentages, estimated completion times, a claimed worker lease or a retry instruction.
- return json({ok:true,projectId:id.data,productionId:r.id,stage,creditState,deliveryAvailable,updatedAt:r.updated_at,queueMode:"synchronous",safeToRetryAutomatically:false,...(deliveryAvailable?{previewUrl:"/api/productions/"+r.id+"/delivery?file=preview",deliveryZipUrl:"/api/productions/"+r.id+"/delivery?file=zip"}:{})});
+ return json({ok:true,projectId:id.data,productionId:r.id,stage,creditState,deliveryAvailable,updatedAt:r.updated_at,queueMode:jobValid?"durable_ai_job":"synchronous",safeToRetryAutomatically:false,...(deliveryAvailable?{previewUrl:"/api/productions/"+r.id+"/delivery?file=preview",deliveryZipUrl:"/api/productions/"+r.id+"/delivery?file=zip"}:{})});
  }catch{return fail(503,"production_status_unavailable");}
 }

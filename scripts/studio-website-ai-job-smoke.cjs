@@ -45,6 +45,13 @@ const {load}=require('./studio-agent-test-loader.cjs');
   let calls=0;
   const deps={enabled:()=>true,policy,apiKey:'offline-test',rpc,transport:async()=>{calls++;return Response.json({id:'chatcmpl-offline-job',model:policy.model,usage:{prompt_tokens:500,completion_tokens:300},choices:[{finish_reason:'stop',message:{content:JSON.stringify(copy)}}]});}};
   assert.equal((await runIsolatedWebsiteAI({...approval,policyHash:'b'.repeat(64)},owner,deps)).state,'not_dispatched');assert.equal(calls,0);
+  assert.equal((await runIsolatedWebsiteAI(approval,owner,deps)).state,'not_dispatched');assert.equal(calls,0);
+  const enqueueArgs={p_user:owner,p_production:productionId,p_hash:planHash,p_policy_version:policy.version,p_policy_hash:approval.policyHash,p_credits:credits,p_maximum:approval.maximumMicroUSD};
+  assert.equal((await rpc('website_ai_enqueue',enqueueArgs)).data,'queued');
+  assert.equal((await rpc('website_ai_enqueue',enqueueArgs)).data,'already_enqueued');
+  assert.equal((await db.query('select state from website_ai_jobs where production_id=$1',[productionId])).rows[0].state,'queued');
+  assert.equal((await db.query('select reserved from credit_balances where user_id=$1',[owner])).rows[0].reserved,500);
+  assert.equal(calls,0);
   const result=await runIsolatedWebsiteAI(approval,owner,deps);assert.equal(result.state,'artifact_cost_pending');assert.equal(calls,1);
   assert.equal((await runIsolatedWebsiteAI(approval,owner,deps)).state,'already_claimed');assert.equal(calls,1);
   const before=(await db.query('select balance,reserved from credit_balances where user_id=$1',[owner])).rows[0];assert.equal(before.balance,1000);assert.equal(before.reserved,500);
@@ -59,6 +66,13 @@ const {load}=require('./studio-agent-test-loader.cjs');
   const delivered=(await db.query('select * from production_requests where id=$1',[productionId])).rows[0];const reservation=(await db.query('select state,credits from website_credit_reservations where production_id=$1',[productionId])).rows[0];
   assert.equal(load('src/lib/assistant-work/website-paid-delivery.ts').websiteCreditDeliveryProof(delivered,reservation),true);
   assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+  // An interrupted claimed job is not replayed or released.
+  const next=(await db.query("insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,estimated_credits,input_json,output_json) values($1,'website',$2,'Second isolated','Offline','pending','pending',$3,'{}'::jsonb,$4::jsonb) returning id",[owner,packId,credits,JSON.stringify({websiteAssistant:{phase:'approved',approvedHash:planHash,planHash,packId,credits,brief:hashBrief},websiteAIApproval:tuple})])).rows[0].id;
+  const args={...enqueueArgs,p_production:next};assert.equal((await rpc('website_ai_enqueue',args)).data,'queued');assert.equal((await rpc('website_ai_claim',args)).data,'claimed');
+  await db.query("update website_ai_jobs set updated_at=now()-interval '10 minutes' where production_id=$1",[next]);
+  assert.equal((await db.query("select website_ai_mark_stale(now()-interval '6 minutes') as n")).rows[0].n,1);
+  assert.equal((await runIsolatedWebsiteAI({...approval,productionId:next},owner,deps)).state,'already_claimed');assert.equal(calls,1);
+  assert.equal((await db.query('select reserved from credit_balances where user_id=$1',[owner])).rows[0].reserved,500);
   console.log('studio-website-ai-job-smoke ok: isolated DB, one AI dispatch, durable files and receipt, pending costs, one settlement and delivery proof (synthetic provider evidence)');
  }finally{await db.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

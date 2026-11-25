@@ -342,10 +342,21 @@ async function showStudioElements(){
  };
  await render();
 }
+function productionStatusCard(root){
+ if(current.id!=='website'||mode!=='real'||!session?.accessToken||!project?.productionId||status?.isolatedPreview)return;
+ const panel=node('section');panel.style.cssText='padding:12px;border:1px solid #443052;border-radius:10px;display:grid;gap:8px';
+ const title=node('strong',language==='tr'?'Sunucu üretim durumu':'Server production status');
+ const detail=node('p',language==='tr'?'Durumu sunucudan kontrol edin.':'Check the recorded status on the server.');
+ detail.setAttribute('role','status');detail.setAttribute('aria-live','polite');
+ const refresh=node('button',language==='tr'?'Üretim durumunu yenile':'Refresh production status');refresh.type='button';
+ const labels={approved:['Plan onaylı','Plan approved'],queued:['Sırada','Queued'],credits_reserved:['Kredi rezerve edildi','Credits reserved'],generating:['Üretim sürüyor','Generating'],provider_cost_pending:['Sağlayıcı maliyeti doğrulanıyor','Provider cost pending'],settlement_pending:['Tahsilat doğrulanıyor','Settlement pending'],ready:['Teslimata hazır','Ready for delivery'],failed_released:['Başarısız · rezervasyon bırakıldı','Failed · reservation released'],reconciliation_required:['İşlem inceleme gerektiriyor · tekrar başlatmayın','Review required · do not restart']};
+ refresh.onclick=async()=>{const seq=epoch,pid=project?.id,productionId=project?.productionId;refresh.disabled=true;detail.textContent=language==='tr'?'Kontrol ediliyor…':'Checking…';try{const data=await request('/api/studio/production/status?projectId='+encodeURIComponent(pid));if(seq!==epoch||project?.id!==pid||project?.productionId!==productionId||!panel.isConnected)return;if(data.projectId!==pid||data.productionId!==productionId)throw Error('project mismatch');detail.textContent=(labels[data.stage]||labels.reconciliation_required)[language==='tr'?0:1];}catch(_error){if(seq===epoch&&panel.isConnected)detail.textContent=language==='tr'?'Sunucu durumu doğrulanamadı. Üretimi tekrar başlatmayın.':'Server status could not be confirmed. Do not restart production.';}finally{refresh.disabled=false;}};
+ panel.append(title,detail,refresh);root.appendChild(panel);
+}
 function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;
  if(view==='assets'){void showStudioElements();return;}if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
- if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));
+ if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));productionStatusCard(root);
   if(previewDraftEnabled()){
     const heading=node('h3',language==='tr'?'Yerel proje briefi':'Local project brief');
     root.appendChild(heading);

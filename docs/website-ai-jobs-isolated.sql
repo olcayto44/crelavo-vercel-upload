@@ -8,7 +8,7 @@ create table public.website_ai_jobs(
  policy_hash text not null check(policy_hash ~ '^[a-f0-9]{64}$'),
  credits integer not null check(credits between 1 and 100000),
  maximum_micro_usd integer not null check(maximum_micro_usd between 1 and 50000),
- state text not null check(state in ('claimed','artifact_cost_pending','reconcile_required','settled')),
+ state text not null check(state in ('queued','claimed','artifact_cost_pending','reconcile_required','settled')),
  receipt jsonb, artifact jsonb, reviewed_cost jsonb,
  updated_at timestamptz not null default now()
 );
@@ -17,7 +17,7 @@ revoke all on public.website_ai_jobs from public,anon,authenticated;
 grant select on public.website_ai_jobs to service_role;
 -- Caller has independently persisted and verified the AI-specific approval. The
 -- approval tuple is stored on the project by an isolated fixture, never client data.
-create function public.website_ai_claim(p_user uuid,p_production uuid,p_hash text,p_policy_version text,p_policy_hash text,p_credits integer,p_maximum integer) returns text
+create function public.website_ai_enqueue(p_user uuid,p_production uuid,p_hash text,p_policy_version text,p_policy_hash text,p_credits integer,p_maximum integer) returns text
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare p production_requests%rowtype; j website_ai_jobs%rowtype; reservation jsonb;
 begin
@@ -25,16 +25,43 @@ begin
  if not found then return 'denied'; end if;
  select * into j from website_ai_jobs where production_id=p_production;
  if found then
-  if j.user_id=p_user and j.plan_hash=p_hash and j.policy_version=p_policy_version and j.policy_hash=p_policy_hash and j.credits=p_credits and j.maximum_micro_usd=p_maximum then return 'already_claimed'; end if;
+  if j.user_id=p_user and j.plan_hash=p_hash and j.policy_version=p_policy_version and j.policy_hash=p_policy_hash and j.credits=p_credits and j.maximum_micro_usd=p_maximum then return 'already_enqueued'; end if;
   return 'denied';
  end if;
  if p.output_json->'websiteAIApproval' is distinct from jsonb_build_object('planHash',p_hash,'policyVersion',p_policy_version,'policyHash',p_policy_hash,'credits',p_credits,'maximumMicroUSD',p_maximum,'source','persisted_explicit_user_approval') then return 'denied'; end if;
  reservation=website_credit_reserve(p_user,p_production,p_hash,p_credits);
  if reservation->>'fresh' is distinct from 'true' then return 'denied'; end if;
- if not website_credit_claim(p_user,p_production,p_hash) then raise exception 'ai_claim_conflict'; end if;
- insert into website_ai_jobs(production_id,user_id,plan_hash,policy_version,policy_hash,credits,maximum_micro_usd,state) values(p_production,p_user,p_hash,p_policy_version,p_policy_hash,p_credits,p_maximum,'claimed');
- return 'claimed';
+ insert into website_ai_jobs(production_id,user_id,plan_hash,policy_version,policy_hash,credits,maximum_micro_usd,state) values(p_production,p_user,p_hash,p_policy_version,p_policy_hash,p_credits,p_maximum,'queued');
+ return 'queued';
 end $$;
+-- Queue claim is a separate transaction. No retry after any provider claim.
+create index website_ai_jobs_queue on public.website_ai_jobs(updated_at,production_id) where state='queued';
+create function public.website_ai_claim(p_user uuid,p_production uuid,p_hash text,p_policy_version text,p_policy_hash text,p_credits integer,p_maximum integer) returns text
+language plpgsql security definer set search_path=public,pg_temp as $
+declare p production_requests%rowtype; j website_ai_jobs%rowtype;
+begin
+ select * into p from production_requests where id=p_production and user_id=p_user and production_type='website' for update;
+ if not found then return 'denied'; end if;
+ select * into j from website_ai_jobs where production_id=p_production and user_id=p_user for update;
+ if not found or j.plan_hash is distinct from p_hash or j.policy_version is distinct from p_policy_version or j.policy_hash is distinct from p_policy_hash or j.credits is distinct from p_credits or j.maximum_micro_usd is distinct from p_maximum then return 'denied'; end if;
+ if j.state<>'queued' then return 'already_claimed'; end if;
+ if p.output_json->'websiteAIApproval' is distinct from jsonb_build_object('planHash',p_hash,'policyVersion',p_policy_version,'policyHash',p_policy_hash,'credits',p_credits,'maximumMicroUSD',p_maximum,'source','persisted_explicit_user_approval') then return 'denied'; end if;
+ if p.output_json->'websiteAssistant'->>'planHash' is distinct from p_hash or p.output_json->'websiteAssistant'->>'approvedHash' is distinct from p_hash then return 'denied'; end if;
+ if not website_credit_claim(p_user,p_production,p_hash) then raise exception 'ai_claim_conflict'; end if;
+ update website_ai_jobs set state='claimed',updated_at=now() where production_id=p_production;
+ return 'claimed';
+end $;
+-- A claimed call may already have reached its provider. Expiry means review,
+-- never requeue. The owner and reservation stay intact.
+create function public.website_ai_mark_stale(p_before timestamptz) returns integer
+language plpgsql security definer set search_path=public,pg_temp as $
+declare n integer;
+begin
+ if p_before is null or p_before>now()-interval '5 minutes' then raise exception 'invalid_stale_cutoff'; end if;
+ update website_ai_jobs set state='reconcile_required',updated_at=now() where state='claimed' and updated_at<p_before;
+ get diagnostics n=row_count;
+ return n;
+end $;
 create function public.website_ai_record(p_user uuid,p_production uuid,p_hash text,p_receipt jsonb,p_artifact jsonb) returns boolean
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare p production_requests%rowtype; j website_ai_jobs%rowtype;
@@ -84,6 +111,6 @@ begin
  update website_ai_jobs set state='settled',reviewed_cost=p_evidence,updated_at=now() where production_id=p_production;
  return 'settled';
 end $$;
-revoke all on function public.website_ai_claim(uuid,uuid,text,text,text,integer,integer),public.website_ai_record(uuid,uuid,text,jsonb,jsonb),public.website_ai_uncertain(uuid,uuid,text),public.website_ai_finalize(uuid,uuid,text,jsonb) from public,anon,authenticated;
-grant execute on function public.website_ai_claim(uuid,uuid,text,text,text,integer,integer),public.website_ai_record(uuid,uuid,text,jsonb,jsonb),public.website_ai_uncertain(uuid,uuid,text),public.website_ai_finalize(uuid,uuid,text,jsonb) to service_role;
+revoke all on function public.website_ai_enqueue(uuid,uuid,text,text,text,integer,integer),public.website_ai_mark_stale(timestamptz),public.website_ai_claim(uuid,uuid,text,text,text,integer,integer),public.website_ai_record(uuid,uuid,text,jsonb,jsonb),public.website_ai_uncertain(uuid,uuid,text),public.website_ai_finalize(uuid,uuid,text,jsonb) from public,anon,authenticated;
+grant execute on function public.website_ai_enqueue(uuid,uuid,text,text,text,integer,integer),public.website_ai_mark_stale(timestamptz),public.website_ai_claim(uuid,uuid,text,text,text,integer,integer),public.website_ai_record(uuid,uuid,text,jsonb,jsonb),public.website_ai_uncertain(uuid,uuid,text),public.website_ai_finalize(uuid,uuid,text,jsonb) to service_role;
 commit;
