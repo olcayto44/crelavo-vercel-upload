@@ -28,6 +28,13 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  const edit={csrf,path:"index.html",version:"0",title:"Updated SEO title",description:"Updated description",headline:"Updated <heading>",lead:"Updated intro"};
  assert.equal((await post("/admin/content",edit)).status,403);assert.equal((await post("/admin/content",{...edit,csrf:"bad"},cookie)).status,403);
  assert.equal((await post("/admin/content",edit,cookie)).status,303);assert.equal((await post("/admin/content",edit,cookie)).status,409);html=await (await get("/")).text();assert(html.includes("Updated &lt;heading&gt;"));assert(html.includes("Updated SEO title"));assert(html.includes("Updated intro"));
+ const article={csrf,slug:"test-news",version:"0",title:"Test article",description:"Article SEO description",body:"Private <script> content",state:"draft"};
+ assert.equal((await post("/admin/article",article)).status,403);assert.equal((await post("/admin/article",article,cookie)).status,303);assert.equal((await get("/articles/test-news")).status,404);
+ assert.equal((await post("/admin/article",{...article,version:"1",state:"published"},cookie)).status,303);assert.equal((await post("/admin/article",{...article,version:"1",state:"archived"},cookie)).status,409);
+ let publicArticle=await (await get("/articles/test-news")).text();assert(publicArticle.includes("Private &lt;script&gt; content"));assert(publicArticle.includes('name="description" content="Article SEO description"'));assert((await (await get("/articles")).text()).includes("Test article"));
+ assert.equal((await post("/admin/article",{...article,version:"2",state:"archived"},cookie)).status,303);assert.equal((await get("/articles/test-news")).status,404);assert(!(await (await get("/articles")).text()).includes("Test article"));
+ assert.equal((await post("/admin/article",{...article,version:"3",state:"published",body:"Restored published content"},cookie)).status,303);
+ console.log("independent editorial acceptance: owner-only revisions, publication/archive, stale version, escaped content and SEO");
  const shop=()=>get("/shop").then(r=>r.text()),parseField=(html,n)=>html.match(new RegExp('name="'+n+'" value="([^"]+)"'))[1];
  let shopHtml=await shop();assert(shopHtml.includes("Fixture product"));assert(!shopHtml.includes("Hidden seed"));assert(shopHtml.includes("Stok: 3"));const order={request_key:parseField(shopHtml,"request_key"),sku:"TEST-1",version:parseField(shopHtml,"version"),name:"Test buyer",email:"buyer@example.test",quantity:"2"};
  assert.equal((await post("/shop/request",{...order,quantity:"4"})).status,409);
@@ -53,7 +60,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  m=maintenance(["backup",backupDir]);assert.equal(m.status,0,m.stderr);assert(fs.existsSync(path.join(backupDir,"site.sqlite")));
  assert.notEqual(maintenance(["backup",backupDir]).status,0);assert.notEqual(maintenance(["restore-check",backupDir]).status,0);
  m=maintenance(["restore-check",backupDir],restoreDir);assert.equal(m.status,0,m.stderr);
- currentDataDir=restoreDir;await start(false);cookie=await login();assert((await shop()).includes("New fixture product"));assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));
+ currentDataDir=restoreDir;await start(false);cookie=await login();assert((await shop()).includes("New fixture product"));assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));assert((await (await get("/articles/test-news")).text()).includes("Restored published content"));
  console.log("independent backup acceptance: integrity, backup refusal to overwrite, restore to new database, real restored server and retained business records");
  console.log("self-hosted ZIP runtime acceptance: extracted source, independent startup, contact persistence, owner session, CSRF, escaped content, optimistic editing and restart");
  }finally{if(child&&child.exitCode===null){child.kill("SIGTERM");await once(child,"exit");}fs.rmSync(dir,{recursive:true,force:true});}
