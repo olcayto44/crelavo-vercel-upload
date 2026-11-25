@@ -108,12 +108,13 @@ const dashboardResult = await (async()=>{
   const final=new URL(page.url());
   const allowed=final.origin===base.origin&&(final.pathname==="/dashboard"||final.pathname==="/auth/login");
   const login=await page.getByRole("dialog",{name:"Sign in to Crelavo"}).isVisible().catch(()=>false);
-  return {status:res?.status(),path:final.pathname,sameOrigin:final.origin===base.origin,loginDialogVisible:login,ok:allowed&&res?.status()===200};
+  return {status:res?.status(),path:final.pathname,sameOrigin:final.origin===base.origin,loginDialogVisible:login,ok:allowed&&res?.status()===200&&(final.pathname==="/auth/login"||login)};
  }catch(e){return {ok:false,error:String(e)};}
 })();
 const failedStudioRoutes=studioResults.filter(s=>s.error||s.status!==200);
-const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,failedStudioRoutes,dashboardResult,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
+const studioCountValid=new Set(studioResults.map(s=>new URL(s.path,base).pathname)).size===37;
+const report={total:results.length,passed:results.filter(x=>!x.issues.length).length,failed:results.filter(x=>x.issues.length).length,duplicateTitles:duplicates("title"),duplicateDescriptions:duplicates("description"),brokenPublicLinks:linkResults.filter(x=>x.error||x.status>=400),linkResults,studioResults,failedStudioRoutes,dashboardResult,studioCountValid,results,limitations:"Lab LCP/CLS/TTFB are single-run local Chromium observations, not field Core Web Vitals or INP. Authenticated Studio workflows, native translation review and measured keyword volume require separate verification."};
 await writeFile(out+"/report.json",JSON.stringify(report,null,2));
-console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles,duplicateDescriptions:report.duplicateDescriptions,failedStudioRoutes:report.failedStudioRoutes,dashboardResult:report.dashboardResult}));
-if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||failedStudioRoutes.length||!dashboardResult.ok)process.exitCode=1;
+console.log(JSON.stringify({total:report.total,passed:report.passed,failed:report.failed,brokenPublicLinks:report.brokenPublicLinks,duplicateTitles:report.duplicateTitles,duplicateDescriptions:report.duplicateDescriptions,failedStudioRoutes:report.failedStudioRoutes,dashboardResult:report.dashboardResult,studioCountValid}));
+if(report.failed||report.brokenPublicLinks.length||report.duplicateTitles.length||report.duplicateDescriptions.length||failedStudioRoutes.length||!dashboardResult.ok||!studioCountValid)process.exitCode=1;
 }finally{await browser.close();}
