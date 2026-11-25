@@ -1,0 +1,7 @@
+import type {Metadata} from "next";
+import {categoryPublicPaths} from "./category-public-routes";
+import {getConfiguredServicePage} from "./service-pages-loader";
+import {publicOrigin} from "./category-detail-meta";
+import {categoryLanguagePaths,globalCategoryPath,globalCategoryProfiles,type GlobalCategoryLocale} from "./category-global-content";
+export async function localizedCategoryVisibility(id:string){const path=categoryPublicPaths[id];const config=path.startsWith("/products/")?null:await getConfiguredServicePage(path.slice(1));return {draft:config?.status==="draft",index:config?.status!=="noindex"&&config?.includeInSitemap!==false}}
+export async function globalCategoryMeta(id:string,locale:GlobalCategoryLocale):Promise<Metadata>{const visibility=await localizedCategoryVisibility(id);if(visibility.draft)return {};const p=globalCategoryProfiles[id][locale],url=publicOrigin+globalCategoryPath(id,locale),title=p.title+" | Crelavo";return {title:{absolute:title},description:p.description,keywords:[],alternates:{canonical:url,...(visibility.index?{languages:Object.fromEntries(Object.entries(categoryLanguagePaths(id)).map(([tag,path])=>[tag,publicOrigin+path]))}:{})},openGraph:{title,description:p.description,url,type:"website",locale:locale==="zh"?"zh_CN":locale==="de"?"de_DE":"fr_FR"},twitter:{card:"summary",title,description:p.description},robots:{index:visibility.index,follow:true}}}

@@ -6,6 +6,7 @@ import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 
+import {categoryLanguagePaths} from "@/lib/category-global-content";
 import {turkishCategoryProfiles,turkishCategoryId,turkishCategoryPath} from "@/lib/category-tr-content";
 import {categoryPublicPaths,categoryWorkspace} from "@/lib/category-public-routes";
 import {publicOrigin} from "@/lib/category-detail-meta";
@@ -22,7 +23,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: LocalizedPageProps): Promise<Metadata> {
   const { slug } = await params;
   const categoryId=turkishCategoryId(slug);
-  if(categoryId){const p=turkishCategoryProfiles[categoryId],visibility=await categoryVisibility(categoryId),canonical=publicOrigin+turkishCategoryPath(categoryId)!;if(visibility.draft)return {};const english=publicOrigin+categoryPublicPaths[categoryId];return {title:{absolute:p.title+" | Crelavo"},description:p.description,keywords:[],alternates:{canonical,...(visibility.index?{languages:{"en-US":english,"tr-TR":canonical,"x-default":english}}:{})},openGraph:{title:p.title+" | Crelavo",description:p.description,url:canonical,type:"website",locale:"tr_TR"},twitter:{card:"summary",title:p.title,description:p.description},robots:{index:visibility.index,follow:true}};}
+  if(categoryId){const p=turkishCategoryProfiles[categoryId],visibility=await categoryVisibility(categoryId),canonical=publicOrigin+turkishCategoryPath(categoryId)!;if(visibility.draft)return {};const english=publicOrigin+categoryPublicPaths[categoryId];return {title:{absolute:p.title+" | Crelavo"},description:p.description,keywords:[],alternates:{canonical,...(visibility.index?{languages:Object.fromEntries(Object.entries(categoryLanguagePaths(categoryId)).map(([tag,path])=>[tag,publicOrigin+path]))}:{})},openGraph:{title:p.title+" | Crelavo",description:p.description,url:canonical,type:"website",locale:"tr_TR"},twitter:{card:"summary",title:p.title,description:p.description},robots:{index:visibility.index,follow:true}};}
   const locale = "tr";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) return { title: "Localized Crelavo page" };

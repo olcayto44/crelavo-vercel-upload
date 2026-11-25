@@ -6,14 +6,20 @@ import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 
+import {globalCategoryId,globalCategoryProfiles} from "@/lib/category-global-content";
+import {globalCategoryMeta,localizedCategoryVisibility} from "@/lib/category-global-meta";
+import {GlobalCategoryPage} from "@/components/GlobalCategoryPage";
+import {categoryWorkspace} from "@/lib/category-public-routes";
+export const dynamic="force-dynamic";
 type LocalizedPageProps = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return localizedEuropePages.filter((page) => page.locale === "de").map((page) => ({ slug: page.slug }));
+  return [...localizedEuropePages.filter(page=>page.locale==="de").map(page=>({slug:page.slug})),...Object.values(globalCategoryProfiles).map(p=>({slug:p.de.slug}))];
 }
 
 export async function generateMetadata({ params }: LocalizedPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const id=globalCategoryId("de",slug);if(id)return globalCategoryMeta(id,"de");
   const locale = "de";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) return { title: "Localized Crelavo page" };
@@ -64,6 +70,7 @@ function LocalizedStructuredData({ page }: { page: (typeof localizedEuropePages)
 
 export default async function LocalizedEuropePage({ params }: LocalizedPageProps) {
   const { slug } = await params;
+  const id=globalCategoryId("de",slug);if(id){if((await localizedCategoryVisibility(id)).draft)notFound();return <GlobalCategoryPage id={id} locale="de"/>;}
   const locale = "de";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) notFound();
@@ -83,7 +90,7 @@ export default async function LocalizedEuropePage({ params }: LocalizedPageProps
           <p className="section-lead">{page.lead}</p>
           <p className="localized-market-note">{page.marketNote}</p>
           <div className="sample-detail-actions">
-            <Link className="btn" href="/dashboard/create">{page.primaryCta}</Link>
+            <Link className="btn" href={categoryWorkspace("video")}>{page.primaryCta}</Link>
             <Link className="btn secondary" href="/pricing">{page.secondaryCta}</Link>
           </div>
         </section>
