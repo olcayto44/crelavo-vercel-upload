@@ -4,6 +4,8 @@ import {normalizeAssistantWebsiteBrief,websitePlanHash,websiteEngineInput,missin
 import {getCategory} from "@/lib/crelavo/categoryCatalog";
 import {generateWebsiteArtifact} from "../website-engine";
 import {generateWebsiteAICopy,WebsiteAICopySchema,prepareWebsiteAICopy} from "./website-ai-copy";
+import {prepareEditableWebsiteBrief,buildEditableWebsiteFromCopy} from "./website-editable-artifact";
+import {renderWebsiteDesignCandidate} from "../website-design-candidate";
 import type {readCostPolicy} from "./cost-policy";
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
 const Approval=z.strictObject({userId:z.string().uuid(),productionId:z.string().uuid(),planHash:hash,packId:z.enum(["landing_page","business_website"]),credits:z.number().int().positive(),policyVersion:z.string(),policyHash:hash,maximumMicroUSD:z.number().int().min(1).max(50000),source:z.literal("persisted_explicit_user_approval"),brief:z.record(z.string(),z.unknown())});
@@ -19,7 +21,7 @@ export async function runIsolatedWebsiteAI(raw:unknown,actor:string,d:D){
  const parsed=Approval.safeParse(raw);if(!parsed.success)return result("not_dispatched");
  const a=parsed.data,p=d.policy,brief=normalizeAssistantWebsiteBrief(a.brief);
  if(a.userId!==actor||a.policyHash!==websiteAIPolicyDigest(p)||a.policyVersion!==p.version||a.maximumMicroUSD!==p.requestMicroUSD||brief.locale!=="en"||websitePlanHash(brief,a.packId)!==a.planHash||missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||getCategory("website")?.packs.find(x=>x.id===a.packId)?.credits!==a.credits)return result("not_dispatched");
- try{prepareWebsiteAICopy(websiteEngineInput(brief),p);}catch{return result("not_dispatched");}
+ try{prepareWebsiteAICopy(websiteEngineInput(brief),p);prepareEditableWebsiteBrief(websiteEngineInput(brief));}catch{return result("not_dispatched");}
  const identity={p_user:a.userId,p_production:a.productionId,p_hash:a.planHash};
  const call=async(name:string,args:Record<string,unknown>)=>{const r=await d.rpc(name,args);if(r.error)throw Error("storage_unconfirmed");return r.data;};
  try{
@@ -32,7 +34,9 @@ export async function runIsolatedWebsiteAI(raw:unknown,actor:string,d:D){
  if(generated.state!=="validated")throw Error("provider_uncertain");
  const copy=WebsiteAICopySchema.parse(generated.copy);
  const artifact=await generateWebsiteArtifact(websiteEngineInput(brief),a.productionId,{mode:"validated_copy",copy});
- const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest}});
+ const editableDesign=buildEditableWebsiteFromCopy(websiteEngineInput(brief),copy);
+ const editableCandidate=renderWebsiteDesignCandidate(editableDesign);
+ const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest,editableDesign,editableDesignHash:editableCandidate.manifest.designHash}});
  if(saved!==true)throw Error("record_uncertain");
  return result("artifact_cost_pending");
  }catch{
