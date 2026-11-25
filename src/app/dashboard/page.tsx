@@ -11,7 +11,7 @@ export default function DashboardPage() {
           <a className="" href="/dashboard/credits">Credits</a>
           <a className="" href="/dashboard/billing">Billing</a>
           <a className="" href="/dashboard/productions">Productions</a>
-          <a className="" href="/dashboard/studio-v2?category=video">Assistant</a>
+          <a className="" href="/dashboard/studio/video">Assistant</a>
           <a className="" href="/dashboard/growth-intelligence">Growth Intelligence</a>
           <a className="" href="/dashboard/partners">Partners</a>
           <a className="" href="/pricing">Pricing</a>
@@ -20,7 +20,7 @@ export default function DashboardPage() {
         <h1>Dashboard</h1>
         <p className="lead">Production, credits, billing and partners in one place. Sign in to load your balance. Checkout stays on Whop.</p>
         <div className="grid g4">
-          <article className="card"><h3>Assistant</h3><p>Start a video, site, campaign or file production.</p><a className="cta" href="/dashboard/studio-v2?category=video">Open assistant</a></article>
+          <article className="card"><h3>Assistant</h3><p>Start a video, site, campaign or file production.</p><a className="cta" href="/dashboard/studio/video">Open assistant</a></article>
           <article className="card"><h3>Credits</h3><p>Credit plans and one-time packs.</p><a className="cta" href="/dashboard/credits">View credits</a></article>
           <article className="card"><h3>Billing</h3><p>Preview, renewal and cancellation through the active customer portal.</p><a className="cta" href="/dashboard/billing">Open billing</a></article>
           <article className="card"><h3>Productions</h3><p>Previews, files and delivery status.</p><a className="cta" href="/dashboard/productions">Open productions</a></article>
