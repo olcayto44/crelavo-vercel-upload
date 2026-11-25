@@ -8,7 +8,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "de": {
       "slug": "ki-website-builder",
       "title": "KI-Website-Builder",
-      "description": "Planen Sie eine responsive Website, Landingpage, einen Online-Shop oder ein Portfolio mit Markenmaterialien und Seitenstruktur."
+      "description": "Planen Sie eine responsive Website, eine Landingpage, einen Onlineshop oder ein Portfolio mit passender Seitenstruktur und Markenmaterialien."
     },
     "fr": {
       "slug": "createur-site-web-ia",
@@ -178,7 +178,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "de": {
       "slug": "ki-video-clips",
       "title": "KI-Video-Clipping",
-      "description": "Planen Sie kurze Social-Media-Clips aus längeren Videos, für die Sie Nutzungsrechte besitzen mit Highlights, Untertiteln und Bildformat."
+      "description": "Planen Sie kurze Social-Media-Clips aus längeren Videos, für die Sie Nutzungsrechte besitzen. Legen Sie Highlights, Untertitel und Bildformat fest."
     },
     "fr": {
       "slug": "decoupage-video-ia",
@@ -188,7 +188,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "zh": {
       "slug": "video-clipping",
       "title": "AI 视频切片",
-      "description": "从获授权的长视频中规划精彩片段、开场吸引点、字幕及社交平台画幅。"
+      "description": "从获授权的长视频中规划精彩片段、吸引观众的开场、字幕及社交平台画幅。"
     }
   },
   "video_tools": {
@@ -212,7 +212,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "de": {
       "slug": "ki-werbekampagne",
       "title": "KI-Werbekampagnen-Generator",
-      "description": "Planen Sie Produktanzeigen mit geprüften Produktinformationen, Aufhänger, Zielgruppe und Handlungsaufforderung."
+      "description": "Planen Sie Produktanzeigen mit geprüften Produktinformationen, einem überzeugenden Einstieg, einer klaren Zielgruppe und einer Handlungsaufforderung."
     },
     "fr": {
       "slug": "campagne-publicitaire-ia",
@@ -229,7 +229,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "de": {
       "slug": "ki-anzeigenanalyse",
       "title": "KI-Anzeigenanalyse",
-      "description": "Prüfen Sie Aufhänger, Angebot und Handlungsaufforderung ohne eine Conversion-Garantie anzunehmen."
+      "description": "Bewerten Sie Einstieg, Angebot und Handlungsaufforderung, ohne daraus eine Garantie für Conversions abzuleiten."
     },
     "fr": {
       "slug": "analyse-publicitaire-ia",
@@ -319,7 +319,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "fr": {
       "slug": "assistant-vente-direct-ia",
       "title": "Assistant de vente en direct IA",
-      "description": "Préparez démonstrations, scripts, prix vérifiés, réponses clients et règles d'escalade."
+      "description": "Préparez démonstrations, scripts, prix vérifiés, réponses clients et règles de transfert vers un conseiller humain."
     },
     "zh": {
       "slug": "live-sales-agent",
@@ -348,7 +348,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "de": {
       "slug": "ki-lippensynchronisation",
       "title": "KI-Lippensynchronisation",
-      "description": "Planen Sie Sprachsynchronisation mit autorisiertem Audio und Video, Sprecherwechseln und präzisem Timing."
+      "description": "Planen Sie die Lippensynchronisation anhand autorisierter Audio- und Videoaufnahmen, mit Sprecherwechseln und präzisem Timing."
     },
     "fr": {
       "slug": "synchronisation-labiale-ia",
@@ -358,7 +358,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "zh": {
       "slug": "lip-sync",
       "title": "AI 口型同步",
-      "description": "使用获授权的音视频规划语音同步，标注说话人及对白时间。"
+      "description": "使用获授权的音视频规划口型同步，标注说话人和对白时间点。"
     }
   },
   "voice_clone": {
@@ -489,7 +489,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "fr": {
       "slug": "video-animaux-ia",
       "title": "Vidéo d'animaux IA",
-      "description": "Préparez des histoires animalières avec espèce, décor, action et simulation signalée."
+      "description": "Préparez des histoires animalières en précisant l’espèce, le décor et l’action, et en signalant les scènes simulées."
     },
     "zh": {
       "slug": "animal-video",
@@ -506,7 +506,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "fr": {
       "slug": "video-nature-ia",
       "title": "Vidéo nature IA",
-      "description": "Préparez paysages et documentaires nature avec narration vérifiée, scènes et ambiance sonore."
+      "description": "Préparez des vidéos de paysages et des documentaires sur la nature, avec une narration vérifiée, des scènes et une ambiance sonore."
     },
     "zh": {
       "slug": "nature-video",
@@ -556,7 +556,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     },
     "fr": {
       "slug": "animation-bonhomme-batons",
-      "title": "Animation de personnages fil de fer",
+      "title": "Animation de personnages en bâtons",
       "description": "Préparez vidéos explicatives et sketchs avec personnages simples, actions claires et dialogues courts."
     },
     "zh": {
@@ -608,7 +608,7 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
     "fr": {
       "slug": "projets-communaute",
       "title": "Projets de la communauté Crelavo",
-      "description": "Explorez des exemples ou préparez la publication de vos créations avec droits et descriptions exacts."
+      "description": "Explorez des exemples ou préparez la publication de vos créations avec des descriptions exactes et des droits de diffusion vérifiés."
     },
     "zh": {
       "slug": "community-showcase",
