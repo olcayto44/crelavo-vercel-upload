@@ -17,7 +17,7 @@ export async function POST(request:Request){
  return await handleProductionDispatch(request,{
  authenticate:async()=>actor,
  loadStudio:async(userId,projectId)=>{const {data,error}=await db.from("studio_agent_projects").select("id,user_id,category_id,production_id").eq("id",projectId).eq("user_id",userId).eq("category_id","website").maybeSingle();if(error)throw Error("storage");return data;},
- loadWebsite:async(userId,productionId)=>{const {data,error}=await db.from("production_requests").select("id,user_id,production_type,status,output_json").eq("id",productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();if(error)throw Error("storage");return data;},
+ loadWebsite:async(userId,productionId)=>{const {data,error}=await db.from("production_requests").select("id,user_id,production_type,status,estimated_credits,output_json").eq("id",productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();if(error)throw Error("storage");return data;},
  adapter:{enabled:()=>centralWebsiteAdapterEnabled()&&websitePaidProductionEnabled()&&websitePaidCanaryAllowed(actor),execute:executePaidWebsiteProduction}});
  }catch{return Response.json({ok:false,code:"studio_production_unavailable",safeToRetryAutomatically:false},{status:503,headers:{"Cache-Control":"no-store"}});}
 }
