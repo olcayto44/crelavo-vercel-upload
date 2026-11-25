@@ -32,6 +32,7 @@ try{
   await page.getByLabel("Zoom",{exact:true}).selectOption("100");
   await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.offsetWidth===1440&&v.scrollHeight<=v.clientHeight+1;});
   await page.getByLabel("Zoom",{exact:true}).selectOption("fit");
+  await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]");return !!v&&v.dataset.zoom==="fit"&&["clip","hidden"].includes(getComputedStyle(v).overflowX)&&v.scrollWidth<=v.clientWidth+1;});
   await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.getBoundingClientRect().width<=v.clientWidth+1&&v.scrollHeight<=v.clientHeight+1;});
   await page.getByRole("button",{name:"mobile · 390px",exact:true}).click();
   await page.waitForFunction(()=>document.querySelector("iframe[title='mobile website preview']")?.offsetWidth===390);
