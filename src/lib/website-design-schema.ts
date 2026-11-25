@@ -18,11 +18,19 @@ const hiddenOn=z.array(z.enum(["mobile","tablet","desktop"])).max(2).refine(v=>n
 // Shared site-wide settings. Only safe links and small raster logos, never executable advertising code.
 const optionalText=(n:number)=>z.union([z.literal(""),text(n)]);
 const safeHttps=z.union([z.literal(""),z.string().max(500).refine(value=>{try{const u=new URL(value);return u.protocol==="https:"&&!!u.hostname&&!u.username&&!u.password&&!/[\s<>"'\\]/.test(value);}catch{return false;}},"HTTPS URL required")]);
+// Relative legacy paths only, no arbitrary hosts, encoded characters, queries or path traversal.
+export const WebsiteRedirectPath=z.string().max(160).regex(/^\/(?:[a-z0-9][a-z0-9-]*(?:\/[a-z0-9][a-z0-9-]*)*(?:\.html)?\/?)?$/).refine(p=>!/^\/(?:api|admin|dashboard|preview|_next)(?:\/|\.|$)/.test(p),"Reserved route");
+const seoRedirect=z.strictObject({from:WebsiteRedirectPath,toSlug:slug,status:z.union([z.literal(301),z.literal(302)])});
+export const WebsiteAlternateLocale=z.enum(["en","tr","de","fr","zh-Hans","x-default"]);
+const seoAlternate=z.strictObject({locale:WebsiteAlternateLocale,url:safeHttps.refine(v=>!!v,"URL required")});
+export const WebsiteBusinessIdentity=z.strictObject({enabled:z.boolean(),legalName:optionalText(120),description:optionalText(320),city:optionalText(100),region:optionalText(100),country:optionalText(80),postalCode:optionalText(24),streetAddress:optionalText(200)});
+export type WebsiteBusinessIdentityInput=z.infer<typeof WebsiteBusinessIdentity>;
+export function defaultWebsiteBusinessIdentity():WebsiteBusinessIdentityInput{return {enabled:false,legalName:"",description:"",city:"",region:"",country:"",postalCode:"",streetAddress:""};}
 // Requested SEO publication settings are draft preferences, never authority to index a preview.
-export const WebsitePageSeo=z.strictObject({focusKeyword:optionalText(100),relatedKeywords:z.array(text(80)).max(8),ogTitle:optionalText(95),ogDescription:optionalText(200),socialImageUrl:safeHttps,canonicalUrl:safeHttps,index:z.boolean(),follow:z.boolean(),includeInSitemap:z.boolean()});
+export const WebsitePageSeo=z.strictObject({focusKeyword:optionalText(100),relatedKeywords:z.array(text(80)).max(8),ogTitle:optionalText(95),ogDescription:optionalText(200),socialImageUrl:safeHttps,canonicalUrl:safeHttps,index:z.boolean(),follow:z.boolean(),includeInSitemap:z.boolean(),alternates:z.array(seoAlternate).max(6).refine(a=>new Set(a.map(v=>v.locale)).size===a.length,"Duplicate alternate language").optional()});
 export type WebsitePageSeoInput=z.infer<typeof WebsitePageSeo>;
 export function defaultWebsitePageSeo():WebsitePageSeoInput{return {focusKeyword:"",relatedKeywords:[],ogTitle:"",ogDescription:"",socialImageUrl:"",canonicalUrl:"",index:true,follow:true,includeInSitemap:true};}
-export const WebsiteSeoSettings=z.strictObject({proposedOrigin:z.union([z.literal(""),z.string().max(250).refine(value=>{try{const u=new URL(value);return u.protocol==="https:"&&u.origin===value.replace(/\/$/,"")&&!u.username&&!u.password&&u.hostname.includes(".")&&!/[\s<>"'\\]/.test(value);}catch{return false;}},"Enter an HTTPS domain without a path")]),sitemapEnabled:z.boolean(),defaultIndex:z.boolean()});
+export const WebsiteSeoSettings=z.strictObject({proposedOrigin:z.union([z.literal(""),z.string().max(250).refine(value=>{try{const u=new URL(value);return u.protocol==="https:"&&u.origin===value.replace(/\/$/,"")&&!u.username&&!u.password&&u.hostname.includes(".")&&!/[\s<>"'\\]/.test(value);}catch{return false;}},"Enter an HTTPS domain without a path")]),sitemapEnabled:z.boolean(),defaultIndex:z.boolean(),redirects:z.array(seoRedirect).max(30).refine(a=>new Set(a.map(v=>v.from)).size===a.length,"Duplicate redirect source").optional(),businessIdentity:WebsiteBusinessIdentity.optional()});
 export type WebsiteSeoSettingsInput=z.infer<typeof WebsiteSeoSettings>;
 export function defaultWebsiteSeoSettings():WebsiteSeoSettingsInput{return {proposedOrigin:"",sitemapEnabled:true,defaultIndex:true};}
 const page=z.strictObject({slug,nav:text(40),title:text(70),description:text(160),headline:text(100),lead:text(320),sections:z.array(z.strictObject({heading:text(80),body:text(700),hiddenOn})).min(1).max(5),seo:WebsitePageSeo.optional(),faq:z.array(z.strictObject({question:text(120),answer:text(500)})).max(5)});
