@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
+import {usePathname} from "next/navigation";
+import {categoryForPublicPath} from "@/lib/category-public-routes";
 import { supabaseBrowser } from "@/lib/supabase";
 import { useAuth } from "./AuthProvider";
 
 export function AuthStickyBar() {
   const { user, loading, modalOpen, openAuth } = useAuth();
+  const pathname=usePathname();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [hasSupabaseSession, setHasSupabaseSession] = useState(false);
 
@@ -27,6 +30,7 @@ export function AuthStickyBar() {
     };
   }, []);
 
+  if(pathname==="/categories"||categoryForPublicPath(pathname)||pathname.startsWith("/admin")||pathname==="/design-preview/admin")return null;
   if (loading || !sessionChecked || modalOpen || user || hasSupabaseSession) return null;
   return <div className="crelavo-auth-sticky"><a href="https://whop.com/checkout/ch_MTZtuBJl2OuZtL8/">Start Pro · $9.99/mo</a><button type="button" onClick={() => openAuth("login")}>Sign in</button></div>;
 }

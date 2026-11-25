@@ -47,6 +47,7 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
       <InnerMobileNav />
       <main className="container section product-detail-page">
       <section className="production-hero-card admin-overview-hero">
+        <nav aria-label="Breadcrumb" style={{fontSize:12,marginBottom:12}}><Link href="/">Home</Link> / <Link href="/categories">Categories</Link> / {page.title}</nav>
         <span className="badge">{page.badge}</span>
         <h1>{page.title}</h1>
         <p>{page.summary}</p>
