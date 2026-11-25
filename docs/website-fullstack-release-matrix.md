@@ -5,7 +5,7 @@ The user approved all workstreams; this is not a claim that all are complete. Do
 3. Editor: preview-only device settings, page metadata, drag/reorder, keyboard alternatives, undo and JSON export. Section text editing and per-device visibility are implemented in the pilot; new smoke/browser checks added, results pending. Persist and integrate with approved project.
 4. CMS: isolated role-protected page draft edit and audit; blog/media/publish and real Auth browser test missing.
 5. SEO/GEO: per-page semantic metadata/preview noindex; verified domain canonical/sitemap, facts and localized content gates remain.
-6. Commerce/CRM/bookings: require domain-specific persistent workflows, inventory race tests, provider payments and verified refunds; not implemented.
+6. Commerce/CRM/bookings: sector-specific requirements registry now covers 26 profiles and 30 reusable modules, with visitor/admin workflows, dependencies, acceptance and integrations. Scope is embedded in candidate manifest and persisted in isolated CMS with RLS, version fence and audit. Synthetic owner/editor/viewer/outsider, stale writes, invalid inputs and revision tests passed in crelavo-test. Real Auth browser test and all business execution modules still require verification. Require domain-specific persistent workflows, inventory race tests, provider payments and verified refunds; not implemented.
 7. Forms/email: real inbox, rate limit, consent, anti-spam, verified sending and delivery retry required.
 8. Languages: five category locales, design candidate language setting; actual translated site content and hreflang verification missing.
 9. Analytics: consent, tenant-scoped events, actual counts, conversion and data retention missing.
