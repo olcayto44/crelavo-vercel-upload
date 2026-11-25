@@ -37,7 +37,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Ekran akışları",
       "Uygulama prototipi"
     ],
-    "question": "Uygulama mağazasına yayın dahil mi?",
+    "question": "Uygulama mağazasında yayımlama da dahil mi?",
     "answer": "Hedef işletim sistemi, cihaz özellikleri ve mağaza yayın gereksinimleri teslimat kapsamına göre ayrıca belirlenir."
   },
   "admin_project": {
@@ -76,7 +76,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Anlatım",
       "Görsel taslak"
     ],
-    "question": "Gerçek görüntülerle üretilen sahneler nasıl ayrılır?",
+    "question": "Gerçek çekimler ile yapay zekâyla üretilen sahneler nasıl ayırt edilir?",
     "answer": "Doğrulanabilir kaynaklar kullanın; canlandırma ve yapay görselleri açık biçimde etiketleyin."
   },
   "animation": {
@@ -168,12 +168,12 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Reklam metni"
     ],
     "question": "Bir reklamın farklı versiyonları nasıl hazırlanır?",
-    "answer": "Ürün iddialarını değiştirmeden açılış kancası, hedef kitle yaklaşımı, görsel yön ve eylem çağrısını çeşitlendirin."
+    "answer": "Ürün iddialarını değiştirmeden dikkat çekici açılışı, hedef kitleye uygun mesajı, görsel yaklaşımı ve harekete geçirici çağrıyı çeşitlendirin."
   },
   "ad_score_checker": {
     "slug": "yapay-zeka-reklam-analizi",
     "title": "Yapay Zeka Reklam Analizi",
-    "description": "Reklam fikrini üretimden önce kanca, teklif açıklığı, görsel yön ve eylem çağrısı açısından değerlendirin.",
+    "description": "Reklam fikrini üretimden önce açılışın dikkat çekiciliği, teklifin açıklığı, görsel yaklaşım ve harekete geçirici çağrı açısından değerlendirin.",
     "uses": [
       "Kanca analizi",
       "Teklif değerlendirme",
@@ -186,7 +186,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
   "campaign_calendar": {
     "slug": "yapay-zeka-kampanya-takvimi",
     "title": "Yapay Zeka Kampanya Takvimi",
-    "description": "Ürün lansmanları, sezonluk teklifler ve sosyal medya içerikleri için yayın tarihleri, varlıklar ve onay adımlarını organize edin.",
+    "description": "Ürün lansmanları, sezonluk teklifler ve sosyal medya içerikleri için yayın tarihlerini, içerik materyallerini ve onay adımlarını düzenleyin.",
     "uses": [
       "İçerik takvimi",
       "Lansman planı",
@@ -272,7 +272,7 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
       "Dil uyarlama"
     ],
     "question": "Senkronizasyonu ne etkiler?",
-    "answer": "Net ses, görünür ağız hareketi, sabit kadraj ve doğru konuşmacı zamanlaması önemlidir."
+    "answer": "Net ses, ağzın açıkça görülebildiği bir kadraj ve konuşmanın doğru zamanlaması önemlidir."
   },
   "voice_clone": {
     "slug": "yapay-zeka-ses-klonlama",
