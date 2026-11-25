@@ -274,3 +274,5 @@ const previewAssistant=read('src/app/api/studio/developer-chat/route.ts');
 assert.ok(client.includes("const panel=node('details',undefined,'studio-video-plan')"),'video plan must not overwhelm the chat transcript');
 assert.ok(client.includes("localEditor.onclick=()=>openStudioTool('video')"),'AI Video plan must link to an actual local editor');
 assert.ok(previewAssistant.includes("Do not end at a generic refusal"),'developer assistant must lead to actionable next steps');
+
+assert.match(authGate,/isStudioConversationPath\(pathname\)/);assert.match(authReturn,/if \(safe && isStudioConversationPath/);assert.match(footer,/pathname\?\.startsWith\("\/dashboard\/studio\/"\)/);assert.match(mobileNav,/"\/dashboard\/studio"/);assert.match(view,/url\.pathname='\/dashboard\/studio\/'/);console.log("clean Studio path wiring smoke ok");

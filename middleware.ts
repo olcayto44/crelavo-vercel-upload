@@ -5,6 +5,7 @@ const VERSIONED_PATHS = new Set(["/live-sales-credits", "/live-sales-credits-v2"
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  if(pathname==="/dashboard/studio-v2"){const url=request.nextUrl.clone();const category=searchParams.get("category");url.pathname=category&&/^[a-z0-9_]{1,40}$/.test(category)?"/dashboard/studio/"+category.replace(/_/g,"-"):"/dashboard/studio";url.searchParams.delete("category");return NextResponse.redirect(url,307); }
 
   if (pathname === "/deployBuilder" || pathname.startsWith("/assistant/workspace/") || pathname.startsWith("/assistant-workstation-production/")) {
     const url = request.nextUrl.clone();
@@ -32,5 +33,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*", "/assistant-workstation-production/:path*"]
+  matcher: ["/dashboard/studio-v2", "/live-sales-credits", "/live-sales-credits-v2", "/dashboard/payment", "/deployBuilder", "/assistant/workspace/:path*", "/assistant-workstation-production/:path*"]
 };

@@ -21,6 +21,7 @@ export function RouteAwareFooter({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/auth") ||
     pathname?.startsWith("/dashboard/assistant-workspace") ||
     pathname?.startsWith("/dashboard/studio-v2") ||
+    pathname === "/dashboard/studio" || pathname?.startsWith("/dashboard/studio/") ||
     pathname?.startsWith("/dashboard/website-builder") ||
     pathname?.startsWith("/dashboard/studio-video-editor") ||
     pathname?.startsWith("/dashboard/studio-elements") ||

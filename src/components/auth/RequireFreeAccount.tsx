@@ -8,7 +8,7 @@ export function RequireFreeAccount({ children, allowStudioPreview = false }: { c
   const isAssistantWorkspace = pathname === "/dashboard/assistant-workspace";
   // Read-only Studio shell is inspectable on feature preview deployments only.
   // Real conversation, uploads and cloud project access still require a session.
-  const previewStudioShell = allowStudioPreview && (isStudioConversationPath(pathname)||["/dashboard/studio-v2", "/dashboard/studio-elements", "/dashboard/studio-video-editor", "/dashboard/studio-image-editor"].includes(pathname));
+  const previewStudioShell = allowStudioPreview && ["/dashboard/studio-v2", "/dashboard/studio", "/dashboard/studio-elements", "/dashboard/studio-video-editor", "/dashboard/studio-image-editor", ...(isStudioConversationPath(pathname)?[pathname]:[])].includes(pathname);
   // These editor routes need account authentication, not a Pro checkout.
   const isStudioEditor = isStudioConversationPath(pathname)||["/dashboard/studio-v2", "/dashboard/studio-elements", "/dashboard/studio-video-editor", "/dashboard/studio-image-editor"].includes(pathname);
   useEffect(() => {
