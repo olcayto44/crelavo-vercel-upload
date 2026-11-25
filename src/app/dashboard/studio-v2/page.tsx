@@ -15,6 +15,7 @@ export default function StudioProductionPage() {
     websitePaidReady: false,
     websitePacks: (getCategory("website")?.packs || []).filter(pack => typeof pack.credits === "number").map(pack => ({ id:pack.id, label:pack.label, credits:pack.credits })),
     mockAllowed: false,
+    previewOnly: process.env.VERCEL_ENV === "preview",
     requirements: Object.fromEntries(configuration.categories.map(c => [c.id, getCategoryContract(c.id).fields])),
     defaults: Object.fromEntries(configuration.categories.map(c => [c.id, getCategoryContract(c.id).defaults])),
   };

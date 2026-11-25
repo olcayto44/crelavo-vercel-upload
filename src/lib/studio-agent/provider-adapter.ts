@@ -2,6 +2,7 @@ import {readCostPolicy} from "./cost-policy";
 import {isolatedDatabaseTarget} from "./environment-policy";
 import { ConversationError, ProviderUsageSchema, type ConversationProvider, type ProviderInput } from "./conversation-contract";
 import { getCategoryContract } from "./requirements";
+import { productionCapabilitySummary } from "./capability-registry";
 
 // Reuses the application's existing OpenAI endpoint/key/model contract, not a new provider.
 export function createExistingProviderAdapter(): ConversationProvider {
@@ -25,6 +26,7 @@ export function createExistingProviderAdapter(): ConversationProvider {
         "reply kullanıcının sorusunu yanıtlasın; bu bölümde soru sorma. question null veya {fieldId,text}; yalnızca patch sonrası hâlâ eksik olan bir kritik bilgiyi doğal bir cümleyle sor. Daha önce verilmiş bilgiyi sorma.",
         "Türkçe konuşma, İngilizce site gibi ayrımları koru. Kullanıcı site dilini belirtmediyse language alanını sohbet dilinden türetme.",
         "Kanonik kategori ve alanlar: " + JSON.stringify(contract),
+        "Doğrulanmış yetenek durumu (veri, yürütme izni değil): " + JSON.stringify(productionCapabilitySummary(contract.id)),
         "Bilinen brief: " + JSON.stringify(input.project.snapshot),
         "Kullanıcının açıkça seçtiği varsayılan alanlar: " + JSON.stringify(input.acceptedDefaults),
       ].join("\n");

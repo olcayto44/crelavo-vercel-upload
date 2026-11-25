@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase";
+import CloudAssetLibrary from "./CloudAssetLibrary";
 
 type Kind = "character" | "product" | "location" | "wardrobe" | "voice" | "style" | "reference";
 type Stored = { key: string; owner: string; name: string; kind: Kind; description: string; mime: string; size: number; createdAt: number; blob: Blob; permission: boolean };
@@ -44,7 +45,12 @@ async function dbWrite(record: Stored | null, key?: string) {
 function title(kind: Kind) {
  return ({character:"Character / Twin",product:"Product / Object",location:"Location / Environment",wardrobe:"Outfit / Wardrobe",voice:"Voice / Audio",style:"Visual Style",reference:"Reference"} as Record<Kind,string>)[kind];
 }
-export default function LocalAssetLibrary() {
+export default function LocalAssetLibrary({allowAnonymousLocalSave=false}:{allowAnonymousLocalSave?:boolean}={}) {
+  const [studioReturnCategory,setStudioReturnCategory]=useState("visual_clone");
+  useEffect(()=>{
+    const candidate=new URLSearchParams(window.location.search).get("studioCategory");
+    if(candidate&&/^[a-z0-9_]{1,40}$/.test(candidate))setStudioReturnCategory(candidate);
+  },[]);
  const [owner,setOwner]=useState("");
  const [status,setStatus]=useState("Checking your Crelavo account…");
  const [records,setRecords]=useState<DisplayAsset[]>([]);
@@ -62,13 +68,17 @@ export default function LocalAssetLibrary() {
   let active=true;
   supabaseBrowser().auth.getUser().then(async({data,error})=>{
    if(!active)return;
-   if(error||!data.user){setStatus("Sign in to access your personal reference library.");return;}
+   if(error||!data.user){
+    if(allowAnonymousLocalSave){const previewOwner="preview-local";setOwner(previewOwner);const items=await dbAll(previewOwner);if(active){setRecords(items.map(({blob,...rest})=>rest).sort((a,b)=>b.createdAt-a.createdAt));setStatus("Preview reference library: files stay on this browser, not in private cloud storage.")}}
+    else setStatus("Sign in to access your personal reference library.");
+    return;
+   }
    setOwner(data.user.id);
    const items=await dbAll(data.user.id);
    if(active){setRecords(items.map(({blob,...rest})=>rest).sort((a,b)=>b.createdAt-a.createdAt));setStatus("References are saved only in this browser, not the cloud.");}
-  }).catch(()=>{if(active)setStatus("The local library is unavailable in this browser.");});
+  }).catch(()=>{if(!active)return;if(allowAnonymousLocalSave){setOwner("preview-local");void dbAll("preview-local").then(items=>{if(active)setRecords(items.map(({blob,...rest})=>rest))}).catch(()=>{});setStatus("Preview local references only.");}else setStatus("The local library is unavailable in this browser.");});
   return ()=>{active=false};
- },[]);
+ },[allowAnonymousLocalSave]);
  useEffect(()=>{
   let active=true;let url: string|null=null;
   if(selection&&owner)dbGet(selection).then(item=>{
@@ -117,10 +127,11 @@ export default function LocalAssetLibrary() {
   catch{setStatus("Could not delete the reference.");}finally{setBusy(false)}
  }
  const visible=records.filter(r=>filter==="all"||r.kind===filter);
- return <main style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",padding:"18px",fontFamily:"Inter,system-ui,sans-serif"}}>
-   <header style={{marginBottom:16}}><h1 style={{fontSize:19,margin:0}}>Elements & Reference Library</h1><p style={{color:"#b5a6c5",fontSize:12}}>Create a reusable collection of characters, objects, locations, outfits, visual styles, and authorized voice references.</p></header>
+ return <section className="studio-compact-elements" style={{color:"#f3edff",background:"#120e1d",minHeight:"100%",maxWidth:1250,margin:"0 auto",padding:"12px 16px",fontFamily:"Inter,system-ui,sans-serif"}}>
+
+   <header style={{marginBottom:10}}><a href={"/dashboard/studio-v2?category="+encodeURIComponent(studioReturnCategory)+"&uiLang=en"} style={{display:"inline-block",color:"#dec8f5",fontSize:12,marginBottom:6}}>← Back to Studio V2</a><h1 style={{fontSize:18,margin:0}}>Elements & Reference Library</h1><p style={{color:"#b5a6c5",fontSize:12}}>Create a reusable collection of characters, objects, locations, outfits, visual styles, and authorized voice references.</p></header>
    <p role="status" aria-live="polite" style={{color:"#d5c2e8",fontSize:12}}>{status}</p>
-   <div style={{display:"grid",gridTemplateColumns:"minmax(205px,1fr) minmax(205px,1.5fr)",gap:14}}>
+   <div className="elements-grid">
     <section style={{border:"1px solid #4b345b",borderRadius:12,padding:12,background:"#20172b",alignSelf:"start"}}>
      <h2 style={{fontSize:14,margin:"0 0 12px"}}>Save a reference</h2>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Reference type
@@ -130,7 +141,7 @@ export default function LocalAssetLibrary() {
       <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Main Character" maxLength={100} style={{display:"block",width:"100%",marginTop:5}} />
      </label>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Description and consistency notes
-      <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Face, freckles, outfit, scene, material, lighting…" rows={4} maxLength={500} style={{display:"block",width:"100%",marginTop:5}} />
+      <textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="Face, freckles, outfit, scene, material, lighting…" rows={3} maxLength={500} style={{display:"block",width:"100%",marginTop:5}} />
      </label>
      <label style={{fontSize:12,display:"block",marginBottom:9}}>Media file (max 25 MB)
       <input id="studio-ref-input" type="file" accept="image/*,video/*,audio/*" onChange={e=>setFile(e.target.files?.[0]||null)} style={{display:"block",maxWidth:"100%",marginTop:5}} />
@@ -155,6 +166,7 @@ export default function LocalAssetLibrary() {
      </div>}
     </section>
    </div>
+   <details className="cloud-details"><summary>Cloud sync & private references (sign-in required)</summary><CloudAssetLibrary /></details>
    <p style={{fontSize:11,color:"#aa99b9",marginTop:16}}>These are real media files stored in IndexedDB on this device, separated by signed-in account. They are not synchronized across devices or connected to AI identity training, motion transfer, or render pipelines yet.</p>
- </main>;
+ </section>;
 }

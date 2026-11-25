@@ -5,6 +5,7 @@ import { blogAdminRequest } from "@/lib/blog-admin-client";
 import { type BlogPost, validateBlogPost } from "@/lib/blog-posts";
 import { BlogPostDates } from "@/components/BlogPostDates";
 import { BlogArticleContent } from "@/components/BlogArticleContent";
+import {editorialSeoDraft} from "@/lib/seo-draft-assist";
 function emptyPost(): BlogPost { return { id: crypto.randomUUID(), slug: "", title: "", excerpt: "", content: "", status: "draft", seoTitle: "", seoDescription: "", keywords: [], coverImage: "", coverAlt: "", author: "Crelavo", publishedAt: null, updatedAt: "" }; }
 export function AdminBlogManager() {
   const [posts, setPosts] = useState<BlogPost[]>([]), [post, setPost] = useState<BlogPost | null>(null);
@@ -57,6 +58,7 @@ export function AdminBlogManager() {
     <p role="status" aria-live="polite">{busy ? "İşlem sürüyor…" : message || (loaded ? posts.length + " kayıtlı yazı" : "Yazılar henüz yüklenmedi.")}</p>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>{posts.map(item => <button className="btn secondary" disabled={busy} key={item.id} onClick={() => select(item)}>{item.title} · {item.status === "published" ? "Yayında" : "Taslak"}</button>)}</div>
     {post && <form onSubmit={event => { event.preventDefault(); void mutate("save"); }} style={{ display: "grid", gap: 14 }}>
+      <button type="button" className="btn secondary" disabled={busy} onClick={()=>{try{const d=editorialSeoDraft(post.title,post.content);change({slug:post.slug||d.slug,seoTitle:post.seoTitle||d.seoTitle,excerpt:post.excerpt||d.excerpt,seoDescription:post.seoDescription||d.seoDescription,keywords:post.keywords.some(Boolean)?post.keywords:[d.keywordCandidate]});setMessage("Boş SEO alanlarına metin tabanlı taslak hazırlandı. Arama hacmi ve görsel içeriği doğrulanmadı; yayınlamadan önce inceleyin.");}catch(e){setMessage(e instanceof Error?e.message:"Taslak hazırlanamadı");}}}>Boş SEO alanlarını hazırla</button><small>Metin tabanlı öneri. Yapay zekâ görsel analizi, arama hacmi ve kapak üretimi henüz bağlı değil.</small>
       <strong>{post.status === "published" ? "Yayındaki yazı" : "Taslak"}{dirty ? " · Kaydedilmemiş değişiklikler" : ""}</strong>
       {([ ["title", "Yazı başlığı", 180], ["slug", "URL (küçük harf ve tire)", 120], ["author", "Yazar", 120], ["coverImage", "Kapak görseli URL (HTTPS veya /images/...)", 2048], ["coverAlt", "Görsel alternatif metni", 250], ["seoTitle", "SEO başlığı (en fazla 70 karakter)", 70] ] as const).map(([key,label,max]) => <label key={key} style={{ display: "grid", gap: 5 }}>{label}<input disabled={busy || (key === "slug" && Boolean(post.publishedAt))} maxLength={max} value={post[key]} onChange={event => change({ [key]: event.target.value })} /></label>)}
       <div style={{ display: "grid", gap: 8 }}>

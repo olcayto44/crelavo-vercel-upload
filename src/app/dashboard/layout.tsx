@@ -16,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <RequireFreeAccount>{children}</RequireFreeAccount>;
+  return <RequireFreeAccount allowStudioPreview={process.env.VERCEL_ENV === "preview"}>{children}</RequireFreeAccount>;
 }

@@ -10,7 +10,7 @@ function assertEqual(actual: unknown, expected: unknown, label: string) {
 }
 
 function assertIncludes(actual: string, expected: string, label: string) {
-  if (!actual.includes(expected)) throw new Error(`${label}: expected ${actual} to include ${expected}`);
+  if (!actual.includes(expected)) throw new Error(`${label}: expected required evidence ${expected}`);
 }
 
 const ecommerceIdea = "E-commerce website Shopify WooCommerce admin";
@@ -184,7 +184,7 @@ for (const term of ["reserved_credits: 0", "finalizedReservedCredits", "completi
 }
 
 const productionsRoute = readFileSync("src/app/api/productions/route.ts", "utf8");
-for (const term of ["status: \"queued\"", "generation_status: \"automation_queued\"", "reserved_credits: estimatedCredits", "type: \"reserve\"", "nextStatusForWorkflow", "nextAutomationStatusForWorkflow", "nextDeliveryLinkForWorkflow"]) {
+for (const term of ["status: \"queued\"", "generation_status: dedicatedProviderBlocked ? \"waiting_provider_config\" : \"automation_queued\"", "reserved_credits: reserveCredits", "const reserveCredits = dedicatedProviderBlocked ? 0 : estimatedCredits", "if (reserveCredits > 0 && available < reserveCredits)", "if (reserveCredits > 0)", "reserved: reserved + reserveCredits", "type: \"reserve\", amount: reserveCredits", "const shouldAutoStartProvider = !dedicatedProviderBlocked", "nextStatusForWorkflow", "nextAutomationStatusForWorkflow", "nextDeliveryLinkForWorkflow"]) {
   assertIncludes(productionsRoute, term, `production reserve creation ${term}`);
 }
 

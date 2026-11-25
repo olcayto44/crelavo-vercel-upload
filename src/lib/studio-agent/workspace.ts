@@ -126,11 +126,13 @@ function showVideoLibrary(items){
  }
  showVideoProject(readyVideos[0]);
 }
-function mediaSummary(){return reference?reference.name+' · yalnız yerel dosya seçimi; yüklenmedi.':'Henüz medya veya varyasyon yok. Sahte çıktı gösterilmez.';}
+const workspaceTurkish=()=>new URLSearchParams(parent.location.search).get('uiLang')==='tr';
+const workspaceCopy=(tr,en)=>workspaceTurkish()?tr:en;
+function mediaSummary(){return reference?reference.name+workspaceCopy(' · yalnız yerel dosya seçimi; yüklenmedi.',' · selected locally; not uploaded.'):workspaceCopy('Henüz medya veya varyasyon yok. Sahte çıktı gösterilmez.','No saved media or variants yet. No simulated output.');}
 function configure(c,p,data,file){project=p;site=data;reference=file;if(category?.id===c.id)return;category=c;active='canvas';const settings=profile(c);q('.studio').dataset.kind=settings.kind;q('.canvas').dataset.kind=settings.kind;const tabs=q('.tabs'),status=q('#view-status');tabs.replaceChildren(...settings.tabs.map(v=>tab(...v)));tabs.querySelector('[data-view="canvas"]').classList.add('active');tabs.append(make('span',undefined,'space'),status);
 const rail=q('.canvas-rail');rail.replaceChildren();const focus=make('button','↖');focus.title='Asistanı odakla';focus.setAttribute('aria-label','Asistanı odakla');focus.onclick=()=>{if(innerWidth<=900)setPanel('assistant');q('#prompt').focus()};rail.append(focus,disabled('T','Metin düzenleme henüz bağlı değil.'),disabled('▧','Katman düzenleme henüz bağlı değil.'),disabled('✎','Görsel düzenleme henüz bağlı değil.'));const attach=make('button','＋');attach.title='Yerel referans dosyası seç';attach.setAttribute('aria-label','Referans dosyası seç');attach.onclick=()=>q('#file').click();rail.append(attach);
 q('#playback').hidden=settings.kind!=='video';q('#canvas-caption').textContent=settings.kind==='video'?'16:9 önizleme · Video çıktısı yok':settings.kind==='character'?'Karakter Canvas · Kimlik ve poz referansları':settings.kind==='image'?'Görsel Canvas · Henüz varyasyon yok':settings.kind==='website'?'Website Preview · Doğrulanmış kaynak, salt okunur':c.panel.title;
-const lower=q('#workspace-lower');const webControls=q('#website-controls');if(webControls.parentNode!==q('.work'))q('.work').insertBefore(webControls,lower);lower.replaceChildren();if(settings.kind==='video'){const grid=make('div',undefined,'lower-grid'),timeline=make('section');const heading=make('h3','Sahneler / Timeline');heading.append(make('span','0 klip'));const ruler=make('div',undefined,'timeline-ruler');ruler.append(make('span','00:00'),make('span','Süre henüz yok'));timeline.append(heading,ruler);for(const name of ['Video','Audio']){const row=make('div',undefined,'timeline-track');row.append(make('span',name),make('div','Henüz '+(name==='Video'?'klip':'ses')+' yok','track-empty'));timeline.append(row)}const library=make('section',undefined,'media-library');const h=make('h3','Varyasyonlar / Medya');h.append(make('span','0 çıktı'));const blank=make('div',mediaSummary(),'media-empty');blank.id='workspace-media-summary';library.append(h,blank);grid.append(timeline,library);lower.append(grid);}
+const lower=q('#workspace-lower');const webControls=q('#website-controls');if(webControls.parentNode!==q('.work'))q('.work').insertBefore(webControls,lower);lower.replaceChildren();if(settings.kind==='video'){const grid=make('div',undefined,'lower-grid'),timeline=make('section');const heading=make('h3',workspaceCopy('Sahneler / Timeline','Scenes / Timeline'));heading.append(make('span',workspaceCopy('0 klip','0 clips')));const ruler=make('div',undefined,'timeline-ruler');ruler.append(make('span','00:00'),make('span',workspaceCopy('Süre henüz yok','Duration unavailable')));timeline.append(heading,ruler);for(const name of ['Video','Audio']){const row=make('div',undefined,'timeline-track');row.append(make('span',name),make('div',workspaceCopy('Henüz '+(name==='Video'?'klip':'ses')+' yok',name==='Video'?'No clips yet':'No audio yet'),'track-empty'));timeline.append(row)}const library=make('section',undefined,'media-library');const h=make('h3',workspaceCopy('Varyasyonlar / Medya','Variants / Media'));h.append(make('span',workspaceCopy('0 çıktı','0 outputs')));const blank=make('div',mediaSummary(),'media-empty');blank.id='workspace-media-summary';library.append(h,blank);grid.append(timeline,library);lower.append(grid);}
 else if(settings.kind==='website'){const heading=make('h3','Sayfalar / Cihaz / Tasarım');heading.append(make('span','Salt okunur'));const workbench=make('div',undefined,'website-workbench');workbench.append(q('#website-controls'));const edits=make('div',undefined,'lower-actions');
  const editor=make('button','Edit content');editor.type='button';editor.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-action',{detail:{action:'edit'}}));
  const history=make('button','Versions & revisions');history.type='button';history.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-action',{detail:{action:'history'}}));
@@ -159,7 +161,23 @@ function showView(view){
   const root=q('#aux-panel');root.replaceChildren();
   const title=make('h2',view==='variants'?'Saved video outputs':view==='timeline'?'Scenes / Timeline':view==='assets'?'Saved media':'Video project details');
   root.append(title);
-  if(!readyVideos.length){root.append(make('p','No completed video available for this account. Video production and editing are not enabled in this view.'));return;}
+  if(!readyVideos.length){
+   root.append(make('p','No completed video is available in this session. This does not mean the saved outputs of an authenticated account are missing.'));
+   const local=make('button','✂ Open local video editor');
+   local.type='button';
+   local.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-video-editor'));
+   root.append(local);
+   if(view==='assets'){
+    const elements=make('button','Open Elements library');
+    elements.type='button';
+    elements.onclick=()=>window.dispatchEvent(new CustomEvent('crelavo-studio-open-elements'));
+    root.append(elements);
+   }
+   const helper=make('p','You can import your own video clips into the local editor. Cloud projects and generated AI variants require sign-in and a completed production.');
+   helper.style.cssText='font-size:12px;color:#bdaecb;line-height:1.5';
+   root.append(helper);
+   return;
+  }
   if(view==='variants'){
    const list=make('div',undefined,'studio-video-browser');
    list.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px';

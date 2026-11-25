@@ -57,7 +57,7 @@ for(const code of ['en','tr','de','es','fr','ar'])assert.match(view,new RegExp('
 assert.match(client,/localStorage\.setItem\('clipora_language'/,'Studio language must persist with site language settings');
 assert.match(client,/language='en'/,'Studio must default to English');
 assert.match(client,/const createControl=\$\('\[data-global="create"\]'\)/,'Website uses original Create toolbar rather than a patched Canvas button');
-assert.match(client,/createControl\.onclick=current\.id==='website'\?openFunctionalWebsiteBuilder:null/,'create must be functional for website only');
+assert.ok(client.includes("createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:()=>"),'Create must open the website builder or a real editable brief instead of remaining a dead button');
 assert.ok(!client.includes("$('.empty-actions').appendChild(button)"),'do not paste extra button over original Canvas');
 const workspace=read('src/lib/studio-agent/workspace.ts');
 const videoRoute=read('src/app/api/studio/video-library/route.ts');
@@ -105,7 +105,8 @@ assert.match(localEditor,/Move clip left/,'clips must allow reordering');
 assert.match(localEditor,/includeAudio/,'editor must support source audio');
 assert.match(localEditor,/URL\.revokeObjectURL/,'local video object URLs must be cleaned up');
 assert.match(workspace,/crelavo-studio-open-video-editor/,'original Canvas toolbar must open video editor');
-assert.match(client,/\/dashboard\/studio-video-editor/,'video editor must stay inside original Canvas');
+assert.match(client,/crelavo-studio-open-tool/,'video editor must securely open a working top-level route instead of a blocked iframe');
+assert.ok(!client.includes("frame.src='/dashboard/studio-video-editor'"),'blocked editor iframe must not be reintroduced');
 assert.match(videoEditorRoute,/LocalVideoEditor/);
 assert.match(elements,/indexedDB\.open/,'asset library must persist locally');
 assert.match(elements,/\.auth\.getUser\(\)/,'assets must be scoped to signed in user');
@@ -170,3 +171,108 @@ assert.match(workspace,/const previewHint=make\('small','Loading preview…'\)/,
 assert.match(workspace,/observer\.observe\(video\)/,'variant previews should lazy load');
 assert.match(workspace,/video\.currentTime=Math\.min\(0\.3,video\.duration\/4\)/,'variant previews should seek to a real image frame');
 console.log('studio-v2-wiring-smoke ok: original layout, authenticated conversation/preview, working Website Builder and credits bound');
+
+const authReturn=read('src/lib/crelavo/redirects.ts');
+const authGate=read('src/components/auth/RequireFreeAccount.tsx');
+assert.match(authReturn,/STUDIO_AUTH_RETURN_PATHS/,'Studio return paths must be explicitly recognized');
+assert.match(authReturn,/if \(safe && STUDIO_AUTH_RETURN_PATHS\.has/,'Studio return should precede default new-user destination');
+assert.match(authGate,/isAssistantWorkspace \|\| isStudioEditor/,'Studio editors must use login modal, not the paid join route');
+
+const dashboardLayout=read('src/app/dashboard/layout.tsx');
+assert.match(dashboardLayout,/process\.env\.VERCEL_ENV === "preview"/,'Anonymous Studio shell must be preview-only');
+assert.match(authGate,/previewStudioShell = allowStudioPreview && \[/,'Unauthenticated preview access must be scoped to explicit Studio routes');
+for(const path of ['/dashboard/studio-v2','/dashboard/studio-elements','/dashboard/studio-video-editor','/dashboard/studio-image-editor']) assert.ok(authGate.includes('"'+path+'"'),'missing safe preview route '+path);
+assert.match(authGate,/if \(previewStudioShell\) return <>{children}<\/>/,'Preview Studio shell must render without auth redirect');
+
+assert.match(studio,/previewOnly: process\.env\.VERCEL_ENV === "preview"/,'Local editor open flag must only be set on previews');
+assert.match(client,/!session&&!window\.__studioB2\?\.previewOnly/,'Local editors must not bypass production auth');
+assert.match(workspace,/Open local video editor/,'Video empty state must link working editor');
+
+const conversationFrame=read('src/components/StudioConversationFrame.tsx');
+assert.match(conversationFrame,/event\.origin!==window\.location\.origin/,'embedded Studio messages must check origin');
+assert.match(conversationFrame,/event\.source!==frame\.current\?\.contentWindow/,'embedded Studio messages must check source');
+assert.match(conversationFrame,/crelavo-studio-open-tool/,'working local tool links must reach the parent');
+assert.match(conversationFrame,/crelavo-studio-request-login/,'chat must offer explicit optional login');
+assert.match(client,/previewDraftEnabled\(\)/,'anonymous preview must have a local draft mode');
+assert.match(client,/\$\('#prompt'\)\.disabled=busy\|\|\(!session&&!previewDraftEnabled\(\)\)/,'preview textarea must remain editable');
+assert.match(client,/previewDraftMessages=\[/,'preview draft must save messages');
+assert.match(client,/sessionStorage\.setItem\(previewDraftKey\(\)/,'preview draft must persist by category in browser tab');
+
+const renderRoute=read('src/app/api/studio/render-jobs/route.ts');
+const jobMigration=read('supabase/migrations/20261124001500_studio_render_jobs.sql');
+assert.match(renderRoute,/bearerTokenFromRequest\(request\)/,'render jobs must require an authenticated token');
+assert.match(renderRoute,/STUDIO_MP4_RENDER_ENABLED !== "1"/,'no actual worker means paid MP4 jobs must stay disabled');
+assert.match(renderRoute,/creditsReserved: false/,'scaffolding cannot bill customers');
+assert.match(renderRoute,/\.eq\("user_id", user\.id\)/,'render status must scope to owner');
+assert.match(renderRoute,/createSignedUrl/,'render completed files must use time-limited private URLs');
+assert.match(jobMigration,/enable row level security/,'persistent MP4 jobs must have RLS');
+assert.match(jobMigration,/unique \(user_id, request_id\)/,'render jobs must be idempotent');
+assert.match(jobMigration,/for select to authenticated/,'no browser write access to jobs');
+assert.match(localEditor,/studio-compact-video-editor/,'the local video editor must retain compact responsive layout');
+assert.match(localEditor,/Back to Studio V2/,'top level clip editor must navigate back to Studio');
+assert.match(localEditor,/preview-local/,'preview must allow local clips without opening real account cloud');
+assert.match(elements,/studio-compact-elements/,'Elements library must have compact responsive layout');
+
+const {execFileSync}=require('node:child_process');
+for(const file of ['scripts/studio-ffmpeg-compose.mjs','scripts/studio-mp4-worker.mjs'])
+  execFileSync(process.execPath,['--check',file],{stdio:'pipe'});
+const compose=read('scripts/studio-ffmpeg-compose.mjs');
+const worker=read('scripts/studio-mp4-worker.mjs');
+assert.match(compose,/libx264/,'MP4 must be encoded with H264');
+assert.match(compose,/aac/,'MP4 must include normalized AAC');
+assert.match(compose,/validateTimeline/,'MP4 jobs must validate source paths and trim values');
+assert.match(worker,/CLIP_REFERENCE_NOT_OWNED/,'worker must revalidate clip ownership');
+assert.match(worker,/eq\("worker_id",workerId\)/,'worker must use exclusive lease checks');
+assert.match(worker,/processJob/,'worker must process queued render jobs');
+
+const sharedToolsCss=read('src/app/dashboard/studio-tools.css');
+const imageEditor=read('src/components/studio/LocalImageEditor.tsx');
+const toolPages=['src/app/dashboard/studio-video-editor/page.tsx','src/app/dashboard/studio-image-editor/page.tsx','src/app/dashboard/studio-elements/page.tsx'];
+for(const path of toolPages){
+ const file=read(path);
+ if(path.includes('/studio-video-editor/')){
+  assert.ok(file.includes('import "./video-workspace.css"'),'video route must use its isolated workstation styles');
+  assert.ok(!file.includes('import "../studio-tools.css"'),'video route must not import legacy shared layout');
+  const videoCss=read('src/app/dashboard/studio-video-editor/video-workspace.css');
+  assert.ok(videoCss.includes('.studio-compact-video-editor .studio-track-grid'),'video styles must include track layout');
+  assert.ok(videoCss.includes('.studio-timeline-resizer'),'timeline resize control must be styled');
+  assert.ok(videoCss.includes('@media(max-width:600px)'),'video workspace must adapt to narrow screens');
+ }else{
+  assert.ok(file.includes('import "../studio-tools.css"'),'image and elements routes retain shared visual system');
+ }
+ assert.ok(file.includes('className="studio-tool-page"'),'standalone editors require a consistent full-page background');
+}
+for(const [name,source] of [['video editor',localEditor],['image editor',imageEditor],['Elements library',elements]]){
+ assert.ok(!source.includes('>\\\\n  <style>')&&!source.includes('>\\\\n    <style>'),'visible literal backslash-n must never appear before styles: '+name);
+ assert.ok(!source.includes('<style>{`'),'patchwork inline CSS must not be embedded per editor: '+name);
+}
+assert.ok(sharedToolsCss.includes('input[type=checkbox]'),'reference consent checkbox must use predictable compact size');
+assert.ok(sharedToolsCss.includes('@media(max-width:800px)'),'all tool layouts must fit narrow screens');
+assert.ok(elements.includes('className="cloud-details"'),'cloud controls must collapse instead of overwhelming local reference library');
+
+const assistantShell=read('src/lib/studio-agent/studio-view.ts');
+assert.ok(assistantShell.includes('.assistant #messages{display:flex;flex-direction:column'),'chat message layout must remain independently scrollable');
+assert.ok(assistantShell.includes('overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain'),'chat scroller must not disappear behind fixed header');
+assert.ok(client.includes("for(const bubble of bubbles)messages.appendChild(bubble)"),'actual messages must appear after plan cards');
+assert.ok(client.includes("requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight})"),'latest chat message must be scrolled into view after layout');
+assert.ok(client.includes('createControl.disabled=false'),'Create must launch actual brief workflow');
+assert.ok(client.includes("for(const name of ['edit','export'])"),'Edit and Export must have functional local navigation');
+assert.ok(client.includes("$('#b2-defaults').disabled=busy||(!session&&!previewDraftEnabled())"),'preview defaults button must accept brief text');
+assert.ok(imageEditor.includes('className="image-transform-buttons"'),'image transform three-button row must be aligned');
+assert.ok(sharedToolsCss.includes('.image-transform-buttons button'),'image transform row must have fixed-size action controls');
+
+const developerChatRoute=read('src/app/api/studio/developer-chat/route.ts');
+assert.match(developerChatRoute,/VERCEL_ENV !== "preview"/,'anonymous expert API must be preview-only');
+assert.match(developerChatRoute,/same_origin_required/,'preview API must reject cross-origin browser calls');
+assert.match(developerChatRoute,/OPENAI_API_KEY/,'expert preview must actually call an AI provider');
+assert.match(developerChatRoute,/limit: 8/,'anonymous preview must have strict rate limits');
+assert.match(developerChatRoute,/spend:false/,'preview API must never spend Crelavo credits');
+assert.match(client,/fetch\('\/api\/studio\/developer-chat'/,'preview composer must call the real developer assistant endpoint');
+assert.match(client,/role:'assistant',content:data.reply/,'assistant replies must appear in the chat history');
+
+const previewAssistant=read('src/app/api/studio/developer-chat/route.ts');
+assert.ok(client.includes("const panel=node('details',undefined,'studio-video-plan')"),'video plan must not overwhelm the chat transcript');
+assert.ok(client.includes("localEditor.onclick=()=>openStudioTool('video')"),'AI Video plan must link to an actual local editor');
+assert.ok(previewAssistant.includes("Do not end at a generic refusal"),'developer assistant must lead to actionable next steps');
+
+assert.match(authGate,/isStudioConversationPath\(pathname\)/);assert.match(authReturn,/if \(safe && isStudioConversationPath/);assert.match(footer,/pathname\?\.startsWith\("\/dashboard\/studio\/"\)/);assert.match(mobileNav,/"\/dashboard\/studio"/);assert.match(view,/url\.pathname='\/dashboard\/studio\/'/);console.log("clean Studio path wiring smoke ok");

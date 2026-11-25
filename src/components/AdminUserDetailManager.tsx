@@ -24,6 +24,10 @@ type UserDetail = {
   bonus_credits: number;
   credit_value_usd: number;
   purchased_credits: number;
+  subscription_status?:string|null;
+  subscription_package?:string|null;
+  subscription_billing?:string|null;
+  subscription_cycle_end?:string|null;
   spent_credits: number;
   purchased_packages: string[];
   balance_updated_at?: string | null;
@@ -32,7 +36,7 @@ type UserDetail = {
 type IpHistory = { id?: string; ip?: string | null; user_agent?: string | null; seen_at?: string | null };
 type PaymentFulfillment = { id?: string; plan_id?: string | null; product_title?: string | null; amount_usd?: number | null; credits?: number | null; status?: string | null; created_at?: string | null };
 type CreditEvent = { id?: string; type: string; amount: number; note?: string | null; created_at?: string | null };
-type ProductionItem = { id: string; title?: string | null; prompt?: string | null; production_type?: string | null; status?: string | null; automation_status?: string | null; package_id?: string | null; estimated_credits?: number | null; reserved_credits?: number | null; final_video_url?: string | null; created_at?: string | null; updated_at?: string | null };
+type ProductionItem = { id: string; title?: string | null; prompt?: string | null; production_type?: string | null; status?: string | null; automation_status?: string | null; package_id?: string | null; estimated_credits?: number | null; reserved_credits?: number | null; final_video_url?: string | null; delivery_link?:string|null; created_at?: string | null; updated_at?: string | null };
 type MessageItem = { id?: string; email?: string | null; source?: string | null; offer?: string | null; status?: string | null; page_url?: string | null; metadata?: any; created_at?: string | null };
 type OutgoingEmail = { id?: string; recipient_email?: string | null; subject?: string | null; body?: string | null; status?: string | null; created_at?: string | null };
 
@@ -157,7 +161,8 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
           <div><span>E-posta</span><strong>{user.email}</strong><small>{user.email_confirmed ? "Onaylı" : "Onay bekliyor"}</small></div>
           <div><span>Ülke / şehir</span><strong>{user.country}</strong><small>{user.city}</small></div>
           <div><span>Kayıt tarihi</span><strong>{formatDate(user.created_at)}</strong><small>Son giriş: {formatDate(user.last_sign_in_at)}</small></div>
-          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Yüklenen kredi: {user.purchased_credits.toLocaleString()}</small></div>
+          <div><span>Abonelik (cüzdan kaydı)</span><strong>{user.subscription_package??"Doğrulanmadı"}</strong><small>{user.subscription_status??"—"} · {user.subscription_billing??"—"} · Dönem bitişi: {formatDate(user.subscription_cycle_end)}</small><small>Kesintisiz ücretli abonelik süresi: Whop geçmişi gerekli.</small></div>
+          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Son en fazla 80 kredi olayı içindeki satın alma: {user.purchased_credits.toLocaleString()}</small></div>
           <div><span>Kullanılan kredi</span><strong>{user.spent_credits.toLocaleString()}</strong><small>Üretim harcaması</small></div>
           <div><span>Kalan kredi</span><strong>{user.available.toLocaleString()}</strong><small>Toplam {user.credits.toLocaleString()} · Reserved {user.reserved.toLocaleString()}</small></div>
           <div><span>Hesap durumu</span><strong>{user.banned_until ? "Askıda" : "Aktif"}</strong><small>{user.banned_until ? `Şu tarihe kadar: ${formatDate(user.banned_until)}` : "Aktif engel yok"}</small></div>
@@ -195,7 +200,7 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
         <span className="badge">Üretim geçmişi</span>
         <h2>Kredileri hangi üretimde kullanmış</h2>
         <div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Tip/paket</th><th>Durum</th><th>Kredi</th><th>İstek konusu</th><th>Çıktı</th></tr></thead><tbody>
-          {allProductions.map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td><strong>{item.title ?? "Untitled"}</strong><br /><small>{item.id}</small></td><td>{item.production_type ?? "video"}<br /><small>{item.package_id ?? "-"}</small></td><td>{item.status ?? "-"}<br /><small>{item.automation_status ?? ""}</small></td><td>{Number(item.reserved_credits ?? item.estimated_credits ?? 0).toLocaleString()}</td><td>{item.prompt ?? "-"}</td><td>{item.final_video_url ? <a href={item.final_video_url} target="_blank">Aç</a> : "-"}</td></tr>)}
+          {allProductions.map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td><strong>{item.title ?? "Untitled"}</strong><br /><small>{item.id}</small></td><td>{item.production_type ?? "video"}<br /><small>{item.package_id ?? "-"}</small></td><td>{item.status ?? "-"}<br /><small>{item.automation_status ?? ""}</small></td><td>{Number(item.reserved_credits ?? item.estimated_credits ?? 0).toLocaleString()}</td><td>{item.prompt ?? "-"}</td><td>{item.final_video_url||item.delivery_link ? <a href={item.final_video_url||item.delivery_link||"#"} target="_blank" rel="noopener noreferrer">Aç</a> : "-"}</td></tr>)}
         </tbody></table></div>
         {!allProductions.length ? <p className="form-message">Bu üyeye ait üretim kaydı bulunamadı.</p> : null}
       </section>

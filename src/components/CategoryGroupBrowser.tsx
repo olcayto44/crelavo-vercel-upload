@@ -1,11 +1,10 @@
 "use client";
-
-
-import { AppWindow, AudioWaveform, Bot, Clapperboard, FileText, Globe2, Image, LayoutDashboard, Megaphone, MonitorSmartphone, Music2, Palette, Pencil, Radio, ScrollText, Scissors, Sparkles, UsersRound, UserRound, Video, Wand2 } from "lucide-react";
-import { HardReloadLink } from "@/components/HardReloadLink";
-
-import { productionPackages, productionTypes, type ProductionPackage } from "@/lib/production";
-
+import {AppWindow,AudioWaveform,Bot,Clapperboard,FileText,Globe2,Image,LayoutDashboard,Megaphone,MonitorSmartphone,Music2,Palette,Pencil,Radio,ScrollText,Scissors,Sparkles,UsersRound,UserRound,Video,Wand2,Search,ArrowUpRight,ArrowRight} from "lucide-react";
+import {useState} from "react";
+import {CATEGORIES} from "@/lib/crelavo/categoryCatalog";
+import {categoryPublicPaths} from "@/lib/category-public-routes";
+import {categoryDiscoveryCopy} from "@/lib/category-discovery-copy";
+import styles from "./CategoryGroupBrowser.module.css";
 const icons = {
   campaign: Megaphone,
   ai_agent: Bot,
@@ -46,45 +45,6 @@ const icons = {
   admin_project: LayoutDashboard
 };
 
-const categoryOptions: Record<string, string[]> = {
-  campaign: ["Shopify product link", "Amazon product link", "Trendyol product link", "Product link ad", "Store/social publish"],
-  ai_agent: ["AI influencer", "Daily social manager", "Trend monitor", "Voice/personality", "Approval flow"],
-  localization: ["Language adaptation", "Cultural rewrite", "Voice direction", "Subtitle notes", "Country variants"],
-  ad_score_checker: ["Basic ad score", "Detailed score report", "3 improved ad angles", "Hook rewrite", "Video-ready brief"],
-  virtual_model_studio: ["1 virtual model visual", "4 image pack", "Catalog visuals", "Fashion model", "Jewelry / beauty visual"],
-  cultural_localization: ["Country brief", "Localized hooks", "Localized script", "CTA adaptation", "Video brief"],
-  campaign_calendar: ["Seasonal brief", "Product launch checklist", "Hook calendar", "Script pack", "Asset plan"],
-  crelavo_academy: ["Free lesson path", "Premium templates", "Done-with-you brief", "UGC lesson", "Product video workflow"],
-  community_showcase: ["Use similar style", "Template reuse", "AI ad example", "UGC example", "Product video proof"],
-  video: ["Prompt-to-video", "Link-to-video", "Voice-to-video", "Photo/avatar input", "Choose character", "Create character", "Own voice-over", "Choose AI voice", "Create AI voice", "Background music", "Emotion-matched music", "Drone-style aerial video"],
-  talking_video: ["Self-in-video", "Photo/avatar input", "Choose character", "Create character", "2/3/4/5+ people", "7-8 person panel", "Own voice-over", "Choose AI voice", "Create AI voice", "Separate voices", "Regional clothing", "Dialect voice"],
-  documentary: ["Topic research", "Narration outline", "Interview map", "Archival visuals", "Documentary music", "Own voice-over", "Choose AI voice"],
-  animation: ["2D animation", "2.5D animation", "3D animation", "Character animation", "Photo/avatar input", "Choose character", "Create character", "Animation music", "Own voice-over", "Choose AI voice", "Child voices"],
-  anime_short_film: ["Anime style", "Character setup", "Photo/avatar input", "Choose character", "Create character", "Dialogue", "Action scene", "Anime music", "Own voice-over", "Choose AI voice", "Child voices", "User materials"],
-  animal_video: ["Funny animal", "Exciting animal", "Cinematic", "Animated", "3D style", "Own voice-over", "User music"],
-  nature_video: ["Wildlife", "Landscape", "Weather", "Documentary", "Cinematic music", "Narration", "User materials"],
-  planet_space_video: ["Planet explainer", "Galaxy scene", "3D space", "Cosmic music", "Narration", "Subtitles", "User materials"],
-  drone_video: ["Map/location prompt", "Satellite-view intro", "Marked area notes", "Drone flyover", "Route/path plan", "Voice-over", "Subtitles", "Background music"],
-  live_sales_agent: ["10/40/120 fair-use live hours", "Product link selling", "Live chat replies", "Avatar persona", "30 languages", "CTA/discount playbook", "OBS/provider readiness", "No included credits"],
-  studio: ["Script", "Scene plan", "Character breakdown", "Trailer", "Teaser", "Direct final video", "Series bible", "Shot list"],
-  drama: ["One-prompt drama", "Short series", "Viral short film", "Episode arc", "Character roles", "Dialogue", "Voice-over", "Reels/TikTok cuts"],
-  cinematic_video: ["Luxury video", "Trailer look", "Drama scene", "Cinematic camera", "Music/voice", "Premium output"],
-  video_clipping: ["Long video to Shorts", "Exciting moments", "Scary moments", "Funny scenes", "Hook extraction", "Subtitles"],
-  avatar: ["Avatar design", "Custom avatar", "Brand persona", "Talking avatar", "Avatar video", "Social avatar"],
-  lip_sync: ["Audio to lip-sync", "Avatar speaking", "Dialogue sync", "Face video", "Multilingual dub", "Final MP4"],
-  voice_clone: ["Voice reference", "Clean vocal", "Clone-style narration", "Multilingual voice", "Brand voice", "Usage rules"],
-  visual_clone: ["Reference style", "Character look", "Product look", "Visual clone", "Style transfer", "New variations"],
-  video_tools: ["Video extend", "Motion control", "Watermark-free final", "Crelavo preview watermark", "Owned-content cleanup", "Image-to-video", "Link-to-video", "Script-to-video"],
-  stickman_animation: ["Explainer", "Comedy skit", "Education", "Storyboard", "Social short", "Choose character", "Create character", "Own voice-over", "Choose AI voice"],
-  music_video: ["Lyric video", "Visualizer", "Performance clip", "Teaser", "Social MV", "Photo/avatar input", "Choose character", "Create character", "Own voice-over", "Choose AI voice", "Create AI voice"],
-  website: ["Landing page", "Business site", "E-commerce storefront", "Admin screens", "Source ZIP + README"],
-  saas: ["Dashboard", "Auth", "Billing", "Admin", "Source ZIP + README"],
-  mobile_app: ["iOS/Android UI", "Expo starter", "Navigation", "Core screens", "Admin pair"],
-  image: ["Hero image", "Product mockup", "Social visual", "App screen", "Asset pack"],
-  brand_kit: ["Logo", "Palette", "Typography", "Social kit", "Usage rules"],
-  document_pack: ["Pitch deck", "Proposal", "Catalog", "PDF", "ZIP package"],
-  admin_project: ["CRUD", "Roles", "Database", "Dashboard", "Setup guide"]
-};
 
 const categoryGroups = [
   {
@@ -109,13 +69,13 @@ const categoryGroups = [
     id: "avatars-voice",
     title: "Avatars & Voice",
     description: "Create avatars, lip-sync productions, cloned voices and reference-based visual variations.",
-    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone"]
+    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone", "virtual_model_studio"]
   },
   {
     id: "brand-files",
     title: "Brand & Files",
     description: "Create images, brand kits, pitch decks, PDFs and reusable source packages.",
-    typeIds: ["image", "brand_kit", "document_pack"]
+    typeIds: ["image", "brand_kit", "document_pack", "crelavo_academy", "community_showcase"]
   },
   {
     id: "special-video",
@@ -125,82 +85,19 @@ const categoryGroups = [
   }
 ];
 
-function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[]) {
-  const type = productionTypes.find((item) => item.id === typeId);
-  if (!type) return null;
 
-  const Icon = icons[type.id];
-  const configuredPackages = packageCatalog.filter((item) => item.productionType === type.id);
-  const fallbackPackages = productionPackages.filter((item) => item.productionType === type.id);
-  const packages = configuredPackages.length ? configuredPackages : fallbackPackages;
-
-  return (
-      <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`} aria-label={`Start ${type.label} production from category visual`}>
-          <div className="category-visual-orb category-visual-orb-one" aria-hidden="true" />
-          <div className="category-visual-orb category-visual-orb-two" aria-hidden="true" />
-          <div className="category-visual-panel category-visual-panel-main">
-            <Icon size={34} color="currentColor" />
-            <strong>{type.label}</strong>
-            <small>{type.startingCredits > 0 ? `${type.startingCredits.toLocaleString()}+ credits` : "Service path"}</small>
-          </div>
-          <div className="category-visual-strip" aria-hidden="true">
-            {(categoryOptions[type.id] ?? []).slice(0, 3).map((option) => <span key={`${type.id}-visual-${option}`}>{option}</span>)}
-          </div>
-        </HardReloadLink>
-        <Icon color="currentColor" />
-      <span className="badge">{type.startingCredits > 0 ? `From ${type.startingCredits.toLocaleString()} credits` : "Service plan pricing"}</span>
-      <h3>{type.label}</h3>
-      <p>{type.description}</p>
-      <div className="category-option-row">
-        {(categoryOptions[type.id] ?? []).map((option) => <small key={option}>{option}</small>)}
-      </div>
-      <div className="production-package-list">
-        {packages.map((item) => (
-          <div key={item.id}>
-            <strong>{item.name}</strong>
-                    <span>{item.credits > 0 ? `${item.credits.toLocaleString()} credits` : "No included credits"}</span>
-          </div>
-        ))}
-      </div>
-      <div className="clc-btn-row">
-        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
-        {type.id === "ad_score_checker" ? <HardReloadLink className="btn secondary" href="/free-tools/ad-performance-score-checker">Free score tool</HardReloadLink> : null}
-        {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/create?type=${encodeURIComponent(type.label)}&category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
-      </div>
-    </div>
-  );
-}
-
-export function CategoryGroupBrowser() {
-  return (
-    <section className="category-browser">
-      <div className="category-group-head main-category-head">
-        <span className="badge">Main categories</span>
-        <h2>All Crelavo production categories</h2>
-        <p>Jump to a group. Every production type is listed below — nothing is hidden behind tabs.</p>
-      </div>
-      <div className="category-tab-grid">
-        {categoryGroups.map((group) => (
-          <HardReloadLink className={`category-tab-card category-tone-${group.id}`} href={`#clc-${group.id}`} key={group.id}>
-            <span>{group.typeIds.length} categories</span>
-            <strong>{group.title}</strong>
-            <small>{group.description}</small>
-          </HardReloadLink>
-        ))}
-      </div>
-      {categoryGroups.map((group) => (
-        <section className="category-group-section" id={`clc-${group.id}`} key={group.id}>
-          <div className="category-group-head">
-            <span className="badge">Production group</span>
-            <h2>{group.title}</h2>
-            <p>{group.description}</p>
-          </div>
-          <div className="production-pricing-grid compact-category-grid">
-            {group.typeIds.map((typeId) => renderCategoryCard(typeId, productionPackages))}
-          </div>
-        </section>
-      ))}
-    </section>
-  );
+export function CategoryGroupBrowser(){
+ const [query,setQuery]=useState("");const [group,setGroup]=useState("all");
+ const matches=(id:string)=>{const c=CATEGORIES.find(c=>c.id===id);const copy=categoryDiscoveryCopy[id];return !!c&&!!copy&&[copy[0],copy[1],c.label,...c.features.map(f=>f.label)].join(" ").toLowerCase().includes(query.trim().toLowerCase());};
+ const visible=categoryGroups.filter(g=>group==="all"||g.id===group).map(g=>({...g,typeIds:g.typeIds.filter(matches)})).filter(g=>g.typeIds.length);
+ const count=visible.reduce((n,g)=>n+g.typeIds.length,0);
+ return <div className={styles.browser} id="category-catalog-v4">
+  <div className={styles.controls}><label className={styles.search}><Search size={20} aria-hidden="true"/><input type="search" aria-label="Search production categories" placeholder="Search video, website, avatar, branding…" value={query} onChange={e=>setQuery(e.target.value)} maxLength={100}/></label><div className={styles.filters} role="group" aria-label="Filter categories"><button type="button" aria-pressed={group==="all"} onClick={()=>setGroup("all")}>All <span>37</span></button>{categoryGroups.map(g=><button type="button" key={g.id} aria-pressed={group===g.id} onClick={()=>setGroup(g.id)}>{g.title} <span>{g.typeIds.length}</span></button>)}</div></div>
+  <div className={styles.count} aria-live="polite">{count} of 37 categories{query&&" matching your search"}<span>Explore details without an account</span></div>
+  {!count&&<div className={styles.empty}><h2>No categories found</h2><p>Try a different keyword or clear the filter.</p><button type="button" onClick={()=>{setQuery("");setGroup("all")}}>Clear filters</button></div>}
+  {visible.map((g,i)=><section key={g.id} className={styles.group} id={"clc-"+g.id} aria-labelledby={"catalog-heading-"+g.id}><header className={styles.groupHead}><div><span className={styles.groupIndex}>{String(categoryGroups.findIndex(x=>x.id===g.id)+1).padStart(2,"0")} / {g.typeIds.length} categories</span><h2 id={"catalog-heading-"+g.id}>{g.title}</h2><p>{g.description}</p></div></header><div className={styles.grid}>{g.typeIds.map(id=>{
+    const c=CATEGORIES.find(c=>c.id===id)!;const copy=categoryDiscoveryCopy[id];const Icon=icons[id as keyof typeof icons]||Sparkles;
+    return <a key={id} data-category={id} href={categoryPublicPaths[id]} className={styles.card} aria-label={"Explore "+copy[0]}><div className={styles.cardTop}><span className={styles.icon} data-group={g.id}><Icon size={25} strokeWidth={1.65} aria-hidden="true"/></span><ArrowUpRight size={17} className={styles.arrow} aria-hidden="true"/></div><h3>{copy[0]}</h3><p>{copy[1]}</p><div className={styles.tags}>{c.features.slice(0,2).map(x=><span key={x.id}>{x.label}</span>)}</div><div className={styles.cardBottom}><span>Explore details</span><ArrowRight size={16} aria-hidden="true"/></div></a>
+  })}</div></section>)}
+ </div>
 }

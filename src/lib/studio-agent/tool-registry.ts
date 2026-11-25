@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CategoryIdSchema, getCategoryContract } from "./requirements";
+import { getProductionCapability } from "./capability-registry";
 import { assertCreditAccount, creditPolicy, type BillingOperation } from "./billing-policy";
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
@@ -112,7 +113,7 @@ export function validateToolAction(rawAction: unknown, trustedServerContext: unk
 export function executeB1Tool(rawAction: unknown, trustedServerContext: unknown) {
   const { action, context, contract } = validateToolAction(rawAction, trustedServerContext);
   if (action.tool === "get_category_capabilities") return {
-    category: getCategoryContract(context.categoryId), tools: listToolContracts(context.categoryId),
+    category: getCategoryContract(context.categoryId), tools: listToolContracts(context.categoryId), capability: getProductionCapability(context.categoryId), executionReady: false as const,
   };
   // No fallback, injected executor, network call, provider invocation, or balance mutation exists here.
   throw new Error(contract.availability === "planned" ? "tool_not_supported_yet" : "tool_adapter_not_connected");

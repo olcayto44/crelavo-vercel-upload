@@ -124,7 +124,7 @@ export default function MyProductionsPage() {
           <a href="/dashboard/credits">Credits</a>
           <a href="/dashboard/billing">Billing</a>
           <a href="/dashboard/productions" className="is-active" aria-current="page">Productions</a>
-          <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
+          <a href="/dashboard/studio-v2?category=video">Assistant</a>
           <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
           <a href="/dashboard/partners">Partners</a>
           <a href="/pricing">Pricing</a>
@@ -142,7 +142,7 @@ export default function MyProductionsPage() {
           <article className="cdx-card">
             <h2>Start production</h2>
             <p>Open the filled AI Video assistant. Type and category stay selected.</p>
-            <a className="cdx-btn" href="/dashboard/create?type=AI%20Video&category=video">Start production</a>
+            <a className="cdx-btn" href="/dashboard/studio-v2?category=video">Start production</a>
           </article>
 
           <article className="cdx-card">
@@ -154,7 +154,7 @@ export default function MyProductionsPage() {
           <article className="cdx-card">
             <h2>Studio</h2>
             <p>Credits, billing and partners stay on the main dashboard.</p>
-            <a className="cdx-btn-ghost" href="/dashboard">Open dashboard</a>
+            <a className="cdx-btn-ghost" href="/dashboard/studio-v2">Open Studio</a>
           </article>
 
           <article className="cdx-card">

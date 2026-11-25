@@ -1,4 +1,4 @@
-import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue, verifyAdminSessionToken } from "@/lib/admin-session";
+import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export function getAdminApiToken(request: Request, body?: Record<string, unknown>) {
@@ -26,7 +26,9 @@ export function getAdminEmail(request: Request, body?: Record<string, unknown>) 
 
 export function isAdminRequest(request: Request, body?: Record<string, unknown>) {
   const sessionToken = getCookieValue(request.headers.get("cookie"), ADMIN_SESSION_COOKIE);
-  if (verifyAdminSessionToken(sessionToken)) return true;
+  const session=getAdminSessionPayload(sessionToken);
+  const owner=String(process.env.ADMIN_EMAIL??"").trim().toLowerCase();
+  if(owner&&session?.email===owner)return true;
 
   const expectedAdminEmail = String(process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
   const expectedAdminToken = String(process.env.ADMIN_API_TOKEN ?? "").trim();
@@ -35,7 +37,7 @@ export function isAdminRequest(request: Request, body?: Record<string, unknown>)
 
   if (!expectedAdminEmail || adminEmail !== expectedAdminEmail) return false;
 
-  if (!expectedAdminToken) return true;
+  if (!expectedAdminToken) return false;
 
   return adminToken === expectedAdminToken;
 }
@@ -58,11 +60,12 @@ export async function getAdminRequestContext(request: Request, body?: Record<str
   const requestToken = getAdminApiToken(request, body);
   const email = sessionPayload?.email ?? requestEmail;
 
-  if (expectedAdminEmail && email === expectedAdminEmail && (!expectedAdminToken || requestToken === expectedAdminToken || Boolean(sessionPayload))) {
+  if (expectedAdminEmail && email === expectedAdminEmail && (Boolean(sessionPayload) || Boolean(expectedAdminToken && requestToken === expectedAdminToken))) {
     return { ok: true as const, email, source: sessionPayload ? "env-session" : "env-token", permissions: adminPermissions };
   }
 
-  if (!email || !email.includes("@")) return { ok: false as const };
+  // An email header/body is not authentication. Delegated access requires a signed session.
+  if (!sessionPayload || !email || !email.includes("@")) return { ok: false as const };
 
   try {
     const { data: usersData, error: usersError } = await supabaseAdmin().auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -78,7 +81,7 @@ export async function getAdminRequestContext(request: Request, body?: Record<str
     if (profileError) throw profileError;
     if (String(profile?.role ?? "").toLowerCase() !== "admin") return { ok: false as const };
 
-    const permissions = normalizePermissions(user.user_metadata?.admin_permissions);
+    const permissions = normalizePermissions(user.app_metadata?.admin_permissions);
     return { ok: true as const, email: user.email.toLowerCase(), source: sessionPayload ? "supabase-session" : "supabase-token", permissions };
   } catch {
     return { ok: false as const };

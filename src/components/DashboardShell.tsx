@@ -10,7 +10,7 @@ const navGroups = [
     items: [
       ["Work Home", "/dashboard/assistant-workspace"],
       ["Overview Dashboard", "/dashboard"],
-      ["Start Live Production", "/dashboard/create"],
+      ["Start Live Production", "/dashboard/studio-v2"],
       ["Growth Intelligence", "/dashboard/growth-intelligence"],
       ["Live Sales Control", "/dashboard/live-sales-agent"],
       ["Drone Shoot Panel", "/dashboard/drone-shoot"],

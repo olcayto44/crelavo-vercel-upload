@@ -1,3 +1,6 @@
+import {localizedCategoryArt,localizedWebsiteConcepts} from "@/lib/category-localized-art";
+import { studioSurfaces } from "@/lib/studio-surfaces";
+import {publicVideoMetadata} from "@/lib/video-public-metadata";
 import { getPublishedBlogPosts } from "@/lib/blog-posts-loader";
 export const dynamic = "force-dynamic";
 import type { MetadataRoute } from "next";
@@ -11,6 +14,10 @@ import { localizedEuropePages } from "@/lib/localized-europe-pages";
 import { getConfiguredServicePages } from "@/lib/service-pages-loader";
 import { getConfiguredShowcaseVideos } from "@/lib/showcase-video-config";
 
+import {categoryPublicPaths} from "@/lib/category-public-routes";
+import {globalCategoryProfiles,globalCategoryLocales,globalCategoryPath,categoryLanguagePaths} from "@/lib/category-global-content";
+import {turkishCategoryProfiles,turkishCategoryPath} from "@/lib/category-tr-content";
+import {publicOrigin} from "@/lib/category-detail-meta";
 const privateRoutePrefixes = ["/admin", "/api", "/auth", "/dashboard", "/wp-admin"];
 
 function canonicalSiteUrl() {
@@ -19,6 +26,7 @@ function canonicalSiteUrl() {
 }
 
 const publicRoutes = [
+  ...studioSurfaces.map(surface => ({ path: surface.path, priority: 0.85, changeFrequency: "monthly" as const })),
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFrequency: "weekly" as const },
   { path: "/alternatives", priority: 0.88, changeFrequency: "weekly" as const },
@@ -49,7 +57,7 @@ const publicRoutes = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = canonicalSiteUrl();
+  const baseUrl = publicOrigin;
   const now = new Date();
 
   if (publicRoutes.some((route) => privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)))) {
@@ -63,6 +71,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const configuredServicePages = await getConfiguredServicePages();
+  // Apply editorial visibility to all route sources, not just serviceRoutes.
+  const excludedServicePaths = new Set(configuredServicePages
+    .filter(page => (page.status ?? "published") !== "published" || page.includeInSitemap === false)
+    .map(page => `/${page.slug}`));
   const serviceRoutes = configuredServicePages
     .filter((page) => (page.status ?? "published") === "published" && page.includeInSitemap !== false)
     .map((page) => ({
@@ -102,6 +114,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const configuredShowcaseVideos = await getConfiguredShowcaseVideos();
+  const videoEntries=new Map(configuredShowcaseVideos.filter(v=>v.publishStatus==="published").map(v=>["/showcase/videos/"+v.id,publicVideoMetadata(v,baseUrl)]));
   const showcaseVideoRoutes = configuredShowcaseVideos
     .filter((video) => video.publishStatus === "published")
     .map((video) => ({
@@ -114,14 +127,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const productionRoutes = productionSeoPages.map(page => ({ path: productionPagePath(page), priority: 0.8, changeFrequency: "monthly" as const }));
 
   const managedBlogRoutes = (await getPublishedBlogPosts()).map(post => ({ path: "/blog/" + post.slug, priority: 0.78, changeFrequency: "monthly" as const, lastModified: post.updatedAt || post.publishedAt! }));
-  const routes = [...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
+  const configuredPaths = new Set(configuredServicePages.map(page=>`/${page.slug}`));
+  const infoPaths = new Set(infoRoutes.map(route=>route.path));
+  const categoryRoutes=Object.values(categoryPublicPaths).filter(path=>!path.startsWith("/products/")?(!configuredPaths.has(path)||!excludedServicePaths.has(path)):infoPaths.has(path)).map(path=>({path,priority:0.85,changeFrequency:"monthly" as const}));
+  const trCategoryRoutes=Object.keys(turkishCategoryProfiles).filter(id=>categoryRoutes.some(route=>route.path===categoryPublicPaths[id])).map(id=>({path:turkishCategoryPath(id)!,priority:0.78,changeFrequency:"monthly" as const}));
+  const globalRoutes=Object.keys(globalCategoryProfiles).filter(id=>categoryRoutes.some(route=>route.path===categoryPublicPaths[id])).flatMap(id=>globalCategoryLocales.map(locale=>({path:globalCategoryPath(id,locale)!,priority:0.78,changeFrequency:"monthly" as const}))); 
+  const routes = [...categoryRoutes, ...trCategoryRoutes, ...globalRoutes, ...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
 
-  return routes
-    .filter((route, index, all) => !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index)
-    .map((route) => ({
+  const eligible = routes.filter((route, index, all) => !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index);
+  const eligiblePaths = new Set(eligible.map(route => route.path));
+  const languageAlternates = new Map<string, Record<string, string>>();
+  // Publish only existing first-party artwork on eligible canonical category pages.
+  const categoryImages = new Map<string,string[]>();
+  const imageLocales = {"en-US":"en","tr-TR":"tr","de-DE":"de","fr-FR":"fr","zh-Hans":"zh"} as const;
+  for (const id of Object.keys(categoryPublicPaths)) {
+    const paths = categoryLanguagePaths(id);
+    for (const [tag, locale] of Object.entries(imageLocales)) {
+      const path = paths[tag];
+      if (!path || !eligiblePaths.has(path)) continue;
+      const hero = localizedCategoryArt(id,locale);
+      const gallery = id==="website" ? localizedWebsiteConcepts(locale) : [];
+      const images = [...new Set([...(hero?[hero.src]:[]),...gallery.map(x=>x.src)])];
+      if (images.length) categoryImages.set(path,images.map(src=>baseUrl+src));
+    }
+  }
+  for (const id of Object.keys(categoryPublicPaths)) {
+    const paths = categoryLanguagePaths(id);
+    if (!Object.values(paths).every(path => eligiblePaths.has(path))) continue;
+    const languages = Object.fromEntries(Object.entries(paths).map(([tag, path]) => [tag, baseUrl + path]));
+    for (const path of Object.values(paths)) languageAlternates.set(path, languages);
+  }
+  return eligible.map((route) => ({
       url: `${baseUrl}${route.path}`,
-      lastModified: route.lastModified ?? now,
+      ...(route.lastModified?{lastModified:route.lastModified}:{}),
       changeFrequency: route.changeFrequency,
-      priority: route.priority
+      priority: route.priority,
+      ...(categoryImages.has(route.path)?{images:categoryImages.get(route.path)!}:{}),
+      ...(languageAlternates.has(route.path) ? {alternates: {languages: languageAlternates.get(route.path)!}} : {}),
+      ...(videoEntries.get(route.path)?{videos:[{title:videoEntries.get(route.path)!.name,description:videoEntries.get(route.path)!.description,thumbnail_loc:videoEntries.get(route.path)!.thumbnailUrl,content_loc:videoEntries.get(route.path)!.contentUrl,publication_date:videoEntries.get(route.path)!.uploadDate}]}:{})
     }));
 }

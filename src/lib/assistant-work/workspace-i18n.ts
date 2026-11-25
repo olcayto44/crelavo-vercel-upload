@@ -1,4 +1,121 @@
 const rows = `
+Leave the editor? Save your project first if you want to reopen it later.|Editörden ayrılmak istiyor musunuz? Daha sonra açmak için önce projenizi kaydedin.|Editor verlassen? Speichern Sie Ihr Projekt zuerst, wenn Sie es später öffnen möchten.|¿Salir del editor? Guarda primero el proyecto para volver a abrirlo más tarde.|Quitter l’éditeur ? Enregistrez votre projet pour le rouvrir plus tard.|هل تريد مغادرة المحرر؟ احفظ مشروعك أولًا لفتحه لاحقًا.
+Project exceeds local recovery limit (150 MB). Export WebM or reduce media before signing in.|Proje yerel kurtarma sınırını (150 MB) aşıyor. Girişten önce WebM üretin veya dosyaları küçültün.|Projekt überschreitet das lokale Wiederherstellungslimit (150 MB). Exportieren Sie WebM oder reduzieren Sie die Medien vor der Anmeldung.|El proyecto supera el límite de recuperación local (150 MB). Exporta WebM o reduce los medios antes de iniciar sesión.|Le projet dépasse la limite de récupération locale (150 Mo). Exportez en WebM ou réduisez les médias avant la connexion.|يتجاوز المشروع حد الاستعادة المحلية (150 ميغابايت). صدّر WebM أو قلّل حجم الوسائط قبل تسجيل الدخول.
+Could not save recovery copy. Sign-in cancelled to protect your project.|Kurtarma kopyası kaydedilemedi. Projenizi korumak için giriş iptal edildi.|Wiederherstellungskopie konnte nicht gespeichert werden. Anmeldung zum Schutz des Projekts abgebrochen.|No se pudo guardar la copia de recuperación. Inicio de sesión cancelado para proteger tu proyecto.|Impossible d’enregistrer la copie de récupération. Connexion annulée pour protéger votre projet.|تعذر حفظ نسخة الاستعادة. أُلغي تسجيل الدخول لحماية مشروعك.
+Guest project restored. Ready for cloud export.|Misafir projesi geri yüklendi. Bulut çıktısına hazır.|Gastprojekt wiederhergestellt. Bereit für den Cloud-Export.|Proyecto de invitado restaurado. Listo para exportar en la nube.|Projet invité restauré. Prêt pour l’export cloud.|تمت استعادة مشروع الضيف. جاهز للتصدير السحابي.
+Select a layer to edit its properties. Images are stacked above the video in list order.|Özelliklerini düzenlemek için katmanı seçin. Görseller video üzerine liste sırasıyla yerleştirilir.|Wählen Sie eine Ebene aus. Bilder werden in Listenreihenfolge über dem Video angeordnet.|Selecciona una capa para editar sus propiedades. Las imágenes se apilan sobre el vídeo en orden de lista.|Sélectionnez un calque pour modifier ses propriétés. Les images sont superposées à la vidéo dans l’ordre de la liste.|اختر طبقة لتعديل خصائصها. تُرتب الصور فوق الفيديو حسب ترتيب القائمة.
+All clips are combined in timeline order into one output file.|Tüm klipler zaman çizelgesi sırasıyla tek dosyada birleştirilir.|Alle Clips werden in Timeline-Reihenfolge in einer Datei zusammengeführt.|Todos los clips se combinan en un archivo según el orden de la línea de tiempo.|Tous les clips sont fusionnés dans un fichier selon l’ordre de la timeline.|تُدمج جميع المقاطع في ملف واحد بترتيب المخطط الزمني.
+Cloud encoder determines actual file size.|Gerçek dosya boyutunu bulut üretim motoru belirler.|Der Cloud-Encoder bestimmt die tatsächliche Dateigröße.|El codificador en la nube determina el tamaño real del archivo.|L’encodeur cloud détermine la taille réelle du fichier.|يحدد مشفر السحابة حجم الملف الفعلي.
+H.264 + AAC · Cloud rendering|H.264 + AAC · Bulutta üretim|H.264 + AAC · Cloud-Rendering|H.264 + AAC · Renderizado en la nube|H.264 + AAC · Rendu cloud|H.264 + AAC · إنتاج سحابي
+Browser rendering · Local|Tarayıcıda yerel üretim|Browser-Rendering · Lokal|Renderizado local en navegador|Rendu local dans le navigateur|إنتاج محلي في المتصفح
+MP4 is recommended for sharing. Sign in and save up to 90 MB of source files to your private cloud project.|MP4 paylaşım için önerilir. Giriş yapın ve toplam 90 MB'a kadar kaynak dosyayı özel bulut projenize kaydedin.|MP4 wird zum Teilen empfohlen. Melden Sie sich an und speichern Sie bis zu 90 MB Quelldateien im privaten Cloud-Projekt.|Se recomienda MP4 para compartir. Inicia sesión y guarda hasta 90 MB de archivos fuente en tu proyecto privado.|MP4 est recommandé pour le partage. Connectez-vous et enregistrez jusqu’à 90 Mo de fichiers source dans votre projet privé.|يُوصى بـ MP4 للمشاركة. سجل الدخول واحفظ حتى 90 ميغابايت من الملفات المصدرية في مشروعك الخاص.
+WebM renders on this device. AI noise removal and true crossfade require MP4.|WebM bu cihazda üretilir. AI ses temizleme ve gerçek çapraz geçiş MP4 gerektirir.|WebM wird auf diesem Gerät gerendert. KI-Rauschunterdrückung und echte Überblendung erfordern MP4.|WebM se renderiza en este dispositivo. La reducción de ruido por IA y la transición cruzada requieren MP4.|WebM est rendu sur cet appareil. La réduction de bruit IA et le fondu enchaîné nécessitent MP4.|يُنتج WebM على هذا الجهاز. إزالة الضوضاء بالذكاء الاصطناعي والتلاشي المتداخل يتطلبان MP4.
+Sign in for private MP4 rendering. Your current project will be preserved in this browser.|Özel MP4 üretimi için giriş yapın. Mevcut projeniz bu tarayıcıda korunur.|Melden Sie sich für privates MP4-Rendering an. Ihr Projekt bleibt in diesem Browser erhalten.|Inicia sesión para renderizar MP4 en privado. Tu proyecto se conservará en este navegador.|Connectez-vous pour le rendu MP4 privé. Votre projet sera conservé dans ce navigateur.|سجل الدخول لإنتاج MP4 الخاص. سيُحفظ مشروعك الحالي في هذا المتصفح.
+Choose fade through black or true crossfade for MP4, or use WebM.|MP4 için siyaha geçiş veya çapraz geçiş seçin ya da WebM kullanın.|Wählen Sie Schwarzblende oder echte Überblendung für MP4 oder verwenden Sie WebM.|Elige fundido a negro o fundido cruzado para MP4, o usa WebM.|Choisissez un fondu au noir ou enchaîné pour MP4, ou utilisez WebM.|اختر التلاشي عبر الأسود أو التلاشي المتداخل لـ MP4 أو استخدم WebM.
+Selected effects require MP4. Choose MP4 or turn off these effects.|Seçili efektler MP4 gerektirir. MP4 seçin veya bu efektleri kapatın.|Ausgewählte Effekte erfordern MP4. Wählen Sie MP4 oder deaktivieren Sie diese Effekte.|Los efectos seleccionados requieren MP4. Elige MP4 o desactívalos.|Les effets sélectionnés nécessitent MP4. Choisissez MP4 ou désactivez-les.|تتطلب التأثيرات المحددة MP4. اختر MP4 أو أوقفها.
+Preparing or finalizing media…|Medya hazırlanıyor veya tamamlanıyor…|Medien werden vorbereitet oder abgeschlossen…|Preparando o finalizando medios…|Préparation ou finalisation des médias…|جارٍ تحضير الوسائط أو إكمالها…
+Preview expired or unavailable. Open it again.|Önizleme süresi doldu veya kullanılamıyor. Yeniden açın.|Vorschau abgelaufen oder nicht verfügbar. Öffnen Sie sie erneut.|Vista previa caducada o no disponible. Ábrela de nuevo.|Aperçu expiré ou indisponible. Ouvrez-le à nouveau.|انتهت صلاحية المعاينة أو أنها غير متاحة. افتحها مجددًا.
+MP4 uses private cloud rendering (90 MB total source files). WebM renders locally. Titles and subtitles are burned into the output. AI noise reduction and true crossfade require MP4. Use media you have rights to.|MP4 özel bulut üretimi kullanır (toplam 90 MB kaynak dosya). WebM yerel olarak üretilir. Başlıklar ve altyazılar videoya işlenir. AI ses temizleme ve gerçek çapraz geçiş MP4 gerektirir. Kullanım hakkınız olan medyaları kullanın.|MP4 nutzt privates Cloud-Rendering (90 MB Quelldateien insgesamt). WebM wird lokal gerendert. Titel und Untertitel werden eingebrannt. KI-Rauschunterdrückung und echte Überblendung erfordern MP4. Nutzen Sie nur Medien, an denen Sie Rechte haben.|MP4 usa renderizado privado en la nube (90 MB de archivos fuente en total). WebM se renderiza localmente. Títulos y subtítulos se integran en el vídeo. La reducción de ruido por IA y el fundido cruzado requieren MP4. Usa medios con los derechos necesarios.|MP4 utilise le rendu cloud privé (90 Mo de sources au total). WebM est rendu localement. Titres et sous-titres sont incrustés. La réduction de bruit IA et le fondu enchaîné nécessitent MP4. Utilisez des médias dont vous détenez les droits.|يستخدم MP4 الإنتاج السحابي الخاص (90 ميغابايت إجمالي المصادر). يُنتج WebM محليًا. تُدمج العناوين والترجمات في الفيديو. تتطلب إزالة الضوضاء والتلاشي المتداخل MP4. استخدم وسائط تملك حقوق استخدامها.
+Back to Studio V2|Studio V2’ye dön|Zurück zu Studio V2|Volver a Studio V2|Retour à Studio V2|العودة إلى Studio V2
+Main navigation|Ana gezinme|Hauptnavigation|Navegación principal|Navigation principale|التنقل الرئيسي
+↕ Vertical · Shorts|↕ Dikey · Shorts|↕ Hochformat · Shorts|↕ Vertical · Shorts|↕ Vertical · Shorts|↕ عمودي · Shorts
+↔ Horizontal|↔ Yatay|↔ Querformat|↔ Horizontal|↔ Horizontal|↔ أفقي
+□ Square|□ Kare|□ Quadrat|□ Cuadrado|□ Carré|□ مربع
+Drop video files here · local max 2 GB/file|Videoları buraya bırakın · dosya başına 2 GB|Videos hier ablegen · max. 2 GB pro Datei|Suelta vídeos aquí · máximo 2 GB por archivo|Déposez les vidéos ici · max. 2 Go par fichier|أفلت الفيديوهات هنا · 2 غيغابايت لكل ملف
+Add video files to begin editing|Düzenlemeye başlamak için video ekleyin|Videos zum Bearbeiten hinzufügen|Añade vídeos para empezar a editar|Ajoutez des vidéos pour commencer|أضف فيديوهات لبدء التحرير
+Restart clip|Klibi yeniden başlat|Clip neu starten|Reiniciar clip|Redémarrer le clip|إعادة تشغيل المقطع
+Trim tools & reset|Kırpma araçları ve sıfırlama|Zuschnittwerkzeuge und Zurücksetzen|Herramientas de recorte y reinicio|Outils de découpage et réinitialisation|أدوات القص وإعادة الضبط
+Choose a clip from the timeline.|Zaman çizelgesinden klip seçin.|Wählen Sie einen Clip aus der Timeline.|Elige un clip de la línea de tiempo.|Choisissez un clip dans la timeline.|اختر مقطعًا من المخطط الزمني.
+Remove music|Müziği kaldır|Musik entfernen|Eliminar música|Supprimer la musique|إزالة الموسيقى
+Image & logo layers · MP4 / WebM|Görsel ve logo katmanları · MP4 / WebM|Bild- und Logoebenen · MP4 / WebM|Capas de imágenes y logotipos · MP4 / WebM|Calques d’images et logos · MP4 / WebM|طبقات الصور والشعارات · MP4 / WebM
+Select layer|Katman seç|Ebene auswählen|Seleccionar capa|Sélectionner un calque|اختيار طبقة
+Selected image — locked|Seçili görsel — kilitli|Ausgewähltes Bild — gesperrt|Imagen seleccionada — bloqueada|Image sélectionnée — verrouillée|الصورة المحددة — مقفلة
+Selected image|Seçili görsel|Ausgewähltes Bild|Imagen seleccionada|Image sélectionnée|الصورة المحددة
+Add/update keyframe at playhead|Oynatma konumunda anahtar kare ekle/güncelle|Keyframe an Abspielposition hinzufügen/aktualisieren|Añadir/actualizar fotograma clave en el cabezal|Ajouter/actualiser une image clé à la tête de lecture|إضافة أو تحديث إطار مفتاحي عند مؤشر التشغيل
+Remove image layer|Görsel katmanını sil|Bildebene entfernen|Eliminar capa de imagen|Supprimer le calque d’image|إزالة طبقة الصورة
+Remove voiceover|Seslendirmeyi kaldır|Sprachaufnahme entfernen|Eliminar voz en off|Supprimer la voix off|إزالة التعليق الصوتي
+Choose subtitle|Altyazı seç|Untertitel auswählen|Elegir subtítulo|Choisir un sous-titre|اختيار الترجمة
+Delete selected subtitle|Seçili altyazıyı sil|Ausgewählten Untertitel löschen|Eliminar subtítulo seleccionado|Supprimer le sous-titre sélectionné|حذف الترجمة المحددة
+Review timeline preview|Zaman çizelgesi önizlemesini kontrol et|Timeline-Vorschau prüfen|Revisar vista previa de la línea de tiempo|Vérifier l’aperçu de la timeline|مراجعة معاينة المخطط الزمني
+Show full video (no cropping)|Videonun tamamını göster (kırpma yok)|Ganzes Video anzeigen (kein Zuschnitt)|Mostrar vídeo completo (sin recorte)|Afficher la vidéo entière (sans recadrage)|عرض الفيديو بالكامل دون قص
+Fill screen (crop edges)|Ekranı doldur (kenarları kırp)|Bildschirm füllen (Ränder zuschneiden)|Llenar pantalla (recortar bordes)|Remplir l’écran (recadrer les bords)|ملء الشاشة مع قص الحواف
+Blur background|Bulanık arka plan|Unscharfer Hintergrund|Fondo desenfocado|Arrière-plan flou|خلفية ضبابية
+Include source audio|Kaynak sesi dahil et|Originalton einschließen|Incluir audio original|Inclure l’audio source|تضمين الصوت الأصلي
+Sign in & continue|Giriş yap ve devam et|Anmelden und fortfahren|Iniciar sesión y continuar|Se connecter et continuer|تسجيل الدخول والمتابعة
+Preparing MP4…|MP4 hazırlanıyor…|MP4 wird vorbereitet…|Preparando MP4…|Préparation du MP4…|جارٍ تحضير MP4…
+Rendering WebM…|WebM üretiliyor…|WebM wird gerendert…|Renderizando WebM…|Rendu WebM…|جارٍ إنتاج WebM…
+Export MP4|MP4 dışa aktar|MP4 exportieren|Exportar MP4|Exporter MP4|تصدير MP4
+Export WebM|WebM dışa aktar|WebM exportieren|Exportar WebM|Exporter WebM|تصدير WebM
+Compact preview|Küçük önizleme|Kompakte Vorschau|Vista previa compacta|Aperçu compact|معاينة مصغرة
+Larger preview|Büyük önizleme|Größere Vorschau|Vista previa ampliada|Aperçu agrandi|معاينة أكبر
+MP4 output preview|MP4 çıktı önizlemesi|MP4-Ausgabevorschau|Vista previa de salida MP4|Aperçu du résultat MP4|معاينة مخرجات MP4
+Format & storage limits|Format ve depolama sınırları|Format- und Speichergrenzen|Límites de formato y almacenamiento|Limites de format et de stockage|حدود التنسيق والتخزين
+MP4 export history|MP4 çıktı geçmişi|MP4-Exportverlauf|Historial de exportación MP4|Historique des exports MP4|سجل تصدير MP4
+No cloud exports yet.|Henüz bulut çıktısı yok.|Noch keine Cloud-Exporte.|Todavía no hay exportaciones en la nube.|Aucun export cloud pour le moment.|لا توجد صادرات سحابية بعد.
+Rendering…|Üretiliyor…|Wird gerendert…|Renderizando…|Rendu en cours…|جارٍ الإنتاج…
+Canvas unavailable.|Video tuvali kullanılamıyor.|Canvas nicht verfügbar.|Lienzo no disponible.|Canvas indisponible.|لوحة الرسم غير متاحة.
+Could not export the video.|Video dışa aktarılamadı.|Video konnte nicht exportiert werden.|No se pudo exportar el vídeo.|Impossible d’exporter la vidéo.|تعذر تصدير الفيديو.
+Add at least one video clip to enable export.|Dışa aktarmak için en az bir video ekleyin.|Mindestens einen Videoclip zum Export hinzufügen.|Añade al menos un clip para exportar.|Ajoutez au moins un clip pour exporter.|أضف مقطع فيديو واحدًا على الأقل للتصدير.
+Media|Medya|Medien|Medios|Médias|الوسائط
+Text|Metin|Text|Texto|Texte|النص
+Images|Görseller|Bilder|Imágenes|Images|الصور
+Transitions|Geçişler|Übergänge|Transiciones|Transitions|الانتقالات
+Audio|Ses|Audio|Audio|Audio|الصوت
+Layers|Katmanlar|Ebenen|Capas|Calques|الطبقات
+Save / reopen project|Projeyi kaydet / aç|Projekt speichern / öffnen|Guardar / abrir proyecto|Enregistrer / ouvrir le projet|حفظ / فتح المشروع
+Save local timeline|Yerel projeyi kaydet|Lokale Timeline speichern|Guardar línea de tiempo local|Enregistrer la timeline locale|حفظ المخطط الزمني المحلي
+Reopen timeline|Projeyi aç|Timeline öffnen|Abrir línea de tiempo|Ouvrir la timeline|فتح المخطط الزمني
+Reopen cloud timeline|Bulut projesini aç|Cloud-Timeline öffnen|Abrir proyecto en la nube|Ouvrir le projet cloud|فتح المشروع السحابي
+Recover auto-saved timeline|Otomatik kaydı geri yükle|Automatische Speicherung wiederherstellen|Recuperar guardado automático|Récupérer la sauvegarde automatique|استعادة الحفظ التلقائي
+Video format|Video biçimi|Videoformat|Formato de vídeo|Format vidéo|تنسيق الفيديو
+Export|Dışa aktar|Exportieren|Exportar|Exporter|تصدير
+Media library|Medya kütüphanesi|Medienbibliothek|Biblioteca multimedia|Bibliothèque multimédia|مكتبة الوسائط
++ Add videos|+ Video ekle|+ Videos hinzufügen|+ Añadir vídeos|+ Ajouter des vidéos|+ إضافة فيديوهات
+Selected clip|Seçili klip|Ausgewählter Clip|Clip seleccionado|Clip sélectionné|المقطع المحدد
+Trim & duration|Kırpma ve süre|Zuschnitt und Dauer|Recorte y duración|Découpage et durée|القص والمدة
+Transform|Dönüştürme|Transformieren|Transformar|Transformation|التحويل
+Crop & position|Kırpma ve konum|Ausschnitt und Position|Recorte y posición|Recadrage et position|الاقتصاص والموضع
+Speed & source audio|Hız ve kaynak ses|Geschwindigkeit und Originalton|Velocidad y audio original|Vitesse et audio source|السرعة والصوت الأصلي
+Audio processing|Ses işleme|Audioverarbeitung|Procesamiento de audio|Traitement audio|معالجة الصوت
+Timeline layers|Zaman çizelgesi katmanları|Timeline-Ebenen|Capas de la línea de tiempo|Calques de la timeline|طبقات المخطط الزمني
+No layers yet.|Henüz katman yok.|Noch keine Ebenen.|Aún no hay capas.|Aucun calque pour le moment.|لا توجد طبقات بعد.
+Video|Video|Video|Vídeo|Vidéo|فيديو
+Image|Görsel|Bild|Imagen|Image|صورة
+Show|Göster|Anzeigen|Mostrar|Afficher|إظهار
+Hide|Gizle|Ausblenden|Ocultar|Masquer|إخفاء
+Unlock|Kilidi aç|Entsperren|Desbloquear|Déverrouiller|إلغاء القفل
+Lock|Kilitle|Sperren|Bloquear|Verrouiller|قفل
+Send back|Arkaya|Nach hinten|Enviar atrás|Reculer|إرسال للخلف
+Bring forward|Öne|Nach vorne|Traer adelante|Avancer|إحضار للأمام
+Duplicate|Çoğalt|Duplizieren|Duplicar|Dupliquer|تكرار
+Delete|Sil|Löschen|Eliminar|Supprimer|حذف
+Title|Başlık|Titel|Título|Titre|العنوان
+Subtitles|Altyazılar|Untertitel|Subtítulos|Sous-titres|الترجمة
+Music|Müzik|Musik|Música|Musique|الموسيقى
+Voiceover|Seslendirme|Sprachaufnahme|Voz en off|Voix off|التعليق الصوتي
+Merge & export videos|Videoları birleştir ve dışa aktar|Videos verbinden und exportieren|Unir y exportar vídeos|Fusionner et exporter les vidéos|دمج وتصدير الفيديوهات
+Export video|Videoyu dışa aktar|Video exportieren|Exportar vídeo|Exporter la vidéo|تصدير الفيديو
+Duration|Süre|Dauer|Duración|Durée|المدة
+Dimensions|Boyutlar|Abmessungen|Dimensiones|Dimensions|الأبعاد
+Estimated size|Tahmini boyut|Geschätzte Größe|Tamaño estimado|Taille estimée|الحجم التقديري
+Ratio|En-boy oranı|Seitenverhältnis|Relación de aspecto|Format d’image|نسبة العرض إلى الارتفاع
+Framing|Çerçeveleme|Bildausschnitt|Encuadre|Cadrage|التأطير
+Resolution|Çözünürlük|Auflösung|Resolución|Résolution|الدقة
+Frame rate|Kare hızı|Bildrate|Fotogramas por segundo|Fréquence d’images|معدل الإطارات
+Quality|Kalite|Qualität|Calidad|Qualité|الجودة
+Low|Düşük|Niedrig|Baja|Faible|منخفضة
+Standard|Standart|Standard|Estándar|Standard|قياسية
+High|Yüksek|Hoch|Alta|Élevée|عالية
+File name|Dosya adı|Dateiname|Nombre de archivo|Nom du fichier|اسم الملف
+Cancel|İptal|Abbrechen|Cancelar|Annuler|إلغاء
+Fullscreen|Tam ekran|Vollbild|Pantalla completa|Plein écran|ملء الشاشة
+Download WebM|WebM indir|WebM herunterladen|Descargar WebM|Télécharger WebM|تنزيل WebM
+Download MP4|MP4 indir|MP4 herunterladen|Descargar MP4|Télécharger MP4|تنزيل MP4
+Refresh|Yenile|Aktualisieren|Actualizar|Actualiser|تحديث
+Preview|Önizle|Vorschau|Vista previa|Aperçu|معاينة
+Queued|Sırada|In Warteschlange|En cola|En attente|في قائمة الانتظار
+Failed|Başarısız|Fehlgeschlagen|Fallido|Échec|فشل
+Ready to download|İndirmeye hazır|Download bereit|Listo para descargar|Prêt à télécharger|جاهز للتنزيل
 Home|Ana sayfa|Startseite|Inicio|Accueil|الرئيسية
 Language|Dil|Sprache|Idioma|Langue|اللغة
 Setup|Ayarlar|Einrichtung|Configuración|Configuration|الإعدادات
