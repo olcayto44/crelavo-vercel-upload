@@ -14,6 +14,8 @@ const paths = groups.map(g=>new URL(g.match(/<loc>(.*?)<\/loc>/s)[1]).pathname);
 if(new Set(paths).size!==185) throw new Error("Duplicate category URLs");
 const expected = new Set(paths);
 const sitemapImages=new Map(groups.map(g=>[new URL(g.match(/<loc>(.*?)<\/loc>/s)[1]).pathname,[...g.matchAll(/<image:loc>(.*?)<\/image:loc>/gs)].map(m=>m[1])]));
+const allImageUrls=[...sitemapImages.values()].flat();
+if(allImageUrls.length!==200||new Set(allImageUrls).size!==40)throw Error("Expected all 200 category image references and 40 unique assets");
 const language = p=>({"tr":"tr-TR","de":"de-DE","fr":"fr-FR","zh":"zh-Hans"}[p.split("/")[1]]||"en");
 const tag = p=>language(p)==="en"?"en-US":language(p);
 const browser = await chromium.launch({headless:true});
@@ -84,7 +86,7 @@ for(const path of paths){
     if(!matchingImage?.alt?.trim())issues.push("Sitemap artwork lacks visible descriptive ALT "+url);
   }
   for(const url of schemaImages){try{const u=new URL(url);if(u.origin===canonicalOrigin&&localArt.has(u.pathname)&&!advertisedImages.includes(url))issues.push("Page artwork missing from image sitemap "+url)}catch{}}
-  if(dom.category==="website"&&advertisedImages.length!==4)issues.push("Expected four Website Builder image sitemap entries");
+  if(advertisedImages.length!==(dom.category==="website"?4:1))issues.push("Missing or unexpected category image sitemap entries");
   item.localArtwork=[];
   for(const src of localArt){if(!imageChecks.has(src)){try{const r=await context.request.get(new URL(src,base).href,{timeout:15000,maxRedirects:0});imageChecks.set(src,{status:r.status(),type:r.headers()["content-type"]||""});}catch(e){imageChecks.set(src,{error:String(e)});}}const check=imageChecks.get(src);item.localArtwork.push({src,...check});if(check.status!==200||!check.type?.startsWith("image/"))issues.push("Invalid category artwork "+src);}
 
@@ -92,6 +94,19 @@ for(const path of paths){
   byPath.set(path,dom.alt);
   await page.waitForLoadState("load",{timeout:15000});
   await page.evaluate(()=>document.fonts.ready);
+  // Decode every advertised image using the actual browser, including optimized Next.js images.
+  const decodedArtwork=await page.locator("main img").evaluateAll(async (nodes, advertised)=>{
+    const wanted=new Set(advertised.map(u=>new URL(u).pathname));
+    const matched=nodes.flatMap(i=>{try{const src=new URL(i.getAttribute("src")||"",location.href);const pathname=src.pathname==="/_next/image"?new URL(src.searchParams.get("url")||"",location.href).pathname:src.pathname;return wanted.has(pathname)?[{i,pathname}]:[];}catch{return [];}});
+    return Promise.all(matched.map(async ({i,pathname})=>{i.loading="eager";let decoded=false;try{await Promise.race([i.decode(),new Promise((_,reject)=>setTimeout(()=>reject(new Error("decode timeout")),10000))]);decoded=true;}catch{}return {pathname,decoded,width:i.naturalWidth,height:i.naturalHeight};}));
+  },advertisedImages);
+  item.decodedArtwork=decodedArtwork;
+  for(const url of advertisedImages){const p=new URL(url).pathname;if(!decodedArtwork.some(i=>i.pathname===p&&i.decoded&&i.width>0&&i.height>0))issues.push("Browser failed to decode category artwork "+p);}
+  // Require category hero metadata to match the page's primary image.
+  const hero=advertisedImages[0];
+  const og=await page.locator('meta[property="og:image"]').first().getAttribute("content").catch(()=>null);
+  if(!hero||og!==hero)issues.push("Category Open Graph hero mismatch");
+  if(!schemaImages.includes(hero))issues.push("Category hero ImageObject mismatch");
   // Website Builder now has four approved, committed assets. Require all four
   // in each locale, and decode the actual browser images (including lazy cards).
   if(dom.category==="website"||["/ai-website-builder","/tr/yapay-zeka-web-sitesi-olusturucu","/de/ki-website-builder","/fr/createur-site-web-ia","/zh/ai-website-builder"].includes(path)){

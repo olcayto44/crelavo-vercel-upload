@@ -1,4 +1,4 @@
-// Approved naming and editorial briefs. A brief is not a generated image.
+// Category artwork inventory and localized descriptions of approved concepts.
 export const categoryArtworkCatalog = [
   {
     "id": "saas",
@@ -10,7 +10,7 @@ export const categoryArtworkCatalog = [
       "fr": "Tableau de bord d’analyse SaaS sur un ordinateur portable",
       "zh": "笔记本电脑上的 SaaS 数据分析仪表板"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "mobile_app",
@@ -22,7 +22,7 @@ export const categoryArtworkCatalog = [
       "fr": "Prototype d’interface d’application sur un smartphone",
       "zh": "智能手机上的移动应用界面原型"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "video",
@@ -60,7 +60,7 @@ export const categoryArtworkCatalog = [
       "fr": "Documentariste préparant une interview dans un cadre naturel",
       "zh": "在自然环境中准备采访的纪录片制作人"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "animation",
@@ -85,7 +85,7 @@ export const categoryArtworkCatalog = [
       "fr": "Performance musicale cinématographique sous un éclairage scénique atmosphérique",
       "zh": "具有氛围舞台灯光的电影感音乐表演场景"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "drama",
@@ -123,7 +123,7 @@ export const categoryArtworkCatalog = [
       "fr": "Piste de montage vidéo avec extraits sélectionnés",
       "zh": "带有精选片段的视频剪辑时间轴"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "video_tools",
@@ -135,7 +135,7 @@ export const categoryArtworkCatalog = [
       "fr": "Station de montage vidéo professionnelle avec aperçu et piste temporelle",
       "zh": "带有预览与时间轴的专业视频剪辑工作站"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "campaign",
@@ -160,7 +160,7 @@ export const categoryArtworkCatalog = [
       "fr": "Exemple de tableau de bord d’évaluation de créations publicitaires",
       "zh": "广告创意评估仪表板示例"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "campaign_calendar",
@@ -172,7 +172,7 @@ export const categoryArtworkCatalog = [
       "fr": "Calendrier de campagne marketing avec contenus programmés",
       "zh": "带有计划内容卡片的营销活动日历"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "ai_agent",
@@ -184,7 +184,7 @@ export const categoryArtworkCatalog = [
       "fr": "Exemple de flux de travail d’un agent IA avec tâches et intégrations",
       "zh": "含任务与集成节点的 AI 智能体工作流示例"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "localization",
@@ -196,7 +196,7 @@ export const categoryArtworkCatalog = [
       "fr": "Station de localisation vidéo multilingue avec pistes de sous-titres",
       "zh": "带字幕轨道的多语言视频本地化工作站"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "cultural_localization",
@@ -208,7 +208,7 @@ export const categoryArtworkCatalog = [
       "fr": "Variantes visuelles régionales pour une campagne interculturelle",
       "zh": "为跨文化营销活动设计的区域视觉方案"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "live_sales_agent",
@@ -220,19 +220,19 @@ export const categoryArtworkCatalog = [
       "fr": "Exemple de présentateur virtuel de produits dans un studio de diffusion en direct",
       "zh": "直播间中的虚拟产品介绍人示例"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "avatar",
     "file": "avatar-hero.webp",
     "alt": {
-      "en": "A digital avatar portrait in a professional recording studio",
-      "tr": "Profesyonel kayıt stüdyosunda dijital avatar portresi",
-      "de": "Digitales Avatarporträt in einem professionellen Aufnahmestudio",
-      "fr": "Portrait d’avatar numérique dans un studio d’enregistrement professionnel",
-      "zh": "专业录制工作室中的数字虚拟形象肖像"
+      "en": "AI-generated portrait of a fictional digital avatar with a softly lit background",
+      "tr": "Yumuşak ışıklı arka planda yapay zekâ ile üretilmiş kurgusal dijital avatar portresi",
+      "de": "KI-generiertes Porträt eines fiktiven digitalen Avatars vor weich beleuchtetem Hintergrund",
+      "fr": "Portrait généré par IA d’un avatar numérique fictif sur un fond doucement éclairé",
+      "zh": "AI 生成的虚构数字虚拟形象肖像，背景光线柔和"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "lip_sync",
@@ -244,19 +244,19 @@ export const categoryArtworkCatalog = [
       "fr": "Gros plan d’un visage associé à une forme d’onde de dialogue synchronisée",
       "zh": "与同步对话波形并列的人脸特写"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "voice_clone",
     "file": "voice-clone-hero.webp",
     "alt": {
-      "en": "A recording microphone and voice waveform in a sound studio",
-      "tr": "Ses stüdyosunda kayıt mikrofonu ve konuşma ses dalgası",
-      "de": "Aufnahmemikrofon und Sprach-Wellenform im Tonstudio",
-      "fr": "Microphone d’enregistrement et forme d’onde vocale en studio",
-      "zh": "录音棚中的麦克风和语音波形"
+      "en": "Illustrative voice actor wearing headphones beside a studio microphone and waveform display",
+      "tr": "Stüdyo mikrofonu ve ses dalgası ekranı yanında kulaklık takan seslendirme sanatçısı konsepti",
+      "de": "Illustrativer Sprecher mit Kopfhörern neben Studiomikrofon und Wellenformanzeige",
+      "fr": "Illustration d’un comédien voix off avec casque, microphone de studio et affichage de la forme d’onde",
+      "zh": "配戴耳机的配音演员与录音棚麦克风、音频波形显示器示意图"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "visual_clone",
@@ -268,7 +268,7 @@ export const categoryArtworkCatalog = [
       "fr": "Exemple de flux de travail par image de référence avec variantes cohérentes d’un personnage",
       "zh": "保持人物一致性的参考图像工作流示例"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "virtual_model_studio",
@@ -293,7 +293,7 @@ export const categoryArtworkCatalog = [
       "fr": "Station professionnelle de création et de retouche d’images",
       "zh": "专业创意图像编辑工作站"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "brand_kit",
@@ -305,7 +305,7 @@ export const categoryArtworkCatalog = [
       "fr": "Planche d’identité de marque harmonisée avec logo, couleurs et emballage",
       "zh": "包含标志、色彩和包装的统一品牌识别方案"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "document_pack",
@@ -317,67 +317,67 @@ export const categoryArtworkCatalog = [
       "fr": "Ensemble coordonné de mises en page de documents professionnels",
       "zh": "统一设计的专业商务文档套件"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "anime_short_film",
     "file": "anime-short-film-hero.webp",
     "alt": {
-      "en": "An original anime-style cinematic scene concept",
-      "tr": "Özgün anime tarzında sinematik sahne konsepti",
-      "de": "Origineller filmischer Szenenentwurf im Anime-Stil",
-      "fr": "Concept original de scène cinématographique de style anime",
-      "zh": "原创动漫风格的电影场景概念"
+      "en": "Original anime-style character beneath a red umbrella on a rainy lantern-lit street",
+      "tr": "Fenerlerle aydınlatılan yağmurlu sokakta kırmızı şemsiyeli özgün anime karakteri",
+      "de": "Originelle Anime-Figur unter einem roten Schirm in einer regnerischen, von Laternen beleuchteten Straße",
+      "fr": "Personnage original de style anime sous un parapluie rouge dans une rue pluvieuse éclairée par des lanternes",
+      "zh": "原创动漫人物撑着红伞走在灯笼照亮的雨夜街道上"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "animal_video",
     "file": "animal-video-hero.webp",
     "alt": {
-      "en": "A cinematic wildlife scene featuring an animal in its natural habitat",
-      "tr": "Doğal yaşam alanındaki bir hayvanı gösteren sinematik sahne",
-      "de": "Filmische Wildtierszene in natürlichem Lebensraum",
-      "fr": "Scène animalière cinématographique dans un habitat naturel",
-      "zh": "动物在自然栖息地中的电影感场景"
+      "en": "AI-generated wildlife concept of a leopard in golden savanna grass",
+      "tr": "Gün batımında savan otları arasında leopar; yapay zekâ ile oluşturulmuş vahşi yaşam konsepti",
+      "de": "KI-generierte Wildtierszene mit einem Leoparden im goldenen Savannengras",
+      "fr": "Scène animalière générée par IA, avec un léopard dans les herbes dorées de la savane",
+      "zh": "AI 生成的野生动物概念图：金色草原中的豹"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "nature_video",
     "file": "nature-video-hero.webp",
     "alt": {
-      "en": "A cinematic landscape of mountains and flowing water",
-      "tr": "Dağlar ve akan su içeren sinematik doğa manzarası",
-      "de": "Filmische Landschaft mit Bergen und fließendem Wasser",
-      "fr": "Paysage cinématographique de montagnes et d’eau vive",
-      "zh": "山脉与流水构成的电影感自然景观"
+      "en": "AI-generated landscape of a forest waterfall, river and snowy mountain peaks",
+      "tr": "Orman şelalesi, akarsu ve karlı dağ zirvelerini gösteren yapay zekâ manzarası",
+      "de": "KI-generierte Landschaft mit Waldwasserfall, Fluss und schneebedeckten Berggipfeln",
+      "fr": "Paysage généré par IA avec cascade en forêt, rivière et sommets enneigés",
+      "zh": "AI 生成的森林瀑布、河流和雪山景观"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "planet_space_video",
     "file": "planet-space-video-hero.webp",
     "alt": {
-      "en": "An artistic interpretation of a planet viewed from space",
-      "tr": "Uzaydan görülen gezegenin sanatsal yorumu",
-      "de": "Künstlerische Darstellung eines Planeten aus dem Weltraum",
-      "fr": "Interprétation artistique d’une planète vue depuis l’espace",
-      "zh": "从太空观察行星的艺术演绎"
+      "en": "Artistic AI-generated view of Earth, the Moon and distant galaxies",
+      "tr": "Dünya, Ay ve uzak galaksilerin yapay zekâ ile oluşturulmuş sanatsal görünümü",
+      "de": "Künstlerische KI-Darstellung der Erde, des Mondes und ferner Galaxien",
+      "fr": "Vue artistique générée par IA de la Terre, de la Lune et de galaxies lointaines",
+      "zh": "AI 生成的地球、月球和遥远星系艺术图"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "drone_video",
     "file": "drone-video-hero.webp",
     "alt": {
-      "en": "An aerial cinematic view of a winding coastline",
-      "tr": "Kıvrımlı kıyı şeridinin sinematik havadan görünümü",
-      "de": "Filmische Luftaufnahme einer gewundenen Küste",
-      "fr": "Vue aérienne cinématographique d’un littoral sinueux",
-      "zh": "蜿蜒海岸线的电影感航拍视角"
+      "en": "AI-generated concept of a camera drone above a turquoise coastal bay",
+      "tr": "Turkuaz bir koy üzerinde kameralı drone gösteren yapay zekâ konsepti",
+      "de": "KI-generiertes Motiv einer Kameradrohne über einer türkisfarbenen Küstenbucht",
+      "fr": "Concept généré par IA d’un drone équipé d’une caméra au-dessus d’une baie turquoise",
+      "zh": "AI 生成的概念图：搭载摄像头的无人机飞越碧蓝海湾"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "stickman_animation",
@@ -389,19 +389,19 @@ export const categoryArtworkCatalog = [
       "fr": "Storyboard original de personnages en bâtons aux poses expressives",
       "zh": "具有表现力姿势的原创火柴人分镜"
     },
-    "kind": "new-concept-needed"
+    "kind": "original-storyboard"
   },
   {
     "id": "crelavo_academy",
     "file": "crelavo-academy-hero.webp",
     "alt": {
-      "en": "An AI creative production lesson at a learning workstation",
-      "tr": "Öğrenme istasyonunda yapay zekâ yaratıcı üretim dersi",
-      "de": "Unterricht zur kreativen KI-Produktion an einem Lernarbeitsplatz",
-      "fr": "Cours de production créative par IA sur un poste d’apprentissage",
-      "zh": "学习工作站上的 AI 创意制作课程"
+      "en": "Illustrative creative workshop with an instructor demonstrating digital video editing to learners",
+      "tr": "Eğitmenin katılımcılara dijital video düzenlemeyi gösterdiği yaratıcı atölye konsepti",
+      "de": "Illustrativer Kreativworkshop, in dem ein Kursleiter den Teilnehmenden digitalen Videoschnitt zeigt",
+      "fr": "Illustration d’un atelier créatif où un formateur présente le montage vidéo numérique aux participants",
+      "zh": "创意课程示意图：讲师向学员演示数字视频剪辑"
     },
-    "kind": "new-concept-needed"
+    "kind": "approved-ai-concept"
   },
   {
     "id": "community_showcase",
