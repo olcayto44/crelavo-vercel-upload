@@ -24,7 +24,7 @@ const {load}=require('./studio-agent-test-loader.cjs');
   await db.exec(fs.readFileSync('supabase/migration_credit_rollover_policy.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migration_website_atomic_credits_isolated.sql','utf8'));
   await db.exec(fs.readFileSync('docs/website-ai-jobs-isolated.sql','utf8'));
-  await db.exec("create or replace function auth.uid() returns uuid language sql stable as $ select nullif(current_setting('test.actor',true),'')::uuid $; grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;");
+  await db.exec("create or replace function auth.uid() returns uuid language sql stable as $auth$ select nullif(current_setting('test.actor',true),'')::uuid $auth$; grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;");
   for(const file of ["website-cms-isolated.sql","website-cms-write-fence-isolated.sql","website-cms-settled-design-import-isolated.sql"])await db.exec(fs.readFileSync("docs/"+file,"utf8"));
   await db.query('insert into auth.users(id) values($1)',[owner]);
   await db.query("insert into profiles(id,email) values($1,'offline@example.test')",[owner]);
