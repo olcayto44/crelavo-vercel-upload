@@ -1,4 +1,4 @@
-const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path"),net=require("node:net"),{spawn}=require("node:child_process"),{once}=require("node:events"),{load}=require("./studio-agent-test-loader.cjs");
+const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("node:os"),path=require("node:path"),net=require("node:net"),{spawn,spawnSync}=require("node:child_process"),{once}=require("node:events"),{load}=require("./studio-agent-test-loader.cjs");
 (async()=>{
  const {buildWebsiteSelfHostedBundle}=load("src/lib/website-selfhost-bundle.ts");
  const design={version:2,brand:"Independent fixture",language:"tr",layout:"service",palette:"sand",industryScope:{sector:"retail",extraModules:["booking"]},pages:[{slug:"home",nav:"Ana sayfa",title:"Independent fixture",description:"A private runtime test.",headline:"Original heading",lead:"Original intro",sections:[{heading:"Section",body:"Fixture content"}],faq:[]}]};
@@ -12,7 +12,8 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  assert.equal(extracted,bundle.entries.length);assert(fs.existsSync(path.join(dir,"server.cjs")));
  const probe=net.createServer();probe.listen(0,"127.0.0.1");await once(probe,"listening");const port=probe.address().port;await new Promise(r=>probe.close(r));
  const origin="http://127.0.0.1:"+port,password="Synthetic-test-password-123";
- const start=async(first)=>{child=spawn(process.execPath,["server.cjs"],{cwd:dir,env:{...process.env,PORT:String(port),SITE_LOCAL_ONLY:"1",SITE_ORIGIN:origin,SITE_DATA_DIR:path.join(dir,"data"),SITE_ADMIN_PASSWORD:first?password:""},stdio:["ignore","pipe","pipe"]});let log="";child.stdout.on("data",v=>log+=v);child.stderr.on("data",v=>log+=v);for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error("Runtime exited: "+log);try{if((await fetch(origin+"/healthz")).ok)return;}catch{}await new Promise(r=>setTimeout(r,50));}throw Error("Runtime failed to start: "+log);};
+ let currentDataDir=path.join(dir,"data");
+ const start=async(first)=>{child=spawn(process.execPath,["server.cjs"],{cwd:dir,env:{...process.env,PORT:String(port),SITE_LOCAL_ONLY:"1",SITE_ORIGIN:origin,SITE_DATA_DIR:currentDataDir,SITE_ADMIN_PASSWORD:first?password:""},stdio:["ignore","pipe","pipe"]});let log="";child.stdout.on("data",v=>log+=v);child.stderr.on("data",v=>log+=v);for(let i=0;i<100;i++){if(child.exitCode!==null)throw Error("Runtime exited: "+log);try{if((await fetch(origin+"/healthz")).ok)return;}catch{}await new Promise(r=>setTimeout(r,50));}throw Error("Runtime failed to start: "+log);};
  const stop=async()=>{if(child&&child.exitCode===null){child.kill("SIGTERM");await once(child,"exit");}child=undefined;};
  const get=(url,cookie="")=>fetch(origin+url,{headers:{cookie}});
  const post=(url,body,cookie="",requestOrigin=origin)=>fetch(origin+url,{method:"POST",redirect:"manual",headers:{"Content-Type":"application/x-www-form-urlencoded",Origin:requestOrigin,cookie},body:new URLSearchParams(body)});
@@ -43,6 +44,14 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  console.log("independent business acceptance: visible seed, live stock, idempotent unpaid requests, cancellation, owner product edit, slot overlap and capacity");
  assert.equal((await post("/admin/logout",{csrf},cookie)).status,303);assert(!(await (await get("/admin",cookie)).text()).includes("Persistent contact"));
  await stop();await start(false);assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));cookie=await login();assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));assert((await shop()).includes("New fixture product"));assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));
+ await stop();
+ const backupDir=path.join(dir,"backup"),restoreDir=path.join(dir,"restored"),maintenance=(args,dataDir=currentDataDir)=>spawnSync(process.execPath,["maintenance.cjs",...args],{cwd:dir,env:{...process.env,SITE_DATA_DIR:dataDir},encoding:"utf8",timeout:10000});
+ let m=maintenance(["verify"]);assert.equal(m.status,0,m.stderr);
+ m=maintenance(["backup",backupDir]);assert.equal(m.status,0,m.stderr);assert(fs.existsSync(path.join(backupDir,"site.sqlite")));
+ assert.notEqual(maintenance(["backup",backupDir]).status,0);assert.notEqual(maintenance(["restore-check",backupDir]).status,0);
+ m=maintenance(["restore-check",backupDir],restoreDir);assert.equal(m.status,0,m.stderr);
+ currentDataDir=restoreDir;await start(false);cookie=await login();assert((await shop()).includes("New fixture product"));assert((await (await get("/admin",cookie)).text()).includes("Persistent contact"));assert((await (await get("/admin",cookie)).text()).includes("Test visitor"));assert((await (await get("/")).text()).includes("Updated &lt;heading&gt;"));
+ console.log("independent backup acceptance: integrity, backup refusal to overwrite, restore to new database, real restored server and retained business records");
  console.log("self-hosted ZIP runtime acceptance: extracted source, independent startup, contact persistence, owner session, CSRF, escaped content, optimistic editing and restart");
  }finally{if(child&&child.exitCode===null){child.kill("SIGTERM");await once(child,"exit");}fs.rmSync(dir,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});
