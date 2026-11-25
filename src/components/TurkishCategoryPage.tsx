@@ -1,0 +1,21 @@
+import Link from "next/link";
+import {Header} from "@/components/Header";
+import {localizedSeoNavLinks} from "@/lib/site-content-config";
+import {categoryPublicPaths,categoryWorkspace} from "@/lib/category-public-routes";
+import {categorySearchProfiles} from "@/lib/category-search-profiles";
+import {turkishCategoryProfiles,turkishCategoryPath} from "@/lib/category-tr-content";
+import {publicOrigin} from "@/lib/category-detail-meta";
+import styles from "./CategoryDetailPage.module.css";
+export function TurkishCategoryPage({id}:{id:string}){
+const p=turkishCategoryProfiles[id],path=turkishCategoryPath(id)!,url=publicOrigin+path,href=categoryWorkspace(id);
+const related=categorySearchProfiles[id].related;
+const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":url+"#page",url,name:p.title,description:p.description,inLanguage:"tr-TR",breadcrumb:{"@id":url+"#breadcrumb"}},{"@type":"BreadcrumbList","@id":url+"#breadcrumb",itemListElement:[{"@type":"ListItem",position:1,name:"Crelavo",item:publicOrigin},{"@type":"ListItem",position:2,name:p.title,item:url}]}]};
+return <><Header navLinks={localizedSeoNavLinks} languageOverride="tr"/><main lang="tr-TR" className={styles.page} data-category-detail={id}><style>{".public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important}.page-with-rails{padding-left:0!important;padding-right:0!important}"}</style><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(graph).replace(/</g,"\\u003c")}}/><div className={styles.wrap}>
+<nav className={styles.crumb} aria-label="Sayfa yolu"><Link href="/">Crelavo</Link><span>/</span><Link href="/categories">Kategoriler</Link><span>/</span><span aria-current="page">{p.title}</span></nav>
+<section className={styles.hero}><div><p className={styles.eyebrow}>CRELAVO AI STUDIO</p><h1>{p.title}</h1><p className={styles.lead}>{p.description}</p><div className={styles.actions}><Link href={href} className={styles.primary}>Projeyi başlat</Link><Link href={categoryPublicPaths[id]} hrefLang="en-US" lang="en" className={styles.secondary}>English</Link></div><p className={styles.note}>İncelemek ücretsizdir. Proje başlatmak için oturum açın; çalışma alanının bazı bölümleri İngilizce olabilir.</p></div><div className={styles.briefPanel}><strong>Proje seçenekleri</strong>{p.uses.map((u,i)=><div key={u}><span>{i+1}</span>{u}</div>)}<small>Üretim kapsamı ve kullanılabilir seçenekler onaydan önce belirlenir.</small></div></section>
+<section className={styles.section}><h2>Hangi projeleri planlayabilirsiniz?</h2><div className={styles.four}>{p.uses.map(u=><article key={u} className={styles.scope}><h3>{u}</h3></article>)}</div></section>
+<section className={styles.section}><h2>Nasıl çalışır?</h2><div className={styles.three}>{[["Fikrinizi anlatın","Hedeflerinizi ve izinli referanslarınızı paylaşın."],["Planı inceleyin",p.answer],["Kapsamı onaylayın","Kullanılabilir araçları, kredi gereksinimini ve teslim koşullarını inceleyin."]].map(([h,t])=><article className={styles.scope} key={h}><h3>{h}</h3><p>{t}</p></article>)}</div></section>
+<section className={styles.section}><h2>Sık sorulan sorular</h2><div className={styles.faq}><details><summary>{p.question}</summary><p>{p.answer}</p></details><details><summary>Ne kadar ücret öderim?</summary><p>Kredi ve ücretler seçilen üretim kapsamına göre değişir. Onay vermeden önce fiyatı ve teslim koşullarını inceleyin.</p><Link href="/pricing">Fiyatlandırma</Link></details><details><summary>Proje planı nihai çıktı mıdır?</summary><p>Hayır. Üretim ve teslim seçenekleri kategoriye göre farklılık gösterir; her kategori otomatik nihai üretim sunmayabilir.</p></details></div></section>
+<section className={styles.section}><h2>İlgili yapay zeka araçları</h2><div className={styles.related}>{related.map(k=><Link key={k} href={turkishCategoryPath(k)??(k==="video"?"/tr/yapay-zeka-video-uretici":categoryPublicPaths[k])}>{turkishCategoryProfiles[k]?.title??"Yapay Zeka Video Üretici"}</Link>)}</div></section>
+<section className={styles.final}><div><h2>Projenizi planlamaya hazır mısınız?</h2><p>Fikrinizi paylaşın, kapsamı inceleyin ve kararınızı verin.</p></div><Link className={styles.primary} href={href}>Studio'yu aç</Link></section></div></main></>
+}

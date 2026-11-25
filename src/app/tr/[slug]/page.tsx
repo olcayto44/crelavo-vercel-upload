@@ -6,14 +6,23 @@ import { InnerMobileNav } from "@/components/InnerMobileNav";
 import { localizedSeoNavLinks } from "@/lib/site-content-config";
 import { getLocalizedEuropePage, localizedEuropePages, localizedLanguageAlternates } from "@/lib/localized-europe-pages";
 
+import {turkishCategoryProfiles,turkishCategoryId,turkishCategoryPath} from "@/lib/category-tr-content";
+import {categoryPublicPaths,categoryWorkspace} from "@/lib/category-public-routes";
+import {publicOrigin} from "@/lib/category-detail-meta";
+import {getConfiguredServicePage} from "@/lib/service-pages-loader";
+import {TurkishCategoryPage} from "@/components/TurkishCategoryPage";
+export const dynamic="force-dynamic";
+async function categoryVisibility(id:string){const path=categoryPublicPaths[id];const config=path.startsWith("/products/")?null:await getConfiguredServicePage(path.slice(1));return {draft:config?.status==="draft",index:config?.status!=="noindex"&&config?.includeInSitemap!==false};}
 type LocalizedPageProps = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return localizedEuropePages.filter((page) => page.locale === "tr").map((page) => ({ slug: page.slug }));
+  return [...localizedEuropePages.filter(page=>page.locale==="tr").map(page=>({slug:page.slug})),...Object.values(turkishCategoryProfiles).map(page=>({slug:page.slug}))];
 }
 
 export async function generateMetadata({ params }: LocalizedPageProps): Promise<Metadata> {
   const { slug } = await params;
+  const categoryId=turkishCategoryId(slug);
+  if(categoryId){const p=turkishCategoryProfiles[categoryId],visibility=await categoryVisibility(categoryId),canonical=publicOrigin+turkishCategoryPath(categoryId)!;if(visibility.draft)return {};const english=publicOrigin+categoryPublicPaths[categoryId];return {title:{absolute:p.title+" | Crelavo"},description:p.description,keywords:[],alternates:{canonical,...(visibility.index?{languages:{"en-US":english,"tr-TR":canonical,"x-default":english}}:{})},openGraph:{title:p.title+" | Crelavo",description:p.description,url:canonical,type:"website",locale:"tr_TR"},twitter:{card:"summary",title:p.title,description:p.description},robots:{index:visibility.index,follow:true}};}
   const locale = "tr";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) return { title: "Localized Crelavo page" };
@@ -64,6 +73,8 @@ function LocalizedStructuredData({ page }: { page: (typeof localizedEuropePages)
 
 export default async function LocalizedEuropePage({ params }: LocalizedPageProps) {
   const { slug } = await params;
+  const categoryId=turkishCategoryId(slug);
+  if(categoryId){if((await categoryVisibility(categoryId)).draft)notFound();return <TurkishCategoryPage id={categoryId}/>;}
   const locale = "tr";
   const page = getLocalizedEuropePage(locale, slug);
   if (!page) notFound();
@@ -83,7 +94,7 @@ export default async function LocalizedEuropePage({ params }: LocalizedPageProps
           <p className="section-lead">{page.lead}</p>
           <p className="localized-market-note">{page.marketNote}</p>
           <div className="sample-detail-actions">
-            <Link className="btn" href="/dashboard/create">{page.primaryCta}</Link>
+            <Link className="btn" href={categoryWorkspace("video")}>{page.primaryCta}</Link>
             <Link className="btn secondary" href="/pricing">{page.secondaryCta}</Link>
           </div>
         </section>
