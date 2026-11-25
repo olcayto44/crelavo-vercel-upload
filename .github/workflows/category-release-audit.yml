@@ -13,6 +13,9 @@ on:
       - 'scripts/category-release-audit.mjs'
       - 'scripts/prepare-category-showcase-art.cjs'
       - 'scripts/category-locale-integrity-smoke.cjs'
+      - 'scripts/e2e-dry-run-smoke.mts'
+      - 'scripts/non-payment-e2e-smoke.mts'
+      - 'next.config.mjs'
       - '.github/workflows/category-release-audit.yml'
   pull_request:
     branches: [feat/studio-cloud-elements-20261123]
