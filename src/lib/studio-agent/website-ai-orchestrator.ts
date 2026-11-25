@@ -36,7 +36,7 @@ export async function runIsolatedWebsiteAI(raw:unknown,actor:string,d:D){
  const artifact=await generateWebsiteArtifact(websiteEngineInput(brief),a.productionId,{mode:"validated_copy",copy});
  const editableDesign=buildEditableWebsiteFromCopy(websiteEngineInput(brief),copy);
  const editableCandidate=renderWebsiteDesignCandidate(editableDesign);
- const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest,editableDesign,editableDesignHash:editableCandidate.manifest.designHash}});
+ const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest,editableDesign,editableDesignHash:editableCandidate.manifest.designHash,artDirection:copy.artDirection??null,aiSecondaryPages:copy.secondaryPages?.map(p=>p.pageTitle)??[]}});
  if(saved!==true)throw Error("record_uncertain");
  return result("artifact_cost_pending");
  }catch{
