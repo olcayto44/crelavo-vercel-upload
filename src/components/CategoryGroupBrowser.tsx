@@ -3,6 +3,8 @@
 
 import { AppWindow, AudioWaveform, Bot, Clapperboard, FileText, Globe2, Image, LayoutDashboard, Megaphone, MonitorSmartphone, Music2, Palette, Pencil, Radio, ScrollText, Scissors, Sparkles, UsersRound, UserRound, Video, Wand2 } from "lucide-react";
 import { HardReloadLink } from "@/components/HardReloadLink";
+import {categoryPublicPaths} from "@/lib/category-public-routes";
+import {useState} from "react";
 
 import { productionPackages, productionTypes, type ProductionPackage } from "@/lib/production";
 
@@ -136,7 +138,7 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 
   return (
       <div className={`card production-pricing-card production-tone-${type.id}`} key={type.id}>
-        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={`/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`} aria-label={`Start ${type.label} production from category visual`}>
+        <HardReloadLink className={`category-card-visual category-visual-${type.id}`} href={categoryPublicPaths[type.id] || "/categories"} aria-label={`Learn about ${type.label}`}>
           <div className="category-visual-orb category-visual-orb-one" aria-hidden="true" />
           <div className="category-visual-orb category-visual-orb-two" aria-hidden="true" />
           <div className="category-visual-panel category-visual-panel-main">
@@ -153,18 +155,18 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
       <h3>{type.label}</h3>
       <p>{type.description}</p>
       <div className="category-option-row">
-        {(categoryOptions[type.id] ?? []).map((option) => <small key={option}>{option}</small>)}
+        {(categoryOptions[type.id] ?? []).slice(0,3).map((option) => <small key={option}>{option}</small>)}
       </div>
-      <div className="production-package-list">
+      <details><summary>Package options (confirm in Studio)</summary><div className="production-package-list">
         {packages.map((item) => (
           <div key={item.id}>
             <strong>{item.name}</strong>
                     <span>{item.credits > 0 ? `${item.credits.toLocaleString()} credits` : "No included credits"}</span>
           </div>
         ))}
-      </div>
+      </div></details>
       <div className="clc-btn-row">
-        <HardReloadLink className="btn" href={type.id === "live_sales_agent" ? "/live-sales-credits" : `/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`}>Start production</HardReloadLink>
+        <HardReloadLink className="btn" href={categoryPublicPaths[type.id] || "/categories"}>Learn more</HardReloadLink>
         {type.id === "ad_score_checker" ? <HardReloadLink className="btn secondary" href="/free-tools/ad-performance-score-checker">Free score tool</HardReloadLink> : null}
         {type.id === "live_sales_agent" ? <HardReloadLink className="btn secondary" href={`/dashboard/studio-v2?category=${encodeURIComponent(type.id)}`}>Open workspace</HardReloadLink> : null}
       </div>
@@ -173,6 +175,8 @@ function renderCategoryCard(typeId: string, packageCatalog: ProductionPackage[])
 }
 
 export function CategoryGroupBrowser() {
+  const [query,setQuery]=useState("");
+  const matches=(id:string)=>{const type=productionTypes.find(t=>t.id===id);return (type?.label+" "+type?.description+" "+(categoryOptions[id]??[]).join(" ")).toLowerCase().includes(query.trim().toLowerCase())};
   return (
     <section className="category-browser">
       <div className="category-group-head main-category-head">
@@ -180,6 +184,7 @@ export function CategoryGroupBrowser() {
         <h2>All Crelavo production categories</h2>
         <p>Jump to a group. Every production type is listed below — nothing is hidden behind tabs.</p>
       </div>
+      <label style={{display:"grid",gap:6,margin:"12px 0"}}>Search categories<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Video, website, avatar…" maxLength={100}/></label>
       <div className="category-tab-grid">
         {categoryGroups.map((group) => (
           <HardReloadLink className={`category-tab-card category-tone-${group.id}`} href={`#clc-${group.id}`} key={group.id}>
@@ -189,7 +194,8 @@ export function CategoryGroupBrowser() {
           </HardReloadLink>
         ))}
       </div>
-      {categoryGroups.map((group) => (
+      {!categoryGroups.some(g=>g.typeIds.some(matches))&&<p>No matching categories. Try another search.</p>}
+      {categoryGroups.filter(g=>g.typeIds.some(matches)).map((group) => (
         <section className="category-group-section" id={`clc-${group.id}`} key={group.id}>
           <div className="category-group-head">
             <span className="badge">Production group</span>
@@ -197,7 +203,7 @@ export function CategoryGroupBrowser() {
             <p>{group.description}</p>
           </div>
           <div className="production-pricing-grid compact-category-grid">
-            {group.typeIds.map((typeId) => renderCategoryCard(typeId, productionPackages))}
+            {group.typeIds.filter(matches).map((typeId) => renderCategoryCard(typeId, productionPackages))}
           </div>
         </section>
       ))}

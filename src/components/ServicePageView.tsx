@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 import { ServicePageStructuredData } from "@/components/ServicePageStructuredData";
 import type { ServicePage } from "@/lib/service-pages";
 import { caseStudyProofs, testimonialProofs, trustedProofSlots } from "@/lib/social-proof";
@@ -38,8 +39,8 @@ function normalizeProductionStartHref(href: string) {
 }
 
 function primaryCtaHref(page: ServicePage) {
-  if (page.slug === "ai-website-builder") return "/dashboard/studio-v2?category=website";
-  if (page.slug === "ai-video-generator") return "/dashboard/studio-v2?category=video";
+  const id=categoryForPublicPath("/"+page.slug);
+  if(id)return categoryWorkspace(id);
   return normalizeProductionStartHref(page.primaryCtaHref);
 }
 
@@ -200,9 +201,9 @@ export function ServicePageView({ page }: { page: ServicePage }) {
       <main className="container section service-page-detail public-funnel-page">
         <section className="production-hero-card admin-overview-hero service-hero-card">
         <span className="badge">{page.badge}</span>
-        <h1>{page.title} for {page.bestFor}</h1>
+        <h1>{page.title}</h1>
         <p>{page.summary}</p>
-        <p className="section-lead">Explore the {page.keyword} category for long-tail searches like {longTailKeywords.slice(1, 4).join(", ")}.</p>
+        <p className="section-lead">Best for {page.bestFor}. Review the project scope before approving production.</p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
           <Link className="btn" href={primaryCtaHref(page)}>{primaryCtaLabel(page)}</Link>
           {page.secondaryCtaHref ? <Link className="btn secondary" href={normalizeProductionStartHref(page.secondaryCtaHref)}>{secondaryCtaLabel(page.secondaryCtaHref)}</Link> : null}
@@ -219,19 +220,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <div><span>Ready path</span><strong>Assistant workflow</strong><small>Continue with guided production</small></div>
       </section>
 
-      <section className="card admin-wide-card service-keyword-cluster" style={{ marginTop: 18 }}>
-        <span className="badge">SEO keyword coverage</span>
-        <h2>{page.title} keywords, long-tail searches and category intent</h2>
-        <p>These search phrases help visitors find the right Crelavo production path from Google, Yandex, Bing, AI directories and category pages.</p>
-        <div className="admin-category-grid">
-          {longTailKeywords.slice(0, 12).map((keyword) => (
-            <div className="card admin-category-card" key={keyword}>
-              <h3>{keyword}</h3>
-              <p>Relevant for {page.bestFor.toLowerCase()} and connected to the {page.keyword} service category.</p>
-            </div>
-          ))}
-        </div>
-      </section>
+
 
       <section className="card admin-wide-card" style={{ marginTop: 18 }}>
         <span className="badge">Proof and case studies</span>
