@@ -32,21 +32,24 @@ jobs:
       - name: Resolve stale lockfile without lifecycle scripts
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Resolve compatible dependency security fixes (no force, no lifecycle scripts)
-        run: npm audit fix --package-lock-only --ignore-scripts --no-fund
+        run: |
+          if ! npm audit fix --package-lock-only --ignore-scripts --no-fund; then
+            echo 'Compatible fixes did not resolve all findings; detailed audit below will enforce the release gate.'
+          fi
       - name: Save resolved lockfile for review
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: resolved-package-lock
           path: package-lock.json
       - run: npm ci
-      - name: Enforce clean dependency audit
-        run: npm audit --audit-level=moderate
       - name: Record dependency audit details
         run: |
           mkdir -p category-audit-results
           npm audit --json > category-audit-results/dependencies-all.json || true
           npm audit --omit=dev --json > category-audit-results/dependencies-runtime.json || true
           node -e 'for(const n of ["all","runtime"]){const d=require("./category-audit-results/dependencies-"+n+".json");if(d.error||!d.metadata)throw Error("Dependency audit unavailable: "+n);console.log(n,JSON.stringify(d.metadata.vulnerabilities));for(const [name,v] of Object.entries(d.vulnerabilities||{}))console.log(name,v.severity,JSON.stringify(v.fixAvailable));}'
+      - name: Enforce clean dependency audit
+        run: npm audit --audit-level=moderate
       - run: npm run build
       - name: Install isolated browser tooling
         run: |
