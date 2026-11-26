@@ -47,7 +47,7 @@ export async function POST(request: Request) {
             .eq("id", user.id)
             .maybeSingle();
 
-          if (!profileError && String(profile?.role ?? "").toLowerCase() === "admin") {
+          if (!profileError && String(profile?.role ?? "").toLowerCase() === "admin" && user.app_metadata?.role==="admin" && user.email.toLowerCase()===expectedEmail) {
             const token = createAdminSessionToken(user.email.toLowerCase());
             if (!token) {
               return Response.json({ error: "Admin session could not be created." }, { status: 500, headers: { "Cache-Control": "no-store" } });

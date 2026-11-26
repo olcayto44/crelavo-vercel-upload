@@ -114,6 +114,21 @@ export async function GET() {
 
   return Response.json({
     ...providerPlan,
+    // Configuration presence is independent of the currently selected route or a successful paid job.
+    providerInventory: {
+      verification: "configuration_presence_only",
+      providers: [
+        {id:"openai",configured:hasProviderEnv("openai")},
+        {id:"gemini",configured:hasAnyEnv(["GOOGLE_GENERATIVE_AI_API_KEY","GOOGLE_API_KEY"])},
+        {id:"minimax",configured:hasProviderEnv("minimax"),videoGroupConfigured:hasProviderEnv("minimaxGroupId")},
+        {id:"heygen",configured:hasProviderEnv("heygen")},
+        {id:"runway",configured:hasProviderEnv("runway")},
+        {id:"fal",configured:hasProviderEnv("fal")},
+        {id:"elevenlabs",configured:hasProviderEnv("elevenlabs")},
+        {id:"replicate",configured:hasProviderEnv("replicate")},
+        {id:"stability",configured:hasProviderEnv("stability")}
+      ]
+    },
     routeMap: providerRouteMap(),
     video: {
       provider: videoProvider,

@@ -12,7 +12,7 @@ function isActiveAdminHref(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(href + "/");
 }
-const groupLabels: Record<string, string> = { Operations: "Operasyon", Finance: "Finans", Content: "İçerik", System: "Sistem" };
+const groupLabels: Record<string, string> = { Overview: "Kontrol merkezi", Commerce: "Ticari yönetim", Production: "Üretim merkezi", Content: "İçerik ve site", Growth: "SEO ve büyüme", Communication: "İletişim", System: "Teknik yönetim" };
 const menuLabels: Record<string, string> = {
   "/admin/blog": "Blog / SEO yazıları",
   "/admin": "Genel bakış", "/admin/live": "Canlı ziyaretçiler", "/admin/users": "Üyeler / aboneler",
@@ -20,7 +20,7 @@ const menuLabels: Record<string, string> = {
   "/admin/finance": "Finans", "/admin/email": "E-posta gönderimi", "/admin/growth": "Lead / destek",
   "/admin/hero": "Ana sayfa videoları", "/admin/showcase-videos": "Vitrin videoları", "/admin/site-content": "Site içeriği",
   "/admin/partners": "İş ortakları", "/admin/seo": "SEO / Google", "/admin/providers": "Sağlayıcı durumu",
-  "/admin/production-qa": "Üretim kontrolü / QA", "/admin/security-fraud": "Güvenlik", "/admin/monitoring": "İzleme"
+  "/admin/studio-capabilities": "Studio üretim yetenekleri", "/admin/studio-reconciliation": "Studio mutabakat", "/admin/production-qa": "Üretim kontrolü / QA", "/admin/security-fraud": "Güvenlik", "/admin/monitoring": "İzleme"
 };
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   const pathname = usePathname();
@@ -46,7 +46,7 @@ export function AdminShell({ children, title, description }: { children: React.R
             if (!items.length) return null;
             return <details className="admin-menu-group" key={group + pathname + Boolean(term)} open={Boolean(term) || items.some(item => isActiveAdminHref(pathname, item.href))}>
               <summary>{groupLabels[group] || group}<span className={styles.groupCount}>{items.length}</span></summary>
-              {items.map(item => <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} aria-current={isActiveAdminHref(pathname, item.href) ? "page" : undefined} key={item.href} href={item.href} onClick={() => setMobileNavigation(false)}>{menuLabels[item.href] || item.label}</Link>)}
+              {items.map(item => <Link className={isActiveAdminHref(pathname, item.href) ? "active" : undefined} aria-current={isActiveAdminHref(pathname, item.href) ? "page" : undefined} key={item.href} href={item.href} onClick={() => setMobileNavigation(false)}>{item.label}</Link>)}
             </details>;
           })}
           {filteredMenu.length === 0 && <p className={styles.noMenuResults}>Eşleşen bölüm yok.</p>}

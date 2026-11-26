@@ -31,11 +31,8 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-        role: "admin",
-        admin_permissions: permissions
-      }
+      app_metadata: { role: "admin", admin_permissions: permissions },
+      user_metadata: { full_name: fullName }
     });
 
     if (createError) throw createError;

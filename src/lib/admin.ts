@@ -1,23 +1,199 @@
 export const adminMenu = [
-  { label: "Overview", href: "/admin", group: "Operations" },
-  { label: "Live Visitors", href: "/admin/live", group: "Operations" },
-  { label: "Members / Subscribers", href: "/admin/users", group: "Operations" },
-  { label: "Inbox / Notifications", href: "/admin/inbox", group: "Operations" },
-  { label: "Productions", href: "/admin/productions", group: "Operations" },
-  { label: "Credits", href: "/admin/credits", group: "Finance" },
-  { label: "Finance", href: "/admin/finance", group: "Finance" },
-  { label: "Email & Messages", href: "/admin/email", group: "Operations" },
-  { label: "Leads / Support", href: "/admin/growth", group: "Operations" },
-  { label: "Hero Videos", href: "/admin/hero", group: "Content" },
-  { label: "Showcase / Vitrine", href: "/admin/showcase-videos", group: "Content" },
-  { label: "Blog / SEO yazıları", href: "/admin/blog", group: "Content" },
-  { label: "Blog / Footer / Hero", href: "/admin/site-content", group: "Content" },
-  { label: "Affiliate / Partners", href: "/admin/partners", group: "Finance" },
-  { label: "SEO / Google", href: "/admin/seo", group: "Content" },
-  { label: "Provider Health", href: "/admin/providers", group: "System" },
-  { label: "Production Debug / QA", href: "/admin/production-qa", group: "System" },
-  { label: "Security / Fraud", href: "/admin/security-fraud", group: "System" },
-  { label: "Monitoring", href: "/admin/monitoring", group: "System" }
+  {
+    "label": "Genel bakış",
+    "href": "/admin",
+    "group": "Overview"
+  },
+  {
+    "label": "Canlı ziyaretçiler",
+    "href": "/admin/live",
+    "group": "Overview"
+  },
+  {
+    "label": "Trafik analizi",
+    "href": "/admin/analytics",
+    "group": "Overview"
+  },
+  {
+    "label": "Üyeler / aboneler",
+    "href": "/admin/users",
+    "group": "Overview"
+  },
+  {
+    "label": "Finans & Whop",
+    "href": "/admin/finance",
+    "group": "Commerce"
+  },
+  {
+    "label": "Kredi yönetimi",
+    "href": "/admin/credits",
+    "group": "Commerce"
+  },
+  {
+    "label": "Paketler",
+    "href": "/admin/packages",
+    "group": "Commerce"
+  },
+  {
+    "label": "Abonelikler",
+    "href": "/admin/billing",
+    "group": "Commerce"
+  },
+  {
+    "label": "Ödeme kontrolü",
+    "href": "/admin/studio-reconciliation",
+    "group": "Commerce"
+  },
+  {
+    "label": "Affiliate / ortaklar",
+    "href": "/admin/partners",
+    "group": "Commerce"
+  },
+  {
+    "label": "Üretimler",
+    "href": "/admin/productions",
+    "group": "Production"
+  },
+  {
+    "label": "37 kategori",
+    "href": "/admin/studio-capabilities",
+    "group": "Production"
+  },
+  {
+    "label": "Studio",
+    "href": "/admin/studio",
+    "group": "Production"
+  },
+  {
+    "label": "Kalite / teslimat",
+    "href": "/admin/production-qa",
+    "group": "Production"
+  },
+  {
+    "label": "Asistan",
+    "href": "/admin/assistant",
+    "group": "Production"
+  },
+  {
+    "label": "Blog yönetimi",
+    "href": "/admin/blog",
+    "group": "Content"
+  },
+  {
+    "label": "Video yükleme / vitrin",
+    "href": "/admin/showcase-videos",
+    "group": "Content"
+  },
+  {
+    "label": "Ana sayfa Hero",
+    "href": "/admin/hero",
+    "group": "Content"
+  },
+  {
+    "label": "Örnek videolar",
+    "href": "/admin/sample-videos",
+    "group": "Content"
+  },
+  {
+    "label": "Site içeriği / footer",
+    "href": "/admin/site-content",
+    "group": "Content"
+  },
+  {
+    "label": "Kategori sayfaları",
+    "href": "/admin/categories",
+    "group": "Content"
+  },
+  {
+    "label": "Hizmet sayfaları",
+    "href": "/admin/service-pages",
+    "group": "Content"
+  },
+  {
+    "label": "SSS",
+    "href": "/admin/faqs",
+    "group": "Content"
+  },
+  {
+    "label": "Marka",
+    "href": "/admin/branding",
+    "group": "Content"
+  },
+  {
+    "label": "Görünüm",
+    "href": "/admin/appearance",
+    "group": "Content"
+  },
+  {
+    "label": "SEO / GEO / Sitemap",
+    "href": "/admin/seo",
+    "group": "Growth"
+  },
+  {
+    "label": "SEO içerik kontrolü",
+    "href": "/admin/seo-workbench",
+    "group": "Growth"
+  },
+  {
+    "label": "Reklamlar",
+    "href": "/admin/ads",
+    "group": "Growth"
+  },
+  {
+    "label": "ROAS",
+    "href": "/admin/ads-roas",
+    "group": "Growth"
+  },
+  {
+    "label": "Büyüme",
+    "href": "/admin/growth",
+    "group": "Growth"
+  },
+  {
+    "label": "Gelen kutusu",
+    "href": "/admin/inbox",
+    "group": "Communication"
+  },
+  {
+    "label": "E-posta",
+    "href": "/admin/email",
+    "group": "Communication"
+  },
+  {
+    "label": "API sağlayıcıları",
+    "href": "/admin/providers",
+    "group": "System"
+  },
+  {
+    "label": "API servisleri",
+    "href": "/admin/api-services",
+    "group": "System"
+  },
+  {
+    "label": "API bütçe / koruma",
+    "href": "/admin/api-guard",
+    "group": "System"
+  },
+  {
+    "label": "Bağlantılar",
+    "href": "/admin/connections",
+    "group": "System"
+  },
+  {
+    "label": "Güvenlik",
+    "href": "/admin/security-fraud",
+    "group": "System"
+  },
+  {
+    "label": "İzleme",
+    "href": "/admin/monitoring",
+    "group": "System"
+  },
+  {
+    "label": "Yedekler",
+    "href": "/admin/backup",
+    "group": "System"
+  }
 ];
 export const adminDailyFocus = [
   { label: "Members / Add credits", href: "/admin/users", priority: "Daily", note: "Find users, open member records, add credits manually, and quickly review account and credit status." },

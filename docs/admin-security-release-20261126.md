@@ -1,0 +1,2 @@
+# Admin release scope
+Production base d63264c274efad85de690b223b1d08e3a33ccbe9. Owner-only admin UI with signed-session and secret checks, app-metadata authorization, overview counts, SEO/GEO workbench, read-only capability and reconciliation reports, member detail and existing blog/showcase/email interface refinements. This does not enable new paid production, mutate balances, send emails or change payment integrations. Non-owner admin access remains closed until role-level page and API permissions are independently validated.
