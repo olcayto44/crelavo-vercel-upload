@@ -32,5 +32,5 @@ export async function handleProductionDispatch(request:Request,d:Deps){
  const result=await dispatchWebsiteAdapter({tool:"generate_website",args:{planHash:q.data.planHash}},context,binding,d.adapter);
  if(result.state==="ready"&&result.chargedCredits!==quote.credits)return fail(409,"production_charge_reconciliation_required");
  const ok=result.state==="ready"||result.state==="already_ready";
- return Response.json({ok,...result,executionReady:false},{status:ok?200:result.state==="failed_released"?502:result.state==="reconciliation_required"?409:403,headers:{"Cache-Control":"no-store"}});
+ return Response.json({ok,...result,executionReady:false},{status:ok?200:result.state==="failed_released"?502:result.state==="reconciliation_required"?409:result.state==="not_dispatched"&&result.code==="insufficient_credits"?402:403,headers:{"Cache-Control":"no-store"}});
 }
