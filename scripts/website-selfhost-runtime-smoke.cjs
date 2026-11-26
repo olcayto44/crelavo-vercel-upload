@@ -25,7 +25,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  assert.equal((await post("/contact-form",{name:"Test",email:"not-email",message:"Invalid"})).status,400);
  assert.equal((await post("/contact-form",{name:"Test <script>",email:"test@example.test",message:"Persistent contact"})).status,303);
  assert(!(await (await get("/admin")).text()).includes("Persistent contact"));
- let cookie=await login(),html=await (await get("/admin",cookie)).text();assert(html.includes("Persistent contact"));assert(html.includes("Test &lt;script&gt;"));const csrf=html.match(/name="csrf" value="([a-f0-9]+)"/)[1];
+ let cookie=await login(),html=await (await get("/admin",cookie)).text();assert(html.includes("Persistent contact"));assert(html.includes("Test &lt;script&gt;"));let csrf=html.match(/name="csrf" value="([a-f0-9]+)"/)[1];
  const edit={csrf,path:"index.html",version:"0",title:"Updated SEO title",description:"Updated description",headline:"Updated <heading>",lead:"Updated intro"};
  assert.equal((await post("/admin/content",edit)).status,403);assert.equal((await post("/admin/content",{...edit,csrf:"bad"},cookie)).status,403);
  assert.equal((await post("/admin/content",edit,cookie)).status,303);assert.equal((await post("/admin/content",edit,cookie)).status,409);html=await (await get("/")).text();assert(html.includes("Updated &lt;heading&gt;"));assert(html.includes("Updated SEO title"));assert(html.includes("Updated intro"));assert(html.includes('property="og:title" content="Updated SEO title"'));assert(html.includes('name="twitter:description" content="Updated description"'));const graph=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);assert.equal(graph.name,"Updated SEO title");assert.equal(graph.description,"Updated description");
@@ -118,6 +118,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  const cdb=new (require("node:sqlite").DatabaseSync)(path.join(currentDataDir,"site.sqlite"),{readOnly:true});
  try{assert.deepEqual({...cdb.prepare("SELECT total_minor,currency,state FROM cart_orders WHERE id=?").get(q3)},{total_minor:16000,currency:"TRY",state:"fulfilled"});assert.equal(cdb.prepare("SELECT count(*) n FROM cart_order_items WHERE order_id=?").get(q3).n,2);}finally{cdb.close();}
  console.log("independent multi-product cart: reviewed totals, atomic stock, stale quote rejection, idempotent request and cancellation, fulfilled stock protected");
+ await stop();await start(false);cookie=await login();csrf=parseField(await (await get("/admin",cookie)).text(),"csrf");
  const slotStart=new Date(Date.now()+86400000).toISOString(),slotEnd=new Date(Date.now()+90000000).toISOString(),slot={csrf,resource:"room-1",service:"Fixture appointment",start:slotStart,end:slotEnd,capacity:"2"};
  assert.equal((await post("/admin/slot",slot,cookie)).status,303);assert.equal((await post("/admin/slot",slot,cookie)).status,409);
  const bookingHtml=await (await get("/appointments")).text(),booking={request_key:parseField(bookingHtml,"request_key"),slot:parseField(bookingHtml,"slot"),name:"Test visitor",email:"visit@example.test",quantity:"2"};
