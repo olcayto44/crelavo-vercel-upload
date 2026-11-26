@@ -49,6 +49,7 @@ jobs:
           npm run smoke:studio-v2-wiring
           node scripts/studio-production-adapter-smoke.cjs
           node scripts/studio-production-dispatch-smoke.cjs
+          node scripts/studio-production-credit-policy-smoke.cjs
           node scripts/studio-production-status-smoke.cjs
       - name: Integrated MP4 worker runtime (release branch)
         run: |
