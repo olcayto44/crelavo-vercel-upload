@@ -3,6 +3,7 @@ import {generateWebsiteAICopy,prepareWebsiteAICopy} from "../studio-agent/websit
 import {buildEditableWebsiteFromCopy,prepareEditableWebsiteBrief} from "../studio-agent/website-editable-artifact";
 import {renderWebsiteDesignCandidate} from "../website-design-candidate";
 import {requireWebsiteArtifact} from "../website-artifact-acceptance";
+import type {WebsiteGeneratedFile} from "../providers/openai";
 import type {CostPolicy} from "../studio-agent/cost-policy";
 // Reuse the existing production OpenAI credential and the verified Website
 // policy. No payment-provider dependency and no local-template fallback.
@@ -26,6 +27,6 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  const acceptance=requireWebsiteArtifact(rendered.files.map(f=>({name:f.path,content:f.content})),{root:"",requiredPages:rendered.manifest.pages.map(p=>p.path),language:design.language});
  if(acceptance.warnings.length)throw Error("website_ai_incomplete_content");
  // The same design becomes the source for the project editor and delivery.
- const files=[...rendered.files,{path:"README.md",contentType:"text/markdown",content:"# "+design.brand+"\n\nStatic website. Review business facts, configure the destination hosting and contact service before publication.\n"}];
+ const files:WebsiteGeneratedFile[]=[...rendered.files.map(f=>({...f,contentType:f.path.endsWith(".html")?"text/html" as const:f.path.endsWith(".css")?"text/css" as const:f.path.endsWith(".json")?"application/json" as const:"text/markdown" as const})),{path:"README.md",contentType:"text/markdown",content:"# "+design.brand+"\n\nStatic website. Review business facts, configure the destination hosting and contact service before publication.\n"}];
  return {...artifact,files,plan:{...artifact.plan,status:"approved" as const,editableDesign:design,editableDesignHash:rendered.manifest.designHash,websiteAIReceipt:result.receipt},websiteContent:{...artifact.websiteContent,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
 }
