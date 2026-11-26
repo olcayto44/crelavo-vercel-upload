@@ -12,7 +12,7 @@ type EditKind=keyof typeof editChoices;
 type Source={jobId:string;ordinal:number};
 type Draft={operation?:EditKind;source?:Source;mask?:string;search?:string;expand?:number;jobId:string;category:Category;title:string;brief:string;aspect:string;count:number;autoResume:boolean;referenceJpeg?:string;referenceConsent?:true};
 type Quote={planHash:string;totalCredits:number;stepCredits:number;stepCount:number;scope:string;draft:Draft};
-const statuses:Record<string,string>={queued:"Sırada",running:"Üretimde",paused_credits:"Kredi bekliyor",ready:"Teslime hazır",reconcile_required:"İşlem kontrolü gerekiyor",cancelled:"İptal",pending:"Bekliyor",claimed:"İşleniyor"};
+const statuses:Record<string,string>={queued:"Sırada",running:"Üretimde",paused_credits:"Kredi bekliyor",ready:"Teslime hazır",reconcile_required:"İşlem kontrolü gerekiyor",failed:"Üretim başarısız — kullanılmayan kredi serbest",cancelled:"İptal",pending:"Bekliyor",claimed:"İşleniyor"};
 const label=(s:string)=>statuses[s]??s;
 const endpoint="/api/studio/stage-jobs";
 const validCategory=(v:string|null):v is Category=>!!v&&Object.prototype.hasOwnProperty.call(categories,v);

@@ -45,14 +45,18 @@ export async function executeStage(job:StageJob,d:Dependencies){
  }catch{return {result:await finish("not_dispatched",null,null,"pre_dispatch_validation_failed"),dispatched:false};}
  try{
   const result=edit?await d.generateEdit!(edit,source!):await d.generate(input!,reference);
-  if(result.state!=="artifact_validated")return {result:await finish("uncertain",null,null,result.code),dispatched:true};
+  if(result.state!=="artifact_validated"){
+   const rejected=/^(minimax|stability)_http_(400|401|402|403|413|422)$/.test(result.code);
+   return {result:await finish(rejected?"rejected_no_output":"uncertain",null,null,result.code),dispatched:true};
+  }
   const receipt=result.receipt;
   if((edit?(receipt.provider!=="stability"||receipt.model!==editReceiptModel(edit.operation)):(receipt.provider!=="minimax"||receipt.model!=="image-01"))||createHash("sha256").update(result.bytes).digest("hex")!==receipt.sha256)throw Error("provider_receipt_mismatch");
   const img=sharp(result.bytes,{limitInputPixels:edit?16777216:4194304,failOn:"warning"});
   const metadata=await img.metadata();if(metadata.format!=="png"||metadata.width!==receipt.width||metadata.height!==receipt.height)throw Error("artifact_invalid");
   let bytes=await img.webp({quality:90}).toBuffer();if(bytes.length>2100000)bytes=await img.webp({quality:75}).toBuffer();
   if(bytes.length>2100000||bytes.length<16)throw Error("delivery_artifact_size");
-  const outputReceipt={...receipt,deliveryMime:"image/webp",deliverySha256:createHash("sha256").update(bytes).digest("hex"),deliveryBytes:bytes.length};
+  const estimatedProviderMicroUSD=edit?(edit.operation==="upscale"?20000:edit.operation==="outpaint"?40000:50000):3500;
+  const outputReceipt={...receipt,estimatedProviderMicroUSD,tariffVersion:job.tariff_version,costState:"pending_reconciliation",deliveryMime:"image/webp",deliverySha256:createHash("sha256").update(bytes).digest("hex"),deliveryBytes:bytes.length};
   return {result:await finish("ready",outputReceipt,bytes.toString("base64"),null),dispatched:true};
  }catch{try{await finish("uncertain",null,null,"provider_or_settlement_unconfirmed");}catch{/* durable claim stays held; never replay a provider call */}return {state:"reconcile_required",dispatched:true};}
 }
