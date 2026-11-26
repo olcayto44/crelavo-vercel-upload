@@ -51,7 +51,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     if (!profile && !authUser) return Response.json({ error: "User not found." }, { status: 404 });
 
     const balance = await safeTable(
-      () => supabase.from("credit_balances").select("user_id, balance, reserved, bonus_credits, updated_at").eq("user_id", userId).maybeSingle(),
+      () => supabase.from("credit_balances").select("user_id, balance, reserved, bonus_credits, updated_at, subscription_status, billing_cycle_ends_at, active_subscription_package, active_subscription_billing").eq("user_id", userId).maybeSingle(),
       null as any
     );
 
@@ -65,7 +65,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const productions = await safeTable(
       () => supabase
         .from("production_requests")
-        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, final_video_url, created_at, updated_at, output_json")
+        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, delivery_link, created_at, updated_at, output_json")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(80),
@@ -75,7 +75,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const legacyVideoRequests = await safeTable(
       () => supabase
         .from("video_requests")
-        .select("id, title, prompt, status, package_id, estimated_credits, final_video_url, created_at, updated_at")
+        .select("id, title, prompt, status, estimated_credits, final_video_url, created_at, updated_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(40),
@@ -121,7 +121,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     let spentCredits = 0;
     for (const event of creditEvents) {
       const amount = Number(event.amount ?? 0) || 0;
-      if (event.type === "purchase" || event.type === "adjustment") {
+      if (event.type === "purchase") {
         if (amount > 0) purchasedCredits += amount;
         const packageId = noteValue(event.note, "package") || noteValue(event.note, "package_id");
         if (packageId) purchasedPackages.add(packageId);
@@ -153,6 +153,10 @@ export async function GET(request: Request, { params }: RouteContext) {
         bonus_credits: Number(balance?.bonus_credits ?? 0) || 0,
         credit_value_usd: estimateCreditValueUsd(balanceTotal),
         purchased_credits: purchasedCredits,
+        subscription_status:balance?.subscription_status??null,
+        subscription_package:balance?.active_subscription_package??null,
+        subscription_billing:balance?.active_subscription_billing??null,
+        subscription_cycle_end:balance?.billing_cycle_ends_at??null,
         spent_credits: spentCredits,
         purchased_packages: Array.from(purchasedPackages),
         balance_updated_at: balance?.updated_at ?? null
