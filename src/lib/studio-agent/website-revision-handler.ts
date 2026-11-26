@@ -17,7 +17,7 @@ function output(result:TurnResponse,context:WebsiteRevisionContext){
  if(proposal.siteId!==context.siteId||proposal.baseHash!==context.baseHash||proposal.expectedRevision!==context.version)throw new ConversationError("project_changed_reload",409);
  const checked=validateWebsiteAIRevision(context,{expectedRevision:proposal.expectedRevision,commands:proposal.commands});
  if(checked.resultHash!==proposal.resultHash)throw new ConversationError("revision_result_invalid");
- const next=applyWebsiteRevision(context.design,context.version,checked);
+ const next=applyWebsiteRevision(context.design,context.version,{expectedRevision:checked.expectedRevision,commands:checked.commands});
  return {ok:true,state:"settled",chargedCredits:result.chargedCredits,reply:result.reply,design:next.design,baseVersion:context.version,proposalOnly:true};
 }
 export async function handleWebsiteAssistantRevision(request:Request,deps:{authenticate:()=>Promise<{userId:string;db:DB}>}){
