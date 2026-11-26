@@ -16,6 +16,8 @@ try{
   await page.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
   await page.goto(origin+"/website-design-test",{waitUntil:"domcontentloaded"});
   await page.getByRole("heading",{name:"Website design studio · responsive pilot"}).waitFor();
+  assert.equal(await page.locator(".crelavo-auth-sticky").count(),0,"Private editor must not show public payment/sign-in overlay");
+  assert.equal(await page.locator("#crelavo-mobile-header").count(),0,"Private editor has its own navigation");
   assert.equal(await page.getByRole("navigation",{name:"Editor sections"}).getByRole("button").count(),6);
   assert.equal(await page.getByLabel("Sector / Sektör",{exact:true}).isVisible(),false);
   await page.getByText("Preview updated. Not published.",{exact:true}).waitFor({timeout:60000});
@@ -133,6 +135,7 @@ try{
  const demo=await browser.newPage({viewport:{width:1280,height:900},acceptDownloads:true});
  const demoErrors=[];demo.on("pageerror",e=>demoErrors.push(e.message));await demo.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
  await demo.goto(origin+"/website-cms-test/demo",{waitUntil:"domcontentloaded"});await demo.getByRole("heading",{name:"Müşteri yönetim paneli",exact:true}).waitFor({timeout:60000});
+ assert.equal(await demo.locator(".crelavo-auth-sticky").count(),0,"Demo must not show live payment entry");
  await demo.getByRole("button",{name:"Asistan ile düzenle",exact:true}).click();
  await demo.getByLabel("Düzenleme isteği",{exact:true}).fill("renk: koyu\nbaşlık: Asistan revizyon testi");
  await demo.getByRole("button",{name:"Değişiklik önerisi oluştur",exact:true}).click();

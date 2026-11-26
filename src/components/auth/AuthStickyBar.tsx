@@ -32,6 +32,8 @@ export function AuthStickyBar() {
     } catch { setSessionChecked(true); setHasSupabaseSession(false); }
   }, []);
 
+  // The isolated Website workspaces have separate authentication and never offer a live checkout.
+  if(pathname==="/website-design-test"||pathname==="/website-cms-test"||pathname.startsWith("/website-cms-test/"))return null;
   if(pathname==="/categories"||categoryForPublicPath(pathname)||(pathname==="/dashboard/studio"||pathname.startsWith("/dashboard/studio/")||pathname==="/dashboard/studio-v2")||pathname.startsWith("/admin")||pathname==="/design-preview/admin")return null;
   if (loading || !sessionChecked || modalOpen || user || hasSupabaseSession) return null;
   return <div className="crelavo-auth-sticky"><a href="https://whop.com/checkout/ch_MTZtuBJl2OuZtL8/">Start Pro · $9.99/mo</a><button type="button" onClick={() => openAuth("login")}>Sign in</button></div>;
