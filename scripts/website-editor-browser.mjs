@@ -197,7 +197,11 @@ try{
  return route.continue();
  });
  await customer.goto(origin+"/website-cms-test",{waitUntil:"domcontentloaded"});
+ // The sign-in button only appears after INITIAL_SESSION, so wait before typing into the hydrated controlled fields.
+ await customer.getByRole("button",{name:"Giriş yap",exact:true}).waitFor({timeout:60000});
+ await customer.waitForFunction(()=>{const form=document.querySelector("main form");return !!form&&Array.from(form.querySelectorAll("button")).some(b=>b.textContent==="Giriş yap"&&!b.disabled);});
  await customer.getByLabel("E-posta",{exact:true}).fill("fixture@example.invalid");await customer.getByLabel("Şifre",{exact:true}).fill("offline-fixture-password");
+ assert.equal(await customer.getByLabel("E-posta",{exact:true}).inputValue(),"fixture@example.invalid");assert.equal(await customer.getByLabel("Şifre",{exact:true}).inputValue(),"offline-fixture-password");assert(await customer.locator("main form").evaluate(f=>f.checkValidity()),"Hydrated login form must be valid");
  await customer.getByRole("button",{name:"Giriş yap",exact:true}).click();
  try{await customer.getByRole("heading",{name:savedDesign.brand,exact:true}).waitFor({timeout:60000});}catch(e){console.log("Customer fixture login diagnostic",JSON.stringify({loginCount,fixtureRequests,errors:customerErrors,status:await customer.locator("main").innerText()}));throw e;}
  await customer.frameLocator("iframe[title$='website preview']").getByRole("heading",{name:"Original customer headline",exact:true}).waitFor({timeout:60000});
