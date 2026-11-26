@@ -236,6 +236,7 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
  paymentDb.exec("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000");
  const createPayments=require(path.join(dir,"payments.cjs")),payCrypto=require("node:crypto");
  let payCalls=[],sessions=new Map(),scenario="normal";const testPrice="price_offline123456789",testSubscription="sub_offline123456789";
+ const payCharge="ch_offline123456789",payIntent="pi_offline123456789";
  const payEnv={SITE_PAYMENT_TEST:"1",SITE_STRIPE_TEST_KEY:"sk_test_synthetic123456789",SITE_STRIPE_TEST_MONTHLY_PRICE:testPrice};
  const paymentDeps={db:paymentDb,config:{language:"tr",modules:["catalog","orders","accounts"]},origin:new URL("https://customer.example.test"),local:false,esc:String,hidden:()=>"",page:(title,body)=>body,send:(res,status,body)=>{res.status=status;res.body=body;},redirect:()=>{},value:(f,k,max)=>{const v=f.get(k);if(!v||v.length>max||f.getAll(k).length!==1)throw Error("field");return v;},token:()=>payCrypto.randomBytes(32).toString("hex"),crypto:payCrypto,env:payEnv,transport:async(url,init)=>{
  const u=new URL(url);assert.equal(u.origin,"https://api.stripe.com");assert.equal(init.redirect,"error");assert.equal(init.headers.Authorization,"Bearer "+payEnv.SITE_STRIPE_TEST_KEY);payCalls.push(u.pathname);
@@ -251,8 +252,10 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
   assert.equal(init.method,"GET");const s=sessions.get(u.pathname.split("/").pop());assert(s);
   return Response.json({...s,status:"complete",payment_status:"paid",payment_intent:"pi_offline123456789",subscription:s.mode==="subscription"?testSubscription:null,amount_total:scenario==="wrong_amount"?1:s.amount_total});
  }
+ if(u.pathname==="/v1/payment_intents/"+payIntent)return Response.json({object:"payment_intent",id:payIntent,livemode:false,status:"succeeded",currency:"try",amount:16000,amount_received:16000,latest_charge:payCharge});
+ if(u.pathname==="/v1/charges/"+payCharge)return Response.json({object:"charge",id:payCharge,livemode:false,payment_intent:payIntent,currency:"try",amount:16000,amount_captured:16000,captured:true,paid:true,status:"succeeded",amount_refunded:scenario==="full_refund"?16000:scenario==="partial_refund"?2000:0,refunded:scenario==="full_refund",disputed:scenario==="dispute"});
  if(u.pathname==="/v1/subscriptions/"+testSubscription){
-  const s=[...sessions.values()].find(x=>x.mode==="subscription");return Response.json({object:"subscription",id:testSubscription,livemode:false,metadata:{crelavo_test_run:s.client_reference_id},currency:"usd",status:"active",items:{has_more:false,data:[{quantity:1,price:{id:scenario==="wrong_subscription"?"price_wrong":testPrice,unit_amount:2500}}]}});
+  const s=[...sessions.values()].find(x=>x.mode==="subscription");return Response.json({object:"subscription",id:testSubscription,livemode:false,metadata:{crelavo_test_run:s.client_reference_id},currency:"usd",status:scenario==="cancelled_subscription"?"canceled":"active",cancel_at_period_end:scenario==="scheduled_cancel",items:{has_more:false,data:[{quantity:1,current_period_start:Math.floor(Date.now()/1000)-100,current_period_end:Math.floor(Date.now()/1000)+86400,price:{id:scenario==="wrong_subscription"?"price_wrong":testPrice,unit_amount:2500}}]}});
  }
  throw Error("unexpected provider path");
  }};
@@ -279,6 +282,19 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
  paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(subRun.id);scenario="normal";
  assert.equal((await invokePayment(payments,"check",{id:subRun.id})).status,200);
  assert.equal(paymentDb.prepare("SELECT subscription_status FROM payment_test_runs WHERE id=?").get(subRun.id).subscription_status,"active");
+ for(const [next,expected] of [["partial_refund","sandbox_partially_refunded"],["full_refund","sandbox_refunded"],["dispute","sandbox_disputed"]]){
+  paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(payRun.id);scenario=next;
+  assert.equal((await invokePayment(payments,"check",{id:payRun.id})).status,200);
+  assert.equal(paymentDb.prepare("SELECT reconciliation FROM payment_test_runs WHERE id=?").get(payRun.id).reconciliation,expected);
+ }
+ for(const [next,expected] of [["scheduled_cancel","sandbox_subscription_cancel_scheduled"],["cancelled_subscription","sandbox_subscription_not_active"]]){
+  paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(subRun.id);scenario=next;
+  assert.equal((await invokePayment(payments,"check",{id:subRun.id})).status,200);
+  assert.equal(paymentDb.prepare("SELECT reconciliation FROM payment_test_runs WHERE id=?").get(subRun.id).reconciliation,expected);
+ }
+ scenario="normal";
+ console.log("independent sandbox reconciliation: authoritative test intent/charge, partial/full refund, dispute, scheduled cancellation and canceled subscription; no real entitlement");
+
  // Signed webhook tests exercise exact extracted module without any external network.
  const createEvents=require(path.join(dir,"payment-events.cjs")),secret="whsec_synthetic123456789",eventEnv={...payEnv,SITE_STRIPE_TEST_WEBHOOK_SECRET:secret};
  const eventDeps={db:paymentDb,origin:new URL("https://customer.example.test"),local:false,env:eventEnv,crypto:payCrypto,send:()=>{},esc:String,hidden:()=>"",rate:()=>true};
