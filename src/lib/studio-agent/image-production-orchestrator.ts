@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { ImageRequestSchema, type ImageProviderResult, type ImageRequest, type ImageReceipt } from "./image-provider";
+import { ImageRequestSchema, websiteImageProviderModels, type ImageProviderResult, type ImageRequest, type ImageReceipt } from "./image-provider";
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
 const uuid=z.string().uuid();
 export const ImagePlanSchema=z.strictObject({
  requestId:uuid,userId:uuid,projectId:uuid,categoryId:z.literal("image"),operation:z.literal("image_generate"),
- provider:z.enum(["minimax","openai"]),model:z.enum(["image-01","gpt-image-2.6-flare"]),request:ImageRequestSchema,
+ provider:z.enum(["minimax","openai","fal","stability","replicate"]),model:z.enum(["image-01","gpt-image-2.6-flare","fal-ai/flux/schnell","core","black-forest-labs/flux-schnell"]),request:ImageRequestSchema,
  tariffVersion:z.string().regex(/^[A-Za-z0-9._-]{1,64}$/),reservedCredits:z.number().int().positive().max(100000),
  maximumProviderMicroUSD:z.number().int().positive().max(1000000),
-}).refine(p=>p.provider==="minimax"?p.model==="image-01":p.model==="gpt-image-2.6-flare"&&p.request.aspect==="16:9");
+}).refine(p=>p.model===websiteImageProviderModels[p.provider]&&(p.provider==="minimax"||p.request.aspect==="16:9"));
 export type ImageProductionPlan=z.infer<typeof ImagePlanSchema>;
 type Plan=ImageProductionPlan;
 const ApprovedSchema=z.strictObject({plan:ImagePlanSchema,planHash:hash,approvalSource:z.literal("persisted_explicit_user_approval"),reservationState:z.literal("reserved"),account:z.literal("production"),costPolicySource:z.literal("reviewed_server_tariff")});

@@ -8,7 +8,7 @@ import {rateLimit} from "@/lib/security";
 import {buildWebsiteMediaPlan} from "@/lib/website-media-art-direction";
 import {handleImageLaunch} from "@/lib/studio-agent/image-launch";
 import {websiteImageCandidates,verifyWebsiteOpenAIImageModel} from "@/lib/studio-agent/website-image-routes";
-import {generateSingleMinimaxImage,generateSingleOpenAIWebsiteImage} from "@/lib/studio-agent/image-provider";
+import {generateSingleMinimaxImage,generateSingleOpenAIWebsiteImage,generateAlternativeWebsiteImage} from "@/lib/studio-agent/image-provider";
 import {optimizeSettledImageForWebsite} from "@/lib/studio-agent/website-settled-image";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -86,7 +86,7 @@ export async function POST(request:Request){
  const payload={action:v.action,projectId:target.project_id,requestId:target.request_id,request:{prompt:target.prompt,aspect:plan.aspect},...(v.action==="submit"?{quoteHash:v.quoteHash,approvedCredits:v.approvedCredits,confirmProduction:true}:{})};
  const result=await handleImageLaunch(new Request("https://internal.invalid/image",{method:"POST",body:JSON.stringify(payload)}),{userId,canaryId,enabled:()=>enabled()&&!!selected,loadTariff,loadOperation,route:selected.route,
  loadProject:async(user,id)=>{const r=await db.from("production_requests").select("id,user_id,production_type").eq("id",id).eq("user_id",user).eq("production_type","image").maybeSingle();if(r.error)throw Error("project");return r.data;},
- rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>chosen.route.provider==="openai"?generateSingleOpenAIWebsiteImage(input,chosen.key):generateSingleMinimaxImage(input,chosen.key)});
+ rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>chosen.route.provider==="openai"?generateSingleOpenAIWebsiteImage(input,chosen.key):chosen.route.provider==="minimax"?generateSingleMinimaxImage(input,chosen.key):generateAlternativeWebsiteImage(chosen.route.provider,input,chosen.key)});
  if(v.action==="submit"&&result.ok){const output=await result.clone().json();if(output.state==="artifact_recorded_cost_pending"){const finalized=await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});if(!finalized.error&&["settled","already_settled"].includes(String(finalized.data)))return json({ok:true,state:"settled",requestId:target.request_id,costSource:"metered_or_published_price_estimate",invoicePending:true,safeToRetryAutomatically:false});}}
  if(v.action==="quote"&&result.ok){const output=await result.json();return json({...output,requiresReviewedProviderCost:false,maximumProviderMicroUsd:selected.route.max_micro_usd,invoicePending:true});}
  return result;

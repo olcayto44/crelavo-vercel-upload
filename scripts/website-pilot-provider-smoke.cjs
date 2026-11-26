@@ -29,3 +29,7 @@ assert.deepEqual(websiteImageCandidates({...reused,STUDIO_WEBSITE_REUSE_PREVIEW_
 assert.deepEqual(websiteImageCandidates(actor,{...reused,STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"false"}).map(x=>x.route.provider),["minimax"]);
 assert.equal(websiteImageCandidates("22222222-2222-4222-8222-222222222222",reused).length,0);
 assert.equal(websiteImageProviderInventory({FAL_KEY:"fixture"}).find(x=>x.id==="fal").configured,true);
+
+const altEnv={...reused,STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"true",STUDIO_WEBSITE_REUSE_PREVIEW_IMAGE_ALTERNATIVES:"true",FAL_KEY:"fixture",STABILITY_API_KEY:"fixture",REPLICATE_API_TOKEN:"fixture"};
+assert.deepEqual(websiteImageCandidates(actor,altEnv).map(x=>x.route.provider),["openai","minimax","fal","stability","replicate"]);
+assert.deepEqual(websiteImageCandidates(actor,{...altEnv,STUDIO_WEBSITE_REUSE_PREVIEW_IMAGE_ALTERNATIVES:"false"}).map(x=>x.route.provider),["openai","minimax"]);

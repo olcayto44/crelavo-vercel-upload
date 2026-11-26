@@ -13,7 +13,7 @@ const Project=z.object({id:uuid,user_id:uuid,production_type:z.literal("image")}
 const Tariff=z.object({version:z.string(),credits:z.number().int().positive(),max_micro_usd:z.number().int().positive(),enabled:z.literal(true)});
 const Journal=z.object({request_id:uuid,user_id:uuid,project_id:uuid,state:z.enum(["approved","reserved","claimed","artifact_cost_pending","reconcile_required","released","settled"])});
 type RPC=Parameters<typeof createImageProductionStore>[0];
-type Deps={route?:{provider:"openai"|"minimax";model:"gpt-image-2.6-flare"|"image-01"};userId:string;canaryId:string;enabled:()=>boolean;loadProject:(user:string,project:string)=>Promise<unknown>;loadOperation:(user:string,request:string)=>Promise<unknown>;loadTariff:()=>Promise<unknown>;rpc:RPC;generate:(request:ImageRequest)=>Promise<ImageProviderResult>};
+type Deps={route?:Pick<ImageProductionPlan,"provider"|"model">;userId:string;canaryId:string;enabled:()=>boolean;loadProject:(user:string,project:string)=>Promise<unknown>;loadOperation:(user:string,request:string)=>Promise<unknown>;loadTariff:()=>Promise<unknown>;rpc:RPC;generate:(request:ImageRequest)=>Promise<ImageProviderResult>};
 export async function handleImageLaunch(request:Request,d:Deps){
  const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"}});
  const fail=(status:number,code:string)=>json({ok:false,code,safeToRetryAutomatically:false},status);
