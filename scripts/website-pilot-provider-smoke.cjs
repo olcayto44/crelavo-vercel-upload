@@ -23,3 +23,9 @@ assert.deepEqual(websiteImagePilotConnection({...reused,STUDIO_IMAGE_TEST_PROVID
 for(const changes of [{VERCEL_ENV:"production"},{VERCEL_GIT_COMMIT_REF:"main"},{STUDIO_AGENT_DATABASE_TARGET:"production"},{STUDIO_AGENT_TEST_DATABASE_ORIGIN:"https://other.supabase.co"}])assert.equal(websiteImagePilotConnection({...reused,...changes,STUDIO_IMAGE_TEST_PROVIDER_KEY:"dedicated-image"}).apiKey,"");
 assert.equal(websiteImagePilotConnection({...reused,MINIMAX_API_KEY:"",OPENAI_API_KEY:"not-an-image-provider-key"}).apiKey,"");
 console.log("Website image connection: explicit same-preview reuse, dedicated precedence, aliases, exact isolated gate, no production key copying or model fallback");
+
+const {websiteImageCandidates,websiteImageProviderInventory}=load("src/lib/studio-agent/website-image-routes.ts");
+assert.deepEqual(websiteImageCandidates({...reused,STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"true"}.STUDIO_WEBSITE_AI_TEST_USER_ID,{...reused,STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"true"}).map(x=>x.route.provider),["openai","minimax"]);
+assert.deepEqual(websiteImageCandidates(actor,{...reused,STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"false"}).map(x=>x.route.provider),["minimax"]);
+assert.equal(websiteImageCandidates("22222222-2222-4222-8222-222222222222",reused).length,0);
+assert.equal(websiteImageProviderInventory({FAL_KEY:"fixture"}).find(x=>x.id==="fal").configured,true);

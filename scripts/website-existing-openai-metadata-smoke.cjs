@@ -9,6 +9,8 @@ const {probe}=require("./website-existing-openai-metadata-check.cjs");
  assert.equal(await probe({...env,STUDIO_WEBSITE_EXISTING_OPENAI_METADATA_CHECK:"false"},transport),"skipped");
  assert.equal(await probe({...env,OPENAI_API_KEY:""},transport),"preview_key_unavailable");assert.equal(calls,0);
  assert.equal(await probe(env,transport),"model_metadata_verified");assert.equal(calls,1);
+ assert.equal(await probe(env,async(url,init)=>{assert.equal(url,"https://api.openai.com/v1/models/gpt-image-2.6-flare");assert.equal(init.method,"GET");return Response.json({object:"model",id:"gpt-image-2.6-flare"});},"gpt-image-2.6-flare"),"model_metadata_verified");
+ assert.equal(await probe(env,transport,"unsupported"),"skipped");
  assert.equal(await probe(env,async()=>Response.json({error:"private fixture"},{status:401})),"credential_rejected");
  assert.equal(await probe(env,async()=>Response.json({object:"model",id:"other"})),"metadata_unconfirmed");
  assert.equal(await probe(env,async()=>{throw Error("private fixture")}),"provider_unavailable");

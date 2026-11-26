@@ -51,7 +51,9 @@ export async function POST(request:Request){
  const budget=await db.from("studio_image_operations").select("max_micro_usd").neq("state","released").limit(1000);
  if(budget.error)return fail(503,"image_budget_unavailable");
  const remaining=Math.max(0,(cfg.data?.total_micro_usd??0)-(budget.data??[]).reduce((sum,row)=>sum+row.max_micro_usd,0));
- const eligible=enabled()&&cfg.data?.enabled?candidates.filter(c=>routes.data?.some(r=>r.version===c.route.version&&r.provider===c.route.provider&&r.model===c.route.model)&&tariffs.data?.some(t=>t.version===c.route.version&&t.credits===c.route.credits&&t.max_micro_usd===c.route.max_micro_usd)&&c.route.max_micro_usd<=remaining):[];
+ const wallet=await db.from("credit_balances").select("balance,reserved").eq("user_id",userId).maybeSingle();if(wallet.error)return fail(503,"image_wallet_unavailable");
+ const available=Math.max(0,(wallet.data?.balance??0)-(wallet.data?.reserved??0));
+ const eligible=enabled()&&cfg.data?.enabled?candidates.filter(c=>routes.data?.some(r=>r.version===c.route.version&&r.provider===c.route.provider&&r.model===c.route.model)&&tariffs.data?.some(t=>t.version===c.route.version&&t.credits===c.route.credits&&t.max_micro_usd===c.route.max_micro_usd)&&c.route.max_micro_usd<=remaining&&c.route.credits<=available):[];
  let selected:(typeof eligible)[number]|undefined=eligible[0];
  // Free metadata check before quoting or submitting. No provider switch after dispatch.
  if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(c.route.provider==="openai"&&!await verifyWebsiteOpenAIImageModel(c.key)){selected=undefined;continue;}selected=c;break;}}
@@ -62,7 +64,7 @@ export async function POST(request:Request){
  if(v.action==="status"){
  const tariff=await loadTariff();let op=target?await loadOperation(userId,target.request_id):null;
  if(target&&op?.state==="artifact_cost_pending"){await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});op=await loadOperation(userId,target.request_id);}
- return json({ok:true,enabled:enabled()&&!!tariff,code:!enabled()?"image_provider_not_configured":!tariff?"image_tariff_or_budget_unavailable":null,provider:selected?.route.provider??null,state:target?.placed_media_version?"placed":op?.state??(target?"prepared":"not_started"),requestId:target?.request_id??null});
+ return json({ok:true,enabled:enabled()&&!!tariff,code:!enabled()?"image_provider_not_configured":!tariff?"image_tariff_or_budget_unavailable":null,provider:selected?.route.provider??null,availableCredits:available,state:target?.placed_media_version?"placed":op?.state??(target?"prepared":"not_started"),requestId:target?.request_id??null});
  }
  if(v.action==="quote"){
  if(!enabled()||!await loadTariff())return fail(503,"image_provider_or_tariff_unavailable");

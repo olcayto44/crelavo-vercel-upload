@@ -138,7 +138,7 @@ try{
  const demoErrors=[];demo.on("pageerror",e=>demoErrors.push(e.message));await demo.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
  await demo.goto(origin+"/website-cms-test/demo",{waitUntil:"domcontentloaded"});await demo.getByRole("heading",{name:"Müşteri yönetim paneli",exact:true}).waitFor({timeout:60000});
  assert.equal(await demo.locator(".crelavo-auth-sticky").count(),0,"Demo must not show live payment entry");
- await demo.waitForLoadState("networkidle");await demo.getByRole("button",{name:"Asistan ile düzenle",exact:true}).click();
+ await demo.getByRole("button",{name:"Asistan ile düzenle",exact:true}).click();await demo.getByRole("heading",{name:"Örnek düzenleme komutları",exact:true}).waitFor();
  await demo.getByLabel("Düzenleme isteği",{exact:true}).fill("renk: koyu\nbaşlık: Asistan revizyon testi");
  await demo.getByRole("button",{name:"Değişiklik önerisi oluştur",exact:true}).click();
  await demo.getByRole("heading",{name:"Önerilen sürüm v2",exact:true}).waitFor();

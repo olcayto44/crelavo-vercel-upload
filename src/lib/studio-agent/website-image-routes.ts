@@ -16,3 +16,14 @@ export function websiteImageCandidates(user:string,env:NodeJS.ProcessEnv=process
 export async function verifyWebsiteOpenAIImageModel(key:string,transport:typeof fetch=fetch){
  try{const r=await transport("https://api.openai.com/v1/models/gpt-image-2.6-flare",{method:"GET",redirect:"error",signal:AbortSignal.timeout(8000),headers:{Authorization:"Bearer "+key}});if(!r.ok)return false;return (await r.json())?.id==="gpt-image-2.6-flare";}catch{return false;}
 }
+
+// Availability status is separate from actual paid generation. No keys returned to clients.
+export function websiteImageProviderInventory(env:NodeJS.ProcessEnv=process.env){
+ return [
+ {id:"openai",configured:!!env.OPENAI_API_KEY?.trim(),adapter:"available"},
+ {id:"minimax",configured:!!(env.MINIMAX_API_KEY?.trim()||env.MINIMAX_KEY?.trim()),adapter:"available"},
+ {id:"fal",configured:!!(env.FAL_API_KEY?.trim()||env.FAL_KEY?.trim()),adapter:"requires_isolated_tariff_and_adapter"},
+ {id:"stability",configured:!!(env.STABILITY_API_KEY?.trim()||env.STABILITY_AI_API_KEY?.trim()||env.STABILITYAI_API_KEY?.trim()),adapter:"requires_isolated_tariff_and_adapter"},
+ {id:"replicate",configured:!!(env.REPLICATE_API_TOKEN?.trim()||env.REPLICATE_API_KEY?.trim()),adapter:"requires_isolated_tariff_and_adapter"}
+ ];
+}
