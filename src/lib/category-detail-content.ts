@@ -66,27 +66,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Delivery scope"
     ]
   ],
-  "admin_project": [
-    "Plan a professional admin panel",
-    "Plan a custom admin panel with management dashboards, inventory or order workflows, role-based permissions and reporting requirements.",
-    [
-      "Management dashboards",
-      "CRUD workflows",
-      "Roles and permissions",
-      "Reporting screens"
-    ],
-    [
-      "Order management",
-      "Support dashboard",
-      "Inventory control"
-    ],
-    [
-      "Data model",
-      "Management screens",
-      "Permission requirements",
-      "Reporting scope"
-    ]
-  ],
   "video": [
     "Create your AI video project",
     "Plan an AI video from text, a product link, voice or image references. Set the story, scene style, aspect ratio and production requirements.",
@@ -127,27 +106,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Speaker roles",
       "Voice and language",
       "Output scope"
-    ]
-  ],
-  "documentary": [
-    "Develop your documentary with AI",
-    "Plan a documentary with AI, from research questions and source material to a narration script, storyboard, interview outline and visual direction.",
-    [
-      "Research outline",
-      "Narration",
-      "Interview planning",
-      "Scene structure"
-    ],
-    [
-      "Historical explainer",
-      "Science documentary",
-      "Human-interest story"
-    ],
-    [
-      "Topic and factual sources",
-      "Narration outline",
-      "Visual and interview plan",
-      "Rights and delivery"
     ]
   ],
   "animation": [
@@ -316,27 +274,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Audience and platform",
       "Improvement priorities",
       "Next-step brief"
-    ]
-  ],
-  "campaign_calendar": [
-    "Plan your marketing content calendar",
-    "Plan a marketing content calendar with launch dates, seasonal campaign ideas, publishing schedules and creative asset requirements.",
-    [
-      "Launch calendars",
-      "Seasonal campaigns",
-      "Content hooks",
-      "Asset planning"
-    ],
-    [
-      "Monthly calendar",
-      "Holiday promotion",
-      "Launch schedule"
-    ],
-    [
-      "Campaign dates",
-      "Audience and channels",
-      "Content themes",
-      "Asset and approval plan"
     ]
   ],
   "ai_agent": [
@@ -570,27 +507,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Asset scope"
     ]
   ],
-  "document_pack": [
-    "Plan professional documents with AI",
-    "Plan professional documents with AI, including proposals, pitch decks and product catalogs. Define the audience, content structure and file requirements.",
-    [
-      "Pitch decks",
-      "Proposals",
-      "Catalogs",
-      "Document packages"
-    ],
-    [
-      "Investor deck",
-      "Client proposal",
-      "Product catalog"
-    ],
-    [
-      "Purpose and audience",
-      "Content outline",
-      "Brand requirements",
-      "Requested file formats"
-    ]
-  ],
   "anime_short_film": [
     "Develop AI anime short films",
     "Develop an original anime-inspired short film with AI. Define characters, dialogue, storyboards, scene styles and animation requirements.",
@@ -610,69 +526,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Art style and storyboard",
       "Dialogue and music",
       "Scene scope"
-    ]
-  ],
-  "animal_video": [
-    "Plan creative animal videos",
-    "Plan animal-themed videos for entertainment or product storytelling. Define pet or animal references, narration, scenes and video format.",
-    [
-      "Funny animal concepts",
-      "Animated scenes",
-      "Cinematic stories",
-      "Narration"
-    ],
-    [
-      "Pet adventure",
-      "Animal product story",
-      "Animated animal short"
-    ],
-    [
-      "Animal reference",
-      "Story and style",
-      "Audio and pacing",
-      "Approved output"
-    ]
-  ],
-  "nature_video": [
-    "Plan cinematic nature videos",
-    "Plan nature videos and documentary concepts with AI. Define landscapes, wildlife stories, narration, atmospheric sound and cinematic direction.",
-    [
-      "Landscape scenes",
-      "Wildlife stories",
-      "Weather concepts",
-      "Nature documentaries"
-    ],
-    [
-      "Mountain landscape",
-      "Wildlife explainer",
-      "Forest atmosphere"
-    ],
-    [
-      "Location and context",
-      "Shot and narration plan",
-      "Music and atmosphere",
-      "Video format"
-    ]
-  ],
-  "planet_space_video": [
-    "Create space video concepts",
-    "Plan space videos, planet explainers and galaxy scenes. Define scientific sources or fictional context, narration and cosmic visual concepts.",
-    [
-      "Planet explainers",
-      "Galaxy scenes",
-      "3D space concepts",
-      "Cosmic narration"
-    ],
-    [
-      "Solar system explainer",
-      "Galaxy journey",
-      "Fictional space scene"
-    ],
-    [
-      "Topic and sources",
-      "Visual direction",
-      "Narration and audio",
-      "Video scope"
     ]
   ],
   "drone_video": [
@@ -738,48 +591,6 @@ export const categoryDetailCopy:Record<string,DetailCopy>={
       "Delivery options"
     ]
   ],
-  "crelavo_academy": [
-    "Plan your creative learning project",
-    "Explore creative learning project briefs for AI video and visual production. Plan lesson goals, exercises, examples and teaching materials.",
-    [
-      "Lesson plans",
-      "Exercises",
-      "Handouts",
-      "Workflow education"
-    ],
-    [
-      "AI video lesson",
-      "Creative workshop",
-      "Production handout"
-    ],
-    [
-      "Learning goals",
-      "Lesson outline",
-      "Exercises and materials",
-      "Review and delivery"
-    ]
-  ],
-  "community_showcase": [
-    "Explore creative showcase projects",
-    "Explore creative project examples and plan a showcase submission. Prepare an original project, description, ownership details and publication consent.",
-    [
-      "Showcase submissions",
-      "Project descriptions",
-      "Creative captions",
-      "Publication metadata"
-    ],
-    [
-      "Project submission",
-      "Video concept showcase",
-      "Visual portfolio"
-    ],
-    [
-      "Original project and rights",
-      "Description and context",
-      "Publication consent",
-      "Review and approval"
-    ]
-  ]
 };
 export const categorySampleIds:Record<string,string[]>={
   "video": [

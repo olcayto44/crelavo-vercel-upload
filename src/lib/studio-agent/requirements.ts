@@ -5,7 +5,7 @@ import { studioCategoryConfiguration } from "@/app/studio-design-test/category-c
 // Read-only projection: never replace the catalog, prices, or existing question UI.
 const configuration = studioCategoryConfiguration();
 const ids = CATEGORIES.map(category => category.id);
-if (ids.length !== 37 || new Set(ids).size !== 37) throw new Error("category_catalog_contract_changed");
+if (ids.length !== 28 || new Set(ids).size !== 28) throw new Error("category_catalog_contract_changed");
 export const CategoryIdSchema = z.enum(ids as [string, ...string[]]);
 const text = z.string().trim().min(1).max(6000);
 const references = z.array(z.string().uuid()).min(1).max(10);

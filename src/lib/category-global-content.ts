@@ -55,23 +55,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "description": "规划 iOS 或 Android 应用的界面、导航和原型要求。"
     }
   },
-  "admin_project": {
-    "de": {
-      "slug": "ki-admin-panel",
-      "title": "KI-Admin-Panel-Builder",
-      "description": "Planen Sie Verwaltungsoberflächen mit Rollen, Datenverwaltung, Berichten und Freigaben."
-    },
-    "fr": {
-      "slug": "panneau-administration-ia",
-      "title": "Créateur de panneau d'administration IA",
-      "description": "Définissez les écrans de gestion, les droits utilisateurs, les rapports et les validations."
-    },
-    "zh": {
-      "slug": "admin-project",
-      "title": "AI 管理后台构建器",
-      "description": "定义管理界面、用户权限、报表和审批流程。"
-    }
-  },
   "talking_video": {
     "de": {
       "slug": "ki-sprechendes-video",
@@ -87,23 +70,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "slug": "advanced-talking-video",
       "title": "AI 数字人对话视频",
       "description": "规划主持人视频、采访及多人对话，准备脚本与获授权的声音参考。"
-    }
-  },
-  "documentary": {
-    "de": {
-      "slug": "ki-dokumentation",
-      "title": "KI-Planer für Dokumentarfilme",
-      "description": "Strukturieren Sie Dokumentarfilme mit überprüfbaren Quellen, Sprechertext, Interviews und gekennzeichneten Rekonstruktionen."
-    },
-    "fr": {
-      "slug": "documentaire-ia",
-      "title": "Créateur de documentaire IA",
-      "description": "Structurez un documentaire avec sources vérifiables, narration, entretiens et reconstitutions signalées."
-    },
-    "zh": {
-      "slug": "documentary",
-      "title": "AI 纪录片制作规划",
-      "description": "使用可核实资料规划纪录片、旁白、采访和明确标注的重现画面。"
     }
   },
   "animation": {
@@ -240,23 +206,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "slug": "ai-ad-performance-score-checker",
       "title": "AI 广告创意分析",
       "description": "制作前评估广告开场、优惠信息和行动号召；评分不代表转化率保证。"
-    }
-  },
-  "campaign_calendar": {
-    "de": {
-      "slug": "ki-kampagnenkalender",
-      "title": "KI-Kampagnenkalender",
-      "description": "Organisieren Sie Produkteinführungen, saisonale Aktionen, Veröffentlichungstermine und Freigaben."
-    },
-    "fr": {
-      "slug": "calendrier-campagne-ia",
-      "title": "Calendrier de campagnes IA",
-      "description": "Organisez lancements, promotions saisonnières, dates de publication et validations."
-    },
-    "zh": {
-      "slug": "ai-campaign-calendar",
-      "title": "AI 营销活动日历",
-      "description": "组织新品发布、季节促销、内容发布日期和审核安排。"
     }
   },
   "ai_agent": {
@@ -446,23 +395,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "description": "定义标志创意、配色、字体、品牌使用规范和所需文件格式。"
     }
   },
-  "document_pack": {
-    "de": {
-      "slug": "ki-dokumentgenerator",
-      "title": "KI-Dokumentgenerator",
-      "description": "Planen Sie Angebote, Präsentationen und Produktkataloge mit geprüften Fakten, Zielgruppe und Gliederung."
-    },
-    "fr": {
-      "slug": "generateur-document-ia",
-      "title": "Générateur de documents IA",
-      "description": "Préparez propositions, présentations et catalogues avec faits vérifiés, public et structure."
-    },
-    "zh": {
-      "slug": "document-pack",
-      "title": "AI 文档生成器",
-      "description": "使用已核实事实规划商业提案、演示文稿和产品目录，明确读者和结构。"
-    }
-  },
   "anime_short_film": {
     "de": {
       "slug": "ki-anime-kurzfilm",
@@ -478,57 +410,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "slug": "anime-short-film",
       "title": "AI 动漫短片",
       "description": "规划具有原创角色、世界观、对白和场景顺序的动漫风格短片。"
-    }
-  },
-  "animal_video": {
-    "de": {
-      "slug": "ki-tiervideo",
-      "title": "KI-Tiervideo",
-      "description": "Planen Sie Tiergeschichten mit Tierart, Umgebung, Handlung und klar gekennzeichneter Simulation."
-    },
-    "fr": {
-      "slug": "video-animaux-ia",
-      "title": "Vidéo d'animaux IA",
-      "description": "Préparez des histoires animalières en précisant l’espèce, le décor et l’action, et en signalant les scènes simulées."
-    },
-    "zh": {
-      "slug": "animal-video",
-      "title": "AI 动物视频",
-      "description": "规划动物故事，明确物种、环境、动作并标注模拟画面。"
-    }
-  },
-  "nature_video": {
-    "de": {
-      "slug": "ki-naturvideo",
-      "title": "KI-Naturvideo",
-      "description": "Planen Sie Landschafts- und Naturdokumentationen mit überprüftem Sprechertext, Szenen und Umgebungsgeräuschen."
-    },
-    "fr": {
-      "slug": "video-nature-ia",
-      "title": "Vidéo nature IA",
-      "description": "Préparez des vidéos de paysages et des documentaires sur la nature, avec une narration vérifiée, des scènes et une ambiance sonore."
-    },
-    "zh": {
-      "slug": "nature-video",
-      "title": "AI 自然视频",
-      "description": "规划风景与自然纪录片，准备经过核实的旁白、场景及环境音。"
-    }
-  },
-  "planet_space_video": {
-    "de": {
-      "slug": "ki-weltraumvideo",
-      "title": "KI-Weltraumvideo",
-      "description": "Entwickeln Sie Planeten- und Galaxienszenen mit wissenschaftlich geprüfter Erklärung oder fiktionalem Kontext."
-    },
-    "fr": {
-      "slug": "video-espace-ia",
-      "title": "Vidéo spatiale IA",
-      "description": "Imaginez des scènes de planètes et galaxies avec explications scientifiques vérifiées ou contexte fictif explicite."
-    },
-    "zh": {
-      "slug": "planet-space-video",
-      "title": "AI 宇宙视频",
-      "description": "规划行星与星系场景，采用经核实的科学说明或明确标注的虚构背景。"
     }
   },
   "drone_video": {
@@ -582,40 +463,6 @@ export const globalCategoryProfiles:Record<string,Record<GlobalCategoryLocale,Gl
       "description": "组织电影或剧集的剧本、角色设定、分集、场景清单和交付范围。"
     }
   },
-  "crelavo_academy": {
-    "de": {
-      "slug": "crelavo-akademie",
-      "title": "Crelavo Akademie – KI-Kurse und Lernprojekte",
-      "description": "Planen Sie Lernziele, praktische Übungen und Unterrichtsmaterial für kreative KI-Produktion."
-    },
-    "fr": {
-      "slug": "academie-crelavo",
-      "title": "Académie Crelavo",
-      "description": "Définissez objectifs pédagogiques, exercices pratiques et supports pour la création assistée par IA."
-    },
-    "zh": {
-      "slug": "crelavo-academy",
-      "title": "Crelavo 学院",
-      "description": "规划 AI 创意制作的学习目标、实践练习与教学材料。"
-    }
-  },
-  "community_showcase": {
-    "de": {
-      "slug": "community-projekte",
-      "title": "Crelavo-Community-Projekte",
-      "description": "Entdecken Sie Projektbeispiele oder planen Sie die Veröffentlichung eigener Werke mit geklärten Nutzungsrechten."
-    },
-    "fr": {
-      "slug": "projets-communaute",
-      "title": "Projets de la communauté Crelavo",
-      "description": "Explorez des exemples ou préparez la publication de vos créations avec des descriptions exactes et des droits de diffusion vérifiés."
-    },
-    "zh": {
-      "slug": "community-showcase",
-      "title": "Crelavo 社区作品展示",
-      "description": "浏览项目示例，或为自有及获授权作品规划发布，确保描述与权利信息准确。"
-    }
-  }
 };
 export const categoryLanguageTags={de:"de-DE",fr:"fr-FR",zh:"zh-Hans",tr:"tr-TR"} as const;
 export function globalCategoryPath(id:string,locale:GlobalCategoryLocale){const p=globalCategoryProfiles[id]?.[locale];return p?"/"+locale+"/"+p.slug:undefined}

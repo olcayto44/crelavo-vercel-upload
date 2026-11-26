@@ -1,0 +1,16 @@
+// Retired product scope, 2026-11-27. Existing customer data and deliveries are not deleted.
+export const RETIRED_CATEGORY_IDS=["admin_project","documentary","campaign_calendar","document_pack","animal_video","nature_video","planet_space_video","crelavo_academy","community_showcase"] as const;
+const keys=new Set<string>([...RETIRED_CATEGORY_IDS,"admin_panel_project","admin_panel_builder","ai_campaign_calendar","document_file_pack","ai_documentary_maker"]);
+export function isRetiredCategory(value:unknown){return typeof value==="string"&&keys.has(value.trim().toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,""));}
+export const RETIRED_CATEGORY_PUBLIC_PATHS=["/products/admin-project","/de/ki-admin-panel","/fr/panneau-administration-ia","/zh/admin-project","/tr/yapay-zeka-yonetim-paneli","/products/documentary","/de/ki-dokumentation","/fr/documentaire-ia","/zh/documentary","/tr/yapay-zeka-belgesel-hazirlama","/ai-campaign-calendar","/de/ki-kampagnenkalender","/fr/calendrier-campagne-ia","/zh/ai-campaign-calendar","/tr/yapay-zeka-kampanya-takvimi","/products/document-pack","/de/ki-dokumentgenerator","/fr/generateur-document-ia","/zh/document-pack","/tr/yapay-zeka-belge-olusturucu","/products/animal-video","/de/ki-tiervideo","/fr/video-animaux-ia","/zh/animal-video","/tr/yapay-zeka-hayvan-videosu","/products/nature-video","/de/ki-naturvideo","/fr/video-nature-ia","/zh/nature-video","/tr/yapay-zeka-doga-videosu","/products/planet-space-video","/de/ki-weltraumvideo","/fr/video-espace-ia","/zh/planet-space-video","/tr/yapay-zeka-uzay-videosu","/crelavo-academy","/de/crelavo-akademie","/fr/academie-crelavo","/zh/crelavo-academy","/tr/crelavo-akademi","/community-showcase","/de/community-projekte","/fr/projets-communaute","/zh/community-showcase","/tr/topluluk-projeleri"] as const;
+const paths=new Set<string>(RETIRED_CATEGORY_PUBLIC_PATHS),slugs=new Set<string>(["admin-project","documentary","campaign-calendar","document-pack","animal-video","nature-video","planet-space-video","crelavo-academy","community-showcase","ai-campaign-calendar","ai-documentary-maker","ai-documentary-generator","ai-admin-panel-builder","admin-panel-builder","ai-animal-video","ai-animal-video-generator","ai-nature-video","ai-nature-video-generator","ai-planet-space-video","ai-space-video-generator","ai-document-pack","document-file-pack","ai-document-file-pack","ai-crelavo-academy","ai-community-showcase"]);
+export function isRetiredCategoryPath(path:string){
+ const clean=path.split(/[?#]/)[0].replace(/\/+$/,"")||"/";
+ if(paths.has(clean))return true;
+ const parts=clean.split("/").filter(Boolean);
+ if(parts.length===1)return slugs.has(parts[0]);
+ if(parts.length===2&&["products","tools","tr","de","fr","zh"].includes(parts[0]))return slugs.has(parts[1]);
+ if(parts.length===3&&parts[0]==="dashboard"&&parts[1]==="studio")return isRetiredCategory(parts[2]);
+ return false;
+}
+export function activeCategoryHref(href:unknown){if(typeof href!=="string")return true;try{const u=new URL(href,"https://www.crelavo.com");if(!["www.crelavo.com","crelavo.com"].includes(u.hostname))return true;return !isRetiredCategoryPath(u.pathname)&&!isRetiredCategory(u.searchParams.get("category"))&&!isRetiredCategory(u.searchParams.get("type"));}catch{return false;}}

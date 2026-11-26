@@ -61,26 +61,6 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "应用原型"
     ]
   },
-  "admin_project": {
-    "de": [
-      "Verwaltungsdashboards",
-      "Datenverwaltung",
-      "Rollen und Rechte",
-      "Berichte"
-    ],
-    "fr": [
-      "Tableaux de bord administratifs",
-      "Gestion des données",
-      "Rôles et permissions",
-      "Rapports"
-    ],
-    "zh": [
-      "管理仪表板",
-      "数据管理",
-      "角色与权限",
-      "报表"
-    ]
-  },
   "talking_video": {
     "de": [
       "Moderationsszenen",
@@ -99,26 +79,6 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "数字人参考",
       "多人对话",
       "旁白"
-    ]
-  },
-  "documentary": {
-    "de": [
-      "Rechercheplan",
-      "Sprechertext",
-      "Interviewplanung",
-      "Szenenstruktur"
-    ],
-    "fr": [
-      "Plan de recherche",
-      "Narration",
-      "Préparation d’entretiens",
-      "Structure des scènes"
-    ],
-    "zh": [
-      "研究提纲",
-      "旁白",
-      "采访规划",
-      "场景结构"
     ]
   },
   "animation": {
@@ -279,26 +239,6 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "行动号召评估",
       "创意角度",
       "改进简报"
-    ]
-  },
-  "campaign_calendar": {
-    "de": [
-      "Launch-Kalender",
-      "Saisonkampagnen",
-      "Content-Einstiege",
-      "Medienplanung"
-    ],
-    "fr": [
-      "Calendriers de lancement",
-      "Campagnes saisonnières",
-      "Accroches de contenu",
-      "Planification des ressources"
-    ],
-    "zh": [
-      "发布日历",
-      "季节性营销",
-      "内容钩子",
-      "素材规划"
     ]
   },
   "ai_agent": {
@@ -521,26 +461,6 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "品牌素材规划"
     ]
   },
-  "document_pack": {
-    "de": [
-      "Pitch-Präsentationen",
-      "Angebote",
-      "Kataloge",
-      "Dokumentenpakete"
-    ],
-    "fr": [
-      "Présentations de projet",
-      "Propositions",
-      "Catalogues",
-      "Dossiers documentaires"
-    ],
-    "zh": [
-      "路演演示",
-      "提案",
-      "目录",
-      "文档套件"
-    ]
-  },
   "anime_short_film": {
     "de": [
       "Anime-Konzepte",
@@ -559,66 +479,6 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "角色设计",
       "动作场景",
       "对话规划"
-    ]
-  },
-  "animal_video": {
-    "de": [
-      "Lustige Tierkonzepte",
-      "Animierte Szenen",
-      "Filmische Geschichten",
-      "Sprechertexte"
-    ],
-    "fr": [
-      "Concepts animaliers humoristiques",
-      "Scènes animées",
-      "Histoires cinématographiques",
-      "Narration"
-    ],
-    "zh": [
-      "趣味动物概念",
-      "动画场景",
-      "电影感故事",
-      "旁白"
-    ]
-  },
-  "nature_video": {
-    "de": [
-      "Landschaftsszenen",
-      "Wildtiergeschichten",
-      "Wetterkonzepte",
-      "Naturdokumentationen"
-    ],
-    "fr": [
-      "Scènes de paysages",
-      "Histoires animalières",
-      "Concepts météorologiques",
-      "Documentaires nature"
-    ],
-    "zh": [
-      "风景场景",
-      "野生动物故事",
-      "天气概念",
-      "自然纪录片"
-    ]
-  },
-  "planet_space_video": {
-    "de": [
-      "Planetenerklärungen",
-      "Galaxienszenen",
-      "3D-Weltraumkonzepte",
-      "Kosmische Erzählung"
-    ],
-    "fr": [
-      "Explications sur les planètes",
-      "Scènes de galaxies",
-      "Concepts spatiaux 3D",
-      "Narration cosmique"
-    ],
-    "zh": [
-      "行星科普",
-      "星系场景",
-      "三维太空概念",
-      "宇宙叙事"
     ]
   },
   "drone_video": {
@@ -681,44 +541,4 @@ export const localizedCategoryUseCases: Record<string,Record<GlobalCategoryLocal
       "预告片概念"
     ]
   },
-  "crelavo_academy": {
-    "de": [
-      "Unterrichtspläne",
-      "Übungen",
-      "Arbeitsblätter",
-      "Workflow-Schulungen"
-    ],
-    "fr": [
-      "Plans de cours",
-      "Exercices",
-      "Supports pédagogiques",
-      "Formation aux flux de travail"
-    ],
-    "zh": [
-      "课程计划",
-      "练习",
-      "学习资料",
-      "工作流教学"
-    ]
-  },
-  "community_showcase": {
-    "de": [
-      "Projektveröffentlichung",
-      "Projektbeschreibungen",
-      "Kreative Bildtexte",
-      "Publikationsmetadaten"
-    ],
-    "fr": [
-      "Soumissions de projets",
-      "Descriptions de projets",
-      "Légendes créatives",
-      "Métadonnées de publication"
-    ],
-    "zh": [
-      "作品提交",
-      "项目描述",
-      "创意说明",
-      "发布元数据"
-    ]
-  }
 };

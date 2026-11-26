@@ -12,10 +12,6 @@ export const categoryDiscoveryCopy:Record<string,readonly [string,string]>={
     "AI App Builder",
     "Design mobile app screens, navigation and app prototypes."
   ],
-  "admin_project": [
-    "Admin Panel Builder",
-    "Define dashboards, user roles and management workflows."
-  ],
   "video": [
     "AI Video Generator",
     "Plan videos from ideas, product links or reference images."
@@ -23,10 +19,6 @@ export const categoryDiscoveryCopy:Record<string,readonly [string,string]>={
   "talking_video": [
     "AI Talking Video",
     "Plan presenter videos, interviews and multi-person dialogue."
-  ],
-  "documentary": [
-    "AI Documentary Maker",
-    "Develop documentary stories, narration and scene plans."
   ],
   "animation": [
     "AI Animation Generator",
@@ -59,10 +51,6 @@ export const categoryDiscoveryCopy:Record<string,readonly [string,string]>={
   "ad_score_checker": [
     "AI Ad Score Checker",
     "Review ad hooks, offer clarity and creative direction."
-  ],
-  "campaign_calendar": [
-    "AI Campaign Calendar",
-    "Plan content schedules, launches and seasonal campaigns."
   ],
   "ai_agent": [
     "AI Agent Builder",
@@ -108,33 +96,9 @@ export const categoryDiscoveryCopy:Record<string,readonly [string,string]>={
     "AI Brand Kit Generator",
     "Plan logo directions, palettes and visual identity assets."
   ],
-  "document_pack": [
-    "AI Document Generator",
-    "Plan proposals, pitch decks and document packages."
-  ],
-  "crelavo_academy": [
-    "Crelavo Academy",
-    "Explore creative learning plans, exercises and handouts."
-  ],
-  "community_showcase": [
-    "Community Showcase",
-    "Explore examples and plan a showcase submission."
-  ],
   "anime_short_film": [
     "AI Anime Generator",
     "Plan anime scenes, characters and short film concepts."
-  ],
-  "animal_video": [
-    "AI Animal Video",
-    "Plan animal stories, cinematic or animated scenes."
-  ],
-  "nature_video": [
-    "AI Nature Video",
-    "Plan landscapes, wildlife and nature documentaries."
-  ],
-  "planet_space_video": [
-    "AI Space Video",
-    "Plan planet explainers, galaxy and cosmic scenes."
   ],
   "drone_video": [
     "AI Drone-Style Video",

@@ -51,18 +51,6 @@ export const categoryArtworkCatalog = [
     "kind": "existing-showcase-frame"
   },
   {
-    "id": "documentary",
-    "file": "documentary-hero.webp",
-    "alt": {
-      "en": "A documentary filmmaker preparing an interview in a natural setting",
-      "tr": "Doğal bir ortamda röportaj hazırlayan belgesel yapımcısı",
-      "de": "Dokumentarfilmer bei der Vorbereitung eines Interviews in natürlicher Umgebung",
-      "fr": "Documentariste préparant une interview dans un cadre naturel",
-      "zh": "在自然环境中准备采访的纪录片制作人"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
     "id": "animation",
     "file": "animation-hero.webp",
     "alt": {
@@ -159,18 +147,6 @@ export const categoryArtworkCatalog = [
       "de": "Illustratives Dashboard zur Bewertung von Werbemitteln",
       "fr": "Exemple de tableau de bord d’évaluation de créations publicitaires",
       "zh": "广告创意评估仪表板示例"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
-    "id": "campaign_calendar",
-    "file": "campaign-calendar-hero.webp",
-    "alt": {
-      "en": "A marketing campaign calendar with scheduled content cards",
-      "tr": "Planlanmış içerik kartlarıyla pazarlama kampanyası takvimi",
-      "de": "Marketingkampagnen-Kalender mit geplanten Inhalten",
-      "fr": "Calendrier de campagne marketing avec contenus programmés",
-      "zh": "带有计划内容卡片的营销活动日历"
     },
     "kind": "approved-ai-concept"
   },
@@ -308,18 +284,6 @@ export const categoryArtworkCatalog = [
     "kind": "approved-ai-concept"
   },
   {
-    "id": "document_pack",
-    "file": "document-pack-hero.webp",
-    "alt": {
-      "en": "A coordinated set of professional business document layouts",
-      "tr": "Uyumlu profesyonel iş belgesi tasarımları",
-      "de": "Abgestimmtes Set professioneller Geschäftsdokument-Layouts",
-      "fr": "Ensemble coordonné de mises en page de documents professionnels",
-      "zh": "统一设计的专业商务文档套件"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
     "id": "anime_short_film",
     "file": "anime-short-film-hero.webp",
     "alt": {
@@ -328,42 +292,6 @@ export const categoryArtworkCatalog = [
       "de": "Originelle Anime-Figur unter einem roten Schirm in einer regnerischen, von Laternen beleuchteten Straße",
       "fr": "Personnage original de style anime sous un parapluie rouge dans une rue pluvieuse éclairée par des lanternes",
       "zh": "原创动漫人物撑着红伞走在灯笼照亮的雨夜街道上"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
-    "id": "animal_video",
-    "file": "animal-video-hero.webp",
-    "alt": {
-      "en": "AI-generated wildlife concept of a leopard in golden savanna grass",
-      "tr": "Gün batımında savan otları arasında leopar; yapay zekâ ile oluşturulmuş vahşi yaşam konsepti",
-      "de": "KI-generierte Wildtierszene mit einem Leoparden im goldenen Savannengras",
-      "fr": "Scène animalière générée par IA, avec un léopard dans les herbes dorées de la savane",
-      "zh": "AI 生成的野生动物概念图：金色草原中的豹"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
-    "id": "nature_video",
-    "file": "nature-video-hero.webp",
-    "alt": {
-      "en": "AI-generated landscape of a forest waterfall, river and snowy mountain peaks",
-      "tr": "Orman şelalesi, akarsu ve karlı dağ zirvelerini gösteren yapay zekâ manzarası",
-      "de": "KI-generierte Landschaft mit Waldwasserfall, Fluss und schneebedeckten Berggipfeln",
-      "fr": "Paysage généré par IA avec cascade en forêt, rivière et sommets enneigés",
-      "zh": "AI 生成的森林瀑布、河流和雪山景观"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
-    "id": "planet_space_video",
-    "file": "planet-space-video-hero.webp",
-    "alt": {
-      "en": "Artistic AI-generated view of Earth, the Moon and distant galaxies",
-      "tr": "Dünya, Ay ve uzak galaksilerin yapay zekâ ile oluşturulmuş sanatsal görünümü",
-      "de": "Künstlerische KI-Darstellung der Erde, des Mondes und ferner Galaxien",
-      "fr": "Vue artistique générée par IA de la Terre, de la Lune et de galaxies lointaines",
-      "zh": "AI 生成的地球、月球和遥远星系艺术图"
     },
     "kind": "approved-ai-concept"
   },
@@ -391,29 +319,4 @@ export const categoryArtworkCatalog = [
     },
     "kind": "original-storyboard"
   },
-  {
-    "id": "crelavo_academy",
-    "file": "crelavo-academy-hero.webp",
-    "alt": {
-      "en": "Illustrative creative workshop with an instructor demonstrating digital video editing to learners",
-      "tr": "Eğitmenin katılımcılara dijital video düzenlemeyi gösterdiği yaratıcı atölye konsepti",
-      "de": "Illustrativer Kreativworkshop, in dem ein Kursleiter den Teilnehmenden digitalen Videoschnitt zeigt",
-      "fr": "Illustration d’un atelier créatif où un formateur présente le montage vidéo numérique aux participants",
-      "zh": "创意课程示意图：讲师向学员演示数字视频剪辑"
-    },
-    "kind": "approved-ai-concept"
-  },
-  {
-    "id": "community_showcase",
-    "file": "community-showcase-hero.webp",
-    "alt": {
-      "en": "A frame from Crelavo’s creative city video showcase",
-      "tr": "Crelavo yaratıcı şehir videosu örneğinden bir kare",
-      "de": "Ein Einzelbild aus Crelavos kreativem Stadtvideo",
-      "fr": "Une image issue d’un exemple de vidéo créative urbaine Crelavo",
-      "zh": "Crelavo 创意城市视频示例中的画面"
-    },
-    "sourceVideo": "/showcase/uploads/crelavo-ai-woman-city.mp4",
-    "kind": "existing-showcase-frame"
-  }
 ] as const;

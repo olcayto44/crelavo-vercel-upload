@@ -40,19 +40,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     "question": "Uygulama mağazasında yayımlama da dahil mi?",
     "answer": "Hedef işletim sistemi, cihaz özellikleri ve mağaza yayın gereksinimleri teslimat kapsamına göre ayrıca belirlenir."
   },
-  "admin_project": {
-    "slug": "yapay-zeka-yonetim-paneli",
-    "title": "Yapay Zekâ Yönetim Paneli Oluşturucu",
-    "description": "İş süreçleriniz için yönetim ekranları, kullanıcı yetkileri, kayıt yönetimi ve raporlama ihtiyaçlarını tanımlayın.",
-    "uses": [
-      "Yönetim ekranları",
-      "Kullanıcı rolleri",
-      "Raporlama",
-      "Onay süreçleri"
-    ],
-    "question": "Yetkileri nasıl tanımlamalıyım?",
-    "answer": "Her rolün görebileceği ve değiştirebileceği kayıtları, onay adımlarını ve denetim ihtiyaçlarını belirtin."
-  },
   "talking_video": {
     "slug": "yapay-zeka-konusan-video",
     "title": "Yapay Zekâ Konuşan Video Oluşturucu",
@@ -65,19 +52,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     ],
     "question": "Birden fazla konuşmacı nasıl planlanır?",
     "answer": "Her konuşmacıyı senaryoda ayrı belirtin; izinli görüntü ve ses referanslarını, telaffuzu ve sahne sırasını ekleyin."
-  },
-  "documentary": {
-    "slug": "yapay-zeka-belgesel-hazirlama",
-    "title": "Yapay Zekâ Belgesel Hazırlama",
-    "description": "Belgesel konusunu araştırma soruları, kaynaklar, anlatım metni ve görsel sahne planıyla yapılandırın.",
-    "uses": [
-      "Belgesel senaryosu",
-      "Röportaj planı",
-      "Anlatım",
-      "Görsel taslak"
-    ],
-    "question": "Gerçek çekimler ile yapay zekâyla üretilen sahneler nasıl ayırt edilir?",
-    "answer": "Doğrulanabilir kaynaklar kullanın; canlandırma ve yapay görselleri açık biçimde etiketleyin."
   },
   "animation": {
     "slug": "yapay-zeka-animasyon-olusturucu",
@@ -182,19 +156,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     ],
     "question": "Reklam puanı satış garantisi verir mi?",
     "answer": "Hayır. Geri bildirim iyileştirme ve kontrollü test için kullanılır; gerçek performans kampanya verilerine bağlıdır."
-  },
-  "campaign_calendar": {
-    "slug": "yapay-zeka-kampanya-takvimi",
-    "title": "Yapay Zekâ Kampanya Takvimi",
-    "description": "Ürün lansmanları, sezonluk teklifler ve sosyal medya içerikleri için yayın tarihlerini, içerik materyallerini ve onay adımlarını düzenleyin.",
-    "uses": [
-      "İçerik takvimi",
-      "Lansman planı",
-      "Sezon kampanyası",
-      "Yayın planı"
-    ],
-    "question": "Kampanya takvimi nasıl hazırlanır?",
-    "answer": "Lansman tarihinden geriye doğru planlayın; her kanalın içeriklerini ve inceleme tarihlerini belirleyin."
   },
   "ai_agent": {
     "slug": "yapay-zeka-ajan-olusturucu",
@@ -339,19 +300,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     "question": "Marka kimliği paketinde neler olabilir?",
     "answer": "Logo yönü, renkler, yazı tipleri ve kullanım kurallarını belirleyin; düzenlenebilir dosyalar teslim kapsamına göre doğrulanır."
   },
-  "document_pack": {
-    "slug": "yapay-zeka-belge-olusturucu",
-    "title": "Yapay Zekâ Belge Oluşturucu",
-    "description": "İş teklifleri, sunumlar ve ürün katalogları için hedef okuyucu, içerik düzeni ve dosya gereksinimlerini belirleyin.",
-    "uses": [
-      "İş teklifi",
-      "Sunum",
-      "Ürün kataloğu",
-      "Kurumsal belge"
-    ],
-    "question": "Belge hazırlamak için hangi bilgileri vermeliyim?",
-    "answer": "Doğrulanmış bilgiler, hedef okuyucu, marka materyalleri, gerekli bölümler ve dosya biçimini hazırlayın."
-  },
   "anime_short_film": {
     "slug": "yapay-zeka-anime-kisa-film",
     "title": "Yapay Zekâ Anime Kısa Film",
@@ -364,45 +312,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     ],
     "question": "Özgün bir anime sahnesi nasıl hazırlanır?",
     "answer": "Kendi karakterinizi ve dünyanızı tanımlayın; korunan karakterleri kopyalamadan görsel yaklaşımınızı belirleyin."
-  },
-  "animal_video": {
-    "slug": "yapay-zeka-hayvan-videosu",
-    "title": "Yapay Zekâ Hayvan Videosu",
-    "description": "Hayvan temalı eğlence, eğitim veya ürün anlatımı için karakter, ortam, hareket ve hikâye konsepti hazırlayın.",
-    "uses": [
-      "Evcil hayvan videosu",
-      "Hayvan animasyonu",
-      "Eğitim sahnesi",
-      "Ürün hikâyesi"
-    ],
-    "question": "Hayvan sahnesinde neler belirtilmeli?",
-    "answer": "Türü, görünümü, ortamı ve hareketi tanımlayın; gerçek görüntü ile kurgusal veya üretilen sahneleri ayırın."
-  },
-  "nature_video": {
-    "slug": "yapay-zeka-doga-videosu",
-    "title": "Yapay Zekâ Doğa Videosu",
-    "description": "Manzara, yaban hayatı ve doğa belgeselleri için sahneler, atmosfer, anlatım ve çevre sesi ihtiyaçlarını planlayın.",
-    "uses": [
-      "Manzara videosu",
-      "Doğa belgeseli",
-      "Yaban hayatı",
-      "Atmosferik sahne"
-    ],
-    "question": "Üretilen doğa görüntüsü gerçek çekim midir?",
-    "answer": "Hayır. Yapay sahneleri canlandırma olarak etiketleyin ve belgesel bilgilerini bağımsız kaynaklarla doğrulayın."
-  },
-  "planet_space_video": {
-    "slug": "yapay-zeka-uzay-videosu",
-    "title": "Yapay Zekâ Uzay Videosu",
-    "description": "Gezegen anlatımları, galaksi sahneleri ve kozmik görseller için bilimsel veya kurgusal bağlamı belirleyin.",
-    "uses": [
-      "Gezegen anlatımı",
-      "Galaksi sahnesi",
-      "Uzay animasyonu",
-      "Bilimsel görsel"
-    ],
-    "question": "Bilimsel içerik ile kurgu nasıl ayrılır?",
-    "answer": "Bilimsel anlatım için güvenilir kaynakları kullanın ve sanatsal yorumlarla kurgusal sahneleri açıkça belirtin."
   },
   "drone_video": {
     "slug": "yapay-zeka-drone-tarzi-video",
@@ -443,32 +352,6 @@ export const turkishCategoryProfiles:Record<string,TurkishCategoryProfile>={
     "question": "Uzun projeye doğrudan başlamalı mıyım?",
     "answer": "Önce küçük bir pilotla karakterleri ve görsel yaklaşımı değerlendirin; ardından bölüm ve teslim kapsamını belirleyin."
   },
-  "crelavo_academy": {
-    "slug": "crelavo-akademi",
-    "title": "Crelavo Akademi",
-    "description": "Yapay zekâ ile yaratıcı üretim konusunda öğrenme hedefleri, uygulamalı alıştırmalar ve eğitim materyalleri planlayın.",
-    "uses": [
-      "Öğrenme planı",
-      "Uygulama egzersizi",
-      "Eğitim materyali",
-      "Atölye konsepti"
-    ],
-    "question": "Eğitim planı nasıl hazırlanır?",
-    "answer": "Beceri düzeyini, hedefi, uygulanabilir alıştırmayı ve öğrenmenin nasıl değerlendirileceğini belirleyin."
-  },
-  "community_showcase": {
-    "slug": "topluluk-projeleri",
-    "title": "Crelavo Topluluk Projeleri",
-    "description": "Yaratıcı proje örneklerini inceleyin veya yayın hakkına sahip olduğunuz çalışmalar için paylaşım planı oluşturun.",
-    "uses": [
-      "Yaratıcı proje",
-      "Portfolyo",
-      "Video örneği",
-      "Topluluk paylaşımı"
-    ],
-    "question": "Hangi projeleri paylaşabilirim?",
-    "answer": "Size ait veya yayın izni olan çalışmaları doğru açıklamalar ve hak bilgileriyle paylaşmayı planlayın."
-  }
 };
 export function turkishCategoryPath(id:string){return turkishCategoryProfiles[id]?"/tr/"+turkishCategoryProfiles[id].slug:undefined}
 export function turkishCategoryId(slug:string){return Object.keys(turkishCategoryProfiles).find(id=>turkishCategoryProfiles[id].slug===slug)}
