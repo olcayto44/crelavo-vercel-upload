@@ -1,3 +1,4 @@
+import {commitVerifiedWhopPurchase,whopAtomicPurchaseEnabled} from "@/lib/studio-agent/whop-atomic-purchase";
 import { applyCreditPurchaseToBuckets } from "@/lib/credit-rollover";
 import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 import { findPaymentProduct } from "@/lib/data";
@@ -217,6 +218,8 @@ async function addCredits(input: {
   if (!profile) return { activated: false, reason: "crelavo_user_not_found" };
 
   const supabase = supabaseAdmin();
+  // Shared transaction candidate. No fallback to a legacy write after RPC uncertainty.
+  if (whopAtomicPurchaseEnabled()) return commitVerifiedWhopPurchase(supabase,{profile,product:input.product,billing:input.billing,credits:input.credits,paymentId:input.paymentId,membershipId:input.membershipId,source:"checkout_complete_fallback"});
   const idempotencyKey = `whop:payment:${input.paymentId}`;
   const { data: existingEvent, error: existingError } = await supabase
     .from("credit_events")
