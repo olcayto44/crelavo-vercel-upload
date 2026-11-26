@@ -28,7 +28,7 @@ export async function PUT(request:Request){
  const q=version===0?a.db.from("studio_website_drafts").insert({user_id:a.actor,design,version:1}):a.db.from("studio_website_drafts").update({design,version:version+1,updated_at:new Date().toISOString()}).eq("user_id",a.actor).eq("version",version);
  const {data,error}=await q.select("version").maybeSingle();
  if(error?.code==="23505"||(!error&&!data))return out({ok:false,code:"version_conflict"},409);
- if(error)return out({ok:false,code:"storage_unavailable"},503);
+ if(error||!data)return out({ok:false,code:"storage_unavailable"},503);
  return out({ok:true,version:data.version});
  }catch{return out({ok:false,code:"invalid_or_unavailable_draft"},400);}
 }
