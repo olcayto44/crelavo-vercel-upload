@@ -40,7 +40,7 @@ export async function POST(request:Request){
  if(missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||body.site_scope==="website_with_admin"||body.scope==="website_with_admin")return reply({ok:false,code:"website_brief_or_scope_invalid"},422);
  const pages=websitePageManifest(brief.pages);
  const packId=pages.length===1?"landing_page":"business_website";
- if(pages.length>3)return reply({ok:false,code:"website_maximum_three_pages",message:"The first release supports up to three pages."},422);
+ if(pages.length>5)return reply({ok:false,code:"website_maximum_five_pages",message:"The Website package supports up to five pages."},422);
  const pack=getCategory("website")?.packs.find(p=>p.id===packId);
  if(!pack||typeof pack.credits!=="number"||pack.credits<=0)return reply({ok:false,code:"website_tariff_unavailable"},503);
  const values=[brief.brief,brief.brand,brief.siteType,brief.audience,brief.style,...brief.pages,...brief.features];

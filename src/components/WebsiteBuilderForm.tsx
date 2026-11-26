@@ -11,7 +11,7 @@ type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUr
 
 export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onContentChange }: { initialProjectId?: string; editorOnly?: boolean; onContentChange?: () => void } = {}) {
   const { t } = useWorkspaceLanguage();
-  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact information, navigation", style: "Modern, clear and conversion-focused" });
+  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact information, navigation", style: "Modern, clear and conversion-focused", locale: "en" });
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewPages, setPreviewPages] = useState<Array<{ title: string; path: string }>>([]);
   const [previewHtml, setPreviewHtml] = useState("");
@@ -147,6 +147,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       const data=await post({action:"generate",productionId:quote.productionId,planHash:quote.planHash,confirmProduction:true});
       if(!["ready","already_ready"].includes(data.state)||data.productionId!==quote.productionId)throw Error("Production outcome not confirmed. Open the saved project before trying again.");
       await openProject(quote.productionId);
+      if(window.parent!==window)window.parent.postMessage({type:"crelavo-studio-website-created",productionId:quote.productionId},window.location.origin);
       notifyStudioUpdated(quote.productionId);
     } catch(error){setStatus(error instanceof Error?error.message:"Website generation failed.");}finally{setBusy(false);}
   }
@@ -209,6 +210,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
         <label>{t("Target audience")}<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
         <label>{t("Pages")}<small>{t("comma-separated")}</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
         <label>{t("Features")}<small>{t("comma-separated")}</small><input value={fields.features} onChange={(event) => update("features", event.target.value)} /></label>
+        <label>Website language<select value={fields.locale} onChange={event=>update("locale",event.target.value)}><option value="en">English</option><option value="tr">Türkçe</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="zh-Hans">中文</option></select></label>
         <label>{t("Style / visual direction")}<input required value={fields.style} onChange={(event) => update("style", event.target.value)} /></label>
         <button className="btn" type="submit" disabled={busy}>{busy ? t("Building...") : t("Generate website package")}</button>
       </form>

@@ -8,7 +8,7 @@ const list = (value: unknown) => (Array.isArray(value) ? value : typeof value ==
 export function normalizeAssistantWebsiteBrief(value: unknown): AssistantWebsiteBrief {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   const text = (key: string, max = 500) => typeof raw[key] === 'string' ? String(raw[key]).trim().slice(0, max) : '';
-  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: /^(tr|turkish)$/i.test(text('locale')) ? 'tr' : 'en' };
+  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: /^(tr|turkish)$/i.test(text('locale')) ? 'tr' : /^(de|german)$/i.test(text('locale')) ? 'de' : /^(fr|french)$/i.test(text('locale')) ? 'fr' : /^(zh-Hans|chinese)$/i.test(text('locale')) ? 'zh-Hans' : 'en' };
 }
 export function missingWebsiteBrief(brief: AssistantWebsiteBrief) {
   const missing = ['brand', 'audience', 'siteType', 'style'].filter((key) => !brief[key as keyof AssistantWebsiteBrief]);
