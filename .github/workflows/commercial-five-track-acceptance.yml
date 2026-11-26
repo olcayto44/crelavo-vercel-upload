@@ -1,0 +1,96 @@
+name: Commercial five-track acceptance (isolated)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/commercial-five-track-acceptance.yml'
+      - 'docs/studio-admin-wallet-atomic-candidate.sql'
+      - 'scripts/studio-admin-wallet-atomic-candidate-smoke.cjs'
+      - 'src/app/api/studio/**'
+      - 'src/app/api/webhooks/whop/**'
+      - 'src/app/api/whop/**'
+      - 'src/lib/studio-agent/**'
+      - 'scripts/studio-mp4-*.mjs'
+      - 'scripts/studio-*-smoke.cjs'
+      - 'scripts/website-*-smoke.cjs'
+      - 'scripts/studio-website-ai-worker.cjs'
+      - 'Dockerfile.website-ai-worker'
+      - 'src/app/website-cms-test/**'
+      - 'src/lib/website-*.ts'
+      - 'docs/*isolated.sql'
+      - 'scripts/studio-ffmpeg-compose.mjs'
+      - 'Dockerfile.studio-worker'
+      - 'worker-deps/**'
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  candidate:
+    name: Live-base candidate regression
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Atomic wallet adjustment candidate
+        run: node scripts/studio-admin-wallet-atomic-candidate-smoke.cjs
+      - name: Production wallet and private draft regressions
+        run: |
+          node scripts/website-paid-production-gate-smoke.cjs
+          node scripts/website-atomic-flow-smoke.cjs
+          node scripts/website-production-draft-smoke.cjs
+          node scripts/studio-reconciliation-monitor-smoke.cjs
+          npm run smoke:studio-v2-wiring
+          node scripts/studio-production-adapter-smoke.cjs
+          node scripts/studio-production-dispatch-smoke.cjs
+          node scripts/studio-production-credit-policy-smoke.cjs
+          node scripts/studio-production-status-smoke.cjs
+      - name: Integrated MP4 worker runtime (release branch)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          node scripts/studio-mp4-runtime-test.mjs
+  isolated-reference:
+    name: Integrated isolated acceptance (release candidate)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci
+      - name: Track 1 - Whop and assistant accounting (fixtures)
+        run: |
+          node scripts/studio-whop-recovery-adapter-smoke.cjs
+          node scripts/studio-whop-atomic-purchase-smoke.cjs
+          node scripts/studio-assistant-accounting-local-smoke.cjs
+      - name: Track 2 - Website AI, revision, CMS and independent ZIP (fixtures)
+        run: |
+          node scripts/studio-website-ai-job-smoke.cjs
+          node scripts/studio-website-revision-metered-smoke.cjs
+          node scripts/website-selfhost-runtime-smoke.cjs
+      - name: Track 3 - 37 category registry, dispatch and site wiring
+        run: |
+          node scripts/studio-capability-registry-smoke.cjs
+          node scripts/studio-production-dispatch-smoke.cjs
+          node scripts/studio-site-integration-smoke.cjs
+      - name: Track 4 - Image ledger and MP4 rendering
+        run: |
+          node scripts/studio-image-ledger-smoke.cjs
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          node scripts/studio-mp4-runtime-test.mjs
+      - name: Track 5 - Verify evidence boundaries
+        run: |
+          node scripts/studio-production-status-smoke.cjs
+          node scripts/website-cms-operations-local-smoke.cjs
+          echo "Release-candidate fixture tests do not authorize live provider spend or certify customer acceptance."

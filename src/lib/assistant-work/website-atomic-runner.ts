@@ -13,11 +13,11 @@ const Input = z.strictObject({
   credits: z.number().int().positive().max(100000),
 });
 type WebsiteArtifact = Awaited<ReturnType<typeof generateWebsiteArtifact>>;
-type Generate = (brief: ReturnType<typeof websiteEngineInput>, projectId: string) => Promise<WebsiteArtifact>;
+type Generate = (brief: ReturnType<typeof websiteEngineInput>, projectId: string, packId?:string) => Promise<WebsiteArtifact>;
 
 export async function runIsolatedWebsiteGeneration(
   raw: z.input<typeof Input>,
-  deps: { ledger: WebsiteCreditLedger; loadReserved: (productionId: string, userId: string) => Promise<unknown>; generate?: Generate },
+  deps: { ledger: WebsiteCreditLedger; loadReserved: (productionId: string, userId: string) => Promise<unknown>; generate?: Generate; remoteGeneration?: boolean },
 ) {
   const input = Input.parse(raw);
   const identity = {
@@ -36,9 +36,9 @@ export async function runIsolatedWebsiteGeneration(
   if (stored.userId !== input.userId || stored.productionId !== input.productionId ||
     stored.planHash !== input.planHash || stored.approvedHash !== input.planHash ||
     stored.credits !== input.credits || pack?.credits !== input.credits ||
-    /admin|commerce|checkout/i.test(pack.label) ||
+    (/admin|commerce|checkout/i.test(pack.label)&&stored.packId!=="website_basic_admin") ||
     websitePlanHash(brief, stored.packId) !== input.planHash ||
-    missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
+    missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief,stored.packId).length) {
     throw new Error("website_reserved_plan_mismatch_reconciliation_required");
   }
   // Finished or interrupted attempts are never sent to the provider again.
@@ -67,10 +67,11 @@ export async function runIsolatedWebsiteGeneration(
   }
   let artifact: WebsiteArtifact;
   try {
-    artifact = await (deps.generate ?? generateWebsiteArtifact)(
-      websiteEngineInput(brief), input.productionId,
-    );
+    artifact = deps.generate ? await deps.generate(websiteEngineInput(brief),input.productionId,stored.packId) : await generateWebsiteArtifact(websiteEngineInput(brief),input.productionId);
   } catch {
+    // A remote provider may have incurred a platform cost. No local failure
+    // evidence is fabricated, no automatic retry, and no customer charge.
+    if(deps.remoteGeneration)return {state:"reconciliation_required" as const,charged:false};
     // The deterministic local generator has no remote provider submission.
     // Never apply this failure shortcut to an external/uncertain provider call.
     await deps.ledger.record({
@@ -83,7 +84,7 @@ export async function runIsolatedWebsiteGeneration(
   await deps.ledger.record({
     ...identity,
     outcome: "ready",
-    result: { files: artifact.files, websiteContent: artifact.websiteContent, pageManifest: artifact.pageManifest },
+    result: { files: artifact.files, websiteContent: artifact.websiteContent, pageManifest: artifact.pageManifest, plan: artifact.plan ?? {} },
   });
   const settlement = await deps.ledger.finalize({ ...identity, outcome: "ready" });
   if (!settlement || typeof settlement !== "object" ||

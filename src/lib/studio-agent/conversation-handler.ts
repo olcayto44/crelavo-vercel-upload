@@ -1,4 +1,7 @@
+import {websitePilotCanary} from "./website-pilot-provider";
 import { createHash } from "node:crypto";
+import { CategoryIdSchema } from "./requirements";
+import { executeB1Tool } from "./tool-registry";
 import { hydrateProject } from "./project-memory";
 import { handleMockPlanCommand } from "./assistant-core";
 import type { supabaseAdmin } from "@/lib/supabase";
@@ -15,7 +18,16 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
   const json=(body:unknown,status=200)=>{const result=body as {project?:ConversationProject};return Response.json(result?.project?{...result,planning:studioPlanningState(result.project)}:body,{status,headers:{"Cache-Control":"no-store"}})};
   try {
     const {userId,db}=await deps.authenticate();
-    if(request.method==="GET"){const readiness=await studioReadiness(db);return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:readiness.ready,readiness,isolatedPreview:process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true",executionReady:false});}
+    if(request.method==="GET"){
+      const query=new URL(request.url).searchParams;
+      if(query.has("capabilities")){
+        if(query.getAll("capabilities").length!==1)throw new ConversationError("invalid_request",400);
+        const categoryId=CategoryIdSchema.parse(query.get("capabilities"));
+        // Context originates only from authenticated server identity; no client scopes, project IDs or approval.
+        const result=executeB1Tool({tool:"get_category_capabilities",args:{categoryId}},{source:"verified_server",userId,categoryId,projectId:null,ownerUserId:null,scopes:["read"],creditAccount:"none",currentPlanHash:null,approval:null,confirmedRestoreRevision:null,ownedMaterialIds:[]});
+        return json({ok:true,...result});
+      }
+      const readiness=await studioReadiness(db);return json({ok:true,mockAllowed:mockPreviewAllowed(),realEnabled:readiness.ready,readiness,isolatedPreview:process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true",executionReady:false});}
     if(request.method!=="POST")return json({ok:false,code:"method_not_allowed"},405);
     if(Number(request.headers.get("content-length")||0)>450000)throw new ConversationError("request_too_large",413);
     const raw=await request.text();if(Buffer.byteLength(raw)>450000)throw new ConversationError("request_too_large",413);
@@ -57,10 +69,18 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
       const project:ConversationProject={...result.project,messages};
       return json({...result,project,memory:"signed_browser_demo",mockState:signPreviewState({...state,project,wallets:result.wallets,last:{requestId:body.requestId,hash,reply:result.reply,chargedCredits:result.chargedCredits}})});
     }
+    if(body.categoryId!=="website"||!websitePilotCanary(userId))throw new ConversationError("website_pilot_only",403);
     if(body.action==="plan")throw new ConversationError("advanced_planning_mock_only",403);
     // No implicit mock fallback. New server flags are off unless explicitly configured AFTER offline migration review.
     const readiness=await studioReadiness(db);if(!readiness.ready)throw new ConversationError("studio_not_ready"); const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();
     const store=createDatabaseConversationStore(db);
+    if(body.categoryId==="website"&&(body.action==="message"||body.action==="bind_website")){
+      // A private CMS-bound project must use the saved-design revision endpoint
+      // with its explicit quote and server-verified site context, not generic chat.
+      const {data:binding,error:bindingError}=await db.from("studio_agent_website_bindings").select("project_id").eq("user_id",userId).eq("project_id",body.projectId).maybeSingle();
+      if(bindingError)throw new ConversationError("studio_storage_unavailable");
+      if(binding)throw new ConversationError("website_revision_endpoint_required",409);
+    }
     if(body.action==="bind_website") {
       if(body.categoryId!=="website"||process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")throw new ConversationError("website_binding_not_allowed",403);
       const {data:website,error:websiteError}=await db.from("production_requests").select("id").eq("id",body.productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();

@@ -28,10 +28,10 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
   function payload() {
     const output = json(row!.output_json); const state = json(output.websiteAssistant);
     const currentBrief = normalizeAssistantWebsiteBrief(state.brief); const currentPack = deps.pack(String(state.packId || ""));
-    const validPackage = Boolean(currentPack && !/admin|commerce|checkout/i.test(currentPack.label));
-    const blockers = [...missingWebsiteBrief(currentBrief), ...(unsupportedWebsiteScope(currentBrief).length ? ["scope"] : []), ...(!validPackage ? ["package"] : []), ...(currentPack && state.credits !== currentPack.credits ? ["price"] : []), ...(state.planHash !== websitePlanHash(currentBrief, String(state.packId || "")) ? ["plan"] : [])];
+    const validPackage = Boolean(currentPack && (!/admin|commerce|checkout/i.test(currentPack.label)||state.packId==="website_basic_admin"));
+    const blockers = [...missingWebsiteBrief(currentBrief), ...(unsupportedWebsiteScope(currentBrief,String(state.packId??"")).length ? ["scope"] : []), ...(!validPackage ? ["package"] : []), ...(currentPack && state.credits !== currentPack.credits ? ["price"] : []), ...(state.planHash !== websitePlanHash(currentBrief, String(state.packId || "")) ? ["plan"] : [])];
 
-    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { review: { ready: blockers.length === 0, blockers }, brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief)), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
+    return { ok: true, category: 'website', engine: 'website_builder', productionId: row!.id, status: state.phase, title: row!.title, body: state.messages?.at(-1)?.content ?? 'Website project loaded.', website: { review: { ready: blockers.length === 0, blockers }, brief: state.brief, messages: state.messages ?? [], planHash: state.planHash, approvedHash: state.approvedHash ?? null, missing: missingWebsiteBrief(normalizeAssistantWebsiteBrief(state.brief)), unsupported: unsupportedWebsiteScope(normalizeAssistantWebsiteBrief(state.brief),String(state.packId??"")), credits: state.credits ?? null, packId: state.packId ?? '', pageManifest: output.pageManifest ?? null }, outputs: automaticDeliveryLinks(String(row!.id)) };
   }
   try {
     if (body.productionId) {
@@ -45,6 +45,10 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     }
     let output = json(row!.output_json); let state = json(output.websiteAssistant);
     if (body.action === 'website_open') return { status: 200, payload: payload() };
+    // A paid or held project is immutable through the brief endpoints. All
+    // later content revisions use the owner-scoped structured project editor.
+    if(output.websiteBillingMode==="atomic_v1"||Number(row!.reserved_credits??0)>0||state.phase==="reserved")
+      return fail(409,"website_paid_project_use_editor_or_status");
     if (body.action === "website_retry") {
       if (state.phase !== "generating" || Date.now() - Date.parse(String(state.generationStartedAt || row!.updated_at)) < 180000) return fail(409, "website_generation_not_stale_refresh_project");
       await save({ status: "failed", generation_status: "failed", output_json: { ...output, websiteAssistant: { ...state, phase: "generation_failed", error: "interrupted_generation_recovered" } } }, "generating");
@@ -56,7 +60,7 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
       const replyLanguage = resolveReplyLanguage(body.uiAction === true ? "" : message, state.messages ?? []);
       const result = await (deps.converse ?? converseWebsiteBrief)(normalizeAssistantWebsiteBrief(state.brief), state.messages ?? [], message, body.websiteBrief, { ...json(body.extras), reply_language: replyLanguage, form_submission: body.uiAction === true });
       const packId = String(typeof body.packId === "string" ? body.packId : state.packId || ""); const pack = deps.pack(packId);
-      const reply = groundedWebsiteReply(result.reply, result.brief, replyLanguage, Boolean(pack && !/admin|commerce|checkout/i.test(pack.label)));
+      const reply = groundedWebsiteReply(result.reply, result.brief, replyLanguage, Boolean(pack && (!/admin|commerce|checkout/i.test(pack.label)||packId==="website_basic_admin")),packId);
       const next = { replyLanguage, brief: result.brief, messages: [...(state.messages ?? []), ...(body.uiAction === true ? [] : [{ role: "user", content: message }]), { role: 'assistant', content: reply }].slice(-30) as WebsiteMessage[], phase: 'draft', packId, credits: pack?.credits ?? null, planHash: websitePlanHash(result.brief, packId), approvedHash: null };
       await save({ title: result.brief.brand ? result.brief.brand + ' website' : 'Website brief', prompt: result.brief.brief || message, input_json: { ...json(row!.input_json), websiteBrief: result.brief }, output_json: { ...output, websiteAssistant: next } });
       return { status: 200, payload: { ...payload(), spend: false } };
@@ -64,8 +68,8 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     const brief = normalizeAssistantWebsiteBrief(state.brief); const hash = websitePlanHash(brief, String(state.packId ?? ''));
     if (body.planHash !== hash || state.planHash !== hash) return fail(409, 'website_plan_changed_review_again');
     if (missingWebsiteBrief(brief).length) return fail(422, 'website_brief_incomplete');
-    if (unsupportedWebsiteScope(brief).length) return fail(422, 'website_static_scope_only');
-    const pack = deps.pack(String(state.packId)); if (!pack || /admin|commerce|checkout/i.test(pack.label)) return fail(422, 'website_select_static_package');
+    if (unsupportedWebsiteScope(brief,String(state.packId??"")).length) return fail(422, 'website_static_scope_only');
+    const pack = deps.pack(String(state.packId)); if (!pack || (/admin|commerce|checkout/i.test(pack.label)&&state.packId!=="website_basic_admin")) return fail(422, 'website_select_static_package');
     if (body.action === 'website_approve') {
       if (state.credits !== pack.credits) return fail(409, 'website_package_price_changed_review_again');
       if (['generating', 'awaiting_payment'].includes(state.phase)) return fail(409, 'website_generation_or_payment_pending');

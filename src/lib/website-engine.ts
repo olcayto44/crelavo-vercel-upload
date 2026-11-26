@@ -1,14 +1,15 @@
-import { generateDeterministicWebsiteSource, escapeHtml } from "./providers/website-template.ts";
+import {createHash} from "node:crypto";
+import { generateDeterministicWebsiteSource, escapeHtml, type WebsiteCopy } from "./providers/website-template.ts";
 import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGenerationInput, type WebsiteGeneratedFile } from "./providers/openai.ts";
 import { createWebsitePlan } from "./website-domain.ts";
 import { websiteContentFromSource } from "./website-content.ts";
 export type WebsiteEngineInput = WebsiteGenerationInput & { locale?: string };
-export const websitePageSlug = (title: string) => title.toLowerCase().replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 70);
+export const websitePageSlug = (title: string) => {const slug=title.toLowerCase().replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);return slug||(/[\p{L}]/u.test(title)?"page-"+createHash("sha256").update(title.normalize("NFKC")).digest("hex").slice(0,16):"");};
 export function websitePageManifest(pages: string[]) {
-  const result = [{ slug: "home", title: pages.find((p) => /^(home|ana\s?sayfa|anasayfa)$/i.test(p)) || "Home", path: "index.html", section: "hero" }];
+  const result = [{ slug: "home", title: pages.find((p) => /^(home|ana\s?sayfa|anasayfa|startseite|accueil|首页)$/i.test(p)) || "Home", path: "index.html", section: "hero" }];
   const used = new Set(["index", "home", "admin", "preview", "manifest"]);
   for (const title of pages) {
-    if (/^(home|ana\s?sayfa|anasayfa|landing[ _-]?page)$/i.test(title)) continue;
+    if (/^(home|ana\s?sayfa|anasayfa|startseite|accueil|首页|landing[ _-]?page)$/i.test(title)) continue;
     let slug = websitePageSlug(title); if (!slug) throw new Error("website_page_name_invalid");
     if (used.has(slug)) { if (result.some((p) => p.slug === slug)) continue; slug = "page-" + slug; }
     used.add(slug);
@@ -25,9 +26,9 @@ export function validateWebsiteSourceFiles(files: WebsiteGeneratedFile[], scope:
   const quality = validateWebsiteQuality(files, scope); if (!quality.valid) throw new WebsiteQualityError(quality.missing);
 }
 /** Shared artifact engine; callers own authorization, approval, persistence and billing. */
-export async function generateWebsiteArtifact(input: WebsiteEngineInput, projectId: string) {
+export async function generateWebsiteArtifact(input: WebsiteEngineInput, projectId: string, options?: {mode:"local"} | {mode:"validated_copy";copy:Pick<WebsiteCopy,"headline"|"intro"|"eyebrow"|"features"|"faq">}) {
   const pageManifest = websitePageManifest(input.pages);
-  const generated = await generateDeterministicWebsiteSource(input);
+  const generated = await generateDeterministicWebsiteSource(input, options);
   const files = generated.files.map((file) => ({ ...file }));
   const index = files.find((file) => file.path === 'index.html')!;
   const navigation = pageManifest.map((page) => '<a href="./' + page.path + '">' + escapeHtml(page.title) + '</a>').join('');

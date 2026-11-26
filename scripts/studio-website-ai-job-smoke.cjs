@@ -1,0 +1,166 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {createHash}=require('node:crypto');
+const {PGlite}=require('@electric-sql/pglite');
+const {load}=require('./studio-agent-test-loader.cjs');
+(async()=>{
+ const db=new PGlite();
+ const owner='11111111-1111-4111-8111-111111111111';
+ const hashBrief={brand:'Offline Brand',brief:'A carefully described offline business website for service clients.',audience:'Small business',siteType:'Landing Page',style:'Minimal',pages:['Home','Contact'],features:[],locale:'en'};
+ const packId='landing_page', credits=500;
+ const hash=b=>createHash('sha256').update(JSON.stringify({version:1,brief:b,packId})).digest('hex');
+ const planHash=hash(hashBrief);
+ try{
+  const schema=fs.readFileSync('supabase/schema.sql','utf8');
+  const table=name=>{const match=schema.match(new RegExp('create table '+name+' \\([^]*?\\n\\);'));assert(match,'missing '+name);return match[0];};
+  await db.exec(`create role anon;create role authenticated;create role service_role;
+    create schema auth;create table auth.users(id uuid primary key);
+    create function auth.uid() returns uuid language sql as $tag$ select null::uuid $tag$;
+    create schema storage;create table storage.objects(id uuid primary key,bucket_id text,name text,owner_id text);
+    create type credit_event_type as enum ('purchase','reserve','spend','refund','adjustment');
+    ${table('profiles')} ${table('credit_balances')} ${table('credit_events')}`);
+  const production=fs.readFileSync('supabase/migration_production_requests.sql','utf8');
+  await db.exec(production.slice(0,production.indexOf('create table if not exists legal_acceptances')));
+  await db.exec(fs.readFileSync('supabase/migration_credit_rollover_policy.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migration_website_atomic_credits_isolated.sql','utf8'));
+  await db.exec(fs.readFileSync('docs/website-ai-jobs-isolated.sql','utf8'));await db.exec(fs.readFileSync('docs/website-ai-activation-isolated.sql','utf8'));
+  await db.exec("create or replace function auth.uid() returns uuid language sql stable as $auth$ select nullif(current_setting('test.actor',true),'')::uuid $auth$; grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;");
+  for(const file of ["website-cms-isolated.sql","website-cms-write-fence-isolated.sql","website-cms-settled-design-import-isolated.sql","website-test-owned-production-list-isolated.sql"])await db.exec(fs.readFileSync("docs/"+file,"utf8"));
+  await db.query('insert into auth.users(id) values($1)',[owner]);
+  await db.query("insert into profiles(id,email) values($1,'offline@example.test')",[owner]);
+  await db.query('insert into credit_balances(user_id,balance,current_subscription_credits,topup_credits) values($1,1000,600,400)',[owner]);
+  const {rows}=await db.query(`insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,estimated_credits,input_json,output_json)
+     values($1,'website',$2,'Offline Brand','This is isolated','pending','pending',$3,'{}'::jsonb,$4::jsonb) returning id`,
+    [owner,packId,credits,JSON.stringify({websiteAssistant:{phase:'approved',approvedHash:planHash,planHash,packId,credits,brief:hashBrief}})]);
+  const productionId=rows[0].id;
+  const rpc=async(name,args)=>{
+   const params=Object.values(args);
+   try{return{data:(await db.query('select public.'+name+'('+params.map((_,i)=>'$'+(i+1)).join(',')+') as value',params)).rows[0].value,error:null};}
+   catch(error){return{data:null,error:{message:String(error.message)}};}
+  };
+  {
+  // Exercise isolated handoff SQL with the real production schema and the relevant assistant contract.
+  await db.exec(fs.readFileSync('docs/studio-assistant-accounting-isolated.sql','utf8'));
+  await db.exec("create table public.studio_agent_website_bindings(project_id uuid primary key references public.studio_agent_projects(id));");
+  await db.exec(fs.readFileSync('docs/website-ai-plan-handoff-isolated.sql','utf8'));
+  const {prepareWebsiteHandoff,handleWebsiteHandoff}=load("src/lib/studio-agent/website-plan-handoff.ts");
+  const sourceFields={business_name:"Fixture handoff",brief:"A local professional business explaining its services and approach to prospective clients.",audience:"Business owners",site_type:"corporate_website",design_style:"clean_and_minimal",language:"english",pages:"Home, Contact",features_and_integrations:"Service information"};
+  const assistantId=(await db.query("insert into studio_agent_projects(user_id,category_id,title,brief,revision) values($1,'website','Fixture handoff',$2::jsonb,1) returning id",[owner,JSON.stringify(sourceFields)])).rows[0].id;
+  const getHandoff=async(id,user)=>(await db.query("select id,user_id,category_id,revision,production_id,brief from studio_agent_projects where id=$1 and user_id=$2",[id,user])).rows[0]??null;
+  const source=await getHandoff(assistantId,owner),q=prepareWebsiteHandoff(source,owner);assert.equal(q.credits,1500);
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,language:"turkish"}},owner));
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,reference_url:"https://example.test"}},owner));
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,features_and_integrations:"payment processing"}},owner));
+  const handoffArgs={p_user:owner,p_project:assistantId,p_revision:1,p_snapshot:sourceFields,p_brief:q.brief,p_hash:q.planHash,p_pack:q.packId,p_credits:q.credits};
+  const rpcHandoff=async(args)=>rpc("website_ai_handoff_approved_plan",args);
+  assert.equal((await rpcHandoff({...handoffArgs,p_revision:2})).data.state,"stale_or_missing");
+  assert.equal((await rpcHandoff({...handoffArgs,p_credits:1})).data.state,"denied");
+  assert.equal((await rpcHandoff({...handoffArgs,p_snapshot:{...sourceFields,brief:"Altered"}})).data.state,"stale_or_missing");
+  const beforeWallet=(await db.query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0];
+  const invokeHandoff=async(body,userId=owner)=>handleWebsiteHandoff(new Request("https://local.test",{method:"POST",body:JSON.stringify(body)}),{userId,canaryId:owner,load:getHandoff,list:async()=>[],rpc:rpcHandoff});
+  const quoteResponse=await invokeHandoff({action:"quote",projectId:assistantId});assert.equal(quoteResponse.status,200);const handoffQuote=await quoteResponse.json();assert.equal(handoffQuote.quoteHash,q.quoteHash);assert.equal(handoffQuote.chargedCredits,0);
+  assert.equal((await invokeHandoff({action:"approve",projectId:assistantId,revision:1,quoteHash:"0".repeat(64),confirmPlan:true})).status,409);
+  assert.equal((await invokeHandoff({action:"quote",projectId:assistantId},"22222222-2222-4222-8222-222222222222")).status,403);
+  const approveBody={action:"approve",projectId:assistantId,revision:1,quoteHash:q.quoteHash,confirmPlan:true};
+  const accepted=await invokeHandoff(approveBody);assert.equal(accepted.status,200);const result=await accepted.json();assert.equal(result.state,"approved");assert.equal(result.productionStarted,false);assert.equal(result.chargedCredits,0);
+  const replay=await (await invokeHandoff(approveBody)).json();assert.equal(replay.state,"already_bound");assert.equal(replay.productionId,result.productionId);
+  const created=(await db.query("select user_id,status,reserved_credits,estimated_credits,output_json from production_requests where id=$1",[result.productionId])).rows[0];assert.equal(created.user_id,owner);assert.equal(created.status,"pending");assert.equal(created.reserved_credits,0);assert.equal(created.estimated_credits,1500);assert.equal(created.output_json.websiteAssistant.approvedHash,q.planHash);
+  assert.deepEqual((await db.query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0],beforeWallet);
+  assert.equal((await db.query("select has_function_privilege('authenticated','public.website_ai_handoff_approved_plan(uuid,uuid,integer,jsonb,jsonb,text,text,integer)','EXECUTE') as allowed")).rows[0].allowed,false);
+  await db.query("update studio_agent_projects set revision=2 where id=$1",[assistantId]);assert.equal((await invokeHandoff(approveBody)).status,409);
+  console.log("website assistant handoff: exact saved brief, explicit version approval, atomic owner binding, no credit hold, stale and duplicate protection");
+  // Isolate this added fixture from existing production list/ledger assertions.
+  await db.query("delete from studio_agent_projects where id=$1",[assistantId]);
+  await db.query("delete from production_requests where id=$1",[result.productionId]);
+  }
+  const {runIsolatedWebsiteAI,websiteAIPolicyDigest}=load('src/lib/studio-agent/website-ai-orchestrator.ts');
+  const policy={version:'offline-v1',model:'gpt-6.1-terra',inputLimit:16000,outputLimit:1200,requestMicroUSD:50000,totalMicroUSD:1000000,userRPM:2,systemRPM:5,inputRate:3000000,outputRate:5000000};
+  const approval={userId:owner,productionId,planHash,packId,credits,policyVersion:policy.version,policyHash:websiteAIPolicyDigest(policy),maximumMicroUSD:policy.requestMicroUSD,source:'persisted_explicit_user_approval',brief:hashBrief};
+  const tuple={planHash,policyVersion:policy.version,policyHash:approval.policyHash,credits,maximumMicroUSD:approval.maximumMicroUSD,source:approval.source};
+
+  const copy={artDirection:{layout:'gallery',palette:'forest',heroImageBrief:'Original studio photography with natural light and neutral textures'},secondaryPages:[{pageTitle:'Contact',title:'Contact Offline Brand',description:'Review a project with the team.',headline:'Discuss your project',lead:'Describe your needs.',section:{heading:'Project enquiries',body:'Share your project requirements with the team.'}}],eyebrow:'Business websites',headline:'A clearer website for your business',intro:'Plan your site around your services and audience.',features:[1,2,3].map(i=>({title:'Planning step '+i,body:'Review your business goals before publishing.'})),faq:[1,2,3].map(i=>({question:'Planning question '+i+'?',answer:'Review your supplied requirements with the team.'}))};
+  let calls=0;
+  const deps={enabled:()=>true,policy,apiKey:'offline-test',rpc,transport:async()=>{calls++;return Response.json({id:'chatcmpl-offline-job',model:policy.model,usage:{prompt_tokens:500,completion_tokens:300},choices:[{finish_reason:'stop',message:{content:JSON.stringify(copy)}}]});}};
+  assert.equal((await runIsolatedWebsiteAI({...approval,policyHash:'b'.repeat(64)},owner,deps)).state,'not_dispatched');assert.equal(calls,0);
+  assert.equal((await runIsolatedWebsiteAI(approval,owner,deps)).state,'not_dispatched');assert.equal(calls,0);
+  const enqueueArgs={p_user:owner,p_production:productionId,p_hash:planHash,p_policy_version:policy.version,p_policy_hash:approval.policyHash,p_credits:credits,p_maximum:approval.maximumMicroUSD};
+  const approvalArgs={...enqueueArgs,p_brief:JSON.stringify(hashBrief),p_pack:packId};
+  assert.equal((await rpc('website_ai_approve_enqueue',approvalArgs)).data,'disabled');
+  const {handleWebsiteAILaunch}=load('src/lib/studio-agent/website-ai-launch.ts');
+  const launch={...deps,userId:owner,canaryId:owner,policyMatches:async()=>Boolean((await db.query('select enabled from website_ai_activation where singleton')).rows[0]?.enabled),loadJob:async(u,id)=>(await db.query('select * from website_ai_jobs where user_id=$1 and production_id=$2',[u,id])).rows[0]??null,loadProject:async(u,id)=>(await db.query('select * from production_requests where user_id=$1 and id=$2',[u,id])).rows[0]??null};
+  const invoke=async(body,d=launch)=>{const res=await handleWebsiteAILaunch(new Request('https://example.test/api',{method:'POST',body:JSON.stringify({productionId,...body})}),d);return {status:res.status,body:await res.json()};};
+  assert.equal((await invoke({action:'quote'})).status,503);assert.equal(calls,0);
+  await db.query('insert into website_ai_activation(policy_version,policy_hash,maximum_micro_usd,total_micro_usd,user_rpm,system_rpm,enabled) values($1,$2,$3,$4,$5,$6,true)',[policy.version,approval.policyHash,policy.requestMicroUSD,policy.totalMicroUSD,policy.userRPM,policy.systemRPM]);
+  assert.equal((await rpc('website_ai_approve_enqueue',{...approvalArgs,p_hash:'b'.repeat(64)})).data,'denied');
+  assert.equal((await rpc('website_ai_approve_enqueue',{...approvalArgs,p_brief:JSON.stringify({...hashBrief,brand:'Other'})})).data,'denied');
+  assert.equal((await invoke({action:'quote'},{...launch,canaryId:productionId})).status,403);
+  const q=await invoke({action:'quote'});assert.equal(q.status,200);assert.equal(q.body.credits,credits);
+  const submit={action:'submit',quoteHash:q.body.quoteHash,approvedCredits:credits,confirmProduction:true};
+  assert.equal((await invoke({...submit,confirmProduction:false})).status,400);
+  assert.equal((await invoke({...submit,approvedCredits:1})).status,409);
+  assert.equal((await invoke({...submit,quoteHash:'b'.repeat(64)})).status,409);
+  assert.equal(calls,0);assert.equal((await db.query('select reserved from credit_balances where user_id=$1',[owner])).rows[0].reserved,0);
+  const result=await invoke(submit);assert.equal(result.status,200,JSON.stringify(result));assert.equal(result.body.state,'artifact_cost_pending');assert.equal(calls,1);
+  assert.equal((await rpc('website_ai_approve_enqueue',approvalArgs)).data,'already_enqueued');
+  assert.equal((await invoke(submit)).status,409);assert.equal((await invoke({action:'status'})).body.state,'artifact_cost_pending');assert.equal(calls,1);
+  console.log("website AI launch: disabled policy, explicit quote, exact plan and canary scope, atomic reserve, one dispatch and read-only status");
+  assert.equal((await runIsolatedWebsiteAI(approval,owner,deps)).state,'already_claimed');assert.equal(calls,1);
+  const before=(await db.query('select balance,reserved from credit_balances where user_id=$1',[owner])).rows[0];assert.equal(before.balance,1000);assert.equal(before.reserved,500);
+  const job=(await db.query('select state,receipt,artifact from website_ai_jobs where production_id=$1',[productionId])).rows[0];assert.equal(job.state,'artifact_cost_pending');assert.equal(job.artifact.editableAcceptance.passed,true);assert.equal(job.artifact.editableAcceptance.releaseReady,false);assert.equal(job.artifact.editableAcceptance.browserVerified,false);assert(job.artifact.files.find(f=>f.path==='index.html').content.includes(copy.headline));assert.equal(job.receipt.requestId,'chatcmpl-offline-job');
+  const {renderWebsiteDesignCandidate}=load('src/lib/website-design-candidate.ts');const editable=renderWebsiteDesignCandidate(job.artifact.editableDesign);assert.equal(editable.manifest.designHash,job.artifact.editableDesignHash);assert(editable.files.find(f=>f.path==="index.html").content.includes(copy.headline));assert(editable.files.every(f=>!f.path.endsWith(".html")||f.content.includes("noindex,nofollow")));assert.equal(editable.manifest.capabilities.persistentCMS,false);assert.equal(job.artifact.editableDesign.layout,"gallery");assert.equal(job.artifact.editableDesign.palette,"forest");assert.equal(job.artifact.artDirection.heroImageBrief,copy.artDirection.heroImageBrief);assert.deepEqual(job.artifact.aiSecondaryPages,["Contact"]);assert(editable.files.find(f=>f.path==="contact.html").content.includes("Discuss your project"));
+  const site="11111111-1111-4111-8111-111111111121",otherSite="11111111-1111-4111-8111-111111111122",outsider="11111111-1111-4111-8111-111111111123";
+  await db.query("insert into auth.users(id) values($1)",[outsider]);
+  await db.query("insert into public.website_cms_sites(id,name,locale) values($1,'Offline site','en'),($2,'Other site','en')",[site,otherSite]);
+  await db.query("insert into public.website_cms_members(site_id,user_id,role) values($1,$2,'owner'),($3,$4,'owner')",[site,owner,otherSite,outsider]);
+  const readDesigns=async(user,site,id=null)=>{await db.exec("set role authenticated");try{await db.query("select set_config('test.actor',$1,false)",[user]);return (await db.query("select public.website_cms_read_settled_designs($1,$2) as value",[site,id])).rows[0].value;}finally{await db.exec("reset role");}};
+  const listOwned=async(user)=>{await db.exec("set role authenticated");try{await db.query("select set_config('test.actor',$1,false)",[user]);return (await db.query("select public.website_test_owned_production_list() as value")).rows[0].value;}finally{await db.exec("reset role");}};
+  assert((await listOwned(owner)).some(p=>p.id===productionId&&p.category==="website"&&p.state==="artifact_cost_pending"));assert.deepEqual(await listOwned(outsider),[]);await db.exec("set role anon");await assert.rejects(()=>db.query("select public.website_test_owned_production_list()"));await db.exec("reset role");console.log("isolated production list: owner-only metadata, no foreign or anonymous project access");
+  assert.deepEqual(await readDesigns(owner,site),[]);assert.equal(await readDesigns(owner,otherSite),null);
+  const identity={p_user:owner,p_production:productionId,p_hash:planHash};
+  await db.exec(fs.readFileSync("docs/website-ai-metered-settlement-isolated.sql","utf8"));
+  await db.query("insert into public.studio_agent_cost_config(singleton,policy,tariff_version,input_units,output_units) values(true,$1::jsonb,'offline-v1',1,2) on conflict(singleton) do update set policy=excluded.policy",[JSON.stringify(policy)]);
+  assert.equal((await rpc("website_ai_finalize_metered",identity)).data,"disabled");
+  await db.exec("update website_ai_activation set auto_metered_settlement=true where singleton");
+  assert.equal((await rpc("website_ai_finalize_metered",{...identity,p_user:outsider})).data,"denied");
+  await db.query("update website_ai_jobs set receipt=jsonb_set(receipt,'{estimatedMicroUSD}','1'::jsonb) where production_id=$1",[productionId]);
+  assert.equal((await rpc("website_ai_finalize_metered",identity)).data,"cost_evidence_required");
+  await db.query("update website_ai_jobs set receipt=$2::jsonb where production_id=$1",[productionId,JSON.stringify(job.receipt)]);
+  assert.equal((await rpc('website_ai_finalize',{...identity,p_evidence:{source:'reviewed_provider_usage',requestId:'wrong',actualMicroUSD:3000}})).data,'cost_evidence_required');
+  assert.equal((await rpc('website_ai_finalize',{...identity,p_evidence:{source:'reviewed_provider_usage',requestId:'chatcmpl-offline-job',actualMicroUSD:60000}})).data,'cost_evidence_required');
+  assert.equal((await rpc('website_ai_finalize_metered',identity)).data,'settled');
+  assert.equal((await rpc('website_ai_finalize_metered',identity)).data,'already_settled');
+  const metered=(await db.query('select reviewed_cost from website_ai_jobs where production_id=$1',[productionId])).rows[0].reviewed_cost;assert.equal(metered.source,'metered_policy_estimate');assert.equal(metered.estimatedMicroUSD,3000);assert.equal(metered.invoicePending,true);assert.equal(metered.actualMicroUSD,undefined);console.log('metered settlement: default off, owner check, receipt arithmetic, one charge, invoice pending');
+  const wallet=(await db.query('select balance,reserved from credit_balances where user_id=$1',[owner])).rows[0];assert.equal(wallet.balance,500);assert.equal(wallet.reserved,0);
+  const delivered=(await db.query('select * from production_requests where id=$1',[productionId])).rows[0];const reservation=(await db.query('select state,credits from website_credit_reservations where production_id=$1',[productionId])).rows[0];
+  assert.equal(load('src/lib/assistant-work/website-paid-delivery.ts').websiteCreditDeliveryProof(delivered,reservation),true);
+  assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+  const direct=load("src/lib/website-settled-delivery.ts"),settledJob=(await db.query("select * from website_ai_jobs where production_id=$1",[productionId])).rows[0],settledReservation=(await db.query("select * from website_credit_reservations where production_id=$1",[productionId])).rows[0];
+  const directRows=direct.directSettledWebsiteRows(owner,productionId,settledJob,delivered,settledReservation);
+  const preview=direct.buildSettledWebsitePreview(directRows,productionId);assert.equal(preview.pages.length,job.artifact.editableDesign.pages.length);assert.equal(preview.releaseReady,false);assert(preview.pages[0].html.includes(copy.headline));assert(preview.pages[0].html.includes("Content-Security-Policy"));assert(!preview.pages[0].html.includes('href="./styles.css"'));
+  assert.throws(()=>direct.directSettledWebsiteRows(outsider,productionId,settledJob,delivered,settledReservation));
+  assert.throws(()=>direct.directSettledWebsiteRows(owner,productionId,{...settledJob,state:"artifact_cost_pending"},delivered,settledReservation));
+  assert.throws(()=>direct.directSettledWebsiteRows(owner,productionId,settledJob,delivered,{...settledReservation,state:"reserved"}));
+  assert.throws(()=>direct.directSettledWebsiteRows(owner,productionId,{...settledJob,reviewed_cost:{...settledJob.reviewed_cost,requestId:"wrong"}},delivered,settledReservation));
+  assert.equal(Buffer.from(direct.buildSettledWebsiteCandidate(directRows,productionId).zip).readUInt32LE(0),0x04034b50);
+  console.log("direct settled delivery: owner, exact reservation and cost evidence, sandbox preview pages, ZIP; no CMS site prerequisite");
+  const listed=await readDesigns(owner,site);assert.equal(listed.length,1);assert.equal(listed[0].productionId,productionId);assert(!("design" in listed[0]));const imported=await readDesigns(owner,site,productionId);assert.deepEqual(imported[0].design,job.artifact.editableDesign);assert.equal(imported[0].designHash,job.artifact.editableDesignHash);const {buildSettledWebsiteCandidate}=load("src/lib/website-settled-delivery.ts");const deliveredZip=buildSettledWebsiteCandidate(imported,productionId);assert.equal(deliveredZip.report.requiresCrelavoAccountAtRuntime,false);assert.equal(deliveredZip.report.releaseReady,false);assert.equal(Buffer.from(deliveredZip.zip).readUInt32LE(0),0x04034b50);assert(deliveredZip.entries.find(e=>e.name==="site/index.html").content.includes(copy.headline));assert.throws(()=>buildSettledWebsiteCandidate([] ,productionId));assert.throws(()=>buildSettledWebsiteCandidate(imported,otherSite));assert.throws(()=>buildSettledWebsiteCandidate([{...imported[0],designHash:"0".repeat(64)}],productionId));const {composeWebsiteScope}=load("src/lib/website-compose-scope.ts"),{buildWebsiteSelfHostedBundle}=load("src/lib/website-selfhost-bundle.ts");const original=JSON.stringify(imported[0].design);const composed=composeWebsiteScope(imported[0].design,{sector:"retail",extraModules:["booking"]});assert.equal(composed.scopeApplied,true);assert(composed.requestedModules.includes("catalog"));assert(composed.requestedModules.includes("booking"));assert.equal(composed.design.pages[0].headline,imported[0].design.pages[0].headline);assert.equal(JSON.stringify(imported[0].design),original);const businessZip=buildWebsiteSelfHostedBundle({design:composed.design,revision:1,catalog:[],articles:[],heroMedia:[]});const config=JSON.parse(businessZip.entries.find(e=>e.name==="site-config.json").content);assert(config.modules.includes("catalog")&&config.modules.includes("booking"));assert.equal(businessZip.report.releaseReady,false);assert.throws(()=>composeWebsiteScope(imported[0].design,{sector:"bogus",extraModules:[]}));console.log("website AI composition: immutable settled content, explicitly saved industry scope, business-module ZIP, no false release claim");console.log("settled AI candidate delivery: exact owner-only settled design, source hash, independent ZIP; no new credit charge");assert.deepEqual(await readDesigns(outsider,otherSite,productionId),[]);assert.equal(await readDesigns(outsider,site,productionId),null);
+  assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,1);
+  if(process.env.STUDIO_WEBSITE_BROWSER_FIXTURE==='true'){
+   const {buildDeliveryEntries,buildDeliveryZip,buildPreviewHtml}=load('src/lib/automatic-delivery-builder.ts');
+   fs.mkdirSync('website-acceptance-results',{recursive:true});
+   const entries=buildDeliveryEntries(delivered);
+   for(const name of ['source/index.html','source/contact.html','source/styles.css','source/script.js','source/README.md'])assert(entries.some(e=>e.name===name),'missing '+name);
+   fs.writeFileSync('website-acceptance-results/delivery.zip',buildDeliveryZip(entries));
+   fs.writeFileSync('website-acceptance-results/preview.html',buildPreviewHtml(delivered));
+   fs.writeFileSync('website-acceptance-results/expected.json',JSON.stringify({headline:copy.headline,faq:copy.faq[0].question,brand:hashBrief.brand,creditSpend:500,provider:'synthetic',deliveryProof:true},null,2));
+  }
+  // An interrupted claimed job is not replayed or released.
+  const next=(await db.query("insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,estimated_credits,input_json,output_json) values($1,'website',$2,'Second isolated','Offline','pending','pending',$3,'{}'::jsonb,$4::jsonb) returning id",[owner,packId,credits,JSON.stringify({websiteAssistant:{phase:'approved',approvedHash:planHash,planHash,packId,credits,brief:hashBrief},websiteAIApproval:tuple})])).rows[0].id;
+  const args={...enqueueArgs,p_production:next};assert.equal((await rpc('website_ai_enqueue',args)).data,'queued');assert.equal((await rpc('website_ai_claim',args)).data,'claimed');
+  await db.query("update website_ai_jobs set updated_at=now()-interval '10 minutes' where production_id=$1",[next]);
+  assert.equal((await db.query("select website_ai_mark_stale(now()-interval '6 minutes') as n")).rows[0].n,1);
+  assert.equal((await runIsolatedWebsiteAI({...approval,productionId:next},owner,deps)).state,'already_claimed');assert.equal(calls,1);
+  assert.equal((await db.query('select reserved from credit_balances where user_id=$1',[owner])).rows[0].reserved,500);
+  console.log('studio-website-ai-job-smoke ok: isolated DB, one AI dispatch, durable files and receipt, pending costs, one settlement and delivery proof (synthetic provider evidence)');
+ }finally{await db.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

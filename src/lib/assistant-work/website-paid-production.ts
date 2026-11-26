@@ -1,7 +1,11 @@
 import { z } from "zod";
+import {paidWebsiteScopeAllowed} from "../website-paid-scope";
+import {websitePageManifest} from "../website-engine";
+import {productionCreditCheck} from "../studio-agent/production-credit-policy";
+import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
-import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope } from "./website-brief";
+import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope, websiteEngineInput } from "./website-brief";
 import { createWebsiteCreditLedger } from "./website-credit-ledger";
 import { websiteCreditDeliveryProof } from "./website-paid-delivery";
 import { runIsolatedWebsiteGeneration } from "./website-atomic-runner";
@@ -18,6 +22,7 @@ export function websitePaidProductionEnabled(env: NodeJS.ProcessEnv = process.en
 // First Production release is canary-only. No configured users = no paid generation.
 export function websitePaidCanaryAllowed(userId: string, env: NodeJS.ProcessEnv = process.env) {
   if (!z.string().uuid().safeParse(userId).success) return false;
+  if(env.VERCEL_ENV==="production"&&env.CRELAVO_WEBSITE_PUBLIC_PAID_ENABLED==="true")return true;
   const raw = String(env.CRELAVO_WEBSITE_ATOMIC_CANARY_USER_IDS || "").trim();
   if (!raw || raw.length > 5000) return false;
   const entries = raw.split(",").map(id => id.trim().toLowerCase());
@@ -67,12 +72,20 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   const credits = pack?.credits;
   const brief = normalizeAssistantWebsiteBrief(state.brief);
   if (!pack || typeof credits !== "number" || !Number.isSafeInteger(credits) || credits <= 0 ||
-      /admin|commerce|checkout/i.test(pack.label) ||
+      (/admin|commerce|checkout/i.test(pack.label)&&state.packId!=="website_basic_admin") ||
       state.credits !== credits || row.estimated_credits !== credits ||
       websitePlanHash(brief, String(state.packId)) !== planHash ||
-      missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
+      missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief,String(state.packId)).length||!paidWebsiteScopeAllowed(state.packId,brief.features)) {
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
+  if(state.packId==="landing_page"&&websitePageManifest(brief.pages).length!==1)return reply({ok:false,code:"website_package_page_limit"},422);
+  const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
+  if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
+  const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
+  const check=productionCreditCheck(credits,available);
+  if(!check.ok)return reply(check,check.status);
+  try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+
   const ledger = createWebsiteCreditLedger(async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     return { data, error };
@@ -90,7 +103,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   try {
     const result = await runIsolatedWebsiteGeneration(
       { userId: user.id, productionId, planHash, credits },
-      { ledger, loadReserved },
+      { ledger, loadReserved, generate:generatePaidWebsiteArtifact, remoteGeneration:true },
     );
     if (result.state === "ready") return reply({
       ok: true, state: "ready", productionId, charged: credits,
@@ -102,7 +115,12 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
     if (result.state === "generation_failed")
       return reply({ ok: false, state: result.state, code: "website_generation_failed_credits_released" }, 502);
     return reply({ ok: false, state: result.state, code: "website_generation_reconciliation_required" }, 409);
-  } catch {
+  } catch(error) {
+    if(error instanceof Error&&error.message==="insufficient_production_credits"){
+      const {data:current,error:readError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
+      if(!readError){const check=productionCreditCheck(credits,Math.max(0,Number(current?.balance??0)-Number(current?.reserved??0)));if(!check.ok)return reply(check,check.status);}
+      return reply({ok:false,code:"insufficient_credits",required:credits,topUpUrl:"/dashboard/payment",productionStarted:false},402);
+    }
     // The reservation may already exist. Never auto-retry or call legacy spending.
     return reply({ ok: false, code: "website_generation_reconciliation_required" }, 503);
   }

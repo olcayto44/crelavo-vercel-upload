@@ -1,4 +1,5 @@
-import { z } from "zod"; import { ToolActionSchema, type ToolName } from "./tool-registry";
+import { z } from "zod";
+import {prepareStudioBriefRevision} from "./shared-assistant-workflow"; import { ToolActionSchema, type ToolName } from "./tool-registry";
 import { BriefSnapshotSchema, CategoryIdSchema, createBriefFieldsSchema, type BriefSnapshot } from "./requirements";
 
 export const IntentSchema = z.enum(["chat", "clarify", "plan", "read_project", "edit_content", "request_production", "change_category"]);
@@ -24,6 +25,6 @@ export function applyModelProposal(rawSnapshot: unknown, rawProposal: unknown): 
   if (proposal.intent === "chat" && Object.keys(proposal.briefPatch).length) throw new Error("chat_cannot_patch_brief");
   const fields = { ...previous.fields, ...proposal.briefPatch };
   const changed = JSON.stringify(fields) !== JSON.stringify(previous.fields);
-  const snapshot = BriefSnapshotSchema.parse({ categoryId: previous.categoryId, revision: previous.revision + Number(changed), fields });
+  const snapshot = changed?prepareStudioBriefRevision(previous,{categoryId:previous.categoryId,expectedRevision:previous.revision,patch:proposal.briefPatch}).snapshot:previous;
   return { snapshot, intent: proposal.intent, reply: proposal.reply, proposedCategory: proposal.proposedCategory, proposedTools: proposal.toolCalls };
 }

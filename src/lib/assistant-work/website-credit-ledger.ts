@@ -29,6 +29,7 @@ export type WebsiteCreditLedger = {
 export function createWebsiteCreditLedger(rpc: RPC): WebsiteCreditLedger {
   async function call(name: "website_credit_reserve" | "website_credit_claim" | "website_credit_finalize", args: Record<string, unknown>) {
     const { data, error } = await rpc(name, args);
+    if(name==="website_credit_reserve"&&error?.message==="insufficient_production_credits")throw new Error("insufficient_production_credits");
     // Fail closed, do not fall back to non-atomic /api/credits/spend.
     if (error || !data || typeof data !== "object" || Array.isArray(data)) {
       throw new Error("website_atomic_ledger_unavailable");

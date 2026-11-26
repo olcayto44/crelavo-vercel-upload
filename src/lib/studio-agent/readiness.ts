@@ -1,3 +1,4 @@
+import {websitePilotProviderKey} from "./website-pilot-provider";
 import {isolatedDatabaseTarget} from "./environment-policy";
 import {readCostPolicy} from "./cost-policy";
 import type { supabaseAdmin } from "@/lib/supabase";
@@ -6,7 +7,7 @@ export type StudioReadiness = { ready:boolean; configured:boolean; checks:{ appr
 export async function studioReadiness(db:ReturnType<typeof supabaseAdmin>):Promise<StudioReadiness> {
  const env=process.env;
  const isolation=isolatedDatabaseTarget(env)&&env.STUDIO_AGENT_ISOLATED_PREVIEW!=="true";
- const checks={approval:env.STUDIO_AGENT_REAL_AI_APPROVED==="true",realEnabled:env.STUDIO_AGENT_REAL_AI_ENABLED==="true",accountingEnabled:env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true",keyConfigured:!!env.STUDIO_AGENT_TEST_PROVIDER_KEY?.trim(),providerVerified:env.STUDIO_AGENT_PROVIDER_VERIFIED==="true",tariff:false,database:false,accounting:false,isolation,costPolicy:false,offlineDisabled:env.STUDIO_AGENT_TEST_OFFLINE!=="true"};
+ const checks={approval:env.STUDIO_AGENT_REAL_AI_APPROVED==="true",realEnabled:env.STUDIO_AGENT_REAL_AI_ENABLED==="true",accountingEnabled:env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true",keyConfigured:!!websitePilotProviderKey(env),providerVerified:env.STUDIO_AGENT_PROVIDER_VERIFIED==="true",tariff:false,database:false,accounting:false,isolation,costPolicy:false,offlineDisabled:env.STUDIO_AGENT_TEST_OFFLINE!=="true"};
  try { readAssistantTariff(); checks.tariff=true; } catch { /* Missing tariff is a blocker, not a fallback. */ }
  try{readCostPolicy();checks.costPolicy=true;}catch{/* Fail closed. */}
  // No provider request, no mutation RPC, and no DB probe while disabled/offline.

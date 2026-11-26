@@ -80,7 +80,7 @@ assert(missing.reply.toLocaleLowerCase('tr-TR').includes('eksik') && !missing.br
 const document = websitePreviewDocument('<html><head></head><body><a href="./about.html">About</a></body></html>');
 assert(document.includes('crelavo-website-page') && document.includes('form-action'), 'safe preview navigation missing');
 const directRoute = readFileSync('src/app/api/websites/generate/route.ts', 'utf8'); const localEngine = readFileSync('src/lib/assistant-work/runLocalEngine.ts', 'utf8');
-assert(directRoute.includes('generateWebsiteArtifact') && !localEngine.includes('function websitePack('), 'two competing website generators still present');
+assert(directRoute.includes('executePaidWebsiteProduction') && !directRoute.includes('generateWebsiteArtifact(') && !localEngine.includes('function websitePack('), 'two competing website generators still present');
 const paused = environment(); const interrupted = await paused.prepare(); await paused.call({ action: 'website_approve', productionId: interrupted.id, planHash: interrupted.hash });
 const interruptedRow = paused.rows.get(interrupted.id); interruptedRow.output_json.websiteAssistant.phase = 'generating'; interruptedRow.output_json.websiteAssistant.generationStartedAt = new Date().toISOString();
 assert((await paused.call({ action: 'website_retry', productionId: interrupted.id })).status === 409, 'live generation must not be recovered early');

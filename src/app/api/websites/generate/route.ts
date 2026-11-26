@@ -1,95 +1,64 @@
-import { generateWebsiteArtifact } from "@/lib/website-engine";
-import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGeneratedFile, type WebsiteScope } from "@/lib/providers/openai";
-
-
-import { hasProviderEnv } from "@/lib/providers/env";
-
-import { clientIpFromRequest, rateLimit, rateLimitResponse, rejectSuspiciousText } from "@/lib/security";
-import { validateProductionSafety } from "@/lib/content-safety";
-import { requireVerifiedRequestUser, supabaseAdmin } from "@/lib/supabase";
-
-const MAX_BRIEF_LENGTH = 6000;
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Website generation failed.";
-}
-
-function cleanList(value: unknown) {
-  return Array.isArray(value) ? value.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, 20) : String(value ?? "").split(",").map((item) => item.trim()).filter(Boolean).slice(0, 20);
-}
-
-export async function POST(request: Request) {
-  // A paid Website launch must never leave the historical zero-credit generator
-  // as an alternate public path. The route remains unchanged until that launch.
-  if (process.env.VERCEL_ENV === "production" &&
-      process.env.CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED === "true") {
-    return Response.json({
-      error: "website_paid_studio_required",
-      message: "Use the Website Builder assistant to review and approve a credit-backed website plan.",
-    }, { status: 409, headers: { "Cache-Control": "no-store" } });
+import {z} from "zod";
+import {getCategory} from "@/lib/crelavo/categoryCatalog";
+import {requireVerifiedRequestUser,supabaseAdmin} from "@/lib/supabase";
+import {clientIpFromRequest,rateLimit,rateLimitResponse,rejectSuspiciousText} from "@/lib/security";
+import {validateProductionSafety} from "@/lib/content-safety";
+import {preparePaidWebsiteAI} from "@/lib/assistant-work/website-paid-ai";
+import {normalizeAssistantWebsiteBrief,missingWebsiteBrief,unsupportedWebsiteScope,websitePlanHash,websiteEngineInput} from "@/lib/assistant-work/website-brief";
+import {paidWebsiteScopeAllowed} from "@/lib/website-paid-scope";
+import {websitePageManifest} from "@/lib/website-engine";
+import {executePaidWebsiteProduction,websitePaidProductionEnabled,websitePaidCanaryAllowed} from "@/lib/assistant-work/website-paid-production";
+import {productionCreditCheck} from "@/lib/studio-agent/production-credit-policy";
+import {readBoundedWebsiteJson} from "@/lib/website-production-draft";
+export const runtime="nodejs";export const dynamic="force-dynamic";export const maxDuration=120;
+const reply=(data:unknown,status=200)=>Response.json(data,{status,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"}});
+const uuid=z.string().uuid(),hash=z.string().regex(/^[a-f0-9]{64}$/);
+export async function POST(request:Request){
+ try{
+ const body=await readBoundedWebsiteJson(request,50000);
+ if(!body||typeof body!=="object"||Array.isArray(body))return reply({ok:false,code:"invalid_request"},400);
+ const userId=uuid.parse(body.user_id);
+ const verified=await requireVerifiedRequestUser(request,userId);if(!verified.ok)return verified.response;
+ const limit=rateLimit({key:"website-builder:"+userId+":"+clientIpFromRequest(request),limit:12,windowMs:15*60000});if(!limit.allowed)return rateLimitResponse(limit.resetAt);
+ if(!websitePaidProductionEnabled()||!websitePaidCanaryAllowed(userId))return reply({ok:false,code:"website_production_not_enabled"},503);
+ const db=supabaseAdmin();
+ if(body.action==="generate"){
+  const productionId=uuid.parse(body.productionId),planHash=hash.parse(body.planHash);
+  if(body.confirmProduction!==true)return reply({ok:false,code:"explicit_production_confirmation_required"},400);
+  const {data:row,error}=await db.from("production_requests").select("output_json,updated_at,status").eq("id",productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();
+  if(error||!row)return reply({ok:false,code:"website_project_not_found"},404);
+  const a=row.output_json?.websiteAssistant;
+  if(a?.planHash!==planHash)return reply({ok:false,code:"website_plan_changed_review_again"},409);
+  if(a.phase==="draft"){
+   const {data:approved,error:approveError}=await db.from("production_requests").update({output_json:{...row.output_json,websiteAssistant:{...a,phase:"approved",approvedHash:planHash,approvedAt:new Date().toISOString()}},updated_at:new Date().toISOString()}).eq("id",productionId).eq("user_id",userId).eq("updated_at",row.updated_at).eq("status","pending").select("id").maybeSingle();
+   if(approveError||!approved)return reply({ok:false,code:"website_plan_changed_review_again"},409);
   }
-  const limit = rateLimit({ key: `website-generate:${clientIpFromRequest(request)}`, limit: 5, windowMs: 15 * 60 * 1000 });
-  if (!limit.allowed) return rateLimitResponse(limit.resetAt);
-  try {
-    const body = await request.json();
-    const userId = String(body.user_id ?? "").trim();
-    const userEmail = String(body.user_email ?? "").trim().toLowerCase();
-    if (!userId || !userEmail) return Response.json({ error: "user_required" }, { status: 401 });
-    const verified = await requireVerifiedRequestUser(request, userId);
-    if (!verified.ok) return verified.response;
-
-    const brief = String(body.brief ?? "").trim().slice(0, MAX_BRIEF_LENGTH);
-    const brand = String(body.brand ?? "").trim().slice(0, 160);
-    const siteType = String(body.site_type ?? "").trim().slice(0, 120);
-    const requestedScope = String(body.site_scope ?? body.scope ?? "marketing_website").trim();
-    const scope: WebsiteScope = requestedScope === "website_with_admin" ? "website_with_admin" : "marketing_website";
-    const audience = String(body.audience ?? "").trim().slice(0, 500);
-    const style = String(body.style ?? "").trim().slice(0, 500);
-    const pages = cleanList(body.pages);
-    const features = cleanList(body.features);
-    if (!brief || !siteType || !brand || !audience || !style) return Response.json({ error: "brief_site_type_brand_audience_style_required", message: "Brief, site type, brand/product, target audience and style are required." }, { status: 400 });
-    if (brief.length < 20) return Response.json({ error: "brief_too_short" }, { status: 400 });
-    const suspicious = rejectSuspiciousText([brief, siteType, brand, audience, style, pages.join(","), features.join(",")]);
-    if (!suspicious.ok) return Response.json({ error: suspicious.message }, { status: 400 });
-    const safety = validateProductionSafety([brief, siteType, brand, audience, style]);
-    if (!safety.ok) return Response.json({ error: safety.message }, { status: 400 });
-
-    const supabase = supabaseAdmin();
-    const { data: production, error: insertError } = await supabase.from("production_requests").insert({
-      user_id: userId,
-      production_type: "website",
-      package_id: "website_builder",
-      title: `${brand} website`,
-      prompt: brief,
-      status: "in_production",
-      generation_status: "provider_generating",
-      estimated_credits: 0,
-      reserved_credits: 0,
-      request_metadata: { source: "website_builder", siteType, scope, brand, audience, pages, features, style, provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template" },
-      input_json: { brief, siteType, scope, brand, audience, pages, features, style },
-      output_json: { provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerStatus: "generating", scope }
-    }).select("*").single();
-    if (insertError || !production) throw insertError ?? new Error("Website production record could not be created.");
-
-    try {
-      const generated = await generateWebsiteArtifact({ brief, siteType, scope, brand, audience, pages, features, style, locale: String(body.locale ?? "en") }, String(production.id));
-      const plan = generated.plan;
-      // Website source files are private production outputs. They are embedded
-      // in the owner-scoped production record and served through authenticated
-      // preview / ZIP routes; never upload them to a public asset bucket.
-      const storedFiles = generated.files;
-      const websiteContent = { ...generated.websiteContent, pages };
-      const outputJson = { plan, pageManifest: generated.pageManifest, websiteContent, websiteContentUpdatedAt: new Date().toISOString(), provider: hasProviderEnv("openai") ? "openai_copy_only" : "deterministic_template", providerModel: hasProviderEnv("openai") ? (process.env.OPENAI_WEBSITE_MODEL || process.env.OPENAI_ASSISTANT_MODEL || "gpt-4o-mini") : null, providerStatus: "succeeded", generatedAt: new Date().toISOString(), siteTitle: generated.siteTitle, framework: generated.framework, scope, websiteFiles: storedFiles };
-      const { data: completed, error: updateError } = await supabase.from("production_requests").update({ status: "ready", generation_status: "completed", preview_url: `/api/productions/${production.id}/delivery?file=preview`, delivery_link: `/api/productions/${production.id}/delivery?file=zip`, delivery_zip_url: `/api/productions/${production.id}/delivery?file=zip`, source_files_url: `/api/productions/${production.id}/delivery?file=source`, readme_url: `/api/productions/${production.id}/delivery?file=readme`, output_json: outputJson, updated_at: new Date().toISOString() }).eq("id", production.id).select("*").single();
-      if (updateError || !completed) throw updateError ?? new Error("Website production could not be finalized.");
-      return Response.json({ plan, production: completed, outputs: { previewUrl: completed.preview_url, zipUrl: completed.delivery_zip_url, sourceUrl: completed.source_files_url, readmeUrl: completed.readme_url, scope } });
-    } catch (error) {
-      await supabase.from("production_requests").update({ status: "failed", generation_status: "failed", output_json: { provider: "openai", providerStatus: "failed", error: errorMessage(error) }, admin_notes: errorMessage(error), updated_at: new Date().toISOString() }).eq("id", production.id);
-      throw error;
-    }
-  } catch (error) {
-        if (error instanceof WebsiteQualityError) return Response.json({ error: error.code, message: "Generated website failed the deterministic quality gate.", missing: error.missing }, { status: 422 });
-    return Response.json({ error: "website_generation_failed", message: errorMessage(error) }, { status: 502 });
-  }
+  const result=await executePaidWebsiteProduction({productionId,planHash},{id:userId});
+  if(result.status!==200)return reply(result.payload,result.status);
+  return reply(result.payload);
+ }
+ if(body.action!=="quote")return reply({ok:false,code:"quote_required",message:"Review the credit price and confirm production first."},400);
+ const brief=normalizeAssistantWebsiteBrief({...body,siteType:body.siteType??body.site_type});
+ if(missingWebsiteBrief(brief).length)return reply({ok:false,code:"website_brief_or_scope_invalid"},422);
+ const pages=websitePageManifest(brief.pages);
+ const admin=body.site_scope==="website_with_admin"||body.scope==="website_with_admin";
+ const packId=admin?"website_basic_admin":pages.length===1?"landing_page":"business_website";
+ if(admin&&process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED!=="true")return reply({ok:false,code:"website_admin_package_not_enabled"},503);
+ if(unsupportedWebsiteScope(brief,packId).length||!paidWebsiteScopeAllowed(packId,brief.features))return reply({ok:false,code:"website_scope_not_supported"},422);
+ if(pages.length>5)return reply({ok:false,code:"website_maximum_five_pages",message:"The Website package supports up to five pages."},422);
+ const pack=getCategory("website")?.packs.find(p=>p.id===packId);
+ if(!pack||typeof pack.credits!=="number"||pack.credits<=0)return reply({ok:false,code:"website_tariff_unavailable"},503);
+ const values=[brief.brief,brief.brand,brief.siteType,brief.audience,brief.style,...brief.pages,...brief.features];
+ const safe=rejectSuspiciousText(values);if(!safe.ok)return reply({ok:false,code:"unsafe_brief",message:safe.message},400);
+ const safety=validateProductionSafety(values);if(!safety.ok)return reply({ok:false,code:"unsafe_brief",message:safety.message},400);
+ const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",userId).maybeSingle();if(walletError)return reply({ok:false,code:"credit_read_failed"},503);
+ const check=productionCreditCheck(pack.credits,Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0)));if(!check.ok)return reply(check,check.status);
+ try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+ const planHash=websitePlanHash(brief,packId);
+ // A quote persists the exact reviewed plan; it never starts production or holds credits.
+ // The separate generate request must explicitly confirm and recheck the same owner/hash.
+ const {data,error}=await db.from("production_requests").insert({user_id:userId,production_type:"website",package_id:"website_builder",title:brief.brand+" website",prompt:brief.brief,status:"pending",generation_status:"pending",estimated_credits:pack.credits,reserved_credits:0,input_json:{source:"website_builder",websiteBrief:brief},request_metadata:{source:"website_builder",category:"website",engine:"website_builder"},output_json:{websiteAssistant:{brief,messages:[],phase:"draft",packId,credits:pack.credits,planHash,approvedHash:null}}}).select("id").single();
+ if(error||!data)return reply({ok:false,code:"website_project_create_failed"},503);
+ return reply({ok:true,productionId:data.id,planHash,packId,credits:pack.credits,balance:check.balance,productionStarted:false});
+ }catch{return reply({ok:false,code:"website_request_unavailable"},400);}
 }
-

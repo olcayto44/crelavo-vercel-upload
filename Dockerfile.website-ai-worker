@@ -1,0 +1,11 @@
+FROM node:24-bookworm-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev --ignore-scripts --no-audit --no-fund
+COPY src ./src
+COPY scripts ./scripts
+COPY supabase ./supabase
+COPY docs/website-ai-jobs-isolated.sql ./docs/website-ai-jobs-isolated.sql
+RUN node scripts/studio-website-ai-job-smoke.cjs && STUDIO_WEBSITE_AI_WORKER_ENABLED=false node scripts/studio-website-ai-worker.cjs
+USER node
+CMD ["node","scripts/studio-website-ai-worker.cjs"]

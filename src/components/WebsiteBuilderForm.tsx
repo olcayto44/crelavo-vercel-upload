@@ -5,13 +5,13 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { websitePreviewDocument } from "@/lib/website-preview";
 import { supabaseBrowser } from "@/lib/supabase";
 
-type WebsitePlan = { projectId?: string; brief?: { businessName?: string; businessDescription?: string }; manifest?: { entryPage?: string; pages?: Array<{ slug: string; title: string }>; features?: string[] }; status?: string };
+type WebsitePlan = { editableDesign?: unknown; projectId?: string; brief?: { businessName?: string; businessDescription?: string }; manifest?: { entryPage?: string; pages?: Array<{ slug: string; title: string }>; features?: string[] }; status?: string };
 type WebsiteContent = { heroTitle: string; heroBody: string; primaryCta: string; [key: string]: unknown };
 type Outputs = { previewUrl: string; zipUrl: string; sourceUrl: string; readmeUrl: string; scope?: string; plan?: WebsitePlan; content?: WebsiteContent };
 
 export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onContentChange }: { initialProjectId?: string; editorOnly?: boolean; onContentChange?: () => void } = {}) {
   const { t } = useWorkspaceLanguage();
-  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact form, navigation", style: "Modern, clear and conversion-focused" });
+  const [fields, setFields] = useState({ brief: "", siteType: "Marketing website", scope: "marketing_website", brand: "", audience: "", pages: "Home, About, Contact", features: "Responsive layout, contact information, navigation", style: "Modern, clear and conversion-focused", locale: "en" });
   const previewFrame = useRef<HTMLIFrameElement>(null);
   const [previewPages, setPreviewPages] = useState<Array<{ title: string; path: string }>>([]);
   const [previewHtml, setPreviewHtml] = useState("");
@@ -129,19 +129,27 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
   function moveFaq(index: number, direction: number) { setContent((current) => { const items = [...(Array.isArray(current.faq) ? current.faq : [])]; const next = index + direction; if (next < 0 || next >= items.length) return current; [items[index], items[next]] = [items[next], items[index]]; return { ...current, faq: items }; }); }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true); setOutputs(null); setPreviewHtml(""); setStatus("Building a premium static template and shaping the brief copy...");
+    setBusy(true); setStatus("Checking the website price and available credits...");
     try {
       const { user, token } = await session();
-      const response = await fetch("/api/websites/generate", { method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ user_id: user.id, user_email: user.email, ...fields, site_type: fields.siteType, site_scope: fields.scope, pages: list(fields.pages), features: list(fields.features) }) });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) { const missing = Array.isArray(data.missing) && data.missing.length ? ` Missing: ${data.missing.join("; ")}` : ""; throw new Error(`${data.message || data.error || "Website generation failed."}${missing}`); }
-      const initialContent = { ...data.production?.output_json?.websiteContent, ...data.outputs?.content, heroTitle: data.production?.output_json?.websiteContent?.heroTitle || data.outputs?.content?.heroTitle || data.plan?.brief?.businessName || "", heroBody: data.production?.output_json?.websiteContent?.heroBody || data.outputs?.content?.heroBody || data.plan?.brief?.businessDescription || "", primaryCta: data.production?.output_json?.websiteContent?.primaryCta || data.outputs?.content?.primaryCta || "Get started" };
-      setContent(initialContent); setPreviewPages(data.production?.output_json?.pageManifest || []); setHistory([]); setOutputs({ ...data.outputs, plan: data.plan, content: initialContent }); setStatus("Website generation complete. Preview, ZIP, README and plan details are ready.");
-      const completedId = data.plan?.projectId || data.production?.id;
-      if (window.parent !== window && typeof completedId === "string" &&
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(completedId))
-        window.parent.postMessage({ type: "crelavo-studio-website-created", productionId: completedId }, window.location.origin);
-    } catch (error) { setStatus(error instanceof Error ? error.message : "Website generation failed."); } finally { setBusy(false); }
+      const headers = { "Content-Type":"application/json", Authorization:"Bearer "+token };
+      const post = async (body:Record<string,unknown>) => {
+        const r=await fetch("/api/websites/generate",{method:"POST",headers,body:JSON.stringify({user_id:user.id,...body})});
+        const d=await r.json().catch(()=>({}));
+        if(r.status===402){const message="Yetersiz kredi. Üretim başlamadı. Gereken: "+(d.required??d.need??"—")+" · Bakiye: "+(d.balance??"—");if(window.confirm(message+" — Kredi yükleme sayfasını açmak ister misiniz?"))window.open("/dashboard/payment","_blank","noopener,noreferrer");throw Error(message);}
+        if(!r.ok||!d.ok)throw Error(d.message||d.code||d.error||"Website production unavailable.");
+        return d;
+      };
+      const quote=await post({action:"quote",...fields,site_type:fields.siteType,site_scope:fields.scope,pages:list(fields.pages),features:list(fields.features)});
+      if(!Number.isSafeInteger(quote.credits)||quote.credits<=0||!quote.productionId||!quote.planHash)throw Error("Website quote not verified.");
+      if(!window.confirm("Website production: "+quote.credits+" credits. Start production?")){setStatus("Production cancelled. No credits spent.");return;}
+      setProjectId(quote.productionId);setStatus("AI website production in progress...");
+      const data=await post({action:"generate",productionId:quote.productionId,planHash:quote.planHash,confirmProduction:true});
+      if(!["ready","already_ready"].includes(data.state)||data.productionId!==quote.productionId)throw Error("Production outcome not confirmed. Open the saved project before trying again.");
+      await openProject(quote.productionId);
+      if(window.parent!==window)window.parent.postMessage({type:"crelavo-studio-website-created",productionId:quote.productionId},window.location.origin);
+      notifyStudioUpdated(quote.productionId);
+    } catch(error){setStatus(error instanceof Error?error.message:"Website generation failed.");}finally{setBusy(false);}
   }
 
   async function applyRevision(event: FormEvent) {
@@ -186,7 +194,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
     <section className="service-page-shell" style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1rem" }}>
       {!editorOnly ? <><span className="badge">{t("AI Website Builder")}</span>
       <h1>{t("Generate a premium website source package from a brief")}</h1>
-      <p>{t("Enter the site type, brand context, target audience, pages, features and visual direction. The output includes renderable HTML/CSS/JS, a preview, a ZIP source bundle and an installation README.")}</p>
+      <p>{t("Enter the site type, brand context, target audience, pages, features and visual direction. The output includes responsive website source, a preview, a ZIP source bundle and an installation README.")}</p>
       <div className="mini-card" style={{ marginBottom: '1rem' }}>
         <h2>{t("Open a saved website")}</h2>
         <button className="btn secondary" type="button" disabled={contentBusy} onClick={listProjects}>{t("Load my websites")}</button>
@@ -197,16 +205,19 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       <form onSubmit={submit} className="form-grid">
         <label>{t("Website brief")}<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder={t("What does it offer, what problem does it solve and what should the user do?")} /></label>
         <label>{t("Site type")}<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
-        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option><option value="website_with_admin">{t("Public website + admin panel source starter")}</option></select><small>{t(scopeLabel)}{t(". Admin files are included only when selected.")}</small></label>
+        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option><option value="website_with_admin">Website + Basic Admin (self-hosted; no live payments)</option></select><small>{t(scopeLabel)}</small></label>
         <label>{t("Brand / product")}<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
         <label>{t("Target audience")}<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
         <label>{t("Pages")}<small>{t("comma-separated")}</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
+        <small>Optional features: AI hero image; for Basic Admin: Blog CMS, Product catalog, Order requests, Customer accounts, Booking requests. No live checkout or paid memberships.</small>
         <label>{t("Features")}<small>{t("comma-separated")}</small><input value={fields.features} onChange={(event) => update("features", event.target.value)} /></label>
+        <label>Website language<select value={fields.locale} onChange={event=>update("locale",event.target.value)}><option value="en">English</option><option value="tr">Türkçe</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="zh-Hans">中文</option></select></label>
         <label>{t("Style / visual direction")}<input required value={fields.style} onChange={(event) => update("style", event.target.value)} /></label>
         <button className="btn" type="submit" disabled={busy}>{busy ? t("Building...") : t("Generate website package")}</button>
       </form>
       </> : null}
       {status ? <p role="status" style={{ marginTop: "1rem" }}>{t(status, statusVariables)}</p> : null}
+      {outputs?.plan?.editableDesign && outputs.plan.projectId ? <p><a className="btn" href={"/dashboard/website-draft?projectId="+encodeURIComponent(outputs.plan.projectId)}>{t("Open visual website editor")}</a></p> : null}
       {outputs ? (
         <>
           <div className="mini-card" style={{ marginTop: "1.5rem" }}>
@@ -216,6 +227,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <p><button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.previewUrl, true)}>{t("Open preview")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.zipUrl)}>{t("Download ZIP/source")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.readmeUrl)}>README</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.sourceUrl)}>{t("Source guide")}</button></p>          </div>
           {previewPages.length ? <p>{previewPages.map((page) => <button key={page.path} disabled={contentBusy} type="button" onClick={() => downloadOutput(outputs.previewUrl + "&page=" + encodeURIComponent(page.path), true)}>{page.title}</button>)}</p> : null}
           {previewHtml ? <div className="mini-card"><h2>{t("Sandboxed website preview")}</h2><button type="button" onClick={() => setPreviewHtml("")}>{t("Close preview")}</button><iframe ref={previewFrame} title={t("Website preview")} sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={previewHtml} style={{ width: "100%", height: 650, border: 0 }} /></div> : null}
+          {!outputs.plan?.editableDesign && <>
           <form onSubmit={applyRevision} className="mini-card" style={{ marginTop: "1rem" }}>
             <h2>{t("Revise with natural language")}</h2>
             <textarea rows={3} value={revisionInstruction} onChange={(event) => setRevisionInstruction(event.target.value)} placeholder={t("Example: Change the hero title to Start faster.")} />
@@ -247,6 +259,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <button className="btn" type="submit" disabled={contentBusy}>{contentBusy ? t("Saving...") : t("Save content")}</button>
           </form>
           {history.length > 0 ? <div id="website-version-history" className="mini-card" style={{ marginTop: "1rem" }}><h2>{t("Version history")}</h2>{history.slice().reverse().map((item) => <div key={`${item.revision}-${item.createdAt}`} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: ".5rem" }}><span>{t("Version")}{item.revision} - {item.source || "manual"}</span><button className="btn secondary" type="button" disabled={contentBusy} onClick={() => rollback(item.revision)}>{t("Restore")}</button></div>)}</div> : null}
+          </>}
         </>
       ) : null}
     </section>

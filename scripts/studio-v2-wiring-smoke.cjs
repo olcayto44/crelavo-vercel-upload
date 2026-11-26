@@ -24,7 +24,7 @@ assert(start>10&&end>start,'Studio client source must be present');
 new vm.Script(client.slice(start,end),{filename:'studio-v2-client.js'});
 assert.match(client,/websiteAssistantRequest\(\{action:'revise'/);
 assert.match(client,/applyWebsiteChat\(result\)/);
-assert.ok(!client.includes("request('/api/websites/generate',{action:"),'Website conversation must never use the old generation endpoint');
+assert.ok(client.includes("request('/api/websites/generate',{user_id:session.userId,action:'generate'") && client.includes("confirmProduction:true"),'Website conversation must use the shared confirmed production endpoint');
 assert.match(client,/Website üretim planı/,'assistant sidebar must expose a Website production plan');
 assert.match(client,/Canvas önizleme/,'ready Websites should be previewable from assistant sidebar');
 assert.match(client,/ZIP indir/,'ready Websites should be downloadable from assistant sidebar');

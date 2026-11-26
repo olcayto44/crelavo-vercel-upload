@@ -5,6 +5,8 @@ let databaseReads=0;
 const {websitePaidProductionEnabled,websitePaidCanaryAllowed,executePaidWebsiteProduction}=load('src/lib/assistant-work/website-paid-production.ts',{
  '@/lib/supabase':{supabaseAdmin:()=>{databaseReads++;throw Error('database_must_not_be_called_when_disabled');}},
  '@/lib/crelavo/categoryCatalog':{getCategory:()=>({packs:[]})},
+ '../website-engine':{websitePageManifest:()=>{throw Error('page_manifest_must_not_run_when_disabled');}},
+ './website-paid-ai':{preparePaidWebsiteAI:()=>{throw Error('provider_must_not_be_called_when_disabled');},generatePaidWebsiteArtifact:()=>{throw Error('provider_must_not_be_called_when_disabled');}},
  './website-credit-ledger':{createWebsiteCreditLedger:()=>{throw Error('ledger_must_not_be_created_when_disabled');}},
  './website-atomic-runner':{runIsolatedWebsiteGeneration:()=>{throw Error('production_must_not_run_when_disabled');}},
  './website-brief':{websitePlanHash:()=>'',normalizeAssistantWebsiteBrief:()=>({}),missingWebsiteBrief:()=>[],unsupportedWebsiteScope:()=>[]},

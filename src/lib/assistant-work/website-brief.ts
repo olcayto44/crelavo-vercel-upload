@@ -8,16 +8,17 @@ const list = (value: unknown) => (Array.isArray(value) ? value : typeof value ==
 export function normalizeAssistantWebsiteBrief(value: unknown): AssistantWebsiteBrief {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   const text = (key: string, max = 500) => typeof raw[key] === 'string' ? String(raw[key]).trim().slice(0, max) : '';
-  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: /^(tr|turkish)$/i.test(text('locale')) ? 'tr' : 'en' };
+  return { brand: text('brand', 160), brief: text('brief', 6000), audience: text('audience'), siteType: text('siteType', 120), style: text('style'), pages: list(raw.pages), features: list(raw.features), locale: /^(tr|turkish)$/i.test(text('locale')) ? 'tr' : /^(de|german)$/i.test(text('locale')) ? 'de' : /^(fr|french)$/i.test(text('locale')) ? 'fr' : /^(zh-Hans|chinese)$/i.test(text('locale')) ? 'zh-Hans' : 'en' };
 }
 export function missingWebsiteBrief(brief: AssistantWebsiteBrief) {
   const missing = ['brand', 'audience', 'siteType', 'style'].filter((key) => !brief[key as keyof AssistantWebsiteBrief]);
   if (brief.brief.length < 20) missing.push('brief'); if (!brief.pages.length) missing.push('pages');
   return missing;
 }
-export function unsupportedWebsiteScope(brief: AssistantWebsiteBrief) {
+export function unsupportedWebsiteScope(brief: AssistantWebsiteBrief, packId="") {
   const needs = [brief.siteType, ...brief.features, ...brief.pages];
-  return needs.filter((s) => /e.?commerce|checkout|shopping cart|payment processing|user accounts|membership|sepet|ödeme|odeme|giriş|giris|login|üyelik|uyelik|authentication|database|veritaban|booking system|rezervasyon sistemi|admin panel|yönetim panel|yonetim panel/i.test(s) || (/personalized recommendations|personalisation|kişiselleştirilmiş|kisisellestirilmis|user reviews|user ratings|kullanıcı yorum|kullanici yorum|kullanıcı puan|kullanici puan/i.test(s) && !/static|statik|demo|mock|sample|örnek|ornek|display.only/i.test(s)));
+  const supported=packId==="website_basic_admin"?new Set(["website with admin","business website with admin","blog cms","product catalog","order requests","customer accounts","booking requests"]):new Set<string>();
+  return needs.filter(s=>!supported.has(s.trim().toLowerCase())).filter((s) => /e.?commerce|checkout|shopping cart|payment processing|user accounts|membership|sepet|ödeme|odeme|giriş|giris|login|üyelik|uyelik|authentication|database|veritaban|booking system|rezervasyon sistemi|admin panel|yönetim panel|yonetim panel/i.test(s) || (/personalized recommendations|personalisation|kişiselleştirilmiş|kisisellestirilmis|user reviews|user ratings|kullanıcı yorum|kullanici yorum|kullanıcı puan|kullanici puan/i.test(s) && !/static|statik|demo|mock|sample|örnek|ornek|display.only/i.test(s)));
 }
 export const websitePlanHash = (brief: AssistantWebsiteBrief, packId: string) => createHash('sha256').update(JSON.stringify({ version: 1, brief, packId })).digest('hex');
 export const websiteEngineInput = (brief: AssistantWebsiteBrief): WebsiteEngineInput => ({ ...brief, scope: 'marketing_website' });
@@ -103,9 +104,9 @@ export async function converseWebsiteBrief(previous: AssistantWebsiteBrief, mess
   return { brief, reply };
 }
 
-export function groundedWebsiteReply(reply: string, brief: AssistantWebsiteBrief, language: string, validPackage: boolean) {
+export function groundedWebsiteReply(reply: string, brief: AssistantWebsiteBrief, language: string, validPackage: boolean, packId="") {
   const t = (source: string, values?: Record<string, string>) => translateWorkspaceText(source, language, values);
-  const missing = missingWebsiteBrief(brief); const unsupported = unsupportedWebsiteScope(brief);
+  const missing = missingWebsiteBrief(brief); const unsupported = unsupportedWebsiteScope(brief,packId);
   const blockers = [...missing, ...(!validPackage ? ["package"] : [])];
   const unsafe = /personalized|kişiselleştir|kisisellestir|user reviews|user ratings|kullanıcı yorum|kullanici yorum|kullanıcı puan|kullanici puan|database|veritaban|membership|üyelik|uyelik/i.test(reply);
   const premature = blockers.length > 0 && /ready|hazır|hazir|onay|approve|start|başla|basla|prêt|bereit|aprob|جاهز/i.test(reply);
@@ -116,7 +117,7 @@ export function groundedWebsiteReply(reply: string, brief: AssistantWebsiteBrief
   const parts = reply.trim() && !unsafe && !premature && !modelStateClaim && !requestsBriefFacts && !unsupported.length ? [reply.trim()] : [];
   if (!parts.length && !missing.length && !unsupported.length) {
     parts.push(t("Static website plan: {brand}. Pages: {pages}.", { brand: brief.brand, pages: brief.pages.join(", ") }));
-    parts.push(t("Website language") + ": " + t(brief.locale === "tr" ? "Turkish" : "English"));
+    parts.push(t("Website language") + ": " + t(({tr:"Turkish",en:"English",de:"German",fr:"French","zh-Hans":"Chinese"} as Record<string,string>)[brief.locale]??"English"));
   }
   if (unsupported.length || unsafe) parts.push(t("This is a static demo. Accounts, real user reviews, personalized recommendations, payments and databases are not delivered as working services."));
   if (blockers.length) parts.push(t("Missing information: {fields}", { fields: blockers.map((field) => t(field)).join(", ") }));
