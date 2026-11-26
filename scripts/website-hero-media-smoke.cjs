@@ -24,6 +24,14 @@ const assert=require("node:assert/strict");const sharp=require("sharp");const {l
  const {inspectWebsiteArtifact,requireWebsiteArtifact}=load("src/lib/website-artifact-acceptance.ts");const report=JSON.parse(bundle.entries.find(e=>e.name==="structural-acceptance.json").content);assert.equal(report.passed,true);assert.equal(report.browserVerified,false);assert.equal(report.releaseReady,false);assert(report.files.every(f=>/^[a-f0-9]{64}$/.test(f.sha256)));const files=result.files.map(f=>({name:f.path,content:f.content})),options={root:"",requiredPages:["index.html"],language:"en"};assert.equal(inspectWebsiteArtifact(files,options).passed,true);
  for(const changed of [home.replace('noindex,nofollow','index,follow'),home.replace("</main>",'<script>alert(1)</script></main>'),home.replace("</main>",'<a href="./missing.html">Missing</a></main>'),home.replace("</main>",'<h1>Duplicate</h1></main>')])assert.throws(()=>requireWebsiteArtifact(files.map(f=>f.name==="index.html"?{...f,content:changed}:f),options));
  assert.throws(()=>requireWebsiteArtifact([...files,{name:"../secret",content:"bad"}],options));assert.throws(()=>requireWebsiteArtifact([...files,files[0]],options));
+ const {inspectWebsiteDelivery}=load("src/lib/website-delivery-preflight.ts");
+ const payload={design:{...design,industryScope:{sector:"retail",extraModules:["booking","memberships"]}},revision:1,catalog:[],heroMedia:validated};
+ const first=inspectWebsiteDelivery(payload),again=inspectWebsiteDelivery(payload);
+ assert.equal(first.review.sha256,again.review.sha256);assert.equal(first.review.releaseReady,false);assert.equal(first.review.commercialDelivery,false);assert(first.review.coverage.some(m=>m.id==="checkout"&&m.status==="partial"));assert(first.review.coverage.some(m=>m.id==="memberships"&&m.status==="not_implemented"));assert(first.review.coverage.some(m=>m.id==="hosting"&&m.status==="configuration_required"));
+ assert.notEqual(inspectWebsiteDelivery({...payload,revision:2}).review.sha256,first.review.sha256);
+ assert.notEqual(inspectWebsiteDelivery({...payload,heroMedia:[]}).review.sha256,first.review.sha256);
+ assert.equal(first.review.sha256,createHash("sha256").update(first.result.zip).digest("hex"));
+ console.log("website delivery preflight: exact ZIP fingerprint, revision/media changes invalidate approval, honest requested-module coverage");
  console.log("settled image import and structural acceptance: own settled bytes/hash/cost/dimensions, optimized WebP, no provider call, broken links and unsafe output rejected");
  console.log("website hero media smoke: decoded WebP, dimensions, rights, page attachment, escaped alt, noindex and ZIP");
 })().catch(e=>{console.error(e);process.exitCode=1;});

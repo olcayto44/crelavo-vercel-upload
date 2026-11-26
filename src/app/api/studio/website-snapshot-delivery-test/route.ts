@@ -4,11 +4,11 @@ import {websiteDesignPilotEnabled} from "@/lib/website-design-pilot-gate";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {rateLimit} from "@/lib/security";
 import {verifyWebsiteHeroMedia} from "@/lib/website-hero-media-verify";
-import {buildWebsiteSelfHostedBundle} from "@/lib/website-selfhost-bundle";
+import {inspectWebsiteDelivery} from "@/lib/website-delivery-preflight";
 import {buildWebsiteReviewBundle} from "@/lib/website-review-bundle";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
-const Input=z.strictObject({siteId:z.string().uuid(),format:z.enum(["review","selfhost"])});
+const Input=z.strictObject({siteId:z.string().uuid(),format:z.enum(["review","selfhost","preflight"]),expectedSha256:z.string().regex(/^[a-f0-9]{64}$/).optional()});
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow"};
 export async function POST(request:Request){
  const fail=(status:number,code:string)=>Response.json({ok:false,code},{status,headers});
@@ -28,7 +28,14 @@ export async function POST(request:Request){
  if(r.error||!r.data||r.data.format!=="crelavo-private-content-snapshot-v1")return fail(404,"snapshot_unavailable");
  const s=r.data;if(!s.design?.design||!Array.isArray(s.catalog))return fail(409,"saved_design_required");
  const payload={design:s.design.design,revision:s.design.version,catalog:s.catalog.map((p:Record<string,unknown>)=>({sku:p.sku,name:p.name,description:p.description,price_minor:p.price_minor,currency:p.currency,stock:p.stock,visible:p.visible})),articles:(Array.isArray(s.articles)?s.articles:[]).filter((a:Record<string,unknown>)=>a.state==="reviewed").map((a:Record<string,unknown>)=>({slug:a.slug,title:a.title,description:a.description,body:a.body,state:a.state})),heroMedia:await verifyWebsiteHeroMedia(s.heroMedia??[])};
- const selfHost=input.data.format==="selfhost",result=selfHost?buildWebsiteSelfHostedBundle(payload):buildWebsiteReviewBundle(payload);
- return new Response(new Uint8Array(result.zip).buffer,{headers:{...headers,"Content-Type":"application/zip","Content-Disposition":selfHost?'attachment; filename="crelavo-independent-website-candidate.zip"':'attachment; filename="crelavo-private-site-review.zip"'}});
+ const selfHost=input.data.format!=="review";
+ if(selfHost){
+ const {result,review}=inspectWebsiteDelivery(payload);
+ if(input.data.format==="preflight")return Response.json({ok:true,...review},{headers});
+ if(input.data.expectedSha256!==review.sha256)return fail(409,"delivery_review_required_or_snapshot_changed");
+ return new Response(new Uint8Array(result.zip).buffer,{headers:{...headers,"Content-Type":"application/zip","Content-Disposition":'attachment; filename="crelavo-independent-website-candidate.zip"',"X-Artifact-SHA256":review.sha256}});
+ }
+ const result=buildWebsiteReviewBundle(payload);
+ return new Response(new Uint8Array(result.zip).buffer,{headers:{...headers,"Content-Type":"application/zip","Content-Disposition":'attachment; filename="crelavo-private-site-review.zip"'}});
  }catch{return fail(400,"saved_snapshot_invalid");}
 }
